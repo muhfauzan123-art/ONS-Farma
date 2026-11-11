@@ -108,9 +108,9 @@
     const mesoList = (st.rekamKlinis || []).filter((k) => String(k.layanan_jenis || '').toUpperCase() === 'MESO');
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Layanan Klinis Farmasi, Racikan &amp; MESO SATUSEHAT</h1>
+          <h1 class="text-xl font-extrabold">Layanan Klinis Farmasi, Racikan &amp; MESO SATUSEHAT</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Dokumentasi SOAP PMK 73 &amp; HL7 FHIR R4, kalkulator racikan multi-bahan + etiket live, serta algoritma Naranjo MESO BPOM.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -443,9 +443,9 @@
     });
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">E-Resep Dokter Mitra, Skrining Kesehatan &amp; Tracker PRB Kronis</h1>
+          <h1 class="text-xl font-extrabold">E-Resep Dokter Mitra, Skrining Kesehatan &amp; Tracker PRB Kronis</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Validasi PIN APJ antrean resep dokter mitra, skrining TDS/GDS/BMI dengan grafik sparkline, &amp; pengingat refill PRB 30 hari.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -706,9 +706,9 @@
     });
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Keuangan, Laba-Rugi Live (P&amp;L), Hutang PBF &amp; Pajak</h1>
+          <h1 class="text-xl font-extrabold">Keuangan, Laba-Rugi Live (P&amp;L), Hutang PBF &amp; Pajak</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Analisis P&amp;L kotor/bersih &amp; aset inventori FEFO, buku kas &amp; lock periode, cicilan hutang PBF, PPN/PPh, &amp; slip gaji A4.</p>
         </div>
         <div class="ons-tab-bar">
@@ -851,7 +851,7 @@
             <div><div class="text-[11px]" style="color:var(--ons-text-soft)">HPP Terjual (COGS)</div><div class="text-base font-extrabold font-mono-num">${S().rp(totalHppPos)}</div></div>
             <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Laba Kotor (${grossMarginPct}%)</div><div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(grossProfit)}</div></div>
             <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Est. Laba Bersih (-Beban)</div><div class="text-base font-extrabold font-mono-num ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(netProfit)}</div></div>
-            <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Valuasi Aset Stok (HPP)</div><div class="text-base font-extrabold font-mono-num text-teal-600">${S().rp(valuasiAsetStok)}</div></div>
+            <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Valuasi Aset Stok (HPP)</div><div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(valuasiAsetStok)}</div></div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -1039,10 +1039,10 @@
     const potongan = billingCache.potongan || [];
     const seeCost = S().canSeeFinancialCost();
 
-    return `<div class="space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+    return `<div class="space-y-4 ons-view-enter">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Tagihan PRB / Home Care, GrupBayar &amp; Kwitansi QR HMAC</h1>
+          <h1 class="text-xl font-extrabold">Tagihan PRB / Home Care, GrupBayar &amp; Kwitansi QR HMAC</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">1 bukti transfer banyak tagihan, verifikasi 1 klik, nomor kwitansi KW-YYYY-XXXXXX &amp; WA Reminder H-3/H-0.</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -1270,16 +1270,31 @@
     global.refreshDocEngineIfNeeded();
     const st = S().AppState;
     activeDocTab = (st.subTabs && st.subTabs['doc-engine']) || activeDocTab || 'surat';
-    const docs = docCache.docs || [];
+    if (Array.isArray(st.deDokumen) && st.deDokumen.length && (!docCache.docs.length || st.deDokumen.length > docCache.docs.length)) {
+      docCache.docs = st.deDokumen.slice();
+    }
+    const docs = docCache.docs || st.deDokumen || [];
     const tpls = docCache.templates || [];
+    const spAll = st.suratPesanan || [];
+    const shiftAll = st.shiftHistory || [];
 
-    return `<div class="space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+    return `<div class="space-y-4 ons-view-enter">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Mesin Dokumen &amp; Surat Resmi Apotek (Doc Engine v10)</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Templat {{...}} Docs/Sheets/Slides, persetujuan PIN APJ/Pemilik, pembekuan TERBIT &amp; Verifikasi Publik 20-Karakter.</p>
+          <h1 class="text-xl font-extrabold">Mesin Dokumen &amp; Arsip Resmi Apotek (Doc Engine)</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Templat {{...}} Docs/Sheets/Slides, persetujuan PIN APJ/Pemilik, pembekuan TERBIT, Arsip SP &amp; Verifikasi Publik 20-Karakter.</p>
         </div>
-        <button onclick="window.openCreateDocModal()" class="ons-btn ons-btn-primary text-xs">+ Buat Draf Surat Resmi Baru</button>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="global.refreshDocEngineIfNeeded(true)" class="ons-btn ons-btn-ghost text-xs">Sinkron Server</button>
+          <button onclick="window.openCreateDocModal()" class="ons-btn ons-btn-primary text-xs">+ Buat Draf Surat Resmi Baru</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+        <div class="ons-card p-3.5"><div style="color:var(--ons-text-soft)">Surat Resmi Terbit</div><div class="text-lg font-bold font-mono-num text-emerald-600">${docs.filter((x) => x.Status === 'TERBIT').length}</div></div>
+        <div class="ons-card p-3.5"><div style="color:var(--ons-text-soft)">Menunggu TTD Pejabat</div><div class="text-lg font-bold font-mono-num text-amber-600">${docs.filter((x) => x.Status !== 'TERBIT').length}</div></div>
+        <div class="ons-card p-3.5"><div style="color:var(--ons-text-soft)">Arsip Surat Pesanan (SP)</div><div class="text-lg font-bold font-mono-num text-blue-600">${spAll.length} (${spAll.filter((s) => s.status_sp === 'SELESAI_DITERIMA').length} Diterima)</div></div>
+        <div class="ons-card p-3.5"><div style="color:var(--ons-text-soft)">Arsip Tutup Shift Kasir</div><div class="text-lg font-bold font-mono-num">${shiftAll.length} Shift</div></div>
       </div>
 
       <div class="flex gap-2">
@@ -1421,6 +1436,7 @@
       S().closeModal();
       global.toast('Draf surat dibuat! Silakan tanda tangani dengan PIN Pejabat.', 'ok');
       await global.refreshDocEngineIfNeeded(true);
+      await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -1439,6 +1455,7 @@
       S().closeModal();
       global.toast('Surat TERBIT! Kode Verifikasi: ' + res.kode_verifikasi, 'ok');
       await global.refreshDocEngineIfNeeded(true);
+      await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -1464,22 +1481,56 @@
   /**
    * W-11: Tutup Shift Kasir (Blind Cash Count + Supervisor PIN Verification)
    */
+  function _parseSplitTunai(detailSplit) {
+    if (!detailSplit) return 0;
+    if (typeof detailSplit === 'object') return Number(detailSplit.tunai || 0);
+    const s = String(detailSplit || '');
+    if (s.trim().startsWith('{')) {
+      try { const o = JSON.parse(s); return Number(o.tunai || 0); } catch (e) {}
+    }
+    const m = s.match(/Tunai\s*(?:Rp)?\s*([\d.,]+)/i);
+    if (m) return Number(String(m[1]).replace(/[^\d]/g, '')) || 0;
+    return 0;
+  }
+
   function renderTutupShiftView() {
     const st = S().AppState;
-    const validToday = (st.penjualan || []).filter((p) => String(p.status_trx || '') !== 'RETUR');
-    const sisTunai = validToday.filter((p) => p.metode_bayar === 'TUNAI').reduce((s, p) => s + Number(p.grand_total || 0), 0);
-    const nonTunai = validToday.filter((p) => p.metode_bayar !== 'TUNAI').reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const validToday = (st.penjualan || []).filter((p) => {
+      const tgl = String(p.tanggal || '').slice(0, 10);
+      return (!tgl || tgl === todayIso) && String(p.status_trx || '') !== 'RETUR';
+    });
+    let sisTunai = 0;
+    let sisQris = 0;
+    let sisTransfer = 0;
+    validToday.forEach((p) => {
+      const tot = Number(p.grand_total || 0);
+      const met = String(p.metode_bayar || 'TUNAI').toUpperCase();
+      if (met === 'TUNAI') {
+        sisTunai += tot;
+      } else if (met === 'SPLIT') {
+        const cashPart = Math.min(tot, _parseSplitTunai(p.detail_split));
+        sisTunai += cashPart;
+        sisQris += Math.max(0, tot - cashPart);
+      } else if (met === 'QRIS') {
+        sisQris += tot;
+      } else {
+        sisTransfer += tot;
+      }
+    });
+    const nonTunai = sisQris + sisTransfer;
     const denoms = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500];
     const denomSum = denoms.reduce((s, d) => s + (d * Number(shiftDenomCounts[d] || 0)), 0);
     const defaultAktual = denomSum > 0 ? denomSum : (300000 + sisTunai);
+    const shiftHist = st.shiftHistory || [];
 
     return `<div class="max-w-3xl mx-auto space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Rekonsiliasi &amp; Tutup Shift Kasir (Blind Count + Denominasi)</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Hitung pecahan uang kertas/koin laci fisik terlebih dahulu lalu sahkan dengan 6-digit PIN APJ / Supervisor.</p>
+          <h1 class="text-xl font-extrabold">Rekonsiliasi &amp; Tutup Shift Kasir (Blind Count + Denominasi)</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Rekonsiliasi penjualan valid hari ini (${S().esc(todayIso)} — ${validToday.length} nota). Sahkan dengan 6-digit PIN APJ / Supervisor.</p>
         </div>
-        <span class="badge-bpom bpom-terbatas font-mono-num">Non-Tunai (QRIS/EDC): ${S().rp(nonTunai)}</span>
+        <span class="badge-bpom bpom-terbatas font-mono-num">Non-Tunai Hari Ini (QRIS/EDC): ${S().rp(nonTunai)}</span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -1503,13 +1554,31 @@
           <div class="space-y-3">
             <div><label class="font-semibold block mb-1">Modal Awal Laci (Rp)</label><input id="shModal" type="number" class="ons-input font-mono-num" value="300000"/></div>
             <div><label class="font-semibold block mb-1">Hitung Fisik Tunai Laci Aktual (Rp) *</label><input id="shAktual" type="number" class="ons-input font-mono-num font-bold text-base" value="${defaultAktual}"/></div>
-            <div><label class="font-semibold block mb-1">Catatan Handover Shift Berikutnya</label><textarea id="shNote" rows="2" class="ons-textarea" placeholder="Serah terima kunci laci, status chiller &amp; catatan selisih..."></textarea></div>
+            <div><label class="font-semibold block mb-1">Catatan Handover Shift Berikutnya</label><textarea id="shNote" rows="2" class="ons-textarea" placeholder="Serah terima kunci laci, modal laci &amp; catatan selisih..."></textarea></div>
             <div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-2">
               <div class="font-bold text-amber-700 dark:text-amber-300">Otorisasi PIN APJ / Supervisor Penutup Shift</div>
               <input id="shPin" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN (Demo: 123456)"/>
             </div>
-            <button onclick="window.submitCloseShift(${sisTunai})" class="ons-btn ons-btn-emerald w-full py-2.5">Rekonsiliasi, Tutup Shift &amp; Kirim ke Pemilik</button>
+            <button onclick="window.submitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer})" class="ons-btn ons-btn-emerald w-full py-2.5">Rekonsiliasi, Tutup Shift &amp; Kirim ke Pemilik</button>
           </div>
+        </div>
+      </div>
+
+      <div class="ons-card p-4 space-y-3">
+        <h3 class="font-bold text-sm">Arsip Riwayat Tutup Shift Kasir (${shiftHist.length})</h3>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>ID Shift &amp; Waktu</th><th>Kasir / Supervisor</th><th>Tunai Aktual</th><th>Selisih Kas</th><th>Catatan Handover</th></tr></thead>
+            <tbody>
+              ${shiftHist.length ? shiftHist.slice(0, 20).map((sh) => `<tr>
+                <td class="font-mono-num text-xs"><b>${S().esc(sh.id_shift)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sh.tgl_tutup, true)}</span></td>
+                <td class="text-xs"><b>${S().esc(sh.kasir_id || '-')}</b><br/><span style="color:var(--ons-text-soft)">SPV: ${S().esc(sh.supervisor_id || '-')}</span></td>
+                <td class="font-mono-num text-xs font-bold">${S().rp(sh.aktual_tunai || 0)}</td>
+                <td class="font-mono-num text-xs font-bold ${Number(sh.selisih_kas || 0) === 0 ? 'text-emerald-600' : 'text-amber-600'}">${S().rp(sh.selisih_kas || 0)}</td>
+                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(sh.catatan_handover || '-')}</td>
+              </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4 text-xs">Belum ada arsip penutupan shift tersimpan.</td></tr>'}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>`;
@@ -1529,16 +1598,19 @@
     if (akt) { akt.value = sum; global.toast('Hitungan pecahan disalin ke Tunai Laci Aktual!', 'ok'); }
   };
 
-  global.submitCloseShift = async (sisTunai) => {
+  global.submitCloseShift = async (sisTunai, sisQris, sisTransfer) => {
     try {
       const res = await API().callApi('shift.close', {
         modal_awal: Number(document.getElementById('shModal').value || 0),
         aktual_tunai: Number(document.getElementById('shAktual').value || 0),
-        sistem_tunai: sisTunai,
+        sistem_tunai: Number(sisTunai || 0),
+        sistem_qris: Number(sisQris || 0),
+        sistem_transfer: Number(sisTransfer || 0),
         catatan_handover: document.getElementById('shNote').value,
         supervisor_pin: document.getElementById('shPin').value
       }, { isWrite: true });
       global.toast('Shift berhasil ditutup! Selisih kas: ' + S().rp(res.shift.selisih_kas), 'ok');
+      await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -1625,9 +1697,9 @@
     const lostSales = _getLostSales();
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Pelaporan SIPNAP Kemenkes, Pareto ABC &amp; Dead Stock</h1>
+          <h1 class="text-xl font-extrabold">Pelaporan SIPNAP Kemenkes, Pareto ABC &amp; Dead Stock</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Format SIPNAP 8 kolom terintegrasi Kartu Stok mutasi nyata, Pareto ABC omzet &amp; valuasi, indikator WHO, &amp; lost sales.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -1996,10 +2068,10 @@
     const canEditProfile = role === 'Pemilik' || role === 'APJ';
     const prof = S().getStoreProfile();
 
-    return `<div class="space-y-5">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+    return `<div class="space-y-5 ons-view-enter">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Pengaturan Apotek, Konfirmasi Identitas &amp; Sistem</h1>
+          <h1 class="text-xl font-extrabold">Pengaturan Apotek, Konfirmasi Identitas &amp; Sistem</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Konfirmasi pemilik, foto/logo usaha, legalitas SIA/SIPA, manajemen akun, desain struk 58/80mm, &amp; audit sistem.</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -2398,10 +2470,10 @@
    * W-14: Simulator Breakpoint Desktop / Tablet / Mobile Kasir
    */
   function renderMobilePreviewView() {
-    return `<div class="space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+    return `<div class="space-y-4 ons-view-enter">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Simulator Breakpoint PWA Mobile, Tablet &amp; Desktop (W-14)</h1>
+          <h1 class="text-xl font-extrabold">Simulator Breakpoint PWA Mobile, Tablet &amp; Desktop (W-14)</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Uji tata letak antarmuka kasir di berbagai ukuran layar secara langsung &amp; instal ke Layar Utama HP.</p>
         </div>
         <div class="flex gap-1.5 flex-wrap">
@@ -2484,18 +2556,27 @@
     const mem = st.members.find((m) => m.id_member === rx.pasien_id || m.nama_pasien === rx.nama_pasien);
     if (cart) {
       cart.label = 'E-Resep ' + String(idKlinis).slice(-4);
-      cart.channel = 'E-Resep Dokter';
+      cart.channel = 'Resep WA';
       cart.id_member = mem ? mem.id_member : 'UMUM';
       cart.pelanggan_nama = rx.nama_pasien;
-      cart.items = pick.map((o) => ({
-        id_obat: o.id_obat,
-        nama_dagang: o.nama_dagang,
-        qty: 1,
-        satuan: o.satuan_dasar,
-        faktor_konversi: 1,
-        harga_jual: mem ? (o.harga_member || o.harga_umum) : o.harga_umum,
-        unitOptions: [{ label: o.satuan_dasar, ratio: 1, harga: mem ? (o.harga_member || o.harga_umum) : o.harga_umum }]
-      }));
+      cart.no_wa = rx.no_wa_pasien || (mem && mem.no_hp) || '';
+      cart.items = pick.map((o) => {
+        const unitSell = Number(mem ? (o.harga_member || o.harga_umum) : o.harga_umum);
+        return {
+          id_obat: o.id_obat,
+          nama_dagang: o.nama_dagang,
+          qty: 1,
+          satuan: o.satuan_dasar,
+          faktor_konversi: 1,
+          harga_jual: unitSell,
+          aturan_pakai: '',
+          unitOptions: [
+            { label: o.satuan_dasar, faktor: 1, harga: unitSell },
+            { label: o.satuan_sedang || 'Strip', faktor: Number(o.rasio_sedang || 10), harga: unitSell * Number(o.rasio_sedang || 10) },
+            { label: o.satuan_besar || 'Box', faktor: Number(o.rasio_besar || 100), harga: Number(o.harga_grosir || unitSell) * Number(o.rasio_besar || 100) }
+          ]
+        };
+      });
     }
     global.toast('Obat dari E-Resep ' + idKlinis + ' dimuat ke Kasir POS!', 'ok');
     global.navigateView('pos');

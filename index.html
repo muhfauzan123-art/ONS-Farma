@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="theme-color" content="#09202A"/>
-  <title>Apotek ONS Farma Enterprise v13.2</title>
+  <title>Apotek ONS Farma Enterprise v14.2</title>
   <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
@@ -36,8 +36,9 @@
   <script src="./js/demo-engine.js"></script>
   <script src="./js/api-turbo.js"></script>
   <script src="./js/store.js"></script>
+  <script src="./js/invoice-scanner.js"></script>
 
-  <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v11.1 -->
+  <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v14.2 -->
   <script src="./js/views-auth-dash-pos.js"></script>
   <script src="./js/views-inventory-procurement.js"></script>
   <script src="./js/views-clinical-finance-admin.js"></script>
@@ -94,19 +95,13 @@
               kw: 'beranda pusat komando dashboard kpi ringkasan kepatuhan'
             },
             {
-              viewId: 'pos', label: 'Kasir & Riwayat POS', icon: 'pos', badgeKey: 'omniPending', badgeTone: 'info',
+              viewId: 'pos', label: 'Kasir & Riwayat POS', icon: 'pos',
               desc: 'Transaksi kasir FEFO cepat, cetak struk/etiket, riwayat nota & retur PIN.',
               kw: 'kasir pos fefo jual barcode f2 riwayat nota void retur',
               tabs: [
                 { subTab: 'kasir', label: 'Kasir POS FEFO', kw: 'kasir jual scan barcode f2 split poin diskon etiket' },
-                { subTab: 'riwayat', label: 'Riwayat Nota & Void', kw: 'riwayat nota penjualan cetak ulang rincian void retur pin' },
-                { subTab: 'online', label: 'Order Online di POS', kw: 'order online web wa masuk ke kasir' }
+                { subTab: 'riwayat', label: 'Riwayat Nota & Void', kw: 'riwayat nota penjualan cetak ulang rincian void retur pin' }
               ]
-            },
-            {
-              viewId: 'omnichannel', label: 'Order Online & Kurir', icon: 'truck', badgeKey: 'omniNew', badgeTone: 'info',
-              desc: 'Kelola pesanan E-Apotek publik, WhatsApp apotek & penugasan kurir.',
-              kw: 'omnichannel delivery kurir etalase publik whatsapp order'
             },
             {
               viewId: 'tutup-shift', label: 'Tutup Shift & Kas', icon: 'clock',
@@ -120,13 +115,12 @@
           label: 'Gudang & Pengadaan',
           items: [
             {
-              viewId: 'gudang', label: 'Gudang, Suhu & Opname', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
-              desc: 'Stok batch FEFO, kartu stok BPOM, monitor chiller 2-8°C & stock opname.',
-              kw: 'gudang stok batch fefo kartu stok chiller suhu cold chain opname',
+              viewId: 'gudang', label: 'Gudang Batch & Opname', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
+              desc: 'Stok batch FEFO, kartu stok BPOM & stock opname fisik.',
+              kw: 'gudang stok batch fefo kartu stok opname recall kadaluarsa',
               tabs: [
                 { subTab: 'batch', label: 'Stok Batch & Recall', kw: 'batch fefo near ed kadaluarsa karantina recall' },
                 { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'kartu stok mutasi masuk keluar bpom xlsx' },
-                { subTab: 'coldchain', label: 'Monitor Chiller 2-8°C', kw: 'cold chain chiller kulkas suhu vaksin insulin' },
                 { subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] }
               ]
             },
@@ -263,12 +257,10 @@
         const lowStock = ONSStore.canSeeFinancialCost()
           ? (st.masterObat || []).filter((o) => ONSStore.getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length
           : 0;
-        const omniNew = (st.omnichannelOrders || []).filter((o) => o.status_order === 'BARU').length;
-        const omniPending = (st.omnichannelOrders || []).filter((o) => o.status_order !== 'SELESAI' && o.status_order !== 'BATAL').length;
         const erxPending = ONSStore.canSeeFinancialCost()
           ? (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length
           : 0;
-        return { nearEd, lowStock, invAlerts: nearEd + lowStock, omniNew, omniPending, erxPending };
+        return { nearEd, lowStock, invAlerts: nearEd + lowStock, erxPending };
       }
 
       function getAllowedMenuTree() {
@@ -506,6 +498,9 @@
       };
 
       window.navigateView = function (viewId, subTab) {
+        if (viewId === 'omnichannel') { viewId = 'pos'; subTab = 'kasir'; }
+        if (viewId === 'pos' && subTab === 'online') subTab = 'kasir';
+        if (viewId === 'gudang' && subTab === 'coldchain') subTab = 'batch';
         if (!ONSStore.canAccessView(viewId)) {
           toast('Akses dibatasi untuk peran ' + ONSStore.getRole(), 'warn');
           return;
@@ -538,11 +533,6 @@
           }
           if (viewId === 'crm-wa' && window.ONSViewsOmniCrm && typeof window.ONSViewsOmniCrm.setCrmTab === 'function') {
             window.ONSViewsOmniCrm.setCrmTab(subTab);
-            window.closeMobileDrawer();
-            return;
-          }
-          if (viewId === 'omnichannel' && window.ONSViewsOmniCrm && typeof window.ONSViewsOmniCrm.setOmniFilter === 'function') {
-            window.ONSViewsOmniCrm.setOmniFilter(subTab);
             window.closeMobileDrawer();
             return;
           }
@@ -613,6 +603,9 @@
         st.strukTemplates = data.struk_templates || [];
         st.fakturPbf = data.faktur_pbf || [];
         st.jurnalKeuangan = data.jurnal_keuangan || [];
+        st.suratPesanan = data.surat_pesanan || [];
+        st.deDokumen = data.de_dokumen || [];
+        st.shiftHistory = data.shift_history || [];
       };
       const applyBootPayload = window.applyBootPayload;
 
@@ -635,7 +628,6 @@
         switch (v) {
           case 'dashboard': slot.innerHTML = v1.renderDashboardView(); break;
           case 'pos': slot.innerHTML = v1.renderPosView(); break;
-          case 'omnichannel': slot.innerHTML = v4.renderOmnichannelView(); break;
           case 'obat': slot.innerHTML = v2.renderMasterObatView(); break;
           case 'gudang': slot.innerHTML = v2.renderGudangView(); break;
           case 'defecta': slot.innerHTML = v2.renderDefectaView(); break;
@@ -661,10 +653,8 @@
         if (nearEdCount > 0) alerts.push({ view: 'gudang', sub: 'batch', tone: 'text-red-600', title: `${nearEdCount} Batch Kritis Near-ED (<=90 hari)`, desc: 'Prioritaskan FEFO atau Retur BAR-PBF.' });
         const lowCount = (st.masterObat || []).filter((o) => ONSStore.getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length;
         if (lowCount > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'defecta', sub: 'order', tone: 'text-amber-600', title: `${lowCount} Obat di Bawah Stok Minimum`, desc: 'Buat SP BPOM otomatis dari menu Defecta.' });
-        const newOmni = (st.omnichannelOrders || []).filter((o) => o.status_order === 'BARU').length;
-        if (newOmni > 0) alerts.push({ view: 'omnichannel', sub: 'SEMUA', tone: 'text-sky-600', title: `${newOmni} Order Online/WA Baru Masuk`, desc: 'Siap diverifikasi & dimuat ke Kasir POS.' });
         const erxPend = (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
-        if (erxPend > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'eresep-prb', sub: 'erx', tone: 'text-purple-600', title: `${erxPend} E-Resep Menunggu PIN APJ`, desc: 'Periksa interaksi obat & verifikasi SIPA.' });
+        if (erxPend > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'eresep-prb', sub: 'erx', tone: 'text-blue-600', title: `${erxPend} E-Resep Menunggu PIN APJ`, desc: 'Periksa interaksi obat & verifikasi SIPA.' });
         return alerts;
       }
 
@@ -719,7 +709,6 @@
           if (!box) return;
           const navMatches = flatNav.filter((n) => !q || `${n.label} ${n.grp} ${n.kw}`.toLowerCase().includes(q)).slice(0, 9);
           const obatMatches = q ? (st.masterObat || []).filter((o) => `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa}`.toLowerCase().includes(q)).slice(0, 5) : [];
-          const orderMatches = q ? (st.omnichannelOrders || []).filter((o) => `${o.no_order} ${o.nama_pelanggan}`.toLowerCase().includes(q)).slice(0, 4) : [];
 
           let html = navMatches.map((n) => `
             <div onclick="ONSStore.closeModal();navigateView('${n.viewId}','${n.subTab}');" class="ons-cmdk-row">
@@ -731,13 +720,6 @@
               <div onclick="ONSStore.closeModal();navigateView('pos','kasir');setTimeout(()=>window.addPosItemById && window.addPosItemById('${ONSStore.esc(o.id_obat)}'),30);" class="ons-cmdk-row">
                 <div><strong>${ONSStore.esc(o.nama_dagang)}</strong> <span style="color:var(--ons-text-soft)">(${ONSStore.getTotalStok(o.id_obat)} ${ONSStore.esc(o.satuan_dasar)})</span></div>
                 <span class="font-mono-num font-bold text-emerald-600">${ONSStore.rp(o.harga_umum)}</span>
-              </div>`).join('');
-          }
-          if (orderMatches.length) {
-            html += `<div class="ons-sidebar-group-label">Pesanan Omnichannel</div>` + orderMatches.map((o) => `
-              <div onclick="ONSStore.closeModal();navigateView('omnichannel','SEMUA');" class="ons-cmdk-row">
-                <div><strong>${ONSStore.esc(o.no_order)}</strong> &bull; ${ONSStore.esc(o.nama_pelanggan)}</div>
-                <span class="badge-bpom bpom-terbatas">${ONSStore.esc(o.status_order)}</span>
               </div>`).join('');
           }
           box.innerHTML = html || '<div class="p-6 text-center opacity-60">Tidak ada hasil yang cocok.</div>';
@@ -818,7 +800,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v13.2 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v14.2 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
@@ -841,8 +823,8 @@
               ${[
                 { id: 'dashboard', l: 'Beranda', i: 'home' },
                 { id: 'pos', l: 'Kasir', i: 'pos' },
-                { id: 'omnichannel', l: 'Order', i: 'truck' },
-                { id: 'gudang', l: 'Gudang', i: 'inventory' }
+                { id: 'gudang', l: 'Gudang', i: 'inventory' },
+                { id: 'billing', l: 'Tagihan', i: 'receipt' }
               ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold ${st.activeView === b.id ? 'text-blue-600' : ''}">
                 ${svgIcon(b.i, 'w-5 h-5')}<span class="mt-0.5">${b.l}</span>
               </button>`).join('')}

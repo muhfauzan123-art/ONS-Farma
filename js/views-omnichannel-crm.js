@@ -232,8 +232,8 @@
       return okStat && okQ;
     });
 
-    return `<div class="space-y-5">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+    return `<div class="space-y-5 ons-view-enter">
+      <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Omnichannel Delivery Hub &amp; Pesanan Online</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Terintegrasi real-time dengan Etalase Publik E-Apotek (?katalog=1), WhatsApp Order, &amp; Kasir POS FEFO.</p>
@@ -246,10 +246,10 @@
       </div>
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Order Baru Masuk</div><div class="text-2xl font-extrabold text-sky-600 mt-1">${cntBaru}</div></div>
-        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Sedang Disiapkan / Racik</div><div class="text-2xl font-extrabold text-amber-600 mt-1">${cntRacik}</div></div>
-        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Siap / Dalam Pengiriman</div><div class="text-2xl font-extrabold text-indigo-600 mt-1">${cntSiap}</div></div>
-        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Selesai &amp; Lunas POS</div><div class="text-2xl font-extrabold text-emerald-600 mt-1">${cntSelesai}</div></div>
+        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Order Baru Masuk</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${cntBaru}</div></div>
+        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Sedang Disiapkan / Racik</div><div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${cntRacik}</div></div>
+        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Siap / Dalam Pengiriman</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${cntSiap}</div></div>
+        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Selesai &amp; Lunas POS</div><div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${cntSelesai}</div></div>
       </div>
 
       <div class="ons-card p-4 space-y-4">
@@ -409,8 +409,8 @@
     });
     const filteredTargets = contacts.filter((c) => (crmFilterSeg === 'SEMUA' || c.segmen === crmFilterSeg) && c.status_aktif !== 'OPT_OUT');
 
-    return `<div class="space-y-5">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+    return `<div class="space-y-5 ons-view-enter">
+      <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">WhatsApp CRM, Broadcast Edukasi &amp; Antrean Fonnte</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Arsitektur /gas-notifikasi-wa-crm: normalisasi 62/08, proteksi Opt-Out pasien, &amp; antrean non-blocking.</p>
@@ -422,10 +422,10 @@
       </div>
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Total Kontak CRM</div><div class="text-2xl font-extrabold mt-1">${contacts.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Pasien Opt-In (Aktif WA)</div><div class="text-2xl font-extrabold text-emerald-600 mt-1">${activeOptIn.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Antrean Menunggu</div><div class="text-2xl font-extrabold text-amber-600 mt-1">${pendingQ.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">WA Terkirim (Log)</div><div class="text-2xl font-extrabold text-sky-600 mt-1">${sentQ.length}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Total Kontak CRM</div><div class="text-2xl font-extrabold font-mono-num mt-1">${contacts.length}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Pasien Opt-In (Aktif WA)</div><div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${activeOptIn.length}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Antrean Menunggu</div><div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${pendingQ.length}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">WA Terkirim (Log)</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${sentQ.length}</div></div>
       </div>
 
       <div class="ons-card p-4 space-y-4">
@@ -477,13 +477,13 @@
                 <select id="blastSegmen" onchange="ONSViewsOmniCrm.setCrmSeg(this.value)" class="ons-select">
                   <option value="SEMUA" ${crmFilterSeg === 'SEMUA' ? 'selected' : ''}>SEMUA PASIEN AKTIF</option>
                   <option value="PRB_KRONIS" ${crmFilterSeg === 'PRB_KRONIS' ? 'selected' : ''}>PASIEN PRB / PENYAKIT KRONIS</option>
-                  <option value="ONLINE" ${crmFilterSeg === 'ONLINE' ? 'selected' : ''}>PELANGGAN ORDER ONLINE / WA</option>
+                  <option value="ONLINE" ${crmFilterSeg === 'ONLINE' ? 'selected' : ''}>PELANGGAN RESEP WA / KONSULTASI</option>
                   <option value="UMUM" ${crmFilterSeg === 'UMUM' ? 'selected' : ''}>PELANGGAN UMUM</option>
                 </select>
               </div>
               <div class="flex flex-wrap gap-1.5">
-                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Halo Kak {nama}, Apotek ONS Farma mengingatkan jadwal kontrol dan tebus ulang obat rutin Anda. Pesan antar langsung via E-Apotek Digital kami ya!')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reminder Kontrol PRB</button>
-                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Salam sehat Kak {nama}! Kini Apotek ONS Farma melayani pemesanan obat resep & multivitamin via Etalase Online dengan konsultasi Apoteker gratis.')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Info E-Apotek</button>
+                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Halo Kak {nama}, Apotek ONS Farma mengingatkan jadwal kontrol dan tebus ulang obat rutin Anda. Silakan balas chat ini atau kunjungi apotek kami ya!')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reminder Kontrol PRB</button>
+                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Salam sehat Kak {nama}! Apoteker ONS Farma siap melayani konsultasi penggunaan obat dan penyiapan resep Anda secara langsung maupun via WhatsApp.')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Info Konsultasi Apoteker</button>
               </div>
               <div>
                 <label class="text-xs font-bold block mb-1">Isi Pesan WhatsApp (Gunakan <code>{nama}</code> untuk personalisasi)</label>

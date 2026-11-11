@@ -86,6 +86,9 @@
     antrianNotif: [],
     fakturPbf: [],
     jurnalKeuangan: [],
+    suratPesanan: [],
+    deDokumen: [],
+    shiftHistory: [],
     carts: [
       { id: 'K1', label: 'Pelanggan #1', channel: 'Toko Fisik', id_member: 'UMUM', items: [], diskon_global: 0 }
     ],
@@ -147,8 +150,8 @@
     const r = getRole();
     if (r === 'Pemilik') return true;
     if (r === 'APJ') return viewId !== 'settings' || true; // APJ akses penuh klinis/gudang/sipnap; settings secrets disensor
-    // Kasir dibatasi strictly hanya Dashboard, POS, Gudang Baca/Cek ED, Omnichannel Dispatch, Billing Tagihan Pasien, Tutup Shift & Mobile
-    const kasirAllowed = ['dashboard', 'pos', 'gudang', 'omnichannel', 'billing', 'tutup-shift', 'mobile-preview'];
+    // Kasir dibatasi strictly hanya Dashboard, POS, Gudang Baca/Cek ED, Billing Tagihan Pasien, Tutup Shift & Mobile
+    const kasirAllowed = ['dashboard', 'pos', 'gudang', 'billing', 'tutup-shift', 'mobile-preview'];
     return kasirAllowed.includes(viewId);
   }
 
@@ -158,17 +161,35 @@
   }
 
   /**
-   * Kalkulator Stok FEFO Total per ID Obat
+   * Kalkulator Stok FEFO Total & Layak Jual (Belum Kadaluarsa) per ID Obat
    */
+  function isBatchExpired(tglEd) {
+    const iso = String(tglEd || '').slice(0, 10);
+    if (!iso) return false;
+    return iso < new Date().toISOString().slice(0, 10);
+  }
+
   function getTotalStok(idObat) {
     return AppState.stokBatch
       .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF')
       .reduce((acc, b) => acc + Number(b.qty_sisa || 0), 0);
   }
 
+  function getSellableStok(idObat) {
+    return AppState.stokBatch
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa))
+      .reduce((acc, b) => acc + Number(b.qty_sisa || 0), 0);
+  }
+
   function getNearestEdBatch(idObat) {
     return AppState.stokBatch
       .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0)
+      .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)))[0] || null;
+  }
+
+  function getNearestSellableBatch(idObat) {
+    return AppState.stokBatch
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa))
       .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)))[0] || null;
   }
 
@@ -618,8 +639,11 @@
     getRole,
     canAccessView,
     canSeeFinancialCost,
+    isBatchExpired,
     getTotalStok,
+    getSellableStok,
     getNearestEdBatch,
+    getNearestSellableBatch,
     checkCartCdss,
     openModal,
     closeModal,

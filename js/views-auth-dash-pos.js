@@ -621,23 +621,27 @@
     const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
     const pemilikNama = prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
+    const fotoPem = prof.foto_pemilik_url || '';
 
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const nowDt = new Date();
+    const hourNow = nowDt.getHours();
+    const greetText = hourNow < 11 ? 'Selamat Pagi' : (hourNow < 15 ? 'Selamat Siang' : (hourNow < 19 ? 'Selamat Sore' : 'Selamat Malam'));
+    const fullDateLabel = nowDt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const todayIso = nowDt.toISOString().slice(0, 10);
+
     const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || '') !== 'RETUR');
     const omzetHari = validSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const marginHari = seeCost ? validSales.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : null;
     const nearEdBatches = st.stokBatch.filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && S().daysUntil(b.tgl_kadaluarsa) <= 90);
-    const defectaCount = st.masterObat.filter((o) => S().getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length;
+    const defectaCount = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).length;
     const apTotal = seeCost ? st.fakturPbf.reduce((s, f) => s + Number(f.sisa_hutang || 0), 0) : null;
-    const latestTemp = st.coldChain.length ? st.coldChain[st.coldChain.length - 1] : null;
-    const coldOk = !latestTemp || (latestTemp.suhu_celcius >= 2 && latestTemp.suhu_celcius <= 8);
     const erxAntre = (st.rekamKlinis || []).filter((r) => String(r.status_klinis || '').includes('MENUNGGU')).length;
-    const omniBaru = (st.omnichannelOrders || []).filter((o) => o.status_order === 'BARU').length;
     const billPending = (st.billingPending || []).length;
     const prbUrgentCount = (st.members || []).filter((m) => m.tgl_habis_obat && S().daysUntil(m.tgl_habis_obat) <= 5).length;
+    const totalPoinMember = validSales.reduce((a, b) => a + Number(b.poin_didapat || 0), 0);
 
-    // Readiness Compliance Score (Audit, Cold-Chain, ED, Defecta)
-    const readiness = Math.max(55, Math.min(100, 100 - nearEdBatches.length * 4 - defectaCount * 3 - (coldOk ? 0 : 15)));
+    // Readiness Compliance Score (Audit, ED, Defecta)
+    const readiness = Math.max(60, Math.min(100, 100 - nearEdBatches.length * 4 - defectaCount * 3));
     const dashArray = Math.round((readiness / 100) * 251.2);
 
     // Agregasi Penjualan Nyata 7 Hari Terakhir dari AppState.penjualan
@@ -659,14 +663,22 @@
     const maxVal = Math.max(...omzSeries, 100000);
     const total7Hari = omzSeries.reduce((a, b) => a + b, 0);
 
-    // Distribusi Channel Apotek Digital (Kasir Toko vs E-Apotek / WA / Marketplace)
-    const chTotals = {};
+    // SVG smooth trend line across 7 days
+    const trendCoords = omzSeries.map((val, idx) => {
+      const x = 15 + idx * 45;
+      const y = 44 - Math.round((Number(val || 0) / maxVal) * 34);
+      return `${x},${y}`;
+    }).join(' ');
+
+    // Distribusi Metode Pembayaran & Layanan Kasir
+    const payTotals = {};
     validSales.forEach((p) => {
-      const ch = String(p.channel || 'Toko Fisik');
-      chTotals[ch] = (chTotals[ch] || 0) + Number(p.grand_total || 0);
+      const mt = String(p.metode_bayar || 'TUNAI').toUpperCase();
+      payTotals[mt] = (payTotals[mt] || 0) + Number(p.grand_total || 0);
     });
-    const channelRows = Object.keys(chTotals).map((k) => ({ name: k, total: chTotals[k] })).sort((a, b) => b.total - a.total);
-    const chDenom = channelRows.reduce((s, r) => s + r.total, 0) || 1;
+    const payRows = Object.keys(payTotals).map((k) => ({ name: k, total: payTotals[k] })).sort((a, b) => b.total - a.total);
+    const payDenom = payRows.reduce((s, r) => s + r.total, 0) || 1;
+    const payColors = { TUNAI: '#10B981', QRIS: '#0066FE', TRANSFER: '#0284C7', SPLIT: '#F59E0B' };
 
     // Top-5 Obat Terlaris dari AppState.detailPenjualan
     const soldMap = {};
@@ -682,33 +694,37 @@
     });
     const topObatList = Object.values(soldMap).sort((a, b) => b.qty - a.qty).slice(0, 5);
 
+    const activeUserDisplay = (S().getRole() === 'Pemilik' ? pemilikNama : ((st.user && st.user.nama_lengkap) || pemilikNama));
+
     return `<div class="space-y-5 ons-view-enter">
-      <!-- Header Eksekutif Apotek Digital -->
-      <div class="ons-card p-4 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <img src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-12 h-12 rounded-xl border object-cover bg-white shrink-0"/>
-          <div class="min-w-0">
+      <!-- Fluid Hero Greeting Cockpit -->
+      <div class="ons-hero-welcome p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="flex items-center gap-4 min-w-0">
+          <div class="relative shrink-0">
+            <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/80 dark:border-slate-700 shadow-md object-cover bg-white"/>
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-800" title="Operasional Aktif"></span>
+          </div>
+          <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-lg sm:text-xl font-extrabold truncate">Pusat Komando ${S().esc(usahaNama)}</h1>
-              <span class="badge-bpom bpom-bebas">APOTEK DIGITAL</span>
+              <span class="badge-bpom bpom-bebas">${S().esc(fullDateLabel)}</span>
+              <span class="badge-bpom bpom-terbatas">Cabang ${S().esc(st.cabangId)} &bull; ${S().esc(S().getRole())}</span>
             </div>
-            <p class="text-xs truncate" style="color:var(--ons-text-soft)">Pemilik/APJ: <b>${S().esc(pemilikNama)}</b> &bull; Cabang <b>${S().esc(st.cabangId)}</b> &bull; Peran: <b>${S().esc(S().getRole())}</b></p>
+            <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight truncate">${greetText}, ${S().esc(activeUserDisplay)}</h1>
+            <p class="text-xs sm:text-sm truncate" style="color:var(--ons-text-soft)">${S().esc(usahaNama)} &bull; SIA: ${S().esc(prof.no_sia || '-')} &bull; ${S().esc(prof.jam_operasional || 'Siap Melayani')}</p>
           </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs">Buka Kasir POS (F2)</button>
-          <button onclick="navigateView('omnichannel')" class="ons-btn ons-btn-ghost text-xs">Order Online (${omniBaru})</button>
-          <button onclick="window.copyPublicApotekLink()" class="ons-btn ons-btn-ghost text-xs">Salin Link E-Apotek</button>
-          <a href="?katalog=1" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-xs">Lihat Etalase Publik</a>
-          ${seeCost ? `<button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-ghost text-xs">Tagihan</button>` : ''}
-          <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">Segarkan</button>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm">Buka Kasir POS (F2)</button>
+          <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>
+          ${seeCost ? `<button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-emerald text-xs">Tagihan</button>` : ''}
+          <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
         </div>
       </div>
 
       ${st.masterObat.length === 0 ? `<div class="ons-card p-4 border-l-4 flex flex-wrap items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.07)">
         <div>
           <div class="font-bold text-sm">Katalog Obat Masih Kosong (Mode Live Baru Terhubung)</div>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Klik tombol di kanan untuk mengisi otomatis 6 obat standar BPOM/KFA, stok batch FEFO, PBF, member PRB &amp; suhu chiller ke Google Sheets, atau import dari Excel (.xlsx).</p>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Klik tombol di kanan untuk mengisi otomatis katalog awal obat BPOM/KFA, batch FEFO, PBF, &amp; member ke Google Sheets, atau import dari Excel (.xlsx).</p>
         </div>
         <div class="flex flex-wrap gap-2">
           ${seeCost ? `<button onclick="window.seedStarterCatalogNow()" class="ons-btn ons-btn-primary text-xs">Isi Katalog Awal (1 Klik)</button>` : ''}
@@ -716,135 +732,174 @@
         </div>
       </div>` : ''}
 
-      <!-- 5 Kartu KPI Utama (Deep-Linked ke Sub-Menu) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        <div class="ons-card p-4 cursor-pointer hover:border-blue-500 transition" onclick="navigateView('pos','riwayat')">
-          <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Omzet Tercatat</div>
-          <div class="text-xl font-bold font-mono-num mt-1 text-blue-600">${S().rp(omzetHari)}</div>
-          <div class="text-[11px] mt-1 text-emerald-600 font-semibold">${validSales.length} nota lunas &rarr; Riwayat</div>
+      <!-- 4 Kartu KPI Utama yang Lega & Interaktif -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+        <div class="ons-kpi-card" onclick="navigateView('pos','riwayat')">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Omzet Penjualan</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-blue-600">${S().rp(omzetHari)}</div>
+            </div>
+            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          </div>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
+            <span class="text-emerald-600 font-bold">${validSales.length} nota lunas</span>
+            <span style="color:var(--ons-text-soft)">Lihat Riwayat &rarr;</span>
+          </div>
         </div>
-        <div class="ons-card p-4 cursor-pointer hover:border-emerald-500 transition" onclick="navigateView('${seeCost ? 'finance' : 'pos'}','${seeCost ? 'pnl' : 'kasir'}')">
-          <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Estimasi Laba Kotor' : 'Poin Member Aktif'}</div>
-          <div class="text-xl font-bold font-mono-num mt-1 text-emerald-600">${seeCost ? S().rp(marginHari) : (validSales.reduce((a, b) => a + Number(b.poin_didapat || 0), 0) + ' Poin')}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${seeCost ? 'Lihat Laba Rugi P&L &rarr;' : 'Data HPP disembunyikan (Kasir)'}</div>
+
+        <div class="ons-kpi-card" onclick="navigateView('${seeCost ? 'finance' : 'pos'}','${seeCost ? 'pnl' : 'kasir'}')">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Estimasi Laba Kotor' : 'Poin Loyalitas Member'}</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600">${seeCost ? S().rp(marginHari) : (totalPoinMember + ' Poin')}</div>
+            </div>
+            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+          </div>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
+            <span style="color:var(--ons-text-soft)">${seeCost ? 'Margin bersih tercatat' : 'Data HPP disembunyikan'}</span>
+            <span class="font-semibold text-emerald-600">${seeCost ? 'Buka P&amp;L &rarr;' : 'Ke Kasir &rarr;'}</span>
+          </div>
         </div>
-        <div class="ons-card p-4 cursor-pointer hover:border-red-500 transition" onclick="navigateView('gudang','batch')">
-          <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Radar ED &le; 90 Hari</div>
-          <div class="text-xl font-bold font-mono-num mt-1 ${nearEdBatches.length ? 'text-red-600' : 'text-emerald-600'}">${nearEdBatches.length} Batch</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Buka Gudang Batch FEFO &rarr;</div>
+
+        <div class="ons-kpi-card" onclick="navigateView('gudang','batch')">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Kesehatan Stok &amp; FEFO</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 ${nearEdBatches.length ? 'text-red-600' : 'text-emerald-600'}">${nearEdBatches.length} Batch ED</div>
+            </div>
+            <span class="ons-kpi-ico ${nearEdBatches.length ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
+          </div>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
+            <span class="${defectaCount ? 'text-amber-600 font-bold' : 'text-emerald-600 font-semibold'}">${defectaCount} item stok menipis</span>
+            <span style="color:var(--ons-text-soft)">Cek Gudang &rarr;</span>
+          </div>
         </div>
-        <div class="ons-card p-4 cursor-pointer hover:border-emerald-500 transition" onclick="navigateView('gudang','coldchain')">
-          <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Chiller Cold-Chain (2-8&deg;C)</div>
-          <div class="text-xl font-bold font-mono-num mt-1 ${coldOk ? 'text-emerald-600' : 'text-red-600'}">${latestTemp ? latestTemp.suhu_celcius + ' °C' : '4.8 °C'}</div>
-          <div class="text-[11px] mt-1 font-semibold ${coldOk ? 'text-emerald-600' : 'text-red-600'}">${coldOk ? 'NORMAL &bull; Catat Suhu &rarr;' : 'ALARM RENTANG! Cek Chiller &rarr;'}</div>
-        </div>
-        <div class="ons-card p-4 cursor-pointer hover:border-amber-500 transition" onclick="navigateView('${seeCost ? 'finance' : 'tutup-shift'}','${seeCost ? 'hutang' : ''}')">
-          <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Tagihan PBF Berjalan' : 'Tutup Shift Kasir'}</div>
-          <div class="text-xl font-bold font-mono-num mt-1 text-amber-600">${seeCost ? S().rp(apTotal) : 'Siap Hitung'}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${seeCost ? st.fakturPbf.length + ' faktur PBF &rarr;' : 'Hitung denominasi kas'}</div>
+
+        <div class="ons-kpi-card" onclick="navigateView('${seeCost ? 'finance' : 'tutup-shift'}','${seeCost ? 'hutang' : ''}')">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Tagihan PBF Berjalan' : 'Handover Shift Kasir'}</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-amber-600">${seeCost ? S().rp(apTotal) : 'Siap Hitung'}</div>
+            </div>
+            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
+          </div>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
+            <span style="color:var(--ons-text-soft)">${seeCost ? st.fakturPbf.length + ' faktur PBF aktif' : 'Rekonsiliasi kas laci'}</span>
+            <span class="font-semibold text-amber-600">${seeCost ? 'Kelola AP &rarr;' : 'Tutup Shift &rarr;'}</span>
+          </div>
         </div>
       </div>
 
-      <!-- Baris Tengah: Compliance Gauge + Grafik Omzet 7 Hari + Antrean Kritis -->
+      <!-- Baris Tengah: Tren 7 Hari + Antrean Prioritas + Kesiapan BPOM -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div class="ons-card p-5 lg:col-span-4 flex flex-col items-center justify-between">
-          <div class="w-full flex items-center justify-between mb-2">
-            <h3 class="font-bold text-sm">Skor Kesiapan &amp; Kepatuhan BPOM</h3>
-            <span class="badge-bpom bpom-bebas">AUDIT SIAP</span>
-          </div>
-          <svg viewBox="0 0 120 120" class="w-36 h-36 my-2">
-            <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ons-border)" stroke-width="11"/>
-            <circle cx="60" cy="60" r="40" fill="none" stroke="#10B981" stroke-width="11" stroke-linecap="round"
-              stroke-dasharray="${dashArray} 251.2" transform="rotate(-90 60 60)"/>
-            <text x="60" y="57" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor">${readiness}%</text>
-            <text x="60" y="74" text-anchor="middle" font-size="9" fill="#64748B">Kepatuhan CDOB</text>
-          </svg>
-          <div class="w-full space-y-1.5 text-xs pt-2 border-t" style="border-color:var(--ons-border)">
-            <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-blue-600"/> Catat Suhu Kulkas Pagi 2-8&deg;C</label>
-            <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-blue-600"/> Verifikasi Laci Narkotika 2 Kunci</label>
-            <label class="flex items-center gap-2"><input type="checkbox" class="accent-blue-600"/> Cek Defecta Order PBF Sebelum 14:00</label>
-          </div>
-        </div>
-
-        <div class="ons-card p-5 lg:col-span-5 flex flex-col justify-between">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="ons-card p-5 lg:col-span-5 flex flex-col justify-between gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 class="font-bold text-sm">Tren ${seeCost ? 'Omzet vs Laba Kotor' : 'Penjualan'} 7 Hari</h3>
-              <div class="text-[11px]" style="color:var(--ons-text-soft)">Agregasi Aktual Data Penjualan: <b>${S().rp(total7Hari)}</b></div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Total 7 hari terakhir: <b>${S().rp(total7Hari)}</b></div>
             </div>
             <div class="flex items-center gap-2 text-[10px]">
-              <span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#0066FE"></span> Omzet</span>
-              ${seeCost ? `<span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#10B981"></span> Laba Kotor</span>` : ''}
+              <span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#0066FE"></span> Omzet</span>
+              ${seeCost ? `<span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#10B981"></span> Laba</span>` : ''}
             </div>
           </div>
-          <div class="flex items-end gap-2 h-44 pt-4">
+          <svg viewBox="0 0 300 50" class="w-full h-11 overflow-visible">
+            <defs>
+              <linearGradient id="onsDashSparkGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#0284C7"/>
+                <stop offset="100%" stop-color="#10B981"/>
+              </linearGradient>
+            </defs>
+            <polyline fill="none" stroke="url(#onsDashSparkGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${trendCoords}"/>
+          </svg>
+          <div class="flex items-end gap-2 h-36 pt-1">
             ${days.map((d, i) => {
               const vOmz = Number(omzSeries[i] || 0);
-              const hOmz = vOmz > 0 ? Math.max(12, Math.round((vOmz / maxVal) * 100)) : 4;
+              const hOmz = vOmz > 0 ? Math.max(14, Math.round((vOmz / maxVal) * 100)) : 5;
               const vLaba = seeCost ? Number(labaSeries[i] || 0) : 0;
-              const hLaba = seeCost && vLaba > 0 ? Math.max(8, Math.round((vLaba / maxVal) * 100)) : 0;
+              const hLaba = seeCost && vLaba > 0 ? Math.max(10, Math.round((vLaba / maxVal) * 100)) : 0;
               const isToday = i === days.length - 1;
               return `<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end" title="${d}: Omzet ${S().rp(vOmz)}${seeCost ? ' | Laba ' + S().rp(vLaba) : ''}">
                 <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${vOmz >= 1000000 ? (vOmz / 1000000).toFixed(1) + 'jt' : (vOmz >= 1000 ? Math.round(vOmz / 1000) + 'rb' : '0')}</div>
                 <div class="w-full h-full flex items-end justify-center gap-1">
-                  <div class="flex-1 rounded-t-md transition-all" style="height:${hOmz}%;background:${isToday ? '#0066FE' : '#0284C7'};opacity:${vOmz > 0 ? (isToday ? '1' : '0.82') : '0.25'};"></div>
-                  ${seeCost ? `<div class="w-2/5 rounded-t-md transition-all" style="height:${Math.max(4, hLaba)}%;background:#10B981;opacity:${vLaba > 0 ? (isToday ? '1' : '0.85') : '0.25'};"></div>` : ''}
+                  <div class="flex-1 rounded-lg transition-all" style="height:${hOmz}%;background:${isToday ? 'linear-gradient(180deg,#3B82F6,#0050CA)' : '#38BDF8'};opacity:${vOmz > 0 ? (isToday ? '1' : '0.78') : '0.22'};"></div>
+                  ${seeCost ? `<div class="w-2/5 rounded-lg transition-all" style="height:${Math.max(4, hLaba)}%;background:#10B981;opacity:${vLaba > 0 ? (isToday ? '1' : '0.82') : '0.22'};"></div>` : ''}
                 </div>
-                <div class="text-[11px] font-semibold">${d}</div>
+                <div class="text-[11px] font-semibold ${isToday ? 'text-blue-600' : ''}">${d}</div>
               </div>`;
             }).join('')}
           </div>
         </div>
 
-        <div class="ons-card p-5 lg:col-span-3 flex flex-col justify-between space-y-3">
-          <h3 class="font-bold text-sm">Antrean Tugas Prioritas</h3>
+        <div class="ons-card p-5 lg:col-span-4 flex flex-col justify-between space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-sm">Agenda Prioritas Hari Ini</h3>
+            <span class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${todayIso}</span>
+          </div>
           <div class="space-y-2 text-xs">
-            <div class="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 flex justify-between items-center cursor-pointer hover:bg-red-500/15" onclick="navigateView('gudang','batch')">
-              <span>Batch Mendekati ED (&le;90h)</span>
-              <span class="font-bold font-mono-num text-red-600">${nearEdBatches.length}</span>
+            <div class="ons-priority-pill" onclick="navigateView('gudang','batch')">
+              <span class="font-medium">Batch Mendekati ED (&le;90 hari)</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-red-500/15 text-red-600">${nearEdBatches.length}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex justify-between items-center cursor-pointer hover:bg-amber-500/15" onclick="navigateView('${seeCost ? 'defecta' : 'gudang'}','${seeCost ? 'order' : 'batch'}')">
-              <span>Item Defecta / Stok Menipis</span>
-              <span class="font-bold font-mono-num text-amber-600">${defectaCount}</span>
+            <div class="ons-priority-pill" onclick="navigateView('${seeCost ? 'defecta' : 'gudang'}','${seeCost ? 'order' : 'batch'}')">
+              <span class="font-medium">Item Defecta / Stok Menipis</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">${defectaCount}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex justify-between items-center cursor-pointer hover:bg-indigo-500/15" onclick="navigateView('eresep-prb','erx')">
-              <span>Antrean E-Resep Dokter</span>
-              <span class="font-bold font-mono-num text-indigo-600">${erxAntre}</span>
+            <div class="ons-priority-pill" onclick="navigateView('eresep-prb','erx')">
+              <span class="font-medium">Antrean E-Resep Dokter</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600">${erxAntre}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/30 flex justify-between items-center cursor-pointer hover:bg-blue-500/15" onclick="navigateView('eresep-prb','prb')">
-              <span>PRB Refill Mendesak (&le;5h)</span>
-              <span class="font-bold font-mono-num text-blue-600">${prbUrgentCount}</span>
+            <div class="ons-priority-pill" onclick="navigateView('eresep-prb','prb')">
+              <span class="font-medium">Pasien PRB Refill (&le;5 hari)</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600">${prbUrgentCount}</span>
             </div>
-            ${seeCost ? `<div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex justify-between items-center cursor-pointer hover:bg-emerald-500/15" onclick="navigateView('billing','verifikasi')">
-              <span>Verifikasi Bukti Bayar PRB</span>
-              <span class="font-bold font-mono-num text-emerald-600">${billPending}</span>
+            ${seeCost ? `<div class="ons-priority-pill" onclick="navigateView('billing','verifikasi')">
+              <span class="font-medium">Verifikasi Pembayaran PRB</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600">${billPending}</span>
             </div>` : ''}
           </div>
-          <div class="p-3 rounded-lg border text-xs cursor-pointer" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)" onclick="navigateView('tutup-shift')">
-            <div class="font-bold mb-1">Akses Cepat Handover Shift (${todayIso})</div>
-            <p style="color:var(--ons-text-soft)">Pastikan stok Chiller 2-8&deg;C &amp; kas laci terhitung sebelum pergantian shift.</p>
+        </div>
+
+        <div class="ons-card p-5 lg:col-span-3 flex flex-col items-center justify-between">
+          <div class="w-full flex items-center justify-between mb-1">
+            <h3 class="font-bold text-sm">Kepatuhan BPOM</h3>
+            <span class="badge-bpom bpom-bebas">SIAP AUDIT</span>
+          </div>
+          <svg viewBox="0 0 120 120" class="w-32 h-32 my-1">
+            <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ons-border)" stroke-width="11"/>
+            <circle cx="60" cy="60" r="40" fill="none" stroke="#10B981" stroke-width="11" stroke-linecap="round"
+              stroke-dasharray="${dashArray} 251.2" transform="rotate(-90 60 60)"/>
+            <text x="60" y="57" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor">${readiness}%</text>
+            <text x="60" y="74" text-anchor="middle" font-size="9" fill="#64748B">Skor CDOB</text>
+          </svg>
+          <div class="w-full space-y-1.5 text-xs pt-2 border-t" style="border-color:var(--ons-border)">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-blue-600 rounded"/> Verifikasi Laci Narkotika</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-blue-600 rounded"/> Prioritas Jual Batch FEFO</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-blue-600 rounded"/> Order SP PBF Sebelum 14:00</label>
           </div>
         </div>
       </div>
 
-      <!-- Baris Analitik Apotek Digital: Bauran Channel + Top Obat Terlaris -->
+      <!-- Baris Bawah: Komposisi Pembayaran + Top Obat Terlaris -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="ons-card p-5 lg:col-span-6 space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-sm">Bauran Channel Apotek Digital</h3>
-            <button onclick="navigateView('omnichannel')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Kelola Omnichannel &rarr;</button>
+            <h3 class="font-bold text-sm">Komposisi Metode Pembayaran Kasir</h3>
+            <button onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Riwayat Nota &rarr;</button>
           </div>
-          <div class="space-y-2.5 text-xs">
-            ${channelRows.length ? channelRows.map((ch) => {
-              const pct = Math.min(100, Math.max(4, Math.round((ch.total / chDenom) * 100)));
+          <div class="space-y-3 text-xs">
+            ${payRows.length ? payRows.map((ch) => {
+              const pct = Math.min(100, Math.max(4, Math.round((ch.total / payDenom) * 100)));
+              const barColor = payColors[ch.name] || '#0066FE';
               return `<div>
                 <div class="flex justify-between font-semibold mb-1">
                   <span>${S().esc(ch.name)}</span>
                   <span class="font-mono-num">${S().rp(ch.total)} (${pct}%)</span>
                 </div>
-                <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${pct}%;background:#0066FE;"></div></div>
+                <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${pct}%;background:${barColor};"></div></div>
               </div>`;
-            }).join('') : '<div class="py-4 text-center" style="color:var(--ons-text-soft)">Belum ada penjualan tercatat pada periode ini.</div>'}
+            }).join('') : '<div class="py-6 text-center rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Belum ada penjualan tercatat pada periode ini.</div>'}
           </div>
         </div>
         <div class="ons-card p-5 lg:col-span-6 space-y-3">
@@ -854,15 +909,15 @@
           </div>
           <div class="space-y-2 text-xs">
             ${topObatList.length ? topObatList.map((item, idx) => `
-              <div class="flex items-center justify-between gap-2 p-2 rounded-lg border" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">${idx + 1}</span>
+              <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl border transition hover:border-blue-500" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">${idx + 1}</span>
                   <span class="font-semibold truncate">${S().esc(item.nama)}</span>
                 </div>
                 <div class="font-mono-num shrink-0 text-right">
                   <b>${item.qty}</b> unit &bull; <span class="text-blue-600 font-bold">${S().rp(item.omz)}</span>
                 </div>
-              </div>`).join('') : '<div class="py-4 text-center" style="color:var(--ons-text-soft)">Top produk akan otomatis terhitung setelah transaksi kasir berlangsung.</div>'}
+              </div>`).join('') : '<div class="py-6 text-center rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Top produk otomatis terhitung setelah transaksi kasir berlangsung.</div>'}
           </div>
         </div>
       </div>
@@ -870,7 +925,10 @@
       <!-- Radar Kadaluarsa FEFO -->
       <div class="ons-card p-5">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h3 class="font-bold text-sm">Radar Batch Mendekati Kadaluarsa (FEFO Terdekat)</h3>
+          <div>
+            <h3 class="font-bold text-sm">Radar Batch Mendekati Kadaluarsa (FEFO Terdekat)</h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Prioritaskan penjualan batch yang paling cepat mendekati tanggal kedaluwarsa.</p>
+          </div>
           <button onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs">Kelola Gudang &amp; Recall &rarr;</button>
         </div>
         <div class="ons-table-wrap">
@@ -880,12 +938,12 @@
               ${st.stokBatch.slice().sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa))).slice(0, 6).map((b) => {
                 const ob = st.masterObat.find((o) => o.id_obat === b.id_obat);
                 const d = S().daysUntil(b.tgl_kadaluarsa);
-                const cls = d <= 90 ? 'text-red-600 font-bold' : (d <= 180 ? 'text-amber-600 font-semibold' : 'text-emerald-600');
+                const badgeCls = d <= 90 ? 'bpom-keras' : (d <= 180 ? 'bpom-prekursor' : 'bpom-bebas');
                 return `<tr>
                   <td class="font-semibold">${S().esc(ob ? ob.nama_dagang : b.id_obat)}</td>
                   <td class="font-mono-num">${S().esc(b.no_batch)}</td>
                   <td class="font-mono-num">${S().esc(b.tgl_kadaluarsa)}</td>
-                  <td class="font-mono-num ${cls}">${d} hari</td>
+                  <td><span class="badge-bpom ${badgeCls} font-mono-num">${d} hari</span></td>
                   <td class="font-mono-num font-bold">${b.qty_sisa}</td>
                   <td><button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Prioritaskan Jual</button></td>
                 </tr>`;
@@ -915,6 +973,7 @@
   function renderPosView() {
     const st = S().AppState;
     posSubTab = (st.subTabs && st.subTabs.pos) || posSubTab || 'kasir';
+    if (posSubTab === 'online') posSubTab = 'kasir';
     const cart = st.carts[st.activeCartIdx] || st.carts[0];
     if (!cart.diskon_mode) cart.diskon_mode = 'RP';
     if (cart.diskon_input === undefined) cart.diskon_input = Number(cart.diskon_global || 0);
@@ -922,16 +981,13 @@
     const cdss = S().checkCartCdss(cart);
     const q = (st.posSearchQ || '').toLowerCase();
     const fGol = st.posFilterGol || '';
-    const omniPending = (st.omnichannelOrders || []).filter((o) => o.status_order !== 'SELESAI' && o.status_order !== 'BATAL');
 
     const subTabHeader = `
       <div class="flex flex-wrap items-center justify-between gap-2 ons-view-enter">
         <div class="ons-tab-bar">
           <button onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir Aktif (${cart.items.length})</button>
           <button onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Riwayat, Struk &amp; Retur PIN (${st.penjualan.length})</button>
-          <button onclick="window.setPosSubTab('online')" class="ons-tab-btn ${posSubTab === 'online' ? 'active' : ''}">Order Online (${omniPending.length})</button>
         </div>
-        ${cart.id_order ? `<span class="badge-bpom bpom-terbatas">Terhubung Order Online #${S().esc(cart.id_order)}</span>` : ''}
       </div>`;
 
     if (posSubTab === 'riwayat') {
@@ -982,28 +1038,6 @@
                 </tr>`).join('') || '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada riwayat transaksi yang cocok dengan filter ini.</td></tr>'}
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>`;
-    }
-
-    if (posSubTab === 'online') {
-      return `<div class="space-y-4 ons-view-enter">
-        ${subTabHeader}
-        <div class="ons-card p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="font-bold text-base">Antrean Pesanan Online &amp; WhatsApp Siap Checkout POS</h2>
-            <button onclick="navigateView('omnichannel')" class="ons-btn ons-btn-ghost text-xs">Buka Hub Omnichannel Lengkap &rarr;</button>
-          </div>
-          <div class="space-y-2">
-            ${omniPending.length === 0 ? '<div class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Semua order online sudah diproses!</div>' : omniPending.map((o) => `
-              <div class="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div>
-                  <div class="font-bold">${S().esc(o.no_order)} &bull; ${S().esc(o.nama_pelanggan)} <span class="badge-bpom bpom-terbatas">${S().esc(o.status_order)}</span></div>
-                  <div style="color:var(--ons-text-soft)">${S().esc(o.channel)} &bull; ${S().esc(o.no_wa)} &bull; Est. ${S().rp(Number(o.total_estimasi || 0) + Number(o.ongkir || 0))}</div>
-                </div>
-                <button onclick="ONSViewsOmniCrm.loadOmniOrderToPos('${S().esc(o.id_order)}');window.setPosSubTab('kasir');" class="ons-btn ons-btn-emerald text-xs">Muat ke Keranjang POS &rarr;</button>
-              </div>`).join('')}
           </div>
         </div>
       </div>`;
@@ -1060,8 +1094,10 @@
         <div class="lg:col-span-7 space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[66vh] overflow-y-auto pr-1">
             ${catalog.map((o) => {
-              const totalStok = S().getTotalStok(o.id_obat);
-              const nearest = S().getNearestEdBatch(o.id_obat);
+              const sellStok = S().getSellableStok(o.id_obat);
+              const totalFisik = S().getTotalStok(o.id_obat);
+              const expiredQty = Math.max(0, totalFisik - sellStok);
+              const nearest = S().getNearestSellableBatch(o.id_obat);
               const edDays = nearest ? S().daysUntil(nearest.tgl_kadaluarsa) : null;
               const edBadgeCls = edDays === null ? '' : (edDays <= 90 ? 'text-red-600 font-bold' : (edDays <= 180 ? 'text-amber-600 font-semibold' : 'text-emerald-600'));
               const price = cart.id_member !== 'UMUM' ? o.harga_member : o.harga_umum;
@@ -1073,17 +1109,17 @@
                   </div>
                   <div class="text-xs mt-1" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; Rak ${S().esc(o.rak_lokasi || '-')}</div>
                   <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">
-                    FEFO: ${nearest ? `${S().esc(nearest.no_batch)} &bull; <span class="${edBadgeCls}">ED ${nearest.tgl_kadaluarsa} (${edDays}h)</span>` : '<span class="text-red-500 font-bold">Stok Kosong</span>'}
+                    FEFO: ${nearest ? `${S().esc(nearest.no_batch)} &bull; <span class="${edBadgeCls}">ED ${nearest.tgl_kadaluarsa} (${edDays}h)</span>` : (expiredQty > 0 ? `<span class="text-red-500 font-bold">Batch ED (${expiredQty} Terblokir)</span>` : '<span class="text-red-500 font-bold">Stok Kosong</span>')}
                   </div>
                 </div>
                 <div class="flex items-center justify-between pt-2 border-t" style="border-color:var(--ons-border)">
                   <div>
                     <div class="text-sm font-bold font-mono-num text-blue-600">${S().rp(price)} <span class="text-[10px] font-normal">/${S().esc(o.satuan_dasar)}</span></div>
-                    <div class="text-[11px] font-mono-num ${totalStok <= o.stok_min ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok: ${totalStok}</div>
+                    <div class="text-[11px] font-mono-num ${sellStok <= o.stok_min ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok}${expiredQty > 0 ? ` <span class="text-amber-600">(+${expiredQty} ED)</span>` : ''}</div>
                   </div>
                   <div class="flex gap-1">
                     ${o.substitusi_ids ? `<button onclick="window.openSubstitusiModal('${o.id_obat}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1" title="Lihat Substitusi (Alt+S)">Sub</button>` : ''}
-                    <button onclick="window.posAddToCart('${o.id_obat}')" ${totalStok <= 0 ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs px-3 py-1.5">+ Keranjang</button>
+                    <button onclick="window.posAddToCart('${o.id_obat}')" ${sellStok <= 0 ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs px-3 py-1.5">+ Keranjang</button>
                   </div>
                 </div>
               </div>`;
@@ -1098,7 +1134,7 @@
               <div>
                 <label class="text-[11px] font-semibold block mb-1">Channel Penjualan</label>
                 <select onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs">
-                  ${['Toko Fisik', 'Resep WA', 'Marketplace / GrabHealth'].map((ch) => `<option ${cart.channel === ch ? 'selected' : ''}>${ch}</option>`).join('')}
+                  ${['Toko Fisik', 'Resep WA', 'Pasien Rutin PRB'].map((ch) => `<option ${cart.channel === ch ? 'selected' : ''}>${ch}</option>`).join('')}
                 </select>
               </div>
               <div>
@@ -1186,7 +1222,7 @@
   }
 
   global.setPosSubTab = (t) => {
-    posSubTab = t || 'kasir';
+    posSubTab = (t && t !== 'online') ? t : 'kasir';
     if (S().AppState.subTabs) S().AppState.subTabs.pos = posSubTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
@@ -1214,7 +1250,7 @@
     try {
       const st = S().AppState;
       const trx = (st.penjualan || []).find((p) => p.no_invoice === noInvoice) || {};
-      let items = (st.detailPenjualan || []).filter((d) => d.no_invoice === noInvoice);
+      let items = (st.detailPenjualan || []).filter((d) => (d.no_invoice && d.no_invoice === noInvoice) || (trx.id_transaksi && d.id_transaksi === trx.id_transaksi));
       if (!items.length) {
         try {
           const res = await API().callApi('pos.details', { no_invoice: noInvoice });
@@ -1231,11 +1267,11 @@
         </div>
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>Nama Obat</th><th>Batch</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
+            <thead><tr><th>Nama Obat</th><th>Batch &amp; ED</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
             <tbody>
               ${items.length ? items.map((it) => `<tr>
-                <td class="font-semibold">${S().esc(it.nama_dagang || it.id_obat)}</td>
-                <td class="font-mono-num">${S().esc(it.id_batch || it.no_batch || '-')}</td>
+                <td><div class="font-semibold">${S().esc(it.nama_dagang || it.id_obat)}</div>${it.aturan_pakai ? `<div class="text-[10px] text-emerald-600">${S().esc(it.aturan_pakai)}</div>` : ''}</td>
+                <td class="font-mono-num"><b>${S().esc(it.no_batch || it.id_batch || '-')}</b>${it.tgl_kadaluarsa ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(String(it.tgl_kadaluarsa).slice(0, 10))}</div>` : ''}</td>
                 <td class="font-mono-num">${it.qty} ${S().esc(it.satuan || '')}</td>
                 <td class="font-mono-num">${S().rp(it.harga_jual)}</td>
                 <td class="font-mono-num font-bold">${S().rp(it.subtotal_item || (Number(it.qty) * Number(it.harga_jual)))}</td>
@@ -1247,7 +1283,7 @@
           <span>Total Nota (${S().esc(trx.status_trx || 'LUNAS')})</span>
           <span class="text-base font-mono-num text-blue-600">${S().rp(trx.grand_total || 0)}</span>
         </div>
-      </div>`, '600px');
+      </div>`, '620px');
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -1334,11 +1370,28 @@
     }
   };
 
+  function _cartBaseQtyForObat(cart, idObat, skipIdx) {
+    return (cart.items || []).reduce((sum, it, i) => {
+      if (i === skipIdx || it.id_obat !== idObat) return sum;
+      return sum + Number(it.qty || 0) * Math.max(1, Number(it.faktor_konversi || 1));
+    }, 0);
+  }
+
   global.posAddToCart = (idObat) => {
     const st = S().AppState;
     const obat = st.masterObat.find((o) => o.id_obat === idObat);
     if (!obat) return;
+    const sellStok = S().getSellableStok(idObat);
+    if (sellStok <= 0) {
+      global.toast('Stok layak jual ' + obat.nama_dagang + ' habis atau kadaluarsa (diblokir FEFO).', 'err');
+      return;
+    }
     const cart = st.carts[st.activeCartIdx];
+    const usedBase = _cartBaseQtyForObat(cart, idObat, -1);
+    if (usedBase + 1 > sellStok) {
+      global.toast('Qty keranjang melebihi stok layak jual (' + sellStok + ' ' + obat.satuan_dasar + ').', 'warn');
+      return;
+    }
     const priceBase = cart.id_member !== 'UMUM' ? Number(obat.harga_member || obat.harga_umum) : Number(obat.harga_umum);
     const existing = cart.items.find((i) => i.id_obat === idObat && i.faktor_konversi === 1);
     if (existing) {
@@ -1375,8 +1428,16 @@
     const it = cart.items[idx];
     const opt = it.unitOptions.find((u) => u.label === label);
     if (opt) {
+      const sellStok = S().getSellableStok(it.id_obat);
+      const otherBase = _cartBaseQtyForObat(cart, it.id_obat, idx);
+      const nextFaktor = Math.max(1, Number(opt.faktor || 1));
+      if (otherBase + (Number(it.qty || 1) * nextFaktor) > sellStok) {
+        global.toast('Satuan ' + opt.label + ' melebihi stok layak jual tersedia (' + sellStok + ').', 'warn');
+        global.renderActiveView();
+        return;
+      }
       it.satuan = opt.label;
-      it.faktor_konversi = opt.faktor;
+      it.faktor_konversi = nextFaktor;
       it.harga_jual = opt.harga;
       global.renderActiveView();
     }
@@ -1384,7 +1445,19 @@
 
   global.posUpdateQty = (idx, q) => {
     const cart = S().AppState.carts[S().AppState.activeCartIdx];
-    cart.items[idx].qty = Math.max(1, Number(q || 1));
+    const it = cart.items[idx];
+    if (!it) return;
+    const reqQty = Math.max(1, Number(q || 1));
+    const sellStok = S().getSellableStok(it.id_obat);
+    const otherBase = _cartBaseQtyForObat(cart, it.id_obat, idx);
+    const faktor = Math.max(1, Number(it.faktor_konversi || 1));
+    const maxItemQty = Math.max(1, Math.floor((sellStok - otherBase) / faktor));
+    if ((otherBase + reqQty * faktor) > sellStok) {
+      global.toast('Stok layak jual ' + it.nama_dagang + ' tidak mencukupi (maks ' + sellStok + ' satuan dasar).', 'warn');
+      it.qty = maxItemQty;
+    } else {
+      it.qty = reqQty;
+    }
     global.renderActiveView();
   };
 
@@ -1414,7 +1487,7 @@
       <p class="text-xs" style="color:var(--ons-text-soft)">Rekomendasi pengganti aman untuk <b>${S().esc(o ? o.nama_dagang : idObat)}</b>:</p>
       <div class="space-y-2">
         ${subs.length ? subs.map((s) => `<div class="p-3 rounded-lg border flex justify-between items-center">
-          <div><div class="font-bold text-sm">${S().esc(s.nama_dagang)}</div><div class="text-xs">Stok: ${S().getTotalStok(s.id_obat)} | Harga: ${S().rp(s.harga_umum)}</div></div>
+          <div><div class="font-bold text-sm">${S().esc(s.nama_dagang)}</div><div class="text-xs">Stok Jual: ${S().getSellableStok(s.id_obat)} | Harga: ${S().rp(s.harga_umum)}</div></div>
           <button onclick="posAddToCart('${s.id_obat}');ONSStore.closeModal();" class="ons-btn ons-btn-primary text-xs">Pilih Obat Ini</button>
         </div>`).join('') : '<div class="text-xs">Belum ada alternatif yang ditautkan pada produk ini.</div>'}
       </div>
@@ -1667,6 +1740,14 @@
   global.openPosCheckoutModal = (metode, total) => {
     const cart = S().AppState.carts[S().AppState.activeCartIdx];
     if (!cart.items.length) { global.toast('Keranjang masih kosong!', 'warn'); return; }
+    for (const it of cart.items) {
+      const needBase = _cartBaseQtyForObat(cart, it.id_obat, -1);
+      const sellStok = S().getSellableStok(it.id_obat);
+      if (needBase > sellStok) {
+        global.toast(`Stok layak jual ${it.nama_dagang} tidak mencukupi (tersedia ${sellStok}, butuh ${needBase}).`, 'err');
+        return;
+      }
+    }
     const cdss = S().checkCartCdss(cart);
     const member = S().AppState.members.find((m) => m.id_member === cart.id_member);
     const maxRedeemPoin = member ? Math.min(Number(member.poin_loyalitas || 0), Math.floor(total / 100)) : 0;
@@ -1839,8 +1920,10 @@
 
       cart.items = [];
       cart.diskon_global = 0;
+      cart.diskon_input = 0;
       cart.id_order = '';
       cart.pelanggan_nama = '';
+      cart.no_wa = '';
       await global.bootLoadState(true);
     } catch (e) {
       global.toast(e.message, 'err');

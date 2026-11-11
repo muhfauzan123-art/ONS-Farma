@@ -20,14 +20,15 @@
   let mutasiFilterJenis = '';
 
   function buildObatMeta(o) {
-    const stok = S().getTotalStok(o.id_obat);
+    const stok = S().getSellableStok(o.id_obat);
+    const totalFisik = S().getTotalStok(o.id_obat);
     const min = Number(o.stok_min || 10);
     const max = Math.max(Number(o.stok_max || 100), min * 2, stok, 1);
     const pct = Math.min(100, Math.round((stok / max) * 100));
     const isZero = stok <= 0;
     const isLow = stok > 0 && stok <= min;
     const isCritical = isZero || isLow;
-    const nearBatch = S().getNearestEdBatch(o.id_obat);
+    const nearBatch = S().getNearestSellableBatch(o.id_obat) || S().getNearestEdBatch(o.id_obat);
     const edDays = nearBatch && nearBatch.tgl_kadaluarsa ? S().daysUntil(nearBatch.tgl_kadaluarsa) : null;
     const isNearEd = edDays !== null && edDays <= 90;
     const isCold = /2\s*[-–]\s*8|chiller|dingin|kulkas/i.test(String(o.suhu_simpan || ''));
@@ -115,7 +116,7 @@
 
     return `<div class="space-y-4 ons-view-enter">
       <!-- Header -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold tracking-tight">Master Katalog Produk Obat (KFA &amp; NIE BPOM)</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Katalog terstandar SATUSEHAT, rasio 3 satuan, pemantauan ED batch FEFO, &amp; kendali akses HPP.</p>
@@ -244,7 +245,7 @@
                     <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
                     <div class="flex flex-wrap items-center gap-1.5 mt-1">
                       <span class="text-[10px] font-mono-num px-1.5 py-0.5 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
-                      ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-600">Chiller 2-8&deg;C</span>` : ''}
+                      ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600">Chiller 2-8&deg;C</span>` : ''}
                     </div>
                   </td>
                   <td>${S().bpomBadge(o.golongan_bpom)}</td>
@@ -611,47 +612,56 @@
   };
 
   /**
-   * W-05: Gudang Batch FEFO (4 Sub-Menu: batch | kartu-stok | coldchain | opname)
+   * W-05: Gudang Batch FEFO (3 Sub-Menu: batch | kartu-stok | opname)
    */
   let gudangBatchQ = '';
   let gudangBatchFilter = 'SEMUA';
   let opnameDraftQty = {};
   let opnameDraftReason = '';
 
+  const MUTASI_ALIASES = {
+    PENJUALAN_POS: ['PENJUALAN_POS', 'PENJUALAN_FEFO'],
+    OPNAME: ['OPNAME', 'STOK_OPNAME_BLIND'],
+    RECALL_KARANTINA: ['RECALL_KARANTINA', 'RECALL_KARANTINA_BPOM'],
+    RETUR_PBF: ['RETUR_PBF', 'RETUR_BAR_PBF']
+  };
+
+  function matchMutasiJenis(rawJenis, filterJenis) {
+    if (!filterJenis) return true;
+    const j = String(rawJenis || '').toUpperCase();
+    const aliases = MUTASI_ALIASES[filterJenis];
+    return aliases ? aliases.includes(j) : j === filterJenis;
+  }
+
   function renderGudangView() {
     const st = S().AppState;
     gudangTab = (st.subTabs && st.subTabs.gudang) || gudangTab || 'batch';
+    if (gudangTab === 'coldchain') gudangTab = 'batch';
     const seeCost = S().canSeeFinancialCost();
     const sorted = st.stokBatch.slice().sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
-    const ccLogs = st.coldChain.slice(-20);
-
-    // SVG polyline untuk grafik Cold-Chain 2-8°C
-    const points = ccLogs.map((l, idx) => {
-      const x = ccLogs.length > 1 ? 20 + (idx / (ccLogs.length - 1)) * 280 : 160;
-      const clamped = Math.max(0, Math.min(12, Number(l.suhu_celcius || 5)));
-      const y = 95 - (clamped / 12) * 80;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
 
     const mutasiRows = (st.mutasiStok || []).filter((m) => {
       const okOb = !mutasiFilterObat || String(m.id_obat) === mutasiFilterObat;
-      const okJn = !mutasiFilterJenis || String(m.jenis_mutasi || '').toUpperCase() === mutasiFilterJenis;
+      const okJn = matchMutasiJenis(m.jenis_mutasi, mutasiFilterJenis);
       return okOb && okJn;
     });
 
-    const latestCc = ccLogs.length ? ccLogs[ccLogs.length - 1] : null;
     const totalNilaiGudang = seeCost ? st.stokBatch.reduce((s, b) => s + (Number(b.qty_sisa || 0) * Number(b.hpp_beli || 0)), 0) : 0;
 
     // Filter Batch Tab
     const gq = gudangBatchQ.trim().toLowerCase();
+    const expiredCount = sorted.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) < 0).length;
+    const kritisCount = sorted.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) >= 0 && S().daysUntil(b.tgl_kadaluarsa) <= 90).length;
     const filteredBatches = sorted.filter((b) => {
       const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
       const d = S().daysUntil(b.tgl_kadaluarsa);
-      if (gudangBatchFilter === 'KRITIS' && !(b.status_batch === 'AKTIF' && d <= 90)) return false;
-      if (gudangBatchFilter === 'KARANTINA' && b.status_batch === 'AKTIF' && !(Number(b.qty_karantina || 0) > 0)) return false;
-      if (gudangBatchFilter === 'AMAN' && !(b.status_batch === 'AKTIF' && d > 90 && b.qty_sisa > 0)) return false;
+      const activeQty = String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0;
+      if (gudangBatchFilter === 'KADALUARSA' && !(activeQty && d < 0)) return false;
+      if (gudangBatchFilter === 'KRITIS' && !(activeQty && d >= 0 && d <= 90)) return false;
+      if (gudangBatchFilter === 'KARANTINA' && !(String(b.status_batch || 'AKTIF') === 'KARANTINA_RECALL' || Number(b.qty_karantina || 0) > 0 || String(b.status_batch) === 'RETUR_PBF')) return false;
+      if (gudangBatchFilter === 'AMAN' && !(activeQty && d > 90)) return false;
       if (gq) {
-        const hay = `${b.no_batch} ${b.no_faktur_pbf} ${o ? o.nama_dagang : b.id_obat}`.toLowerCase();
+        const hay = `${b.no_batch} ${b.no_faktur_pbf} ${b.no_sp || ''} ${o ? o.nama_dagang : b.id_obat}`.toLowerCase();
         if (!hay.includes(gq)) return false;
       }
       return true;
@@ -673,16 +683,15 @@
     });
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Gudang Batch FEFO, Kartu Stok, Chiller &amp; Stock Opname</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola batch ED terdekat, buku mutasi Kartu Stok BPOM, log suhu Chiller 2-8&deg;C, dan penyesuaian fisik Stock Opname.</p>
+          <h1 class="text-xl font-extrabold">Gudang Batch FEFO, Kartu Stok &amp; Stock Opname</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola batch kedaluwarsa terdekat, buku mutasi Kartu Stok BPOM, dan penyesuaian fisik Stock Opname.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
             <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Batch &amp; FEFO (${sorted.length})</button>
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok (${(st.mutasiStok || []).length})</button>
-            <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Cold-Chain 2-8&deg;C</button>
             ${seeCost ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
           </div>
         </div>
@@ -698,7 +707,7 @@
               </select>
               <select class="ons-select w-48 text-xs" onchange="window.setMutasiFilterJenis(this.value)">
                 <option value="">-- Semua Jenis Mutasi --</option>
-                ${['PENJUALAN_POS', 'RETUR_PENJUALAN', 'PEMBELIAN_PBF', 'OPNAME', 'RECALL_KARANTINA', 'RETUR_PBF'].map((j) => `<option value="${j}" ${mutasiFilterJenis === j ? 'selected' : ''}>${j}</option>`).join('')}
+                ${['PENJUALAN_POS', 'RETUR_PENJUALAN', 'PEMBELIAN_PBF', 'OPNAME', 'RECALL_KARANTINA', 'RETUR_PBF', 'PENYESUAIAN_MASUK'].map((j) => `<option value="${j}" ${mutasiFilterJenis === j ? 'selected' : ''}>${j}</option>`).join('')}
               </select>
             </div>
             <div class="flex gap-2">
@@ -722,60 +731,6 @@
                 </tr>`).join('')}
               </tbody>
             </table>
-          </div>
-        </div>
-      ` : gudangTab === 'coldchain' ? `
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div class="ons-card p-5 lg:col-span-7">
-              <div class="flex items-center justify-between mb-2">
-                <div>
-                  <h3 class="font-bold text-sm">Grafik Suhu Chiller Vaksin / Insulin (Batas CDOB: 2&deg;C - 8&deg;C)</h3>
-                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Terakhir: <b>${latestCc ? latestCc.suhu_celcius + ' °C (' + latestCc.kelembapan + '%)' : '4.8 °C'}</b> &bull; Status: <b class="${!latestCc || latestCc.status_alarm === 'NORMAL' ? 'text-emerald-600' : 'text-red-600'}">${latestCc ? S().esc(latestCc.status_alarm) : 'NORMAL'}</b></div>
-                </div>
-                <span class="badge-bpom bpom-terbatas">CHILLER-VAKSIN-01</span>
-              </div>
-              <svg viewBox="0 0 320 110" class="w-full h-44">
-                <rect x="15" y="41.6" width="290" height="40" fill="rgba(16,185,129,0.12)" stroke="#10B981" stroke-dasharray="3,3"/>
-                <text x="20" y="39" font-size="7" fill="#DC2626">Batas Atas 8&deg;C</text>
-                <text x="20" y="90" font-size="7" fill="#0284C7">Batas Bawah 2&deg;C</text>
-                ${points ? `<polyline fill="none" stroke="#0066FE" stroke-width="2.5" points="${points}"/>` : ''}
-              </svg>
-            </div>
-            <div class="ons-card p-5 lg:col-span-5 space-y-3">
-              <h3 class="font-bold text-sm">Catat Pemeriksaan Suhu Cold-Chain Baru</h3>
-              <div class="grid grid-cols-2 gap-2 text-xs">
-                <div><label class="font-semibold block mb-1">Unit Kulkas</label>
-                  <select id="ccKulkasSelect" class="ons-select text-xs">
-                    <option value="CHILLER-VAKSIN-01">CHILLER-VAKSIN-01 (2-8&deg;C)</option>
-                    <option value="CHILLER-INSULIN-02">CHILLER-INSULIN-02 (2-8&deg;C)</option>
-                  </select>
-                </div>
-                <div><label class="font-semibold block mb-1">Kelembapan (%)</label><input id="ccHumInput" type="number" value="54" class="ons-input font-mono-num"/></div>
-              </div>
-              <div class="text-xs"><label class="font-semibold block mb-1">Pembacaan Suhu (&deg;C) *</label><input id="ccTempInput" type="number" step="0.1" value="4.8" class="ons-input font-mono-num font-bold text-base"/></div>
-              <input id="ccNoteInput" class="ons-input text-xs" placeholder="Catatan / Tindakan korektif jika suhu keluar rentang..."/>
-              <button onclick="window.saveColdChainEntry()" class="ons-btn ons-btn-emerald w-full text-xs">Simpan Log Suhu &amp; Cek Alarm CDOB</button>
-            </div>
-          </div>
-          <div class="ons-card p-4">
-            <h3 class="font-bold text-sm mb-3">Histori Pencatatan Suhu Chiller (${st.coldChain.length} Log)</h3>
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>Waktu Catat</th><th>Unit Chiller</th><th>Suhu (&deg;C)</th><th>Kelembapan</th><th>Status Alarm</th><th>Petugas</th><th>Tindakan Korektif</th></tr></thead>
-                <tbody>
-                  ${st.coldChain.slice().reverse().slice(0, 40).map((c) => `<tr>
-                    <td class="font-mono-num text-xs">${S().formatTgl(c.timestamp, true)}</td>
-                    <td class="font-mono-num text-xs font-bold">${S().esc(c.id_kulkas)}</td>
-                    <td class="font-mono-num font-bold ${Number(c.suhu_celcius) >= 2 && Number(c.suhu_celcius) <= 8 ? 'text-emerald-600' : 'text-red-600'}">${c.suhu_celcius} &deg;C</td>
-                    <td class="font-mono-num text-xs">${c.kelembapan}%</td>
-                    <td><span class="badge-bpom ${c.status_alarm === 'NORMAL' ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(c.status_alarm)}</span></td>
-                    <td class="text-xs">${S().esc(c.petugas_id)}</td>
-                    <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(c.tindakan_korektif || '-')}</td>
-                  </tr>`).join('')}
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
       ` : (gudangTab === 'opname' && seeCost) ? `
@@ -821,19 +776,22 @@
         <div class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Total Batch Tersedia</div><div class="text-lg font-bold font-mono-num">${sorted.length}</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">ED Kritis (&le; 90 Hari)</div><div class="text-lg font-bold font-mono-num text-red-600">${sorted.filter((b) => b.status_batch === 'AKTIF' && S().daysUntil(b.tgl_kadaluarsa) <= 90).length}</div></div>
+            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Kadaluarsa / Kritis &le; 90h</div><div class="text-lg font-bold font-mono-num text-red-600">${expiredCount} ED &bull; ${kritisCount} Kritis</div></div>
             <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Stok Karantina Recall</div><div class="text-lg font-bold font-mono-num text-amber-600">${sorted.reduce((s, b) => s + Number(b.qty_karantina || 0), 0)} Unit</div></div>
             ${seeCost ? `<div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Valuasi Persediaan (HPP)</div><div class="text-lg font-bold font-mono-num text-blue-600">${S().rp(totalNilaiGudang)}</div></div>` : ''}
           </div>
           <div class="ons-card p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap gap-2 items-center">
-                <input class="ons-input text-xs w-60" placeholder="Cari obat, batch, faktur..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
+                <input class="ons-input text-xs w-60" placeholder="Cari obat, batch, faktur, SP..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
                 <div class="ons-tab-bar">
-                  ${['SEMUA', 'KRITIS', 'KARANTINA', 'AMAN'].map((f) => `<button onclick="window.setGudangBatchFilter('${f}')" class="ons-tab-btn ${gudangBatchFilter === f ? 'active' : ''}">${f}</button>`).join('')}
+                  ${['SEMUA', 'KADALUARSA', 'KRITIS', 'KARANTINA', 'AMAN'].map((f) => `<button onclick="window.setGudangBatchFilter('${f}')" class="ons-tab-btn ${gudangBatchFilter === f ? 'active' : ''}">${f}</button>`).join('')}
                 </div>
               </div>
-              ${seeCost ? `<button onclick="window.setGudangTab('opname')" class="ons-btn ons-btn-primary text-xs">Buka Stock Opname Fisik &rarr;</button>` : ''}
+              ${seeCost ? `<div class="flex flex-wrap gap-2">
+                <button onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-emerald text-xs">+ Input Batch Manual</button>
+                <button onclick="window.setGudangTab('opname')" class="ons-btn ons-btn-primary text-xs">Stock Opname Fisik &rarr;</button>
+              </div>` : ''}
             </div>
             <div class="ons-table-wrap">
               <table class="ons-table">
@@ -842,14 +800,15 @@
                   ${filteredBatches.map((b) => {
                     const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
                     const d = S().daysUntil(b.tgl_kadaluarsa);
-                    const edBadge = d <= 90 ? 'bpom-keras' : (d <= 180 ? 'bpom-prekursor' : 'bpom-bebas');
+                    const isEd = d < 0 && Number(b.qty_sisa || 0) > 0;
+                    const edBadge = d < 0 ? 'bpom-keras' : (d <= 90 ? 'bpom-keras' : (d <= 180 ? 'bpom-prekursor' : 'bpom-bebas'));
                     return `<tr>
                       <td class="font-semibold">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
-                      <td class="font-mono-num text-xs"><b>${S().esc(b.no_batch)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(b.no_faktur_pbf)}</span></td>
-                      <td><span class="badge-bpom ${edBadge} font-mono-num">${S().esc(b.tgl_kadaluarsa)} (${d}h)</span></td>
+                      <td class="font-mono-num text-xs"><b>${S().esc(b.no_batch)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(b.no_faktur_pbf)}${b.no_sp && b.no_sp !== '-' ? ' &bull; ' + S().esc(b.no_sp) : ''}</span></td>
+                      <td><span class="badge-bpom ${edBadge} font-mono-num">${isEd ? 'KADALUARSA ' : ''}${S().esc(b.tgl_kadaluarsa)} (${d}h)</span></td>
                       <td class="font-mono-num font-bold">${b.qty_sisa}</td>
                       <td class="font-mono-num text-red-600">${b.qty_karantina || 0}</td>
-                      <td><span class="badge-bpom ${b.status_batch === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(b.status_batch)}</span></td>
+                      <td><span class="badge-bpom ${isEd ? 'bpom-keras' : (b.status_batch === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras')}">${isEd ? 'ED / BLOKIR POS' : S().esc(b.status_batch)}</span></td>
                       ${seeCost ? `<td><button onclick="window.triggerRecallBatch('${b.id_batch}','${S().esc(b.no_batch)}')" ${b.status_batch !== 'AKTIF' ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs py-1 px-2.5">1-Klik Recall BPOM</button></td>` : ''}
                     </tr>`;
                   }).join('') || '<tr><td colspan="7" class="text-center py-6 text-xs">Tidak ada batch cocok dengan filter ini.</td></tr>'}
@@ -863,13 +822,51 @@
   }
 
   global.setGudangTab = (t) => {
-    gudangTab = t || 'batch';
+    gudangTab = (t && t !== 'coldchain') ? t : 'batch';
     if (S().AppState.subTabs) S().AppState.subTabs.gudang = gudangTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
   global.setGudangBatchQ = (v) => { gudangBatchQ = v || ''; global.renderActiveView(); };
   global.setGudangBatchFilter = (v) => { gudangBatchFilter = v || 'SEMUA'; global.renderActiveView(); };
+  global.openAddManualBatchModal = () => {
+    const obts = S().AppState.masterObat || [];
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Tambah Batch Stok Gudang Manual</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="sm:col-span-2"><label class="font-semibold block mb-1">Produk Obat *</label>
+          <select id="mbObatInp" class="ons-select">${obts.map((o) => `<option value="${S().esc(o.id_obat)}">${S().esc(o.nama_dagang)} (${S().esc(o.satuan_dasar)})</option>`).join('')}</select>
+        </div>
+        <div><label class="font-semibold block mb-1">Nomor Batch *</label><input id="mbNoBatchInp" class="ons-input font-mono-num" value="B-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}"/></div>
+        <div><label class="font-semibold block mb-1">Tanggal Kadaluarsa *</label><input id="mbEdInp" type="date" class="ons-input font-mono-num" value="2028-12-31"/></div>
+        <div><label class="font-semibold block mb-1">Qty Masuk (Satuan Dasar) *</label><input id="mbQtyInp" type="number" min="1" class="ons-input font-mono-num" value="50"/></div>
+        <div><label class="font-semibold block mb-1">HPP / Unit (Rp)</label><input id="mbHppInp" type="number" min="0" class="ons-input font-mono-num" value="${obts[0] ? (obts[0].hpp_terakhir || obts[0].hpp_avg || 0) : 0}"/></div>
+        <div><label class="font-semibold block mb-1">Referensi Faktur / Keterangan</label><input id="mbRefInp" class="ons-input font-mono-num" value="STOK-AWAL"/></div>
+        <div><label class="font-semibold block mb-1">Catatan</label><input id="mbCatInp" class="ons-input" value="Input batch awal / penyesuaian gudang"/></div>
+      </div>
+      <button onclick="window.submitAddManualBatch()" class="ons-btn ons-btn-emerald w-full py-2.5 text-xs">Simpan Batch &amp; Catat ke Kartu Stok</button>
+    </div>`, '540px');
+  };
+  global.submitAddManualBatch = async () => {
+    try {
+      const payload = {
+        id_obat: document.getElementById('mbObatInp').value,
+        no_batch: document.getElementById('mbNoBatchInp').value,
+        tgl_kadaluarsa: document.getElementById('mbEdInp').value,
+        qty_sisa: Number(document.getElementById('mbQtyInp').value || 0),
+        hpp_beli: Number(document.getElementById('mbHppInp').value || 0),
+        no_faktur_pbf: document.getElementById('mbRefInp').value,
+        catatan: document.getElementById('mbCatInp').value
+      };
+      await API().callApi('stok.addBatch', payload, { isWrite: true });
+      S().closeModal();
+      global.toast('Batch baru berhasil ditambahkan & tercatat di Kartu Stok!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
   global.setOpnameDraftQty = (idBatch, v) => { opnameDraftQty[idBatch] = v; global.renderActiveView(); };
   global.setOpnameDraftReason = (v) => { opnameDraftReason = v || ''; };
   global.submitFullOpnameWorkspace = async () => {
@@ -906,19 +903,6 @@
       { key: 'referensi_id', label: 'Referensi' },
       { key: 'catatan', label: 'Catatan' }
     ], rows);
-  };
-
-  global.saveColdChainEntry = async () => {
-    try {
-      const res = await API().callApi('coldchain.log', {
-        id_kulkas: (document.getElementById('ccKulkasSelect') || {}).value || 'CHILLER-VAKSIN-01',
-        suhu_celcius: Number(document.getElementById('ccTempInput').value),
-        kelembapan: Number(document.getElementById('ccHumInput').value),
-        tindakan_korektif: document.getElementById('ccNoteInput').value
-      }, { isWrite: true });
-      global.toast(res.item.status_alarm === 'NORMAL' ? 'Suhu normal tercatat!' : 'ALARM: Suhu di luar 2-8°C! Notifikasi Owner diantrikan.', res.item.status_alarm === 'NORMAL' ? 'ok' : 'warn');
-      await global.bootLoadState(true);
-    } catch (e) { global.toast(e.message, 'err'); }
   };
 
   global.triggerRecallBatch = (idBatch, noBatch) => {
@@ -996,7 +980,7 @@
   function renderDefectaView() {
     const st = S().AppState;
     defectaTab = (st.subTabs && st.subTabs.defecta) || defectaTab || 'order';
-    const lowStock = st.masterObat.filter((o) => S().getTotalStok(o.id_obat) <= Number(o.stok_min || 10));
+    const lowStock = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
     const soldMap = {};
     (st.detailPenjualan || []).forEach((d) => { soldMap[d.id_obat] = (soldMap[d.id_obat] || 0) + Number(d.qty || 0); });
     const estDos = (idObat, sisa, minStok) => {
@@ -1012,7 +996,7 @@
 
     const getOrderQty = (o) => {
       if (defectaOrderQty[o.id_obat] !== undefined) return Math.max(1, Number(defectaOrderQty[o.id_obat] || 1));
-      const s = S().getTotalStok(o.id_obat);
+      const s = S().getSellableStok(o.id_obat);
       return Math.max(10, Number(o.stok_max || 100) - s);
     };
 
@@ -1023,9 +1007,9 @@
     });
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Smart Defecta (DOS), SP BPOM 5 Golongan &amp; Supplier PBF</h1>
+          <h1 class="text-xl font-extrabold">Smart Defecta (DOS), SP BPOM 5 Golongan &amp; Supplier PBF</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">Analisis Days-of-Stock (DOS), ubah jumlah pesanan per item, terbitkan SP BPOM ke Doc Engine, &amp; kelola Master PBF CDOB.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -1095,13 +1079,15 @@
               <thead><tr><th>Obat</th><th>Golongan SP BPOM</th><th>Stok Sisa / Min</th><th>Est. Habis (DOS)</th><th>Qty Order (Edit)</th><th>PBF Utama</th><th>Estimasi Biaya</th></tr></thead>
               <tbody>
                 ${lowStock.length ? lowStock.map((o) => {
-                  const s = S().getTotalStok(o.id_obat);
+                  const s = S().getSellableStok(o.id_obat);
+                  const totFisik = S().getTotalStok(o.id_obat);
+                  const edBlocked = Math.max(0, totFisik - s);
                   const dos = estDos(o.id_obat, s, o.stok_min);
                   const qtyOrder = getOrderQty(o);
                   return `<tr>
                     <td class="font-bold">${S().esc(o.nama_dagang)}</td>
                     <td>${S().bpomBadge(o.golongan_bpom)}</td>
-                    <td class="font-mono-num text-red-600 font-bold">${s} / ${o.stok_min}</td>
+                    <td class="font-mono-num text-red-600 font-bold">${s} / ${o.stok_min}${edBlocked > 0 ? `<div class="text-[10px] text-amber-600">(${edBlocked} ED terblokir)</div>` : ''}</td>
                     <td><span class="badge-bpom ${dos <= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num">&plusmn; ${dos} Hari</span></td>
                     <td>
                       <div class="flex items-center gap-1">
@@ -1113,6 +1099,37 @@
                     <td class="font-mono-num font-semibold">${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}</td>
                   </tr>`;
                 }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Seluruh stok produk masih aman di atas batas minimum!</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="font-bold text-sm">Riwayat &amp; Status Surat Pesanan (SP Terintegrasi Faktur &amp; Arsip) (${(st.suratPesanan || []).length})</h3>
+            <button onclick="navigateView('doc-engine','surat')" class="ons-btn ons-btn-ghost text-xs">Buka Mesin Surat Resmi &rarr;</button>
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead><tr><th>No. SP &amp; Tanggal</th><th>Supplier PBF</th><th>Golongan &amp; Item</th><th>Est. Total</th><th>Status Pengadaan</th><th>Aksi Lanjut</th></tr></thead>
+              <tbody>
+                ${(st.suratPesanan || []).length ? (st.suratPesanan || []).map((sp) => {
+                  let itemsArr = [];
+                  try { itemsArr = JSON.parse(sp.items_json || '[]'); } catch (e) {}
+                  const done = String(sp.status_sp || '') === 'SELESAI_DITERIMA';
+                  return `<tr>
+                    <td class="font-mono-num text-xs"><b>${S().esc(sp.no_sp)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sp.tanggal)}</span></td>
+                    <td class="font-semibold text-xs">${S().esc(sp.nama_pbf || sp.id_pbf)}</td>
+                    <td class="text-xs"><span class="badge-bpom bpom-prekursor">${S().esc(sp.golongan_sp || 'REGULER')}</span> <span class="ml-1">${itemsArr.length} item</span></td>
+                    <td class="font-mono-num text-xs font-bold">${S().rp(sp.estimasi_total || 0)}</td>
+                    <td><span class="badge-bpom ${done ? 'bpom-bebas' : 'bpom-terbatas'}">${done ? ('DITERIMA: ' + S().esc(sp.no_faktur_pbf || 'OK')) : S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</span></td>
+                    <td>
+                      ${!done
+                        ? `<button onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Faktur (GRN) &rarr;</button>`
+                        : `<button onclick="navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Lihat Faktur</button>`}
+                    </td>
+                  </tr>`;
+                }).join('') : '<tr><td colspan="6" class="text-center py-5 text-xs">Belum ada Surat Pesanan tercatat. Klik tombol "Buat SP" di atas untuk menerbitkan SP resmi.</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -1182,28 +1199,36 @@
 
   global.generateSpFromDefecta = async (targetPbf) => {
     const st = S().AppState;
-    const pbfName = targetPbf || ((st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PT Bina San Prima');
-    const items = st.masterObat.filter((o) => S().getTotalStok(o.id_obat) <= Number(o.stok_min || 10) && (!targetPbf || o.pbf_utama === targetPbf));
-    const ringkasan = items.map((o) => {
-      const q = defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - S().getTotalStok(o.id_obat));
-      return `${o.nama_dagang} (${q} ${o.satuan_dasar})`;
-    }).join(', ') || 'Paket Reguler Apotek';
+    const lowAll = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
+    const itemsFiltered = targetPbf ? lowAll.filter((o) => o.pbf_utama === targetPbf) : lowAll;
+    const pickedItems = itemsFiltered.length ? itemsFiltered : st.masterObat.slice(0, 1);
+    const pbfName = targetPbf || ((pickedItems[0] && pickedItems[0].pbf_utama) || (st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PT Bina San Prima');
+    const pbfObj = (st.supplierPbf || []).find((p) => p.nama_pbf === pbfName || p.id_pbf === pbfName);
+    const spItems = pickedItems.map((o) => {
+      const s = S().getSellableStok(o.id_obat);
+      const q = defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - s);
+      return {
+        id_obat: o.id_obat,
+        nama_dagang: o.nama_dagang,
+        golongan_bpom: o.golongan_bpom || 'BEBAS',
+        qty: q,
+        satuan_dasar: o.satuan_dasar || 'Unit',
+        hpp_unit: Number(o.hpp_terakhir || o.hpp_avg || 0)
+      };
+    });
+    const golList = spItems.map((x) => String(x.golongan_bpom || '').toUpperCase());
+    const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
     try {
-      const prof = S().getStoreProfile();
-      const res = await API().callApi('doc.createDraft', {
-        kode_templat: 'SP_BPOM_5_GOL',
-        judul: 'SP Defecta — ' + pbfName + ' (' + new Date().toLocaleDateString('id-ID') + ')',
-        data: {
-          GOLONGAN_SP: 'REGULER & PREKURSOR',
-          NAMA_PBF: pbfName,
-          ALAMAT_PBF: 'Gudang Farmasi Terdaftar CDOB',
-          NAMA_APJ: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
-          NO_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
-          NAMA_APOTEK: prof.nama_usaha || 'Apotek ONS Farma',
-          DAFTAR_PESANAN: ringkasan
-        }
+      const res = await API().callApi('sp.save', {
+        id_pbf: pbfObj ? pbfObj.id_pbf : '',
+        nama_pbf: pbfName,
+        golongan_sp: golSp,
+        items: spItems,
+        create_doc: true,
+        catatan: 'SP dibuat otomatis dari analisa Defecta Apotek'
       }, { isWrite: true });
-      global.toast('Draf SP BPOM (' + res.item.NomorSurat + ') diterbitkan ke Mesin Surat!', 'ok');
+      global.toast('SP Resmi (' + res.item.no_sp + ') tersimpan & draf dikirim ke Arsip Doc Engine!', 'ok');
+      await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -1214,15 +1239,61 @@
   let fakturListQ = '';
   let fakturListFilter = 'SEMUA';
   let grnHeader = {
+    id_sp: '',
     no_faktur_pbf: '',
     no_sp: '',
     id_pbf: '',
     tgl_jatuh_tempo: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
     diskon_pbf: 0,
     ppn_masukan: 0,
+    status_bayar: 'BELUM_LUNAS',
     catatan: ''
   };
   let grnItems = [];
+
+  global.loadSpIntoGrn = (idSp) => {
+    const st = S().AppState;
+    const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    const pbfObj = (st.supplierPbf || []).find((p) => p.id_pbf === sp.id_pbf || p.nama_pbf === sp.nama_pbf);
+    const termin = Number((pbfObj && pbfObj.termin_hari) || 30);
+    grnHeader.id_sp = sp.id_sp;
+    grnHeader.no_sp = sp.no_sp;
+    grnHeader.id_pbf = sp.nama_pbf || sp.id_pbf || grnHeader.id_pbf;
+    grnHeader.tgl_jatuh_tempo = new Date(Date.now() + termin * 86400000).toISOString().slice(0, 10);
+    if (!grnHeader.no_faktur_pbf) grnHeader.no_faktur_pbf = 'FK-PBF-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-01';
+    let spItems = [];
+    try { spItems = JSON.parse(sp.items_json || '[]'); } catch (e) {}
+    if (spItems.length) {
+      grnItems = spItems.map((it, idx) => {
+        const obat = st.masterObat.find((m) => m.id_obat === it.id_obat) || {};
+        return {
+          id_obat: it.id_obat,
+          no_batch: 'B-' + new Date().getFullYear() + '-SP' + (idx + 1),
+          tgl_kadaluarsa: '2028-12-31',
+          qty_dasar: Number(it.qty || it.qty_order || 10),
+          hpp_unit: Number(it.hpp_unit || obat.hpp_terakhir || obat.hpp_avg || 0)
+        };
+      });
+    }
+    global.toast('Item SP ' + sp.no_sp + ' berhasil dimuat ke Form Penerimaan Faktur (GRN)!', 'ok');
+    global.navigateView('faktur', 'input');
+  };
+
+  let grnScanState = {
+    previewDataUrl: '',
+    processedDataUrl: '',
+    fileName: '',
+    sourceType: '',
+    enhanceMode: 'contrast',
+    rotateDeg: 0,
+    scanning: false,
+    progress: 0,
+    statusText: '',
+    rawText: '',
+    summary: null,
+    error: ''
+  };
 
   function ensureGrnInitialized() {
     const st = S().AppState;
@@ -1262,30 +1333,117 @@
     const nettoGrn = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Penerimaan Faktur PBF (GRN Multi-Item) &amp; Retur BAR-PBF</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Input faktur banyak item sekaligus (GRN CDOB), ekstraksi teks OCR faktur, pelunasan PBF, &amp; retur barang mendekati ED.</p>
+          <h1 class="text-xl font-extrabold">Penerimaan Faktur PBF (GRN Multi-Item) &amp; Retur BAR-PBF</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Scan foto/PDF faktur gratis tanpa API berbayar, ekstraksi otomatis multi-obat &amp; batch FEFO, pelunasan PBF, serta retur BAR-PBF.</p>
         </div>
         <div class="ons-tab-bar">
           <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">Daftar Faktur (${st.fakturPbf.length})</button>
-          <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Input GRN Multi-Item &amp; OCR</button>
+          <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Scan &amp; Input GRN</button>
           <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active' : ''}">Retur BAR-PBF (${returCandidates.length})</button>
         </div>
       </div>
 
       ${fakturTab === 'input' ? `
         <div class="space-y-4">
-          <div class="ons-card p-4 space-y-3">
-            <div class="flex flex-wrap justify-between items-center gap-2">
-              <span class="font-bold text-xs">Smart OCR Text Parser (Tempel Teks PDF / Foto Faktur PBF)</span>
-              <button type="button" onclick="window.parseGrnOcrToForm()" class="ons-btn ons-btn-primary text-xs py-1 px-3">Ekstrak ke Form GRN &darr;</button>
+          <div class="ons-card p-4 sm:p-5 space-y-3.5">
+            <div class="flex flex-wrap justify-between items-start gap-3">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-extrabold text-sm">Smart Invoice Scanner Faktur PBF</span>
+                  <span class="badge-bpom bpom-bebas">100% GRATIS &bull; OCR + PDF + AUTO-PARSE</span>
+                </div>
+                <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Foto lewat kamera HP, unggah gambar JPG/PNG atau file PDF faktur PBF, lalu ekstrak banyak item obat, nomor batch, ED &amp; harga sekaligus ke Form GRN.</p>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="window.loadGrnSampleInvoice()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Contoh Teks Faktur</button>
+                ${(grnScanState.previewDataUrl || grnScanState.rawText || grnScanState.summary) ? `<button type="button" onclick="window.clearGrnScanner()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 text-red-600">Reset Scanner</button>` : ''}
+              </div>
             </div>
-            <textarea id="grnOcrRaw" rows="2" class="ons-textarea text-xs font-mono-num" placeholder="Contoh: FK-BSP-8821 PT Bina San Prima Batch B-2026-X9 ED 2028-09-30 Qty 120 Total Rp 1.450.000"></textarea>
+
+            <div id="grnScanDropzone"
+              ondragover="event.preventDefault();this.classList.add('is-dragover');"
+              ondragleave="this.classList.remove('is-dragover');"
+              ondrop="event.preventDefault();this.classList.remove('is-dragover');if(event.dataTransfer&&event.dataTransfer.files&&event.dataTransfer.files[0])window.handleGrnScannerFile(event.dataTransfer.files[0]);"
+              class="ons-scan-zone">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="space-y-1 text-xs">
+                  <div class="font-bold">Seret &amp; lepas Foto / PDF Faktur di sini, atau pilih sumber scan:</div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Tips akurasi maksimal: pastikan pencahayaan merata; untuk faktur kertas rangkap/dot-matrix gunakan mode <b>Hitam-Putih Dot Matrix</b> di bawah.</div>
+                </div>
+                <div class="flex flex-wrap gap-2 shrink-0">
+                  <button type="button" onclick="window.openGrnLiveCamera()" class="ons-btn ons-btn-primary text-xs min-h-[44px]">&#128247; Kamera Live</button>
+                  <label class="ons-btn ons-btn-emerald text-xs min-h-[44px] cursor-pointer mb-0">
+                    &#128193; Pilih Foto / PDF Faktur
+                    <input id="grnScannerFileInp" type="file" accept="image/*,.pdf,application/pdf" capture="environment" class="hidden" onchange="if(this.files&&this.files[0])window.handleGrnScannerFile(this.files[0]);this.value='';"/>
+                  </label>
+                </div>
+              </div>
+
+              <div id="grnScanProgressWrap" class="${grnScanState.scanning || grnScanState.statusText ? '' : 'hidden'} mt-3 pt-3 border-t space-y-1.5" style="border-color:var(--ons-border)">
+                <div class="flex items-center justify-between text-[11px] font-semibold">
+                  <span id="grnScanStatusLabel">${S().esc(grnScanState.statusText || 'Memproses faktur...')}</span>
+                  <span id="grnScanPctLabel" class="font-mono-num">${Math.round(Number(grnScanState.progress || 0))}%</span>
+                </div>
+                <div class="ons-scan-progress-track">
+                  <div id="grnScanProgressBar" class="ons-scan-progress-fill" style="width:${Math.min(100, Math.max(0, Number(grnScanState.progress || 0)))}%"></div>
+                </div>
+              </div>
+              ${grnScanState.error ? `<div class="mt-2 p-2.5 rounded-lg text-xs border text-red-600 bg-red-500/10" style="border-color:rgba(220,38,38,.3)">${S().esc(grnScanState.error)}</div>` : ''}
+            </div>
+
+            <div class="grid grid-cols-1 ${grnScanState.previewDataUrl ? 'lg:grid-cols-12' : ''} gap-3">
+              ${grnScanState.previewDataUrl ? `
+                <div class="lg:col-span-5 p-3 rounded-xl border space-y-2.5 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-bold truncate">Pratinjau Pra-OCR (${S().esc(grnScanState.fileName || 'Foto Faktur')})</span>
+                    <button type="button" onclick="window.setGrnScanOption('rotate', 90)" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0">&#8635; Putar 90&deg;</button>
+                  </div>
+                  <div class="rounded-lg overflow-hidden border bg-white max-h-56 flex items-center justify-center" style="border-color:var(--ons-border)">
+                    <img src="${S().esc(grnScanState.processedDataUrl || grnScanState.previewDataUrl)}" alt="Preview Faktur" class="max-h-56 w-auto object-contain"/>
+                  </div>
+                  <div class="flex flex-wrap items-center justify-between gap-1.5">
+                    <select class="ons-select text-[11px] flex-1 min-w-[150px] py-1 min-h-[34px]" onchange="window.setGrnScanOption('enhanceMode', this.value)" aria-label="Mode Peningkat Gambar OCR">
+                      <option value="contrast" ${grnScanState.enhanceMode === 'contrast' ? 'selected' : ''}>Mode: Kontras Cerah (Foto HP)</option>
+                      <option value="sharp_bw" ${grnScanState.enhanceMode === 'sharp_bw' ? 'selected' : ''}>Mode: Hitam-Putih Dot Matrix</option>
+                      <option value="original" ${grnScanState.enhanceMode === 'original' ? 'selected' : ''}>Mode: Warna Asli</option>
+                    </select>
+                    <button type="button" onclick="window.runGrnImageScan()" class="ons-btn ons-btn-primary text-[11px] py-1 px-3 min-h-[34px]">Scan Ulang Foto</button>
+                  </div>
+                </div>
+              ` : ''}
+              <div class="${grnScanState.previewDataUrl ? 'lg:col-span-7' : ''} space-y-2">
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                  <label for="grnOcrRaw" class="font-bold text-xs">Teks Hasil Scan OCR / PDF atau Paste Teks Faktur (Dapat Diedit Sebelum Ekstrak)</label>
+                  <button type="button" onclick="window.parseGrnOcrToForm()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">Ekstrak ke Form GRN &darr;</button>
+                </div>
+                <textarea id="grnOcrRaw" rows="${grnScanState.previewDataUrl ? 6 : 3}" oninput="window.setGrnRawText(this.value)" class="ons-textarea text-xs font-mono-num" placeholder="Tempel teks faktur PDF/WA atau scan foto di atas... Contoh:&#10;FK-BSP-2026-8821 PT Bina San Prima TOP 30 Hari&#10;Amoxicillin 500mg Batch B-2026-X9 ED 30/09/2028 Qty 10 Box Total Rp 1.450.000">${S().esc(grnScanState.rawText || '')}</textarea>
+                ${grnScanState.summary ? `
+                  <div class="p-2.5 rounded-xl border text-[11px] flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-emerald-tint);border-color:rgba(16,185,129,.35)">
+                    <div>
+                      <b class="text-emerald-700">&#10003; Hasil Ekstraksi Otomatis:</b>
+                      <span>${grnScanState.summary.headerFields} kolom header &bull; <b>${grnScanState.summary.itemCount} baris obat</b> masuk ke tabel GRN di bawah.</span>
+                      ${grnScanState.summary.unitConversions && grnScanState.summary.unitConversions.length ? `<div class="mt-0.5 text-emerald-800">Konversi Satuan: ${S().esc(grnScanState.summary.unitConversions.join('; '))}</div>` : ''}
+                      ${grnScanState.summary.unmatchedLines && grnScanState.summary.unmatchedLines.length ? `<div class="mt-0.5 text-amber-700">Catatan: ${grnScanState.summary.unmatchedLines.length} baris batch belum cocok otomatis ke Master Obat — pilih nama obat manual di tabel bawah.</div>` : ''}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
           </div>
 
           <div class="ons-card p-5 space-y-4">
-            <h3 class="font-bold text-sm">Header Penerimaan Barang (Goods Received Note — CDOB)</h3>
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+              <h3 class="font-bold text-sm">Header Penerimaan Barang (Goods Received Note — CDOB)</h3>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="font-semibold" style="color:var(--ons-text-soft)">Tarik dari SP Aktif:</span>
+                <select class="ons-select text-xs w-64" onchange="if(this.value) window.loadSpIntoGrn(this.value);">
+                  <option value="">-- Pilih Surat Pesanan (Opsional) --</option>
+                  ${(st.suratPesanan || []).filter((sp) => String(sp.status_sp || '') !== 'SELESAI_DITERIMA').map((sp) => `<option value="${S().esc(sp.id_sp)}" ${grnHeader.id_sp === sp.id_sp ? 'selected' : ''}>${S().esc(sp.no_sp)} (${S().esc(sp.nama_pbf)})</option>`).join('')}
+                </select>
+              </div>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div><label class="font-semibold block mb-1">No. Faktur PBF *</label><input class="ons-input font-mono-num" value="${S().esc(grnHeader.no_faktur_pbf)}" oninput="window.setGrnField('no_faktur_pbf', this.value)"/></div>
               <div><label class="font-semibold block mb-1">No. Surat Pesanan (SP)</label><input class="ons-input font-mono-num" value="${S().esc(grnHeader.no_sp)}" oninput="window.setGrnField('no_sp', this.value)"/></div>
@@ -1297,6 +1455,12 @@
               <div><label class="font-semibold block mb-1">Jatuh Tempo Pembayaran</label><input type="date" class="ons-input" value="${S().esc(grnHeader.tgl_jatuh_tempo)}" onchange="window.setGrnField('tgl_jatuh_tempo', this.value)"/></div>
               <div><label class="font-semibold block mb-1">Diskon Faktur PBF (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.diskon_pbf}" oninput="window.setGrnField('diskon_pbf', Number(this.value||0), true)"/></div>
               <div><label class="font-semibold block mb-1">PPN Masukan 11% (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.ppn_masukan}" oninput="window.setGrnField('ppn_masukan', Number(this.value||0), true)"/></div>
+              <div><label class="font-semibold block mb-1">Status Pembayaran Awal</label>
+                <select class="ons-select" onchange="window.setGrnField('status_bayar', this.value)">
+                  <option value="BELUM_LUNAS" ${grnHeader.status_bayar !== 'LUNAS' ? 'selected' : ''}>BELUM LUNAS (Hutang Dagang PBF)</option>
+                  <option value="LUNAS" ${grnHeader.status_bayar === 'LUNAS' ? 'selected' : ''}>LUNAS (Bayar Langsung Kas/Transfer)</option>
+                </select>
+              </div>
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
@@ -1420,28 +1584,218 @@
     if (grnItems.length > 1) { grnItems.splice(idx, 1); global.renderActiveView(); }
   };
 
-  global.parseGrnOcrToForm = () => {
-    const raw = (document.getElementById('grnOcrRaw') || {}).value || '';
-    if (!raw.trim()) return global.toast('Tempel teks faktur terlebih dahulu.', 'warn');
+  function _updateGrnScanProgressDom(pct, txt) {
+    grnScanState.progress = Number(pct || 0);
+    grnScanState.statusText = txt || '';
+    const wrap = document.getElementById('grnScanProgressWrap');
+    const bar = document.getElementById('grnScanProgressBar');
+    const lbl = document.getElementById('grnScanStatusLabel');
+    const pctLbl = document.getElementById('grnScanPctLabel');
+    if (wrap) wrap.classList.remove('hidden');
+    if (bar) bar.style.width = Math.min(100, Math.max(0, grnScanState.progress)) + '%';
+    if (lbl) lbl.textContent = grnScanState.statusText;
+    if (pctLbl) pctLbl.textContent = Math.round(grnScanState.progress) + '%';
+  }
+
+  global.setGrnRawText = (val) => {
+    grnScanState.rawText = String(val || '');
+  };
+
+  global.setGrnScanOption = (key, val) => {
+    if (key === 'rotate') {
+      grnScanState.rotateDeg = (Number(grnScanState.rotateDeg || 0) + Number(val || 90)) % 360;
+    } else if (key === 'enhanceMode') {
+      grnScanState.enhanceMode = val || 'contrast';
+    }
+    if (grnScanState.previewDataUrl) {
+      window.runGrnImageScan();
+    } else {
+      global.renderActiveView();
+    }
+  };
+
+  global.clearGrnScanner = () => {
+    grnScanState.previewDataUrl = '';
+    grnScanState.processedDataUrl = '';
+    grnScanState.fileName = '';
+    grnScanState.sourceType = '';
+    grnScanState.rotateDeg = 0;
+    grnScanState.scanning = false;
+    grnScanState.progress = 0;
+    grnScanState.statusText = '';
+    grnScanState.rawText = '';
+    grnScanState.summary = null;
+    grnScanState.error = '';
+    const inp = document.getElementById('grnOcrRaw');
+    if (inp) inp.value = '';
+    global.renderActiveView();
+  };
+
+  global.loadGrnSampleInvoice = () => {
+    const scanner = global.ONSInvoiceScanner;
+    const sample = scanner ? scanner.getSamplePbfInvoiceText(S().AppState) : '';
+    grnScanState.rawText = sample;
+    grnScanState.error = '';
+    const inp = document.getElementById('grnOcrRaw');
+    if (inp) inp.value = sample;
+    global.parseGrnOcrToForm();
+  };
+
+  global.openGrnLiveCamera = () => {
+    const scanner = global.ONSInvoiceScanner;
+    if (!scanner) return;
+    scanner.openLiveCameraCaptureModal((dataUrl, fileName) => {
+      grnScanState.previewDataUrl = dataUrl;
+      grnScanState.processedDataUrl = dataUrl;
+      grnScanState.fileName = fileName || 'Kamera_Faktur.jpg';
+      grnScanState.sourceType = 'KAMERA';
+      grnScanState.rotateDeg = 0;
+      grnScanState.error = '';
+      global.runGrnImageScan();
+    });
+  };
+
+  global.runGrnImageScan = async () => {
+    const scanner = global.ONSInvoiceScanner;
+    if (!scanner || !grnScanState.previewDataUrl) return;
+    grnScanState.scanning = true;
+    grnScanState.error = '';
+    global.renderActiveView();
+    try {
+      _updateGrnScanProgressDom(8, 'Meningkatkan ketajaman & kontras gambar...');
+      const pre = await scanner.preprocessInvoiceImage(grnScanState.previewDataUrl, {
+        enhanceMode: grnScanState.enhanceMode || 'contrast',
+        rotateDeg: grnScanState.rotateDeg || 0
+      });
+      grnScanState.processedDataUrl = pre.dataUrl || grnScanState.previewDataUrl;
+      const text = await scanner.recognizeImageText(grnScanState.processedDataUrl, _updateGrnScanProgressDom);
+      grnScanState.rawText = text;
+      grnScanState.scanning = false;
+      if (!String(text || '').trim()) {
+        grnScanState.error = 'Teks belum terbaca dari gambar. Coba putar gambar 90 derajat, ubah mode ke Hitam-Putih Dot Matrix, atau tempel teks secara manual.';
+        global.renderActiveView();
+        return;
+      }
+      global.parseGrnOcrToForm(text);
+    } catch (err) {
+      grnScanState.scanning = false;
+      grnScanState.error = (err && err.message) ? err.message : 'Gagal menjalankan OCR browser.';
+      global.toast(grnScanState.error, 'warn');
+      global.renderActiveView();
+    }
+  };
+
+  global.handleGrnScannerFile = async (file) => {
+    const scanner = global.ONSInvoiceScanner;
+    if (!file || !scanner) return;
+    const fname = String(file.name || '');
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(fname);
+    grnScanState.fileName = fname;
+    grnScanState.error = '';
+    grnScanState.rotateDeg = 0;
+
+    if (isPdf) {
+      grnScanState.sourceType = 'PDF';
+      grnScanState.previewDataUrl = '';
+      grnScanState.processedDataUrl = '';
+      grnScanState.scanning = true;
+      global.renderActiveView();
+      try {
+        const pdfRes = await scanner.extractFromPdfFile(file, _updateGrnScanProgressDom);
+        if (pdfRes.source === 'PDF_TEXT') {
+          grnScanState.rawText = pdfRes.text;
+          grnScanState.scanning = false;
+          global.parseGrnOcrToForm(pdfRes.text);
+          return;
+        }
+        if (pdfRes.pageImages && pdfRes.pageImages.length) {
+          grnScanState.previewDataUrl = pdfRes.pageImages[0];
+          grnScanState.processedDataUrl = pdfRes.pageImages[0];
+          await global.runGrnImageScan();
+          return;
+        }
+        grnScanState.scanning = false;
+        grnScanState.error = 'PDF kosong atau tidak dapat dirender.';
+        global.renderActiveView();
+      } catch (err) {
+        grnScanState.scanning = false;
+        grnScanState.error = (err && err.message) ? err.message : 'Gagal membaca file PDF faktur.';
+        global.toast(grnScanState.error, 'warn');
+        global.renderActiveView();
+      }
+      return;
+    }
+
+    // File Gambar (JPG / PNG / WebP / HEIC)
+    grnScanState.sourceType = 'FOTO';
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      grnScanState.previewDataUrl = ev.target && ev.target.result ? String(ev.target.result) : '';
+      grnScanState.processedDataUrl = grnScanState.previewDataUrl;
+      global.runGrnImageScan();
+    };
+    reader.onerror = () => {
+      grnScanState.error = 'Gagal membaca file gambar dari perangkat.';
+      global.renderActiveView();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  global.parseGrnOcrToForm = (overrideText) => {
+    const domVal = (document.getElementById('grnOcrRaw') || {}).value;
+    const raw = typeof overrideText === 'string'
+      ? overrideText
+      : (domVal !== undefined ? domVal : (grnScanState.rawText || ''));
+    if (!String(raw).trim()) return global.toast('Tempel teks faktur atau scan foto/PDF faktur terlebih dahulu.', 'warn');
+
+    grnScanState.rawText = String(raw);
     ensureGrnInitialized();
+
+    const st = S().AppState;
+    const scanner = global.ONSInvoiceScanner;
+    if (scanner && typeof scanner.parseInvoiceText === 'function') {
+      const parsed = scanner.parseInvoiceText(raw, st.masterObat, st.supplierPbf);
+      if (parsed.header.no_faktur_pbf) grnHeader.no_faktur_pbf = parsed.header.no_faktur_pbf;
+      if (parsed.header.no_sp) grnHeader.no_sp = parsed.header.no_sp;
+      if (parsed.header.id_pbf) grnHeader.id_pbf = parsed.header.id_pbf;
+      if (parsed.header.tgl_jatuh_tempo) grnHeader.tgl_jatuh_tempo = parsed.header.tgl_jatuh_tempo;
+      if (parsed.header.diskon_pbf > 0) grnHeader.diskon_pbf = parsed.header.diskon_pbf;
+      if (parsed.header.status_bayar) grnHeader.status_bayar = parsed.header.status_bayar;
+
+      if (parsed.items && parsed.items.length) {
+        grnItems = parsed.items.map((it) => ({
+          id_obat: it.id_obat,
+          no_batch: it.no_batch,
+          tgl_kadaluarsa: it.tgl_kadaluarsa,
+          qty_dasar: Number(it.qty_dasar || 1),
+          hpp_unit: Number(it.hpp_unit || 0)
+        }));
+      }
+
+      if (parsed.header.ppn_masukan > 0) {
+        grnHeader.ppn_masukan = parsed.header.ppn_masukan;
+      } else if (parsed.meta.autoPpn11) {
+        const brutoEst = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
+        grnHeader.ppn_masukan = Math.round(Math.max(0, brutoEst - Number(grnHeader.diskon_pbf || 0)) * 0.11);
+      }
+
+      grnScanState.summary = {
+        headerFields: parsed.meta.detectedHeaderFields,
+        itemCount: grnItems.length,
+        matchedItemsCount: parsed.meta.matchedItemsCount,
+        unitConversions: parsed.meta.unitConversions || [],
+        unmatchedLines: parsed.meta.unmatchedLines || []
+      };
+
+      global.toast(`Scan faktur selesai: ${parsed.meta.detectedHeaderFields} header & ${grnItems.length} baris obat terisi ke GRN!`, 'ok');
+      global.renderActiveView();
+      return;
+    }
+
+    // Fallback minimalis jika scanner helper belum termuat
     const fakM = raw.match(/\b((?:FK|INV|FJ)[-\/][A-Z0-9\-\/]{3,})/i);
     if (fakM) grnHeader.no_faktur_pbf = fakM[1].toUpperCase();
-    const pbfMatch = S().AppState.supplierPbf.find((p) => raw.toLowerCase().includes(p.nama_pbf.toLowerCase().split(' ').slice(0, 2).join(' ')));
-    if (pbfMatch) grnHeader.id_pbf = pbfMatch.nama_pbf;
-    if (grnItems[0]) {
-      const batM = raw.match(/BATCH[:\s#-]*([A-Z0-9\-]{3,})/i);
-      if (batM) grnItems[0].no_batch = batM[1].toUpperCase();
-      const edM = raw.match(/(20\d{2}-\d{2}-\d{2})/);
-      if (edM) grnItems[0].tgl_kadaluarsa = edM[1];
-      const qtyM = raw.match(/(?:QTY|JUMLAH)[:\s]*(\d+)|(\d+)\s*(?:BOX|TAB|KAP|BTL|PCS)/i);
-      if (qtyM) grnItems[0].qty_dasar = Number(qtyM[1] || qtyM[2] || 50);
-      const rpM = raw.match(/(?:RP|TOTAL|NETTO)[:.\s]*([\d.,]{4,})/i);
-      if (rpM) {
-        const tot = Number(rpM[1].replace(/[.,]/g, ''));
-        if (tot > 0 && grnItems[0].qty_dasar > 0) grnItems[0].hpp_unit = Math.round(tot / grnItems[0].qty_dasar);
-      }
-    }
-    global.toast('Ekstraksi teks OCR selesai diisi ke Header & Item #1 GRN!', 'ok');
+    global.toast('Ekstraksi teks faktur selesai diisi ke Form GRN!', 'ok');
     global.renderActiveView();
   };
 
@@ -1452,6 +1806,7 @@
       const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
       const netto = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
       await API().callApi('pengadaan.fakturSave', {
+        id_sp: grnHeader.id_sp || '',
         no_faktur_pbf: grnHeader.no_faktur_pbf.trim(),
         no_sp: grnHeader.no_sp,
         id_pbf: grnHeader.id_pbf,
@@ -1460,6 +1815,7 @@
         diskon_pbf: Number(grnHeader.diskon_pbf || 0),
         ppn_masukan: Number(grnHeader.ppn_masukan || 0),
         netto_hutang: netto,
+        status_bayar: grnHeader.status_bayar || 'BELUM_LUNAS',
         items: grnItems.map((it) => ({
           id_obat: it.id_obat,
           no_batch: it.no_batch,
@@ -1468,8 +1824,16 @@
           hpp_unit: Number(it.hpp_unit || 0)
         }))
       }, { isWrite: true });
+      grnHeader.id_sp = '';
       grnHeader.no_faktur_pbf = '';
+      grnHeader.no_sp = '';
+      grnHeader.status_bayar = 'BELUM_LUNAS';
       grnItems = [];
+      grnScanState.rawText = '';
+      grnScanState.summary = null;
+      grnScanState.previewDataUrl = '';
+      grnScanState.processedDataUrl = '';
+      grnScanState.statusText = '';
       global.toast('Faktur Multi-Item & semua batch FEFO berhasil masuk ke gudang!', 'ok');
       window.setFakturTab('daftar');
       await global.bootLoadState(true);

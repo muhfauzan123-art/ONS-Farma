@@ -116,7 +116,7 @@
           const json = await resp.json();
           _lastLatencyMs = Math.round(performance.now() - t0);
           const badge = document.getElementById('apiLatencyBadge');
-          if (badge) badge.textContent = 'v13.2 • ' + _lastLatencyMs + 'ms';
+          if (badge) badge.textContent = 'v14.2 • ' + _lastLatencyMs + 'ms';
 
           if (!json.ok) {
             if (json.code === 401) {
