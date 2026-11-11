@@ -193,6 +193,7 @@
                   <img src="./icons/ons-farma-app-icon.png" class="w-7 h-7 rounded md:hidden"/>
                   <span class="font-bold text-sm md:hidden">ONS Farma</span>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v10.1 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden">&#128242; Install PWA</button>

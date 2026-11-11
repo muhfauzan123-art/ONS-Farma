@@ -16,6 +16,7 @@
 
   const _inflight = new Map();
   let _writeEpoch = Number(localStorage.getItem('ons_v10_epoch') || '1');
+  let _lastLatencyMs = 0;
   let _batchQueue = [];
   let _batchScheduled = false;
 
@@ -89,6 +90,7 @@
     }
 
     const execFetch = async () => {
+      const t0 = performance.now();
       const bodyPayload = {
         action: action,
         token: token,
@@ -106,6 +108,10 @@
       });
 
       const json = await resp.json();
+      _lastLatencyMs = Math.round(performance.now() - t0);
+      const badge = document.getElementById('apiLatencyBadge');
+      if (badge) badge.textContent = 'v10.1 • ' + _lastLatencyMs + 'ms';
+
       if (!json.ok) {
         if (json.code === 401) {
           setSession(null);
@@ -212,6 +218,7 @@
     bumpClientEpoch,
     getOfflineQueue,
     pushOfflineQueue,
-    flushOfflineQueue
+    flushOfflineQueue,
+    getLastLatency: () => _lastLatencyMs
   };
 })(window);

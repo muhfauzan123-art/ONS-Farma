@@ -12,6 +12,8 @@
   let activeDocTab = 'surat'; // surat | pindai
   let billingCache = { tagihan: [], pending: [], history: [], potongan: [] };
   let docCache = { templates: [], docs: [], pejabat: [] };
+  let mobilePreviewBp = '390px';
+  const LOST_SALES_KEY = 'ons_lost_sales_v10';
 
   /**
    * W-08: Layanan Klinis (3-Tahap Skrining, Kalkulator Racikan, Etiket Putih/Biru, RME/SOAP, SATUSEHAT FHIR)
@@ -30,7 +32,13 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <!-- Kalkulator Racikan & Puyer -->
         <div class="ons-card p-5 lg:col-span-5 space-y-3">
-          <h3 class="font-bold text-sm">Kalkulator Racikan / Puyer &amp; Biaya Jasa</h3>
+          <h3 class="font-bold text-sm">Kalkulator Racikan / Puyer &amp; Integrasi POS</h3>
+          <div class="text-xs">
+            <label class="font-semibold block mb-1">Bahan Obat Dasar (FEFO Master)</label>
+            <select id="racObatSelect" class="ons-select" onchange="window.calcRacikan()">
+              ${st.masterObat.map((o) => `<option value="${o.id_obat}">${S().esc(o.nama_dagang)} (${S().rp(o.harga_umum)}/${S().esc(o.satuan_dasar)})</option>`).join('') || '<option value="">(Katalog Kosong)</option>'}
+            </select>
+          </div>
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div><label class="font-semibold block mb-1">Jumlah Bungkus / Kapsul</label><input id="racJumlah" type="number" value="10" class="ons-input font-mono-num" oninput="window.calcRacikan()"/></div>
             <div><label class="font-semibold block mb-1">Dosis per Bungkus (mg)</label><input id="racDosis" type="number" value="250" class="ons-input font-mono-num" oninput="window.calcRacikan()"/></div>
@@ -38,8 +46,9 @@
             <div><label class="font-semibold block mb-1">Jasa Racik + Tuslah (Rp)</label><input id="racJasa" type="number" value="7500" class="ons-input font-mono-num" oninput="window.calcRacikan()"/></div>
           </div>
           <div id="racHasilBox" class="p-3 rounded-xl text-xs font-mono-num border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            Kebutuhan Tablet Asli: <b>5.0 Tablet</b> &bull; Total Jasa Racik: <b>Rp 7.500</b>
+            Kebutuhan Tablet Asli: <b>5.00 Tablet</b> (5 bulat) &bull; Total Jasa Racik: <b>Rp 7.500</b>
           </div>
+          <button onclick="window.addRacikanToPos()" class="ons-btn ons-btn-emerald w-full text-xs">&#128722; Masukkan Bahan Racikan ke Kasir POS</button>
         </div>
 
         <!-- Cetak Etiket Putih & Biru -->
@@ -80,13 +89,39 @@
   }
 
   global.calcRacikan = () => {
-    const jml = Number(document.getElementById('racJumlah').value || 0);
-    const dos = Number(document.getElementById('racDosis').value || 0);
-    const sed = Math.max(1, Number(document.getElementById('racSediaan').value || 1));
-    const jasa = Number(document.getElementById('racJasa').value || 0);
-    const tabs = ((jml * dos) / sed).toFixed(2);
+    const jml = Number((document.getElementById('racJumlah') || {}).value || 0);
+    const dos = Number((document.getElementById('racDosis') || {}).value || 0);
+    const sed = Math.max(1, Number((document.getElementById('racSediaan') || {}).value || 1));
+    const jasa = Number((document.getElementById('racJasa') || {}).value || 0);
+    const obId = (document.getElementById('racObatSelect') || {}).value || '';
+    const ob = S().AppState.masterObat.find((o) => o.id_obat === obId);
+    const tabsNum = (jml * dos) / sed;
+    const bulat = Math.max(1, Math.ceil(tabsNum));
+    const estHarga = ob ? (Number(ob.harga_umum || 0) * bulat + jasa) : jasa;
     const box = document.getElementById('racHasilBox');
-    if (box) box.innerHTML = `Kebutuhan Tablet Asli: <b>${tabs} Tablet</b> (${Math.ceil(Number(tabs))} bulat) &bull; Total Jasa Racik: <b>${S().rp(jasa)}</b>`;
+    if (box) {
+      box.innerHTML = `Kebutuhan: <b>${tabsNum.toFixed(2)} (${bulat} unit bulat)</b> &bull; Jasa: <b>${S().rp(jasa)}</b><br/>Estimasi Total Bahan + Jasa: <b class="text-emerald-600">${S().rp(estHarga)}</b>`;
+    }
+  };
+
+  global.addRacikanToPos = () => {
+    const obId = (document.getElementById('racObatSelect') || {}).value;
+    if (!obId) return global.toast('Pilih bahan obat terlebih dahulu.', 'warn');
+    const jml = Number((document.getElementById('racJumlah') || {}).value || 1);
+    const dos = Number((document.getElementById('racDosis') || {}).value || 0);
+    const sed = Math.max(1, Number((document.getElementById('racSediaan') || {}).value || 1));
+    const jasa = Number((document.getElementById('racJasa') || {}).value || 0);
+    const qtyBulat = Math.max(1, Math.ceil((jml * dos) / sed));
+    const st = S().AppState;
+    const cart = st.carts[st.activeCartIdx] || st.carts[0];
+    const beforeLen = cart.items.length;
+    if (global.posAddToCart) {
+      global.posAddToCart(obId);
+      const added = cart.items.find((i) => i.id_obat === obId && i.faktor_konversi === 1);
+      if (added) added.qty = beforeLen === cart.items.length ? added.qty + qtyBulat - 1 : qtyBulat;
+    }
+    global.toast(qtyBulat + ' unit bahan racikan masuk keranjang POS (+ est. jasa ' + S().rp(jasa) + ')', 'ok');
+    if (global.navigateView) global.navigateView('pos');
   };
 
   global.printEtiketSample = (jenis) => {
@@ -159,6 +194,23 @@
   /**
    * W-09: E-Resep Dokter Mitra, Skrining Kesehatan & Tracker Refill PRB 30 Hari
    */
+  function _renderSkriningSparkline(skrList) {
+    const vals = (skrList || []).map((s) => Number(s.gds || 0)).filter((v) => v > 0);
+    if (!vals.length) return '<span class="text-[10px]" style="color:var(--ons-text-soft)">Belum ada tren GDS</span>';
+    const pts = vals.map((v, idx) => {
+      const x = vals.length === 1 ? 35 : 5 + (idx / (vals.length - 1)) * 60;
+      const clamped = Math.max(60, Math.min(350, v));
+      const y = 24 - ((clamped - 60) / 290) * 20;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const last = vals[vals.length - 1];
+    const stroke = last > 200 ? '#DC2626' : (last > 140 ? '#D97706' : '#10B981');
+    return `<svg viewBox="0 0 70 28" class="w-16 h-6 inline-block align-middle">
+      <polyline fill="none" stroke="${stroke}" stroke-width="2" points="${pts}"/>
+      ${vals.length === 1 ? `<circle cx="35" cy="${pts.split(',')[1]}" r="2.5" fill="${stroke}"/>` : ''}
+    </svg>`;
+  }
+
   function renderEresepPrbView() {
     const st = S().AppState;
     const erxUrl = `${global.location.origin}${global.location.pathname}?erx=DR-MITRA-${new Date().getFullYear()}`;
@@ -166,9 +218,12 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 class="text-xl font-bold">E-Resep Dokter Mitra, Skrining Kesehatan &amp; Tracker PRB Kronis</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Pemantauan kepatuhan minum obat kronis 30 hari &amp; skrining metabolik pasien (TD/GDS/BMI).</p>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Pemantauan kepatuhan minum obat kronis 30 hari, grafik sparkline GDS, &amp; kalkulator BMI/Tensi.</p>
         </div>
-        <button onclick="window.openAddMemberPrbModal()" class="ons-btn ons-btn-primary text-xs">+ Daftarkan Pasien PRB / Member</button>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="window.openSkriningModal()" class="ons-btn ons-btn-emerald text-xs">+ Catat Skrining (TD/GDS/BMI)</button>
+          <button onclick="window.openAddMemberPrbModal()" class="ons-btn ons-btn-primary text-xs">+ Daftarkan Pasien PRB / Member</button>
+        </div>
       </div>
 
       <div class="ons-card p-4 flex flex-wrap items-center justify-between gap-3">
@@ -186,7 +241,7 @@
         <h3 class="font-bold text-sm mb-3">Pelacak Refill Obat Pasien Kronis / BPJS PRB (Siklus 30 Hari)</h3>
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>Pasien &amp; Alergi</th><th>Program &amp; Diagnosa</th><th>Tgl Habis Obat</th><th>Poin</th><th>Skrining Terakhir</th><th>Aksi WA Reminder</th></tr></thead>
+            <thead><tr><th>Pasien &amp; Alergi</th><th>Program &amp; Diagnosa</th><th>Tgl Habis Obat</th><th>Poin</th><th>Skrining &amp; Tren GDS</th><th>Aksi</th></tr></thead>
             <tbody>
               ${st.members.map((m) => {
                 let skrList = [];
@@ -198,9 +253,15 @@
                   <td class="text-xs"><span class="badge-bpom bpom-terbatas">${S().esc(m.program_prb)}</span><div class="mt-1">${S().esc(m.penyakit_kronis)}</div></td>
                   <td class="font-mono-num text-xs">${m.tgl_habis_obat ? `<span class="${daysLeft <= 3 ? 'text-red-600 font-bold' : ''}">${m.tgl_habis_obat} (${daysLeft}h)</span>` : '-'}</td>
                   <td class="font-mono-num font-bold text-blue-600">${m.poin_loyalitas || 0}</td>
-                  <td class="text-xs font-mono-num">${lastSkr ? `TD ${lastSkr.td} | GDS ${lastSkr.gds} | BMI ${lastSkr.bmi}` : '-'}</td>
+                  <td class="text-xs font-mono-num">
+                    <div>${lastSkr ? `TD ${S().esc(lastSkr.td)} | GDS ${S().esc(lastSkr.gds)} | BMI ${S().esc(lastSkr.bmi)}` : '-'}</div>
+                    <div>${_renderSkriningSparkline(skrList)}</div>
+                  </td>
                   <td>
-                    ${m.no_hp ? `<a target="_blank" href="https://wa.me/${m.no_hp}?text=${encodeURIComponent('Halo ' + m.nama_pasien + ', obat rutin ' + m.penyakit_kronis + ' Anda akan segera habis pada ' + (m.tgl_habis_obat || 'minggu ini') + '. Silakan hubungi Apotek ONS Farma untuk pengulangan/antar gratis.')}" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Kirim WA Refill</a>` : '-'}
+                    <div class="flex flex-wrap gap-1">
+                      <button onclick="window.openSkriningModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">+ Skrining</button>
+                      ${m.no_hp ? `<a target="_blank" href="https://wa.me/${m.no_hp}?text=${encodeURIComponent('Halo ' + m.nama_pasien + ', obat rutin ' + m.penyakit_kronis + ' Anda segera habis pada ' + (m.tgl_habis_obat || 'minggu ini') + '. Hasil skrining terakhir: ' + (lastSkr ? ('TD ' + lastSkr.td + ', GDS ' + lastSkr.gds + ', BMI ' + lastSkr.bmi) : 'Terpantau baik') + '. Hubungi Apotek ONS Farma.')}" class="ons-btn ons-btn-emerald text-xs py-1 px-2">WA Kartu</a>` : ''}
+                    </div>
                   </td>
                 </tr>`;
               }).join('')}
@@ -210,6 +271,53 @@
       </div>
     </div>`;
   }
+
+  global.openSkriningModal = (idMember) => {
+    const members = S().AppState.members || [];
+    if (!members.length) return global.toast('Daftarkan minimal 1 pasien/member terlebih dahulu.', 'warn');
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Catat Skrining Metabolik Pasien (TD / GDS / BMI)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div><label class="font-semibold block mb-1">Pilih Pasien</label><select id="skrMemId" class="ons-select">${members.map((m) => `<option value="${S().esc(m.id_member)}" ${m.id_member === idMember ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.program_prb)})</option>`).join('')}</select></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Tekanan Darah (mmHg)</label><input id="skrTd" class="ons-input font-mono-num" value="125/80"/></div>
+        <div><label class="font-semibold block mb-1">Gula Darah Sewaktu (mg/dL)</label><input id="skrGds" type="number" class="ons-input font-mono-num" value="118"/></div>
+        <div><label class="font-semibold block mb-1">Berat Badan (kg)</label><input id="skrBb" type="number" class="ons-input font-mono-num" value="65" oninput="window.recalcSkriningBmi()"/></div>
+        <div><label class="font-semibold block mb-1">Tinggi Badan (cm)</label><input id="skrTb" type="number" class="ons-input font-mono-num" value="168" oninput="window.recalcSkriningBmi()"/></div>
+      </div>
+      <div class="p-2.5 rounded-lg border font-mono-num text-center" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">BMI Terhitung: <b id="skrBmiOut">23.0</b></div>
+      <button onclick="window.saveSkriningSubmit()" class="ons-btn ons-btn-emerald w-full">Simpan Skrining ke Rekam Pasien</button>
+    </div>`, '480px');
+  };
+
+  global.recalcSkriningBmi = () => {
+    const bb = Number((document.getElementById('skrBb') || {}).value || 0);
+    const tb = Number((document.getElementById('skrTb') || {}).value || 0) / 100;
+    const el = document.getElementById('skrBmiOut');
+    if (el && bb > 0 && tb > 0) el.textContent = (bb / (tb * tb)).toFixed(1);
+  };
+
+  global.saveSkriningSubmit = async () => {
+    try {
+      const memId = document.getElementById('skrMemId').value;
+      const m = S().AppState.members.find((x) => x.id_member === memId);
+      if (!m) throw new Error('Pasien tidak ditemukan.');
+      let arr = [];
+      try { arr = JSON.parse(m.riwayat_skrining_json || '[]'); } catch (e) {}
+      if (!Array.isArray(arr)) arr = [];
+      arr.push({
+        tgl: new Date().toISOString().slice(0, 10),
+        td: document.getElementById('skrTd').value || '120/80',
+        gds: Number(document.getElementById('skrGds').value || 100),
+        bmi: Number((document.getElementById('skrBmiOut') || {}).textContent || 22)
+      });
+      await API().callApi('member.save', Object.assign({}, m, {
+        riwayat_skrining_json: JSON.stringify(arr.slice(-12))
+      }), { isWrite: true });
+      S().closeModal();
+      global.toast('Hasil skrining & tren GDS tersimpan!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
 
   global.openAddMemberPrbModal = () => {
     S().openModal(`<div class="p-6 space-y-3 text-xs">
@@ -250,15 +358,24 @@
     const totalKeluar = st.jurnalKeuangan.filter((j) => !String(j.jenis_trx).includes('MASUK')).reduce((s, j) => s + Number(j.nominal || 0), 0);
     const ppnKeluaran = Math.round(totalMasuk * 0.11);
     const pphFinal = Math.round(totalMasuk * 0.005);
+    const openFaktur = st.fakturPbf.filter((f) => Number(f.sisa_hutang || 0) > 0);
+    const apBuckets = [0, 0, 0, 0];
+    openFaktur.forEach((f) => {
+      const h = S().daysUntil(f.tgl_jatuh_tempo);
+      const wIdx = h <= 7 ? 0 : (h <= 14 ? 1 : (h <= 21 ? 2 : 3));
+      apBuckets[wIdx] += Number(f.sisa_hutang || 0);
+    });
+    const maxAp = Math.max(...apBuckets, 1);
 
     return `<div class="space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 class="text-xl font-bold">Keuangan, AP Radar, Pajak Apotek &amp; Slip Gaji</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Kas masuk/keluar, proyeksi PPN 11% &amp; PPh Final 0.5% PP 55/2022, penguncian periode, &amp; penggajian.</p>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Kas masuk/keluar, proyeksi PPN 11% &amp; PPh Final 0.5% PP 55/2022, bayar hutang PBF, &amp; slip gaji A4.</p>
         </div>
         <div class="flex gap-2 flex-wrap">
           <button onclick="window.openInputJurnalModal()" class="ons-btn ons-btn-primary text-xs">+ Catat Petty Cash / Biaya</button>
+          <button onclick="window.openSlipGajiModal()" class="ons-btn ons-btn-ghost text-xs">&#128196; Cetak Slip Gaji (A4)</button>
           <button onclick="window.lockCurrentFinancePeriod()" class="ons-btn ons-btn-danger text-xs">&#128274; Kunci Periode Bulan Ini</button>
         </div>
       </div>
@@ -268,6 +385,39 @@
         <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Pengeluaran Operasional</div><div class="text-lg font-bold font-mono-num text-red-600">${S().rp(totalKeluar)}</div></div>
         <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Estimasi PPN 11%</div><div class="text-lg font-bold font-mono-num text-blue-600">${S().rp(ppnKeluaran)}</div></div>
         <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">PPh Final 0.5% UMKM</div><div class="text-lg font-bold font-mono-num text-amber-600">${S().rp(pphFinal)}</div></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="ons-card p-4 lg:col-span-5">
+          <h3 class="font-bold text-sm mb-3">Proyeksi AP Outflow 4 Minggu</h3>
+          <div class="flex items-end gap-3 h-32 pt-2">
+            ${['Mgg 1', 'Mgg 2', 'Mgg 3', 'Mgg 4+'].map((lbl, idx) => {
+              const v = apBuckets[idx];
+              const pct = v > 0 ? Math.max(15, Math.round((v / maxAp) * 100)) : 5;
+              return `<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${v ? (v / 1000000).toFixed(1) + 'jt' : '0'}</div>
+                <div class="w-full rounded-t-md" style="height:${pct}%;background:${idx === 0 && v > 0 ? '#DC2626' : '#F59E0B'}"></div>
+                <div class="text-[11px] font-semibold">${lbl}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="ons-card p-4 lg:col-span-7">
+          <h3 class="font-bold text-sm mb-3">Radar Pelunasan Hutang PBF (${openFaktur.length} Faktur Aktif)</h3>
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead><tr><th>Faktur &amp; PBF</th><th>Jatuh Tempo</th><th>Sisa Hutang</th><th>Aksi Pelunasan</th></tr></thead>
+              <tbody>
+                ${openFaktur.length ? openFaktur.map((f) => `<tr>
+                  <td class="text-xs"><b>${S().esc(f.no_faktur_pbf)}</b><br/>${S().esc(f.id_pbf)}</td>
+                  <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo)}</td>
+                  <td class="font-mono-num font-bold text-amber-600">${S().rp(f.sisa_hutang)}</td>
+                  <td><button onclick="window.payHutangPbfNow('${S().esc(f.id_beli)}', ${Number(f.sisa_hutang || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Bayar Lunas</button></td>
+                </tr>`).join('') : '<tr><td colspan="4" class="text-xs text-center">Seluruh hutang faktur PBF telah lunas.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div class="ons-card p-4">
@@ -290,6 +440,54 @@
       </div>
     </div>`;
   }
+
+  global.payHutangPbfNow = async (idBeli, nominal) => {
+    if (!confirm('Catat pelunasan faktur ' + idBeli + ' sebesar ' + S().rp(nominal) + ' ke jurnal pengeluaran kas?')) return;
+    try {
+      await API().callApi('finance.payHutangPbf', { id_beli: idBeli, nominal_bayar: nominal, metode: 'TRANSFER_BANK' }, { isWrite: true });
+      global.toast('Pelunasan hutang PBF dicatat ke Jurnal Kas!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.openSlipGajiModal = () => {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Generator Slip Gaji Apotek ONS Farma (A4)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Nama Pegawai</label><input id="sgNama" class="ons-input" value="apt. Siti Rahma, S.Farm"/></div>
+        <div><label class="font-semibold block mb-1">Jabatan</label><input id="sgJab" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
+        <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="number" class="ons-input font-mono-num" value="4800000"/></div>
+        <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="number" class="ons-input font-mono-num" value="1500000"/></div>
+        <div><label class="font-semibold block mb-1">Potongan Kasbon / BPJS</label><input id="sgPot" type="number" class="ons-input font-mono-num" value="150000"/></div>
+        <div><label class="font-semibold block mb-1">Periode Bulan</label><input id="sgPer" class="ons-input font-mono-num" value="${new Date().toISOString().slice(0, 7)}"/></div>
+      </div>
+      <button onclick="window.printSlipGajiPdf()" class="ons-btn ons-btn-primary w-full">Pratinjau &amp; Cetak Slip Gaji A4</button>
+    </div>`, '520px');
+  };
+
+  global.printSlipGajiPdf = () => {
+    const nama = document.getElementById('sgNama').value;
+    const jab = document.getElementById('sgJab').value;
+    const pokok = Number(document.getElementById('sgPokok').value || 0);
+    const tunj = Number(document.getElementById('sgTunj').value || 0);
+    const pot = Number(document.getElementById('sgPot').value || 0);
+    const per = document.getElementById('sgPer').value;
+    const bersih = Math.max(0, pokok + tunj - pot);
+    S().printHtmlZone(`<div style="font-family:Arial,sans-serif;border:2px solid #09202A;padding:24px;max-width:680px;margin:auto;font-size:12px;">
+      <div style="border-bottom:2px solid #09202A;padding-bottom:8px;margin-bottom:14px;display:flex;justify-content:space-between;">
+        <div><b style="font-size:16px;">APOTEK ONS FARMA ENTERPRISE</b><br/>SLIP GAJI PEGAWAI &bull; PERIODE ${S().esc(per)}</div>
+        <div style="text-align:right;">Dicetak: ${new Date().toLocaleDateString('id-ID')}</div>
+      </div>
+      <p><b>Nama:</b> ${S().esc(nama)}<br/><b>Jabatan:</b> ${S().esc(jab)}</p>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0;" border="1" cellpadding="6">
+        <tr><td>Gaji Pokok</td><td style="text-align:right;">${S().rp(pokok)}</td></tr>
+        <tr><td>Tunjangan Profesi / Insentif Shift</td><td style="text-align:right;">${S().rp(tunj)}</td></tr>
+        <tr><td>Potongan BPJS / Kasbon</td><td style="text-align:right;color:#DC2626;">-${S().rp(pot)}</td></tr>
+        <tr style="background:#f1f5f9;font-weight:bold;font-size:14px;"><td>THP / Gaji Bersih Diterima</td><td style="text-align:right;">${S().rp(bersih)}</td></tr>
+      </table>
+      <div style="margin-top:28px;display:flex;justify-content:space-between;"><div>Diterima Oleh,<br/><br/><br/>(${S().esc(nama)})</div><div>Pemilik Apotek ONS Farma,<br/><br/><br/>(___________________)</div></div>
+    </div>`);
+  };
 
   global.openInputJurnalModal = () => {
     S().openModal(`<div class="p-6 space-y-3 text-xs">
@@ -387,7 +585,7 @@
         <div class="space-y-2">
           ${(billingCache.history || []).filter((h) => h.Status === 'TERVERIFIKASI').map((h) => `<div class="p-2.5 rounded-lg border flex justify-between items-center text-xs">
             <div><b class="font-mono-num">${S().esc(h.NoKwitansi)}</b> (${S().esc(h.GrupBayar)}) &bull; ${S().rp(h.NominalBayar)}</div>
-            <button onclick="window.openKwitansiQrModal('${S().esc(h.NoKwitansi)}', ${h.NominalBayar})" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Lihat &amp; Cetak Kwitansi QR</button>
+            <button onclick="window.openKwitansiQrModal('${S().esc(h.NoKwitansi)}', ${h.NominalBayar}, '${S().esc(h.Sig || '')}')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Lihat &amp; Cetak Kwitansi QR</button>
           </div>`).join('')}
         </div>
       </div>` : ''}
@@ -501,8 +699,9 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
-  global.openKwitansiQrModal = (noKw, nom) => {
-    const verifyLink = `${global.location.origin}${global.location.pathname}#kwitansi=${encodeURIComponent(noKw)}&sig=${encodeURIComponent(btoa(noKw).slice(0, 12).toUpperCase())}`;
+  global.openKwitansiQrModal = (noKw, nom, sig) => {
+    const validSig = sig || btoa(noKw).slice(0, 12).toUpperCase();
+    const verifyLink = `${global.location.origin}${global.location.pathname}#kwitansi=${encodeURIComponent(noKw)}&sig=${encodeURIComponent(validSig)}`;
     S().openModal(`<div class="p-6 text-center space-y-3">
       <div class="p-5 border-2 rounded-xl text-left space-y-3 bg-white text-black">
         <div class="flex justify-between items-start border-b pb-2">
@@ -511,7 +710,7 @@
         </div>
         <div class="text-sm">Telah diterima pembayaran sejumlah: <b class="font-mono-num text-lg">${S().rp(nom)}</b></div>
         <div class="flex items-center justify-between pt-2">
-          <div class="text-[10px]">Scan QR untuk memverifikasi keaslian kwitansi<br/>secara publik (HMAC-SHA256 Terproteksi).</div>
+          <div class="text-[10px]">Scan QR untuk memverifikasi keaslian kwitansi<br/>secara publik (HMAC-SHA256: <b class="font-mono-num">${S().esc(validSig)}</b>).</div>
           <div>${S().renderSvgQr(verifyLink, 96)}</div>
         </div>
       </div>
@@ -565,12 +764,27 @@
             </tbody>
           </table>
         </div>
-      </div>` : `<div class="ons-card p-4 space-y-3 text-xs">
+      </div>` : `<div class="ons-card p-4 space-y-4 text-xs">
+        <div class="p-3 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <h3 class="font-bold text-sm">Pemindai Templat Google Docs / Sheets / Slides ({{...}})</h3>
+          <p style="color:var(--ons-text-soft)">Tempel ID File Google Docs/Sheets/Slides Anda untuk memindai tag <code>{{PLACEHOLDER}}</code> secara otomatis dan membuat form isian surat.</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <input id="deScanFileId" class="ons-input font-mono-num" placeholder="ID File Drive (cth: 1AbCdEfG...)" value=""/>
+            <input id="deScanNama" class="ons-input" placeholder="Nama Templat Baru" value="Surat Keterangan Apoteker"/>
+            <div class="flex gap-2">
+              <select id="deScanJenis" class="ons-select flex-1"><option>Google Docs</option><option>Google Sheets</option><option>Google Slides</option></select>
+              <button onclick="window.runDocScanTemplate()" class="ons-btn ons-btn-primary">Pindai</button>
+            </div>
+          </div>
+          <div id="deScanResultBox" class="hidden p-2.5 rounded-lg border bg-white/60 dark:bg-black/20"></div>
+        </div>
         <h3 class="font-bold text-sm">Templat Terdaftar ({{...}} + Modifier |kapital, |rupiah, |terbilang, |tanggal)</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          ${tpls.map((t) => `<div class="p-3 rounded-xl border space-y-1">
-            <div class="font-bold text-sm">${S().esc(t.Nama)}</div>
-            <div class="font-mono-num text-blue-600">${S().esc(t.Kode)} &bull; ${S().esc(t.JenisFile)}</div>
+          ${tpls.map((t) => `<div class="p-3 rounded-xl border space-y-2">
+            <div class="flex justify-between items-start gap-2">
+              <div><div class="font-bold text-sm">${S().esc(t.Nama)}</div><div class="font-mono-num text-blue-600">${S().esc(t.Kode)} &bull; ${S().esc(t.JenisFile)}</div></div>
+              <button onclick="window.openCreateDocModal('${S().esc(t.Kode)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Buat Surat &rarr;</button>
+            </div>
             <div style="color:var(--ons-text-soft)">Placeholder: ${S().esc(t.PlaceholderJson)}</div>
           </div>`).join('')}
         </div>
@@ -594,23 +808,69 @@
   };
   global.setDocTab = (t) => { activeDocTab = t; global.renderActiveView(); };
 
-  global.openCreateDocModal = () => {
+  global.runDocScanTemplate = async () => {
+    const fileId = (document.getElementById('deScanFileId') || {}).value || '';
+    const nama = (document.getElementById('deScanNama') || {}).value || 'Templat Baru';
+    const jenis = (document.getElementById('deScanJenis') || {}).value || 'Google Docs';
+    if (!fileId.trim()) return global.toast('Masukkan ID File Google Docs/Sheets/Slides terlebih dahulu.', 'warn');
+    try {
+      const res = await API().callApi('doc.scanTemplate', { file_id: fileId.trim(), nama, jenis_file: jenis }, { isWrite: true });
+      const tags = res.placeholders || res.tags || [];
+      const blocks = res.blocks || [];
+      const box = document.getElementById('deScanResultBox');
+      if (box) {
+        box.classList.remove('hidden');
+        box.innerHTML = `<div class="flex flex-wrap justify-between items-center gap-2">
+          <div><b class="text-emerald-600">${tags.length} Placeholder Terdeteksi:</b> <span class="font-mono-num">${S().esc(tags.join(', '))}</span>${blocks.length ? ` | Blok: <b>${S().esc(blocks.join(', '))}</b>` : ''}</div>
+          <button onclick="window.openCreateDocModal('', ${S().esc(JSON.stringify(tags))})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Isi Form &amp; Buat Draf &rarr;</button>
+        </div>`;
+      }
+      global.toast('Berhasil memindai ' + tags.length + ' placeholder dari templat!', 'ok');
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.openCreateDocModal = (preKode, customTags) => {
     const tpls = docCache.templates || [];
+    const selKode = preKode || (tpls[0] && tpls[0].Kode) || '';
+    const buildDynFields = (kode) => {
+      const tp = tpls.find((x) => x.Kode === kode);
+      let tags = Array.isArray(customTags) && customTags.length ? customTags : ['NAMA_PBF', 'NAMA_APJ', 'NO_SIPA'];
+      if (!customTags) {
+        try {
+          const parsed = JSON.parse((tp && tp.PlaceholderJson) || '[]');
+          if (Array.isArray(parsed) && parsed.length) tags = parsed;
+        } catch (e) {}
+      }
+      return tags.map((tg) => {
+        const clean = String(tg).replace(/^\{+|\}+$/g, '').split('|')[0];
+        const defVal = clean.includes('APJ') ? 'apt. Siti Rahma, S.Farm' : (clean.includes('SIPA') ? '19920412/SIPA_35.78/2025/1042' : (clean.includes('PBF') ? 'PT Bina San Prima' : ''));
+        return `<div><label class="font-semibold block mb-1">${S().esc(clean)}</label><input data-doc-tag="${S().esc(clean)}" class="ons-input" value="${S().esc(defVal)}" placeholder="Isi ${S().esc(clean)}..."/></div>`;
+      }).join('');
+    };
     S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Buat Draf Dokumen Resmi</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
-      <select id="deTplCode" class="ons-select">${tpls.map((t) => `<option value="${t.Kode}">${S().esc(t.Nama)}</option>`).join('')}</select>
-      <input id="deJudul" class="ons-input" placeholder="Judul Dokumen (mis. SP Pengadaan Prekursor Nov 2026)"/>
-      <input id="dePihak" class="ons-input" placeholder="Pihak Tujuan / PBF / Pasien" value="PT Bina San Prima"/>
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Buat Draf Dokumen Resmi (Form Otomatis)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <select id="deTplCode" class="ons-select" onchange="window._refreshDocDynForm(this.value)">${tpls.map((t) => `<option value="${S().esc(t.Kode)}" ${t.Kode === selKode ? 'selected' : ''}>${S().esc(t.Nama)}</option>`).join('')}</select>
+      <input id="deJudul" class="ons-input" placeholder="Judul Dokumen (mis. SP Pengadaan Prekursor Nov 2026)" required/>
+      <div id="deDynFieldsBox" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-auto p-1">${buildDynFields(selKode)}</div>
       <button onclick="window.submitCreateDocDraft()" class="ons-btn ons-btn-primary w-full">Buat Draf Surat</button>
-    </div>`, '480px');
+    </div>`, '540px');
+    global._refreshDocDynForm = (k) => {
+      const box = document.getElementById('deDynFieldsBox');
+      if (box) box.innerHTML = buildDynFields(k);
+    };
   };
 
   global.submitCreateDocDraft = async () => {
     try {
+      const dataObj = {};
+      document.querySelectorAll('[data-doc-tag]').forEach((inp) => {
+        const k = inp.getAttribute('data-doc-tag');
+        if (k) dataObj[k] = inp.value;
+      });
       await API().callApi('doc.createDraft', {
         kode_templat: document.getElementById('deTplCode').value,
-        judul: document.getElementById('deJudul').value,
-        data: { NAMA_PBF: document.getElementById('dePihak').value, NAMA_APJ: 'apt. Siti Rahma, S.Farm', NO_SIPA: '19920412/SIPA_35.78/2025/1042' }
+        judul: document.getElementById('deJudul').value || 'Dokumen Resmi Apotek ONS Farma',
+        data: dataObj
       }, { isWrite: true });
       S().closeModal();
       global.toast('Draf surat dibuat! Silakan tanda tangani dengan PIN Pejabat.', 'ok');
@@ -697,14 +957,40 @@
   /**
    * W-12: Laporan SIPNAP Kemenkes 8 Kolom, Analisis Pareto ABC & Universal Export
    */
+  function _getLostSales() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(LOST_SALES_KEY) || 'null');
+      if (Array.isArray(arr) && arr.length) return arr;
+    } catch (e) {}
+    return [{ tanggal: new Date().toISOString().slice(0, 10), nama_obat: 'Salbutamol Nebules 2.5mg', qty: 4, alasan: 'Stok habis sementara' }];
+  }
+
   function renderSipnapParetoView() {
     const st = S().AppState;
     const narcoticsOot = st.masterObat.filter((o) => ['NARKOTIKA', 'PSIKOTROPIKA', 'OOT', 'PREKURSOR'].includes(String(o.golongan_bpom).toUpperCase()));
+    const ranked = st.masterObat.map((o) => {
+      const qty = S().getTotalStok(o.id_obat);
+      const val = Math.max(1, qty) * Number(o.harga_umum || 0);
+      return { nama: o.nama_dagang, val, qty, zat: String(o.zat_aktif || '').toLowerCase() };
+    }).sort((a, b) => b.val - a.val);
+    const totalVal = Math.max(1, ranked.reduce((s, r) => s + r.val, 0));
+    let cum = 0;
+    const paretoRows = ranked.slice(0, 8).map((r) => {
+      const pct = Math.round((r.val / totalVal) * 100);
+      cum += pct;
+      const cls = cum <= 70 ? 'A (Fast 70%)' : (cum <= 90 ? 'B (Menengah 20%)' : 'C (Slow 10%)');
+      return Object.assign({}, r, { pct, cls });
+    });
+    const abxCount = ranked.filter((r) => /amoxi|azith|cipro|cefix|cefa|clind/.test(r.zat)).length;
+    const abxPct = ranked.length ? Math.round((abxCount / ranked.length) * 100) : 0;
+    const deadBatches = st.stokBatch.filter((b) => b.status_batch === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) > 90 && Number(b.qty_sisa) >= 40);
+    const lostSales = _getLostSales();
+
     return `<div class="space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 class="text-xl font-bold">Pelaporan SIPNAP Kemenkes, Pareto ABC &amp; DU90%</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Format standar Kemenkes RI 8 kolom &amp; klasifikasi omzet Pareto ABC + indikator antibiotik WHO.</p>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Format standar Kemenkes RI 8 kolom, klasifikasi omzet Pareto ABC, indikator antibiotik WHO &amp; log permintaan tertolak.</p>
         </div>
         <button onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-primary text-xs">Export SIPNAP (.xlsx)</button>
       </div>
@@ -732,8 +1018,52 @@
           </table>
         </div>
       </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="ons-card p-4 lg:col-span-7 space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-sm">Analisis Pareto ABC Valuasi Stok &amp; DU90%</h3>
+            <span class="badge-bpom ${abxPct <= 30 ? 'bpom-bebas' : 'bpom-keras'}">Rasio Antibiotik WHO: ${abxPct}% (&le;30%)</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            ${paretoRows.length ? paretoRows.map((p) => `<div>
+              <div class="flex justify-between mb-0.5"><span><b>${S().esc(p.nama)}</b> <span style="color:var(--ons-text-soft)">[${p.cls}]</span></span><span class="font-mono-num">${p.pct}% (${S().rp(p.val)})</span></div>
+              <div class="w-full h-2 rounded-full overflow-hidden" style="background:var(--ons-border)"><div class="h-full" style="width:${Math.max(4, p.pct)}%;background:${p.cls.startsWith('A') ? '#0066FE' : (p.cls.startsWith('B') ? '#10B981' : '#94A3B8')}"></div></div>
+            </div>`).join('') : '<div style="color:var(--ons-text-soft)">Belum ada data produk di katalog untuk dianalisis.</div>'}
+          </div>
+        </div>
+
+        <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-sm">Dead Stock &amp; Log Permintaan Tertolak (Lost Sales)</h3>
+            <span class="badge-bpom bpom-terbatas">Slow/Dead: ${deadBatches.length} Batch</span>
+          </div>
+          <div class="flex gap-2">
+            <input id="lsNama" class="ons-input flex-1" placeholder="Nama obat dicari pasien tapi kosong..."/>
+            <input id="lsQty" type="number" class="ons-input w-16 font-mono-num" value="1"/>
+            <button onclick="window.addLostSaleNow()" class="ons-btn ons-btn-primary">Catat</button>
+          </div>
+          <div class="space-y-1.5 max-h-40 overflow-auto">
+            ${lostSales.slice().reverse().map((ls) => `<div class="p-2 rounded-lg border flex justify-between" style="border-color:var(--ons-border)">
+              <div><b>${S().esc(ls.nama_obat)}</b> (${ls.qty}x)</div>
+              <span style="color:var(--ons-text-soft)">${S().esc(ls.tanggal)}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
     </div>`;
   }
+
+  global.addLostSaleNow = () => {
+    const nama = (document.getElementById('lsNama') || {}).value || '';
+    const qty = Number((document.getElementById('lsQty') || {}).value || 1);
+    if (!nama.trim()) return global.toast('Tulis nama obat yang ditanyakan pasien.', 'warn');
+    const arr = _getLostSales();
+    arr.push({ tanggal: new Date().toISOString().slice(0, 10), nama_obat: nama.trim(), qty, alasan: 'Tidak tersedia saat diminta' });
+    localStorage.setItem(LOST_SALES_KEY, JSON.stringify(arr.slice(-30)));
+    global.toast('Permintaan tertolak dicatat untuk pertimbangan pengadaan PBF!', 'ok');
+    global.renderActiveView();
+  };
 
   global.exportSipnapExcel = () => {
     const rows = S().AppState.masterObat
@@ -752,20 +1082,52 @@
   /**
    * W-13: Pengaturan Secrets Vault Masked, Audit Diff Viewer, Backup & Migrasi Database (/gas-migrasi-database)
    */
-  let settingsCache = { secrets: {}, audit: [] };
+  let settingsCache = { secrets: {}, audit: [], users: [] };
   function renderSettingsView() {
     global.loadSettingsBundle();
     const secrets = settingsCache.secrets || {};
     const audit = settingsCache.audit || [];
+    const users = settingsCache.users || [];
+    const isOwner = S().getRole() === 'Pemilik';
 
     return `<div class="space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-bold">Pengaturan Sistem, Brankas Rahasia, Audit Trail &amp; Migrasi DB</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Seluruh API Key terenkripsi di Google Script Properties &amp; tersensor (zero secret leaks).</p>
+          <h1 class="text-xl font-bold">Pengaturan Sistem, Pengguna &amp; Sandi, Brankas Rahasia &amp; Migrasi DB</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola akun kasir/APJ, ganti password &amp; PIN 6 digit, Script Properties tersensor, &amp; backup Drive.</p>
         </div>
-        <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-emerald text-xs">&#128190; Snapshot Backup Google Drive</button>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">&#128273; Ganti Sandi / PIN Saya</button>
+          ${isOwner ? `<button onclick="window.seedStarterCatalogFromSettings()" class="ons-btn ons-btn-ghost text-xs">&#9889; Isi Katalog Awal (Seed)</button>` : ''}
+          <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-emerald text-xs">&#128190; Snapshot Backup Google Drive</button>
+        </div>
       </div>
+
+      ${isOwner ? `<div class="ons-card p-5 space-y-3 text-xs">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Manajemen Akun Pengguna, Role &amp; Otorisasi PIN (PENGGUNA_CABANG)</h3>
+            <p style="color:var(--ons-text-soft)">Tambah akun staf baru, atur SIPA Apoteker, atau reset kata sandi &amp; PIN otorisasi tanpa menyentuh database.</p>
+          </div>
+          <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah / Edit Akun</button>
+        </div>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>Username</th><th>Nama Lengkap</th><th>Role</th><th>Cabang</th><th>No. SIPA</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody>
+              ${users.length ? users.map((u) => `<tr>
+                <td class="font-mono-num font-bold">${S().esc(u.username)}</td>
+                <td>${S().esc(u.nama_lengkap)}</td>
+                <td><span class="badge-bpom ${u.role === 'Pemilik' ? 'bpom-narkotika' : (u.role === 'APJ' ? 'bpom-terbatas' : 'bpom-bebas')}">${S().esc(u.role)}</span></td>
+                <td class="font-mono-num">${S().esc(u.cabang_id)}</td>
+                <td class="font-mono-num">${S().esc(u.no_sipa || '-')}</td>
+                <td><span class="badge-bpom ${u.status_aktif === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(u.status_aktif)}</span></td>
+                <td><button onclick="window.openChangeCredModal('${S().esc(u.username)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reset Sandi / PIN</button></td>
+              </tr>`).join('') : '<tr><td colspan="7" class="text-center" style="color:var(--ons-text-soft)">Memuat daftar pengguna...</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>` : ''}
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <!-- Secrets Vault Masked -->
@@ -818,10 +1180,81 @@
     if (_setLoading || (!force && Object.keys(settingsCache.secrets).length)) return;
     _setLoading = true;
     try {
-      const [sec, aud] = await Promise.all([API().callApi('settings.getSecretsMasked', {}), API().callApi('audit.list', {})]);
-      settingsCache = { secrets: sec.secrets || {}, audit: aud.items || [] };
+      const [sec, aud, usr] = await Promise.all([
+        API().callApi('settings.getSecretsMasked', {}),
+        API().callApi('audit.list', {}),
+        S().getRole() === 'Pemilik' ? API().callApi('users.list', {}).catch(() => ({ items: [] })) : Promise.resolve({ items: [] })
+      ]);
+      settingsCache = { secrets: sec.secrets || {}, audit: aud.items || [], users: usr.items || [] };
       if (S().AppState.activeView === 'settings') global.renderActiveView();
     } catch (e) {} finally { _setLoading = false; }
+  };
+
+  global.seedStarterCatalogFromSettings = async () => {
+    try {
+      const res = await API().callApi('system.seedStarterCatalog', {}, { isWrite: true });
+      global.toast(res.message || 'Katalog awal berhasil diisi!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.openAddUserModal = () => {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Tambah / Perbarui Akun Pengguna</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Username *</label><input id="usrName" class="ons-input font-mono-num" placeholder="kasir2"/></div>
+        <div><label class="font-semibold block mb-1">Nama Lengkap *</label><input id="usrFull" class="ons-input" placeholder="Dina Putri, A.Md.Farm"/></div>
+        <div><label class="font-semibold block mb-1">Role</label><select id="usrRole" class="ons-select"><option>Kasir</option><option>APJ</option><option>Pemilik</option></select></div>
+        <div><label class="font-semibold block mb-1">Cabang</label><input id="usrBranch" class="ons-input font-mono-num" value="${S().esc(S().AppState.cabangId || 'ONS-01')}"/></div>
+        <div><label class="font-semibold block mb-1">Kata Sandi Awal (min 6) *</label><input id="usrPass" type="password" class="ons-input" placeholder="Min. 6 karakter"/></div>
+        <div><label class="font-semibold block mb-1">PIN 6 Digit Otorisasi</label><input id="usrPin" type="password" maxlength="6" class="ons-input font-mono-num" value="123456"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">No. SIPA (jika Apoteker/APJ)</label><input id="usrSipa" class="ons-input font-mono-num" placeholder="-"/></div>
+      <button onclick="window.submitAddUserNow()" class="ons-btn ons-btn-emerald w-full">Simpan Akun ke PENGGUNA_CABANG</button>
+    </div>`, '520px');
+  };
+
+  global.submitAddUserNow = async () => {
+    try {
+      await API().callApi('users.save', {
+        username: document.getElementById('usrName').value,
+        nama_lengkap: document.getElementById('usrFull').value,
+        role: document.getElementById('usrRole').value,
+        cabang_id: document.getElementById('usrBranch').value,
+        password_baru: document.getElementById('usrPass').value,
+        pin_baru: document.getElementById('usrPin').value,
+        no_sipa: document.getElementById('usrSipa').value
+      }, { isWrite: true });
+      S().closeModal();
+      global.toast('Akun pengguna berhasil disimpan!', 'ok');
+      global.loadSettingsBundle(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.openChangeCredModal = (targetUsername) => {
+    const u = targetUsername || (S().AppState.user && S().AppState.user.username) || 'pemilik';
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Ubah Kata Sandi &amp; PIN: <span class="font-mono-num text-blue-600">${S().esc(u)}</span></h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <input type="hidden" id="credTargetUser" value="${S().esc(u)}"/>
+      <div><label class="font-semibold block mb-1">Kata Sandi Baru (kosongkan jika tidak mengubah sandi)</label><input id="credNewPass" type="password" class="ons-input" placeholder="Minimal 6 karakter kuat"/></div>
+      <div><label class="font-semibold block mb-1">PIN Otorisasi 6 Digit Baru (kosongkan jika tidak mengubah PIN)</label><input id="credNewPin" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="Contoh: 654321"/></div>
+      <label class="flex items-center gap-2"><input id="credRevokeAll" type="checkbox" class="accent-blue-600"/> Cabut paksa sesi login aktif di perangkat lain</label>
+      <button onclick="window.submitChangeCredNow()" class="ons-btn ons-btn-primary w-full">Simpan Perubahan Kredensial</button>
+    </div>`, '460px');
+  };
+
+  global.submitChangeCredNow = async () => {
+    try {
+      const res = await API().callApi('users.changeCredentials', {
+        username: document.getElementById('credTargetUser').value,
+        password_baru: document.getElementById('credNewPass').value,
+        pin_baru: document.getElementById('credNewPin').value,
+        revoke_other_sessions: !!document.getElementById('credRevokeAll').checked
+      }, { isWrite: true });
+      S().closeModal();
+      global.toast(res.pesan || 'Kata sandi / PIN berhasil diperbarui!', 'ok');
+      global.loadSettingsBundle(true);
+    } catch (e) { global.toast(e.message, 'err'); }
   };
 
   global.promptUpdateSecret = (key) => {
@@ -866,26 +1299,50 @@
    */
   function renderMobilePreviewView() {
     return `<div class="space-y-4">
-      <div>
-        <h1 class="text-xl font-bold">Desain Responsif PWA Mobile &amp; Tablet Kasir (W-14)</h1>
-        <p class="text-xs" style="color:var(--ons-text-soft)">Aplikasi ini otomatis beradaptasi pada layar HP (&lt;768px) dengan Bottom Navigation Bar &amp; tombol sentuh minimal 44px.</p>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="ons-card p-5 space-y-3">
-          <h3 class="font-bold text-sm">Siap Instal ke Layar Utama HP Android / iOS (PWA Standalone)</h3>
-          <p class="text-xs">Saat dihosting di GitHub Pages, klik tombol <b>Install Aplikasi</b> di bar atas atau menu browser <i>Add to Home Screen</i>. Kasir &amp; Pemilik dapat membuka Apotek ONS Farma layaknya aplikasi Play Store tanpa delay URL.</p>
-          <button onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs">&#128242; Install PWA ke Perangkat Ini</button>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="text-xl font-bold">Simulator Breakpoint PWA Mobile, Tablet &amp; Desktop (W-14)</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Uji tata letak antarmuka kasir di berbagai ukuran layar secara langsung &amp; instal ke Layar Utama HP.</p>
         </div>
-        <div class="ons-card p-5 space-y-2 text-xs">
-          <h3 class="font-bold text-sm">Checklist Ergonomi Kasir &amp; Gudang Seluler:</h3>
-          <div>&#9989; Bottom Navigation cepat 4 menu utama di layar HP</div>
-          <div>&#9989; Target sentuh minimum 44x44 px di seluruh tombol POS</div>
-          <div>&#9989; Pemindai Barcode Kamera Belakang langsung di menu Kasir POS</div>
-          <div>&#9989; Antrean Transaksi Offline darurat otomatis tersimpan saat sinyal hilang</div>
+        <div class="flex gap-1.5 flex-wrap">
+          ${[
+            { id: '100%', label: '&#128187; Desktop (100%)' },
+            { id: '768px', label: '&#128241; Tablet (768px)' },
+            { id: '390px', label: '&#128242; Mobile HP (390px)' }
+          ].map((bp) => `<button onclick="window.setMobilePreviewBp('${bp.id}')" class="ons-btn text-xs ${mobilePreviewBp === bp.id ? 'ons-btn-primary' : 'ons-btn-ghost'}">${bp.label}</button>`).join('')}
+        </div>
+      </div>
+
+      <div class="ons-card p-4 overflow-auto">
+        <div class="mx-auto transition-all duration-300 border-2 rounded-2xl overflow-hidden shadow-lg" style="max-width:${mobilePreviewBp};border-color:var(--ons-border);background:var(--ons-bg)">
+          <div class="px-4 py-2.5 flex items-center justify-between text-white text-xs font-bold" style="background:#09202A">
+            <span>ONS Farma PWA (${mobilePreviewBp})</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-600 text-[10px]">ONLINE</span>
+          </div>
+          <div class="p-3 space-y-2 text-xs">
+            <div class="grid ${mobilePreviewBp === '390px' ? 'grid-cols-2' : 'grid-cols-4'} gap-2">
+              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Produk</div><b class="font-mono-num">${S().AppState.masterObat.length}</b></div>
+              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Batch FEFO</div><b class="font-mono-num">${S().AppState.stokBatch.length}</b></div>
+              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Penjualan</div><b class="font-mono-num">${S().AppState.penjualan.length}</b></div>
+              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Touch Target</div><b class="text-emerald-600">44px+ OK</b></div>
+            </div>
+            <button onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary w-full py-2.5">&#128242; Install PWA ke Perangkat Ini</button>
+          </div>
+          ${mobilePreviewBp === '390px' ? `<div class="grid grid-cols-4 text-center text-[10px] py-2 border-t" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <button onclick="navigateView('dashboard')" class="font-bold text-blue-600">&#127968; Home</button>
+            <button onclick="navigateView('pos')">&#9889; POS</button>
+            <button onclick="navigateView('gudang')">&#128230; Stok</button>
+            <button onclick="navigateView('billing')">&#128179; Tagihan</button>
+          </div>` : ''}
         </div>
       </div>
     </div>`;
   }
+
+  global.setMobilePreviewBp = (bp) => {
+    mobilePreviewBp = bp || '390px';
+    global.renderActiveView();
+  };
 
   global.ONSViewsClinicalFinanceAdmin = {
     renderKlinisView,

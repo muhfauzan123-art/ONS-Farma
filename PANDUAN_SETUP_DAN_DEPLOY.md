@@ -60,3 +60,29 @@ Paket aplikasi **Apotek ONS Farma Enterprise v10.0** menggunakan arsitektur mode
 ## Bagian 4: Mengatur API Key WhatsApp (Fonnte) & SATUSEHAT
 
 Masuk ke aplikasi sebagai **Pemilik**, buka menu **Pengaturan & Migrasi**, lalu isi melalui form **Brankas Rahasia Script Properties** (`FONNTE_TOKEN`, `WA_OWNER_TARGET`, `ADMIN_EMAIL`, `SATUSEHAT_*`). Token disimpan aman di server GAS & selalu disensor di tampilan browser.
+
+---
+
+## Bagian 5: Cara Revisi Aman Agar Aplikasi, URL Live & Database Sheets Tidak Rusak
+
+Saat Anda memperbarui kode di masa mendatang (misal ke v10.1 atau menambah fitur baru), ikuti 4 aturan emas berikut agar aplikasi aktif dan data transaksi di Google Sheets tidak pernah hilang:
+
+1. **Jangan Buat Deployment GAS Baru (Edit Deployment Lama!):**
+   - Buka Editor Google Apps Script -> perbarui file `.gs` yang berubah (jangan mengubah nama tab Google Sheets).
+   - Klik tombol **Deploy** -> **Manage deployments** (*Kelola deployment*) -> klik ikon **Pensil (Edit)** di kanan deployment aktif Anda -> pada bagian *Version*, pilih **New version** (*Versi baru*) -> klik **Deploy**.
+   - **Penting:** URL `/exec` tetap sama persis, Script Properties tetap utuh, dan seluruh data di Google Sheets aman! Jangan jalankan `setupAppEnvironment` jika Anda tidak ingin mereset apa pun (meski idempoten, cukup deploy versi baru saja).
+
+2. **Jangan Hapus/Timpa `frontend-pwa/js/config.js`:**
+   - File `frontend-pwa/js/config.js` berisi alamat `GAS_URL` live milik Anda. Saat menyalin pembaruan folder `frontend-pwa/`, kecualikan `js/config.js` atau pastikan URL `/exec` di dalamnya tetap sesuai.
+
+3. **Naikkan Versi `CACHE_NAME` di `frontend-pwa/sw.js`:**
+   - Setiap kali mengubah tampilan HTML/CSS/JS PWA, naikkan versi string di `sw.js` (misal `'ons-farma-pwa-v10.1.0'`) agar HP kasir dan browser Pemilik otomatis mengunduh versi terbaru tanpa terjebak cache lama.
+
+4. **Push Perubahan Frontend ke GitHub Pages:**
+   ```bash
+   cd frontend-pwa
+   git status
+   git add .
+   git commit -m "Update Apotek ONS Farma v10.1"
+   git push origin main
+   ```

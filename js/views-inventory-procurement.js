@@ -10,6 +10,8 @@
   let masterFilterGol = '';
   let masterSearchQ = '';
   let wizardFullScrollMode = false;
+  let wizardStep = 1;
+  let importObatBuffer = [];
 
   /**
    * W-04: Master Obat KFA & NIE + Masking HPP Kasir + Code128 Barcode Print
@@ -33,7 +35,8 @@
           <p class="text-xs" style="color:var(--ons-text-soft)">Katalog terstandar SATUSEHAT KFA, multi-satuan 3 tingkat, &amp; proteksi HPP berbasis RBAC.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk (Wizard 5 Langkah)</button>` : ''}
+          ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk (Wizard 5 Langkah)</button>
+          <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">&#128229; Import Excel (.xlsx)</button>` : ''}
           <button onclick="window.exportMasterObat('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
           <button onclick="window.exportMasterObat('pdf')" class="ons-btn ons-btn-ghost text-xs">Cetak PDF</button>
         </div>
@@ -130,13 +133,17 @@
     }, 30);
   };
 
-  global.openObatWizardModal = (editId) => {
+  global.openObatWizardModal = (editId, stepOverride) => {
+    if (stepOverride) wizardStep = Math.max(1, Math.min(5, stepOverride));
+    else wizardStep = 1;
     const o = S().AppState.masterObat.find((x) => x.id_obat === editId) || {
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1', satuan_dasar: 'Tablet',
       satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 10, stok_max: 100,
-      hpp_avg: 0, harga_umum: 0, harga_member: 0, harga_grosir: 0
+      hpp_avg: 0, harga_umum: 0, harga_member: 0, harga_grosir: 0, substitusi_ids: ''
     };
+    const steps = ['1. Identitas & KFA', '2. Golongan & Rak', '3. Multi-Satuan', '4. Harga & Stok', '5. Substitusi & Simpan'];
+    const secCls = (n) => (!wizardFullScrollMode && wizardStep !== n) ? 'hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3 rounded-xl border';
     const renderForm = () => `
       <div class="p-6 space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-3" style="border-color:var(--ons-border)">
@@ -146,48 +153,96 @@
             <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
           </div>
         </div>
+        ${!wizardFullScrollMode ? `<div class="grid grid-cols-5 gap-1.5 text-[11px]" id="wizStepNav">
+          ${steps.map((lbl, idx) => {
+            const n = idx + 1;
+            const act = wizardStep === n;
+            return `<button type="button" onclick="window.setObatWizardStep(${n})" class="py-1.5 px-2 rounded-lg font-semibold border text-center transition-all ${act ? 'ons-btn-primary border-blue-600' : 'ons-btn-ghost'}">${lbl}</button>`;
+          }).join('')}
+        </div>` : ''}
         <form id="obatWizardForm" onsubmit="event.preventDefault();window.saveObatFromWizard();" class="space-y-4 text-xs">
           <input type="hidden" id="wObatId" value="${S().esc(o.id_obat)}"/>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-xl border" style="border-color:var(--ons-border)">
-            <div class="md:col-span-2 font-bold text-blue-600">1. Identitas &amp; Regulasi KFA / NIE BPOM</div>
+          <div id="wizSec1" class="${secCls(1)}" style="border-color:var(--ons-border)">
+            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">1. Identitas &amp; Regulasi KFA / NIE BPOM</div>
             <div><label class="font-semibold block mb-1">Nama Dagang *</label><input id="wNamaDagang" class="ons-input" value="${S().esc(o.nama_dagang)}" required/></div>
             <div><label class="font-semibold block mb-1">Zat Aktif &amp; Kekuatan</label><input id="wZatAktif" class="ons-input" value="${S().esc(o.zat_aktif)}"/></div>
             <div><label class="font-semibold block mb-1">Kode KFA SATUSEHAT</label><input id="wKfa" class="ons-input font-mono-num" value="${S().esc(o.kode_kfa)}"/></div>
             <div><label class="font-semibold block mb-1">NIE BPOM</label><input id="wNie" class="ons-input font-mono-num" value="${S().esc(o.nie_bpom)}"/></div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-xl border" style="border-color:var(--ons-border)">
-            <div class="md:col-span-3 font-bold text-blue-600">2. Golongan &amp; Penyimpanan</div>
+          <div id="wizSec2" class="${secCls(2)}" style="border-color:var(--ons-border)">
+            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">2. Golongan &amp; Penyimpanan CDOB</div>
             <div><label class="font-semibold block mb-1">Golongan BPOM</label>
               <select id="wGol" class="ons-select">${['BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].map((g) => `<option ${o.golongan_bpom === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
             </div>
             <div><label class="font-semibold block mb-1">Suhu Simpan</label><input id="wSuhu" class="ons-input" value="${S().esc(o.suhu_simpan)}"/></div>
-            <div><label class="font-semibold block mb-1">Lokasi Rak</label><input id="wRak" class="ons-input" value="${S().esc(o.rak_lokasi)}"/></div>
+            <div><label class="font-semibold block mb-1">Lokasi Rak / Chiller</label><input id="wRak" class="ons-input" value="${S().esc(o.rak_lokasi)}"/></div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-xl border" style="border-color:var(--ons-border)">
-            <div class="md:col-span-3 font-bold text-blue-600">3. Multi-Satuan (Dasar / Sedang / Besar)</div>
-            <div><label class="font-semibold block mb-1">Satuan Dasar</label><input id="wSatDasar" class="ons-input" value="${S().esc(o.satuan_dasar)}"/></div>
-            <div><label class="font-semibold block mb-1">Rasio Sedang (cth: Strip=10)</label><input id="wRasioSed" type="number" class="ons-input" value="${o.rasio_sedang}"/></div>
-            <div><label class="font-semibold block mb-1">Rasio Besar (cth: Box=100)</label><input id="wRasioBes" type="number" class="ons-input" value="${o.rasio_besar}"/></div>
+          <div id="wizSec3" class="${secCls(3)}" style="border-color:var(--ons-border)">
+            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">3. Multi-Satuan (Dasar / Sedang / Besar)</div>
+            <div><label class="font-semibold block mb-1">Satuan Dasar (Terkecil)</label><input id="wSatDasar" class="ons-input" value="${S().esc(o.satuan_dasar)}"/></div>
+            <div><label class="font-semibold block mb-1">Satuan Sedang &amp; Rasio</label><div class="flex gap-1.5"><input id="wSatSed" class="ons-input w-1/2" value="${S().esc(o.satuan_sedang || 'Strip')}"/><input id="wRasioSed" type="number" class="ons-input w-1/2 font-mono-num" value="${o.rasio_sedang}"/></div></div>
+            <div><label class="font-semibold block mb-1">Satuan Besar &amp; Rasio</label><div class="flex gap-1.5"><input id="wSatBes" class="ons-input w-1/2" value="${S().esc(o.satuan_besar || 'Box')}"/><input id="wRasioBes" type="number" class="ons-input w-1/2 font-mono-num" value="${o.rasio_besar}"/></div></div>
           </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 rounded-xl border" style="border-color:var(--ons-border)">
-            <div class="col-span-2 md:col-span-4 font-bold text-blue-600">4. Valuasi Harga &amp; Threshold Stok</div>
-            <div><label class="font-semibold block mb-1">HPP Beli (Rp)</label><input id="wHpp" type="number" class="ons-input font-mono-num" value="${o.hpp_avg}"/></div>
-            <div><label class="font-semibold block mb-1">Harga Umum</label><input id="wHrgUmum" type="number" class="ons-input font-mono-num" value="${o.harga_umum}"/></div>
-            <div><label class="font-semibold block mb-1">Harga Member</label><input id="wHrgMem" type="number" class="ons-input font-mono-num" value="${o.harga_member}"/></div>
-            <div><label class="font-semibold block mb-1">Stok Min</label><input id="wStokMin" type="number" class="ons-input font-mono-num" value="${o.stok_min}"/></div>
+          <div id="wizSec4" class="${secCls(4)}" style="border-color:var(--ons-border)">
+            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">4. Valuasi Harga &amp; Threshold Stok</div>
+            <div><label class="font-semibold block mb-1">HPP Beli Rata-Rata (Rp)</label><input id="wHpp" type="number" class="ons-input font-mono-num" value="${o.hpp_avg}"/></div>
+            <div><label class="font-semibold block mb-1">Harga Umum (Rp)</label><input id="wHrgUmum" type="number" class="ons-input font-mono-num" value="${o.harga_umum}"/></div>
+            <div><label class="font-semibold block mb-1">Harga Member / PRB (Rp)</label><input id="wHrgMem" type="number" class="ons-input font-mono-num" value="${o.harga_member}"/></div>
+            <div><label class="font-semibold block mb-1">Harga Grosir / B2B (Rp)</label><input id="wHrgGrosir" type="number" class="ons-input font-mono-num" value="${o.harga_grosir || o.harga_member}"/></div>
+            <div><label class="font-semibold block mb-1">Stok Minimum (Defecta)</label><input id="wStokMin" type="number" class="ons-input font-mono-num" value="${o.stok_min}"/></div>
+            <div><label class="font-semibold block mb-1">Stok Maksimum</label><input id="wStokMax" type="number" class="ons-input font-mono-num" value="${o.stok_max || 100}"/></div>
           </div>
-          <div class="flex justify-end gap-2">
-            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost">Batal</button>
-            <button type="submit" class="ons-btn ons-btn-primary">Simpan Produk ke Master Obat</button>
+          <div id="wizSec5" class="${secCls(5)}" style="border-color:var(--ons-border)">
+            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">5. Substitusi Generik &amp; Konfirmasi Simpan</div>
+            <div class="md:col-span-2 lg:col-span-3"><label class="font-semibold block mb-1">ID Obat Substitusi (pisahkan koma, cth: OBT-002)</label><input id="wSubstitusi" class="ons-input font-mono-num" value="${S().esc(o.substitusi_ids || '')}"/></div>
+            <div class="md:col-span-2 lg:col-span-3 p-2.5 rounded-lg text-[11px]" style="background:var(--ons-bg-subtle)">Pastikan Nama Dagang, Satuan Dasar, dan Harga Jual telah terisi benar sebelum menyimpan ke database Master Obat.</div>
+          </div>
+          <div class="flex flex-wrap justify-between gap-2 pt-2">
+            <div class="flex gap-2">
+              <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost">Batal</button>
+              ${!wizardFullScrollMode && wizardStep > 1 ? `<button type="button" id="wizPrevBtn" onclick="window.setObatWizardStep(window._wizCurStep - 1)" class="ons-btn ons-btn-ghost">&larr; Sebelumnya</button>` : ''}
+            </div>
+            <div class="flex gap-2">
+              ${!wizardFullScrollMode && wizardStep < 5 ? `<button type="button" id="wizNextBtn" onclick="window.setObatWizardStep(window._wizCurStep + 1)" class="ons-btn ons-btn-primary">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
+              ${(wizardFullScrollMode || wizardStep === 5) ? `<button type="submit" class="ons-btn ons-btn-emerald">&#9989; Simpan Produk ke Master Obat</button>` : ''}
+            </div>
           </div>
         </form>
       </div>`;
+    global._wizCurStep = wizardStep;
     S().openModal(renderForm(), '780px');
+  };
+
+  global.setObatWizardStep = (nextStep) => {
+    wizardStep = Math.max(1, Math.min(5, Number(nextStep || 1)));
+    global._wizCurStep = wizardStep;
+    for (let i = 1; i <= 5; i++) {
+      const sec = document.getElementById('wizSec' + i);
+      if (sec) sec.className = (!wizardFullScrollMode && wizardStep !== i) ? 'hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3 rounded-xl border';
+    }
+    const nav = document.getElementById('wizStepNav');
+    if (nav) {
+      Array.from(nav.children).forEach((btn, idx) => {
+        const active = (idx + 1) === wizardStep;
+        btn.className = 'py-1.5 px-2 rounded-lg font-semibold border text-center transition-all ' + (active ? 'ons-btn-primary border-blue-600' : 'ons-btn-ghost');
+      });
+    }
+    const form = document.getElementById('obatWizardForm');
+    if (form && form.lastElementChild) {
+      form.lastElementChild.innerHTML = `<div class="flex gap-2">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost">Batal</button>
+        ${wizardStep > 1 ? `<button type="button" onclick="window.setObatWizardStep(${wizardStep - 1})" class="ons-btn ons-btn-ghost">&larr; Sebelumnya</button>` : ''}
+      </div>
+      <div class="flex gap-2">
+        ${wizardStep < 5 ? `<button type="button" onclick="window.setObatWizardStep(${wizardStep + 1})" class="ons-btn ons-btn-primary">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
+        ${wizardStep === 5 ? `<button type="submit" class="ons-btn ons-btn-emerald">&#9989; Simpan Produk ke Master Obat</button>` : ''}
+      </div>`;
+    }
   };
 
   global.toggleObatWizardMode = (id) => {
     wizardFullScrollMode = !wizardFullScrollMode;
-    global.openObatWizardModal(id);
+    global.openObatWizardModal(id, wizardStep);
   };
 
   global.saveObatFromWizard = async () => {
@@ -202,15 +257,96 @@
         suhu_simpan: document.getElementById('wSuhu').value,
         rak_lokasi: document.getElementById('wRak').value,
         satuan_dasar: document.getElementById('wSatDasar').value,
+        satuan_sedang: document.getElementById('wSatSed').value,
         rasio_sedang: Number(document.getElementById('wRasioSed').value || 10),
+        satuan_besar: document.getElementById('wSatBes').value,
         rasio_besar: Number(document.getElementById('wRasioBes').value || 100),
         hpp_avg: Number(document.getElementById('wHpp').value || 0),
         harga_umum: Number(document.getElementById('wHrgUmum').value || 0),
         harga_member: Number(document.getElementById('wHrgMem').value || 0),
-        stok_min: Number(document.getElementById('wStokMin').value || 10)
+        harga_grosir: Number(document.getElementById('wHrgGrosir').value || 0),
+        stok_min: Number(document.getElementById('wStokMin').value || 10),
+        stok_max: Number(document.getElementById('wStokMax').value || 100),
+        substitusi_ids: document.getElementById('wSubstitusi').value
       }, { isWrite: true });
       S().closeModal();
       global.toast('Produk berhasil disimpan ke Master Obat!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.openImportObatModal = () => {
+    importObatBuffer = [];
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Import Massal Master Obat (.xlsx / .csv)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <p style="color:var(--ons-text-soft)">Unggah file Excel <code>.xlsx</code> atau <code>.csv</code> dengan header kolom: <code>nama_dagang</code>, <code>zat_aktif</code>, <code>kode_kfa</code>, <code>golongan_bpom</code>, <code>satuan_dasar</code>, <code>hpp_avg</code>, <code>harga_umum</code>, <code>harga_member</code>.</p>
+      <div class="flex flex-wrap gap-2 items-center">
+        <input id="impObatFile" type="file" accept=".xlsx,.csv" class="ons-input flex-1" onchange="window.parseImportObatFile(this.files[0])"/>
+        <button type="button" onclick="window.downloadTemplateImportObat()" class="ons-btn ons-btn-ghost">Unduh Contoh CSV</button>
+      </div>
+      <div id="impObatPreview" class="p-3 rounded-xl border max-h-48 overflow-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">Pilih file .xlsx atau .csv untuk pratinjau...</div>
+      <button onclick="window.submitImportObatBulk()" class="ons-btn ons-btn-emerald w-full">&#128229; Import ke Database Master Obat</button>
+    </div>`, '640px');
+  };
+
+  global.downloadTemplateImportObat = () => {
+    const csv = 'nama_dagang,zat_aktif,kode_kfa,nie_bpom,golongan_bpom,satuan_dasar,hpp_avg,harga_umum,harga_member,stok_min\n' +
+      'Cetirizine 10mg Dexa,Cetirizine HCl 10mg,93002110,GKL1405048817A1,TERBATAS,Tablet,350,700,600,30\n' +
+      'Neurobion Forte Tab,Vitamin B1 B6 B12,92004512,DBL7215806416B1,BEBAS,Tablet,2800,3900,3600,20\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Template_Import_Master_Obat_ONS.csv';
+    a.click();
+  };
+
+  global.parseImportObatFile = async (file) => {
+    const box = document.getElementById('impObatPreview');
+    if (!file || !box) return;
+    try {
+      let rows = [];
+      if (file.name.toLowerCase().endsWith('.xlsx') && global.ONSXlsxLite) {
+        const buf = await file.arrayBuffer();
+        const sheets = await global.ONSXlsxLite.read(buf);
+        rows = (sheets[0] && sheets[0].rows) || [];
+      } else {
+        const text = await file.text();
+        rows = text.split(/\r?\n/).filter((l) => l.trim()).map((l) => l.split(l.includes(';') ? ';' : ',').map((c) => c.trim().replace(/^"|"$/g, '')));
+      }
+      if (rows.length < 2) throw new Error('File minimal berisi 1 baris header + 1 baris data.');
+      const headers = rows[0].map((h) => String(h || '').toLowerCase().trim().replace(/\s+/g, '_'));
+      importObatBuffer = rows.slice(1).filter((r) => r.some((v) => String(v || '').trim())).map((r) => {
+        const obj = {};
+        headers.forEach((h, idx) => { obj[h] = r[idx] !== undefined ? r[idx] : ''; });
+        return {
+          nama_dagang: obj.nama_dagang || obj.nama || obj.produk || '',
+          zat_aktif: obj.zat_aktif || '',
+          kode_kfa: obj.kode_kfa || '',
+          nie_bpom: obj.nie_bpom || '',
+          golongan_bpom: obj.golongan_bpom || obj.golongan || 'BEBAS',
+          satuan_dasar: obj.satuan_dasar || obj.satuan || 'Tablet',
+          hpp_avg: Number(obj.hpp_avg || obj.hpp || 0),
+          harga_umum: Number(obj.harga_umum || obj.harga || 0),
+          harga_member: Number(obj.harga_member || obj.harga_umum || 0),
+          stok_min: Number(obj.stok_min || 10)
+        };
+      }).filter((x) => x.nama_dagang);
+      box.innerHTML = `<div class="font-bold text-emerald-600 mb-1">Terdeteksi ${importObatBuffer.length} produk siap diimport:</div>` +
+        importObatBuffer.slice(0, 8).map((x, idx) => `<div>${idx + 1}. <b>${S().esc(x.nama_dagang)}</b> (${S().esc(x.golongan_bpom)}) &bull; HPP ${S().rp(x.hpp_avg)} &rarr; Umum ${S().rp(x.harga_umum)}</div>`).join('') +
+        (importObatBuffer.length > 8 ? `<div class="mt-1 italic">... dan ${importObatBuffer.length - 8} item lainnya.</div>` : '');
+    } catch (e) {
+      importObatBuffer = [];
+      box.innerHTML = `<span class="text-red-600 font-bold">Gagal membaca file: ${S().esc(e.message)}</span>`;
+    }
+  };
+
+  global.submitImportObatBulk = async () => {
+    if (!importObatBuffer.length) return global.toast('Pilih file berisi data produk yang valid terlebih dahulu.', 'warn');
+    try {
+      const res = await API().callApi('obat.bulkImport', { items: importObatBuffer }, { isWrite: true });
+      S().closeModal();
+      const cnt = res.imported !== undefined ? res.imported : ((res.inserted || 0) + (res.updated || 0) || importObatBuffer.length);
+      global.toast('Import berhasil! ' + cnt + ' produk diperbarui ke Master Obat.', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
@@ -509,7 +645,14 @@
 
   global.openInputFakturModal = () => {
     S().openModal(`<div class="p-6 space-y-4">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Input Faktur PBF &amp; Tambah Stok Batch FEFO</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Input Faktur PBF &amp; Smart OCR Text Parser</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="p-3 rounded-xl border text-xs space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="flex justify-between items-center">
+          <span class="font-bold">&#128270; Tempel Teks PDF/Foto Faktur PBF (Ekstrak Otomatis)</span>
+          <button type="button" onclick="window.parseFakturTextHint()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Ekstrak ke Form &darr;</button>
+        </div>
+        <textarea id="fOcrRaw" rows="2" class="ons-textarea text-[11px] font-mono-num" placeholder="Contoh: FK-BSP-8821 PT Bina San Prima Batch B-2026-X9 ED 2028-09-30 Qty 120 Total Rp 1.450.000"></textarea>
+      </div>
       <div class="grid grid-cols-2 gap-3 text-xs">
         <div><label class="font-semibold block mb-1">No. Faktur PBF *</label><input id="fNoFak" class="ons-input font-mono-num" value="FK-BSP-${Math.floor(1000 + Math.random() * 8999)}"/></div>
         <div><label class="font-semibold block mb-1">Supplier PBF</label><select id="fPbf" class="ons-select">${S().AppState.supplierPbf.map((p) => `<option>${S().esc(p.nama_pbf)}</option>`).join('')}</select></div>
@@ -521,7 +664,32 @@
         <div><label class="font-semibold block mb-1">Jatuh Tempo</label><input id="fJt" type="date" class="ons-input" value="${new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)}"/></div>
       </div>
       <button onclick="window.saveFakturSubmit()" class="ons-btn ons-btn-emerald w-full text-xs">Simpan Faktur &amp; Masukkan ke Stok FEFO</button>
-    </div>`, '600px');
+    </div>`, '640px');
+  };
+
+  global.parseFakturTextHint = () => {
+    const raw = (document.getElementById('fOcrRaw') || {}).value || '';
+    if (!raw.trim()) return global.toast('Tempel teks faktur terlebih dahulu.', 'warn');
+    const fakM = raw.match(/\b((?:FK|INV|FJ)[-\/][A-Z0-9\-\/]{3,})/i);
+    if (fakM) document.getElementById('fNoFak').value = fakM[1].toUpperCase();
+    const batM = raw.match(/BATCH[:\s#-]*([A-Z0-9\-]{3,})/i);
+    if (batM) document.getElementById('fBatch').value = batM[1].toUpperCase();
+    const edM = raw.match(/(20\d{2}-\d{2}-\d{2})/);
+    if (edM) document.getElementById('fEd').value = edM[1];
+    const qtyM = raw.match(/(?:QTY|JUMLAH)[:\s]*(\d+)|(\d+)\s*(?:BOX|TAB|KAP|BTL|PCS)/i);
+    if (qtyM) document.getElementById('fQty').value = Number(qtyM[1] || qtyM[2] || 100);
+    const rpM = raw.match(/(?:RP|TOTAL|NETTO)[:.\s]*([\d.,]{4,})/i);
+    if (rpM) {
+      const num = Number(rpM[1].replace(/[.,]/g, ''));
+      if (num > 0) document.getElementById('fNetto').value = num;
+    }
+    const pbfSel = document.getElementById('fPbf');
+    if (pbfSel) {
+      Array.from(pbfSel.options).forEach((opt) => {
+        if (raw.toLowerCase().includes(opt.value.toLowerCase().split(' ').slice(0, 2).join(' '))) pbfSel.value = opt.value;
+      });
+    }
+    global.toast('Ekstraksi teks faktur selesai! Periksa kembali kolom angka.', 'ok');
   };
 
   global.saveFakturSubmit = async () => {

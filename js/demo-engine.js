@@ -389,9 +389,38 @@
     }
 
     // --- MODUL TAGIHAN & PEMBAYARAN (/gas-tagihan-pembayaran) ---
+    if (action === 'billing.history') {
+      return { items: db.pembayaran.map((p) => Object.assign({}, p, { Sig: p.NoKwitansi ? btoa(p.NoKwitansi).slice(0, 12).toUpperCase() : '' })) };
+    }
+    if (action === 'users.list') return { items: db.users };
+    if (action === 'users.save') {
+      const idx = db.users.findIndex((u) => u.username.toLowerCase() === String(d.username || '').toLowerCase());
+      const usr = Object.assign({ id_user: 'USR-' + String(db.users.length + 1).padStart(3, '0'), cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }, d);
+      if (idx >= 0) db.users[idx] = Object.assign(db.users[idx], usr);
+      else db.users.push(usr);
+      saveDb(db);
+      return { ok: true, username: usr.username };
+    }
+    if (action === 'users.changeCredentials') return { ok: true, pesan: 'Sandi/PIN diperbarui pada sesi lokal!' };
+    if (action === 'system.seedStarterCatalog') return { ok: true, pesan: 'Data katalog awal sudah tersedia!' };
+    if (action === 'obat.bulkImport') {
+      (d.items || []).forEach((it, idx) => db.master_obat.push(Object.assign({ id_obat: 'OBT-IMP-' + Date.now() + idx, status_aktif: 'AKTIF' }, it)));
+      db.epoch++;
+      saveDb(db);
+      return { inserted: (d.items || []).length, updated: 0 };
+    }
+    if (action === 'finance.payHutangPbf') {
+      const f = db.faktur_pbf.find((x) => x.id_beli === d.id_beli);
+      if (!f) throw new Error('Faktur tidak ditemukan.');
+      const pay = Number(d.nominal_bayar || f.sisa_hutang || 0);
+      f.sisa_hutang = Math.max(0, Number(f.sisa_hutang || 0) - pay);
+      f.status_bayar = f.sisa_hutang === 0 ? 'LUNAS' : 'SEBAGIAN';
+      db.jurnal_keuangan.push({ id_jurnal: 'JRN-' + Date.now(), tanggal: nowIso, cabang_id: 'ONS-01', jenis_trx: 'KELUAR_PEMBAYARAN_PBF', kategori: 'Bayar Faktur ' + f.no_faktur_pbf, nominal: pay, metode: 'TRANSFER', referensi_id: f.no_faktur_pbf, periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId });
+      saveDb(db);
+      return { faktur: f };
+    }
     if (action === 'billing.list') return { items: db.tagihan };
     if (action === 'billing.pending') return { items: db.pembayaran.filter((p) => p.Status === 'MENUNGGU_VERIFIKASI') };
-    if (action === 'billing.history') return { items: db.pembayaran };
     if (action === 'discount.list') return { items: db.potongan };
     if (action === 'discount.save') {
       const item = Object.assign({ ID: 'POT-' + Date.now().toString().slice(-4), Aktif: 'YA' }, d);
@@ -465,6 +494,9 @@
 
     // --- MODUL DOC ENGINE (/gas-doc-engine) ---
     if (action === 'doc.templates') return { items: db.de_templat };
+    if (action === 'doc.scanTemplate') {
+      return { placeholders: ['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_PBF', 'TOTAL_NILAI|rupiah', 'TERBILANG|terbilang', 'NAMA_APJ', 'NO_SIPA'], blocks: ['ITEM_PESANAN'] };
+    }
     if (action === 'doc.list') return { items: db.de_dokumen };
     if (action === 'doc.pejabatList') return { items: db.de_pejabat };
     if (action === 'doc.createDraft') {

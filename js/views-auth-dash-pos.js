@@ -254,9 +254,12 @@
     const readiness = Math.max(55, Math.min(100, 100 - nearEdBatches.length * 4 - defectaCount * 3 - (coldOk ? 0 : 15)));
     const dashArray = Math.round((readiness / 100) * 251.2);
 
-    // Grafik Batang SVG 7 Hari Simulasi + Data Aktual Hari Ini
+    // Grafik Batang Dual SVG 7 Hari Simulasi + Data Aktual Hari Ini (Omzet vs Laba Kotor terproteksi RBAC)
     const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Hari Ini'];
-    const omzSeries = [4200000, 5100000, 4850000, 6200000, 5950000, 7400000, Math.max(3800000, omzetHari)];
+    const omzToday = omzetHari > 0 ? omzetHari : (st.masterObat.length ? 3800000 : 0);
+    const omzSeries = [4200000, 5100000, 4850000, 6200000, 5950000, 7400000, omzToday];
+    const labaToday = marginHari > 0 ? marginHari : Math.round(omzToday * 0.24);
+    const labaSeries = seeCost ? omzSeries.map((v, idx) => (idx === omzSeries.length - 1 ? labaToday : Math.round(v * 0.24))) : [];
     const maxVal = Math.max(...omzSeries, 1);
 
     return `<div class="space-y-5">
@@ -271,6 +274,17 @@
           <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">&#128260; Segarkan Data</button>
         </div>
       </div>
+
+      ${st.masterObat.length === 0 ? `<div class="ons-card p-4 border-l-4 flex flex-wrap items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.07)">
+        <div>
+          <div class="font-bold text-sm">Katalog Obat Masih Kosong (Mode Live Baru Terhubung)</div>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Klik tombol di kanan untuk mengisi otomatis 6 obat standar BPOM/KFA, stok batch FEFO, PBF, member PRB &amp; suhu chiller ke Google Sheets, atau import dari Excel (.xlsx).</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${seeCost ? `<button onclick="window.seedStarterCatalogNow()" class="ons-btn ons-btn-primary text-xs">&#9889; Isi Katalog Awal (1 Klik)</button>` : ''}
+          <button onclick="navigateView('${seeCost ? 'obat' : 'pos'}')" class="ons-btn ons-btn-ghost text-xs">Kelola Katalog / Import Excel</button>
+        </div>
+      </div>` : ''}
 
       <!-- 5 Kartu KPI Utama -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -323,17 +337,26 @@
         </div>
 
         <div class="ons-card p-5 lg:col-span-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-bold text-sm">Tren Penjualan 7 Hari Terakhir</h3>
-            <span class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Peak Hour: 16:00 - 20:00</span>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h3 class="font-bold text-sm">Tren ${seeCost ? 'Omzet vs Laba Kotor' : 'Penjualan'} 7 Hari</h3>
+            <div class="flex items-center gap-2 text-[10px]">
+              <span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#0066FE"></span> Omzet</span>
+              ${seeCost ? `<span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#10B981"></span> Laba Kotor</span>` : ''}
+            </div>
           </div>
           <div class="flex items-end gap-2 h-44 pt-4">
             ${days.map((d, i) => {
-              const hPct = Math.max(12, Math.round((omzSeries[i] / maxVal) * 100));
+              const vOmz = Number(omzSeries[i] || 0);
+              const hOmz = vOmz > 0 ? Math.max(12, Math.round((vOmz / maxVal) * 100)) : 4;
+              const vLaba = seeCost ? Number(labaSeries[i] || 0) : 0;
+              const hLaba = seeCost && vLaba > 0 ? Math.max(8, Math.round((vLaba / maxVal) * 100)) : 0;
               const isToday = i === days.length - 1;
-              return `<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${(omzSeries[i] / 1000000).toFixed(1)}jt</div>
-                <div class="w-full rounded-t-md transition-all" style="height:${hPct}%;background:${isToday ? '#0066FE' : '#0284C7'};opacity:${isToday ? '1' : '0.75'};"></div>
+              return `<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end" title="${d}: Omzet ${S().rp(vOmz)}${seeCost ? ' | Laba ' + S().rp(vLaba) : ''}">
+                <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${(vOmz / 1000000).toFixed(1)}jt</div>
+                <div class="w-full h-full flex items-end justify-center gap-1">
+                  <div class="flex-1 rounded-t-md transition-all" style="height:${hOmz}%;background:${isToday ? '#0066FE' : '#0284C7'};opacity:${isToday ? '1' : '0.8'};"></div>
+                  ${seeCost ? `<div class="w-2/5 rounded-t-md transition-all" style="height:${Math.max(4, hLaba)}%;background:#10B981;opacity:${isToday ? '1' : '0.85'};"></div>` : ''}
+                </div>
                 <div class="text-[11px] font-semibold">${d}</div>
               </div>`;
             }).join('')}
@@ -392,6 +415,14 @@
       </div>
     </div>`;
   }
+
+  global.seedStarterCatalogNow = async () => {
+    try {
+      const res = await API().callApi('system.seedStarterCatalog', {}, { isWrite: true });
+      global.toast(res.pesan || res.message || 'Katalog awal berhasil diisi ke Google Sheets!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
 
   /**
    * W-03: Kasir POS Berkecepatan Tinggi (Voice, Kamera Barcode, Multi-Cart, CDSS + APJ PIN, QRIS, Thermal BT)
