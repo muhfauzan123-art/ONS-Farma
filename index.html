@@ -576,9 +576,30 @@
         }
       };
 
+      function syncOwnerIdentityFromProfile(prof) {
+        const p = prof || (ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {});
+        const st = ONSStore.AppState;
+        if (!st.user || !p || !p.nama_pemilik) return;
+        const isPemilik = st.user.role === 'Pemilik' || String(st.user.id_user || '') === 'USR-001' || String(st.user.username || '').toLowerCase() === 'pemilik';
+        if (!isPemilik) return;
+        const stale = /hendra\s+wijaya/i.test(String(st.user.nama_lengkap || '')) || p.terkonfirmasi === 'YA';
+        if (!stale || st.user.nama_lengkap === p.nama_pemilik) return;
+        st.user.nama_lengkap = p.nama_pemilik;
+        if (p.sipa_pemilik) st.user.no_sipa = p.sipa_pemilik;
+        const ses = ONSApi.getSession && ONSApi.getSession();
+        if (ses && ses.user) {
+          ses.user = Object.assign({}, ses.user, {
+            nama_lengkap: p.nama_pemilik,
+            no_sipa: p.sipa_pemilik || ses.user.no_sipa
+          });
+          ONSApi.setSession(ses);
+        }
+      }
+
       window.applyBootPayload = function (data) {
         const st = ONSStore.AppState;
         if (data.store_profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(data.store_profile);
+        syncOwnerIdentityFromProfile(data.store_profile);
         st.masterObat = data.master_obat || [];
         st.stokBatch = data.stok_batch || [];
         st.members = data.members || [];
@@ -738,11 +759,19 @@
         const st = ONSStore.AppState;
         st.user = ses.user;
         const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
+        syncOwnerIdentityFromProfile(prof);
         const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
         const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
         const fotoPem = prof.foto_pemilik_url || '';
         const alertsCount = buildOperationalAlerts().length;
-        const initials = String((st.user && st.user.nama_lengkap) || 'OF').replace(/^apt\.?\s*/i, '').slice(0, 2).toUpperCase();
+        const cleanWords = String((st.user && st.user.nama_lengkap) || 'OF')
+          .replace(/^(apt|dr|drg|prof|hj|h)\.?\s+/i, '')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+        const initials = cleanWords.length >= 2
+          ? (cleanWords[0][0] + cleanWords[1][0]).toUpperCase()
+          : String(cleanWords[0] || 'OF').slice(0, 2).toUpperCase();
 
         root.innerHTML = `
           <div class="min-h-screen flex flex-col md:flex-row">

@@ -2253,6 +2253,14 @@
       if (S().AppState.user && S().AppState.user.role === 'Pemilik') {
         S().AppState.user.nama_lengkap = saved.nama_pemilik;
         S().AppState.user.no_sipa = saved.sipa_pemilik;
+        const ses = API().getSession && API().getSession();
+        if (ses && ses.user) {
+          ses.user = Object.assign({}, ses.user, {
+            nama_lengkap: saved.nama_pemilik,
+            no_sipa: saved.sipa_pemilik || ses.user.no_sipa
+          });
+          API().setSession(ses);
+        }
       }
       profileMediaDraft = { foto: null, logo: null };
       settingsCache.users = [];
