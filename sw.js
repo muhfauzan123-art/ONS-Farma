@@ -22,6 +22,7 @@ const CORE_ASSETS = [
   './js/views-auth-dash-pos.js',
   './js/views-inventory-procurement.js',
   './js/views-clinical-finance-admin.js',
+  './js/views-pemeriksaan.js',
   './js/views-omnichannel-crm.js',
   './vendor/ons-code128.js',
   './vendor/ons-xlsx-export.js',

@@ -71,6 +71,7 @@
       faktur: 'daftar',
       klinis: 'soap',
       'eresep-prb': 'erx',
+      pemeriksaan: 'semua',
       'crm-wa': 'kontak',
       finance: 'pnl',
       billing: 'tagihan',
@@ -105,6 +106,7 @@
     activeShift: null,
     piutangPelanggan: [],
     copyResep: [],
+    pemeriksaanPasien: [],
     mutasiCabang: [],
     branchStockCompare: null,
     branchesList: ['ONS-01', 'ONS-02', 'ONS-03'],
@@ -169,8 +171,8 @@
     const r = getRole();
     if (r === 'Pemilik') return true;
     if (r === 'APJ') return viewId !== 'settings' || true; // APJ akses penuh klinis/gudang/sipnap; settings secrets disensor
-    // Kasir dibatasi strictly hanya Dashboard, POS, Gudang Baca/Cek ED, Billing Tagihan Pasien, Tutup Shift & Mobile
-    const kasirAllowed = ['dashboard', 'pos', 'gudang', 'billing', 'tutup-shift', 'mobile-preview'];
+    // Kasir dibatasi strictly hanya Dashboard, POS, Gudang Baca/Cek ED, Billing Tagihan Pasien, Pemeriksaan Pasien, Tutup Shift & Mobile
+    const kasirAllowed = ['dashboard', 'pos', 'gudang', 'pemeriksaan', 'billing', 'tutup-shift', 'mobile-preview'];
     return kasirAllowed.includes(viewId);
   }
 
@@ -611,7 +613,9 @@
       document.body.appendChild(zone);
     }
     zone.innerHTML = innerHtml;
-    setTimeout(() => window.print(), 150);
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && typeof window.print === 'function') window.print();
+    }, 150);
   }
 
   /**

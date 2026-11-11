@@ -205,6 +205,93 @@
     ];
   }
 
+  function buildPemeriksaanSeed(isoToday) {
+    const yesterday = addDays(-1);
+    return [
+      {
+        id_periksa: 'CHK-DEMO-01',
+        tanggal: isoToday + 'T09:10:00',
+        cabang_id: 'ONS-01',
+        id_member: 'MBR-001',
+        nama_pasien: 'Tn. Bambang Suryono',
+        no_wa: '6281234567801',
+        jenis_kelamin: 'L',
+        usia_tahun: 61,
+        tensi_sistol: 136,
+        tensi_diastol: 86,
+        nadi_bpm: 78,
+        gula_jenis: 'GDS',
+        gula_darah: 108,
+        kolesterol_total: 214,
+        asam_urat: 7.4,
+        status_tensi: 'HIPERTENSI_1',
+        status_gula: 'NORMAL',
+        status_kolesterol: 'BATAS_TINGGI',
+        status_asam_urat: 'TINGGI',
+        keluhan_catatan: 'Cek rutin bulanan + kadang pegal di sendi jari kaki',
+        saran_apoteker: 'Lanjutkan Amlodipine 10mg malam, kurangi garam/jeroan/melinjo, cukupi air putih 2L/hari.',
+        biaya_cek: 45000,
+        petugas: 'apt. Siti Rahma, S.Farm',
+        wa_terkirim: 'TERKIRIM_WA (' + isoToday + ' 09:15)',
+        updated_at: isoToday + 'T09:15:00Z'
+      },
+      {
+        id_periksa: 'CHK-DEMO-02',
+        tanggal: isoToday + 'T10:30:00',
+        cabang_id: 'ONS-01',
+        id_member: 'MBR-002',
+        nama_pasien: 'Ny. Hj. Aminah Kusuma',
+        no_wa: '6281234567802',
+        jenis_kelamin: 'P',
+        usia_tahun: 57,
+        tensi_sistol: 124,
+        tensi_diastol: 78,
+        nadi_bpm: 74,
+        gula_jenis: 'GDP',
+        gula_darah: 138,
+        kolesterol_total: 186,
+        asam_urat: 5.2,
+        status_tensi: 'MENINGKAT',
+        status_gula: 'TINGGI',
+        status_kolesterol: 'NORMAL',
+        status_asam_urat: 'NORMAL',
+        keluhan_catatan: 'Kontrol GDP pagi sebelum suntik insulin',
+        saran_apoteker: 'Pertahankan dosis Insulin sesuai jadwal dokter & kurangi karbohidrat sederhana.',
+        biaya_cek: 35000,
+        petugas: 'apt. Siti Rahma, S.Farm',
+        wa_terkirim: 'BELUM',
+        updated_at: isoToday + 'T10:30:00Z'
+      },
+      {
+        id_periksa: 'CHK-DEMO-03',
+        tanggal: yesterday + 'T16:20:00',
+        cabang_id: 'ONS-01',
+        id_member: '',
+        nama_pasien: 'Ibu Kartini Wulandari',
+        no_wa: '6281344559901',
+        jenis_kelamin: 'P',
+        usia_tahun: 49,
+        tensi_sistol: 116,
+        tensi_diastol: 76,
+        nadi_bpm: 72,
+        gula_jenis: 'GDS',
+        gula_darah: 112,
+        kolesterol_total: 248,
+        asam_urat: 6.7,
+        status_tensi: 'NORMAL',
+        status_gula: 'NORMAL',
+        status_kolesterol: 'TINGGI',
+        status_asam_urat: 'TINGGI',
+        keluhan_catatan: 'Leher terasa kaku & nyeri lutut ringan',
+        saran_apoteker: 'Kolesterol & Asam Urat di atas batas normal. Disarankan konsultasi dokter & batasi makanan berlemak/purin.',
+        biaya_cek: 45000,
+        petugas: 'Budi Santoso (Kasir)',
+        wa_terkirim: 'BELUM',
+        updated_at: yesterday + 'T16:20:00Z'
+      }
+    ];
+  }
+
   function buildCopyResepSeed(isoToday) {
     return [
       { id_copy: 'CR-001', no_salinan: 'CR/0001/' + isoToday.slice(5, 7) + '/' + isoToday.slice(0, 4), tanggal: isoToday, cabang_id: 'ONS-01', no_resep_asal: 'R/202611-0042', tgl_resep_asal: isoToday, nama_dokter: 'dr. Hendri Saputra, Sp.PD', id_member: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', umur_pasien: '58 th', items_json: JSON.stringify([{ nama_dagang: 'Amlodipine Besilate 5 mg', qty_resep: 30, qty_ambil: 15, qty_sisa: 15, signa: '1 x 1 tab pagi', flag: 'det 15' }]), status_serah: 'DET_15', apoteker_nama: 'apt. Siti Rahma, S.Farm', no_sipa: '19920412/SIPA_35.78/2025/1042', no_invoice_pos: '', catatan: 'Tebus sebagian 15 tablet, sisa 15 tablet' }
@@ -220,6 +307,7 @@
     });
     if (!Array.isArray(db.piutang_pelanggan)) { db.piutang_pelanggan = buildOwnerPiutangSeed(isoToday); changed = true; }
     if (!Array.isArray(db.copy_resep)) { db.copy_resep = buildCopyResepSeed(isoToday); changed = true; }
+    if (!Array.isArray(db.pemeriksaan_pasien)) { db.pemeriksaan_pasien = buildPemeriksaanSeed(isoToday); changed = true; }
     if (!Array.isArray(db.mutasi_cabang)) {
       db.mutasi_cabang = [{
         id_transfer: 'TRF-DEMO-01',
@@ -536,6 +624,7 @@
         active_shift: (db.shift_history || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA' && (!s.cabang_id || s.cabang_id === activeBr)) || null,
         piutang_pelanggan: db.piutang_pelanggan || [],
         copy_resep: db.copy_resep || [],
+        pemeriksaan_pasien: db.pemeriksaan_pasien || [],
         mutasi_cabang: db.mutasi_cabang || [],
         branch_stock_compare: _computeBranchCompareDemo(db, '')
       };
@@ -1773,6 +1862,230 @@
       db.epoch++;
       saveDb(db);
       return { item: trfRow, batches_added: batchesAdded };
+    }
+
+    if (action === 'pemeriksaan.list') {
+      const items = (db.pemeriksaan_pasien || []).filter((r) => !cabang || cabang === 'ALL' || !r.cabang_id || r.cabang_id === cabang)
+        .slice().sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')));
+      return { items };
+    }
+
+    if (action === 'pemeriksaan.save') {
+      if (!d || !String(d.nama_pasien || '').trim()) {
+        throw new Error('Nama pasien wajib diisi.');
+      }
+      const sistol = Number(d.tensi_sistol || 0);
+      const diastol = Number(d.tensi_diastol || 0);
+      const gulaVal = Number(d.gula_darah || 0);
+      const kolVal = Number(d.kolesterol_total || 0);
+      const auVal = Number(d.asam_urat || 0);
+      if (!((sistol > 0 && diastol > 0) || gulaVal > 0 || kolVal > 0 || auVal > 0)) {
+        throw new Error('Isi minimal satu hasil pemeriksaan (Tensi, Gula Darah, Kolesterol, atau Asam Urat).');
+      }
+      if (!Array.isArray(db.pemeriksaan_pasien)) db.pemeriksaan_pasien = [];
+      const id = String(d.id_periksa || ('CHK-' + Date.now().toString().slice(-6)));
+      const existIdx = db.pemeriksaan_pasien.findIndex((x) => x.id_periksa === id);
+      const existing = existIdx >= 0 ? db.pemeriksaan_pasien[existIdx] : null;
+      const jk = String(d.jenis_kelamin || (existing && existing.jenis_kelamin) || 'L').toUpperCase() === 'P' ? 'P' : 'L';
+      const gulaJenis = String(d.gula_jenis || (existing && existing.gula_jenis) || 'GDS').toUpperCase();
+
+      let statusTensi = '';
+      if (sistol > 0 && diastol > 0) {
+        if (sistol < 90 || diastol < 60) statusTensi = 'HIPOTENSI';
+        else if (sistol >= 180 || diastol >= 120) statusTensi = 'KRISIS_HIPERTENSI';
+        else if (sistol >= 140 || diastol >= 90) statusTensi = 'HIPERTENSI_2';
+        else if (sistol >= 130 || diastol >= 80) statusTensi = 'HIPERTENSI_1';
+        else if (sistol >= 120 && diastol < 80) statusTensi = 'MENINGKAT';
+        else statusTensi = 'NORMAL';
+      }
+      let statusGula = '';
+      if (gulaVal > 0) {
+        if (gulaVal < 70) statusGula = 'HIPOGLIKEMIA';
+        else if (gulaJenis === 'GDP') statusGula = gulaVal >= 126 ? 'TINGGI' : (gulaVal >= 100 ? 'WASPADA' : 'NORMAL');
+        else statusGula = gulaVal >= 200 ? 'TINGGI' : (gulaVal >= 140 ? 'WASPADA' : 'NORMAL');
+      }
+      let statusKol = '';
+      if (kolVal > 0) statusKol = kolVal >= 240 ? 'TINGGI' : (kolVal >= 200 ? 'BATAS_TINGGI' : 'NORMAL');
+      let statusAu = '';
+      if (auVal > 0) {
+        const hi = jk === 'P' ? 6.0 : 7.0;
+        const lo = jk === 'P' ? 2.4 : 3.4;
+        statusAu = auVal > hi ? 'TINGGI' : (auVal < lo ? 'RENDAH' : 'NORMAL');
+      }
+
+      let waNorm = String(d.no_wa || (existing && existing.no_wa) || '').replace(/[^0-9]/g, '');
+      if (waNorm.startsWith('0')) waNorm = '62' + waNorm.slice(1);
+      else if (waNorm.startsWith('8')) waNorm = '62' + waNorm;
+      const biaya = Number(d.biaya_cek || 0);
+
+      const row = {
+        id_periksa: id,
+        tanggal: d.tanggal || (existing && existing.tanggal) || nowIso,
+        cabang_id: d.cabang_id || cabang || 'ONS-01',
+        id_member: String(d.id_member || '').trim(),
+        nama_pasien: String(d.nama_pasien).trim(),
+        no_wa: waNorm || String(d.no_wa || '').trim(),
+        jenis_kelamin: jk,
+        usia_tahun: d.usia_tahun !== undefined && d.usia_tahun !== '' ? Number(d.usia_tahun) : '',
+        tensi_sistol: (sistol > 0 && diastol > 0) ? sistol : '',
+        tensi_diastol: (sistol > 0 && diastol > 0) ? diastol : '',
+        nadi_bpm: Number(d.nadi_bpm || 0) > 0 ? Number(d.nadi_bpm) : '',
+        gula_jenis: gulaVal > 0 ? gulaJenis : '',
+        gula_darah: gulaVal > 0 ? gulaVal : '',
+        kolesterol_total: kolVal > 0 ? kolVal : '',
+        asam_urat: auVal > 0 ? auVal : '',
+        status_tensi: statusTensi,
+        status_gula: statusGula,
+        status_kolesterol: statusKol,
+        status_asam_urat: statusAu,
+        keluhan_catatan: String(d.keluhan_catatan || '').trim(),
+        saran_apoteker: String(d.saran_apoteker || '').trim(),
+        biaya_cek: biaya,
+        petugas: d.petugas || userNama,
+        wa_terkirim: d.queue_wa && waNorm ? ('ANTRIAN_FONNTE (' + nowIso.slice(0, 16).replace('T', ' ') + ')') : ((existing && existing.wa_terkirim) || 'BELUM'),
+        updated_at: nowIso
+      };
+
+      if (existIdx >= 0) {
+        db.pemeriksaan_pasien[existIdx] = row;
+      } else {
+        db.pemeriksaan_pasien.unshift(row);
+        if (biaya > 0 && !d.skip_jurnal) {
+          db.jurnal_keuangan.unshift({
+            id_jurnal: 'JRN-' + Date.now(), tanggal: nowIso, cabang_id: row.cabang_id,
+            jenis_trx: 'MASUK_LAYANAN_KLINIS', kategori: 'Pemeriksaan Kesehatan (POCT)',
+            nominal: biaya, metode: d.metode_bayar || 'TUNAI', referensi_id: id,
+            periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId
+          });
+        }
+      }
+
+      if (row.id_member) {
+        const mbr = (db.members || []).find((m) => m.id_member === row.id_member);
+        if (mbr) {
+          let arr = [];
+          try { arr = JSON.parse(mbr.riwayat_skrining_json || '[]'); } catch (e) { arr = []; }
+          if (!Array.isArray(arr)) arr = [];
+          const snap = {
+            tgl: String(row.tanggal).slice(0, 10),
+            td: row.tensi_sistol ? (row.tensi_sistol + '/' + row.tensi_diastol) : '',
+            gds: row.gula_darah || '',
+            kolesterol: row.kolesterol_total || '',
+            asam_urat: row.asam_urat || '',
+            id_periksa: id
+          };
+          const sIdx = arr.findIndex((s) => s.id_periksa === id);
+          if (sIdx >= 0) arr[sIdx] = snap;
+          else arr.push(snap);
+          mbr.riwayat_skrining_json = JSON.stringify(arr.slice(-20));
+        }
+      }
+
+      if (d.queue_wa && waNorm) {
+        db.antrian_notif.unshift({
+          id_notif: 'NTF-CHK-' + Date.now().toString().slice(-4),
+          created_at: nowIso, channel: 'WA', tujuan: waNorm, nama_penerima: row.nama_pasien,
+          jenis_event: 'HASIL_PEMERIKSAAN', referensi_id: id,
+          pesan: String(d.wa_pesan || ('Hasil Pemeriksaan Kesehatan ' + row.nama_pasien + ' siap.')),
+          status: 'ANTRI', percobaan: 0, catatan_error: '', sent_at: ''
+        });
+      }
+
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: row.cabang_id,
+        aksi: 'PEMERIKSAAN_PASIEN_SAVE', entitas: 'PEMERIKSAAN_PASIEN', entitas_id: id,
+        diff_sesudah_json: JSON.stringify({ nama_pasien: row.nama_pasien, td: row.tensi_sistol ? (row.tensi_sistol + '/' + row.tensi_diastol) : '', gula: row.gula_darah || '', kolesterol: row.kolesterol_total || '', asam_urat: row.asam_urat || '' })
+      });
+      db.epoch++;
+      saveDb(db);
+      return { item: row };
+    }
+
+    if (action === 'pemeriksaan.markWaSent') {
+      const id = String((d && d.id_periksa) || '').trim();
+      const rec = (db.pemeriksaan_pasien || []).find((x) => x.id_periksa === id);
+      if (!rec) throw new Error('Data pemeriksaan tidak ditemukan: ' + id);
+      const stamp = (d && d.via === 'FONNTE' ? 'TERKIRIM_FONNTE (' : 'TERKIRIM_WA (') + nowIso.slice(0, 16).replace('T', ' ') + ')';
+      rec.wa_terkirim = stamp;
+      rec.updated_at = nowIso;
+      if (d && d.via === 'FONNTE' && d.no_wa && d.wa_pesan) {
+        db.antrian_notif.unshift({
+          id_notif: 'NTF-CHK-' + Date.now().toString().slice(-4),
+          created_at: nowIso, channel: 'WA', tujuan: String(d.no_wa).replace(/[^0-9]/g, ''),
+          nama_penerima: rec.nama_pasien, jenis_event: 'HASIL_PEMERIKSAAN', referensi_id: id,
+          pesan: String(d.wa_pesan), status: 'TERKIRIM', percobaan: 1, catatan_error: '', sent_at: nowIso
+        });
+      }
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, id_periksa: id, wa_terkirim: stamp };
+    }
+
+    if (action === 'pemeriksaan.delete') {
+      if (role !== 'Pemilik' && role !== 'APJ') throw new Error('Hanya Pemilik / APJ yang berhak menghapus data pemeriksaan.');
+      const id = String((d && d.id_periksa) || '').trim();
+      const idx = (db.pemeriksaan_pasien || []).findIndex((x) => x.id_periksa === id);
+      if (idx < 0) throw new Error('Data pemeriksaan tidak ditemukan.');
+      db.pemeriksaan_pasien.splice(idx, 1);
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, id_periksa: id };
+    }
+
+    if (action === 'system.factoryReset') {
+      if (role !== 'Pemilik') throw new Error('Hanya Pemilik yang dapat melakukan Reset Data Pabrik.');
+      if (d && d.demo_mode === 'restore_demo') {
+        const fresh = buildSeedDb();
+        fresh.profil_usaha = db.profil_usaha || defaultProfilUsaha();
+        ensureV11Seed(fresh);
+        fresh.audit_log.unshift({
+          id_audit: 'AUD-DEMO-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: cabang,
+          aksi: 'RESTORE_DEMO_DATA', entitas: 'SYSTEM', entitas_id: 'DEMO',
+          diff_sesudah_json: JSON.stringify({ info: 'Data contoh simulasi demo dipulihkan' })
+        });
+        saveDb(fresh);
+        return { ok: true, demo_mode: 'restore_demo', epoch: fresh.epoch, pesan: 'Data contoh Demo Simulasi berhasil dipulihkan!' };
+      }
+      const conf = String((d && d.konfirmasi) || '').trim().toUpperCase();
+      if (conf !== 'RESET PABRIK') throw new Error('Konfirmasi salah. Ketik tepat: RESET PABRIK');
+      if (String((d && d.pin) || '') !== '123456') throw new Error('PIN Pemilik salah (PIN Demo default: 123456).');
+
+      const hapusMaster = !(d && d.hapus_master === false);
+      const opKeys = [
+        'stok_batch', 'mutasi_stok', 'penjualan', 'detail_penjualan',
+        'surat_pesanan', 'faktur_pbf', 'rekam_klinis', 'pemeriksaan_pasien',
+        'jurnal_keuangan', 'shift_history', 'cold_chain',
+        'tagihan', 'pembayaran', 'potongan', 'reminder_log',
+        'de_dokumen', 'omnichannel_orders', 'crm_kontak', 'antrian_notif',
+        'piutang_pelanggan', 'copy_resep', 'mutasi_cabang'
+      ];
+      let totalCleared = 0;
+      opKeys.forEach((k) => {
+        if (Array.isArray(db[k])) totalCleared += db[k].length;
+        db[k] = [];
+      });
+      if (hapusMaster) {
+        ['master_obat', 'supplier_pbf', 'members'].forEach((k) => {
+          if (Array.isArray(db[k])) totalCleared += db[k].length;
+          db[k] = [];
+        });
+      }
+      db.kw_counter = 1;
+      db.doc_counter = 1;
+      db.audit_log = [{
+        id_audit: 'AUD-RST-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: cabang,
+        aksi: 'FACTORY_RESET', entitas: 'SYSTEM', entitas_id: hapusMaster ? 'PRODUKSI_BERSIH_TOTAL' : 'PRODUKSI_BERSIH_TRANSAKSI',
+        diff_sesudah_json: JSON.stringify({ hapus_master: hapusMaster, baris_dihapus: totalCleared })
+      }];
+      db.epoch = Number(db.epoch || 1) + 1;
+      saveDb(db);
+      return {
+        ok: true,
+        master_terhapus: hapusMaster,
+        total_rows_cleared: totalCleared,
+        epoch: db.epoch,
+        pesan: 'Reset Data Pabrik selesai! ' + totalCleared + ' data uji coba dibersihkan.'
+      };
     }
 
     return { ok: true };

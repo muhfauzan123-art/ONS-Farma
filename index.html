@@ -43,6 +43,7 @@
   <script src="./js/views-auth-dash-pos.js"></script>
   <script src="./js/views-inventory-procurement.js"></script>
   <script src="./js/views-clinical-finance-admin.js"></script>
+  <script src="./js/views-pemeriksaan.js"></script>
   <script src="./js/views-omnichannel-crm.js"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
@@ -77,7 +78,8 @@
         chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
         shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
         doc: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/>',
-        clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'
+        clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+        activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'
       };
 
       function svgIcon(name, extraClass) {
@@ -174,6 +176,18 @@
               tabs: [
                 { subTab: 'erx', label: 'Antrean E-Resep APJ', kw: 'e-resep dokter mitra pin apj validasi pos' },
                 { subTab: 'prb', label: 'Monitoring Pasien PRB', kw: 'prb kronis refill gds sparkline wa' }
+              ]
+            },
+            {
+              viewId: 'pemeriksaan', label: 'Pemeriksaan Pasien', icon: 'activity',
+              desc: 'Pemeriksaan Tensi, Gula Darah, Kolesterol & Asam Urat tersimpan + kirim laporan via WhatsApp.',
+              kw: 'pemeriksaan pasien cek kesehatan tensi darah gula darah kolesterol asam urat wa',
+              tabs: [
+                { subTab: 'semua', label: 'Semua & Input Cek', kw: 'ringkasan paket cek kesehatan lengkap input riwayat wa' },
+                { subTab: 'tensi', label: 'Pemeriksaan Tensi', kw: 'tensi tekanan darah sistol diastol nadi mmhg hipertensi' },
+                { subTab: 'gula', label: 'Pemeriksaan Gula Darah', kw: 'gula darah glukosa gds gdp 2jpp diabetes' },
+                { subTab: 'kolesterol', label: 'Pemeriksaan Kolesterol', kw: 'kolesterol total lemak darah mg/dl' },
+                { subTab: 'asam_urat', label: 'Pemeriksaan Asam Urat', kw: 'asam urat uric acid gout nyeri sendi pria wanita' }
               ]
             },
             {
@@ -523,6 +537,7 @@
             faktur: window.setFakturTab,
             klinis: window.setKlinisTab,
             'eresep-prb': window.setEresepTab,
+            pemeriksaan: window.setPemeriksaanTab,
             finance: window.setFinanceTab,
             sipnap: window.setSipnapTab,
             billing: window.setBillingTab,
@@ -619,6 +634,7 @@
         st.activeShift = data.active_shift || (st.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA') || null;
         st.piutangPelanggan = data.piutang_pelanggan || [];
         st.copyResep = data.copy_resep || [];
+        st.pemeriksaanPasien = data.pemeriksaan_pasien || [];
         st.mutasiCabang = data.mutasi_cabang || [];
         st.branchStockCompare = data.branch_stock_compare || null;
       };
@@ -649,6 +665,7 @@
           case 'faktur': slot.innerHTML = v2.renderFakturView(); break;
           case 'klinis': slot.innerHTML = v3.renderKlinisView(); break;
           case 'eresep-prb': slot.innerHTML = v3.renderEresepPrbView(); break;
+          case 'pemeriksaan': slot.innerHTML = (window.ONSViewsPemeriksaan ? window.ONSViewsPemeriksaan.renderPemeriksaanView() : v3.renderKlinisView()); break;
           case 'crm-wa': slot.innerHTML = v4.renderCrmWaView(); break;
           case 'finance': slot.innerHTML = v3.renderFinanceView(); break;
           case 'billing': slot.innerHTML = v3.renderBillingModuleView(); break;

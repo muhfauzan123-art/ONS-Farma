@@ -2386,6 +2386,7 @@
           <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi / PIN Saya</button>
           ${isOwner ? `<button onclick="window.seedStarterCatalogFromSettings()" class="ons-btn ons-btn-ghost text-xs">Isi Katalog Awal (Seed)</button>` : ''}
           <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-emerald text-xs">Snapshot Backup Drive</button>
+          ${isOwner ? `<button onclick="window.openFactoryResetModal()" class="ons-btn ons-btn-danger text-xs">Reset Data Pabrik</button>` : ''}
         </div>
       </div>
 
@@ -2393,7 +2394,7 @@
         <button onclick="window.setSettingsTab('profil')" class="ons-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">Identitas Pemilik &amp; Usaha</button>
         <button onclick="window.setSettingsTab('akun')" class="ons-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">Akun, Sandi &amp; PIN (${users.length})</button>
         <button onclick="window.setSettingsTab('struk')" class="ons-tab-btn ${settingsTab === 'struk' ? 'active' : ''}">Desain Struk Thermal</button>
-        <button onclick="window.setSettingsTab('vault')" class="ons-tab-btn ${settingsTab === 'vault' ? 'active' : ''}">Brankas Rahasia &amp; Migrasi DB</button>
+        <button onclick="window.setSettingsTab('vault')" class="ons-tab-btn ${settingsTab === 'vault' ? 'active' : ''}">Brankas, Migrasi &amp; Reset Pabrik</button>
         <button onclick="window.setSettingsTab('audit')" class="ons-tab-btn ${settingsTab === 'audit' ? 'active' : ''}">Log Audit (${audit.length})</button>
       </div>
 
@@ -2445,6 +2446,10 @@
             <button onclick="window.runMigrationExecute()" class="ons-btn ons-btn-primary flex-1">2. Eksekusi Upsert Batch</button>
           </div>
           <div id="migResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+        </div>
+
+        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-red-200">
+          ${renderFactoryResetPanelHtml(isOwner, 'vault')}
         </div>
       </div>` : ''}
 
@@ -2773,6 +2778,130 @@
       const res = await API().callApi('migrasi.run', { source_id: src }, { isWrite: true });
       global.toast('Migrasi Upsert selesai untuk ' + res.results.length + ' sheet!', 'ok');
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  function renderFactoryResetPanelHtml(isOwner, scope) {
+    const sfx = scope || 'vault';
+    const isDemo = API().isDemoMode && API().isDemoMode();
+    if (!isOwner) {
+      return `<div class="p-3 rounded-xl border bg-amber-50 text-amber-800 border-amber-200 text-xs">
+        <b>Zona Reset Data Pabrik:</b> Fitur pembersihan data pabrik hanya dapat dijalankan oleh akun berhak akses <b>Pemilik</b>.
+      </div>`;
+    }
+    return `<div class="space-y-3 text-xs">
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-extrabold text-sm text-red-700">Zona Reset Data Pabrik &amp; Inisialisasi Produksi</h3>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">Khusus Pemilik + PIN</span>
+          </div>
+          <p class="mt-1" style="color:var(--ons-text-soft)">Gunakan fitur ini sebelum apotek mulai beroperasi nyata untuk membersihkan seluruh data dummy, transaksi simulasi POS, stok uji coba, E-Resep, Tagihan, CRM &amp; riwayat pemeriksaan.</p>
+        </div>
+        ${isDemo ? `<button type="button" onclick="window.restoreDemoSampleData()" class="ons-btn ons-btn-ghost text-xs">Pulihkan Data Contoh Demo</button>` : ''}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="p-3 rounded-xl border border-red-200 bg-red-50/70 text-red-900 space-y-1">
+          <div class="font-bold">Data yang Dibersihkan:</div>
+          <ul class="list-disc pl-4 space-y-0.5 text-[11px]">
+            <li>Seluruh Transaksi POS, Nota, Mutasi Stok &amp; Batch FEFO</li>
+            <li>Surat Pesanan (SP), Faktur Masuk PBF &amp; Piutang Tempo</li>
+            <li>Kas, Jurnal Keuangan, Tutup Shift &amp; Log Cold-Chain</li>
+            <li>Rekam Klinis E-Resep, Pemeriksaan Pasien, Tagihan &amp; CRM WA</li>
+          </ul>
+        </div>
+        <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-900 space-y-1">
+          <div class="font-bold">Data yang Tetap Aman Terjaga:</div>
+          <ul class="list-disc pl-4 space-y-0.5 text-[11px]">
+            <li>Akun Login Pengguna, Password &amp; PIN (<code>PENGGUNA_CABANG</code>)</li>
+            <li>Identitas Pemilik, Apotek, SIPA/SIA &amp; Logo (<code>PROFIL_USAHA</code>)</li>
+            <li>Desain Struk Thermal, Template Dokumen Resmi &amp; Script Properties</li>
+            <li>Pencatatan Log Audit Reset Pabrik baru sebagai jejak resmi</li>
+          </ul>
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+        <input id="rstHapusMaster_${sfx}" type="checkbox" checked class="accent-red-600"/>
+        <span><b>Reset Total 0%</b> &mdash; Hapus juga data Master Obat, Supplier PBF &amp; Member PRB (hapus centang jika Master Obat sudah diisi data asli dan ingin dipertahankan).</span>
+      </label>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+        <div class="md:col-span-5">
+          <label class="font-semibold block mb-1">Ketik Konfirmasi: <code class="text-red-700 font-bold">RESET PABRIK</code></label>
+          <input id="rstConfirm_${sfx}" class="ons-input font-mono-num uppercase" placeholder="RESET PABRIK"/>
+        </div>
+        <div class="md:col-span-3">
+          <label class="font-semibold block mb-1">PIN Pemilik (6 Digit)</label>
+          <input id="rstPin_${sfx}" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="******"/>
+        </div>
+        <div class="md:col-span-4">
+          <button type="button" onclick="window.executeFactoryReset('${sfx}')" class="ons-btn ons-btn-danger w-full min-h-[42px]">Jalankan Reset Data Pabrik</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  global.openFactoryResetModal = () => {
+    const isOwner = S().getRole() === 'Pemilik';
+    S().openModal(`<div class="ons-ws-modal" data-ws-custom="1">
+      <div class="ons-ws-topbar">
+        <div>
+          <h3 class="font-extrabold text-base text-red-700">Reset Data Pabrik (Siap Operasional Produksi)</h3>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Bersihkan data uji coba dengan aman &mdash; identitas apotek &amp; akun login tetap dipertahankan.</p>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup &times;</button>
+      </div>
+      <div class="ons-ws-pane">${renderFactoryResetPanelHtml(isOwner, 'modal')}</div>
+    </div>`, 'full');
+  };
+
+  global.executeFactoryReset = async (scope) => {
+    const sfx = scope || 'vault';
+    const conf = String((document.getElementById('rstConfirm_' + sfx) || {}).value || '').trim().toUpperCase();
+    const pin = String((document.getElementById('rstPin_' + sfx) || {}).value || '').trim();
+    const hapusMasterEl = document.getElementById('rstHapusMaster_' + sfx);
+    const hapusMaster = hapusMasterEl ? !!hapusMasterEl.checked : true;
+
+    if (conf !== 'RESET PABRIK') {
+      global.toast('Ketik tepat RESET PABRIK pada kotak konfirmasi.', 'err');
+      return;
+    }
+    if (!pin) {
+      global.toast('Masukkan PIN Pemilik 6 digit untuk otorisasi.', 'err');
+      return;
+    }
+    try {
+      const res = await API().callApi('system.factoryReset', {
+        konfirmasi: conf,
+        pin,
+        hapus_master: hapusMaster
+      }, { isWrite: true });
+
+      const st = S().AppState;
+      st.carts = [{ id: 'K1', label: 'Pelanggan #1', channel: 'Toko Fisik', id_member: 'UMUM', tier_harga: 'UMUM', items: [], diskon_global: 0, held_note: '', held_at: '' }];
+      st.activeCartIdx = 0;
+      settingsCache = { secrets: settingsCache.secrets || {}, audit: [], users: settingsCache.users || [] };
+
+      S().closeModal();
+      global.toast((res && res.pesan) || 'Reset Data Pabrik selesai! Sistem bersih siap produksi.', 'ok');
+      await global.bootLoadState(true);
+      if (typeof global.loadSettingsBundle === 'function') await global.loadSettingsBundle(true);
+    } catch (e) {
+      global.toast(e.message || 'Gagal melakukan Reset Data Pabrik.', 'err');
+    }
+  };
+
+  global.restoreDemoSampleData = async () => {
+    try {
+      const res = await API().callApi('system.factoryReset', { demo_mode: 'restore_demo' }, { isWrite: true });
+      S().closeModal();
+      global.toast((res && res.pesan) || 'Data contoh Demo berhasil dipulihkan!', 'ok');
+      await global.bootLoadState(true);
+      if (typeof global.loadSettingsBundle === 'function') await global.loadSettingsBundle(true);
+    } catch (e) {
+      global.toast(e.message || 'Gagal memulihkan data contoh Demo.', 'err');
+    }
   };
 
   /**
