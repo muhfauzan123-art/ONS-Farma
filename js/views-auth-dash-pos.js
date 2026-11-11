@@ -716,7 +716,8 @@
         <div class="flex flex-wrap items-center gap-2 shrink-0">
           <button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm">Buka Kasir POS (F2)</button>
           <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>
-          ${seeCost ? `<button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-emerald text-xs">Tagihan</button>` : ''}
+          ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs" title="Kirim Ringkasan Harian ke WA Pemilik (100% Gratis)">Rekap WA Pemilik</button>` : ''}
+          ${seeCost ? `<button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-ghost text-xs">Tagihan</button>` : ''}
           <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
         </div>
       </div>
@@ -1053,35 +1054,66 @@
     });
 
     const subtotal = cart.items.reduce((s, it) => s + Number(it.harga_jual) * Number(it.qty), 0);
+    const itemDiscTotal = cart.items.reduce((s, it) => s + Number(it.diskon_item || 0), 0);
+    const subAfterItemDisc = Math.max(0, subtotal - itemDiscTotal);
     if (cart.diskon_mode === 'PCT') {
       const pct = Math.min(100, Math.max(0, Number(cart.diskon_input || 0)));
-      cart.diskon_global = Math.round(subtotal * (pct / 100));
+      cart.diskon_global = Math.round(subAfterItemDisc * (pct / 100));
     } else {
-      cart.diskon_global = Math.min(subtotal, Math.max(0, Number(cart.diskon_input || 0)));
+      cart.diskon_global = Math.min(subAfterItemDisc, Math.max(0, Number(cart.diskon_input || 0)));
     }
-    const grandTotal = Math.max(0, subtotal - Number(cart.diskon_global || 0));
+    const grandTotal = Math.max(0, subAfterItemDisc - Number(cart.diskon_global || 0));
+    const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
+    const estHppCart = cart.items.reduce((s, it) => {
+      const ob = st.masterObat.find((o) => o.id_obat === it.id_obat);
+      const nb = S().getNearestSellableBatch(it.id_obat);
+      const hppBase = Number((nb && nb.hpp_beli) || (ob && ob.hpp_avg) || 0);
+      return s + (hppBase * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1)));
+    }, 0);
+    const isBelowHppCart = estHppCart > 0 && grandTotal < estHppCart;
     const offQueue = API().getOfflineQueue();
 
     return `<div class="space-y-4 ons-view-enter">
       ${subTabHeader}
+      <!-- Bar Status Shift Kasir Aktif (Buka / Tutup Shift) -->
+      <div class="ons-card px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs" style="border-left:4px solid ${st.activeShift ? '#059669' : '#D97706'}">
+        ${st.activeShift ? `
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="badge-bpom bpom-bebas">SHIFT AKTIF</span>
+            <span class="font-mono-num font-bold">${S().esc(st.activeShift.id_shift)}</span>
+            <span style="color:var(--ons-text-soft)">Kasir: <b>${S().esc(st.activeShift.kasir_id || '-')}</b> &bull; Modal Laci: <b class="font-mono-num text-emerald-600">${S().rp(st.activeShift.modal_awal || 0)}</b></span>
+          </div>
+          <button onclick="navigateView('tutup-shift')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Rekonsiliasi &amp; Tutup Shift &rarr;</button>
+        ` : `
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="badge-bpom bpom-terbatas">BELUM BUKA SHIFT</span>
+            <span style="color:var(--ons-text-soft)">Catat modal awal uang receh laci kasir sebelum memulai shift penjualan hari ini.</span>
+          </div>
+          <button onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs py-1 px-3">+ Buka Shift Kasir (Modal Laci)</button>
+        `}
+      </div>
+
       <!-- Top Bar POS: Pencarian Barcode, Suara, Kamera, Multi-Keranjang & Offline Queue -->
       <div class="ons-card p-3 flex flex-wrap items-center gap-2">
         <div class="flex-1 min-w-[220px] relative">
-          <input id="posSearchInput" class="ons-input pr-10" placeholder="[F2] Scan Barcode KFA / Ketik Nama Obat atau Zat Aktif..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){window.posAddFirstMatch();}"/>
+          <input id="posSearchInput" class="ons-input pr-10" placeholder="[F2] Scan Barcode KFA/EAN / Ketik Nama Obat atau Zat Aktif..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){window.posAddFirstMatch();}"/>
         </div>
-        <button onclick="window.startPosCameraScan()" class="ons-btn ons-btn-ghost text-xs" title="Scan Barcode Kamera">Scan Kamera</button>
+        <button onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-xs" title="Scan Barcode Kamera HP/Webcam (Gratis)">Scan Barcode</button>
         <button onclick="window.startPosVoiceCashier()" class="ons-btn ons-btn-ghost text-xs" title="Kasir Suara Bahasa Indonesia">Suara Kasir</button>
         <button onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs">Printer BT</button>
         ${offQueue.length ? `<button onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-xs">Sinkron ${offQueue.length} Antrean Offline</button>` : ''}
       </div>
 
-      <!-- Multi-Cart Queue Tabs -->
+      <!-- Multi-Cart Queue Tabs (Hold Antrean Bernama) -->
       <div class="flex flex-wrap items-center gap-2">
         ${st.carts.map((c, idx) => `
-          <button onclick="window.switchPosCart(${idx})" class="ons-btn text-xs ${idx === st.activeCartIdx ? 'ons-btn-primary' : 'ons-btn-ghost'}">
-            ${S().esc(c.label)} (${c.items.length})
-          </button>`).join('')}
-        <button onclick="window.addPosCartTab()" class="ons-btn ons-btn-ghost text-xs">+ Tahan Antrean Baru</button>
+          <div class="inline-flex items-center rounded-lg overflow-hidden border" style="border-color:var(--ons-border)">
+            <button onclick="window.switchPosCart(${idx})" class="ons-btn rounded-none border-0 text-xs ${idx === st.activeCartIdx ? 'ons-btn-primary' : 'ons-btn-ghost'}">
+              ${S().esc(c.label)} (${c.items.length})${c.held_at ? ` <span class="text-[10px] opacity-80">[${S().esc(c.held_at)}]</span>` : ''}
+            </button>
+            ${st.carts.length > 1 ? `<button onclick="window.closePosCartTab(${idx})" title="Tutup tab antrean ini" class="px-2 py-1 text-xs hover:bg-red-500/20 text-red-500 font-bold">&times;</button>` : ''}
+          </div>`).join('')}
+        <button onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-xs">+ Tahan / Hold Antrean</button>
         <div class="ml-auto flex gap-1 flex-wrap">
           ${['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR'].map((g) => `
             <button onclick="ONSStore.AppState.posFilterGol='${g}';renderActiveView();" class="ons-btn text-xs py-1 px-2.5 ${fGol === g ? 'ons-btn-primary' : 'ons-btn-ghost'}">${g || 'Semua'}</button>
@@ -1100,7 +1132,9 @@
               const nearest = S().getNearestSellableBatch(o.id_obat);
               const edDays = nearest ? S().daysUntil(nearest.tgl_kadaluarsa) : null;
               const edBadgeCls = edDays === null ? '' : (edDays <= 90 ? 'text-red-600 font-bold' : (edDays <= 180 ? 'text-amber-600 font-semibold' : 'text-emerald-600'));
-              const price = cart.id_member !== 'UMUM' ? o.harga_member : o.harga_umum;
+              const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
+              const effPrice = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(o, 1, tierMode) : { harga: o.harga_umum, tierApplied: 'UMUM' };
+              const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(o.id_obat, 90) : { hasNearEd: false };
               return `<div class="ons-product-card flex flex-col justify-between gap-2">
                 <div>
                   <div class="flex items-start justify-between gap-2">
@@ -1111,14 +1145,16 @@
                   <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">
                     FEFO: ${nearest ? `${S().esc(nearest.no_batch)} &bull; <span class="${edBadgeCls}">ED ${nearest.tgl_kadaluarsa} (${edDays}h)</span>` : (expiredQty > 0 ? `<span class="text-red-500 font-bold">Batch ED (${expiredQty} Terblokir)</span>` : '<span class="text-red-500 font-bold">Stok Kosong</span>')}
                   </div>
+                  ${nearEd.hasNearEd ? `<div class="mt-1"><span class="badge-bpom bpom-prekursor text-[10px]">Promo Near-ED &le;${nearEd.minDays}h: Saran Diskon ${nearEd.suggestedDiscPct}%</span></div>` : ''}
                 </div>
                 <div class="flex items-center justify-between pt-2 border-t" style="border-color:var(--ons-border)">
                   <div>
-                    <div class="text-sm font-bold font-mono-num text-blue-600">${S().rp(price)} <span class="text-[10px] font-normal">/${S().esc(o.satuan_dasar)}</span></div>
+                    <div class="text-sm font-bold font-mono-num text-blue-600">${S().rp(effPrice.harga)} <span class="text-[10px] font-normal">/${S().esc(o.satuan_dasar)}</span></div>
                     <div class="text-[11px] font-mono-num ${sellStok <= o.stok_min ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok}${expiredQty > 0 ? ` <span class="text-amber-600">(+${expiredQty} ED)</span>` : ''}</div>
                   </div>
                   <div class="flex gap-1">
-                    ${o.substitusi_ids ? `<button onclick="window.openSubstitusiModal('${o.id_obat}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1" title="Lihat Substitusi (Alt+S)">Sub</button>` : ''}
+                    <button onclick="window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1" title="Cek Stok Antar-Cabang">Cabang</button>
+                    ${o.substitusi_ids ? `<button onclick="window.openSubstitusiModal('${o.id_obat}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1" title="Lihat Substitusi">Sub</button>` : ''}
                     <button onclick="window.posAddToCart('${o.id_obat}')" ${sellStok <= 0 ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs px-3 py-1.5">+ Keranjang</button>
                   </div>
                 </div>
@@ -1127,10 +1163,10 @@
           </div>
         </div>
 
-        <!-- Panel Kanan: Keranjang Aktif, Pasien, CDSS & Checkout -->
+        <!-- Panel Kanan: Keranjang Aktif, Pasien, Tier Harga, CDSS & Checkout -->
         <div class="lg:col-span-5 space-y-3">
           <div class="ons-card p-4 space-y-3">
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div>
                 <label class="text-[11px] font-semibold block mb-1">Channel Penjualan</label>
                 <select onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs">
@@ -1139,9 +1175,20 @@
               </div>
               <div>
                 <label class="text-[11px] font-semibold block mb-1">Pasien / Member PRB</label>
-                <select onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].id_member=this.value;renderActiveView();" class="ons-select text-xs">
-                  <option value="UMUM" ${cart.id_member === 'UMUM' ? 'selected' : ''}>Pasien Umum (Tanpa Kartu)</option>
+                <select onchange="window.onPosMemberChange(this.value)" class="ons-select text-xs">
+                  <option value="UMUM" ${cart.id_member === 'UMUM' ? 'selected' : ''}>Pasien Umum</option>
                   ${st.members.map((m) => `<option value="${m.id_member}" ${cart.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.program_prb)})</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="text-[11px] font-semibold block mb-1">Tier Harga</label>
+                <select onchange="window.setPosPriceTier(this.value)" class="ons-select text-xs">
+                  ${[
+                    { id: 'UMUM', lbl: 'Eceran Umum' },
+                    { id: 'MEMBER', lbl: 'Member / PRB' },
+                    { id: 'GROSIR', lbl: 'Grosir (B2B)' },
+                    { id: 'FASKES', lbl: 'Faskes / Klinik' }
+                  ].map((t) => `<option value="${t.id}" ${(cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM')) === t.id ? 'selected' : ''}>${t.lbl}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -1156,14 +1203,24 @@
               ${cdss.alerts.map((al) => `<div class="p-2.5 rounded-lg text-xs font-semibold border ${al.level === 'DANGER' ? 'bg-red-500/15 border-red-500 text-red-700 dark:text-red-300' : 'bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300'}">${S().esc(al.msg)}</div>`).join('')}
             </div>` : ''}
 
+            ${isBelowHppCart ? `<div class="p-2.5 rounded-lg text-xs font-bold border bg-red-500/15 border-red-500 text-red-700 dark:text-red-300">
+              &#9888;&#65039; PERINGATAN ANTI-RUGI: Total jual (${S().rp(grandTotal)}) di bawah modal HPP (${S().rp(estHppCart)}). Checkout mewajibkan PIN APJ!
+            </div>` : ''}
+
             <!-- Daftar Item Keranjang -->
             <div class="space-y-2 max-h-64 overflow-y-auto border-y py-2" style="border-color:var(--ons-border)">
-              ${cart.items.length ? cart.items.map((it, idx) => `
-                <div class="text-xs p-2 rounded-lg space-y-1.5" style="background:var(--ons-bg-subtle)">
+              ${cart.items.length ? cart.items.map((it, idx) => {
+                const ob = st.masterObat.find((o) => o.id_obat === it.id_obat);
+                const nearIt = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(it.id_obat, 90) : { hasNearEd: false };
+                const grossLine = Number(it.harga_jual || 0) * Number(it.qty || 1);
+                const netLine = Math.max(0, grossLine - Number(it.diskon_item || 0));
+                const hppLine = Number((ob && ob.hpp_avg) || 0) * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1));
+                const itemBelowHpp = hppLine > 0 && netLine < hppLine;
+                return `<div class="text-xs p-2 rounded-lg space-y-1.5" style="background:var(--ons-bg-subtle)">
                   <div class="flex items-center justify-between gap-2">
                     <div class="flex-1 min-w-0">
-                      <div class="font-bold truncate">${S().esc(it.nama_dagang)}</div>
-                      <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(it.harga_jual)} / ${S().esc(it.satuan)} &times; ${it.faktor_konversi} dasar</div>
+                      <div class="font-bold truncate">${S().esc(it.nama_dagang)} ${it.tier_applied === 'GROSIR_AUTO' ? '<span class="badge-bpom bpom-bebas text-[9px]">GROSIR OTOMATIS</span>' : ''}</div>
+                      <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(it.harga_jual)} / ${S().esc(it.satuan)} &times; ${it.faktor_konversi} dasar ${Number(it.diskon_item || 0) > 0 ? `<span class="text-emerald-600 font-bold">(-${S().rp(it.diskon_item)})</span>` : ''} ${itemBelowHpp ? '<span class="text-red-600 font-bold">[RUGI &lt; HPP]</span>' : ''}</div>
                     </div>
                     <div class="flex items-center gap-1">
                       <button onclick="window.openCartEtiketModal(${idx})" class="ons-btn ons-btn-ghost text-[10px] py-1 px-1.5 min-h-0 h-8" title="Cetak Etiket Obat Putih/Biru">Etiket</button>
@@ -1174,13 +1231,15 @@
                       <button onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-8">&times;</button>
                     </div>
                   </div>
-                  <div class="flex items-center gap-1.5">
+                  <div class="flex flex-wrap items-center gap-1.5">
                     <span class="text-[10px] font-semibold shrink-0" style="color:var(--ons-text-soft)">Aturan Pakai:</span>
                     <select onchange="window.posSetAturanPakai(${idx}, this.value)" class="ons-select text-[11px] py-0.5 px-1.5 min-h-0 h-7 flex-1">
                       ${['', '3 x 1 Sesudah Makan', '3 x 1 Sebelum Makan', '2 x 1 Sesudah Makan', '1 x 1 Malam Hari', '1 x 1 Pagi Hari', 'Oles Tipis 2x Sehari (Obat Luar)'].map((opt) => `<option value="${S().esc(opt)}" ${(it.aturan_pakai || '') === opt ? 'selected' : ''}>${opt || 'Standar / Sesuai Etiket'}</option>`).join('')}
                     </select>
+                    ${nearIt.hasNearEd ? `<button type="button" onclick="window.applyNearEdDiscountToItem(${idx})" class="ons-btn ons-btn-amber text-[10px] py-0.5 px-2 min-h-0 h-7">Promo ED -${nearIt.suggestedDiscPct}%</button>` : ''}
                   </div>
-                </div>`).join('') : '<div class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada item. Pilih obat dari katalog di sebelah kiri atau scan barcode.</div>'}
+                </div>`;
+              }).join('') : '<div class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada item. Pilih obat dari katalog di sebelah kiri atau scan barcode.</div>'}
             </div>
 
             <!-- Cross-Sell / Profit Booster Cerdas -->
@@ -1191,13 +1250,14 @@
 
             <div class="space-y-1.5 text-sm pt-1">
               <div class="flex justify-between"><span>Subtotal</span><span class="font-mono-num">${S().rp(subtotal)}</span></div>
+              ${itemDiscTotal > 0 ? `<div class="flex justify-between text-xs text-emerald-600 font-semibold"><span>Diskon Promo Item (Near-ED)</span><span class="font-mono-num">-${S().rp(itemDiscTotal)}</span></div>` : ''}
               <div class="flex justify-between items-center gap-2">
                 <div class="flex items-center gap-1.5 text-xs">
                   <span class="font-semibold">Diskon</span>
                   <button type="button" onclick="window.toggleCartDiscMode()" class="ons-quick-denom py-0.5 px-2 text-[10px]">${cart.diskon_mode === 'PCT' ? '% Persen' : 'Rp Nominal'}</button>
                 </div>
                 <div class="flex items-center gap-2">
-                  <input type="number" min="0" max="${cart.diskon_mode === 'PCT' ? 100 : subtotal}" value="${cart.diskon_input || 0}" onchange="window.applyCartDiscInput(this.value)" class="ons-input font-mono-num text-right text-xs w-24 py-1 min-h-0 h-8"/>
+                  <input type="number" min="0" max="${cart.diskon_mode === 'PCT' ? 100 : subAfterItemDisc}" value="${cart.diskon_input || 0}" onchange="window.applyCartDiscInput(this.value)" class="ons-input font-mono-num text-right text-xs w-24 py-1 min-h-0 h-8"/>
                   ${cart.diskon_mode === 'PCT' && cart.diskon_global > 0 ? `<span class="text-[11px] font-mono-num text-emerald-600">-${S().rp(cart.diskon_global)}</span>` : ''}
                 </div>
               </div>
@@ -1205,16 +1265,28 @@
                 <span>TOTAL BAYAR</span>
                 <span class="font-mono-num text-blue-600">${S().rp(grandTotal)}</span>
               </div>
+              ${seeCost && cart.items.length ? `<div class="flex justify-between text-[11px] font-mono-num" style="color:var(--ons-text-soft)"><span>Est. Laba Kotor (vs HPP ${S().rp(estHppCart)})</span><span class="${(grandTotal - estHppCart) >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}">${S().rp(grandTotal - estHppCart)}</span></div>` : ''}
             </div>
 
             <!-- Tombol Pembayaran -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
               <button onclick="window.openPosCheckoutModal('TUNAI', ${grandTotal})" class="ons-btn ons-btn-emerald text-xs">[F4] Tunai</button>
               <button onclick="window.openPosCheckoutModal('QRIS', ${grandTotal})" class="ons-btn ons-btn-primary text-xs">[F8] QRIS BI</button>
               <button onclick="window.openPosCheckoutModal('TRANSFER', ${grandTotal})" class="ons-btn ons-btn-ghost text-xs">Transfer/EDC</button>
               <button onclick="window.openPosCheckoutModal('SPLIT', ${grandTotal})" class="ons-btn ons-btn-ghost text-xs">Split Pay</button>
+              <button onclick="window.openPosCheckoutModal('PIUTANG', ${grandTotal})" class="ons-btn ons-btn-amber text-xs col-span-2 sm:col-span-1" title="Tempo / Piutang Pelanggan & Mitra Dokter">Piutang/Tempo</button>
             </div>
-            ${cart.items.length ? `<button onclick="window.openCartEtiketModal(0)" class="ons-btn ons-btn-ghost w-full text-xs">1-Klik Cetak Etiket Obat Putih/Biru (${cart.items.length} Item)</button>` : ''}
+            <div class="flex flex-wrap gap-1.5 text-[10px] items-center justify-center pt-0.5" style="color:var(--ons-text-soft)">
+              <span class="ons-shortcut-kbd">F2</span> Scan
+              <span class="ons-shortcut-kbd">F4</span> Tunai
+              <span class="ons-shortcut-kbd">F8</span> QRIS
+              <span class="ons-shortcut-kbd">F9</span> Hold Antrean
+              <span class="ons-shortcut-kbd">Esc</span> Tutup
+            </div>
+            ${cart.items.length ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button onclick="window.openCartEtiketModal(0)" class="ons-btn ons-btn-ghost w-full text-xs">Cetak Etiket (${cart.items.length} Item)</button>
+              <button onclick="window.openCopyResepFromPosModal()" class="ons-btn ons-btn-ghost w-full text-xs">Tebus Sebagian &amp; Copy Resep (p.c.c)</button>
+            </div>` : ''}
           </div>
         </div>
       </div>
@@ -1377,6 +1449,113 @@
     }, 0);
   }
 
+  function _repriceCartItem(obat, it, tierMode) {
+    if (!obat || !it) return;
+    const totalBaseQty = Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1));
+    const eff = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, totalBaseQty, tierMode) : { harga: Number(obat.harga_umum || 0), tierApplied: 'UMUM', isGrosirAuto: false };
+    it.harga_jual = eff.harga * Math.max(1, Number(it.faktor_konversi || 1));
+    it.tier_applied = eff.tierApplied;
+    const rSed = Number(obat.rasio_sedang || 10);
+    const rBes = Number(obat.rasio_besar || 100);
+    const baseEff1 = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, 1, tierMode).harga : Number(obat.harga_umum || 0);
+    const baseEffSed = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rSed, tierMode).harga : baseEff1;
+    const baseEffBes = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rBes, tierMode).harga : baseEff1;
+    it.unitOptions = [
+      { label: obat.satuan_dasar, faktor: 1, harga: baseEff1 },
+      { label: obat.satuan_sedang || 'Strip', faktor: rSed, harga: baseEffSed * rSed },
+      { label: obat.satuan_besar || 'Box', faktor: rBes, harga: baseEffBes * rBes }
+    ];
+    return eff;
+  }
+
+  global.onPosMemberChange = (memberId) => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (!cart) return;
+    cart.id_member = memberId || 'UMUM';
+    if (cart.tier_harga !== 'GROSIR' && cart.tier_harga !== 'FASKES') {
+      cart.tier_harga = cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM';
+    }
+    const mode = cart.tier_harga || 'UMUM';
+    cart.items.forEach((it) => {
+      const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
+      _repriceCartItem(ob, it, mode);
+    });
+    global.renderActiveView();
+  };
+
+  global.setPosPriceTier = (tierMode) => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (!cart) return;
+    cart.tier_harga = String(tierMode || 'UMUM').toUpperCase();
+    cart.items.forEach((it) => {
+      const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
+      _repriceCartItem(ob, it, cart.tier_harga);
+    });
+    global.toast('Tier harga keranjang diubah ke: ' + cart.tier_harga, 'info');
+    global.renderActiveView();
+  };
+
+  global.applyNearEdDiscountToItem = (idx) => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    const it = cart && cart.items[idx];
+    if (!it) return;
+    const info = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(it.id_obat, 90) : { hasNearEd: false, suggestedDiscPct: 10 };
+    const pct = info.suggestedDiscPct || 10;
+    const gross = Number(it.harga_jual || 0) * Number(it.qty || 1);
+    it.diskon_item = Math.round((gross * pct) / 100);
+    global.toast('Promo Near-ED ' + pct + '% diterapkan untuk ' + it.nama_dagang + ' (-' + S().rp(it.diskon_item) + ')', 'ok');
+    global.renderActiveView();
+  };
+
+  global.posQuickCheckoutShortcut = (metode) => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (!cart || !cart.items.length) {
+      global.toast('Keranjang POS masih kosong.', 'warn');
+      return;
+    }
+    const sub = cart.items.reduce((s, it) => s + Number(it.harga_jual) * Number(it.qty), 0);
+    const itDisc = cart.items.reduce((s, it) => s + Number(it.diskon_item || 0), 0);
+    const grand = Math.max(0, sub - itDisc - Number(cart.diskon_global || 0));
+    global.openPosCheckoutModal(metode || 'TUNAI', grand);
+  };
+
+  global.openBranchCompareDrawer = (idObat) => {
+    const st = S().AppState;
+    const obat = st.masterObat.find((o) => o.id_obat === idObat);
+    if (!obat) return;
+    const cmp = (st.branchStockCompare && st.branchStockCompare.items) || [];
+    const entry = cmp.find((x) => x.id_obat === idObat);
+    const branches = (st.branchStockCompare && st.branchStockCompare.branches) || st.branchesList || ['ONS-01', 'ONS-02', 'ONS-03'];
+    const perCb = (entry && entry.stok_per_cabang) || {};
+    if (!entry) perCb[st.cabangId || 'ONS-01'] = S().getSellableStok(idObat);
+    S().openDrawer(`<div class="p-5 space-y-4 text-xs">
+      <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
+        <div>
+          <span class="badge-bpom bpom-terbatas">MULTI-CABANG REAL-TIME</span>
+          <h3 class="font-extrabold text-base mt-1">${S().esc(obat.nama_dagang)}</h3>
+          <div style="color:var(--ons-text-soft)">${S().esc(obat.zat_aktif)} &bull; Rak ${S().esc(obat.rak_lokasi || '-')}</div>
+        </div>
+        <button onclick="ONSStore.closeDrawer()" class="text-2xl px-1">&times;</button>
+      </div>
+      <div class="space-y-2">
+        ${branches.map((br) => {
+          const qty = br === (st.cabangId || 'ONS-01') ? S().getSellableStok(idObat) : Number(perCb[br] || 0);
+          return `<div class="p-3 rounded-xl border flex items-center justify-between" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <div>
+              <div class="font-bold">${S().esc(br)} ${br === (st.cabangId || 'ONS-01') ? '<span class="badge-bpom bpom-bebas text-[9px] ml-1">CABANG AKTIF</span>' : ''}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Stok siap jual (FEFO non-ED)</div>
+            </div>
+            <div class="text-base font-extrabold font-mono-num ${qty > 0 ? 'text-emerald-600' : 'text-red-500'}">${qty} ${S().esc(obat.satuan_dasar)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="ONSStore.closeDrawer();navigateView('gudang','transfer');" class="ons-btn ons-btn-primary flex-1 text-xs">Buat Mutasi Antar-Cabang &rarr;</button>
+        <button onclick="ONSStore.closeDrawer()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+      </div>
+    </div>`, '460px');
+  };
+
   global.posAddToCart = (idObat) => {
     const st = S().AppState;
     const obat = st.masterObat.find((o) => o.id_obat === idObat);
@@ -1392,26 +1571,30 @@
       global.toast('Qty keranjang melebihi stok layak jual (' + sellStok + ' ' + obat.satuan_dasar + ').', 'warn');
       return;
     }
-    const priceBase = cart.id_member !== 'UMUM' ? Number(obat.harga_member || obat.harga_umum) : Number(obat.harga_umum);
+    const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
     const existing = cart.items.find((i) => i.id_obat === idObat && i.faktor_konversi === 1);
     if (existing) {
       existing.qty++;
+      const effUp = _repriceCartItem(obat, existing, tierMode);
+      if (effUp && effUp.isGrosirAuto) {
+        global.toast('Harga Grosir Otomatis aktif (>= ' + (obat.min_qty_grosir || 10) + ' ' + obat.satuan_dasar + ')!', 'ok');
+      }
     } else {
-      const unitOptions = [
-        { label: obat.satuan_dasar, faktor: 1, harga: priceBase },
-        { label: obat.satuan_sedang || 'Strip', faktor: Number(obat.rasio_sedang || 10), harga: priceBase * Number(obat.rasio_sedang || 10) },
-        { label: obat.satuan_besar || 'Box', faktor: Number(obat.rasio_besar || 100), harga: Number(obat.harga_grosir || priceBase) * Number(obat.rasio_besar || 100) }
-      ];
-      cart.items.push({
+      const eff = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, 1, tierMode) : { harga: Number(obat.harga_umum || 0), tierApplied: tierMode };
+      const itemObj = {
         id_obat: obat.id_obat,
         nama_dagang: obat.nama_dagang,
         satuan: obat.satuan_dasar,
         faktor_konversi: 1,
-        harga_jual: priceBase,
+        harga_jual: eff.harga,
+        tier_applied: eff.tierApplied,
+        diskon_item: 0,
         qty: 1,
         aturan_pakai: '',
-        unitOptions
-      });
+        unitOptions: []
+      };
+      _repriceCartItem(obat, itemObj, tierMode);
+      cart.items.push(itemObj);
     }
     global.renderActiveView();
   };
@@ -1438,7 +1621,12 @@
       }
       it.satuan = opt.label;
       it.faktor_konversi = nextFaktor;
-      it.harga_jual = opt.harga;
+      const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
+      const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
+      const eff = _repriceCartItem(ob, it, tierMode);
+      if (eff && eff.isGrosirAuto) {
+        global.toast('Tier Grosir Otomatis diterapkan untuk ' + it.nama_dagang, 'ok');
+      }
       global.renderActiveView();
     }
   };
@@ -1458,6 +1646,13 @@
     } else {
       it.qty = reqQty;
     }
+    const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
+    const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
+    const wasAuto = it.tier_applied === 'GROSIR_AUTO';
+    const eff = _repriceCartItem(ob, it, tierMode);
+    if (eff && eff.isGrosirAuto && !wasAuto) {
+      global.toast('Harga Grosir Otomatis aktif (>= ' + ((ob && ob.min_qty_grosir) || 10) + ' ' + ((ob && ob.satuan_dasar) || 'unit') + ')!', 'ok');
+    }
     global.renderActiveView();
   };
 
@@ -1471,10 +1666,73 @@
     global.renderActiveView();
   };
 
-  global.addPosCartTab = () => {
+  global.addPosCartTab = (customLabel, heldNote) => {
     const st = S().AppState;
-    st.carts.push({ id: 'K' + (st.carts.length + 1), label: 'Pelanggan #' + (st.carts.length + 1), channel: 'Toko Fisik', id_member: 'UMUM', items: [], diskon_global: 0 });
+    const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    st.carts.push({
+      id: 'K' + Date.now().toString().slice(-4),
+      label: customLabel || ('Pelanggan #' + (st.carts.length + 1)),
+      channel: 'Toko Fisik',
+      id_member: 'UMUM',
+      tier_harga: 'UMUM',
+      items: [],
+      diskon_global: 0,
+      held_note: heldNote || '',
+      held_at: customLabel ? nowTime : ''
+    });
     st.activeCartIdx = st.carts.length - 1;
+    global.renderActiveView();
+  };
+
+  global.openHoldCartModal = () => {
+    const st = S().AppState;
+    const cur = st.carts[st.activeCartIdx];
+    const suggest = (cur && cur.pelanggan_nama) ? ('Parkir: ' + cur.pelanggan_nama) : ('Antrean #' + (st.carts.length + 1));
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Hold / Tahan Antrean Pelanggan</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Keranjang saat ini tetap tersimpan pada tab-nya. Buat tab antrean baru atau beri nama label pada antrean agar kasir mudah melayani pasien lain terlebih dahulu.</p>
+      <div><label class="font-semibold block mb-1">Label Nama Antrean *</label><input id="holdCartLabelInp" class="ons-input" value="${S().esc(suggest)}" placeholder="Cth: Ibu Rina (Tunggu Racikan)"/></div>
+      <div><label class="font-semibold block mb-1">Catatan Singkat</label><input id="holdCartNoteInp" class="ons-input" placeholder="Opsional: pasien cek tensi dulu / tunggu konfirmasi dokter"/></div>
+      <div class="flex gap-2">
+        <button onclick="window.submitHoldCurrentNameOnly()" class="ons-btn ons-btn-ghost flex-1">Tandai Antrean Aktif Ini</button>
+        <button onclick="window.submitHoldNewTab()" class="ons-btn ons-btn-primary flex-1">+ Simpan &amp; Buka Antrean Baru</button>
+      </div>
+    </div>`, '460px');
+  };
+
+  global.submitHoldCurrentNameOnly = () => {
+    const st = S().AppState;
+    const cur = st.carts[st.activeCartIdx];
+    const lbl = (document.getElementById('holdCartLabelInp') || {}).value || '';
+    const note = (document.getElementById('holdCartNoteInp') || {}).value || '';
+    if (cur && lbl.trim()) {
+      cur.label = lbl.trim();
+      cur.held_note = note.trim();
+      cur.held_at = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+    S().closeModal();
+    global.toast('Antrean aktif ditandai: ' + (lbl || 'Hold'), 'ok');
+    global.renderActiveView();
+  };
+
+  global.submitHoldNewTab = () => {
+    const lbl = (document.getElementById('holdCartLabelInp') || {}).value || '';
+    const note = (document.getElementById('holdCartNoteInp') || {}).value || '';
+    S().closeModal();
+    global.addPosCartTab(lbl.trim(), note.trim());
+    global.toast('Tab antrean baru dibuka! Antrean sebelumnya tetap aman tersimpan.', 'ok');
+  };
+
+  global.closePosCartTab = (idx) => {
+    const st = S().AppState;
+    if (st.carts.length <= 1) return;
+    const c = st.carts[idx];
+    if (c && c.items && c.items.length && !confirm('Hapus tab antrean "' + c.label + '" beserta ' + c.items.length + ' item di dalamnya?')) return;
+    st.carts.splice(idx, 1);
+    if (st.activeCartIdx >= st.carts.length) st.activeCartIdx = Math.max(0, st.carts.length - 1);
     global.renderActiveView();
   };
 
@@ -1523,46 +1781,30 @@
     rec.start();
   };
 
-  global.startPosCameraScan = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      global.toast('Kamera tidak tersedia pada browser ini.', 'warn');
+  global.startPosCameraScan = () => {
+    if (global.ONSBarcode && typeof global.ONSBarcode.openScannerModal === 'function') {
+      global.ONSBarcode.openScannerModal({
+        title: 'Scan Barcode / QR Kemasan Obat (POS Kasir)',
+        hint: 'Arahkan kamera ke barcode EAN-13 / QR NIE / label rak KFA untuk langsung masuk ke keranjang POS.',
+        onDetect: (code) => {
+          const hit = global.ONSBarcode.matchProductByBarcode(code, S().AppState.masterObat, S().AppState.stokBatch);
+          const obHit = hit && hit.obat;
+          if (obHit) {
+            global.posAddToCart(obHit.id_obat);
+            global.toast('Barcode terdeteksi: ' + obHit.nama_dagang + ' masuk keranjang!', 'ok');
+          } else {
+            S().AppState.posSearchQ = code;
+            global.renderActiveView();
+            global.toast('Kode "' + code + '" tidak cocok persis — ditampilkan di pencarian POS.', 'warn');
+          }
+        }
+      });
       return;
     }
-    S().openModal(`<div class="p-5 space-y-3 text-center">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-sm">Pemindai Barcode Kamera (KFA / NIE / EAN-13)</h3><button onclick="window.stopPosCameraScan()" class="text-xl">&times;</button></div>
-      <video id="posCamVideo" autoplay playsinline class="w-full rounded-xl bg-black max-h-64 object-cover"></video>
-      <div class="flex gap-2">
-        <input id="manualScanMock" class="ons-input text-xs font-mono-num" placeholder="Atau tempel kode barcode di sini (cth: 93001024)"/>
-        <button onclick="S().AppState.posSearchQ=document.getElementById('manualScanMock').value;posAddFirstMatch();stopPosCameraScan();" class="ons-btn ons-btn-primary text-xs">Proses</button>
-      </div>
-    </div>`, '480px');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      global._posCamStream = stream;
-      const vid = document.getElementById('posCamVideo');
-      if (vid) vid.srcObject = stream;
-      if ('BarcodeDetector' in global) {
-        const detector = new global.BarcodeDetector();
-        const timer = setInterval(async () => {
-          if (!global._posCamStream) { clearInterval(timer); return; }
-          try {
-            const codes = await detector.detect(vid);
-            if (codes && codes.length) {
-              S().AppState.posSearchQ = codes[0].rawValue;
-              global.posAddFirstMatch();
-              global.stopPosCameraScan();
-            }
-          } catch (e) {}
-        }, 400);
-      }
-    } catch (e) { global.toast('Izin kamera ditolak/tidak ada perangkat: ' + e.message, 'warn'); }
+    global.toast('Modul scanner barcode belum termuat.', 'warn');
   };
 
   global.stopPosCameraScan = () => {
-    if (global._posCamStream) {
-      global._posCamStream.getTracks().forEach((t) => t.stop());
-      global._posCamStream = null;
-    }
     S().closeModal();
   };
 
@@ -1749,6 +1991,14 @@
       }
     }
     const cdss = S().checkCartCdss(cart);
+    const estHppCart = cart.items.reduce((s, it) => {
+      const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
+      const nb = S().getNearestSellableBatch(it.id_obat);
+      const hppBase = Number((nb && nb.hpp_beli) || (ob && ob.hpp_avg) || 0);
+      return s + (hppBase * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1)));
+    }, 0);
+    const isBelowHpp = estHppCart > 0 && total < estHppCart;
+    const requiresApjAuth = Boolean(cdss.needsApjPin || isBelowHpp);
     const member = S().AppState.members.find((m) => m.id_member === cart.id_member);
     const maxRedeemPoin = member ? Math.min(Number(member.poin_loyalitas || 0), Math.floor(total / 100)) : 0;
     const invPreview = 'INV-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-POS';
@@ -1763,6 +2013,11 @@
         <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Tagihan Awal</div>
         <div id="posModalTotalDisplay" class="text-2xl font-extrabold font-mono-num text-blue-600">${S().rp(total)}</div>
       </div>
+
+      ${isBelowHpp ? `<div class="p-3 rounded-xl border border-red-500 bg-red-500/15 text-xs space-y-1 text-red-700 dark:text-red-300">
+        <div class="font-extrabold">&#9888;&#65039; GUARD ANTI-RUGI: HARGA JUAL DI BAWAH HPP MODAL!</div>
+        <div>Total Jual: <b class="font-mono-num">${S().rp(total)}</b> &bull; Modal HPP: <b class="font-mono-num">${S().rp(estHppCart)}</b> (Selisih Rugi: <b class="font-mono-num">${S().rp(estHppCart - total)}</b>). Wajib otorisasi PIN APJ/Pemilik.</div>
+      </div>` : ''}
 
       ${maxRedeemPoin > 0 ? `<div class="p-3 rounded-xl border text-xs space-y-1.5" style="border-color:var(--ons-border)">
         <div class="flex justify-between font-bold">
@@ -1798,8 +2053,19 @@
         <div class="text-sm font-bold flex justify-between pt-1"><span>Kembalian:</span><span id="posKembalianSpan" class="font-mono-num text-emerald-600">Rp 0</span></div>
       </div>` : ''}
 
-      ${cdss.needsApjPin ? `<div class="p-3 rounded-xl border border-red-500/40 bg-red-500/10 space-y-2">
-        <div class="text-xs font-bold text-red-600">&#128274; OTORISASI PIN APJ DIPERLUKAN (Obat Keras / Narkotika / Peringatan CDSS)</div>
+      ${metode === 'PIUTANG' ? `<div class="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/5 space-y-2.5 text-xs">
+        <div class="font-bold text-amber-700 dark:text-amber-300">Pencatatan Piutang / Tempo Pelanggan &amp; Mitra Dokter</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div><label class="font-semibold block mb-1">Nama Penanggung Jawab *</label><input id="posPiutangNama" class="ons-input text-xs" value="${S().esc(cart.pelanggan_nama || (member && member.nama_pasien) || '')}" placeholder="Nama pasien / klinik mitra"/></div>
+          <div><label class="font-semibold block mb-1">Tgl Jatuh Tempo *</label><input id="posPiutangJt" type="date" class="ons-input font-mono-num text-xs" value="${new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10)}"/></div>
+          <div><label class="font-semibold block mb-1">Batas Plafon Kredit (Rp)</label><input id="posPiutangPlafon" type="number" class="ons-input font-mono-num text-xs" value="2000000"/></div>
+          <div><label class="font-semibold block mb-1">Catatan Tempo</label><input id="posPiutangNote" class="ons-input text-xs" placeholder="Tagihan akhir bulan / resep kronis"/></div>
+        </div>
+        <div class="text-[11px]" style="color:var(--ons-text-soft)">Nota berstatus <b>BELUM_LUNAS</b> &amp; kas masuk baru dicatat ketika piutang dibayar di menu Keuangan &rarr; Piutang.</div>
+      </div>` : ''}
+
+      ${requiresApjAuth ? `<div class="p-3 rounded-xl border border-red-500/40 bg-red-500/10 space-y-2">
+        <div class="text-xs font-bold text-red-600">&#128274; OTORISASI PIN APJ DIPERLUKAN (${isBelowHpp ? 'Guard Anti-Rugi Jual < HPP' : 'Obat Keras / Narkotika / Peringatan CDSS'})</div>
         <input id="posApjPinInput" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN APJ (Demo: 123456)"/>
       </div>` : ''}
 
@@ -1808,7 +2074,7 @@
         <input id="posWaStrukTarget" type="tel" class="ons-input font-mono-num text-xs" value="${S().esc(cart.no_wa || (member && member.no_hp) || '')}" placeholder="0812xxxx / 62812xxxx (atau isi setelah nota terbit)"/>
       </div>
 
-      <button onclick="window.executePosCheckout('${S().esc(metode)}', ${total}, ${cdss.needsApjPin})" class="ons-btn ons-btn-emerald w-full py-2.5">Proses Transaksi, Potong FEFO &amp; Cetak Struk</button>
+      <button onclick="window.executePosCheckout('${S().esc(metode)}', ${total}, ${requiresApjAuth})" class="ons-btn ons-btn-emerald w-full py-2.5">${metode === 'PIUTANG' ? 'Catat Piutang Tempo, Potong FEFO &amp; Terbitkan Nota' : 'Proses Transaksi, Potong FEFO &amp; Cetak Struk'}</button>
     </div>`, '520px');
   };
 
@@ -1856,23 +2122,39 @@
       const sN = Number((document.getElementById('posSplitNonTunai') || {}).value || 0);
       detailSplit = `Tunai ${S().rp(sT)} + QRIS/EDC ${S().rp(sN)}`;
     }
-    const tunaiBayar = metode === 'TUNAI' ? Number((document.getElementById('posTunaiBayar') || {}).value || grandTotal) : grandTotal;
+    const tunaiBayar = metode === 'TUNAI' ? Number((document.getElementById('posTunaiBayar') || {}).value || grandTotal) : (metode === 'PIUTANG' ? 0 : grandTotal);
     const kembaliRp = metode === 'TUNAI' ? Math.max(0, tunaiBayar - grandTotal) : 0;
+    const piutangNama = ((document.getElementById('posPiutangNama') || {}).value || '').trim();
+    const piutangJt = ((document.getElementById('posPiutangJt') || {}).value || '').trim();
+    const piutangPlafon = Number((document.getElementById('posPiutangPlafon') || {}).value || 2000000);
+    const piutangNote = ((document.getElementById('posPiutangNote') || {}).value || '').trim();
 
+    if (metode === 'PIUTANG' && (!cart.id_member || cart.id_member === 'UMUM') && !piutangNama) {
+      global.toast('Pembayaran Piutang/Tempo wajib memilih Member/Mitra atau mengisi Nama Penanggung Jawab!', 'err');
+      return;
+    }
+
+    const itemDiscTotal = cart.items.reduce((s, it) => s + Number(it.diskon_item || 0), 0);
     const payload = {
       cabang_id: st.cabangId,
+      shift_id: (st.activeShift && st.activeShift.id_shift) || 'SHF-AKTIF',
       channel: cart.channel,
       id_member: cart.id_member,
-      pelanggan_nama: cart.pelanggan_nama || (member && member.nama_pasien) || 'Pasien Umum',
+      tier_harga: cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM'),
+      pelanggan_nama: piutangNama || cart.pelanggan_nama || (member && member.nama_pasien) || 'Pasien Umum',
       id_order: cart.id_order || '',
       metode_bayar: metode,
       detail_split: detailSplit,
       redeem_poin: redeemPoin,
       subtotal: cart.items.reduce((s, it) => s + it.harga_jual * it.qty, 0),
-      diskon_total: Number(cart.diskon_global || 0) + poinDiskonRp,
+      diskon_total: Number(cart.diskon_global || 0) + itemDiscTotal + poinDiskonRp,
       grand_total: grandTotal,
       apj_override_id: apjOverride,
+      allow_below_hpp: Boolean(apjOverride),
       send_wa_to: waTarget,
+      tgl_jatuh_tempo: piutangJt,
+      plafon_kredit: piutangPlafon,
+      catatan_piutang: piutangNote,
       items: cart.items
     };
 
@@ -1924,6 +2206,8 @@
       cart.id_order = '';
       cart.pelanggan_nama = '';
       cart.no_wa = '';
+      cart.held_note = '';
+      cart.held_at = '';
       await global.bootLoadState(true);
     } catch (e) {
       global.toast(e.message, 'err');
@@ -1934,6 +2218,219 @@
     const res = await API().flushOfflineQueue();
     global.toast(res.synced ? (res.synced + ' transaksi tersinkronkan!') : 'Tidak ada antrean / masih offline.', 'info');
     await global.bootLoadState(true);
+  };
+
+  /**
+   * Buka Shift Kasir (Catat Modal Awal Laci)
+   */
+  global.openBukaShiftModal = () => {
+    const st = S().AppState;
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Buka Shift Kasir (Modal Laci Awal)</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="p-3 rounded-xl" style="background:var(--ons-bg-subtle)">
+        Kasir Bertugas: <b>${S().esc((st.user && st.user.nama_lengkap) || 'Kasir')}</b> (${S().esc(S().getRole())})
+      </div>
+      <div><label class="font-semibold block mb-1">Modal Awal Uang Laci (Rp) *</label><input id="openShiftModalInp" type="number" min="0" class="ons-input font-mono-num text-base font-bold" value="300000"/></div>
+      <div><label class="font-semibold block mb-1">Catatan Pembukaan Shift</label><input id="openShiftNoteInp" class="ons-input" value="Modal uang receh pembukaan shift pagi"/></div>
+      <button onclick="window.submitBukaShift()" class="ons-btn ons-btn-emerald w-full py-2.5 text-xs">Konfirmasi Buka Shift Kasir</button>
+    </div>`, '440px');
+  };
+
+  global.submitBukaShift = async () => {
+    try {
+      const modalAwal = Math.max(0, Number((document.getElementById('openShiftModalInp') || {}).value || 0));
+      const catatan = ((document.getElementById('openShiftNoteInp') || {}).value || '').trim();
+      const res = await API().callApi('shift.open', { modal_awal: modalAwal, catatan }, { isWrite: true });
+      S().closeModal();
+      global.toast(res.already_open ? ('Shift aktif ditemukan: ' + res.shift.id_shift) : ('Shift dibuka: ' + res.shift.id_shift), 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  /**
+   * Tebus Sebagian & Cetak Salinan Resep (Apograph / p.c.c) - PMK 73/2016
+   */
+  global.openCopyResepFromPosModal = () => {
+    const st = S().AppState;
+    const cart = st.carts[st.activeCartIdx];
+    if (!cart || !cart.items.length) {
+      global.toast('Masukkan item obat resep ke keranjang POS terlebih dahulu!', 'warn');
+      return;
+    }
+    const member = st.members.find((m) => m.id_member === cart.id_member);
+    const pasienDef = cart.pelanggan_nama || (member && member.nama_pasien) || '';
+    const todayIso = new Date().toISOString().slice(0, 10);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Tebus Sebagian &amp; Salinan Resep (p.c.c)</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Atur jumlah resep dokter vs jumlah yang ditebus sekarang. Sistem otomatis mencatat <i>det</i> / <i>nedet</i> &amp; memperbarui qty keranjang POS.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div><label class="font-semibold block mb-1">Nama Pasien *</label><input id="crPasien" class="ons-input" value="${S().esc(pasienDef)}" placeholder="Nama lengkap pasien"/></div>
+        <div><label class="font-semibold block mb-1">Umur / BB</label><input id="crUmur" class="ons-input" value="-" placeholder="Cth: 45 th"/></div>
+        <div><label class="font-semibold block mb-1">Nama Dokter Penulis *</label><input id="crDokter" class="ons-input" value="dr. Hendri Saputra, Sp.PD"/></div>
+        <div><label class="font-semibold block mb-1">No. Resep Asal &amp; Tgl</label><input id="crNoResep" class="ons-input font-mono-num" value="R/${todayIso.replace(/-/g, '')}/01"/></div>
+      </div>
+      <div class="space-y-2 max-h-60 overflow-y-auto">
+        ${cart.items.map((it, idx) => {
+          const defAmbil = Math.max(1, Math.floor(Number(it.qty || 1) / 2) || Number(it.qty || 1));
+          return `<div class="p-2.5 rounded-xl border grid grid-cols-12 gap-2 items-center" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="col-span-6">
+              <div class="font-bold truncate">${S().esc(it.nama_dagang)}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Signa: ${S().esc(it.aturan_pakai || 'Sesuai aturan pakai')}</div>
+            </div>
+            <div class="col-span-3">
+              <label class="text-[10px] block">Qty Resep</label>
+              <input id="crQtyResep_${idx}" type="number" min="1" value="${Number(it.qty || 1)}" class="ons-input font-mono-num py-1 min-h-0 h-7"/>
+            </div>
+            <div class="col-span-3">
+              <label class="text-[10px] block">Ditebus Skrg</label>
+              <input id="crQtyAmbil_${idx}" type="number" min="0" max="${Number(it.qty || 1)}" value="${defAmbil}" class="ons-input font-mono-num py-1 min-h-0 h-7"/>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="checkbox" id="crSyncCartChk" checked/>
+        <label for="crSyncCartChk">Sesuaikan otomatis Qty Keranjang POS mengikuti jumlah <b>Ditebus Sekarang</b></label>
+      </div>
+      <button onclick="window.submitCopyResepFromPos()" class="ons-btn ons-btn-primary w-full py-2.5 text-xs">Simpan Arsip Salinan Resep &amp; Cetak Apograph (p.c.c)</button>
+    </div>`, '620px');
+  };
+
+  global.submitCopyResepFromPos = async () => {
+    try {
+      const st = S().AppState;
+      const cart = st.carts[st.activeCartIdx];
+      const namaPasien = ((document.getElementById('crPasien') || {}).value || '').trim();
+      if (!namaPasien) throw new Error('Nama pasien wajib diisi!');
+      const dokter = ((document.getElementById('crDokter') || {}).value || 'Dokter').trim();
+      const umur = ((document.getElementById('crUmur') || {}).value || '-').trim();
+      const noResep = ((document.getElementById('crNoResep') || {}).value || '').trim();
+      const syncCart = !!(document.getElementById('crSyncCartChk') || {}).checked;
+
+      const copyItems = cart.items.map((it, idx) => {
+        const qResep = Math.max(1, Number((document.getElementById('crQtyResep_' + idx) || {}).value || it.qty || 1));
+        const qAmbil = Math.min(qResep, Math.max(0, Number((document.getElementById('crQtyAmbil_' + idx) || {}).value || 0)));
+        const qSisa = Math.max(0, qResep - qAmbil);
+        const flag = qAmbil === 0 ? 'nedet' : (qSisa === 0 ? 'det orig' : ('det ' + qAmbil + ' (sisa ' + qSisa + ')'));
+        if (syncCart) {
+          it.qty = qAmbil > 0 ? qAmbil : it.qty;
+        }
+        return {
+          id_obat: it.id_obat,
+          nama_dagang: it.nama_dagang,
+          satuan: it.satuan || 'Tab',
+          qty_resep: qResep,
+          qty_ambil: qAmbil,
+          qty_sisa: qSisa,
+          signa: it.aturan_pakai || 'Sesuai aturan pakai',
+          flag
+        };
+      });
+      if (syncCart) {
+        cart.pelanggan_nama = namaPasien;
+      }
+      const res = await API().callApi('resep.copySave', {
+        cabang_id: st.cabangId,
+        no_resep_asal: noResep,
+        nama_dokter: dokter,
+        id_member: cart.id_member || 'UMUM',
+        nama_pasien: namaPasien,
+        umur_pasien: umur,
+        items: copyItems,
+        status_serah: copyItems.every((i) => i.qty_sisa === 0) ? 'DET_ORIG' : 'DET_SEBAGIAN'
+      }, { isWrite: true });
+
+      S().closeModal();
+      global.toast('Salinan Resep (p.c.c) ' + res.item.no_salinan + ' tersimpan!', 'ok');
+      await global.bootLoadState(true);
+      global.printCopyResepDocument(res.item);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.printCopyResepDocument = (crObj) => {
+    if (!crObj) return;
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    let items = [];
+    try { items = typeof crObj.items_json === 'string' ? JSON.parse(crObj.items_json) : (crObj.items_json || []); } catch (e) {}
+    const rowsHtml = items.map((it, idx) => `
+      <div style="border-bottom:1px dashed #94A3B8;padding:8px 0;">
+        <div style="display:flex;justify-content:space-between;font-weight:700;">
+          <span>R/ ${idx + 1}. ${S().esc(it.nama_dagang)}</span>
+          <span>No. ${it.qty_resep} (${S().esc(it.flag || ('det ' + it.qty_ambil))})</span>
+        </div>
+        <div style="font-size:12px;margin-top:2px;">S. ${S().esc(it.signa || '-')}</div>
+      </div>`).join('');
+    const html = `<div style="max-width:620px;margin:0 auto;font-family:Arial,sans-serif;color:#0F172A;padding:18px;border:2px solid #0F172A;">
+      <div style="text-align:center;border-bottom:2px solid #0F172A;padding-bottom:10px;margin-bottom:12px;">
+        <div style="font-size:16px;font-weight:800;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+        <div style="font-size:11px;">${S().esc(prof.alamat_usaha || '')} ${S().esc(prof.kota || '')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
+        <div style="font-size:11px;">Apoteker: ${S().esc(crObj.apoteker_nama || prof.nama_pemilik || '-')} &bull; SIPA: ${S().esc(crObj.no_sipa || prof.sipa_pemilik || '-')}</div>
+      </div>
+      <div style="text-align:center;font-weight:800;font-size:14px;text-decoration:underline;margin-bottom:12px;">SALINAN RESEP (APOGRAPH)</div>
+      <table style="width:100%;font-size:12px;margin-bottom:10px;">
+        <tr><td><b>No. Salinan</b>: ${S().esc(crObj.no_salinan)}</td><td><b>Tanggal</b>: ${S().esc(crObj.tanggal)}</td></tr>
+        <tr><td><b>Dari Dokter</b>: ${S().esc(crObj.nama_dokter)}</td><td><b>No. R/ Asal</b>: ${S().esc(crObj.no_resep_asal)}</td></tr>
+        <tr><td><b>Untuk Pasien</b>: ${S().esc(crObj.nama_pasien)}</td><td><b>Umur</b>: ${S().esc(crObj.umur_pasien || '-')}</td></tr>
+      </table>
+      ${rowsHtml}
+      <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;">
+        <div><b>p.c.c</b> (<i>Pro Copia Conform</i>)<br/><span style="font-size:11px;color:#475569;">Sesuai dengan resep asli (PMK 73/2016)</span></div>
+        <div style="text-align:center;">
+          <div>${S().esc(prof.kota || 'Makassar')}, ${S().esc(crObj.tanggal)}</div>
+          <div style="height:36px;"></div>
+          <div style="font-weight:700;text-decoration:underline;">${S().esc(crObj.apoteker_nama || prof.nama_pemilik)}</div>
+          <div style="font-size:11px;">SIPA: ${S().esc(crObj.no_sipa || prof.sipa_pemilik)}</div>
+        </div>
+      </div>
+    </div>`;
+    S().printHtmlZone(html);
+  };
+
+  /**
+   * Modal Kirim Rekap Malam Pemilik ke WhatsApp (100% Gratis via wa.me)
+   */
+  global.openOwnerDailyDigestModal = () => {
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const defaultWa = prof.wa_pemilik || prof.wa_usaha || '';
+    const msg = S().buildOwnerDailyDigestText ? S().buildOwnerDailyDigestText() : '';
+    const waHref = S().buildWaUrl ? S().buildWaUrl(defaultWa, msg) : ('https://wa.me/?text=' + encodeURIComponent(msg));
+    global._lastOwnerDigestMsg = msg;
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Rekap Malam Harian ke WhatsApp Pemilik (100% Gratis)</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Kirim ringkasan omzet, estimasi laba kotor, breakdown metode bayar, piutang terbuka, defecta, &amp; Near-ED langsung lewat WhatsApp tanpa biaya gateway bulanan.</p>
+      <div>
+        <label class="font-semibold block mb-1">Nomor WA Pemilik Tujuan</label>
+        <input id="ownerDigestWaInp" type="tel" class="ons-input font-mono-num" value="${S().esc(defaultWa)}" oninput="window.syncOwnerDigestHref(this.value)" placeholder="0811xxxx / 62811xxxx"/>
+      </div>
+      <pre class="p-3 rounded-xl border font-mono-num whitespace-pre-wrap text-[11px] max-h-60 overflow-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(msg)}</pre>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="window.copyOwnerDigestNow()" class="ons-btn ons-btn-ghost flex-1 text-xs">Salin Teks Laporan</button>
+        <a id="ownerDigestWaBtn" target="_blank" rel="noopener" href="${S().esc(waHref)}" class="ons-btn ons-btn-emerald flex-1 text-xs font-bold">Kirim Sekarang via WhatsApp &rarr;</a>
+      </div>
+    </div>`, '560px');
+  };
+
+  global.syncOwnerDigestHref = (rawPhone) => {
+    const btn = document.getElementById('ownerDigestWaBtn');
+    if (btn && S().buildWaUrl) {
+      btn.href = S().buildWaUrl(rawPhone, global._lastOwnerDigestMsg || '');
+    }
+  };
+  global.copyOwnerDigestNow = () => {
+    const txt = global._lastOwnerDigestMsg || '';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).catch(() => {});
+    }
+    global.toast('Teks Rekap Malam Harian berhasil disalin ke clipboard!', 'ok');
   };
 
   global.ONSViewsAuthDashPos = { renderPublicStandaloneIfApplicable, renderLoginView, renderDashboardView, renderPosView };

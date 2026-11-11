@@ -18,6 +18,8 @@
   let gudangTab = 'batch';
   let mutasiFilterObat = '';
   let mutasiFilterJenis = '';
+  let opnameRakFilter = '';
+  let opnameViewMode = 'TABLE'; // TABLE | CARD (Mobile HP)
 
   function buildObatMeta(o) {
     const stok = S().getSellableStok(o.id_obat);
@@ -124,6 +126,7 @@
         <div class="flex flex-wrap gap-2">
           ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk (Wizard)</button>
           <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">Import Excel (.xlsx)</button>` : ''}
+          <button onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-ghost text-xs" title="Cetak Stiker Barcode Obat / Rak Mandiri">Cetak Label Barcode</button>
           <button onclick="window.exportMasterObat('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
           <button onclick="window.exportMasterObat('pdf')" class="ons-btn ons-btn-ghost text-xs">Cetak PDF</button>
         </div>
@@ -141,6 +144,7 @@
       <div class="ons-card p-3.5 space-y-3">
         <div class="flex flex-wrap items-center gap-2">
           <input class="ons-input flex-1 min-w-[210px] text-xs" placeholder="Cari Nama Dagang, Zat Aktif, Kode KFA, NIE, atau Lokasi Rak..." value="${S().esc(masterSearchQ)}" oninput="window.setMasterSearch(this.value)"/>
+          <button type="button" onclick="window.scanMasterObatBarcode()" class="ons-btn ons-btn-primary text-xs" title="Cari Obat Lewat Kamera Barcode">Scan Barcode</button>
           <select class="ons-select w-40 text-xs" onchange="window.setMasterStokFilter(this.value)" aria-label="Filter Status Stok">
             <option value="SEMUA" ${masterFilterStok === 'SEMUA' ? 'selected' : ''}>Semua Status Stok</option>
             <option value="AMAN" ${masterFilterStok === 'AMAN' ? 'selected' : ''}>Stok Aman</option>
@@ -282,29 +286,35 @@
   global.openObatDetailModal = (idObat) => {
     const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
     if (!o) return;
+    const st = S().AppState;
     const m = buildObatMeta(o);
     const seeCost = S().canSeeFinancialCost();
-    const batches = (S().AppState.stokBatch || [])
+    const batches = (st.stokBatch || [])
       .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF')
       .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
+    const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(idObat, 90) : { hasNearEd: false };
+    const cmpItem = ((st.branchStockCompare && st.branchStockCompare.items) || []).find((x) => x.id_obat === idObat);
+    const branches = (st.branchStockCompare && st.branchStockCompare.branches) || st.branchesList || ['ONS-01', 'ONS-02', 'ONS-03'];
+    const perCb = (cmpItem && cmpItem.stok_per_cabang) || {};
 
-    S().openModal(`<div class="p-6 space-y-4 text-xs">
+    S().openDrawer(`<div class="p-6 space-y-4 text-xs">
       <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
         <div>
           <div class="flex flex-wrap items-center gap-1.5 mb-1">
             ${S().bpomBadge(o.golongan_bpom)}
             <span class="font-mono-num px-2 py-0.5 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.id_obat)}</span>
             ${m.isCold ? `<span class="badge-bpom bpom-terbatas">COLD CHAIN 2-8&deg;C</span>` : ''}
+            ${nearEd.hasNearEd ? `<span class="badge-bpom bpom-prekursor">PROMO NEAR-ED -${nearEd.suggestedDiscPct}%</span>` : ''}
           </div>
           <h3 class="font-extrabold text-base">${S().esc(o.nama_dagang)}</h3>
           <p style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('&bull; ' + S().esc(o.kekuatan)) : ''}</p>
         </div>
-        <button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+        <button onclick="ONSStore.closeDrawer()" class="text-2xl px-1">&times;</button>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-          <div style="color:var(--ons-text-soft)">Stok Total</div>
+          <div style="color:var(--ons-text-soft)">Stok Aktif (${S().esc(st.cabangId || 'ONS-01')})</div>
           <div class="text-base font-extrabold font-mono-num" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar)}</div>
         </div>
         <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
@@ -316,17 +326,38 @@
           <div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(o.harga_member || o.harga_umum)}</div>
         </div>
         <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div style="color:var(--ons-text-soft)">Grosir (&ge;${Number(o.min_qty_grosir || 10)} ${S().esc(o.satuan_dasar)})</div>
+          <div class="text-sm font-extrabold font-mono-num text-blue-700 dark:text-blue-400">${S().rp(o.harga_grosir || o.harga_member || o.harga_umum)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div style="color:var(--ons-text-soft)">Harga Faskes / Mitra</div>
+          <div class="text-sm font-extrabold font-mono-num text-slate-700 dark:text-slate-200">${S().rp(o.harga_faskes || o.harga_grosir || o.harga_umum)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
           <div style="color:var(--ons-text-soft)">${seeCost ? 'HPP Rata-Rata' : 'Batas Min. Stok'}</div>
-          <div class="text-base font-extrabold font-mono-num">${seeCost ? S().rp(o.hpp_avg) : (m.min + ' ' + S().esc(o.satuan_dasar))}</div>
+          <div class="text-sm font-extrabold font-mono-num">${seeCost ? S().rp(o.hpp_avg) : (m.min + ' ' + S().esc(o.satuan_dasar))}</div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl border" style="border-color:var(--ons-border)">
+      <div class="p-3 rounded-xl border space-y-2" style="border-color:var(--ons-border)">
+        <div class="font-bold">Komparasi Stok Antar-Cabang Real-Time</div>
+        <div class="grid grid-cols-3 gap-2">
+          ${branches.map((br) => {
+            const qBr = br === (st.cabangId || 'ONS-01') ? m.stok : Number(perCb[br] || 0);
+            return `<div class="p-2 rounded-lg text-center border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-[10px] font-bold">${S().esc(br)}</div>
+              <div class="text-sm font-extrabold font-mono-num ${qBr > 0 ? 'text-emerald-600' : 'text-red-500'}">${qBr}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border" style="border-color:var(--ons-border)">
         <div><b>Kode KFA:</b> <span class="font-mono-num">${S().esc(o.kode_kfa || '-')}</span></div>
         <div><b>NIE BPOM:</b> <span class="font-mono-num">${S().esc(o.nie_bpom || '-')}</span></div>
         <div><b>Lokasi Rak:</b> <span class="font-mono-num">${S().esc(o.rak_lokasi || '-')}</span></div>
         <div><b>Suhu Simpan:</b> ${S().esc(o.suhu_simpan || 'Suhu Ruang')}</div>
-        <div class="sm:col-span-2"><b>Konversi Satuan:</b> 1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}</div>
+        <div class="sm:col-span-2"><b>Konversi:</b> 1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}</div>
       </div>
 
       <div>
@@ -343,20 +374,20 @@
                   <td class="font-mono-num font-bold">${Number(b.qty_sisa || 0)} ${S().esc(o.satuan_dasar)}</td>
                   <td class="font-mono-num">${S().esc(b.rak_penyimpanan || o.rak_lokasi || '-')}</td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="4" class="text-center" style="color:var(--ons-text-soft)">Stok batch kosong — segera lakukan PO ke PBF.</td></tr>'}
+              }).join('') : '<tr><td colspan="4" class="text-center" style="color:var(--ons-text-soft)">Stok batch kosong — segera lakukan PO atau Mutasi Cabang.</td></tr>'}
             </tbody>
           </table>
         </div>
       </div>
 
       <div class="flex flex-wrap justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
-        <button onclick="ONSStore.closeModal();navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs">Buka Modul Gudang &rarr;</button>
+        <button onclick="ONSStore.closeDrawer();navigateView('gudang','transfer')" class="ons-btn ons-btn-ghost text-xs">Mutasi Cabang &rarr;</button>
         <div class="flex gap-2">
           <button onclick="window.printCode128Obat('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs">Cetak Barcode</button>
-          ${seeCost ? `<button onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-xs">Edit Produk</button>` : ''}
+          ${seeCost ? `<button onclick="ONSStore.closeDrawer();window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-xs">Edit Produk</button>` : ''}
         </div>
       </div>
-    </div>`, '680px');
+    </div>`, '580px');
   };
 
   global.exportMasterObat = (fmt) => {
@@ -444,11 +475,13 @@
             <div><label class="font-semibold block mb-1">Satuan Besar &amp; Rasio</label><div class="flex gap-1.5"><input id="wSatBes" class="ons-input w-1/2" value="${S().esc(o.satuan_besar || 'Box')}"/><input id="wRasioBes" type="number" class="ons-input w-1/2 font-mono-num" value="${o.rasio_besar}"/></div></div>
           </div>
           <div id="wizSec4" class="${secCls(4)}" style="border-color:var(--ons-border)">
-            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">4. Valuasi Harga &amp; Threshold Stok</div>
+            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">4. Valuasi Harga Bertingkat &amp; Threshold Stok</div>
             <div><label class="font-semibold block mb-1">HPP Beli Rata-Rata (Rp)</label><input id="wHpp" type="number" class="ons-input font-mono-num" value="${o.hpp_avg}"/></div>
             <div><label class="font-semibold block mb-1">Harga Umum (Rp)</label><input id="wHrgUmum" type="number" class="ons-input font-mono-num" value="${o.harga_umum}"/></div>
             <div><label class="font-semibold block mb-1">Harga Member / PRB (Rp)</label><input id="wHrgMem" type="number" class="ons-input font-mono-num" value="${o.harga_member}"/></div>
             <div><label class="font-semibold block mb-1">Harga Grosir / B2B (Rp)</label><input id="wHrgGrosir" type="number" class="ons-input font-mono-num" value="${o.harga_grosir || o.harga_member}"/></div>
+            <div><label class="font-semibold block mb-1">Min. Qty Grosir (${S().esc(o.satuan_dasar || 'Unit')})</label><input id="wMinQtyGrosir" type="number" min="1" class="ons-input font-mono-num" value="${o.min_qty_grosir || 10}"/></div>
+            <div><label class="font-semibold block mb-1">Harga Faskes / Klinik (Rp)</label><input id="wHrgFaskes" type="number" class="ons-input font-mono-num" value="${o.harga_faskes || o.harga_grosir || o.harga_member || o.harga_umum}"/></div>
             <div><label class="font-semibold block mb-1">Stok Minimum (Defecta)</label><input id="wStokMin" type="number" class="ons-input font-mono-num" value="${o.stok_min}"/></div>
             <div><label class="font-semibold block mb-1">Stok Maksimum</label><input id="wStokMax" type="number" class="ons-input font-mono-num" value="${o.stok_max || 100}"/></div>
           </div>
@@ -507,6 +540,16 @@
 
   global.saveObatFromWizard = async () => {
     try {
+      const hppVal = Number(document.getElementById('wHpp').value || 0);
+      const hUmum = Number(document.getElementById('wHrgUmum').value || 0);
+      const hMem = Number(document.getElementById('wHrgMem').value || 0);
+      const hGrosir = Number(document.getElementById('wHrgGrosir').value || 0);
+      const minQtyGrosir = Math.max(2, Number((document.getElementById('wMinQtyGrosir') || {}).value || 10));
+      const hFaskes = Number((document.getElementById('wHrgFaskes') || {}).value || 0);
+      if (hppVal > 0 && ((hUmum > 0 && hUmum < hppVal) || (hMem > 0 && hMem < hppVal) || (hGrosir > 0 && hGrosir < hppVal) || (hFaskes > 0 && hFaskes < hppVal))) {
+        const ok = global.confirm('PERINGATAN MARGIN (ANTI-RUGI): Terdapat tier harga jual di bawah HPP (' + S().rp(hppVal) + '). Tetap simpan?');
+        if (!ok) return;
+      }
       await API().callApi('obat.save', {
         id_obat: document.getElementById('wObatId').value,
         nama_dagang: document.getElementById('wNamaDagang').value,
@@ -521,16 +564,18 @@
         rasio_sedang: Number(document.getElementById('wRasioSed').value || 10),
         satuan_besar: document.getElementById('wSatBes').value,
         rasio_besar: Number(document.getElementById('wRasioBes').value || 100),
-        hpp_avg: Number(document.getElementById('wHpp').value || 0),
-        harga_umum: Number(document.getElementById('wHrgUmum').value || 0),
-        harga_member: Number(document.getElementById('wHrgMem').value || 0),
-        harga_grosir: Number(document.getElementById('wHrgGrosir').value || 0),
+        hpp_avg: hppVal,
+        harga_umum: hUmum,
+        harga_member: hMem,
+        harga_grosir: hGrosir,
+        min_qty_grosir: minQtyGrosir,
+        harga_faskes: hFaskes,
         stok_min: Number(document.getElementById('wStokMin').value || 10),
         stok_max: Number(document.getElementById('wStokMax').value || 100),
         substitusi_ids: document.getElementById('wSubstitusi').value
       }, { isWrite: true });
       S().closeModal();
-      global.toast('Produk berhasil disimpan ke Master Obat!', 'ok');
+      global.toast('Produk & Harga Multi-Tier berhasil disimpan ke Master Obat!', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
@@ -667,8 +712,20 @@
       return true;
     });
 
-    // Opname Physical Count Draft Rows
-    const activeForOpname = sorted.filter((b) => b.status_batch === 'AKTIF' && (!gq || `${b.no_batch} ${(st.masterObat.find((m) => m.id_obat === b.id_obat) || {}).nama_dagang || b.id_obat}`.toLowerCase().includes(gq)));
+    // Opname Physical Count Draft Rows + Filter Lokasi Rak & Mode HP
+    const rakSet = new Set();
+    st.masterObat.forEach((o) => { if (o.rak_lokasi) rakSet.add(String(o.rak_lokasi).trim()); });
+    const rakList = Array.from(rakSet).sort();
+    const activeForOpname = sorted.filter((b) => {
+      if (String(b.status_batch || 'AKTIF') !== 'AKTIF') return false;
+      const ob = st.masterObat.find((m) => m.id_obat === b.id_obat) || {};
+      if (opnameRakFilter && String(ob.rak_lokasi || '').trim() !== opnameRakFilter) return false;
+      if (gq) {
+        const hay = `${b.no_batch} ${ob.nama_dagang || b.id_obat} ${ob.kode_kfa || ''} ${ob.rak_lokasi || ''}`.toLowerCase();
+        if (!hay.includes(gq)) return false;
+      }
+      return true;
+    });
     let opnameCounted = 0;
     let opnameSelisihUnit = 0;
     let opnameSelisihRp = 0;
@@ -693,11 +750,124 @@
             <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Batch &amp; FEFO (${sorted.length})</button>
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok (${(st.mutasiStok || []).length})</button>
             ${seeCost ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
+            ${seeCost ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
           </div>
         </div>
       </div>
 
-      ${gudangTab === 'kartu-stok' ? `
+      ${gudangTab === 'transfer' && seeCost ? (() => {
+        const cmpObj = st.branchStockCompare && !Array.isArray(st.branchStockCompare) ? st.branchStockCompare : null;
+        const branchIds = (cmpObj && Array.isArray(cmpObj.branches) && cmpObj.branches.length)
+          ? cmpObj.branches
+          : (Array.isArray(st.branchesList) && st.branchesList.length ? st.branchesList : ['ONS-01', 'ONS-02', 'ONS-03']);
+        const branchLabels = { 'ONS-01': 'Pusat (Jaksel)', 'ONS-02': 'Cabang Bekasi', 'ONS-03': 'Cabang Depok' };
+        const compList = (cmpObj && Array.isArray(cmpObj.items)) ? cmpObj.items : (Array.isArray(st.branchStockCompare) ? st.branchStockCompare : []);
+        const trfList = st.mutasiCabang || [];
+        const defDest = branchIds.find((bid) => bid !== st.cabangId) || 'ONS-02';
+        return `<div class="space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm">Kirim Mutasi Stok Antar-Cabang (FEFO)</h3>
+                <span class="badge-bpom bpom-terbatas">Gudang ${S().esc(st.cabangId)}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="font-semibold block mb-1">Cabang Asal</label>
+                  <select id="trfAsalCab" class="ons-select text-xs">
+                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === st.cabangId ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(branchLabels[bid] || bid)}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="font-semibold block mb-1">Cabang Tujuan</label>
+                  <select id="trfTujuanCab" class="ons-select text-xs">
+                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === defDest ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(branchLabels[bid] || bid)}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="col-span-2">
+                  <label class="font-semibold block mb-1">Produk Obat *</label>
+                  <select id="trfObatId" class="ons-select text-xs">
+                    ${st.masterObat.map((o) => `<option value="${S().esc(o.id_obat)}">${S().esc(o.nama_dagang)} (Stok ${S().getSellableStok(o.id_obat)})</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="font-semibold block mb-1">Qty Kirim *</label>
+                  <input id="trfQtyInp" type="number" min="1" value="10" class="ons-input font-mono-num text-right text-xs"/>
+                </div>
+              </div>
+              <div>
+                <label class="font-semibold block mb-1">Catatan Surat Jalan</label>
+                <input id="trfNoteInp" class="ons-input text-xs" placeholder="Cth: Permintaan darurat cabang / rebalancing stok ED"/>
+              </div>
+              <button onclick="window.submitMutasiCabangSend()" class="ons-btn ons-btn-primary w-full text-xs">Terbitkan Surat Jalan &amp; Kirim Mutasi FEFO</button>
+            </div>
+
+            <div class="ons-card p-4 lg:col-span-7 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-sm">Komparator Stok Real-Time 3 Cabang</h3>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Cabang aktif: <b class="font-mono-num">${S().esc(st.cabangId)}</b></span>
+              </div>
+              <div class="ons-table-wrap max-h-64 overflow-y-auto">
+                <table class="ons-table">
+                  <thead><tr><th>Obat</th>${branchIds.map((bid) => `<th class="text-right font-mono-num">${S().esc(bid)}</th>`).join('')}<th class="text-right">Total Grup</th></tr></thead>
+                  <tbody>
+                    ${(compList.length ? compList : st.masterObat.map((o) => {
+                      const perBranch = {};
+                      branchIds.forEach((bid) => { perBranch[bid] = bid === st.cabangId ? S().getSellableStok(o.id_obat) : 0; });
+                      return { id_obat: o.id_obat, nama_dagang: o.nama_dagang, satuan_dasar: o.satuan_dasar, stok_per_cabang: perBranch, total_semua_cabang: Object.values(perBranch).reduce((a, b) => a + b, 0) };
+                    })).map((row) => `<tr>
+                      <td class="font-semibold text-xs">${S().esc(row.nama_dagang)}</td>
+                      ${branchIds.map((bid) => {
+                        const qtyBr = Number(((row.stok_per_cabang || row.per_cabang || {})[bid]) || 0);
+                        return `<td class="text-right font-mono-num text-xs ${qtyBr <= 5 ? 'text-red-600 font-bold' : 'text-emerald-600'}">${qtyBr}</td>`;
+                      }).join('')}
+                      <td class="text-right font-mono-num font-bold text-xs">${row.total_semua_cabang !== undefined ? row.total_semua_cabang : (row.total_all || 0)}</td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="ons-card p-4 space-y-3">
+            <h3 class="font-bold text-sm">Riwayat Surat Jalan &amp; Penerimaan Mutasi Antar-Cabang (${trfList.length})</h3>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>No. Surat Jalan</th><th>Asal &rarr; Tujuan</th><th>Obat &amp; Batch</th><th>Qty</th><th>Status</th><th>Aksi Cabang</th></tr></thead>
+                <tbody>
+                  ${trfList.length ? trfList.map((tr) => {
+                    const done = String(tr.status_transfer || '') === 'DITERIMA';
+                    let trLines = [];
+                    try { trLines = JSON.parse(tr.items_json || '[]'); } catch (e) {}
+                    const firstLn = trLines[0] || {};
+                    const prodTitle = trLines.length > 1
+                      ? `${firstLn.nama_dagang || 'Item'} (+${trLines.length - 1} lainnya)`
+                      : (firstLn.nama_dagang || tr.nama_dagang || '-');
+                    const batchInfo = firstLn.no_batch ? `Batch: ${firstLn.no_batch} • ED ${firstLn.tgl_kadaluarsa || '-'}` : (tr.no_batch || '-');
+                    const totQty = tr.total_qty_dasar !== undefined ? tr.total_qty_dasar : (tr.qty_kirim || 0);
+                    return `<tr>
+                      <td class="font-mono-num text-xs"><b>${S().esc(tr.no_surat_jalan || tr.id_transfer)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(tr.tanggal_kirim || tr.tgl_kirim, true)}</span></td>
+                      <td class="text-xs font-semibold">${S().esc(tr.cabang_asal)} &rarr; ${S().esc(tr.cabang_tujuan)}</td>
+                      <td class="text-xs"><b>${S().esc(prodTitle)}</b><br/><span class="font-mono-num" style="color:var(--ons-text-soft)">${S().esc(batchInfo)}</span></td>
+                      <td class="font-mono-num font-bold">${totQty}</td>
+                      <td><span class="badge-bpom ${done ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(tr.status_transfer || 'DIKIRIM')}</span></td>
+                      <td>
+                        <div class="flex flex-wrap gap-1.5">
+                          <button onclick="window.printSuratJalanMutasi('${S().esc(tr.id_transfer)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Cetak SJ</button>
+                          ${!done ? `<button onclick="window.receiveMutasiCabang('${S().esc(tr.id_transfer)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Barang Masuk</button>` : `<span class="text-[11px]" style="color:var(--ons-text-soft)">Diterima ${S().esc(tr.diterima_oleh || '')}</span>`}
+                        </div>
+                      </td>
+                    </tr>`;
+                  }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Belum ada mutasi antar-cabang tercatat.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+      })() : ''}
+      ${gudangTab === 'transfer' ? '' : (gudangTab === 'kartu-stok' ? `
         <div class="ons-card p-4 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap gap-2">
@@ -743,15 +913,53 @@
           </div>
           <div class="ons-card p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <input class="ons-input text-xs w-64" placeholder="Cari obat / no. batch opname..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
               <div class="flex flex-wrap items-center gap-2">
-                <input id="opnameWorkspaceReason" class="ons-input text-xs w-60" placeholder="Catatan/Alasan SO..." value="${S().esc(opnameDraftReason || 'Stock Opname Rutin Gudang')}" oninput="window.setOpnameDraftReason(this.value)"/>
+                <input class="ons-input text-xs w-52" placeholder="Cari obat / KFA / batch opname..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
+                <select class="ons-select text-xs w-40" onchange="window.setOpnameRakFilter(this.value)" aria-label="Filter Lokasi Rak">
+                  <option value="">-- Semua Rak --</option>
+                  ${rakList.map((rk) => `<option value="${S().esc(rk)}" ${opnameRakFilter === rk ? 'selected' : ''}>Rak: ${S().esc(rk)}</option>`).join('')}
+                </select>
+                <button type="button" onclick="window.scanOpnameBarcodeNow()" class="ons-btn ons-btn-primary text-xs">Scan Barcode</button>
+                <div class="inline-flex rounded-lg border p-0.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                  <button type="button" onclick="window.setOpnameViewMode('TABLE')" class="ons-btn text-xs py-1 px-2 ${opnameViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Tabel</button>
+                  <button type="button" onclick="window.setOpnameViewMode('CARD')" class="ons-btn text-xs py-1 px-2 ${opnameViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Mode HP</button>
+                </div>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <input id="opnameWorkspaceReason" class="ons-input text-xs w-56" placeholder="Catatan/Alasan SO..." value="${S().esc(opnameDraftReason || 'Stock Opname Rutin Gudang')}" oninput="window.setOpnameDraftReason(this.value)"/>
                 <button onclick="window.submitFullOpnameWorkspace()" class="ons-btn ons-btn-emerald text-xs">Simpan Hasil Opname (${opnameCounted} Batch)</button>
               </div>
             </div>
+            ${opnameViewMode === 'CARD' ? `
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${activeForOpname.map((b) => {
+                  const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                  const sysQty = Number(b.qty_sisa || 0);
+                  const val = opnameDraftQty[b.id_batch] !== undefined ? opnameDraftQty[b.id_batch] : '';
+                  const diff = val !== '' ? (Number(val) - sysQty) : null;
+                  return `<div class="p-3.5 rounded-xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <div class="flex items-start justify-between gap-2">
+                      <div>
+                        <div class="font-bold text-sm">${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
+                        <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Rak: <b>${S().esc((o && o.rak_lokasi) || '-')}</b> &bull; Batch <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</div>
+                      </div>
+                      <span class="badge-bpom bpom-terbatas font-mono-num">Sistem: ${sysQty}</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, -1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">-1</button>
+                      <input type="number" min="0" value="${S().esc(val)}" placeholder="${sysQty}" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-sm font-bold w-24 text-center py-1 min-h-0 h-8"/>
+                      <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+1</button>
+                      <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 10)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+10</button>
+                      <button type="button" onclick="window.setOpnameDraftQty('${b.id_batch}', ${sysQty})" class="ons-btn ons-btn-emerald text-xs px-2.5 py-1 ml-auto">= Sistem</button>
+                    </div>
+                    ${diff !== null ? `<div class="text-xs font-mono-num font-bold ${diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600')}">Selisih: ${diff > 0 ? '+' : ''}${diff} unit (${S().rp(diff * Number(b.hpp_beli || 0))})</div>` : ''}
+                  </div>`;
+                }).join('')}
+              </div>
+            ` : `
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>Nama Obat</th><th>No. Batch &amp; ED</th><th>Stok Sistem</th><th>Hitung Fisik Riil</th><th>Selisih Unit</th><th>Estimasi Selisih Rp</th></tr></thead>
+                <thead><tr><th>Nama Obat &amp; Rak</th><th>No. Batch &amp; ED</th><th>Stok Sistem</th><th>Hitung Fisik Riil</th><th>Selisih Unit</th><th>Estimasi Selisih Rp</th></tr></thead>
                 <tbody>
                   ${activeForOpname.map((b) => {
                     const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
@@ -759,7 +967,7 @@
                     const diff = val !== '' ? (Number(val) - Number(b.qty_sisa || 0)) : null;
                     const diffRp = diff !== null ? diff * Number(b.hpp_beli || 0) : 0;
                     return `<tr>
-                      <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
+                      <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}<br/><span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">Rak: ${S().esc((o && o.rak_lokasi) || '-')}</span></td>
                       <td class="font-mono-num text-xs"><b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</td>
                       <td class="font-mono-num font-bold">${b.qty_sisa}</td>
                       <td><input type="number" min="0" value="${S().esc(val)}" placeholder="Isi qty riil" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-xs w-28 py-1 text-right"/></td>
@@ -769,7 +977,7 @@
                   }).join('')}
                 </tbody>
               </table>
-            </div>
+            </div>`}
           </div>
         </div>
       ` : `
@@ -817,7 +1025,7 @@
             </div>
           </div>
         </div>
-      `}
+      `)}
     </div>`;
   }
 
@@ -826,6 +1034,69 @@
     if (S().AppState.subTabs) S().AppState.subTabs.gudang = gudangTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+  };
+
+  global.submitMutasiCabangSend = async () => {
+    try {
+      const asal = (document.getElementById('trfAsalCab') || {}).value || S().AppState.cabangId || 'ONS-01';
+      const tujuan = (document.getElementById('trfTujuanCab') || {}).value || 'ONS-02';
+      const idObat = (document.getElementById('trfObatId') || {}).value || '';
+      const qty = Math.max(1, Number((document.getElementById('trfQtyInp') || {}).value || 0));
+      const catatan = (document.getElementById('trfNoteInp') || {}).value || '';
+      const res = await API().callApi('cabang.transferSend', { cabang_asal: asal, cabang_tujuan: tujuan, items: [{ id_obat: idObat, qty }], catatan }, { isWrite: true });
+      global.toast('Surat Jalan ' + (res.item ? res.item.no_surat_jalan : 'Mutasi') + ' terkirim (' + asal + ' -> ' + tujuan + ')!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.receiveMutasiCabang = async (idTransfer) => {
+    try {
+      const res = await API().callApi('cabang.transferReceive', { id_transfer: idTransfer }, { isWrite: true });
+      global.toast('Barang mutasi ' + (res.item ? res.item.no_surat_jalan : '') + ' resmi diterima & masuk Batch FEFO tujuan!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.printSuratJalanMutasi = (idTransfer) => {
+    const tr = (S().AppState.mutasiCabang || []).find((m) => m.id_transfer === idTransfer);
+    if (!tr) { global.toast('Data Surat Jalan tidak ditemukan.', 'warn'); return; }
+    let trLines = [];
+    try { trLines = JSON.parse(tr.items_json || '[]'); } catch (e) {}
+    if (!trLines.length && tr.nama_dagang) {
+      trLines = [{ nama_dagang: tr.nama_dagang, no_batch: tr.no_batch, tgl_kadaluarsa: tr.tgl_kadaluarsa, qty: tr.qty_kirim || tr.total_qty_dasar || 0 }];
+    }
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    S().printHtmlZone(`<div style="max-width:680px;margin:0 auto;font-family:Arial,sans-serif;font-size:12px;color:#111;border:2px solid #1e293b;padding:20px;">
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:10px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:16px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+          <div style="font-size:11px;">APJ: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:bold;">SURAT JALAN MUTASI STOK</div>
+          <div style="font-family:monospace;font-weight:bold;">${S().esc(tr.no_surat_jalan || tr.id_transfer)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:11px;">
+        <div><b>Cabang Pengirim:</b> ${S().esc(tr.cabang_asal)}<br/><b>Tanggal Kirim:</b> ${S().formatTgl(tr.tanggal_kirim || tr.tgl_kirim, true)}<br/><b>Petugas Kirim:</b> ${S().esc(tr.dikirim_oleh || '-')}</div>
+        <div><b>Cabang Penerima:</b> ${S().esc(tr.cabang_tujuan)}<br/><b>Status:</b> ${S().esc(tr.status_transfer || 'DIKIRIM')}<br/><b>Penerima:</b> ${S().esc(tr.diterima_oleh || 'Menunggu Konfirmasi')}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;">
+        <thead><tr style="background:#f1f5f9;"><th style="border:1px solid #cbd5e1;padding:6px;text-align:left;">Nama Produk</th><th style="border:1px solid #cbd5e1;padding:6px;text-align:left;">No. Batch &amp; ED</th><th style="border:1px solid #cbd5e1;padding:6px;text-align:right;">Qty Kirim</th></tr></thead>
+        <tbody>
+          ${trLines.map((ln) => `<tr>
+            <td style="border:1px solid #cbd5e1;padding:6px;font-weight:bold;">${S().esc(ln.nama_dagang || '-')}</td>
+            <td style="border:1px solid #cbd5e1;padding:6px;font-family:monospace;">${S().esc(ln.no_batch || '-')} &bull; ED ${S().esc(ln.tgl_kadaluarsa || '-')}</td>
+            <td style="border:1px solid #cbd5e1;padding:6px;text-align:right;font-weight:bold;">${ln.qty || 0} Unit</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="font-size:11px;margin-bottom:24px;"><b>Catatan:</b> ${S().esc(tr.catatan || 'Transfer antar-cabang sesuai standar CDOB & FEFO')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-size:11px;margin-top:32px;">
+        <div>Pengirim (${S().esc(tr.cabang_asal)})<br/><br/><br/>( ____________________ )</div>
+        <div>Penerima (${S().esc(tr.cabang_tujuan)})<br/><br/><br/>( ____________________ )</div>
+      </div>
+    </div>`);
   };
   global.setGudangBatchQ = (v) => { gudangBatchQ = v || ''; global.renderActiveView(); };
   global.setGudangBatchFilter = (v) => { gudangBatchFilter = v || 'SEMUA'; global.renderActiveView(); };
@@ -980,13 +1251,42 @@
   function renderDefectaView() {
     const st = S().AppState;
     defectaTab = (st.subTabs && st.subTabs.defecta) || defectaTab || 'order';
-    const lowStock = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
-    const soldMap = {};
-    (st.detailPenjualan || []).forEach((d) => { soldMap[d.id_obat] = (soldMap[d.id_obat] || 0) + Number(d.qty || 0); });
-    const estDos = (idObat, sisa, minStok) => {
-      const rateDay = Math.max(0.5, Number(soldMap[idObat] || 0) / 7 || (Number(minStok || 10) / 14));
-      return Math.max(0, Math.round(sisa / rateDay));
-    };
+    const pbfLeadMap = {};
+    (st.supplierPbf || []).forEach((p) => { pbfLeadMap[String(p.nama_pbf || '').trim().toUpperCase()] = Number(p.lead_time_hari || 3); });
+    const nowMs = Date.now();
+    const trx30Ids = {};
+    (st.penjualan || []).forEach((p) => {
+      const tMs = new Date(p.tanggal || nowMs).getTime();
+      if ((nowMs - tMs) <= 30 * 86400000) trx30Ids[p.id_transaksi] = true;
+    });
+    const sold30Map = {};
+    (st.detailPenjualan || []).forEach((d) => {
+      if (!Object.keys(trx30Ids).length || trx30Ids[d.id_transaksi]) {
+        sold30Map[d.id_obat] = (sold30Map[d.id_obat] || 0) + Number(d.qty || 0);
+      }
+    });
+    const forecastMap = {};
+    st.masterObat.forEach((o) => {
+      const s = S().getSellableStok(o.id_obat);
+      const qty30 = Number(sold30Map[o.id_obat] || 0);
+      const avgHarian = Math.max(0.2, Math.round((qty30 > 0 ? qty30 / 30 : Number(o.stok_min || 10) / 14) * 10) / 10);
+      const leadHari = pbfLeadMap[String(o.pbf_utama || '').trim().toUpperCase()] || 3;
+      const safetyStock = Math.max(Number(o.stok_min || 10), Math.ceil(avgHarian * 5));
+      const rop = Math.ceil(avgHarian * leadHari) + safetyStock;
+      const target14d = Math.ceil(avgHarian * (14 + leadHari)) + safetyStock;
+      const rekOrder = Math.max(0, target14d - s);
+      const dos = Math.max(0, Math.round(s / Math.max(0.2, avgHarian)));
+      forecastMap[o.id_obat] = {
+        avg_harian: avgHarian,
+        lead_time_hari: leadHari,
+        reorder_point: rop,
+        rekomendasi_order: rekOrder,
+        dos: dos,
+        perlu_order: s <= rop || s <= Number(o.stok_min || 10)
+      };
+    });
+    const lowStock = st.masterObat.filter((o) => forecastMap[o.id_obat] && forecastMap[o.id_obat].perlu_order);
+    const estDos = (idObat) => (forecastMap[idObat] ? forecastMap[idObat].dos : 0);
     const groupedPbf = {};
     lowStock.forEach((o) => {
       const pbf = o.pbf_utama || 'PBF Reguler Lainnya';
@@ -996,6 +1296,8 @@
 
     const getOrderQty = (o) => {
       if (defectaOrderQty[o.id_obat] !== undefined) return Math.max(1, Number(defectaOrderQty[o.id_obat] || 1));
+      const fc = forecastMap[o.id_obat];
+      if (fc && fc.rekomendasi_order > 0) return fc.rekomendasi_order;
       const s = S().getSellableStok(o.id_obat);
       return Math.max(10, Number(o.stok_max || 100) - s);
     };
@@ -1071,34 +1373,40 @@
 
         <div class="ons-card p-4">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <h3 class="font-bold text-sm">Daftar Defecta Stok Tipis (${lowStock.length} Item Memerlukan Order)</h3>
+            <div>
+              <h3 class="font-bold text-sm">Smart Defecta &amp; Peramalan Kebutuhan 30 Hari (${lowStock.length} Item Perlu Reorder)</h3>
+              <p class="text-[11px]" style="color:var(--ons-text-soft)">Memperhitungkan rata-rata laku harian 30 hari, Lead Time PBF, dan Safety Stock otomatis.</p>
+            </div>
             <span class="text-xs font-mono-num font-bold text-blue-600">Est. Total PO: ${S().rp(lowStock.reduce((acc, o) => acc + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0))}</span>
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
-              <thead><tr><th>Obat</th><th>Golongan SP BPOM</th><th>Stok Sisa / Min</th><th>Est. Habis (DOS)</th><th>Qty Order (Edit)</th><th>PBF Utama</th><th>Estimasi Biaya</th></tr></thead>
+              <thead><tr><th>Obat &amp; Golongan</th><th>Stok / ROP</th><th>Laku 30h &amp; DOS</th><th>Qty Order (Forecast)</th><th>PBF &amp; Lead Time</th><th>Estimasi Biaya</th></tr></thead>
               <tbody>
                 ${lowStock.length ? lowStock.map((o) => {
                   const s = S().getSellableStok(o.id_obat);
                   const totFisik = S().getTotalStok(o.id_obat);
                   const edBlocked = Math.max(0, totFisik - s);
-                  const dos = estDos(o.id_obat, s, o.stok_min);
+                  const fc = forecastMap[o.id_obat] || { avg_harian: 0.5, lead_time_hari: 3, reorder_point: Number(o.stok_min || 10), rekomendasi_order: 20, dos: 0 };
                   const qtyOrder = getOrderQty(o);
                   return `<tr>
-                    <td class="font-bold">${S().esc(o.nama_dagang)}</td>
-                    <td>${S().bpomBadge(o.golongan_bpom)}</td>
-                    <td class="font-mono-num text-red-600 font-bold">${s} / ${o.stok_min}${edBlocked > 0 ? `<div class="text-[10px] text-amber-600">(${edBlocked} ED terblokir)</div>` : ''}</td>
-                    <td><span class="badge-bpom ${dos <= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num">&plusmn; ${dos} Hari</span></td>
+                    <td><div class="font-bold">${S().esc(o.nama_dagang)}</div><div class="mt-0.5">${S().bpomBadge(o.golongan_bpom)}</div></td>
+                    <td class="font-mono-num"><span class="text-red-600 font-bold">${s}</span> / ROP ${fc.reorder_point}${edBlocked > 0 ? `<div class="text-[10px] text-amber-600">(${edBlocked} ED terblokir)</div>` : ''}</td>
+                    <td>
+                      <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">&plusmn; ${fc.avg_harian}/hr</div>
+                      <span class="badge-bpom ${fc.dos <= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num">&plusmn; ${fc.dos} Hari</span>
+                    </td>
                     <td>
                       <div class="flex items-center gap-1">
                         <input type="number" min="1" value="${qtyOrder}" onchange="window.setDefectaOrderQty('${o.id_obat}', this.value)" class="ons-input font-mono-num text-right text-xs w-20 py-1 min-h-0 h-8"/>
                         <span class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.satuan_dasar)}</span>
                       </div>
+                      ${fc.rekomendasi_order > 0 ? `<button type="button" onclick="window.setDefectaOrderQty('${o.id_obat}', ${fc.rekomendasi_order})" class="text-[10px] font-semibold text-blue-600 hover:underline mt-0.5">Saran Forecast: ${fc.rekomendasi_order}</button>` : ''}
                     </td>
-                    <td class="text-xs">${S().esc(o.pbf_utama)}</td>
+                    <td class="text-xs"><div>${S().esc(o.pbf_utama)}</div><div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Lead Time: ${fc.lead_time_hari} Hari</div></td>
                     <td class="font-mono-num font-semibold">${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}</td>
                   </tr>`;
-                }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Seluruh stok produk masih aman di atas batas minimum!</td></tr>'}
+                }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Seluruh stok produk masih aman di atas Reorder Point!</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -1471,11 +1779,18 @@
               <table class="ons-table">
                 <thead><tr><th>Produk Obat</th><th>No. Batch</th><th>Tanggal ED</th><th>Qty Dasar</th><th>HPP / Unit (Rp)</th><th>Subtotal</th><th>Hapus</th></tr></thead>
                 <tbody>
-                  ${grnItems.map((it, idx) => `<tr>
+                  ${grnItems.map((it, idx) => {
+                    const obRef = st.masterObat.find((m) => m.id_obat === it.id_obat);
+                    const oldHpp = obRef ? Number(obRef.hpp_terakhir || obRef.hpp_avg || 0) : 0;
+                    const newHpp = Number(it.hpp_unit || 0);
+                    const hppDiffPct = (oldHpp > 0 && newHpp > oldHpp) ? Math.round(((newHpp - oldHpp) / oldHpp) * 100) : 0;
+                    const hppBelowJual = obRef && newHpp > 0 && Number(obRef.harga_umum || 0) > 0 && newHpp >= Number(obRef.harga_umum || 0);
+                    return `<tr>
                     <td>
                       <select class="ons-select text-xs min-w-[180px]" onchange="window.updateGrnItem(${idx}, 'id_obat', this.value)">
                         ${st.masterObat.map((o) => `<option value="${o.id_obat}" ${it.id_obat === o.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)}</option>`).join('')}
                       </select>
+                      ${oldHpp > 0 ? `<div class="text-[10px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">HPP Lama: ${S().rp(oldHpp)}${hppDiffPct > 0 ? ` &bull; <span class="text-red-600 font-bold">Naik +${hppDiffPct}%</span>` : ''}${hppBelowJual ? ` &bull; <span class="text-red-600 font-bold">RUGI (&ge; Harga Umum!)</span>` : ''}</div>` : ''}
                     </td>
                     <td><input class="ons-input font-mono-num text-xs w-32" value="${S().esc(it.no_batch)}" onchange="window.updateGrnItem(${idx}, 'no_batch', this.value)"/></td>
                     <td><input type="date" class="ons-input text-xs w-36" value="${S().esc(it.tgl_kadaluarsa)}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
@@ -1483,7 +1798,8 @@
                     <td><input type="number" min="0" class="ons-input font-mono-num text-xs w-28 text-right" value="${it.hpp_unit}" onchange="window.updateGrnItem(${idx}, 'hpp_unit', Number(this.value||0))"/></td>
                     <td class="font-mono-num font-bold text-xs">${S().rp(Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0))}</td>
                     <td><button type="button" onclick="window.removeGrnItemRow(${idx})" ${grnItems.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button></td>
-                  </tr>`).join('')}
+                  </tr>`;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -1805,7 +2121,7 @@
       if (!grnHeader.no_faktur_pbf.trim()) throw new Error('No. Faktur PBF wajib diisi.');
       const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
       const netto = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
-      await API().callApi('pengadaan.fakturSave', {
+      const res = await API().callApi('pengadaan.fakturSave', {
         id_sp: grnHeader.id_sp || '',
         no_faktur_pbf: grnHeader.no_faktur_pbf.trim(),
         no_sp: grnHeader.no_sp,
@@ -1834,7 +2150,12 @@
       grnScanState.previewDataUrl = '';
       grnScanState.processedDataUrl = '';
       grnScanState.statusText = '';
-      global.toast('Faktur Multi-Item & semua batch FEFO berhasil masuk ke gudang!', 'ok');
+      if (res && Array.isArray(res.hpp_alerts) && res.hpp_alerts.length) {
+        const listTxt = res.hpp_alerts.map((a) => `${a.nama_dagang} (HPP naik +${a.pct_naik !== undefined ? a.pct_naik : a.pct_up}% -> ${S().rp(a.new_hpp)})`).join(', ');
+        global.toast('Faktur masuk gudang! PERINGATAN KENAIKAN HPP: ' + listTxt, 'warn');
+      } else {
+        global.toast('Faktur Multi-Item & semua batch FEFO berhasil masuk ke gudang!', 'ok');
+      }
       window.setFakturTab('daftar');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
@@ -1854,6 +2175,57 @@
       global.toast('Retur BAR-PBF dicatat (' + res.qty_retur + ' unit). Potongan hutang: ' + S().rp(res.nilai_potong_hutang), 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  /**
+   * Scanner & Stiker Barcode + Opname Mobile HP Helpers (v15.0)
+   */
+  global.openPrintMasterLabelsModal = () => {
+    const items = S().AppState.masterObat || [];
+    if (global.ONSBarcode && typeof global.ONSBarcode.openPrintBarcodeLabelsModal === 'function') {
+      global.ONSBarcode.openPrintBarcodeLabelsModal(items);
+    } else {
+      global.toast('Modul cetak stiker barcode belum dimuat.', 'warn');
+    }
+  };
+
+  global.scanMasterObatBarcode = () => {
+    if (global.ONSBarcode && typeof global.ONSBarcode.openScannerModal === 'function') {
+      global.ONSBarcode.openScannerModal({
+        title: 'Cari Produk Master Obat via Barcode',
+        hint: 'Scan barcode kemasan/stiker rak untuk memfilter katalog.',
+        onDetect: (code) => {
+          const hit = global.ONSBarcode.matchProductByBarcode(code, S().AppState.masterObat, S().AppState.stokBatch);
+          const obHit = hit && hit.obat;
+          masterSearchQ = obHit ? obHit.nama_dagang : code;
+          global.toast(obHit ? ('Ditemukan: ' + obHit.nama_dagang) : ('Pencarian difilter: ' + code), obHit ? 'ok' : 'info');
+          global.renderActiveView();
+        }
+      });
+    }
+  };
+
+  global.setOpnameRakFilter = (rak) => { opnameRakFilter = rak || ''; global.renderActiveView(); };
+  global.setOpnameViewMode = (m) => { opnameViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
+  global.stepOpnameDraftQty = (idBatch, sysQty, delta) => {
+    const cur = opnameDraftQty[idBatch] !== undefined && opnameDraftQty[idBatch] !== '' ? Number(opnameDraftQty[idBatch]) : Number(sysQty || 0);
+    opnameDraftQty[idBatch] = Math.max(0, cur + Number(delta || 0));
+    global.renderActiveView();
+  };
+  global.scanOpnameBarcodeNow = () => {
+    if (global.ONSBarcode && typeof global.ONSBarcode.openScannerModal === 'function') {
+      global.ONSBarcode.openScannerModal({
+        title: 'Scan Barcode Stock Opname Rak',
+        hint: 'Scan barcode kemasan obat untuk langsung menyaring batch & menghitung stok fisik.',
+        onDetect: (code) => {
+          const hit = global.ONSBarcode.matchProductByBarcode(code, S().AppState.masterObat, S().AppState.stokBatch);
+          const obHit = hit && hit.obat;
+          gudangBatchQ = obHit ? obHit.nama_dagang : (hit && hit.batch ? hit.batch.no_batch : code);
+          global.toast(obHit ? ('Opname disaring ke: ' + obHit.nama_dagang) : ('Filter batch: ' + code), obHit ? 'ok' : 'info');
+          global.renderActiveView();
+        }
+      });
+    }
   };
 
   global.ONSViewsInventoryProcurement = { renderMasterObatView, renderGudangView, renderDefectaView, renderFakturView };

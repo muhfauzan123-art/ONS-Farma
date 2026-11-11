@@ -102,8 +102,14 @@
     suratPesanan: [],
     deDokumen: [],
     shiftHistory: [],
+    activeShift: null,
+    piutangPelanggan: [],
+    copyResep: [],
+    mutasiCabang: [],
+    branchStockCompare: null,
+    branchesList: ['ONS-01', 'ONS-02', 'ONS-03'],
     carts: [
-      { id: 'K1', label: 'Pelanggan #1', channel: 'Toko Fisik', id_member: 'UMUM', items: [], diskon_global: 0 }
+      { id: 'K1', label: 'Pelanggan #1', channel: 'Toko Fisik', id_member: 'UMUM', tier_harga: 'UMUM', items: [], diskon_global: 0, held_note: '', held_at: '' }
     ],
     activeCartIdx: 0,
     posSearchQ: '',
@@ -182,27 +188,32 @@
     return iso < new Date().toISOString().slice(0, 10);
   }
 
+  function _isActiveBranchBatch(b, branchOverride) {
+    const br = branchOverride || AppState.cabangId || 'ONS-01';
+    return !b.cabang_id || b.cabang_id === br;
+  }
+
   function getTotalStok(idObat) {
     return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF')
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && _isActiveBranchBatch(b))
       .reduce((acc, b) => acc + Number(b.qty_sisa || 0), 0);
   }
 
   function getSellableStok(idObat) {
     return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa))
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa) && _isActiveBranchBatch(b))
       .reduce((acc, b) => acc + Number(b.qty_sisa || 0), 0);
   }
 
   function getNearestEdBatch(idObat) {
     return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0)
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && _isActiveBranchBatch(b))
       .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)))[0] || null;
   }
 
   function getNearestSellableBatch(idObat) {
     return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa))
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa) && _isActiveBranchBatch(b))
       .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)))[0] || null;
   }
 
@@ -323,6 +334,103 @@
   function closeModal() {
     const el = document.getElementById('onsModalRoot');
     if (el) el.remove();
+  }
+
+  /**
+   * Slide-Over Context Drawer Kanan (v16.0: Detail Obat, Komparasi Cabang, Profil Member PRB)
+   */
+  function openDrawer(html, maxWidth = '560px') {
+    closeDrawer();
+    const back = document.createElement('div');
+    back.id = 'onsDrawerRoot';
+    back.className = 'ons-context-drawer-backdrop';
+    back.innerHTML = `<div id="onsDrawerBody" class="ons-context-drawer-panel" role="dialog" style="max-width:${maxWidth};">${html}</div>`;
+    back.addEventListener('click', (e) => {
+      if (e.target === back) closeDrawer();
+    });
+    document.body.appendChild(back);
+  }
+
+  function closeDrawer() {
+    const el = document.getElementById('onsDrawerRoot');
+    if (el) el.remove();
+  }
+
+  /**
+   * Smart Pricing Bertingkat (Umum / Member / Grosir Min-Qty / Faskes) & Promo Near-ED
+   */
+  function getEffectiveObatPrice(obat, qtyBase = 1, tierMode = 'UMUM') {
+    if (!obat) return { harga: 0, tierApplied: 'UMUM', isGrosirAuto: false };
+    const mode = String(tierMode || 'UMUM').toUpperCase();
+    const hUmum = Number(obat.harga_umum || 0);
+    const hMember = Number(obat.harga_member || hUmum || 0);
+    const hGrosir = Number(obat.harga_grosir || hMember || hUmum || 0);
+    const hFaskes = Number(obat.harga_faskes || hGrosir || hMember || hUmum || 0);
+    const minGrosir = Math.max(1, Number(obat.min_qty_grosir || 10));
+    const q = Math.max(1, Number(qtyBase || 1));
+    if (mode === 'FASKES') {
+      return { harga: hFaskes, tierApplied: 'FASKES', isGrosirAuto: false };
+    }
+    if (mode === 'GROSIR') {
+      return { harga: hGrosir, tierApplied: 'GROSIR', isGrosirAuto: false };
+    }
+    const baseTarget = mode === 'MEMBER' ? hMember : hUmum;
+    if (Number(obat.harga_grosir || 0) > 0 && q >= minGrosir && hGrosir > 0 && hGrosir < baseTarget) {
+      return { harga: hGrosir, tierApplied: 'GROSIR_AUTO', isGrosirAuto: true };
+    }
+    if (mode === 'MEMBER') {
+      return { harga: hMember, tierApplied: 'MEMBER', isGrosirAuto: false };
+    }
+    return { harga: hUmum, tierApplied: 'UMUM', isGrosirAuto: false };
+  }
+
+  function getNearEdBatchInfo(idObat, thresholdDays = 90) {
+    const batches = AppState.stokBatch
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa) && (!b.cabang_id || b.cabang_id === AppState.cabangId))
+      .map((b) => ({ batch: b, days: daysUntil(b.tgl_kadaluarsa) }))
+      .filter((x) => x.days >= 0 && x.days <= Number(thresholdDays || 90))
+      .sort((a, b) => a.days - b.days);
+    if (!batches.length) return { hasNearEd: false, minDays: null, nearQty: 0, suggestedDiscPct: 0, noBatch: '' };
+    const minDays = batches[0].days;
+    const nearQty = batches.reduce((s, x) => s + Number(x.batch.qty_sisa || 0), 0);
+    const pct = minDays <= 30 ? 20 : (minDays <= 60 ? 15 : 10);
+    return { hasNearEd: true, minDays, nearQty, suggestedDiscPct: pct, noBatch: batches[0].batch.no_batch || '' };
+  }
+
+  /**
+   * Generator Teks Kartu PIO & Jadwal Minum Obat Pasien WhatsApp (PMK 73/2016)
+   */
+  function buildPioScheduleWaText(pio) {
+    const p = pio || {};
+    const prof = getStoreProfile();
+    const lines = [
+      '*KARTU INFORMASI OBAT & JADWAL MINUM (PIO)*',
+      '*' + (prof.nama_usaha || 'APOTEK ONS FARMA') + '*',
+      'Apoteker : ' + (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi'),
+      'SIPA     : ' + (prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042'),
+      '--------------------------------',
+      'Pasien   : *' + (p.nama_pasien || 'Pasien') + '*',
+      'Tanggal  : ' + (p.tanggal || new Date().toLocaleDateString('id-ID')),
+      ''
+    ];
+    (p.items || []).forEach((it, idx) => {
+      const slots = [];
+      if (it.pagi) slots.push('Pagi (' + (it.pagi_jam || '07:00') + ')');
+      if (it.siang) slots.push('Siang (' + (it.siang_jam || '13:00') + ')');
+      if (it.sore) slots.push('Sore (' + (it.sore_jam || '17:00') + ')');
+      if (it.malam) slots.push('Malam (' + (it.malam_jam || '21:00') + ')');
+      lines.push((idx + 1) + '. *' + (it.nama_obat || 'Obat') + '* (' + (it.dosis || '1 unit') + ')');
+      lines.push('   Jadwal : ' + (slots.length ? slots.join(' | ') : 'Sesuai etiket'));
+      if (it.timing) lines.push('   Cara   : _' + it.timing + '_');
+      if (it.edukasi) lines.push('   Edukasi: ' + it.edukasi);
+    });
+    if (p.catatan_apoteker) {
+      lines.push('');
+      lines.push('Catatan Apoteker: ' + p.catatan_apoteker);
+    }
+    lines.push('--------------------------------');
+    lines.push('_Konsultasi obat GRATIS bersama Apoteker. Semoga lekas sembuh!_');
+    return lines.join('\n');
   }
 
   /**
@@ -633,6 +741,57 @@
     return lines.join('\n');
   }
 
+  /**
+   * Generator Teks Rekap Malam Harian Pemilik Apotek (100% Gratis via wa.me)
+   */
+  function buildOwnerDailyDigestText(dateIso) {
+    const prof = getStoreProfile();
+    const todayIso = dateIso || new Date().toISOString().slice(0, 10);
+    const salesToday = (AppState.penjualan || []).filter((p) => {
+      const tgl = String(p.tanggal || '').slice(0, 10);
+      return (!tgl || tgl === todayIso) && String(p.status_trx || '') !== 'RETUR';
+    });
+    let omzet = 0;
+    let margin = 0;
+    let tunai = 0;
+    let nonTunai = 0;
+    let piutangHariIni = 0;
+    salesToday.forEach((p) => {
+      const gt = Number(p.grand_total || 0);
+      omzet += gt;
+      margin += Number(p.estimasi_margin || 0);
+      const met = String(p.metode_bayar || 'TUNAI').toUpperCase();
+      if (met === 'TUNAI') tunai += gt;
+      else if (met === 'PIUTANG') piutangHariIni += gt;
+      else nonTunai += gt;
+    });
+    const openPiutang = (AppState.piutangPelanggan || []).filter((pt) => String(pt.status_piutang || '').toUpperCase() !== 'LUNAS');
+    const totalPiutangSisa = openPiutang.reduce((s, pt) => s + Number(pt.sisa_piutang || 0), 0);
+    const defectaCount = (AppState.masterObat || []).filter((o) => getSellableStok(o.id_obat) <= Number(o.stok_minimum || 0)).length;
+    const nearEdCount = (AppState.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && daysUntil(b.tgl_kadaluarsa) <= 90).length;
+    const actShift = AppState.activeShift || (AppState.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
+
+    const lines = [
+      '*REKAP HARIAN ' + String(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase() + '*',
+      'Tanggal : ' + todayIso + ' (' + salesToday.length + ' nota)',
+      'Pemilik/APJ : ' + (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi'),
+      '--------------------------------',
+      'Omzet Hari Ini : ' + rp(omzet),
+      'Est. Laba Kotor: ' + rp(margin),
+      '- Tunai        : ' + rp(tunai),
+      '- QRIS/EDC/Trf : ' + rp(nonTunai),
+      '- Piutang Baru : ' + rp(piutangHariIni),
+      '--------------------------------',
+      'Piutang Aktif  : ' + openPiutang.length + ' nota (' + rp(totalPiutangSisa) + ')',
+      'Alert Defecta  : ' + defectaCount + ' produk perlu restok',
+      'Alert Near ED  : ' + nearEdCount + ' batch (<=90 hari / ED)',
+      'Status Shift   : ' + (actShift ? ('TERBUKA (' + actShift.id_shift + ')') : 'Semua shift tertutup'),
+      '--------------------------------',
+      '_Dikirim 1-klik dari ONS Farma Digital v15.0 (Gratis Tanpa Gateway)_'
+    ];
+    return lines.join('\n');
+  }
+
   global.ONSStore = {
     AppState,
     defaultStoreProfile,
@@ -644,6 +803,7 @@
     normalizeWa62,
     buildWaUrl,
     formatStrukWaMessage,
+    buildOwnerDailyDigestText,
     toggleDarkMode,
     rp,
     esc,
@@ -659,8 +819,13 @@
     getNearestEdBatch,
     getNearestSellableBatch,
     checkCartCdss,
+    getEffectiveObatPrice,
+    getNearEdBatchInfo,
+    buildPioScheduleWaText,
     openModal,
     closeModal,
+    openDrawer,
+    closeDrawer,
     buildQrisEmvcoPayload,
     renderSvgQr,
     exportDataset,

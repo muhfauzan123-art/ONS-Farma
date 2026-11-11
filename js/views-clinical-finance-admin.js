@@ -48,6 +48,14 @@
     gejala: 'Batuk kering persisten / Ruam alergi ringan',
     scores: [0, 2, 1, 0, 0, 0, 0, 0, 0, 0]
   };
+  let pioState = {
+    pasien: 'Tn. Bambang Suryono',
+    noWa: '081234567890',
+    idMember: 'MBR-001',
+    itemsText: 'Amoxicillin 500mg (3x1 sesudah makan)\nParacetamol 500mg (Bila demam)\nAmlodipine 10mg (1x1 pagi hari)',
+    jadwalKeys: ['PAGI', 'SIANG', 'MALAM'],
+    catatan: 'Habiskan antibiotik hingga tuntas. Hindari konsumsi kopi berlebih bersamaan.'
+  };
   const NARANJO_CRITERIA = [
     { label: '1. Ada laporan reaksi serupa sebelumnya di literatur ilmiah?', pts: 1 },
     { label: '2. Reaksi muncul setelah obat yang dicurigai diberikan?', pts: 2 },
@@ -117,13 +125,81 @@
           <div class="ons-tab-bar">
             <button onclick="window.setKlinisTab('soap')" class="ons-tab-btn ${klinisTab === 'soap' ? 'active' : ''}">Skrining &amp; SOAP (${(st.rekamKlinis || []).length})</button>
             <button onclick="window.setKlinisTab('racikan')" class="ons-tab-btn ${klinisTab === 'racikan' ? 'active' : ''}">Kalkulator Racikan &amp; Etiket</button>
+            <button onclick="window.setKlinisTab('pio')" class="ons-tab-btn ${klinisTab === 'pio' ? 'active' : ''}">Kartu PIO &amp; Jadwal WA</button>
             <button onclick="window.setKlinisTab('meso')" class="ons-tab-btn ${klinisTab === 'meso' ? 'active' : ''}">MESO Naranjo (${mesoList.length})</button>
           </div>
+          <button onclick="window.openCopyResepArchiveModal()" class="ons-btn ons-btn-ghost text-xs">Arsip Copy Resep (${(st.copyResep || []).length})</button>
           <button onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs">+ Input SOAP Klinis</button>
         </div>
       </div>
 
-      ${klinisTab === 'racikan' ? `
+      ${klinisTab === 'pio' ? (() => {
+        const jKeys = pioState.jadwalKeys || [];
+        const pioItems = String(pioState.itemsText || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
+          const m = l.match(/^(.*?)\((.*?)\)\s*$/);
+          return {
+            nama_obat: m ? m[1].trim() : l,
+            dosis: m ? m[2].trim() : 'Sesuai anjuran dokter',
+            pagi: jKeys.includes('PAGI'),
+            siang: jKeys.includes('SIANG'),
+            sore: jKeys.includes('SORE'),
+            malam: jKeys.includes('MALAM')
+          };
+        });
+        const waPreview = S().buildPioScheduleWaText ? S().buildPioScheduleWaText({ nama_pasien: pioState.pasien, items: pioItems, catatan_apoteker: pioState.catatan }) : '';
+        const waHref = (S().buildWaUrl && pioState.noWa) ? S().buildWaUrl(pioState.noWa, waPreview) : ('https://wa.me/?text=' + encodeURIComponent(waPreview));
+        const pioHistory = (st.rekamKlinis || []).filter((k) => String(k.layanan_jenis || '').toUpperCase() === 'PIO');
+        return `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
+            <h3 class="font-bold text-sm">Builder Kartu PIO &amp; Jadwal Minum Obat Pasien (PMK 73)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div><label class="font-semibold block mb-1">Pilih Pasien / Member</label>
+                <select class="ons-select text-xs" onchange="window.pickPioMember(this.value)">
+                  <option value="">-- Custom / Pasien Umum --</option>
+                  ${(st.members || []).map((m) => `<option value="${S().esc(m.id_member)}" ${pioState.idMember === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.no_hp || '-')})</option>`).join('')}
+                </select>
+              </div>
+              <div><label class="font-semibold block mb-1">Nama Pasien *</label><input class="ons-input text-xs" value="${S().esc(pioState.pasien)}" oninput="window.setPioMeta('pasien', this.value)"/></div>
+              <div class="sm:col-span-2"><label class="font-semibold block mb-1">No. WhatsApp Pasien (Gratis Kirim via wa.me)</label><input class="ons-input font-mono-num text-xs" value="${S().esc(pioState.noWa)}" oninput="window.setPioMeta('noWa', this.value)"/></div>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Pilih Waktu Minum Obat Utama</label>
+              <div class="flex flex-wrap gap-2">
+                ${[
+                  { k: 'PAGI', l: '07:00 Pagi' },
+                  { k: 'SIANG', l: '13:00 Siang' },
+                  { k: 'SORE', l: '17:00 Sore' },
+                  { k: 'MALAM', l: '21:00 Malam' }
+                ].map((slot) => {
+                  const active = (pioState.jadwalKeys || []).includes(slot.k);
+                  return `<button type="button" onclick="window.togglePioJadwal('${slot.k}')" class="ons-btn text-xs py-1 px-3 ${active ? 'ons-btn-primary' : 'ons-btn-ghost'}">${slot.l}</button>`;
+                }).join('')}
+              </div>
+            </div>
+            <div><label class="font-semibold block mb-1">Daftar Obat &amp; Aturan Pakai (1 obat per baris, format: Nama (Aturan))</label><textarea rows="4" class="ons-textarea font-mono-num text-xs" oninput="window.setPioMeta('itemsText', this.value)">${S().esc(pioState.itemsText)}</textarea></div>
+            <div><label class="font-semibold block mb-1">Catatan Edukasi / Interaksi Apoteker</label><input class="ons-input text-xs" value="${S().esc(pioState.catatan)}" oninput="window.setPioMeta('catatan', this.value)"/></div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button onclick="window.submitPioRecord()" class="ons-btn ons-btn-emerald text-xs">Simpan Arsip PIO &rarr; SOAP</button>
+              <button onclick="window.printPioCard()" class="ons-btn ons-btn-ghost text-xs">Cetak Kartu PIO</button>
+              <a target="_blank" rel="noopener" href="${S().esc(waHref)}" class="ons-btn ons-btn-primary text-xs">Kirim Jadwal WA (Gratis)</a>
+            </div>
+          </div>
+
+          <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
+            <h3 class="font-bold text-sm">Pratinjau Kartu PIO &amp; Pesan WhatsApp Otomatis</h3>
+            <pre class="p-3 rounded-xl border whitespace-pre-wrap font-sans text-xs max-h-64 overflow-y-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(waPreview)}</pre>
+            <div class="pt-2 border-t space-y-2" style="border-color:var(--ons-border)">
+              <div class="font-bold text-xs">Riwayat Edukasi PIO Tersimpan (${pioHistory.length})</div>
+              <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                ${pioHistory.length ? pioHistory.map((p) => `<div class="p-2 rounded-lg border text-[11px]" style="border-color:var(--ons-border)">
+                  <div class="flex justify-between"><b>${S().esc(p.nama_pasien)}</b><span class="font-mono-num" style="color:var(--ons-text-soft)">${S().formatTgl(p.tanggal)}</span></div>
+                  <div style="color:var(--ons-text-soft)">${S().esc(p.soap_notes)}</div>
+                </div>`).join('') : '<div style="color:var(--ons-text-soft)">Belum ada log PIO baru sesi ini.</div>'}
+              </div>
+            </div>
+          </div>
+        </div>`;
+      })() : klinisTab === 'racikan' ? `
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div class="ons-card p-5 lg:col-span-7 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -303,6 +379,110 @@
       global.toast(`Laporan MESO Skor ${score} (${kategori}) tersimpan!`, 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.setPioMeta = (k, v) => { pioState[k] = v; global.renderActiveView(); };
+  global.togglePioJadwal = (slotKey) => {
+    const arr = Array.isArray(pioState.jadwalKeys) ? pioState.jadwalKeys.slice() : [];
+    const idx = arr.indexOf(slotKey);
+    if (idx >= 0) arr.splice(idx, 1);
+    else arr.push(slotKey);
+    pioState.jadwalKeys = arr;
+    global.renderActiveView();
+  };
+  global.pickPioMember = (idMbr) => {
+    const m = (S().AppState.members || []).find((x) => x.id_member === idMbr);
+    pioState.idMember = idMbr || '';
+    if (m) {
+      pioState.pasien = m.nama_pasien || pioState.pasien;
+      pioState.noWa = m.no_hp || pioState.noWa;
+    }
+    global.renderActiveView();
+  };
+  global.submitPioRecord = async () => {
+    try {
+      const itemsList = String(pioState.itemsText || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).join('; ');
+      await API().callApi('klinis.save', {
+        id_member: pioState.idMember || 'UMUM',
+        nama_pasien: pioState.pasien || 'Pasien Umum',
+        dokter_asal: 'Pelayanan Informasi Obat (PIO) Apoteker',
+        layanan_jenis: 'PIO',
+        cdss_warning: 'Jadwal Minum: ' + (pioState.jadwalKeys || []).join(', '),
+        soap_notes: 'Obat: ' + itemsList + ' | Catatan PIO: ' + (pioState.catatan || '-')
+      }, { isWrite: true });
+      global.toast('Kartu PIO & Edukasi Pasien berhasil tersimpan ke arsip SOAP!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.printPioCard = () => {
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const rows = String(pioState.itemsText || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    S().printHtmlZone(`<div style="max-width:520px;margin:0 auto;border:2px solid #0f172a;padding:16px;font-family:Arial,sans-serif;font-size:12px;">
+      <div style="text-align:center;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:10px;">
+        <div style="font-size:15px;font-weight:bold;">KARTU INFORMASI OBAT (PIO)</div>
+        <div style="font-size:12px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+        <div style="font-size:10px;">Apoteker: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
+      </div>
+      <div style="margin-bottom:10px;"><b>Nama Pasien:</b> ${S().esc(pioState.pasien)} &bull; <b>Jadwal Utama:</b> ${S().esc((pioState.jadwalKeys || []).join(', ') || 'Sesuai etiket')}</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+        <thead><tr style="background:#f1f5f9;"><th style="border:1px solid #cbd5e1;padding:6px;text-align:left;">No</th><th style="border:1px solid #cbd5e1;padding:6px;text-align:left;">Obat &amp; Aturan Minum</th></tr></thead>
+        <tbody>${rows.map((r, i) => `<tr><td style="border:1px solid #cbd5e1;padding:6px;">${i + 1}</td><td style="border:1px solid #cbd5e1;padding:6px;">${S().esc(r)}</td></tr>`).join('')}</tbody>
+      </table>
+      <div style="background:#f8fafc;border:1px dashed #64748b;padding:8px;font-size:11px;"><b>Pesan Apoteker:</b> ${S().esc(pioState.catatan || '-')}</div>
+    </div>`);
+  };
+  global.openPioFromMember = (idMbr) => {
+    global.pickPioMember(idMbr);
+    S().closeDrawer();
+    if (global.navigateView) global.navigateView('klinis', 'pio');
+  };
+  global.openMemberProfileDrawer = (idMember) => {
+    const m = (S().AppState.members || []).find((x) => x.id_member === idMember);
+    if (!m) return;
+    let skr = [];
+    try { skr = JSON.parse(m.riwayat_skrining_json || '[]'); } catch (e) {}
+    const klinisLogs = (S().AppState.rekamKlinis || []).filter((k) => k.id_member === m.id_member || String(k.nama_pasien || '').toLowerCase() === String(m.nama_pasien || '').toLowerCase());
+    S().openDrawer(`<div class="p-5 space-y-4 text-xs">
+      <div class="flex items-start justify-between gap-2 pb-3 border-b" style="border-color:var(--ons-border)">
+        <div>
+          <span class="badge-bpom bpom-terbatas">${S().esc(m.program_prb || 'MEMBER')}</span>
+          <h3 class="text-base font-extrabold mt-1">${S().esc(m.nama_pasien)}</h3>
+          <div class="font-mono-num" style="color:var(--ons-text-soft)">ID: ${S().esc(m.id_member)} &bull; WA: ${S().esc(m.no_hp || '-')}</div>
+        </div>
+        <button onclick="ONSStore.closeDrawer()" class="text-xl px-2">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="p-3 rounded-xl border border-red-500/30 bg-red-500/5">
+          <div class="text-[11px] font-bold text-red-600">ALERGI OBAT</div>
+          <div class="font-semibold mt-0.5">${S().esc(m.alergi_list || 'Tidak Ada')}</div>
+        </div>
+        <div class="p-3 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="text-[11px]" style="color:var(--ons-text-soft)">Poin &amp; Jadwal Refill</div>
+          <div class="font-bold font-mono-num mt-0.5">${m.poin_loyalitas || 0} Poin &bull; ${S().esc(m.tgl_habis_obat || '-')}</div>
+        </div>
+      </div>
+      <div>
+        <div class="font-bold mb-1.5">Riwayat Skrining Klinis (${skr.length})</div>
+        <div class="space-y-1.5 max-h-40 overflow-y-auto">
+          ${skr.length ? skr.slice().reverse().map((s) => `<div class="p-2 rounded-lg border font-mono-num flex justify-between" style="border-color:var(--ons-border)">
+            <span>${S().esc(s.tgl || '-')}</span><span>TD ${S().esc(s.td)} | GDS ${S().esc(s.gds)} | BMI ${S().esc(s.bmi)}</span>
+          </div>`).join('') : '<div style="color:var(--ons-text-soft)">Belum ada riwayat skrining.</div>'}
+        </div>
+      </div>
+      <div>
+        <div class="font-bold mb-1.5">Catatan SOAP &amp; PIO Terkait (${klinisLogs.length})</div>
+        <div class="space-y-1.5 max-h-44 overflow-y-auto">
+          ${klinisLogs.length ? klinisLogs.slice(0, 6).map((k) => `<div class="p-2 rounded-lg border" style="border-color:var(--ons-border)">
+            <div class="flex justify-between font-semibold"><span>${S().esc(k.layanan_jenis)}</span><span class="font-mono-num">${S().formatTgl(k.tanggal)}</span></div>
+            <div style="color:var(--ons-text-soft)">${S().esc(k.soap_notes || '-')}</div>
+          </div>`).join('') : '<div style="color:var(--ons-text-soft)">Belum ada rekam SOAP/PIO tercatat.</div>'}
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button onclick="window.openSkriningModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost flex-1">+ Catat Skrining</button>
+        <button onclick="window.openPioFromMember('${S().esc(m.id_member)}')" class="ons-btn ons-btn-primary flex-1">Buat Kartu PIO WA &rarr;</button>
+      </div>
+    </div>`, '430px');
   };
 
   global.addRacikanToPos = () => {
@@ -494,6 +674,7 @@
                     </td>
                     <td>
                       <div class="flex flex-wrap gap-1">
+                        <button onclick="window.openMemberProfileDrawer('${S().esc(m.id_member)}')" class="ons-btn ons-btn-primary text-xs py-1 px-2">Profil</button>
                         <button onclick="window.openSkriningModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">+ Skrining</button>
                         ${(() => {
                           if (!m.no_hp) return '';
@@ -704,16 +885,20 @@
       if (jurnalFilter === 'KELUAR') return !String(j.jenis_trx).includes('MASUK');
       return true;
     });
+    const piutangList = st.piutangPelanggan || [];
+    const openPiutang = piutangList.filter((pt) => String(pt.status_piutang || '').toUpperCase() !== 'LUNAS');
+    const totalPiutangOpen = openPiutang.reduce((s, pt) => s + Number(pt.sisa_piutang || 0), 0);
 
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Keuangan, Laba-Rugi Live (P&amp;L), Hutang PBF &amp; Pajak</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis P&amp;L kotor/bersih &amp; aset inventori FEFO, buku kas &amp; lock periode, cicilan hutang PBF, PPN/PPh, &amp; slip gaji A4.</p>
+          <h1 class="text-xl font-extrabold">Keuangan, Laba-Rugi Live (P&amp;L), Piutang, Hutang PBF &amp; Pajak</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis P&amp;L kotor/bersih &amp; aset inventori FEFO, buku kas &amp; lock periode, piutang tempo pelanggan, hutang PBF, PPN/PPh, &amp; slip gaji A4.</p>
         </div>
         <div class="ons-tab-bar">
           <button onclick="window.setFinanceTab('pnl')" class="ons-tab-btn ${financeTab === 'pnl' ? 'active' : ''}">Laba-Rugi (P&amp;L)</button>
           <button onclick="window.setFinanceTab('jurnal')" class="ons-tab-btn ${financeTab === 'jurnal' ? 'active' : ''}">Buku Kas &amp; Lock (${jurnalScoped.length})</button>
+          <button onclick="window.setFinanceTab('piutang')" class="ons-tab-btn ${financeTab === 'piutang' ? 'active' : ''}">Piutang Pelanggan (${openPiutang.length})</button>
           <button onclick="window.setFinanceTab('hutang')" class="ons-tab-btn ${financeTab === 'hutang' ? 'active' : ''}">Hutang PBF (${openFaktur.length})</button>
           <button onclick="window.setFinanceTab('pajak')" class="ons-tab-btn ${financeTab === 'pajak' ? 'active' : ''}">Pajak &amp; Slip Gaji</button>
         </div>
@@ -756,6 +941,47 @@
                     <td class="text-xs">${S().esc(j.metode || '-')}</td>
                     <td><span class="badge-bpom ${j.status_lock === 'TERKUNCI' ? 'bpom-keras' : 'bpom-terbatas'}">${S().esc(j.status_lock || 'TERBUKA')}</span></td>
                   </tr>`).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada entri jurnal pada filter ini.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ` : financeTab === 'piutang' ? `
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Total Sisa Piutang Berjalan</div><div class="text-xl font-extrabold font-mono-num text-amber-600">${S().rp(totalPiutangOpen)}</div></div>
+            <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Nota Tempo Aktif / Sebagian</div><div class="text-xl font-extrabold font-mono-num text-blue-600">${openPiutang.length} Nota</div></div>
+            <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Jatuh Tempo &le; 3 Hari / Terlambat</div><div class="text-xl font-extrabold font-mono-num text-red-600">${openPiutang.filter((pt) => S().daysUntil(pt.tgl_jatuh_tempo) <= 3).length} Tagihan</div></div>
+          </div>
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-bold text-sm">Buku Piutang Pelanggan &amp; Mitra Dokter (${piutangList.length})</h3>
+              <span class="text-xs" style="color:var(--ons-text-soft)">Pelunasan otomatis mencatat kas masuk (<code>MASUK_PIUTANG</code>) &amp; melunaskan invoice POS.</span>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>No. Invoice &amp; Pelanggan</th><th>Jatuh Tempo</th><th>Tagihan</th><th>Terbayar</th><th>Sisa Piutang</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                  ${piutangList.length ? piutangList.map((pt) => {
+                    const days = S().daysUntil(pt.tgl_jatuh_tempo);
+                    const isPaid = String(pt.status_piutang || '').toUpperCase() === 'LUNAS';
+                    const waMsg = 'Yth. ' + (pt.nama_pelanggan || 'Pelanggan') + ', pengingat tagihan tempo Apotek ONS Farma untuk nota ' + (pt.no_invoice || pt.id_piutang) + ' jatuh tempo ' + (pt.tgl_jatuh_tempo || '-') + ' sebesar ' + S().rp(pt.sisa_piutang || 0) + '. Terima kasih.';
+                    const waUrl = S().buildWaUrl ? S().buildWaUrl(pt.no_wa || '', waMsg) : ('https://wa.me/?text=' + encodeURIComponent(waMsg));
+                    return `<tr>
+                      <td class="text-xs"><b>${S().esc(pt.no_invoice || pt.id_piutang)}</b><br/>${S().esc(pt.nama_pelanggan)}</td>
+                      <td class="font-mono-num text-xs ${!isPaid && days < 0 ? 'text-red-600 font-bold' : ''}">${S().esc(pt.tgl_jatuh_tempo || '-')}${!isPaid && days < 0 ? ' (Lewat ' + Math.abs(days) + 'h)' : ''}</td>
+                      <td class="font-mono-num text-xs">${S().rp(pt.total_tagihan)}</td>
+                      <td class="font-mono-num text-xs text-emerald-600">${S().rp(pt.total_dibayar || 0)}</td>
+                      <td class="font-mono-num text-xs font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'}">${S().rp(pt.sisa_piutang || 0)}</td>
+                      <td><span class="badge-bpom ${isPaid ? 'bpom-bebas' : 'bpom-terbatas'}">${S().esc(pt.status_piutang)}</span></td>
+                      <td>
+                        <div class="flex flex-wrap gap-1">
+                          ${!isPaid ? `<button onclick="window.openPayPiutangModal('${S().esc(pt.id_piutang)}','${S().esc(pt.no_invoice)}','${S().esc(pt.nama_pelanggan)}',${Number(pt.sisa_piutang || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2">Cicil / Lunas</button>` : ''}
+                          ${!isPaid ? `<a target="_blank" rel="noopener" href="${S().esc(waUrl)}" class="ons-btn ons-btn-ghost text-xs py-1 px-2">WA Tagih</a>` : ''}
+                        </div>
+                      </td>
+                    </tr>`;
+                  }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Belum ada transaksi piutang pelanggan.</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -1519,9 +1745,11 @@
       }
     });
     const nonTunai = sisQris + sisTransfer;
+    const actShift = st.activeShift || (st.shiftHistory || []).find((sh) => String(sh.status_shift || '').toUpperCase() === 'TERBUKA') || null;
+    const modalDefault = actShift ? Number(actShift.modal_awal || 0) : 300000;
     const denoms = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500];
     const denomSum = denoms.reduce((s, d) => s + (d * Number(shiftDenomCounts[d] || 0)), 0);
-    const defaultAktual = denomSum > 0 ? denomSum : (300000 + sisTunai);
+    const defaultAktual = denomSum > 0 ? denomSum : (modalDefault + sisTunai);
     const shiftHist = st.shiftHistory || [];
 
     return `<div class="max-w-3xl mx-auto space-y-5 ons-view-enter">
@@ -1531,6 +1759,22 @@
           <p class="text-xs" style="color:var(--ons-text-soft)">Rekonsiliasi penjualan valid hari ini (${S().esc(todayIso)} — ${validToday.length} nota). Sahkan dengan 6-digit PIN APJ / Supervisor.</p>
         </div>
         <span class="badge-bpom bpom-terbatas font-mono-num">Non-Tunai Hari Ini (QRIS/EDC): ${S().rp(nonTunai)}</span>
+      </div>
+
+      <div class="ons-card p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs" style="border-left:4px solid ${actShift ? '#059669' : '#D97706'}">
+        ${actShift ? `
+          <div>
+            <span class="badge-bpom bpom-bebas mr-1.5">SHIFT TERBUKA</span>
+            <b class="font-mono-num">${S().esc(actShift.id_shift)}</b> &bull; Kasir: <b>${S().esc(actShift.kasir_id)}</b> &bull; Modal Laci: <b class="font-mono-num text-emerald-600">${S().rp(actShift.modal_awal || 0)}</b>
+          </div>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Buka: ${S().formatTgl(actShift.tgl_buka)}</span>
+        ` : `
+          <div>
+            <span class="badge-bpom bpom-terbatas mr-1.5">BELUM ADA SHIFT TERBUKA</span>
+            <span style="color:var(--ons-text-soft)">Anda tetap bisa menutup shift langsung atau buka shift baru terlebih dahulu.</span>
+          </div>
+          ${typeof global.openBukaShiftModal === 'function' ? `<button onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">+ Buka Shift Baru</button>` : ''}
+        `}
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -1552,7 +1796,7 @@
         <div class="ons-card p-5 lg:col-span-6 space-y-4 text-xs">
           <h3 class="font-bold text-sm">Formulir Penutupan Kas &amp; Serah Terima</h3>
           <div class="space-y-3">
-            <div><label class="font-semibold block mb-1">Modal Awal Laci (Rp)</label><input id="shModal" type="number" class="ons-input font-mono-num" value="300000"/></div>
+            <div><label class="font-semibold block mb-1">Modal Awal Laci (Rp)</label><input id="shModal" type="number" class="ons-input font-mono-num" value="${modalDefault}"/></div>
             <div><label class="font-semibold block mb-1">Hitung Fisik Tunai Laci Aktual (Rp) *</label><input id="shAktual" type="number" class="ons-input font-mono-num font-bold text-base" value="${defaultAktual}"/></div>
             <div><label class="font-semibold block mb-1">Catatan Handover Shift Berikutnya</label><textarea id="shNote" rows="2" class="ons-textarea" placeholder="Serah terima kunci laci, modal laci &amp; catatan selisih..."></textarea></div>
             <div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-2">
@@ -1600,7 +1844,10 @@
 
   global.submitCloseShift = async (sisTunai, sisQris, sisTransfer) => {
     try {
+      const act = S().AppState.activeShift || (S().AppState.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
       const res = await API().callApi('shift.close', {
+        id_shift: act ? act.id_shift : '',
+        tgl_buka: act ? act.tgl_buka : '',
         modal_awal: Number(document.getElementById('shModal').value || 0),
         aktual_tunai: Number(document.getElementById('shAktual').value || 0),
         sistem_tunai: Number(sisTunai || 0),
@@ -1612,6 +1859,67 @@
       global.toast('Shift berhasil ditutup! Selisih kas: ' + S().rp(res.shift.selisih_kas), 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  /**
+   * Piutang Pelanggan & Arsip Salinan Resep (p.c.c) Handlers (v15.0)
+   */
+  global.openPayPiutangModal = (idPiutang, noInv, namaPel, sisaMax) => {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Terima Pembayaran Piutang (${S().esc(noInv || idPiutang)})</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="p-3 rounded-lg" style="background:var(--ons-bg-subtle)">
+        Pelanggan: <b>${S().esc(namaPel)}</b><br/>
+        Sisa Tagihan: <b class="font-mono-num text-amber-600">${S().rp(sisaMax)}</b>
+      </div>
+      <div><label class="font-semibold block mb-1">Nominal Diterima (Rp) *</label><input id="payPiutangAmt" type="number" min="1" max="${sisaMax}" class="ons-input font-mono-num" value="${sisaMax}"/></div>
+      <div><label class="font-semibold block mb-1">Metode Penerimaan</label><select id="payPiutangMetode" class="ons-select"><option value="TRANSFER_BANK">TRANSFER_BANK</option><option value="TUNAI">KAS TUNAI</option><option value="QRIS">QRIS</option></select></div>
+      <div><label class="font-semibold block mb-1">Catatan</label><input id="payPiutangNote" class="ons-input" placeholder="Opsional: transfer BCA an ..."/></div>
+      <button onclick="window.submitPayPiutang('${S().esc(idPiutang)}')" class="ons-btn ons-btn-emerald w-full py-2.5 text-xs">Catat Pembayaran ke Buku Kas (MASUK_PIUTANG)</button>
+    </div>`, '440px');
+  };
+
+  global.submitPayPiutang = async (idPiutang) => {
+    try {
+      const nom = Number((document.getElementById('payPiutangAmt') || {}).value || 0);
+      const met = (document.getElementById('payPiutangMetode') || {}).value || 'TRANSFER_BANK';
+      const cat = (document.getElementById('payPiutangNote') || {}).value || '';
+      if (nom <= 0) throw new Error('Nominal bayar harus lebih dari 0.');
+      const res = await API().callApi('piutang.pay', { id_piutang: idPiutang, nominal_bayar: nom, metode: met, catatan: cat }, { isWrite: true });
+      S().closeModal();
+      global.toast('Pembayaran piutang dicatat! Status: ' + res.item.status_piutang, 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.openCopyResepArchiveModal = () => {
+    const list = S().AppState.copyResep || [];
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Arsip Salinan Resep (Apograph / p.c.c) (${list.length})</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Riwayat salinan resep tebus sebagian sesuai PMK 73/2016. Klik Cetak untuk mencetak ulang dokumen p.c.c.</p>
+      <div class="space-y-2 max-h-80 overflow-y-auto">
+        ${list.length ? list.map((cr, idx) => `<div class="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div>
+            <div class="font-bold font-mono-num">${S().esc(cr.no_salinan)} &bull; <span class="text-blue-600">${S().esc(cr.status_serah || 'DET')}</span></div>
+            <div>Pasien: <b>${S().esc(cr.nama_pasien)}</b> &bull; Dokter: ${S().esc(cr.nama_dokter)}</div>
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Tgl: ${S().esc(cr.tanggal)} &bull; No. R/: ${S().esc(cr.no_resep_asal || '-')}</div>
+          </div>
+          <button type="button" onclick="window.reprintCopyResepIdx(${idx})" class="ons-btn ons-btn-primary text-xs py-1 px-3">Cetak p.c.c</button>
+        </div>`).join('') : '<div class="text-center py-6">Belum ada arsip salinan resep tersimpan.</div>'}
+      </div>
+    </div>`, '580px');
+  };
+
+  global.reprintCopyResepIdx = (idx) => {
+    const list = S().AppState.copyResep || [];
+    if (list[idx] && typeof global.printCopyResepDocument === 'function') {
+      global.printCopyResepDocument(list[idx]);
+    }
   };
 
   /**

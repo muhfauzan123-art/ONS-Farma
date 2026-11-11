@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="theme-color" content="#09202A"/>
-  <title>Apotek ONS Farma Enterprise v14.2</title>
+  <title>Apotek ONS Farma Enterprise v16.0</title>
   <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
@@ -37,8 +37,9 @@
   <script src="./js/api-turbo.js"></script>
   <script src="./js/store.js"></script>
   <script src="./js/invoice-scanner.js"></script>
+  <script src="./js/barcode-scanner.js"></script>
 
-  <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v14.2 -->
+  <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v15.0 -->
   <script src="./js/views-auth-dash-pos.js"></script>
   <script src="./js/views-inventory-procurement.js"></script>
   <script src="./js/views-clinical-finance-admin.js"></script>
@@ -121,7 +122,8 @@
               tabs: [
                 { subTab: 'batch', label: 'Stok Batch & Recall', kw: 'batch fefo near ed kadaluarsa karantina recall' },
                 { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'kartu stok mutasi masuk keluar bpom xlsx' },
-                { subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] }
+                { subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'transfer', label: 'Mutasi Antar-Cabang', kw: 'mutasi transfer antar cabang stok multi cabang surat jalan', roles: ['Pemilik', 'APJ'] }
               ]
             },
             {
@@ -161,6 +163,7 @@
               tabs: [
                 { subTab: 'soap', label: 'Skrining & SOAP FHIR', kw: 'soap pio pto skrining resep satusehat' },
                 { subTab: 'racikan', label: 'Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru' },
+                { subTab: 'pio', label: 'Kartu PIO & Jadwal WA', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
                 { subTab: 'meso', label: 'MESO (Naranjo)', kw: 'meso naranjo efek samping rotd bpom' }
               ]
             },
@@ -613,6 +616,11 @@
         st.suratPesanan = data.surat_pesanan || [];
         st.deDokumen = data.de_dokumen || [];
         st.shiftHistory = data.shift_history || [];
+        st.activeShift = data.active_shift || (st.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA') || null;
+        st.piutangPelanggan = data.piutang_pelanggan || [];
+        st.copyResep = data.copy_resep || [];
+        st.mutasiCabang = data.mutasi_cabang || [];
+        st.branchStockCompare = data.branch_stock_compare || null;
       };
       const applyBootPayload = window.applyBootPayload;
 
@@ -807,7 +815,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v14.2 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v16.0 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
@@ -844,9 +852,14 @@
         window.renderActiveView();
       };
 
-      // Hotkey POS & Global Command Palette (F2 fokus barcode, Ctrl+K Command Palette)
+      // Hotkey POS & Global Command Palette (F2 scan, F4 Tunai, F8 QRIS, F9 Hold Antrean, Esc tutup, Ctrl+K Command)
       window.addEventListener('keydown', (e) => {
         if (!ONSApi.getSession()) return;
+        if (e.key === 'Escape') {
+          ONSStore.closeModal();
+          ONSStore.closeDrawer();
+          return;
+        }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
           window.openCommandPalette();
@@ -856,6 +869,23 @@
           e.preventDefault();
           window.navigateView('pos');
           setTimeout(() => document.getElementById('posSearchInput')?.focus(), 40);
+          return;
+        }
+        if (ONSStore.AppState.activeView === 'pos' && !document.getElementById('onsModalRoot')) {
+          if (e.key === 'F4' && typeof window.posQuickCheckoutShortcut === 'function') {
+            e.preventDefault();
+            window.posQuickCheckoutShortcut('TUNAI');
+            return;
+          }
+          if (e.key === 'F8' && typeof window.posQuickCheckoutShortcut === 'function') {
+            e.preventDefault();
+            window.posQuickCheckoutShortcut('QRIS');
+            return;
+          }
+          if (e.key === 'F9' && typeof window.openHoldCartModal === 'function') {
+            e.preventDefault();
+            window.openHoldCartModal();
+          }
         }
       });
 

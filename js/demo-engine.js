@@ -64,15 +64,15 @@
         { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }
       ],
       master_obat: [
-        { id_obat: 'OBT-001', kode_kfa: '93001024', nama_dagang: 'Amoxicillin Trihydrate 500mg', zat_aktif: 'Amoxicillin', kekuatan: '500 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Kaplet', nie_bpom: 'GKL9805024104A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-K1', satuan_dasar: 'Kaplet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 50, stok_max: 500, hpp_avg: 480, hpp_terakhir: 500, harga_umum: 900, harga_member: 800, harga_grosir: 700, pbf_utama: 'PT Bina San Prima', status_aktif: 'AKTIF', substitusi_ids: 'OBT-005' },
-        { id_obat: 'OBT-002', kode_kfa: '93002110', nama_dagang: 'Paracetamol Sanmol 500mg', zat_aktif: 'Paracetamol', kekuatan: '500 mg', golongan_bpom: 'BEBAS', bentuk_sediaan: 'Tablet', nie_bpom: 'DBL7622235610A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-B1', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 4, satuan_besar: 'Box', rasio_besar: 100, stok_min: 80, stok_max: 600, hpp_avg: 320, hpp_terakhir: 340, harga_umum: 650, harga_member: 600, harga_grosir: 520, pbf_utama: 'PT Enseval Putera', status_aktif: 'AKTIF', substitusi_ids: 'OBT-006' },
-        { id_obat: 'OBT-003', kode_kfa: '93004409', nama_dagang: 'Lantus SoloStar Insulin Pen', zat_aktif: 'Insulin Glargine', kekuatan: '100 IU/mL', golongan_bpom: 'KERAS', bentuk_sediaan: 'Injeksi Pen', nie_bpom: 'DKI0185200243A1', suhu_simpan: 'Cold Chain (2-8°C)', rak_lokasi: 'CHILLER-01', satuan_dasar: 'Pen', satuan_sedang: 'Box Isi 5', rasio_sedang: 5, satuan_besar: 'Karton', rasio_besar: 25, stok_min: 10, stok_max: 40, hpp_avg: 118000, hpp_terakhir: 120000, harga_umum: 148000, harga_member: 142000, harga_grosir: 136000, pbf_utama: 'PT Anugrah Argon Medika', status_aktif: 'AKTIF', substitusi_ids: '' },
-        { id_obat: 'OBT-004', kode_kfa: '93007721', nama_dagang: 'Rhinos SR Kapsul Lepas Lambat', zat_aktif: 'Loratadine + Pseudoephedrine', kekuatan: '5mg/120mg', golongan_bpom: 'PREKURSOR', bentuk_sediaan: 'Kapsul SR', nie_bpom: 'DKL9905028403A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'LEMARI-PRE', satuan_dasar: 'Kapsul', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 50, stok_min: 20, stok_max: 150, hpp_avg: 7800, hpp_terakhir: 8000, harga_umum: 11500, harga_member: 10800, harga_grosir: 9800, pbf_utama: 'PT Dexa Medica Dist', status_aktif: 'AKTIF', substitusi_ids: 'OBT-007' },
-        { id_obat: 'OBT-005', kode_kfa: '93001089', nama_dagang: 'Cefadroxil Monohydrate 500mg', zat_aktif: 'Cefadroxil', kekuatan: '500 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Kapsul', nie_bpom: 'GKL0105031101A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-K2', satuan_dasar: 'Kapsul', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 40, stok_max: 300, hpp_avg: 1150, hpp_terakhir: 1200, harga_umum: 1950, harga_member: 1800, harga_grosir: 1650, pbf_utama: 'PT Bina San Prima', status_aktif: 'AKTIF', substitusi_ids: 'OBT-001' },
-        { id_obat: 'OBT-006', kode_kfa: '93002914', nama_dagang: 'Ibuprofen Proris 400mg', zat_aktif: 'Ibuprofen', kekuatan: '400 mg', golongan_bpom: 'TERBATAS', bentuk_sediaan: 'Kaplet', nie_bpom: 'DTL9921620604B1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-T1', satuan_dasar: 'Kaplet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 40, stok_max: 250, hpp_avg: 890, hpp_terakhir: 920, harga_umum: 1600, harga_member: 1450, harga_grosir: 1350, pbf_utama: 'PT Enseval Putera', status_aktif: 'AKTIF', substitusi_ids: 'OBT-002' },
-        { id_obat: 'OBT-007', kode_kfa: '93005112', nama_dagang: 'Amlodipine Besylate 10mg PRB', zat_aktif: 'Amlodipine', kekuatan: '10 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Tablet', nie_bpom: 'GKL1205046510B1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-PRB', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 30, stok_min: 90, stok_max: 600, hpp_avg: 410, hpp_terakhir: 420, harga_umum: 850, harga_member: 750, harga_grosir: 650, pbf_utama: 'PT Kimia Farma Trading', status_aktif: 'AKTIF', substitusi_ids: '' },
-        { id_obat: 'OBT-008', kode_kfa: '93009901', nama_dagang: 'Codeine Phosphate 10mg (Kimia Farma)', zat_aktif: 'Codeine', kekuatan: '10 mg', golongan_bpom: 'NARKOTIKA', bentuk_sediaan: 'Tablet', nie_bpom: 'GNL7212401810A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'LEMARI-NARKO-2KUNCI', satuan_dasar: 'Tablet', satuan_sedang: 'Botol 100', rasio_sedang: 100, satuan_besar: 'Botol 100', rasio_besar: 100, stok_min: 15, stok_max: 100, hpp_avg: 2300, hpp_terakhir: 2350, harga_umum: 4200, harga_member: 4000, harga_grosir: 3800, pbf_utama: 'PT Kimia Farma Trading', status_aktif: 'AKTIF', substitusi_ids: '' },
-        { id_obat: 'OBT-009', kode_kfa: '93006210', nama_dagang: 'Warfarin Simarc-2 2mg', zat_aktif: 'Warfarin', kekuatan: '2 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Tablet', nie_bpom: 'DKL0421011210A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-JANTUNG', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 15, stok_max: 100, hpp_avg: 1350, hpp_terakhir: 1400, harga_umum: 2400, harga_member: 2250, harga_grosir: 2050, pbf_utama: 'PT Fahrenheit', status_aktif: 'AKTIF', substitusi_ids: '' }
+        { id_obat: 'OBT-001', kode_kfa: '93001024', nama_dagang: 'Amoxicillin Trihydrate 500mg', zat_aktif: 'Amoxicillin', kekuatan: '500 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Kaplet', nie_bpom: 'GKL9805024104A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-K1', satuan_dasar: 'Kaplet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 50, stok_max: 500, hpp_avg: 480, hpp_terakhir: 500, harga_umum: 900, harga_member: 800, harga_grosir: 700, min_qty_grosir: 20, harga_faskes: 650, pbf_utama: 'PT Bina San Prima', status_aktif: 'AKTIF', substitusi_ids: 'OBT-005' },
+        { id_obat: 'OBT-002', kode_kfa: '93002110', nama_dagang: 'Paracetamol Sanmol 500mg', zat_aktif: 'Paracetamol', kekuatan: '500 mg', golongan_bpom: 'BEBAS', bentuk_sediaan: 'Tablet', nie_bpom: 'DBL7622235610A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-B1', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 4, satuan_besar: 'Box', rasio_besar: 100, stok_min: 80, stok_max: 600, hpp_avg: 320, hpp_terakhir: 340, harga_umum: 650, harga_member: 600, harga_grosir: 520, min_qty_grosir: 20, harga_faskes: 480, pbf_utama: 'PT Enseval Putera', status_aktif: 'AKTIF', substitusi_ids: 'OBT-006' },
+        { id_obat: 'OBT-003', kode_kfa: '93004409', nama_dagang: 'Lantus SoloStar Insulin Pen', zat_aktif: 'Insulin Glargine', kekuatan: '100 IU/mL', golongan_bpom: 'KERAS', bentuk_sediaan: 'Injeksi Pen', nie_bpom: 'DKI0185200243A1', suhu_simpan: 'Cold Chain (2-8°C)', rak_lokasi: 'CHILLER-01', satuan_dasar: 'Pen', satuan_sedang: 'Box Isi 5', rasio_sedang: 5, satuan_besar: 'Karton', rasio_besar: 25, stok_min: 10, stok_max: 40, hpp_avg: 118000, hpp_terakhir: 120000, harga_umum: 148000, harga_member: 142000, harga_grosir: 136000, min_qty_grosir: 5, harga_faskes: 132000, pbf_utama: 'PT Anugrah Argon Medika', status_aktif: 'AKTIF', substitusi_ids: '' },
+        { id_obat: 'OBT-004', kode_kfa: '93007721', nama_dagang: 'Rhinos SR Kapsul Lepas Lambat', zat_aktif: 'Loratadine + Pseudoephedrine', kekuatan: '5mg/120mg', golongan_bpom: 'PREKURSOR', bentuk_sediaan: 'Kapsul SR', nie_bpom: 'DKL9905028403A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'LEMARI-PRE', satuan_dasar: 'Kapsul', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 50, stok_min: 20, stok_max: 150, hpp_avg: 7800, hpp_terakhir: 8000, harga_umum: 11500, harga_member: 10800, harga_grosir: 9800, min_qty_grosir: 10, harga_faskes: 9200, pbf_utama: 'PT Dexa Medica Dist', status_aktif: 'AKTIF', substitusi_ids: 'OBT-007' },
+        { id_obat: 'OBT-005', kode_kfa: '93001089', nama_dagang: 'Cefadroxil Monohydrate 500mg', zat_aktif: 'Cefadroxil', kekuatan: '500 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Kapsul', nie_bpom: 'GKL0105031101A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-K2', satuan_dasar: 'Kapsul', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 40, stok_max: 300, hpp_avg: 1150, hpp_terakhir: 1200, harga_umum: 1950, harga_member: 1800, harga_grosir: 1650, min_qty_grosir: 20, harga_faskes: 1550, pbf_utama: 'PT Bina San Prima', status_aktif: 'AKTIF', substitusi_ids: 'OBT-001' },
+        { id_obat: 'OBT-006', kode_kfa: '93002914', nama_dagang: 'Ibuprofen Proris 400mg', zat_aktif: 'Ibuprofen', kekuatan: '400 mg', golongan_bpom: 'TERBATAS', bentuk_sediaan: 'Kaplet', nie_bpom: 'DTL9921620604B1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-T1', satuan_dasar: 'Kaplet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 40, stok_max: 250, hpp_avg: 890, hpp_terakhir: 920, harga_umum: 1600, harga_member: 1450, harga_grosir: 1350, min_qty_grosir: 20, harga_faskes: 1250, pbf_utama: 'PT Enseval Putera', status_aktif: 'AKTIF', substitusi_ids: 'OBT-002' },
+        { id_obat: 'OBT-007', kode_kfa: '93005112', nama_dagang: 'Amlodipine Besylate 10mg PRB', zat_aktif: 'Amlodipine', kekuatan: '10 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Tablet', nie_bpom: 'GKL1205046510B1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-PRB', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 30, stok_min: 90, stok_max: 600, hpp_avg: 410, hpp_terakhir: 420, harga_umum: 850, harga_member: 750, harga_grosir: 650, min_qty_grosir: 30, harga_faskes: 600, pbf_utama: 'PT Kimia Farma Trading', status_aktif: 'AKTIF', substitusi_ids: '' },
+        { id_obat: 'OBT-008', kode_kfa: '93009901', nama_dagang: 'Codeine Phosphate 10mg (Kimia Farma)', zat_aktif: 'Codeine', kekuatan: '10 mg', golongan_bpom: 'NARKOTIKA', bentuk_sediaan: 'Tablet', nie_bpom: 'GNL7212401810A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'LEMARI-NARKO-2KUNCI', satuan_dasar: 'Tablet', satuan_sedang: 'Botol 100', rasio_sedang: 100, satuan_besar: 'Botol 100', rasio_besar: 100, stok_min: 15, stok_max: 100, hpp_avg: 2300, hpp_terakhir: 2350, harga_umum: 4200, harga_member: 4000, harga_grosir: 3800, min_qty_grosir: 20, harga_faskes: 3500, pbf_utama: 'PT Kimia Farma Trading', status_aktif: 'AKTIF', substitusi_ids: '' },
+        { id_obat: 'OBT-009', kode_kfa: '93006210', nama_dagang: 'Warfarin Simarc-2 2mg', zat_aktif: 'Warfarin', kekuatan: '2 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Tablet', nie_bpom: 'DKL0421011210A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-JANTUNG', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 15, stok_max: 100, hpp_avg: 1350, hpp_terakhir: 1400, harga_umum: 2400, harga_member: 2250, harga_grosir: 2050, min_qty_grosir: 20, harga_faskes: 1950, pbf_utama: 'PT Fahrenheit', status_aktif: 'AKTIF', substitusi_ids: '' }
       ],
       stok_batch: [
         { id_batch: 'BTH-101', cabang_id: 'ONS-01', id_obat: 'OBT-001', no_batch: 'AMX-2601A', tgl_kadaluarsa: addDays(45), qty_sisa: 140, qty_karantina: 0, hpp_beli: 480, no_faktur_pbf: 'FK-BSP-8821', status_batch: 'AKTIF' },
@@ -85,7 +85,10 @@
         { id_batch: 'BTH-108', cabang_id: 'ONS-01', id_obat: 'OBT-006', no_batch: 'IBU-2603W', tgl_kadaluarsa: addDays(62), qty_sisa: 120, qty_karantina: 0, hpp_beli: 890, no_faktur_pbf: 'FK-ENS-5501', status_batch: 'AKTIF' },
         { id_batch: 'BTH-109', cabang_id: 'ONS-01', id_obat: 'OBT-007', no_batch: 'AML-2607N', tgl_kadaluarsa: addDays(390), qty_sisa: 65, qty_karantina: 0, hpp_beli: 410, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
         { id_batch: 'BTH-110', cabang_id: 'ONS-01', id_obat: 'OBT-008', no_batch: 'COD-2608K', tgl_kadaluarsa: addDays(290), qty_sisa: 42, qty_karantina: 0, hpp_beli: 2300, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-111', cabang_id: 'ONS-01', id_obat: 'OBT-009', no_batch: 'WAR-2610M', tgl_kadaluarsa: addDays(310), qty_sisa: 50, qty_karantina: 0, hpp_beli: 1350, no_faktur_pbf: 'FK-FHR-0081', status_batch: 'AKTIF' }
+        { id_batch: 'BTH-111', cabang_id: 'ONS-01', id_obat: 'OBT-009', no_batch: 'WAR-2610M', tgl_kadaluarsa: addDays(310), qty_sisa: 50, qty_karantina: 0, hpp_beli: 1350, no_faktur_pbf: 'FK-FHR-0081', status_batch: 'AKTIF' },
+        { id_batch: 'BTH-201', cabang_id: 'ONS-02', id_obat: 'OBT-004', no_batch: 'RHN-CB2-01', tgl_kadaluarsa: addDays(300), qty_sisa: 80, qty_karantina: 0, hpp_beli: 7800, no_faktur_pbf: 'FK-DXA-CB2', status_batch: 'AKTIF' },
+        { id_batch: 'BTH-202', cabang_id: 'ONS-02', id_obat: 'OBT-007', no_batch: 'AML-CB2-02', tgl_kadaluarsa: addDays(400), qty_sisa: 180, qty_karantina: 0, hpp_beli: 410, no_faktur_pbf: 'FK-KFT-CB2', status_batch: 'AKTIF' },
+        { id_batch: 'BTH-203', cabang_id: 'ONS-03', id_obat: 'OBT-001', no_batch: 'AMX-CB3-01', tgl_kadaluarsa: addDays(360), qty_sisa: 150, qty_karantina: 0, hpp_beli: 480, no_faktur_pbf: 'FK-BSP-CB3', status_batch: 'AKTIF' }
       ],
       members: [
         { id_member: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_hp: '6281234567801', tgl_lahir: '1965-04-19', alergi_list: 'Penisilin', penyakit_kronis: 'Hipertensi + Jantung', program_prb: 'PRB_BPJS', obat_rutin_ids: 'OBT-007,OBT-009', tgl_habis_obat: addDays(2), tgl_reminder_berikut: isoToday, poin_loyalitas: 245, riwayat_skrining_json: JSON.stringify([{ tgl: addDays(-30), td: '148/92', gds: 112, bmi: 26.4 }, { tgl: isoToday, td: '136/86', gds: 108, bmi: 25.9 }]) },
@@ -196,12 +199,45 @@
     };
   }
 
+  function buildOwnerPiutangSeed(isoToday) {
+    return [
+      { id_piutang: 'PTG-001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-091', tanggal_trx: isoToday + 'T09:15:00Z', tgl_jatuh_tempo: isoToday, cabang_id: 'ONS-01', id_member: 'MBR-001', nama_pelanggan: 'Klinik Pratama Sehat Sentosa', no_wa: '081244556677', total_tagihan: 650000, total_dibayar: 250000, sisa_piutang: 400000, plafon_kredit: 5000000, status_piutang: 'SEBAGIAN', dibuat_oleh: 'apt. Siti Rahma, S.Farm', catatan: 'Tagihan tempo mitra dokter 14 hari', updated_at: isoToday + 'T09:15:00Z' }
+    ];
+  }
+
+  function buildCopyResepSeed(isoToday) {
+    return [
+      { id_copy: 'CR-001', no_salinan: 'CR/0001/' + isoToday.slice(5, 7) + '/' + isoToday.slice(0, 4), tanggal: isoToday, cabang_id: 'ONS-01', no_resep_asal: 'R/202611-0042', tgl_resep_asal: isoToday, nama_dokter: 'dr. Hendri Saputra, Sp.PD', id_member: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', umur_pasien: '58 th', items_json: JSON.stringify([{ nama_dagang: 'Amlodipine Besilate 5 mg', qty_resep: 30, qty_ambil: 15, qty_sisa: 15, signa: '1 x 1 tab pagi', flag: 'det 15' }]), status_serah: 'DET_15', apoteker_nama: 'apt. Siti Rahma, S.Farm', no_sipa: '19920412/SIPA_35.78/2025/1042', no_invoice_pos: '', catatan: 'Tebus sebagian 15 tablet, sisa 15 tablet' }
+    ];
+  }
+
   function ensureV11Seed(db) {
     const def = buildSeedDb();
+    const isoToday = new Date().toISOString().slice(0, 10);
     let changed = false;
     ['mutasi_stok', 'omnichannel_orders', 'crm_kontak', 'antrian_notif', 'st_template', 'surat_pesanan', 'shift_history'].forEach((k) => {
       if (!Array.isArray(db[k])) { db[k] = def[k]; changed = true; }
     });
+    if (!Array.isArray(db.piutang_pelanggan)) { db.piutang_pelanggan = buildOwnerPiutangSeed(isoToday); changed = true; }
+    if (!Array.isArray(db.copy_resep)) { db.copy_resep = buildCopyResepSeed(isoToday); changed = true; }
+    if (!Array.isArray(db.mutasi_cabang)) {
+      db.mutasi_cabang = [{
+        id_transfer: 'TRF-DEMO-01',
+        no_surat_jalan: 'SJ-MUT/' + isoToday.replace(/-/g, '') + '/0001',
+        tanggal_kirim: isoToday + 'T09:00:00',
+        tanggal_terima: '',
+        cabang_asal: 'ONS-02',
+        cabang_tujuan: 'ONS-01',
+        items_json: JSON.stringify([{ id_obat: 'OBT-004', nama_dagang: 'Rhinos SR Kapsul Lepas Lambat', satuan_dasar: 'Kapsul', no_batch: 'RHN-CB2-01', tgl_kadaluarsa: addDays(300), hpp_beli: 7800, qty: 20 }]),
+        total_qty_dasar: 20,
+        estimasi_nilai_hpp: 156000,
+        status_transfer: 'DIKIRIM',
+        dikirim_oleh: 'APJ Cabang ONS-02',
+        diterima_oleh: '',
+        catatan: 'Drop stok antrean cabang timur'
+      }];
+      changed = true;
+    }
     if (!db.profil_usaha || typeof db.profil_usaha !== 'object') {
       db.profil_usaha = def.profil_usaha;
       changed = true;
@@ -267,14 +303,114 @@
     return c;
   }
 
+  function _computeBranchCompareDemo(db, idObat) {
+    const branches = ['ONS-01', 'ONS-02', 'ONS-03'];
+    const brSet = new Set(branches);
+    const mapByObat = {};
+    (db.stok_batch || []).forEach((b) => {
+      if (String(b.status_batch || 'AKTIF') !== 'AKTIF' || Number(b.qty_sisa || 0) <= 0) return;
+      if (String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) < isoToday) return;
+      if (idObat && b.id_obat !== idObat) return;
+      const br = b.cabang_id || 'ONS-01';
+      brSet.add(br);
+      if (!mapByObat[b.id_obat]) mapByObat[b.id_obat] = {};
+      mapByObat[b.id_obat][br] = (mapByObat[b.id_obat][br] || 0) + Number(b.qty_sisa || 0);
+    });
+    const branchList = Array.from(brSet).sort();
+    const target = idObat ? (db.master_obat || []).filter((o) => o.id_obat === idObat) : (db.master_obat || []);
+    const items = target.map((o) => {
+      const perCb = {};
+      let tot = 0;
+      branchList.forEach((br) => {
+        const q = (mapByObat[o.id_obat] && mapByObat[o.id_obat][br]) || 0;
+        perCb[br] = q;
+        tot += q;
+      });
+      return { id_obat: o.id_obat, nama_dagang: o.nama_dagang, satuan_dasar: o.satuan_dasar || 'Unit', stok_per_cabang: perCb, total_semua_cabang: tot };
+    });
+    return { branches: branchList, items };
+  }
+
+  function _estimateCheckoutHppDemo(db, itemsReq, branchId) {
+    const cutTmp = {};
+    let estHpp = 0;
+    let estBruto = 0;
+    (itemsReq || []).forEach((it) => {
+      const faktor = Math.max(1, Number(it.faktor_konversi || 1));
+      let rem = Number(it.qty || 1) * faktor;
+      const avail = (db.stok_batch || [])
+        .filter((b) => (!b.cabang_id || b.cabang_id === branchId) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) >= isoToday)
+        .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
+      const unitSell = Number(it.harga_jual || 0) / faktor;
+      const obat = (db.master_obat || []).find((o) => o.id_obat === it.id_obat) || {};
+      avail.forEach((b) => {
+        if (rem <= 0) return;
+        const free = Number(b.qty_sisa || 0) - Number(cutTmp[b.id_batch] || 0);
+        if (free <= 0) return;
+        const cut = Math.min(rem, free);
+        cutTmp[b.id_batch] = Number(cutTmp[b.id_batch] || 0) + cut;
+        rem -= cut;
+        estHpp += cut * Number(b.hpp_beli || obat.hpp_avg || 0);
+        estBruto += Math.round(cut * unitSell);
+      });
+    });
+    return { estHpp, estBruto };
+  }
+
+  function _computeSmartDefectaDemo(db, branchId) {
+    const cut30 = addDays(-30);
+    const stokMap = {};
+    (db.stok_batch || []).forEach((b) => {
+      if ((!b.cabang_id || b.cabang_id === branchId) && String(b.status_batch || 'AKTIF') === 'AKTIF' && String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) >= isoToday) {
+        stokMap[b.id_obat] = (stokMap[b.id_obat] || 0) + Number(b.qty_sisa || 0);
+      }
+    });
+    const trx30 = {};
+    (db.penjualan || []).forEach((p) => {
+      if ((!p.cabang_id || p.cabang_id === branchId) && String(p.status_trx || '') !== 'RETUR' && String(p.tanggal || '').slice(0, 10) >= cut30) {
+        if (p.id_transaksi) trx30[p.id_transaksi] = true;
+        if (p.no_invoice) trx30[p.no_invoice] = true;
+      }
+    });
+    const sold30 = {};
+    (db.detail_penjualan || []).forEach((dt) => {
+      if (trx30[dt.id_transaksi] || trx30[dt.no_invoice]) sold30[dt.id_obat] = (sold30[dt.id_obat] || 0) + Number(dt.qty || 0);
+    });
+    const pbfLead = {};
+    (db.supplier_pbf || []).forEach((p) => { if (p.nama_pbf) pbfLead[String(p.nama_pbf).toLowerCase()] = Number(p.lead_time_hari || 2); });
+    const items = [];
+    (db.master_obat || []).forEach((o) => {
+      if (String(o.status_aktif || 'AKTIF') !== 'AKTIF') return;
+      const s = stokMap[o.id_obat] || 0;
+      const min = Number(o.stok_min || 10);
+      const max = Number(o.stok_max || 100);
+      const qty30 = sold30[o.id_obat] || 0;
+      const avgHarian = Math.round((qty30 > 0 ? qty30 / 30 : Math.max(0.5, min / 14)) * 100) / 100;
+      const leadTime = pbfLead[String(o.pbf_utama || '').toLowerCase()] || 2;
+      const rop = Math.ceil(avgHarian * (leadTime + 3));
+      const dos = avgHarian > 0 ? Math.round(s / avgHarian) : 999;
+      const smartQty = Math.max(1, Math.max(max, Math.ceil(avgHarian * (30 + leadTime))) - s);
+      if (s <= min || s <= rop) {
+        items.push({
+          id_obat: o.id_obat, nama_dagang: o.nama_dagang, zat_aktif: o.zat_aktif, golongan_bpom: o.golongan_bpom || 'BEBAS',
+          stok_saat_ini: s, stok_min: min, reorder_point: rop, terjual_30_hari: qty30, avg_harian: avgHarian,
+          lead_time_hari: leadTime, days_of_stock: dos, rekomendasi_order: smartQty,
+          satuan_dasar: o.satuan_dasar, hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0), pbf_utama: o.pbf_utama || 'PBF Reguler'
+        });
+      }
+    });
+    return { items };
+  }
+
   function handleAction(action, d, tokenPayload) {
     const db = loadDb();
     const role = (tokenPayload && tokenPayload.role) || 'Pemilik';
     const userNama = (tokenPayload && tokenPayload.nama) || 'Demo User';
     const userId = (tokenPayload && tokenPayload.uid) || 'USR-001';
+    const cabang = (d && d.cabang_id) || (tokenPayload && tokenPayload.branch) || 'ONS-01';
     const nowIso = new Date().toISOString();
 
-    if (action === 'ping') return { app: 'Apotek ONS Farma Enterprise', version: '14.2.0-DEMO', epoch: db.epoch };
+    if (action === 'ping') return { app: 'Apotek ONS Farma Enterprise', version: '16.0.0-DEMO', epoch: db.epoch };
 
     if (action === 'public.catalog') {
       const prof = db.profil_usaha || defaultProfilUsaha();
@@ -375,13 +511,14 @@
           tgl_kadaluarsa: dt.tgl_kadaluarsa || b.tgl_kadaluarsa || ''
         });
       });
+      const activeBr = (d && d.cabang_id) || 'ONS-01';
       return {
         user: tokenPayload,
         epoch: db.epoch,
-        cabang_id: d.cabang_id || 'ONS-01',
+        cabang_id: activeBr,
         store_profile: db.profil_usaha || defaultProfilUsaha(),
         master_obat: db.master_obat.map((o) => maskRow(o, role)),
-        stok_batch: db.stok_batch.map((b) => maskRow(b, role)),
+        stok_batch: db.stok_batch.filter((b) => !b.cabang_id || b.cabang_id === activeBr).map((b) => maskRow(b, role)),
         members: db.members,
         supplier_pbf: db.supplier_pbf,
         cold_chain: db.cold_chain,
@@ -395,7 +532,12 @@
         jurnal_keuangan: role !== 'Kasir' ? db.jurnal_keuangan : [],
         surat_pesanan: role !== 'Kasir' ? (db.surat_pesanan || []) : [],
         de_dokumen: role !== 'Kasir' ? (db.de_dokumen || []) : [],
-        shift_history: db.shift_history || []
+        shift_history: db.shift_history || [],
+        active_shift: (db.shift_history || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA' && (!s.cabang_id || s.cabang_id === activeBr)) || null,
+        piutang_pelanggan: db.piutang_pelanggan || [],
+        copy_resep: db.copy_resep || [],
+        mutasi_cabang: db.mutasi_cabang || [],
+        branch_stock_compare: _computeBranchCompareDemo(db, '')
       };
     }
 
@@ -403,6 +545,8 @@
       const existingIdx = db.master_obat.findIndex((o) => o.id_obat === d.id_obat);
       const item = Object.assign({
         id_obat: d.id_obat || ('OBT-' + String(db.master_obat.length + 1).padStart(3, '0')),
+        min_qty_grosir: Number(d.min_qty_grosir || 10),
+        harga_faskes: Number(d.harga_faskes || d.harga_grosir || d.harga_member || 0),
         status_aktif: 'AKTIF',
         updated_at: nowIso
       }, d);
@@ -416,6 +560,31 @@
     if (action === 'pos.checkout') {
       const itemsReq = Array.isArray(d.items) ? d.items : [];
       if (!itemsReq.length) throw new Error('Keranjang POS masih kosong.');
+      const hppEstCheck = _estimateCheckoutHppDemo(db, itemsReq, cabang);
+      const preNetRev = (d.grand_total !== undefined && d.grand_total !== null) ? Number(d.grand_total) : Math.max(0, hppEstCheck.estBruto - Number(d.diskon_total || 0));
+      const isSupv = role === 'Pemilik' || role === 'APJ';
+      if (hppEstCheck.estHpp > 0 && preNetRev < hppEstCheck.estHpp && !d.apj_override_id && !(isSupv && d.allow_below_hpp === true)) {
+        throw new Error('GUARD ANTI-RUGI: Harga jual bersih (Rp ' + preNetRev + ') di bawah HPP modal (Rp ' + hppEstCheck.estHpp + '). Diperlukan otorisasi PIN APJ/Pemilik.');
+      }
+      const metodeBayar = String(d.metode_bayar || 'TUNAI').toUpperCase();
+      const isPiutang = metodeBayar === 'PIUTANG';
+
+      if (isPiutang) {
+        const custNameKey = String(d.pelanggan_nama || '').trim().toLowerCase();
+        if ((!d.id_member || d.id_member === 'UMUM') && !custNameKey) {
+          throw new Error('Pembayaran Piutang / Tempo wajib memilih Member/Mitra atau mengisi Nama Pelanggan.');
+        }
+        const estBill = d.grand_total !== undefined ? Math.max(0, Number(d.grand_total)) : itemsReq.reduce((s, it) => s + Number(it.qty || 1) * Number(it.harga_jual || 0), 0);
+        const plafon = Number(d.plafon_kredit !== undefined && d.plafon_kredit !== '' ? d.plafon_kredit : 2000000);
+        const openDebt = (db.piutang_pelanggan || []).filter((p) => {
+          if (String(p.status_piutang || '').toUpperCase() === 'LUNAS') return false;
+          if (d.id_member && d.id_member !== 'UMUM') return String(p.id_member) === String(d.id_member);
+          return custNameKey && String(p.nama_pelanggan || '').trim().toLowerCase() === custNameKey;
+        }).reduce((sum, p) => sum + Math.max(0, Number(p.sisa_piutang || 0)), 0);
+        if (plafon > 0 && (openDebt + estBill) > plafon && !d.apj_override_id) {
+          throw new Error('Limit piutang/tempo terlampaui (Terpakai Rp ' + openDebt.toLocaleString('id-ID') + ', baru Rp ' + estBill.toLocaleString('id-ID') + ', plafon Rp ' + plafon.toLocaleString('id-ID') + '). Diperlukan otorisasi PIN APJ.');
+        }
+      }
       // Pra-validasi stok FEFO layak jual (hindari batch KADALUARSA)
       itemsReq.forEach((it) => {
         const qtyNeeded = Number(it.qty || 1) * Number(it.faktor_konversi || 1);
@@ -423,7 +592,7 @@
         let availSellable = 0;
         let expiredQty = 0;
         db.stok_batch.forEach((b) => {
-          if (b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0) {
+          if ((!b.cabang_id || b.cabang_id === cabang) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0) {
             const ed = String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10);
             if (ed < isoToday) expiredQty += Number(b.qty_sisa || 0);
             else availSellable += Number(b.qty_sisa || 0);
@@ -444,7 +613,7 @@
         const qtyNeededBase = Number(it.qty || 1) * faktor;
         let rem = qtyNeededBase;
         const batches = db.stok_batch
-          .filter((b) => b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) >= isoToday)
+          .filter((b) => (!b.cabang_id || b.cabang_id === cabang) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) >= isoToday)
           .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
         const obat = db.master_obat.find((o) => o.id_obat === it.id_obat) || {};
         const unitSell = Number(it.harga_jual || obat.harga_umum || 0) / faktor;
@@ -482,7 +651,7 @@
           outDetails.push(detObj);
           db.mutasi_stok.unshift({
             id_mutasi: 'MUT-' + Date.now() + Math.random().toString(36).slice(2, 5),
-            timestamp: nowIso, cabang_id: 'ONS-01', id_obat: it.id_obat, nama_dagang: obat.nama_dagang || it.id_obat,
+            timestamp: nowIso, cabang_id: cabang, id_obat: it.id_obat, nama_dagang: obat.nama_dagang || it.id_obat,
             id_batch: b.id_batch, no_batch: b.no_batch, tgl_kadaluarsa: b.tgl_kadaluarsa || '', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -cut,
             stok_akhir: b.qty_sisa, referensi_id: noInv, user_id: userId, catatan: 'Checkout POS FEFO ' + (d.channel || 'Toko Fisik')
           });
@@ -510,22 +679,55 @@
         total_hpp: totalHpp,
         estimasi_margin: grandTotal - totalHpp,
         poin_didapat: Math.floor(grandTotal / 10000),
-        status_trx: 'LUNAS'
+        status_trx: isPiutang ? 'BELUM_LUNAS' : 'LUNAS'
       };
       db.penjualan.unshift(trx);
-      db.jurnal_keuangan.push({
-        id_jurnal: 'JRN-' + Date.now(),
-        tanggal: nowIso,
-        cabang_id: trx.cabang_id,
-        jenis_trx: 'MASUK_PENJUALAN',
-        kategori: trx.channel,
-        nominal: trx.grand_total,
-        metode: trx.metode_bayar,
-        referensi_id: noInv,
-        periode_bulan: nowIso.slice(0, 7),
-        status_lock: 'TERBUKA',
-        user_id: userId
-      });
+      if (isPiutang) {
+        if (!Array.isArray(db.piutang_pelanggan)) db.piutang_pelanggan = [];
+        const dp = Math.min(grandTotal, Math.max(0, Number(d.dp_bayar || 0)));
+        const sisa = Math.max(0, grandTotal - dp);
+        const jtDefault = new Date(Date.now() + (Number(d.tempo_hari || 14) * 86400000)).toISOString().slice(0, 10);
+        db.piutang_pelanggan.unshift({
+          id_piutang: 'PTG-' + Date.now().toString().slice(-6),
+          no_invoice: noInv,
+          tanggal_trx: nowIso,
+          tgl_jatuh_tempo: d.tgl_jatuh_tempo || jtDefault,
+          cabang_id: trx.cabang_id,
+          id_member: trx.id_member,
+          nama_pelanggan: d.pelanggan_nama || 'Pelanggan Tempo',
+          no_wa: d.send_wa_to || '',
+          total_tagihan: grandTotal,
+          total_dibayar: dp,
+          sisa_piutang: sisa,
+          plafon_kredit: Number(d.plafon_kredit !== undefined && d.plafon_kredit !== '' ? d.plafon_kredit : 2000000),
+          status_piutang: sisa <= 0 ? 'LUNAS' : (dp > 0 ? 'SEBAGIAN' : 'BELUM_LUNAS'),
+          dibuat_oleh: userNama,
+          catatan: d.catatan_piutang || ('Tempo POS ' + noInv),
+          updated_at: nowIso
+        });
+        if (dp > 0) {
+          db.jurnal_keuangan.push({
+            id_jurnal: 'JRN-' + Date.now(), tanggal: nowIso, cabang_id: trx.cabang_id,
+            jenis_trx: 'MASUK_PIUTANG', kategori: 'DP Piutang POS', nominal: dp,
+            metode: 'TUNAI', referensi_id: noInv, periode_bulan: nowIso.slice(0, 7),
+            status_lock: 'TERBUKA', user_id: userId
+          });
+        }
+      } else {
+        db.jurnal_keuangan.push({
+          id_jurnal: 'JRN-' + Date.now(),
+          tanggal: nowIso,
+          cabang_id: trx.cabang_id,
+          jenis_trx: 'MASUK_PENJUALAN',
+          kategori: trx.channel,
+          nominal: trx.grand_total,
+          metode: trx.metode_bayar,
+          referensi_id: noInv,
+          periode_bulan: nowIso.slice(0, 7),
+          status_lock: 'TERBUKA',
+          user_id: userId
+        });
+      }
       if (trx.id_member !== 'UMUM') {
         const mem = db.members.find((m) => m.id_member === trx.id_member);
         if (mem) {
@@ -769,8 +971,9 @@
       }, d);
       db.faktur_pbf.unshift(f);
       const items = Array.isArray(d.items) ? d.items : [];
+      const hppAlerts = [];
       if (items.length) {
-        // Hitung weighted average HPP & update MASTER_OBAT
+        // Hitung weighted average HPP & update MASTER_OBAT + Deteksi Kenaikan HPP
         const stokSebelum = {};
         db.stok_batch.forEach((b) => {
           if (String(b.status_batch || 'AKTIF') === 'AKTIF') {
@@ -784,7 +987,20 @@
           const obat = db.master_obat.find((o) => o.id_obat === it.id_obat);
           if (obat && hppUnit > 0) {
             const oldQ = stokSebelum[it.id_obat] || 0;
+            const prevRef = Number(obat.hpp_terakhir || obat.hpp_avg || 0);
             const oldAvg = Number(obat.hpp_avg || obat.hpp_terakhir || hppUnit);
+            if (prevRef > 0 && hppUnit > prevRef) {
+              const pct = Math.round(((hppUnit - prevRef) / prevRef) * 1000) / 10;
+              hppAlerts.push({
+                id_obat: it.id_obat,
+                nama_dagang: obat.nama_dagang,
+                old_hpp: prevRef,
+                new_hpp: hppUnit,
+                pct_naik: pct,
+                harga_umum: Number(obat.harga_umum || 0),
+                below_hpp: Number(obat.harga_umum || 0) > 0 && hppUnit >= Number(obat.harga_umum || 0)
+              });
+            }
             obat.hpp_terakhir = hppUnit;
             obat.hpp_avg = (oldQ + qtyBase) > 0 ? Math.round(((oldQ * oldAvg) + (qtyBase * hppUnit)) / (oldQ + qtyBase)) : hppUnit;
             obat.updated_at = nowIso;
@@ -792,7 +1008,7 @@
           }
           const batchId = 'BTH-' + Date.now() + i;
           const bNew = {
-            id_batch: batchId, cabang_id: 'ONS-01', id_obat: it.id_obat,
+            id_batch: batchId, cabang_id: d.cabang_id || cabang || 'ONS-01', id_obat: it.id_obat,
             no_batch: it.no_batch || ('NEW-' + i), tgl_kadaluarsa: it.tgl_kadaluarsa || '2028-12-31',
             qty_sisa: qtyBase, qty_karantina: 0, hpp_beli: hppUnit,
             no_faktur_pbf: d.no_faktur_pbf, status_batch: 'AKTIF', no_sp: noSp, updated_at: nowIso
@@ -800,7 +1016,7 @@
           db.stok_batch.push(bNew);
           db.mutasi_stok.unshift({
             id_mutasi: 'MSK-' + Date.now() + i,
-            timestamp: nowIso, cabang_id: 'ONS-01', id_obat: it.id_obat, nama_dagang: (obat && obat.nama_dagang) || it.id_obat,
+            timestamp: nowIso, cabang_id: d.cabang_id || cabang || 'ONS-01', id_obat: it.id_obat, nama_dagang: (obat && obat.nama_dagang) || it.id_obat,
             id_batch: batchId, no_batch: bNew.no_batch, tgl_kadaluarsa: bNew.tgl_kadaluarsa,
             jenis_mutasi: 'PEMBELIAN_PBF', qty_ubah: qtyBase, stok_akhir: qtyBase,
             referensi_id: d.no_faktur_pbf, user_id: userId, catatan: 'Terima Faktur PBF ' + (d.id_pbf || '') + (noSp !== '-' ? ' (SP: ' + noSp + ')' : '')
@@ -824,10 +1040,10 @@
           periode_bulan: String(f.tgl_faktur || isoToday).slice(0, 7), status_lock: 'TERBUKA', user_id: userId
         });
       }
-      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'FAKTUR_PBF_CREATE', entitas: 'PEMBELIAN_PBF', entitas_id: f.id_beli, diff_sesudah_json: JSON.stringify({ no_faktur: d.no_faktur_pbf, no_sp: noSp, netto }) });
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: d.cabang_id || cabang || 'ONS-01', aksi: 'FAKTUR_PBF_CREATE', entitas: 'PEMBELIAN_PBF', entitas_id: f.id_beli, diff_sesudah_json: JSON.stringify({ no_faktur: d.no_faktur_pbf, no_sp: noSp, netto, hpp_naik: hppAlerts.length }) });
       db.epoch++;
       saveDb(db);
-      return { item: f };
+      return { item: f, hpp_alerts: hppAlerts };
     }
 
     if (action === 'pengadaan.returBar') {
@@ -893,34 +1109,143 @@
       return { periode: d.periode, locked_rows: c };
     }
 
+    if (action === 'shift.open') {
+      if (!Array.isArray(db.shift_history)) db.shift_history = [];
+      const openRow = db.shift_history.find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
+      if (openRow) return { shift: openRow, already_open: true };
+      const row = {
+        id_shift: 'SHF-' + Date.now().toString().slice(-6),
+        cabang_id: d.cabang_id || 'ONS-01',
+        tgl_buka: nowIso,
+        tgl_tutup: '',
+        kasir_id: d.kasir_nama || userNama,
+        supervisor_id: '-',
+        modal_awal: Math.max(0, Number(d.modal_awal || 0)),
+        sistem_tunai: 0,
+        sistem_qris: 0,
+        sistem_transfer: 0,
+        aktual_tunai: 0,
+        selisih_kas: 0,
+        catatan_handover: d.catatan || 'Buka Shift Kasir',
+        status_shift: 'TERBUKA'
+      };
+      db.shift_history.unshift(row);
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'SHIFT_OPENED', entitas: 'TUKAR_SHIFT_CLOSE', entitas_id: row.id_shift, diff_sesudah_json: JSON.stringify(row) });
+      db.epoch++;
+      saveDb(db);
+      return { shift: row, already_open: false };
+    }
+
     if (action === 'shift.close') {
       if (String(d.supervisor_pin) !== '123456') throw new Error('PIN Supervisor salah (Demo: 123456).');
       const modal = Number(d.modal_awal || 0);
       const sisTunai = Number(d.sistem_tunai || 0);
       const aktTunai = Number(d.aktual_tunai || 0);
       const selisih = aktTunai - (modal + sisTunai);
-      const row = {
-        id_shift: 'SHF-' + Date.now(),
-        cabang_id: d.cabang_id || 'ONS-01',
-        tgl_buka: d.tgl_buka || nowIso,
-        tgl_tutup: nowIso,
-        kasir_id: userNama,
-        supervisor_id: 'apt. Siti Rahma, S.Farm',
-        modal_awal: modal,
-        sistem_tunai: sisTunai,
-        sistem_qris: Number(d.sistem_qris || 0),
-        sistem_transfer: Number(d.sistem_transfer || 0),
-        aktual_tunai: aktTunai,
-        selisih_kas: selisih,
-        catatan_handover: d.catatan_handover || '',
-        status_shift: 'DITUTUP'
-      };
       if (!Array.isArray(db.shift_history)) db.shift_history = [];
-      db.shift_history.unshift(row);
+      let row = db.shift_history.find((s) => (d.id_shift && s.id_shift === d.id_shift) || String(s.status_shift || '').toUpperCase() === 'TERBUKA');
+      if (row) {
+        Object.assign(row, {
+          tgl_tutup: nowIso,
+          supervisor_id: 'apt. Siti Rahma, S.Farm',
+          modal_awal: modal,
+          sistem_tunai: sisTunai,
+          sistem_qris: Number(d.sistem_qris || 0),
+          sistem_transfer: Number(d.sistem_transfer || 0),
+          aktual_tunai: aktTunai,
+          selisih_kas: selisih,
+          catatan_handover: d.catatan_handover || row.catatan_handover || '',
+          status_shift: 'DITUTUP'
+        });
+      } else {
+        row = {
+          id_shift: d.id_shift || ('SHF-' + Date.now()),
+          cabang_id: d.cabang_id || 'ONS-01',
+          tgl_buka: d.tgl_buka || nowIso,
+          tgl_tutup: nowIso,
+          kasir_id: userNama,
+          supervisor_id: 'apt. Siti Rahma, S.Farm',
+          modal_awal: modal,
+          sistem_tunai: sisTunai,
+          sistem_qris: Number(d.sistem_qris || 0),
+          sistem_transfer: Number(d.sistem_transfer || 0),
+          aktual_tunai: aktTunai,
+          selisih_kas: selisih,
+          catatan_handover: d.catatan_handover || '',
+          status_shift: 'DITUTUP'
+        };
+        db.shift_history.unshift(row);
+      }
       db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'SHIFT_CLOSED', entitas: 'TUKAR_SHIFT_CLOSE', entitas_id: row.id_shift, diff_sesudah_json: JSON.stringify(row) });
       db.epoch++;
       saveDb(db);
       return { shift: row };
+    }
+
+    if (action === 'piutang.list') {
+      return { items: (db.piutang_pelanggan || []).slice() };
+    }
+
+    if (action === 'piutang.pay') {
+      const idP = String(d.id_piutang || '').trim();
+      const noInv = String(d.no_invoice || '').trim();
+      const nom = Number(d.nominal_bayar || 0);
+      if ((!idP && !noInv) || nom <= 0) throw new Error('ID Piutang / No. Invoice dan nominal bayar (> 0) wajib diisi.');
+      const target = (db.piutang_pelanggan || []).find((p) => (idP && p.id_piutang === idP) || (!idP && noInv && p.no_invoice === noInv));
+      if (!target) throw new Error('Data piutang tidak ditemukan.');
+      const sisa = Math.max(0, Number(target.sisa_piutang || 0));
+      if (nom > sisa) throw new Error('Nominal bayar melebihi sisa piutang (' + sisa + ').');
+      target.total_dibayar = Number(target.total_dibayar || 0) + nom;
+      target.sisa_piutang = Math.max(0, sisa - nom);
+      target.status_piutang = target.sisa_piutang <= 0 ? 'LUNAS' : 'SEBAGIAN';
+      target.updated_at = nowIso;
+      if (d.catatan) target.catatan = (target.catatan ? target.catatan + ' | ' : '') + d.catatan;
+      db.jurnal_keuangan.push({
+        id_jurnal: 'JRN-' + Date.now(), tanggal: nowIso, cabang_id: target.cabang_id || 'ONS-01',
+        jenis_trx: 'MASUK_PIUTANG', kategori: 'Pelunasan Piutang ' + (target.nama_pelanggan || ''),
+        nominal: nom, metode: d.metode || 'TRANSFER_BANK', referensi_id: target.no_invoice || target.id_piutang,
+        periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId
+      });
+      if (target.status_piutang === 'LUNAS' && target.no_invoice) {
+        const inv = db.penjualan.find((p) => p.no_invoice === target.no_invoice);
+        if (inv) inv.status_trx = 'LUNAS';
+      }
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'PIUTANG_PAYMENT', entitas: 'PIUTANG_PELANGGAN', entitas_id: target.id_piutang, diff_sesudah_json: JSON.stringify({ nominal: nom, sisa: target.sisa_piutang, status: target.status_piutang }) });
+      db.epoch++;
+      saveDb(db);
+      return { item: target, nominal_bayar: nom };
+    }
+
+    if (action === 'resep.copyList') {
+      return { items: (db.copy_resep || []).slice() };
+    }
+
+    if (action === 'resep.copySave') {
+      const cItems = Array.isArray(d.items) ? d.items : [];
+      if (!d.nama_pasien || !cItems.length) throw new Error('Nama pasien dan minimal 1 item obat wajib diisi untuk Salinan Resep (p.c.c).');
+      if (!Array.isArray(db.copy_resep)) db.copy_resep = [];
+      const row = {
+        id_copy: d.id_copy || ('CR-' + Date.now().toString().slice(-6)),
+        no_salinan: d.no_salinan || ('CR/' + String(db.copy_resep.length + 1).padStart(4, '0') + '/' + isoToday.slice(5, 7) + '/' + isoToday.slice(0, 4)),
+        tanggal: d.tanggal || isoToday,
+        cabang_id: d.cabang_id || 'ONS-01',
+        no_resep_asal: d.no_resep_asal || ('R/' + isoToday.replace(/-/g, '')),
+        tgl_resep_asal: d.tgl_resep_asal || isoToday,
+        nama_dokter: d.nama_dokter || 'Dokter Penulis Resep',
+        id_member: d.id_member || 'UMUM',
+        nama_pasien: d.nama_pasien,
+        umur_pasien: d.umur_pasien || '-',
+        items_json: JSON.stringify(cItems),
+        status_serah: d.status_serah || 'DET_ORIG',
+        apoteker_nama: d.apoteker_nama || userNama,
+        no_sipa: d.no_sipa || '19920412/SIPA_35.78/2025/1042',
+        no_invoice_pos: d.no_invoice_pos || '',
+        catatan: d.catatan || 'Salinan resep tebus sebagian (p.c.c)'
+      };
+      db.copy_resep.unshift(row);
+      db.epoch++;
+      saveDb(db);
+      return { item: row };
     }
 
     if (action === 'sipnap.report') {
@@ -1286,6 +1611,168 @@
       db.epoch++;
       saveDb(db);
       return { ok: true, profile: next };
+    }
+
+    if (action === 'pengadaan.smartDefecta' || action === 'defecta.forecast') {
+      return _computeSmartDefectaDemo(db, cabang);
+    }
+
+    if (action === 'cabang.stockCompare') {
+      return _computeBranchCompareDemo(db, d.id_obat || '');
+    }
+
+    if (action === 'cabang.transferList') {
+      const brFilter = d.cabang_id || '';
+      const rows = (db.mutasi_cabang || []).filter((r) => !brFilter || r.cabang_asal === brFilter || r.cabang_tujuan === brFilter);
+      return { items: rows, stock_compare: _computeBranchCompareDemo(db, '') };
+    }
+
+    if (action === 'cabang.transferSend') {
+      const asal = String(d.cabang_asal || cabang || 'ONS-01').trim();
+      const tujuan = String(d.cabang_tujuan || '').trim();
+      const reqItems = Array.isArray(d.items) && d.items.length
+        ? d.items
+        : (d.id_obat ? [{ id_obat: d.id_obat, qty: Number(d.qty_kirim || d.qty || 1) }] : []);
+      if (!tujuan || asal === tujuan) throw new Error('Cabang tujuan mutasi wajib berbeda dari cabang asal (' + asal + ').');
+      if (!reqItems.length) throw new Error('Pilih minimal 1 produk untuk dikirim antar-cabang.');
+      if (!Array.isArray(db.mutasi_cabang)) db.mutasi_cabang = [];
+      const cutMap = {};
+      const shippedLines = [];
+      let totalQty = 0;
+      let totalHppVal = 0;
+
+      reqItems.forEach((reqIt) => {
+        const need = Math.max(1, Number(reqIt.qty_dasar || reqIt.qty || 0));
+        const obat = db.master_obat.find((o) => o.id_obat === reqIt.id_obat) || {};
+        const avail = db.stok_batch
+          .filter((b) => (b.cabang_id || 'ONS-01') === asal && b.id_obat === reqIt.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) >= isoToday)
+          .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
+        const freeTotal = avail.reduce((s, b) => s + Math.max(0, Number(b.qty_sisa || 0) - Number(cutMap[b.id_batch] || 0)), 0);
+        if (freeTotal < need) {
+          throw new Error('Stok cabang ' + asal + ' tidak cukup untuk mutasi ' + (obat.nama_dagang || reqIt.id_obat) + ' (tersedia ' + freeTotal + ', diminta ' + need + ').');
+        }
+        let rem = need;
+        avail.forEach((b) => {
+          if (rem <= 0) return;
+          const used = Number(cutMap[b.id_batch] || 0);
+          const free = Number(b.qty_sisa || 0) - used;
+          if (free <= 0) return;
+          const take = Math.min(rem, free);
+          cutMap[b.id_batch] = used + take;
+          rem -= take;
+          const hppUnit = Number(b.hpp_beli || obat.hpp_avg || 0);
+          totalQty += take;
+          totalHppVal += take * hppUnit;
+          shippedLines.push({
+            id_obat: reqIt.id_obat,
+            nama_dagang: obat.nama_dagang || reqIt.id_obat,
+            satuan_dasar: obat.satuan_dasar || 'Unit',
+            id_batch_asal: b.id_batch,
+            no_batch: b.no_batch,
+            tgl_kadaluarsa: b.tgl_kadaluarsa,
+            hpp_beli: hppUnit,
+            qty: take
+          });
+        });
+      });
+
+      const idTrf = 'TRF-' + Date.now().toString().slice(-6);
+      const noSj = 'SJ-MUT/' + isoToday.replace(/-/g, '') + '/' + idTrf.slice(-4);
+      Object.keys(cutMap).forEach((bId) => {
+        const b = db.stok_batch.find((x) => x.id_batch === bId);
+        if (!b) return;
+        const take = cutMap[bId];
+        b.qty_sisa = Math.max(0, Number(b.qty_sisa || 0) - take);
+        if (b.qty_sisa <= 0) { b.qty_sisa = 0; b.status_batch = 'HABIS'; }
+        b.updated_at = nowIso;
+        const obat = db.master_obat.find((o) => o.id_obat === b.id_obat) || {};
+        db.mutasi_stok.unshift({
+          id_mutasi: 'MSK-' + Date.now() + Math.random().toString(36).slice(2, 5),
+          timestamp: nowIso, cabang_id: asal, id_obat: b.id_obat, nama_dagang: obat.nama_dagang || b.id_obat,
+          id_batch: b.id_batch, no_batch: b.no_batch, tgl_kadaluarsa: b.tgl_kadaluarsa || '',
+          jenis_mutasi: 'TRANSFER_KELUAR_CABANG', qty_ubah: -take, stok_akhir: b.qty_sisa,
+          referensi_id: noSj, user_id: userId, catatan: 'Kirim mutasi ke cabang ' + tujuan
+        });
+      });
+
+      const row = {
+        id_transfer: idTrf,
+        no_surat_jalan: noSj,
+        tanggal_kirim: nowIso,
+        tanggal_terima: '',
+        cabang_asal: asal,
+        cabang_tujuan: tujuan,
+        items_json: JSON.stringify(shippedLines),
+        total_qty_dasar: totalQty,
+        estimasi_nilai_hpp: Math.round(totalHppVal),
+        status_transfer: 'DIKIRIM',
+        dikirim_oleh: userNama,
+        diterima_oleh: '',
+        catatan: d.catatan || ''
+      };
+      db.mutasi_cabang.unshift(row);
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: asal,
+        aksi: 'TRANSFER_CABANG_KIRIM', entitas: 'MUTASI_ANTAR_CABANG', entitas_id: idTrf,
+        diff_sesudah_json: JSON.stringify({ no_surat_jalan: noSj, tujuan, total_qty: totalQty })
+      });
+      db.epoch++;
+      saveDb(db);
+      return { item: row };
+    }
+
+    if (action === 'cabang.transferReceive') {
+      const idTrf = String(d.id_transfer || '').trim();
+      if (!idTrf) throw new Error('ID transfer antar-cabang wajib diisi.');
+      const trfRow = (db.mutasi_cabang || []).find((r) => r.id_transfer === idTrf);
+      if (!trfRow) throw new Error('Data mutasi antar-cabang tidak ditemukan.');
+      if (String(trfRow.status_transfer || '') === 'DITERIMA') {
+        throw new Error('Mutasi cabang ini sudah berstatus DITERIMA sebelumnya.');
+      }
+      trfRow.status_transfer = 'DITERIMA';
+      trfRow.tanggal_terima = nowIso;
+      trfRow.diterima_oleh = userNama;
+      if (d.catatan) trfRow.catatan = (trfRow.catatan ? trfRow.catatan + ' | ' : '') + d.catatan;
+
+      let lines = [];
+      try { lines = JSON.parse(trfRow.items_json || '[]'); } catch (e) {}
+      let batchesAdded = 0;
+      lines.forEach((ln, idx) => {
+        const qty = Number(ln.qty || 0);
+        if (qty <= 0) return;
+        const bId = 'BTH-TRF-' + Date.now().toString().slice(-5) + idx;
+        db.stok_batch.push({
+          id_batch: bId,
+          cabang_id: trfRow.cabang_tujuan,
+          id_obat: ln.id_obat,
+          no_batch: ln.no_batch || 'TRF-BATCH',
+          tgl_kadaluarsa: ln.tgl_kadaluarsa || '2028-12-31',
+          qty_sisa: qty,
+          qty_karantina: 0,
+          hpp_beli: Number(ln.hpp_beli || 0),
+          no_faktur_pbf: trfRow.no_surat_jalan,
+          status_batch: 'AKTIF',
+          no_sp: trfRow.id_transfer,
+          updated_at: nowIso
+        });
+        db.mutasi_stok.unshift({
+          id_mutasi: 'MSK-' + Date.now() + idx,
+          timestamp: nowIso, cabang_id: trfRow.cabang_tujuan, id_obat: ln.id_obat, nama_dagang: ln.nama_dagang || ln.id_obat,
+          id_batch: bId, no_batch: ln.no_batch || 'TRF-BATCH', tgl_kadaluarsa: ln.tgl_kadaluarsa || '2028-12-31',
+          jenis_mutasi: 'TRANSFER_MASUK_CABANG', qty_ubah: qty, stok_akhir: qty,
+          referensi_id: trfRow.no_surat_jalan, user_id: userId,
+          catatan: 'Terima mutasi dari cabang ' + trfRow.cabang_asal
+        });
+        batchesAdded++;
+      });
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: trfRow.cabang_tujuan,
+        aksi: 'TRANSFER_CABANG_TERIMA', entitas: 'MUTASI_ANTAR_CABANG', entitas_id: idTrf,
+        diff_sesudah_json: JSON.stringify({ no_surat_jalan: trfRow.no_surat_jalan, asal: trfRow.cabang_asal, diterima: userNama })
+      });
+      db.epoch++;
+      saveDb(db);
+      return { item: trfRow, batches_added: batchesAdded };
     }
 
     return { ok: true };
