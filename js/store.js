@@ -39,10 +39,23 @@
     };
   }
 
+  function sanitizeLegacyOwnerName(val, fallback) {
+    const s = String(val || '').trim();
+    if (!s || /hendra\s+wijaya/i.test(s)) return fallback || 'apt. Anissa Faradifa R. Is Rumi';
+    return s;
+  }
+
+  function _normalizeProfileObject(prof) {
+    const merged = Object.assign({}, defaultStoreProfile(), prof || {});
+    merged.nama_pemilik = sanitizeLegacyOwnerName(merged.nama_pemilik, 'apt. Anissa Faradifa R. Is Rumi');
+    merged.dikonfirmasi_oleh = sanitizeLegacyOwnerName(merged.dikonfirmasi_oleh, merged.nama_pemilik);
+    return merged;
+  }
+
   function loadCachedProfile() {
     try {
       const raw = localStorage.getItem(PROFILE_CACHE_KEY);
-      if (raw) return Object.assign({}, defaultStoreProfile(), JSON.parse(raw));
+      if (raw) return _normalizeProfileObject(JSON.parse(raw));
     } catch (e) {}
     return defaultStoreProfile();
   }
@@ -496,11 +509,11 @@
   };
 
   function getStoreProfile() {
-    return Object.assign({}, defaultStoreProfile(), AppState.storeProfile || {});
+    return _normalizeProfileObject(AppState.storeProfile);
   }
 
   function setStoreProfile(prof) {
-    const merged = Object.assign({}, defaultStoreProfile(), prof || {});
+    const merged = _normalizeProfileObject(prof);
     AppState.storeProfile = merged;
     try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(merged)); } catch (e) {}
     return merged;
@@ -623,6 +636,7 @@
   global.ONSStore = {
     AppState,
     defaultStoreProfile,
+    sanitizeLegacyOwnerName,
     getStoreProfile,
     setStoreProfile,
     getProfileCompleteness,

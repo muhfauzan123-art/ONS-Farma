@@ -569,17 +569,24 @@
       function syncOwnerIdentityFromProfile(prof) {
         const p = prof || (ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {});
         const st = ONSStore.AppState;
-        if (!st.user || !p || !p.nama_pemilik) return;
+        if (!p || !p.nama_pemilik) return;
+        const cleanOwner = (ONSStore.sanitizeLegacyOwnerName ? ONSStore.sanitizeLegacyOwnerName(p.nama_pemilik, 'apt. Anissa Faradifa R. Is Rumi') : p.nama_pemilik);
+        if (/hendra\s+wijaya/i.test(String(p.nama_pemilik || '')) || /hendra\s+wijaya/i.test(String(p.dikonfirmasi_oleh || ''))) {
+          p.nama_pemilik = cleanOwner;
+          p.dikonfirmasi_oleh = cleanOwner;
+          if (ONSStore.setStoreProfile) ONSStore.setStoreProfile(p);
+        }
+        if (!st.user) return;
         const isPemilik = st.user.role === 'Pemilik' || String(st.user.id_user || '') === 'USR-001' || String(st.user.username || '').toLowerCase() === 'pemilik';
         if (!isPemilik) return;
         const stale = /hendra\s+wijaya/i.test(String(st.user.nama_lengkap || '')) || p.terkonfirmasi === 'YA';
-        if (!stale || st.user.nama_lengkap === p.nama_pemilik) return;
-        st.user.nama_lengkap = p.nama_pemilik;
+        if (!stale || st.user.nama_lengkap === cleanOwner) return;
+        st.user.nama_lengkap = cleanOwner;
         if (p.sipa_pemilik) st.user.no_sipa = p.sipa_pemilik;
         const ses = ONSApi.getSession && ONSApi.getSession();
         if (ses && ses.user) {
           ses.user = Object.assign({}, ses.user, {
-            nama_lengkap: p.nama_pemilik,
+            nama_lengkap: cleanOwner,
             no_sipa: p.sipa_pemilik || ses.user.no_sipa
           });
           ONSApi.setSession(ses);

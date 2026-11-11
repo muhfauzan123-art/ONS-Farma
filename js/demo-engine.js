@@ -205,6 +205,15 @@
     if (!db.profil_usaha || typeof db.profil_usaha !== 'object') {
       db.profil_usaha = def.profil_usaha;
       changed = true;
+    } else {
+      if (/hendra\s+wijaya/i.test(String(db.profil_usaha.nama_pemilik || ''))) {
+        db.profil_usaha.nama_pemilik = 'apt. Anissa Faradifa R. Is Rumi';
+        changed = true;
+      }
+      if (/hendra\s+wijaya/i.test(String(db.profil_usaha.dikonfirmasi_oleh || ''))) {
+        db.profil_usaha.dikonfirmasi_oleh = db.profil_usaha.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
+        changed = true;
+      }
     }
     if (Array.isArray(db.users)) {
       db.users.forEach((u) => {
@@ -1244,9 +1253,12 @@
       if (!String(d.nama_pemilik || '').trim() || !String(d.nama_usaha || '').trim()) {
         throw new Error('Nama Pemilik dan Nama Tempat Usaha wajib diisi.');
       }
+      const confName = (role === 'Pemilik' || /hendra\s+wijaya/i.test(String(userNama || '')))
+        ? String(d.nama_pemilik || '').trim()
+        : (userNama || d.nama_pemilik);
       const next = Object.assign({}, defaultProfilUsaha(), db.profil_usaha || {}, d, {
         terkonfirmasi: (d.terkonfirmasi === false || d.terkonfirmasi === 'BELUM') ? 'BELUM' : 'YA',
-        dikonfirmasi_oleh: userNama || d.nama_pemilik,
+        dikonfirmasi_oleh: confName,
         dikonfirmasi_pada: nowIso,
         updated_at: nowIso
       });

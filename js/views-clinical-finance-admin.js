@@ -1924,7 +1924,7 @@
             </div>
             <div class="ons-progress-track"><div class="ons-progress-fill" style="width:${comp.pct}%"></div></div>
             <div class="text-[11px] text-sky-100/90">
-              ${merged.dikonfirmasi_pada ? `Dikonfirmasi: ${S().formatTgl(merged.dikonfirmasi_pada)} (${S().esc(merged.dikonfirmasi_oleh || merged.nama_pemilik)})` : 'Lengkapi foto, logo & legalitas lalu klik Konfirmasi & Simpan.'}
+              ${merged.dikonfirmasi_pada ? `Dikonfirmasi: ${S().formatTgl(merged.dikonfirmasi_pada)} (${S().esc(S().sanitizeLegacyOwnerName ? S().sanitizeLegacyOwnerName(merged.dikonfirmasi_oleh, merged.nama_pemilik) : (merged.dikonfirmasi_oleh || merged.nama_pemilik))})` : 'Lengkapi foto, logo & legalitas lalu klik Konfirmasi & Simpan.'}
             </div>
           </div>
         </div>
@@ -2105,7 +2105,7 @@
             <tbody>
               ${users.length ? users.map((u) => `<tr>
                 <td class="font-mono-num font-bold">${S().esc(u.username)}</td>
-                <td>${S().esc(u.nama_lengkap)}</td>
+                <td>${S().esc((u.role === 'Pemilik' && S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(u.nama_lengkap, prof.nama_pemilik) : u.nama_lengkap)}</td>
                 <td><span class="badge-bpom ${u.role === 'Pemilik' ? 'bpom-narkotika' : (u.role === 'APJ' ? 'bpom-terbatas' : 'bpom-bebas')}">${S().esc(u.role)}</span></td>
                 <td class="font-mono-num">${S().esc(u.cabang_id)}</td>
                 <td class="font-mono-num">${S().esc(u.no_sipa || '-')}</td>
@@ -2312,7 +2312,8 @@
       jam_operasional: v('profJamOps'),
       zona_waktu: v('profZonaWaktu'),
       logo_usaha_url: v('profLogoUrl'),
-      terkonfirmasi: 'YA'
+      terkonfirmasi: 'YA',
+      dikonfirmasi_oleh: (document.getElementById('profNamaPemilik') || {}).value || (cur.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')
     };
     if (!payload.nama_pemilik || !payload.nama_usaha) {
       global.toast('Nama Pemilik dan Nama Tempat Usaha wajib diisi.', 'err');
