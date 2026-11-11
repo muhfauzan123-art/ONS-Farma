@@ -90,42 +90,59 @@
     }
 
     const execFetch = async () => {
-      const t0 = performance.now();
+      const reqId = o.requestId || (o.isWrite ? ('REQ-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6)) : '');
       const bodyPayload = {
         action: action,
         token: token,
         cabang_id: cabang,
-        request_id: o.requestId || (o.isWrite ? ('REQ-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6)) : ''),
+        request_id: reqId,
         data: data || {}
       };
+      const maxAttempts = o.isWrite ? 1 : 2;
+      let lastErr = null;
 
-      // WAJIB text/plain;charset=utf-8 untuk bebas CORS preflight ke GAS Web App!
-      const resp = await fetch(global.ONS_CONFIG.GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(bodyPayload),
-        redirect: 'follow'
-      });
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const t0 = performance.now();
+          // WAJIB text/plain;charset=utf-8 untuk bebas CORS preflight ke GAS Web App!
+          const resp = await fetch(global.ONS_CONFIG.GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(bodyPayload),
+            redirect: 'follow'
+          });
 
-      const json = await resp.json();
-      _lastLatencyMs = Math.round(performance.now() - t0);
-      const badge = document.getElementById('apiLatencyBadge');
-      if (badge) badge.textContent = 'v10.1 • ' + _lastLatencyMs + 'ms';
+          const json = await resp.json();
+          _lastLatencyMs = Math.round(performance.now() - t0);
+          const badge = document.getElementById('apiLatencyBadge');
+          if (badge) badge.textContent = 'v11.0 • ' + _lastLatencyMs + 'ms';
 
-      if (!json.ok) {
-        if (json.code === 401) {
-          setSession(null);
-          if (typeof global.renderApp === 'function') global.renderApp();
+          if (!json.ok) {
+            if (json.code === 401) {
+              setSession(null);
+              if (typeof global.renderApp === 'function') global.renderApp();
+            }
+            const apiErr = new Error(json.error || 'Terjadi kesalahan pada server GAS.');
+            apiErr.code = json.code || 500;
+            throw apiErr;
+          }
+
+          if (o.isWrite) {
+            bumpClientEpoch();
+          } else {
+            setCachedRead(action, data, json.data);
+          }
+          return json.data;
+        } catch (err) {
+          lastErr = err;
+          if (attempt < maxAttempts && (!err.code || err.code >= 500)) {
+            await new Promise((res) => setTimeout(res, 350));
+            continue;
+          }
+          throw err;
         }
-        throw new Error(json.error || 'Terjadi kesalahan pada server GAS.');
       }
-
-      if (o.isWrite) {
-        bumpClientEpoch();
-      } else {
-        setCachedRead(action, data, json.data);
-      }
-      return json.data;
+      throw lastErr;
     };
 
     const p = execFetch().finally(() => {

@@ -345,3 +345,381 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   :where(.lg\:col-span-6) { grid-column: span 6 / span 6; }
   :where(.lg\:col-span-7) { grid-column: span 7 / span 7; }
 }
+
+
+/* === ONS FARMA v11.0 DIGITAL MODERN UI POLISH === */
+.ons-card-interactive {
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+}
+.ons-card-interactive:hover {
+  transform: translateY(-1px);
+  border-color: var(--ons-primary-bright);
+  box-shadow: 0 10px 25px -8px rgba(0, 80, 202, 0.16);
+}
+
+.ons-tab-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  background: var(--ons-bg-subtle);
+  border: 1px solid var(--ons-border);
+  border-radius: 0.75rem;
+}
+.ons-tab-btn {
+  padding: 0.42rem 0.85rem;
+  border-radius: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ons-text-muted);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.12s ease;
+  background: transparent;
+}
+.ons-tab-btn:hover { color: var(--ons-text-main); }
+.ons-tab-btn.active {
+  background: var(--ons-bg-card);
+  color: var(--ons-primary);
+  border-color: var(--ons-border);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.ons-sidebar-group-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ons-text-muted);
+  padding: 0.65rem 0.75rem 0.25rem;
+  opacity: 0.85;
+}
+
+.ons-cmdk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+.ons-cmdk-row:hover, .ons-cmdk-row.active {
+  background: var(--ons-bg-subtle);
+}
+
+.ons-popover-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(360px, 92vw);
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border-strong);
+  border-radius: 0.9rem;
+  box-shadow: 0 20px 45px -10px rgba(9, 32, 42, 0.25);
+  z-index: 60;
+}
+
+@media print {
+  body.printing-thermal #printZone {
+    width: 100%;
+    max-width: 80mm;
+    margin: 0 auto;
+    padding: 0 !important;
+  }
+}
+
+/* === ONS FARMA v11.1 MODERN PHARMACY MENU, SUB-MENU, BREADCRUMB & DRAWER === */
+.ons-sidebar {
+  width: 268px;
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+}
+.ons-sidebar::-webkit-scrollbar { width: 5px; }
+.ons-sidebar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.28); border-radius: 999px; }
+
+.ons-sidebar.collapsed {
+  width: 78px;
+}
+.ons-sidebar.collapsed .ons-hide-collapsed {
+  display: none !important;
+}
+.ons-sidebar.collapsed .ons-menu-parent {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.ons-sidebar.collapsed .ons-submenu-wrap {
+  display: none !important;
+}
+
+.ons-nav-svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ons-menu-group {
+  margin-bottom: 0.22rem;
+}
+
+.ons-menu-parent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 0.52rem 0.72rem;
+  border-radius: 0.65rem;
+  font-size: 0.81rem;
+  font-weight: 700;
+  color: #CBD5E1;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  text-align: left;
+}
+.ons-menu-parent:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+.ons-menu-parent.has-active {
+  background: rgba(56, 189, 248, 0.13);
+  border-color: rgba(56, 189, 248, 0.24);
+  color: #FFFFFF;
+}
+.ons-menu-parent:focus-visible,
+.ons-submenu-btn:focus-visible,
+.ons-nav-btn:focus-visible,
+.ons-subnav-chip:focus-visible {
+  outline: 2px solid #38BDF8;
+  outline-offset: 2px;
+}
+
+.ons-chevron {
+  width: 15px;
+  height: 15px;
+  opacity: 0.72;
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
+}
+.ons-menu-parent[aria-expanded="true"] .ons-chevron {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.ons-nav-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.2rem 0.44rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #FCD34D;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.ons-nav-badge.danger {
+  background: rgba(239, 68, 68, 0.22);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.ons-nav-badge.info {
+  background: rgba(56, 189, 248, 0.2);
+  color: #7DD3FC;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.ons-submenu-wrap {
+  overflow: hidden;
+  padding-left: 0.85rem;
+  margin-top: 0.15rem;
+  margin-bottom: 0.35rem;
+}
+.ons-submenu-wrap.is-closed {
+  display: none;
+}
+
+.ons-submenu-list {
+  border-left: 1.5px solid rgba(148, 163, 184, 0.22);
+  padding-left: 0.52rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
+}
+
+.ons-submenu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 35px;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.55rem;
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: #94A3B8;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+}
+.ons-submenu-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #F1F5F9;
+}
+.ons-submenu-btn.active {
+  background: linear-gradient(90deg, #0066FE 0%, #0284C7 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(0, 102, 254, 0.34);
+}
+
+.ons-submenu-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+.ons-submenu-btn.active .ons-submenu-dot {
+  opacity: 1;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+/* Breadcrumb & Sub-Menu Horizontal Ribbon di Workspace Utama */
+.ons-subnav-bar {
+  background: var(--ons-bg-card);
+  border-bottom: 1px solid var(--ons-border);
+  padding: 0.55rem 1.25rem;
+}
+@media (max-width: 767px) {
+  .ons-subnav-bar { padding: 0.5rem 0.9rem; }
+}
+
+.ons-subnav-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 1px;
+}
+.ons-subnav-ribbon::-webkit-scrollbar { display: none; }
+
+.ons-subnav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  padding: 0.34rem 0.72rem;
+  min-height: 32px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.ons-subnav-chip:hover {
+  border-color: var(--ons-primary-bright);
+  color: var(--ons-text-main);
+}
+.ons-subnav-chip.active {
+  background: var(--ons-primary);
+  color: #FFFFFF;
+  border-color: var(--ons-primary);
+  box-shadow: 0 2px 8px rgba(0, 80, 202, 0.25);
+}
+
+/* Mobile Slide-Over Menu Drawer & Safe Area Bottom Nav */
+.ons-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(3px);
+  z-index: 80;
+  display: flex;
+}
+.ons-drawer-panel {
+  width: min(320px, 86vw);
+  height: 100%;
+  background: linear-gradient(180deg, var(--ons-nav-start) 0%, var(--ons-nav-end) 100%);
+  color: #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.85rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  box-shadow: 8px 0 32px rgba(2, 6, 23, 0.55);
+}
+.ons-drawer-panel .ons-menu-parent,
+.ons-drawer-panel .ons-submenu-btn,
+.ons-drawer-panel .ons-nav-btn {
+  min-height: 44px;
+}
+
+.ons-mobile-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+@media (prefers-reduced-motion: reduce) {
+  .ons-sidebar, .ons-chevron, .ons-menu-parent, .ons-submenu-btn, .ons-subnav-chip, .ons-view-enter {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   v12.0 PRO UTILITIES: FADE, FOCUS, ETIKET PREVIEW, NARANJO
+   ========================================================= */
+@keyframes onsFadeSlideIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ons-view-enter {
+  animation: onsFadeSlideIn 0.16s ease-out both;
+}
+.ons-quick-denom {
+  padding: 0.32rem 0.6rem;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-main);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.ons-quick-denom:hover {
+  border-color: var(--ons-primary-bright);
+  background: rgba(0, 80, 202, 0.08);
+  color: var(--ons-primary-bright);
+}
+.ons-etiket-box {
+  border: 2px solid #0F172A;
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.ons-etiket-box.putih { background: #FFFFFF; color: #0F172A; }
+.ons-etiket-box.biru { background: #DBEAFE; color: #0F172A; border-color: #1D4ED8; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--ons-primary-bright);
+  outline-offset: 1px;
+}

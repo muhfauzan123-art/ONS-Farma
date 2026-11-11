@@ -1,13 +1,13 @@
 # Panduan Setup Backend Google Apps Script & Deploy Frontend ke GitHub Pages
 
-Paket aplikasi **Apotek ONS Farma Enterprise v10.0** menggunakan arsitektur modern **Decoupled Frontend + Pure JSON REST API** agar responsif tanpa delay iframe dan bebas masalah CORS.
+Paket aplikasi **Apotek ONS Farma Enterprise v11.0 ("Apotek Digital Modern Terpadu")** menggunakan arsitektur modern **Decoupled Frontend + Pure JSON REST API** agar responsif tanpa delay iframe dan bebas masalah CORS.
 
 ---
 
 ## Bagian 1: Struktur Folder
 
-1. **`backend-gas/`** -> Ditempelkan / di-*push* ke proyek **Google Apps Script** (berisi `appsscript.json` & 7 file `.gs`). **JANGAN** masukkan folder ini ke repositori GitHub Pages publik.
-2. **`frontend-pwa/`** -> Di-*deploy* ke **GitHub Pages** (hanya HTML, CSS, JS statis, ikon PWA, & `sw.js`). File `js/config.js` hanya menyimpan URL publik `/exec`.
+1. **`backend-gas/`** -> Ditempelkan / di-*push* ke proyek **Google Apps Script** (berisi `appsscript.json` & **8 file `.gs`**). **JANGAN** masukkan folder ini ke repositori GitHub Pages publik.
+2. **`frontend-pwa/`** -> Di-*deploy* ke **GitHub Pages** (hanya HTML, CSS, JS statis, ikon PWA, & `sw.js`). File `js/config.js` hanya menyimpan URL publik `/exec`. Etalase publik pelanggan juga tersedia otomatis lewat query `?katalog=1`.
 
 ---
 
@@ -15,7 +15,7 @@ Paket aplikasi **Apotek ONS Farma Enterprise v10.0** menggunakan arsitektur mode
 
 1. Buka [script.google.com](https://script.google.com) dan buat **New Project** (atau buka Google Sheet baru -> menu *Extensions* -> *Apps Script*).
 2. Aktifkan visibilitas `appsscript.json` (*Project Settings* -> centang *Show "appsscript.json" manifest file in editor*), lalu salin isi `backend-gas/appsscript.json`.
-3. Buat 7 file script di editor Apps Script sesuai nama dan isi file di `backend-gas/`:
+3. Buat **8 file script** di editor Apps Script sesuai nama dan isi file di `backend-gas/`:
    - `01_Config_Secrets.gs`
    - `02_ScaleTurbo_Router.gs`
    - `03_POS_FEFO_Warehouse.gs`
@@ -23,10 +23,10 @@ Paket aplikasi **Apotek ONS Farma Enterprise v10.0** menggunakan arsitektur mode
    - `05_Tagihan_Pembayaran.gs`
    - `06_DocEngine.gs`
    - `07_Migrasi_Database.gs`
-4. Pilih fungsi **`setupAppEnvironment`** pada dropdown atas editor Apps Script, lalu klik **Run** dan berikan izin akses (Authorize).
-   - Fungsi ini bersifat **idempoten** (aman dijalankan ulang): otomatis membuat **25 sheet lengkap**, folder arsip **Google Drive**, men-generate rahasia kriptografi `SESSION_SECRET`, `HMAC_PEPPER`, `QR_SECRET`, dan `DE_HMAC_SECRET` secara acak di **Script Properties**, serta mengisi 3 akun awal:
-     - `pemilik` / `apj` / `kasir` (Kata sandi awal: `OnsFarma#2026`, PIN Pejabat awal: `123456`).
-     - Untuk mengganti password/PIN darurat kapan saja langsung dari editor GAS: jalankan `resetAksesDarurat("pemilik", "SandiBaruKuat", "654321")`.
+   - `08_CRM_Omnichannel_Printer.gs` *(Modul v11.0: Omnichannel Delivery, WhatsApp CRM & Blast, dan Template Struk Thermal)*
+4. Untuk instalasi perdana (database masih kosong), pilih fungsi **`setupAppEnvironment`** pada dropdown atas editor Apps Script, lalu klik **Run** dan berikan izin akses (Authorize).
+   - Fungsi ini bersifat **idempoten**: membuat **29 sheet lengkap**, folder arsip **Google Drive**, rahasia kriptografi `SESSION_SECRET`, `HMAC_PEPPER`, `QR_SECRET`, dan `DE_HMAC_SECRET` di **Script Properties**, serta mengisi 3 akun awal (`pemilik`, `apj`, `kasir`, sandi awal `OnsFarma#2026`, PIN awal `123456`).
+   - *(Upgrade dari v10 ke v11: Anda **TIDAK PERLU** menjalankan ulang `setupAppEnvironment`; 4 sheet baru v11 (`OMNICHANNEL_ORDER`, `CRM_KONTAK`, `ANTRIAN_NOTIF`, `ST_TEMPLATE`) akan dibuat otomatis secara lazy-self-healing saat pertama kali diakses!)*
 5. Klik **Deploy** -> **New deployment**:
    - Type: **Web app**
    - Execute as: **Me (User deploying)**
@@ -76,13 +76,13 @@ Saat Anda memperbarui kode di masa mendatang (misal ke v10.1 atau menambah fitur
    - File `frontend-pwa/js/config.js` berisi alamat `GAS_URL` live milik Anda. Saat menyalin pembaruan folder `frontend-pwa/`, kecualikan `js/config.js` atau pastikan URL `/exec` di dalamnya tetap sesuai.
 
 3. **Naikkan Versi `CACHE_NAME` di `frontend-pwa/sw.js`:**
-   - Setiap kali mengubah tampilan HTML/CSS/JS PWA, naikkan versi string di `sw.js` (misal `'ons-farma-pwa-v10.1.0'`) agar HP kasir dan browser Pemilik otomatis mengunduh versi terbaru tanpa terjebak cache lama.
+   - Setiap kali mengubah tampilan HTML/CSS/JS PWA, naikkan versi string di `sw.js` (saat ini `'ons-farma-pwa-v11.0.0'`) agar HP kasir dan browser Pemilik otomatis mengunduh versi terbaru tanpa terjebak cache lama.
 
 4. **Push Perubahan Frontend ke GitHub Pages:**
    ```bash
    cd frontend-pwa
    git status
    git add .
-   git commit -m "Update Apotek ONS Farma v10.1"
+   git commit -m "Update Apotek ONS Farma v11.0 Apotek Digital Terpadu"
    git push origin main
    ```

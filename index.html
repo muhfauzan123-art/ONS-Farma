@@ -4,10 +4,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="theme-color" content="#09202A"/>
-  <title>Apotek ONS Farma Enterprise v10</title>
+  <title>Apotek ONS Farma Enterprise v12.0</title>
   <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
+  <link rel="preconnect" href="https://script.google.com"/>
+  <link rel="preconnect" href="https://script.googleusercontent.com"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -28,51 +30,430 @@
   <script src="./vendor/ons-xlsx-export.js"></script>
   <script src="./vendor/ons-xlsx-lite.js"></script>
 
-  <!-- Core Config, Scale Turbo REST API & Sandbox Engine -->
+  <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
   <script src="./js/config.js"></script>
+  <script src="./js/struk-engine.js"></script>
   <script src="./js/demo-engine.js"></script>
   <script src="./js/api-turbo.js"></script>
   <script src="./js/store.js"></script>
 
-  <!-- 14 Tampilan Layar & Modul Terintegrasi -->
+  <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v11.1 -->
   <script src="./js/views-auth-dash-pos.js"></script>
   <script src="./js/views-inventory-procurement.js"></script>
   <script src="./js/views-clinical-finance-admin.js"></script>
+  <script src="./js/views-omnichannel-crm.js"></script>
 
-  <!-- Bootstrap Utama & Navigasi Instan (<50ms) -->
+  <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
     (function () {
       'use strict';
 
-      const NAV_ITEMS = [
-        { id: 'dashboard', label: 'Pusat Komando', icon: '&#128202;', minRole: 'Kasir' },
-        { id: 'pos', label: 'Kasir POS Cepat', icon: '&#9889;', minRole: 'Kasir' },
-        { id: 'obat', label: 'Master Obat KFA', icon: '&#128138;', minRole: 'APJ' },
-        { id: 'gudang', label: 'Gudang FEFO & Recall', icon: '&#128230;', minRole: 'Kasir' },
-        { id: 'defecta', label: 'Defecta & SP BPOM', icon: '&#128221;', minRole: 'APJ' },
-        { id: 'faktur', label: 'Faktur & Retur PBF', icon: '&#129534;', minRole: 'APJ' },
-        { id: 'klinis', label: 'Klinis & SATUSEHAT', icon: '&#129658;', minRole: 'APJ' },
-        { id: 'eresep-prb', label: 'E-Resep & PRB', icon: '&#128197;', minRole: 'APJ' },
-        { id: 'finance', label: 'Keuangan & Pajak', icon: '&#128176;', minRole: 'APJ' },
-        { id: 'billing', label: 'Tagihan & Kwitansi QR', icon: '&#128179;', minRole: 'Kasir' },
-        { id: 'doc-engine', label: 'Mesin Surat Resmi', icon: '&#128196;', minRole: 'APJ' },
-        { id: 'tutup-shift', label: 'Tutup Shift PIN', icon: '&#128274;', minRole: 'Kasir' },
-        { id: 'sipnap', label: 'SIPNAP & Pareto', icon: '&#128200;', minRole: 'APJ' },
-        { id: 'settings', label: 'Pengaturan & Migrasi', icon: '&#9881;&#65039;', minRole: 'Pemilik' },
-        { id: 'mobile-preview', label: 'PWA & Mobile Info', icon: '&#128241;', minRole: 'Kasir' }
+      const OPEN_GROUPS_KEY = 'ons_menu_open_v11';
+      const SIDEBAR_MINI_KEY = 'ons_sidebar_mini_v11';
+
+      // Set Ikon SVG Terpadu (Lucide-style 2px stroke — UI/UX Pro Max)
+      const SVG_ICONS = {
+        home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>',
+        pos: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M7 15h4"/>',
+        inventory: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+        clinical: '<path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/>',
+        finance: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+        report: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/>',
+        settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.83 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>',
+        chevron: '<path d="m6 9 6 6 6-6"/>',
+        search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+        bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+        menu: '<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>',
+        close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+        collapse: '<path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/>',
+        sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+        moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+        logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+        truck: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>'
+      };
+
+      function svgIcon(name, extraClass) {
+        return `<svg viewBox="0 0 24 24" aria-hidden="true" class="ons-nav-svg ${extraClass || ''}">${SVG_ICONS[name] || SVG_ICONS.home}</svg>`;
+      }
+
+      // Arsitektur Menu & Sub-Menu Apotek Digital v12.0
+      const MENU_TREE = [
+        {
+          id: 'grp-home',
+          label: 'Beranda & KPI',
+          icon: 'home',
+          directView: 'dashboard',
+          kw: 'beranda pusat komando dashboard kpi ringkasan kepatuhan'
+        },
+        {
+          id: 'grp-pos',
+          label: 'Penjualan & POS',
+          icon: 'pos',
+          badgeKey: 'omniNew',
+          badgeTone: 'info',
+          children: [
+            { viewId: 'pos', subTab: 'kasir', label: 'Kasir POS FEFO', kw: 'kasir jual scan barcode f2 split poin diskon etiket checkout' },
+            { viewId: 'pos', subTab: 'riwayat', label: 'Riwayat Nota & Retur PIN', kw: 'riwayat nota penjualan cetak ulang struk rincian void retur pin' },
+            { viewId: 'pos', subTab: 'online', label: 'Antrean Online di POS', kw: 'order online pos keranjang web wa', badgeKey: 'omniPending', badgeTone: 'info' },
+            { viewId: 'omnichannel', subTab: 'SEMUA', label: 'Omnichannel Delivery Hub', kw: 'omnichannel delivery kurir etalase publik', badgeKey: 'omniNew', badgeTone: 'info' },
+            { viewId: 'tutup-shift', subTab: '', label: 'Tutup Shift & Denominasi Kas', kw: 'tutup shift z-report kasir pecahan uang rekonsiliasi pin' }
+          ]
+        },
+        {
+          id: 'grp-inv',
+          label: 'Inventaris & PBF',
+          icon: 'inventory',
+          badgeKey: 'invAlerts',
+          badgeTone: 'danger',
+          children: [
+            { viewId: 'gudang', subTab: 'batch', label: 'Stok Batch FEFO & Recall', kw: 'gudang batch ed kadaluarsa karantina recall bpom', badgeKey: 'nearEd', badgeTone: 'danger' },
+            { viewId: 'gudang', subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'kartu stok mutasi masuk keluar bpom xlsx' },
+            { viewId: 'gudang', subTab: 'coldchain', label: 'Monitor Chiller 2-8°C', kw: 'cold chain chiller suhu kulkas vaksin insulin alarm' },
+            { viewId: 'gudang', subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] },
+            { viewId: 'obat', subTab: '', label: 'Master Obat KFA BPOM', kw: 'master obat kfa nie bpom harga jual beli code128' },
+            { viewId: 'defecta', subTab: 'order', label: 'Smart Defecta & SP BPOM', kw: 'defecta stok minimum days of stock surat pesanan sp pbf', badgeKey: 'lowStock', badgeTone: '' },
+            { viewId: 'defecta', subTab: 'supplier', label: 'Direktori Supplier PBF CDOB', kw: 'supplier pbf cdob sla termin kontak wa tambah edit' },
+            { viewId: 'faktur', subTab: 'daftar', label: 'Daftar Faktur & Hutang PBF', kw: 'faktur pembelian penerimaan barang hutang pbf' },
+            { viewId: 'faktur', subTab: 'input', label: 'Input Faktur GRN & OCR', kw: 'input faktur grn multi item ocr parser batch masuk' },
+            { viewId: 'faktur', subTab: 'retur', label: 'Retur Near-ED BAR-PBF', kw: 'retur barang pbf bar near ed kadaluarsa' }
+          ]
+        },
+        {
+          id: 'grp-clin',
+          label: 'Layanan Klinis & CRM',
+          icon: 'clinical',
+          badgeKey: 'erxPending',
+          badgeTone: 'info',
+          children: [
+            { viewId: 'klinis', subTab: 'soap', label: 'Skrining Resep & SOAP FHIR', kw: 'klinis soap pio pto satusehat fhir skrining resep' },
+            { viewId: 'klinis', subTab: 'racikan', label: 'Kalkulator Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru cetak' },
+            { viewId: 'klinis', subTab: 'meso', label: 'Monitoring Efek Samping (MESO)', kw: 'naranjo meso efek samping obat rotd bpom' },
+            { viewId: 'eresep-prb', subTab: 'erx', label: 'Antrean E-Resep APJ', kw: 'e-resep dokter mitra pin apj validasi pos', badgeKey: 'erxPending', badgeTone: 'info' },
+            { viewId: 'eresep-prb', subTab: 'prb', label: 'Pasien PRB & Skrining', kw: 'prb kronis refill bpjs skrining gds sparkline wa' },
+            { viewId: 'crm-wa', subTab: 'kontak', label: 'Direktori CRM & Opt-Out', kw: 'crm kontak pasien whatsapp 08 62 opt out' },
+            { viewId: 'crm-wa', subTab: 'blast', label: 'Broadcast WA Terjadwal', kw: 'broadcast blast whatsapp edukasi reminder kontrol' },
+            { viewId: 'crm-wa', subTab: 'antrean', label: 'Antrean Notif Fonnte', kw: 'antrean notifikasi wa fonnte email log' }
+          ]
+        },
+        {
+          id: 'grp-fin',
+          label: 'Keuangan & Tagihan',
+          icon: 'finance',
+          children: [
+            { viewId: 'finance', subTab: 'pnl', label: 'Laporan Laba-Rugi (P&L)', kw: 'keuangan laba rugi pnl omzet cogs margin valuasi aset xlsx' },
+            { viewId: 'finance', subTab: 'jurnal', label: 'Buku Kas & Lock Periode', kw: 'jurnal kas petty cash masuk keluar lock periode' },
+            { viewId: 'finance', subTab: 'hutang', label: 'Pelunasan Hutang PBF', kw: 'hutang pbf cicil bayar faktur outflow 4 minggu' },
+            { viewId: 'finance', subTab: 'pajak', label: 'Pajak PPN/PPh & Slip Gaji', kw: 'pajak ppn 11 pph final slip gaji karyawan a4' },
+            { viewId: 'billing', subTab: 'tagihan', label: 'Tagihan & Kwitansi QR', kw: 'tagihan prb kwitansi hmac piutang grupbayar' },
+            { viewId: 'billing', subTab: 'verifikasi', label: 'Verifikasi Transfer & QRIS', kw: 'verifikasi bukti transfer qris 1 klik' },
+            { viewId: 'billing', subTab: 'potongan', label: 'Potongan & Subsidi PRB', kw: 'potongan diskon beasiswa subsidi pasien' },
+            { viewId: 'billing', subTab: 'reminder', label: 'Reminder Jatuh Tempo WA', kw: 'reminder pengingat jatuh tempo h-3 h-0' }
+          ]
+        },
+        {
+          id: 'grp-rep',
+          label: 'Laporan & Surat Resmi',
+          icon: 'report',
+          children: [
+            { viewId: 'sipnap', subTab: 'narkotika', label: 'SIPNAP Kemenkes 8 Kolom', kw: 'sipnap kemenkes narkotika psikotropika oot mutasi' },
+            { viewId: 'sipnap', subTab: 'pareto', label: 'Pareto ABC & Indikator WHO', kw: 'pareto abc fast slow moving antibiotik who' },
+            { viewId: 'sipnap', subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock slow moving permintaan tertolak lost sales' },
+            { viewId: 'doc-engine', subTab: 'surat', label: 'Arsip & TTD Surat Resmi', kw: 'doc engine surat resmi kuasa bpom qr verifikasi ttd pin' },
+            { viewId: 'doc-engine', subTab: 'pindai', label: 'Templat & Pemindai {{Tag}}', kw: 'templat google docs sheets placeholder pemindai' }
+          ]
+        },
+        {
+          id: 'grp-sys',
+          label: 'Pengaturan & Perangkat',
+          icon: 'settings',
+          children: [
+            { viewId: 'settings', subTab: 'akun', label: 'Pengguna, Sandi & PIN', kw: 'pengaturan akun user kasir apj sipa ganti sandi pin' },
+            { viewId: 'settings', subTab: 'struk', label: 'Desain Struk Thermal 58/80', kw: 'template struk printer thermal 58mm 80mm escpos qr' },
+            { viewId: 'settings', subTab: 'vault', label: 'Brankas Rahasia & Migrasi', kw: 'script properties fonnte vault migrasi spreadsheet backup drive' },
+            { viewId: 'settings', subTab: 'audit', label: 'Log Audit Sistem', kw: 'log audit immutable keamanan' },
+            { viewId: 'mobile-preview', subTab: '', label: 'PWA, Etalase Publik & Printer', kw: 'pwa mobile preview etalase katalog bluetooth printer' }
+          ]
+        }
       ];
 
-      window.navigateView = function (viewId) {
+      function getMenuBadges() {
+        const st = ONSStore.AppState;
+        const nearEd = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && ONSStore.daysUntil(b.tgl_kadaluarsa) <= 90).length;
+        const lowStock = ONSStore.canSeeFinancialCost()
+          ? (st.masterObat || []).filter((o) => ONSStore.getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length
+          : 0;
+        const omniNew = (st.omnichannelOrders || []).filter((o) => o.status_order === 'BARU').length;
+        const omniPending = (st.omnichannelOrders || []).filter((o) => o.status_order !== 'SELESAI' && o.status_order !== 'BATAL').length;
+        const erxPending = ONSStore.canSeeFinancialCost()
+          ? (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length
+          : 0;
+        return { nearEd, lowStock, invAlerts: nearEd + lowStock, omniNew, omniPending, erxPending };
+      }
+
+      function getAllowedMenuTree() {
+        const tree = [];
+        const curRole = ONSStore.getRole();
+        MENU_TREE.forEach((grp) => {
+          if (grp.directView) {
+            if (ONSStore.canAccessView(grp.directView)) tree.push(grp);
+            return;
+          }
+          const kids = (grp.children || []).filter((c) => {
+            if (!ONSStore.canAccessView(c.viewId)) return false;
+            if (c.roles && !c.roles.includes(curRole)) return false;
+            return true;
+          });
+          if (kids.length) tree.push(Object.assign({}, grp, { children: kids }));
+        });
+        return tree;
+      }
+
+      function loadOpenGroups() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) || 'null');
+          if (Array.isArray(parsed)) return new Set(parsed);
+        } catch (e) {}
+        return new Set(['grp-pos', 'grp-inv']);
+      }
+      const openGroupsSet = loadOpenGroups();
+      let sidebarCollapsed = localStorage.getItem(SIDEBAR_MINI_KEY) === '1';
+
+      function saveOpenGroups() {
+        try { localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify(Array.from(openGroupsSet))); } catch (e) {}
+      }
+
+      function isSubItemActive(item, grp) {
+        const st = ONSStore.AppState;
+        if (st.activeView !== item.viewId) return false;
+        if (!item.subTab) return true;
+        const parent = grp || getActiveParentGroup();
+        if (parent && parent.children) {
+          const sameViewCount = parent.children.filter((c) => c.viewId === item.viewId).length;
+          if (sameViewCount <= 1) return true;
+        }
+        const curSub = (st.subTabs && st.subTabs[item.viewId]) || '';
+        return !curSub ? item === parent?.children?.[0] : curSub === item.subTab;
+      }
+
+      function getActiveParentGroup() {
+        const st = ONSStore.AppState;
+        const tree = getAllowedMenuTree();
+        for (const grp of tree) {
+          if (grp.directView && grp.directView === st.activeView) return grp;
+          if ((grp.children || []).some((c) => c.viewId === st.activeView)) return grp;
+        }
+        return tree[0] || null;
+      }
+
+      function getActiveSubItem(grp) {
+        if (!grp || grp.directView) return null;
+        const st = ONSStore.AppState;
+        const curSub = (st.subTabs && st.subTabs[st.activeView]) || '';
+        return grp.children.find((c) => c.viewId === st.activeView && (!c.subTab || c.subTab === curSub))
+          || grp.children.find((c) => c.viewId === st.activeView)
+          || null;
+      }
+
+      function renderMenuTreeHtml(isDrawer) {
+        const tree = getAllowedMenuTree();
+        const badges = getMenuBadges();
+        const activeGrp = getActiveParentGroup();
+        if (activeGrp && !activeGrp.directView) openGroupsSet.add(activeGrp.id);
+
+        return tree.map((grp) => {
+          if (grp.directView) {
+            const isAct = ONSStore.AppState.activeView === grp.directView;
+            return `<div class="ons-menu-group">
+              <button onclick="navigateView('${grp.directView}')" title="${ONSStore.esc(grp.label)}" class="ons-menu-parent ${isAct ? 'has-active' : ''}">
+                <span class="flex items-center gap-2.5 min-w-0">${svgIcon(grp.icon)}<span class="truncate ons-hide-collapsed">${ONSStore.esc(grp.label)}</span></span>
+              </button>
+            </div>`;
+          }
+          const isExpanded = openGroupsSet.has(grp.id);
+          const hasAct = activeGrp && activeGrp.id === grp.id;
+          const bVal = grp.badgeKey ? Number(badges[grp.badgeKey] || 0) : 0;
+          const firstChild = grp.children[0];
+
+          return `<div class="ons-menu-group">
+            <button type="button"
+              aria-expanded="${isExpanded ? 'true' : 'false'}"
+              title="${ONSStore.esc(grp.label)}"
+              onclick="window.onClickParentMenu('${grp.id}','${firstChild ? firstChild.viewId : ''}','${firstChild ? firstChild.subTab : ''}')"
+              class="ons-menu-parent ${hasAct ? 'has-active' : ''}">
+              <span class="flex items-center gap-2.5 min-w-0">
+                ${svgIcon(grp.icon)}
+                <span class="truncate ons-hide-collapsed">${ONSStore.esc(grp.label)}</span>
+              </span>
+              <span class="flex items-center gap-1.5 ons-hide-collapsed shrink-0">
+                ${bVal > 0 ? `<span class="ons-nav-badge ${grp.badgeTone || ''}">${bVal}</span>` : ''}
+                ${svgIcon('chevron', 'ons-chevron')}
+              </span>
+            </button>
+            <div class="ons-submenu-wrap ${isExpanded ? '' : 'is-closed'}">
+              <div class="ons-submenu-list">
+                ${grp.children.map((sub) => {
+                  const subAct = isSubItemActive(sub, grp);
+                  const sbVal = sub.badgeKey ? Number(badges[sub.badgeKey] || 0) : 0;
+                  return `<button type="button"
+                    data-nav-id="${sub.viewId}"
+                    data-sub-tab="${sub.subTab || ''}"
+                    onclick="navigateView('${sub.viewId}','${sub.subTab || ''}')"
+                    class="ons-submenu-btn ${subAct ? 'active' : ''}">
+                    <span class="flex items-center gap-2 min-w-0">
+                      <span class="ons-submenu-dot"></span>
+                      <span class="truncate">${ONSStore.esc(sub.label)}</span>
+                    </span>
+                    ${sbVal > 0 ? `<span class="ons-nav-badge ${sub.badgeTone || ''}">${sbVal}</span>` : ''}
+                  </button>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      function renderSubnavBarHtml() {
+        const grp = getActiveParentGroup();
+        if (!grp) return '';
+        const activeSub = getActiveSubItem(grp);
+        const badges = getMenuBadges();
+        const trail = activeSub
+          ? `<span>${ONSStore.esc(grp.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeSub.label)}</strong>`
+          : `<strong style="color:var(--ons-text-main)">${ONSStore.esc(grp.label)}</strong>`;
+
+        const chipsHtml = (grp.children && grp.children.length > 1) ? `
+          <div class="ons-subnav-ribbon mt-2" role="navigation" aria-label="Sub-menu cepat ${ONSStore.esc(grp.label)}">
+            ${grp.children.map((sub) => {
+              const act = isSubItemActive(sub, grp);
+              const b = sub.badgeKey ? Number(badges[sub.badgeKey] || 0) : 0;
+              return `<button type="button" onclick="navigateView('${sub.viewId}','${sub.subTab || ''}')" class="ons-subnav-chip ${act ? 'active' : ''}">
+                <span>${ONSStore.esc(sub.label)}</span>
+                ${b > 0 ? `<span class="font-mono-num text-[10px] px-1.5 py-0.2 rounded-full ${act ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600'}">${b}</span>` : ''}
+              </button>`;
+            }).join('')}
+          </div>` : '';
+
+        return `<div class="flex flex-wrap items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
+          <div class="flex items-center flex-wrap gap-1">${trail}</div>
+          <div class="hidden sm:flex items-center gap-2 text-[11px]">
+            <span>Pintasan: <kbd class="px-1 py-0.5 rounded border font-mono-num">F2</kbd> Kasir &bull; <kbd class="px-1 py-0.5 rounded border font-mono-num">Ctrl+K</kbd> Cari Sub-Menu</span>
+          </div>
+        </div>${chipsHtml}`;
+      }
+
+      window.syncNavHighlight = function () {
+        const sideMount = document.getElementById('sidebarMenuMount');
+        if (sideMount) sideMount.innerHTML = renderMenuTreeHtml(false);
+        const drawerMount = document.getElementById('drawerMenuMount');
+        if (drawerMount) drawerMount.innerHTML = renderMenuTreeHtml(true);
+        const subBar = document.getElementById('workspaceSubnavBar');
+        if (subBar) subBar.innerHTML = renderSubnavBarHtml();
+        const curView = ONSStore.AppState.activeView;
+        document.querySelectorAll('[data-mobile-nav]').forEach((el) => {
+          const isMatch = el.getAttribute('data-mobile-nav') === curView;
+          el.classList.toggle('text-blue-600', isMatch);
+        });
+      };
+
+      window.onClickParentMenu = function (grpId, firstViewId, firstSubTab) {
+        if (sidebarCollapsed) {
+          sidebarCollapsed = false;
+          localStorage.setItem(SIDEBAR_MINI_KEY, '0');
+          document.getElementById('desktopSidebar')?.classList.remove('collapsed');
+          openGroupsSet.add(grpId);
+          saveOpenGroups();
+          if (firstViewId) navigateView(firstViewId, firstSubTab || '');
+          else window.syncNavHighlight();
+          return;
+        }
+        if (openGroupsSet.has(grpId)) openGroupsSet.delete(grpId);
+        else openGroupsSet.add(grpId);
+        saveOpenGroups();
+        window.syncNavHighlight();
+      };
+
+      window.toggleSidebarCollapsed = function () {
+        sidebarCollapsed = !sidebarCollapsed;
+        localStorage.setItem(SIDEBAR_MINI_KEY, sidebarCollapsed ? '1' : '0');
+        const side = document.getElementById('desktopSidebar');
+        if (side) side.classList.toggle('collapsed', sidebarCollapsed);
+      };
+
+      window.openMobileDrawer = function () {
+        if (document.getElementById('mobileNavDrawer')) return;
+        const st = ONSStore.AppState;
+        const dr = document.createElement('div');
+        dr.id = 'mobileNavDrawer';
+        dr.className = 'ons-drawer-backdrop md:hidden';
+        dr.innerHTML = `<div class="ons-drawer-panel" role="dialog" aria-label="Menu Apotek">
+          <div class="flex items-center justify-between gap-2 pb-3 mb-2 border-b border-white/10">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img src="./icons/ons-farma-app-icon.png" alt="Logo" class="w-9 h-9 rounded-lg"/>
+              <div class="min-w-0">
+                <div class="font-bold text-sm text-white truncate">ONS FARMA v12.0</div>
+                <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+              </div>
+            </div>
+            <button onclick="window.closeMobileDrawer()" aria-label="Tutup Menu" class="p-2 rounded-lg text-slate-300 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center">${svgIcon('close')}</button>
+          </div>
+          <div id="drawerMenuMount" class="flex-1 space-y-1">${renderMenuTreeHtml(true)}</div>
+          <div class="pt-3 mt-3 border-t border-white/10 space-y-2 text-xs">
+            <div class="px-2 text-slate-300 truncate"><b>${ONSStore.esc((st.user && st.user.nama_lengkap) || '')}</b></div>
+            <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn text-red-300 hover:bg-red-500/20">${svgIcon('logout')}<span>Keluar Sesi</span></button>
+          </div>
+        </div>`;
+        dr.addEventListener('click', (e) => { if (e.target === dr) window.closeMobileDrawer(); });
+        document.body.appendChild(dr);
+      };
+
+      window.closeMobileDrawer = function () {
+        const el = document.getElementById('mobileNavDrawer');
+        if (el) el.remove();
+      };
+
+      window.navigateView = function (viewId, subTab) {
         if (!ONSStore.canAccessView(viewId)) {
           toast('Akses dibatasi untuk peran ' + ONSStore.getRole(), 'warn');
           return;
         }
-        ONSStore.AppState.activeView = viewId;
+        const st = ONSStore.AppState;
+        st.activeView = viewId;
+        if (subTab !== undefined && subTab !== '') {
+          if (!st.subTabs) st.subTabs = {};
+          st.subTabs[viewId] = subTab;
+          st.activeSubTab = subTab;
+          const setterMap = {
+            pos: window.setPosSubTab,
+            gudang: window.setGudangTab,
+            defecta: window.setDefectaTab,
+            faktur: window.setFakturTab,
+            klinis: window.setKlinisTab,
+            'eresep-prb': window.setEresepTab,
+            finance: window.setFinanceTab,
+            sipnap: window.setSipnapTab,
+            billing: window.setBillingTab,
+            'doc-engine': window.setDocTab,
+            settings: window.setSettingsTab
+          };
+          if (typeof setterMap[viewId] === 'function') {
+            setterMap[viewId](subTab);
+            window.closeMobileDrawer();
+            return;
+          }
+          if (viewId === 'crm-wa' && window.ONSViewsOmniCrm && typeof window.ONSViewsOmniCrm.setCrmTab === 'function') {
+            window.ONSViewsOmniCrm.setCrmTab(subTab);
+            window.closeMobileDrawer();
+            return;
+          }
+          if (viewId === 'omnichannel' && window.ONSViewsOmniCrm && typeof window.ONSViewsOmniCrm.setOmniFilter === 'function') {
+            window.ONSViewsOmniCrm.setOmniFilter(subTab);
+            window.closeMobileDrawer();
+            return;
+          }
+        }
+        window.closeMobileDrawer();
         window.renderActiveView();
-        // Highlight nav secara instan tanpa re-render penuh
-        document.querySelectorAll('[data-nav-id]').forEach((el) => {
-          el.classList.toggle('active', el.getAttribute('data-nav-id') === viewId);
-        });
+        window.syncNavHighlight();
       };
 
       window.bootLoadState = async function (forceRefresh) {
@@ -99,7 +480,7 @@
         }
       };
 
-      function applyBootPayload(data) {
+      window.applyBootPayload = function (data) {
         const st = ONSStore.AppState;
         st.masterObat = data.master_obat || [];
         st.stokBatch = data.stok_batch || [];
@@ -108,9 +489,14 @@
         st.coldChain = data.cold_chain || [];
         st.rekamKlinis = data.rekam_klinis || [];
         st.penjualan = data.penjualan || [];
+        st.detailPenjualan = data.detail_penjualan || [];
+        st.mutasiStok = data.mutasi_stok || [];
+        st.omnichannelOrders = data.omnichannel_orders || [];
+        st.strukTemplates = data.struk_templates || [];
         st.fakturPbf = data.faktur_pbf || [];
         st.jurnalKeuangan = data.jurnal_keuangan || [];
-      }
+      };
+      const applyBootPayload = window.applyBootPayload;
 
       window.logoutUser = function () {
         ONSApi.setSession(null);
@@ -126,16 +512,19 @@
         const v1 = window.ONSViewsAuthDashPos;
         const v2 = window.ONSViewsInventoryProcurement;
         const v3 = window.ONSViewsClinicalFinanceAdmin;
+        const v4 = window.ONSViewsOmniCrm;
 
         switch (v) {
           case 'dashboard': slot.innerHTML = v1.renderDashboardView(); break;
           case 'pos': slot.innerHTML = v1.renderPosView(); break;
+          case 'omnichannel': slot.innerHTML = v4.renderOmnichannelView(); break;
           case 'obat': slot.innerHTML = v2.renderMasterObatView(); break;
           case 'gudang': slot.innerHTML = v2.renderGudangView(); break;
           case 'defecta': slot.innerHTML = v2.renderDefectaView(); break;
           case 'faktur': slot.innerHTML = v2.renderFakturView(); break;
           case 'klinis': slot.innerHTML = v3.renderKlinisView(); break;
           case 'eresep-prb': slot.innerHTML = v3.renderEresepPrbView(); break;
+          case 'crm-wa': slot.innerHTML = v4.renderCrmWaView(); break;
           case 'finance': slot.innerHTML = v3.renderFinanceView(); break;
           case 'billing': slot.innerHTML = v3.renderBillingModuleView(); break;
           case 'doc-engine': slot.innerHTML = v3.renderDocEngineView(); break;
@@ -145,6 +534,96 @@
           case 'mobile-preview': slot.innerHTML = v3.renderMobilePreviewView(); break;
           default: slot.innerHTML = v1.renderDashboardView();
         }
+      };
+
+      function buildOperationalAlerts() {
+        const st = ONSStore.AppState;
+        const alerts = [];
+        const nearEdCount = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && ONSStore.daysUntil(b.tgl_kadaluarsa) <= 90).length;
+        if (nearEdCount > 0) alerts.push({ view: 'gudang', sub: 'batch', tone: 'text-red-600', title: `${nearEdCount} Batch Kritis Near-ED (<=90 hari)`, desc: 'Prioritaskan FEFO atau Retur BAR-PBF.' });
+        const lowCount = (st.masterObat || []).filter((o) => ONSStore.getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length;
+        if (lowCount > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'defecta', sub: 'order', tone: 'text-amber-600', title: `${lowCount} Obat di Bawah Stok Minimum`, desc: 'Buat SP BPOM otomatis dari menu Defecta.' });
+        const newOmni = (st.omnichannelOrders || []).filter((o) => o.status_order === 'BARU').length;
+        if (newOmni > 0) alerts.push({ view: 'omnichannel', sub: 'SEMUA', tone: 'text-sky-600', title: `${newOmni} Order Online/WA Baru Masuk`, desc: 'Siap diverifikasi & dimuat ke Kasir POS.' });
+        const erxPend = (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
+        if (erxPend > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'eresep-prb', sub: 'erx', tone: 'text-purple-600', title: `${erxPend} E-Resep Menunggu PIN APJ`, desc: 'Periksa interaksi obat & verifikasi SIPA.' });
+        return alerts;
+      }
+
+      window.toggleHeaderAlerts = function () {
+        const existing = document.getElementById('headerAlertPopover');
+        if (existing) { existing.remove(); return; }
+        const alerts = buildOperationalAlerts();
+        const host = document.getElementById('headerAlertHost');
+        if (!host) return;
+        const pop = document.createElement('div');
+        pop.id = 'headerAlertPopover';
+        pop.className = 'ons-popover-panel p-3.5 space-y-2';
+        pop.innerHTML = `
+          <div class="flex items-center justify-between border-b pb-2" style="border-color:var(--ons-border)">
+            <span class="font-bold text-xs">Radar Peringatan Apotek (${alerts.length})</span>
+            <button onclick="document.getElementById('headerAlertPopover')?.remove()" class="text-xs font-bold opacity-60">&times;</button>
+          </div>
+          ${alerts.length === 0 ? '<div class="text-xs py-3 text-center opacity-70">Semua indikator gudang, klinis & order aman!</div>' : alerts.map((a) => `
+            <button onclick="document.getElementById('headerAlertPopover')?.remove();navigateView('${a.view}','${a.sub || ''}');" class="w-full text-left p-2 rounded-lg border hover:bg-slate-500/10 block space-y-0.5" style="border-color:var(--ons-border)">
+              <div class="text-xs font-bold ${a.tone}">${ONSStore.esc(a.title)}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">${ONSStore.esc(a.desc)}</div>
+            </button>`).join('')}
+        `;
+        host.appendChild(pop);
+      };
+
+      window.openCommandPalette = function () {
+        const st = ONSStore.AppState;
+        const flatNav = [];
+        getAllowedMenuTree().forEach((grp) => {
+          if (grp.directView) {
+            flatNav.push({ viewId: grp.directView, subTab: '', grp: 'Utama', label: grp.label, icon: grp.icon, kw: grp.kw || '' });
+          } else {
+            (grp.children || []).forEach((c) => {
+              flatNav.push({ viewId: c.viewId, subTab: c.subTab || '', grp: grp.label, label: c.label, icon: grp.icon, kw: c.kw || '' });
+            });
+          }
+        });
+        ONSStore.openModal(`<div class="p-4 space-y-3">
+          <div class="flex items-center gap-2 border-b pb-2" style="border-color:var(--ons-border)">
+            <span class="text-sm font-bold text-blue-600">Ctrl+K</span>
+            <input id="cmdkSearchInp" class="ons-input flex-1 text-sm" placeholder="Cari menu / sub-menu (mis. kartu stok, struk, retur, blast), obat KFA, atau order..." oninput="window.filterCmdk(this.value)"/>
+            <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Esc</button>
+          </div>
+          <div id="cmdkResultsBox" class="max-h-80 overflow-y-auto space-y-1 text-xs"></div>
+        </div>`, '620px');
+        window.filterCmdk = function (rawQ) {
+          const q = String(rawQ || '').trim().toLowerCase();
+          const box = document.getElementById('cmdkResultsBox');
+          if (!box) return;
+          const navMatches = flatNav.filter((n) => !q || `${n.label} ${n.grp} ${n.kw}`.toLowerCase().includes(q)).slice(0, 9);
+          const obatMatches = q ? (st.masterObat || []).filter((o) => `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa}`.toLowerCase().includes(q)).slice(0, 5) : [];
+          const orderMatches = q ? (st.omnichannelOrders || []).filter((o) => `${o.no_order} ${o.nama_pelanggan}`.toLowerCase().includes(q)).slice(0, 4) : [];
+
+          let html = navMatches.map((n) => `
+            <div onclick="ONSStore.closeModal();navigateView('${n.viewId}','${n.subTab}');" class="ons-cmdk-row">
+              <div class="flex items-center gap-2">${svgIcon(n.icon, 'opacity-70')}<strong>${ONSStore.esc(n.label)}</strong></div>
+              <span class="text-[11px]" style="color:var(--ons-text-soft)">${ONSStore.esc(n.grp)}</span>
+            </div>`).join('');
+          if (obatMatches.length) {
+            html += `<div class="ons-sidebar-group-label">Stok Obat &amp; Tambah ke Kasir</div>` + obatMatches.map((o) => `
+              <div onclick="ONSStore.closeModal();navigateView('pos','kasir');setTimeout(()=>window.addPosItemById && window.addPosItemById('${ONSStore.esc(o.id_obat)}'),30);" class="ons-cmdk-row">
+                <div><strong>${ONSStore.esc(o.nama_dagang)}</strong> <span style="color:var(--ons-text-soft)">(${ONSStore.getTotalStok(o.id_obat)} ${ONSStore.esc(o.satuan_dasar)})</span></div>
+                <span class="font-mono-num font-bold text-emerald-600">${ONSStore.rp(o.harga_umum)}</span>
+              </div>`).join('');
+          }
+          if (orderMatches.length) {
+            html += `<div class="ons-sidebar-group-label">Pesanan Omnichannel</div>` + orderMatches.map((o) => `
+              <div onclick="ONSStore.closeModal();navigateView('omnichannel','SEMUA');" class="ons-cmdk-row">
+                <div><strong>${ONSStore.esc(o.no_order)}</strong> &bull; ${ONSStore.esc(o.nama_pelanggan)}</div>
+                <span class="badge-bpom bpom-terbatas">${ONSStore.esc(o.status_order)}</span>
+              </div>`).join('');
+          }
+          box.innerHTML = html || '<div class="p-6 text-center opacity-60">Tidak ada hasil yang cocok.</div>';
+        };
+        window.filterCmdk('');
+        setTimeout(() => document.getElementById('cmdkSearchInp')?.focus(), 20);
       };
 
       window.renderApp = function () {
@@ -159,71 +638,90 @@
 
         const st = ONSStore.AppState;
         st.user = ses.user;
-        const allowedNav = NAV_ITEMS.filter((it) => ONSStore.canAccessView(it.id));
+        const alertsCount = buildOperationalAlerts().length;
 
         root.innerHTML = `
           <div class="min-h-screen flex flex-col md:flex-row">
-            <!-- Sidebar Desktop -->
-            <aside class="ons-sidebar w-64 shrink-0 p-3 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
+            <!-- Sidebar Desktop Menu + Sub-Menu Akordeon v12.0 -->
+            <aside id="desktopSidebar" class="ons-sidebar ${sidebarCollapsed ? 'collapsed' : ''} shrink-0 p-3 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
               <div>
-                <div class="flex items-center gap-2.5 px-2 py-2.5 mb-3 border-b border-white/10">
-                  <img src="./icons/ons-farma-app-icon.png" alt="Logo" class="w-9 h-9 rounded-lg"/>
-                  <div class="min-w-0">
-                    <div class="font-bold text-sm text-white truncate">ONS FARMA v10</div>
-                    <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-2.5 border-b border-white/10">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <img src="./icons/ons-farma-app-icon.png" alt="Logo" class="w-9 h-9 rounded-lg shrink-0"/>
+                    <div class="min-w-0 ons-hide-collapsed">
+                      <div class="font-bold text-sm text-white truncate">ONS FARMA v12.0</div>
+                      <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                    </div>
                   </div>
+                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 shrink-0">
+                    ${svgIcon('collapse')}
+                  </button>
                 </div>
-                <nav class="space-y-1">
-                  ${allowedNav.map((it) => `
-                    <button data-nav-id="${it.id}" onclick="navigateView('${it.id}')" class="ons-nav-btn ${st.activeView === it.id ? 'active' : ''}">
-                      <span>${it.icon}</span><span class="truncate">${it.label}</span>
-                    </button>`).join('')}
+                <nav id="sidebarMenuMount" aria-label="Menu Utama Apotek" class="space-y-1">
+                  ${renderMenuTreeHtml(false)}
                 </nav>
               </div>
               <div class="pt-3 mt-3 border-t border-white/10 space-y-2 text-xs">
-                <div class="px-2 text-slate-300 truncate"><b>${ONSStore.esc(st.user.nama_lengkap)}</b></div>
-                <button onclick="logoutUser()" class="ons-nav-btn text-red-300 hover:bg-red-500/20"><span>&#128682;</span><span>Keluar Sesi</span></button>
+                <div class="px-2 text-slate-300 truncate ons-hide-collapsed"><b>${ONSStore.esc(st.user.nama_lengkap)}</b></div>
+                <button onclick="logoutUser()" title="Keluar Sesi" class="ons-nav-btn text-red-300 hover:bg-red-500/20">
+                  ${svgIcon('logout')}
+                  <span class="ons-hide-collapsed">Keluar Sesi</span>
+                </button>
               </div>
             </aside>
 
             <!-- Konten Utama -->
             <div class="flex-1 flex flex-col min-w-0">
-              <header class="h-14 border-b px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-                <div class="flex items-center gap-2">
+              <header class="h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                <div class="flex items-center gap-2 min-w-0">
+                  <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu & Sub-Menu" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="./icons/ons-farma-app-icon.png" class="w-7 h-7 rounded md:hidden"/>
-                  <span class="font-bold text-sm md:hidden">ONS Farma</span>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v10.1 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v12.0 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
-                <div class="flex items-center gap-2">
-                  <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden">&#128242; Install PWA</button>
-                  <button onclick="ONSStore.toggleDarkMode();renderApp();" class="ons-btn ons-btn-ghost text-xs px-2.5">${st.darkMode ? '&#9728;&#65039; Shift Terang' : '&#127769; Shift Malam'}</button>
-                  <button onclick="logoutUser()" class="ons-btn ons-btn-ghost text-xs md:hidden">Keluar</button>
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                  <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
+                  <div id="headerAlertHost" class="relative">
+                    <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Radar Notifikasi Apotek">${svgIcon('bell', 'w-4 h-4')} ${alertsCount ? `<span class="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[10px] font-bold">${alertsCount}</span>` : ''}</button>
+                  </div>
+                  <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden">Install</button>
+                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-2.5">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}<span class="hidden lg:inline">${st.darkMode ? 'Terang' : 'Malam'}</span></button>
                 </div>
               </header>
+
+              <!-- Breadcrumb & Sub-Menu Kontekstual Cepat -->
+              <div id="workspaceSubnavBar" class="ons-subnav-bar">${renderSubnavBarHtml()}</div>
 
               <main id="mainViewSlot" class="flex-1 p-4 md:p-6 ons-main-scroll"></main>
             </div>
 
-            <!-- Mobile Bottom Nav (<768px) -->
-            <nav class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-4 h-16" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <!-- Mobile Bottom Nav (<768px) dengan Touch Target >=44px & Drawer Menu -->
+            <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-5 ons-mobile-bottom" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
               ${[
-                { id: 'dashboard', l: 'Beranda', i: '&#128202;' },
-                { id: 'pos', l: 'Kasir POS', i: '&#9889;' },
-                { id: 'gudang', l: 'Gudang', i: '&#128230;' },
-                { id: 'billing', l: 'Tagihan', i: '&#128179;' }
-              ].map((b) => `<button data-nav-id="${b.id}" onclick="navigateView('${b.id}')" class="flex flex-col items-center justify-center text-[11px] font-semibold ${st.activeView === b.id ? 'text-blue-600' : ''}">
-                <span class="text-lg leading-none">${b.i}</span><span class="mt-0.5">${b.l}</span>
+                { id: 'dashboard', l: 'Beranda', i: 'home' },
+                { id: 'pos', l: 'Kasir', i: 'pos' },
+                { id: 'omnichannel', l: 'Order', i: 'truck' },
+                { id: 'gudang', l: 'Gudang', i: 'inventory' }
+              ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold ${st.activeView === b.id ? 'text-blue-600' : ''}">
+                ${svgIcon(b.i, 'w-5 h-5')}<span class="mt-0.5">${b.l}</span>
               </button>`).join('')}
+              <button onclick="window.openMobileDrawer()" aria-label="Buka Semua Menu" class="flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold">
+                ${svgIcon('menu', 'w-5 h-5')}<span class="mt-0.5">Menu</span>
+              </button>
             </nav>
           </div>
         `;
         window.renderActiveView();
       };
 
-      // Hotkey POS (F2 fokus barcode, F4 checkout Tunai, F8 QRIS)
+      // Hotkey POS & Global Command Palette (F2 fokus barcode, Ctrl+K Command Palette)
       window.addEventListener('keydown', (e) => {
         if (!ONSApi.getSession()) return;
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          window.openCommandPalette();
+          return;
+        }
         if (e.key === 'F2') {
           e.preventDefault();
           window.navigateView('pos');

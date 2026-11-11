@@ -6,7 +6,7 @@
  * - Selalu sajikan UI instan dari cache untuk pengalaman bebas lag (<50ms)
  */
 
-const CACHE_NAME = 'ons-farma-pwa-v10.1.0';
+const CACHE_NAME = 'ons-farma-pwa-v12.0.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -15,10 +15,12 @@ const CORE_ASSETS = [
   './js/config.js',
   './js/demo-engine.js',
   './js/api-turbo.js',
+  './js/struk-engine.js',
   './js/store.js',
   './js/views-auth-dash-pos.js',
   './js/views-inventory-procurement.js',
   './js/views-clinical-finance-admin.js',
+  './js/views-omnichannel-crm.js',
   './vendor/ons-code128.js',
   './vendor/ons-xlsx-export.js',
   './vendor/ons-xlsx-lite.js',

@@ -76,15 +76,37 @@
         { id_log_suhu: 'CC-04', timestamp: isoToday + 'T08:00:00', cabang_id: 'ONS-01', id_kulkas: 'CHILLER-VAKSIN-01', suhu_celcius: 4.9, kelembapan: 53, status_alarm: 'NORMAL', petugas_id: 'apt. Siti Rahma, S.Farm', tindakan_korektif: '-' }
       ],
       rekam_klinis: [
-        { id_klinis: 'KLN-8801', tanggal: isoToday + 'T09:15:00', cabang_id: 'ONS-01', pasien_id: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_wa_pasien: '6281234567801', dokter_asal: 'dr. Andi Pratama, Sp.JP', no_sip_dokter: '446/109/SIP-DOK/2024', alergi_pasien: 'Penisilin', layanan_jenis: 'SKRINING_RESEP', cdss_warning: 'Kontraindikasi Amoxicillin + Alergi Penisilin terdeteksi & telah diganti Cefadroxil/Azithromycin.', apj_pin_verified_by: 'apt. Siti Rahma, S.Farm', soap_notes: 'S: Kontrol TD rutin. O: TD 136/86 mmHg. A: Hipertensi terkontrol. P: Lanjut Amlodipine 10mg 1x1 malam, edukasi diet rendah garam.', status_klinis: 'TERVERIFIKASI_APJ' }
+        { id_klinis: 'KLN-8801', tanggal: isoToday + 'T09:15:00', cabang_id: 'ONS-01', pasien_id: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_wa_pasien: '6281234567801', dokter_asal: 'dr. Andi Pratama, Sp.JP', no_sip_dokter: '446/109/SIP-DOK/2024', alergi_pasien: 'Penisilin', layanan_jenis: 'SKRINING_RESEP', cdss_warning: 'Kontraindikasi Amoxicillin + Alergi Penisilin terdeteksi & telah diganti Cefadroxil/Azithromycin.', apj_pin_verified_by: 'apt. Siti Rahma, S.Farm', soap_notes: 'S: Kontrol TD rutin. O: TD 136/86 mmHg. A: Hipertensi terkontrol. P: Lanjut Amlodipine 10mg 1x1 malam, edukasi diet rendah garam.', status_klinis: 'TERVERIFIKASI_APJ' },
+        { id_klinis: 'KLN-8802', tanggal: isoToday + 'T11:30:00', cabang_id: 'ONS-01', pasien_id: 'MBR-002', nama_pasien: 'Ny. Hj. Aminah Kusuma', no_wa_pasien: '6281234567802', dokter_asal: 'dr. Rina Wijaya, Sp.PD-KEMD', no_sip_dokter: '446/218/SIP-DOK/2025', alergi_pasien: 'Sulfa', layanan_jenis: 'ERX_DOKTER', cdss_warning: 'Resep Cold Chain Insulin Glargine — Cek Suhu Chiller 2-8C.', apj_pin_verified_by: '', soap_notes: 'R/ Lantus SoloStar Pen No. I (S 0-0-14 IU s.c.)\nR/ Paracetamol 500mg Tab No. X (S 3 dd 1 prn demam)', status_klinis: 'ANTRIAN_VALIDASI_APJ' }
       ],
       penjualan: [
-        { id_transaksi: 'TRX-1001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-001', tanggal: isoToday + 'T08:42:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Toko Fisik', id_member: 'MBR-002', metode_bayar: 'QRIS', subtotal: 296000, diskon_total: 0, pajak_ppn: 0, grand_total: 296000, total_hpp: 236000, estimasi_margin: 60000, poin_didapat: 29, status_trx: 'LUNAS' },
-        { id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', tanggal: isoToday + 'T10:15:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Resep WA', id_member: 'MBR-001', metode_bayar: 'TUNAI', subtotal: 84000, diskon_total: 4000, pajak_ppn: 0, grand_total: 80000, total_hpp: 51000, estimasi_margin: 29000, poin_didapat: 8, status_trx: 'LUNAS' }
+        { id_transaksi: 'TRX-1001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-001', tanggal: isoToday + 'T08:42:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Toko Fisik', id_member: 'MBR-002', metode_bayar: 'QRIS', detail_split: '', subtotal: 296000, diskon_total: 0, pajak_ppn: 0, grand_total: 296000, total_hpp: 236000, estimasi_margin: 60000, poin_didapat: 29, status_trx: 'LUNAS' },
+        { id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', tanggal: isoToday + 'T10:15:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Resep WA', id_member: 'MBR-001', metode_bayar: 'TUNAI', detail_split: '', subtotal: 84000, diskon_total: 4000, pajak_ppn: 0, grand_total: 80000, total_hpp: 51000, estimasi_margin: 29000, poin_didapat: 8, status_trx: 'LUNAS' }
       ],
       detail_penjualan: [
         { id_detail: 'DTL-1', id_transaksi: 'TRX-1001', id_obat: 'OBT-003', id_batch: 'BTH-105', qty: 2, satuan: 'Pen', harga_jual: 148000, hpp_unit: 118000, subtotal_item: 296000 },
         { id_detail: 'DTL-2', id_transaksi: 'TRX-1002', id_obat: 'OBT-001', id_batch: 'BTH-101', qty: 30, satuan: 'Kaplet', harga_jual: 900, hpp_unit: 480, subtotal_item: 27000 }
+      ],
+      mutasi_stok: [
+        { id_mutasi: 'MUT-101', timestamp: isoToday + 'T08:42:00', cabang_id: 'ONS-01', id_obat: 'OBT-003', nama_dagang: 'Lantus SoloStar Insulin Pen', id_batch: 'BTH-105', no_batch: 'INS-2604C', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -2, stok_akhir: 18, referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-001', user_id: 'USR-003', catatan: 'Penjualan POS FEFO' },
+        { id_mutasi: 'MUT-102', timestamp: isoToday + 'T10:15:00', cabang_id: 'ONS-01', id_obat: 'OBT-001', nama_dagang: 'Amoxicillin Trihydrate 500mg', id_batch: 'BTH-101', no_batch: 'AMX-2601A', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -30, stok_akhir: 140, referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-002', user_id: 'USR-003', catatan: 'Penjualan Resep WA' }
+      ],
+      omnichannel_orders: [
+        { id_order: 'ORD-901', no_order: 'ONL-' + isoToday.replace(/-/g, '') + '-01', tanggal: isoToday + 'T10:50:00', cabang_id: 'ONS-01', channel: 'E-Apotek Web', nama_pelanggan: 'Ibu Nadia Kusuma', no_wa: '6281234500112', alamat: 'Jl. Boulevard Raya No. 48, Makassar', items_json: JSON.stringify([{ id_obat: 'OBT-002', nama: 'Paracetamol Sanmol 500mg', qty: 20, satuan: 'Tablet', harga: 650 }, { id_obat: 'OBT-006', nama: 'Ibuprofen Proris 400mg', qty: 10, satuan: 'Kaplet', harga: 1600 }]), catatan: 'Antar siang sebelum jam 2, butuh struk PDF/WA', total_estimasi: 29000, ongkir: 10000, status_order: 'BARU', kurir: '', no_invoice_pos: '', petugas_id: 'Web Storefront' },
+        { id_order: 'ORD-902', no_order: 'ONL-' + isoToday.replace(/-/g, '') + '-02', tanggal: isoToday + 'T11:20:00', cabang_id: 'ONS-01', channel: 'WhatsApp Apotek', nama_pelanggan: 'Tn. Hendri Wijaya', no_wa: '6281299887766', alamat: 'Perumahan Griya Sehat Blok C4', items_json: JSON.stringify([{ id_obat: 'OBT-007', nama: 'Amlodipine Besylate 10mg PRB', qty: 30, satuan: 'Tablet', harga: 850 }]), catatan: 'Pelanggan rutin PRB bulanan', total_estimasi: 25500, ongkir: 8000, status_order: 'DIKIRIM_KURIR', kurir: 'Kurir Internal (Pak Hasan)', no_invoice_pos: '', petugas_id: 'apt. Siti Rahma, S.Farm' }
+      ],
+      crm_kontak: [
+        { id_kontak: 'CRM-001', nama: 'Tn. Bambang Suryono', no_wa_08: '081234567801', no_wa_62: '6281234567801', segmen: 'PRB_KRONIS', catatan_medis: 'Alergi: Penisilin | Hipertensi + Jantung', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: isoToday },
+        { id_kontak: 'CRM-002', nama: 'Ny. Hj. Aminah Kusuma', no_wa_08: '081234567802', no_wa_62: '6281234567802', segmen: 'PRB_KRONIS', catatan_medis: 'Alergi: Sulfa | Diabetes Melitus Tipe 2', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: '' },
+        { id_kontak: 'CRM-003', nama: 'Ibu Nadia Kusuma', no_wa_08: '081234500112', no_wa_62: '6281234500112', segmen: 'ONLINE', catatan_medis: 'Pembeli Etalase Web E-Apotek', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: '' }
+      ],
+      antrian_notif: [
+        { id_notif: 'NTF-01', created_at: isoToday + 'T09:00:00', channel: 'WA', tujuan: '6281234567801', nama_penerima: 'Tn. Bambang Suryono', jenis_event: 'REMINDER_PRB', referensi_id: 'MBR-001', pesan: 'Halo Tn. Bambang Suryono, jadwal kontrol & tebus obat PRB Anda 2 hari lagi.', status: 'TERKIRIM', percobaan: 1, catatan_error: '', sent_at: isoToday + 'T09:05:00' },
+        { id_notif: 'NTF-02', created_at: isoToday + 'T11:25:00', channel: 'WA', tujuan: '6281299887766', nama_penerima: 'Tn. Hendri Wijaya', jenis_event: 'OMNI_STATUS', referensi_id: 'ORD-902', pesan: 'Pesanan Anda sedang diantar oleh Kurir Internal (Pak Hasan).', status: 'ANTRI', percobaan: 0, catatan_error: '', sent_at: '' }
+      ],
+      st_template: [
+        { id_tpl: 'TPL-58', kode: 'STRUK_58_DEFAULT', nama: 'Struk Kasir Thermal 58mm (Standar)', lebar_mm: 58, template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No|{{NOTA}}\n[LR]Total|{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday },
+        { id_tpl: 'TPL-80', kode: 'STRUK_80_RESEP', nama: 'Struk Apotek Thermal 80mm (Detail Klinik)', lebar_mm: 80, template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No|{{NOTA}}\n[LR]Total|{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday }
       ],
       jurnal_keuangan: [
         { id_jurnal: 'JRN-1', tanggal: isoToday + 'T08:42:00', cabang_id: 'ONS-01', jenis_trx: 'MASUK_PENJUALAN', kategori: 'Toko Fisik', nominal: 296000, metode: 'QRIS', referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-001', periode_bulan: isoToday.slice(0, 7), status_lock: 'TERBUKA', user_id: 'USR-003' },
@@ -121,10 +143,20 @@
     };
   }
 
+  function ensureV11Seed(db) {
+    const def = buildSeedDb();
+    let changed = false;
+    ['mutasi_stok', 'omnichannel_orders', 'crm_kontak', 'antrian_notif', 'st_template'].forEach((k) => {
+      if (!Array.isArray(db[k])) { db[k] = def[k]; changed = true; }
+    });
+    if (changed) saveDb(db);
+    return db;
+  }
+
   function loadDb() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) return ensureV11Seed(JSON.parse(raw));
     } catch (e) {}
     const seeded = buildSeedDb();
     saveDb(seeded);
@@ -156,7 +188,49 @@
     const userId = (tokenPayload && tokenPayload.uid) || 'USR-001';
     const nowIso = new Date().toISOString();
 
-    if (action === 'ping') return { app: 'Apotek ONS Farma Enterprise', version: '10.0.0-DEMO', epoch: db.epoch };
+    if (action === 'ping') return { app: 'Apotek ONS Farma Enterprise', version: '11.0.0-DEMO', epoch: db.epoch };
+
+    if (action === 'public.catalog') {
+      const stockMap = {};
+      db.stok_batch.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0).forEach((b) => {
+        stockMap[b.id_obat] = (stockMap[b.id_obat] || 0) + Number(b.qty_sisa || 0);
+      });
+      return {
+        apotek: { nama: 'Apotek ONS Farma Digital', cabang: 'ONS-01', wa_admin: '628110000990' },
+        items: db.master_obat.filter((o) => o.status_aktif !== 'NONAKTIF').map((o) => ({
+          id_obat: o.id_obat, nama_dagang: o.nama_dagang, zat_aktif: o.zat_aktif, kekuatan: o.kekuatan,
+          golongan_bpom: o.golongan_bpom, bentuk_sediaan: o.bentuk_sediaan, satuan_dasar: o.satuan_dasar,
+          harga_umum: Number(o.harga_umum || 0), stok_tersedia: stockMap[o.id_obat] || 0
+        }))
+      };
+    }
+
+    if (action === 'public.submitOrder') {
+      if (!d.nama_pelanggan || !d.no_wa) throw new Error('Nama & nomor WhatsApp wajib diisi.');
+      const noOrder = 'ONL-' + isoToday.replace(/-/g, '') + '-' + String(db.omnichannel_orders.length + 1).padStart(2, '0');
+      const ord = {
+        id_order: 'ORD-' + Date.now().toString().slice(-5),
+        no_order: noOrder,
+        tanggal: nowIso,
+        cabang_id: d.cabang_id || 'ONS-01',
+        channel: 'E-Apotek Web',
+        nama_pelanggan: d.nama_pelanggan,
+        no_wa: String(d.no_wa).replace(/[^0-9]/g, ''),
+        alamat: d.alamat || '',
+        items_json: typeof d.items_json === 'string' ? d.items_json : JSON.stringify(d.items || []),
+        catatan: d.catatan || '',
+        total_estimasi: Number(d.total_estimasi || 0),
+        ongkir: Number(d.ongkir || 0),
+        status_order: 'BARU',
+        kurir: '',
+        no_invoice_pos: '',
+        petugas_id: 'Public Storefront'
+      };
+      db.omnichannel_orders.unshift(ord);
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, id_order: ord.id_order, no_order: ord.no_order, status_order: 'BARU', item: ord };
+    }
 
     if (action === 'auth.login') {
       const u = db.users.find((x) => x.username.toLowerCase() === String(d.username || '').toLowerCase());
@@ -170,7 +244,11 @@
         branch: d.cabang_id || 'ONS-01'
       };
       const fakeTok = 'DEMO.' + btoa(unescape(encodeURIComponent(JSON.stringify(sesObj))));
-      return { token: fakeTok, user: Object.assign({}, u, { cabang_id: sesObj.branch }) };
+      const out = { token: fakeTok, user: Object.assign({}, u, { cabang_id: sesObj.branch }) };
+      if (d.include_boot) {
+        out.boot = handleAction('boot.getState', d, { uid: sesObj.uid, nama: sesObj.nama, role: sesObj.role, sipa: sesObj.sipa, branch: sesObj.branch });
+      }
+      return out;
     }
 
     if (action === 'auth.verifyPin') {
@@ -192,6 +270,10 @@
         cold_chain: db.cold_chain,
         rekam_klinis: db.rekam_klinis.map((r) => maskRow(r, role)),
         penjualan: db.penjualan.map((p) => maskRow(p, role)),
+        detail_penjualan: (db.detail_penjualan || []).map((dt) => maskRow(dt, role)),
+        mutasi_stok: db.mutasi_stok || [],
+        omnichannel_orders: db.omnichannel_orders || [],
+        struk_templates: db.st_template || [],
         faktur_pbf: role !== 'Kasir' ? db.faktur_pbf : [],
         jurnal_keuangan: role !== 'Kasir' ? db.jurnal_keuangan : []
       };
@@ -215,17 +297,38 @@
       const trxId = 'TRX-' + Math.floor(1000 + Math.random() * 9000);
       const noInv = 'INV-' + isoToday.replace(/-/g, '') + '-' + String(db.penjualan.length + 1).padStart(3, '0');
       let totalHpp = 0;
+      const outDetails = [];
       (d.items || []).forEach((it) => {
         let rem = Number(it.qty || 1) * Number(it.faktor_konversi || 1);
         const batches = db.stok_batch.filter((b) => b.id_obat === it.id_obat && b.status_batch === 'AKTIF' && b.qty_sisa > 0)
           .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
+        const obat = db.master_obat.find((o) => o.id_obat === it.id_obat) || {};
         batches.forEach((b) => {
           if (rem <= 0) return;
           const cut = Math.min(rem, b.qty_sisa);
           b.qty_sisa -= cut;
           rem -= cut;
           totalHpp += cut * Number(b.hpp_beli || 0);
-          db.detail_penjualan.push({ id_detail: 'DTL-' + Date.now() + Math.random(), id_transaksi: trxId, id_obat: it.id_obat, id_batch: b.id_batch, qty: cut, satuan: it.satuan });
+          const unitSell = Number(it.harga_jual || obat.harga_umum || 0) / Number(it.faktor_konversi || 1);
+          const detObj = {
+            id_detail: 'DTL-' + Date.now() + Math.random().toString(36).slice(2, 5),
+            id_transaksi: trxId,
+            id_obat: it.id_obat,
+            id_batch: b.id_batch,
+            qty: cut,
+            satuan: obat.satuan_dasar || it.satuan,
+            harga_jual: Math.round(unitSell),
+            hpp_unit: Number(b.hpp_beli || 0),
+            subtotal_item: Math.round(cut * unitSell)
+          };
+          db.detail_penjualan.push(detObj);
+          outDetails.push(detObj);
+          db.mutasi_stok.unshift({
+            id_mutasi: 'MUT-' + Date.now() + Math.random().toString(36).slice(2, 5),
+            timestamp: nowIso, cabang_id: 'ONS-01', id_obat: it.id_obat, nama_dagang: obat.nama_dagang || it.id_obat,
+            id_batch: b.id_batch, no_batch: b.no_batch, jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -cut,
+            stok_akhir: b.qty_sisa, referensi_id: noInv, user_id: userId, catatan: 'Checkout POS ' + (d.channel || 'Toko Fisik')
+          });
         });
       });
       const trx = {
@@ -237,6 +340,7 @@
         channel: d.channel || 'Toko Fisik',
         id_member: d.id_member || 'UMUM',
         metode_bayar: d.metode_bayar || 'TUNAI',
+        detail_split: d.detail_split || '',
         subtotal: Number(d.subtotal || d.grand_total || 0),
         diskon_total: Number(d.diskon_total || 0),
         pajak_ppn: Number(d.pajak_ppn || 0),
@@ -262,11 +366,26 @@
       });
       if (trx.id_member !== 'UMUM') {
         const mem = db.members.find((m) => m.id_member === trx.id_member);
-        if (mem) mem.poin_loyalitas = Number(mem.poin_loyalitas || 0) + trx.poin_didapat;
+        if (mem) {
+          mem.poin_loyalitas = Math.max(0, Number(mem.poin_loyalitas || 0) - Number(d.redeem_poin || 0) + trx.poin_didapat);
+        }
+      }
+      if (d.id_order) {
+        const om = db.omnichannel_orders.find((o) => o.id_order === d.id_order);
+        if (om) { om.status_order = 'SELESAI'; om.no_invoice_pos = noInv; }
+      }
+      if (d.send_wa_to) {
+        db.antrian_notif.unshift({
+          id_notif: 'NTF-' + Date.now().toString().slice(-5), created_at: nowIso, channel: 'WA',
+          tujuan: String(d.send_wa_to).replace(/[^0-9]/g, ''), nama_penerima: d.pelanggan_nama || 'Pelanggan POS',
+          jenis_event: 'STRUK_POS', referensi_id: noInv,
+          pesan: 'Struk Digital Apotek ONS Farma No ' + noInv + ' Total Rp ' + Number(trx.grand_total).toLocaleString('id-ID'),
+          status: 'ANTRI', percobaan: 0, catatan_error: '', sent_at: ''
+        });
       }
       db.epoch++;
       saveDb(db);
-      return { penjualan: maskRow(trx, role), no_invoice: noInv };
+      return { penjualan: maskRow(trx, role), detail: outDetails.map((dr) => maskRow(dr, role)), no_invoice: noInv };
     }
 
     if (action === 'stok.recallBatch') {
@@ -316,12 +435,45 @@
       return { adjusted: (d.entries || []).length };
     }
 
+    if (action === 'pbf.save') {
+      if (!String(d.nama_pbf || '').trim()) throw new Error('Nama Supplier PBF wajib diisi.');
+      const idPbf = String(d.id_pbf || '').trim() || ('PBF-' + Date.now().toString().slice(-5));
+      const row = {
+        id_pbf: idPbf,
+        nama_pbf: String(d.nama_pbf).trim(),
+        kode_cdob: d.kode_cdob || '-',
+        npwp_pbf: d.npwp_pbf || '-',
+        kontak_wa: d.kontak_wa || '',
+        email_pbf: d.email_pbf || '',
+        lead_time_hari: Math.max(1, Number(d.lead_time_hari || 3)),
+        termin_hari: Math.max(0, Number(d.termin_hari !== undefined ? d.termin_hari : 30)),
+        skor_sla: Math.min(100, Math.max(0, Number(d.skor_sla !== undefined ? d.skor_sla : 95))),
+        status_pbf: String(d.status_pbf || 'AKTIF').toUpperCase()
+      };
+      const idx = db.supplier_pbf.findIndex((p) => p.id_pbf === idPbf);
+      if (idx >= 0) db.supplier_pbf[idx] = Object.assign(db.supplier_pbf[idx], row);
+      else db.supplier_pbf.push(row);
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: idx >= 0 ? 'SUPPLIER_PBF_UPDATE' : 'SUPPLIER_PBF_CREATE', entitas: 'SUPPLIER_PBF', entitas_id: idPbf, diff_sesudah_json: JSON.stringify(row) });
+      db.epoch++;
+      saveDb(db);
+      return { item: row };
+    }
+
     if (action === 'pengadaan.fakturSave') {
-      const f = Object.assign({ id_beli: 'BLI-' + Date.now(), status_bayar: 'BELUM_LUNAS', status_bar: 'AKTIF' }, d);
+      const netto = Number(d.netto_hutang || d.total_bruto || 0);
+      const f = Object.assign({
+        id_beli: 'BLI-' + Date.now(),
+        tgl_faktur: isoToday,
+        tgl_jatuh_tempo: isoToday,
+        netto_hutang: netto,
+        sisa_hutang: d.sisa_hutang !== undefined ? Number(d.sisa_hutang) : netto,
+        status_bayar: d.status_bayar || 'BELUM_LUNAS',
+        status_bar: 'AKTIF'
+      }, d);
       db.faktur_pbf.unshift(f);
       if (Array.isArray(d.items)) {
         d.items.forEach((it, i) => {
-          db.stok_batch.push({ id_batch: 'BTH-' + Date.now() + i, cabang_id: 'ONS-01', id_obat: it.id_obat, no_batch: it.no_batch || 'NEW-B', tgl_kadaluarsa: it.tgl_kadaluarsa || '2028-12-31', qty_sisa: Number(it.qty_dasar || 10), qty_karantina: 0, hpp_beli: Number(it.hpp_unit || 0), no_faktur_pbf: d.no_faktur_pbf, status_batch: 'AKTIF' });
+          db.stok_batch.push({ id_batch: 'BTH-' + Date.now() + i, cabang_id: 'ONS-01', id_obat: it.id_obat, no_batch: it.no_batch || ('NEW-' + i), tgl_kadaluarsa: it.tgl_kadaluarsa || '2028-12-31', qty_sisa: Number(it.qty_dasar || it.qty || 10), qty_karantina: 0, hpp_beli: Number(it.hpp_unit || 0), no_faktur_pbf: d.no_faktur_pbf, status_batch: 'AKTIF' });
         });
       }
       db.epoch++;
@@ -546,6 +698,156 @@
     }
     if (action === 'migrasi.run') {
       return { ok: true, results: [{ target_sheet: 'MASTER_OBAT', inserted: 18, updated: 324 }, { target_sheet: 'STOK_BATCH', inserted: 42, updated: 470 }] };
+    }
+
+    // --- MODUL v11.0 (RETUR POS PIN, KARTU STOK, E-RX APJ, OMNICHANNEL, WA CRM & THERMAL STRUK) ---
+    if (action === 'pos.details') {
+      const trx = db.penjualan.find((p) => (d.no_invoice && p.no_invoice === d.no_invoice) || (d.id_transaksi && p.id_transaksi === d.id_transaksi));
+      if (!trx) throw new Error('Transaksi POS tidak ditemukan.');
+      const items = (db.detail_penjualan || []).filter((dt) => dt.id_transaksi === trx.id_transaksi).map((dt) => {
+        const o = db.master_obat.find((x) => x.id_obat === dt.id_obat) || {};
+        return Object.assign(maskRow(dt, role), { nama_dagang: o.nama_dagang || dt.id_obat, golongan_bpom: o.golongan_bpom || '' });
+      });
+      return { penjualan: maskRow(trx, role), items };
+    }
+    if (action === 'pos.voidReturn') {
+      if (String(d.pin_override || '') !== '123456') throw new Error('PIN Otorisasi Retur/Void salah (Demo PIN: 123456).');
+      const trx = db.penjualan.find((p) => (d.no_invoice && p.no_invoice === d.no_invoice) || (d.id_transaksi && p.id_transaksi === d.id_transaksi));
+      if (!trx) throw new Error('Transaksi tidak ditemukan.');
+      if (trx.status_trx === 'RETUR') throw new Error('Transaksi sudah berstatus RETUR.');
+      const dets = (db.detail_penjualan || []).filter((dt) => dt.id_transaksi === trx.id_transaksi);
+      dets.forEach((dt) => {
+        const b = db.stok_batch.find((x) => x.id_batch === dt.id_batch);
+        if (b) {
+          b.qty_sisa = Number(b.qty_sisa || 0) + Number(dt.qty || 0);
+          b.status_batch = 'AKTIF';
+          const o = db.master_obat.find((x) => x.id_obat === dt.id_obat) || {};
+          db.mutasi_stok.unshift({
+            id_mutasi: 'MUT-' + Date.now() + Math.random().toString(36).slice(2, 4),
+            timestamp: nowIso, cabang_id: 'ONS-01', id_obat: dt.id_obat, nama_dagang: o.nama_dagang || dt.id_obat,
+            id_batch: b.id_batch, no_batch: b.no_batch, jenis_mutasi: 'RETUR_PENJUALAN', qty_ubah: Number(dt.qty || 0),
+            stok_akhir: b.qty_sisa, referensi_id: trx.no_invoice, user_id: userId, catatan: 'Retur/Void PIN: ' + (d.alasan || '-')
+          });
+        }
+      });
+      trx.status_trx = 'RETUR';
+      db.jurnal_keuangan.push({
+        id_jurnal: 'JRN-RTR-' + Date.now(), tanggal: nowIso, cabang_id: 'ONS-01', jenis_trx: 'KELUAR_OPERASIONAL',
+        kategori: 'Retur / Void POS (' + trx.no_invoice + ')', nominal: Number(trx.grand_total || 0),
+        metode: trx.metode_bayar || 'TUNAI', referensi_id: trx.no_invoice, periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId
+      });
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, no_invoice: trx.no_invoice, status_trx: 'RETUR', restored_items: dets.length, authorized_by: 'apt. Siti Rahma, S.Farm' };
+    }
+    if (action === 'stok.mutasiList') {
+      return { items: (db.mutasi_stok || []).filter((m) => (!d.id_obat || m.id_obat === d.id_obat) && (!d.jenis_mutasi || m.jenis_mutasi === d.jenis_mutasi)) };
+    }
+    if (action === 'klinis.erxApprove') {
+      if (String(d.pin || '') !== '123456') throw new Error('PIN APJ salah (Demo PIN: 123456).');
+      const kl = db.rekam_klinis.find((x) => x.id_klinis === d.id_klinis);
+      if (!kl) throw new Error('Rekam klinis tidak ditemukan.');
+      kl.status_klinis = d.status_klinis || 'TERVERIFIKASI_APJ';
+      kl.apj_pin_verified_by = 'apt. Siti Rahma, S.Farm (SIPA Verified)';
+      if (d.catatan_apoteker) kl.soap_notes = (kl.soap_notes || '') + '\n[Verifikasi APJ] ' + d.catatan_apoteker;
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, item: kl };
+    }
+    if (action === 'omni.list') return { items: db.omnichannel_orders || [] };
+    if (action === 'omni.save') {
+      const ord = {
+        id_order: 'ORD-' + Date.now().toString().slice(-5),
+        no_order: 'ONL-' + isoToday.replace(/-/g, '') + '-' + String((db.omnichannel_orders || []).length + 1).padStart(2, '0'),
+        tanggal: nowIso, cabang_id: 'ONS-01', channel: d.channel || 'WhatsApp Apotek', nama_pelanggan: d.nama_pelanggan,
+        no_wa: String(d.no_wa || '').replace(/[^0-9]/g, ''), alamat: d.alamat || '',
+        items_json: d.items_json || '[]', catatan: d.catatan || '', total_estimasi: Number(d.total_estimasi || 0),
+        ongkir: Number(d.ongkir || 0), status_order: 'BARU', kurir: '', no_invoice_pos: '', petugas_id: userNama
+      };
+      db.omnichannel_orders.unshift(ord);
+      db.epoch++;
+      saveDb(db);
+      return { item: ord };
+    }
+    if (action === 'omni.updateStatus') {
+      const ord = (db.omnichannel_orders || []).find((x) => x.id_order === d.id_order);
+      if (!ord) throw new Error('Order omnichannel tidak ditemukan.');
+      ord.status_order = d.status_order || ord.status_order;
+      if (d.kurir !== undefined) ord.kurir = d.kurir;
+      if (d.no_invoice_pos) ord.no_invoice_pos = d.no_invoice_pos;
+      if (d.kirim_wa) {
+        db.antrian_notif.unshift({
+          id_notif: 'NTF-' + Date.now().toString().slice(-5), created_at: nowIso, channel: 'WA',
+          tujuan: ord.no_wa, nama_penerima: ord.nama_pelanggan, jenis_event: 'OMNI_STATUS',
+          referensi_id: ord.no_order, pesan: 'Update Order ' + ord.no_order + ': ' + ord.status_order,
+          status: 'ANTRI', percobaan: 0, catatan_error: '', sent_at: ''
+        });
+      }
+      db.epoch++;
+      saveDb(db);
+      return { item: ord };
+    }
+    if (action === 'crm.list') return { items: db.crm_kontak || [] };
+    if (action === 'crm.sync') {
+      const seen = new Set((db.crm_kontak || []).map((c) => c.no_wa_62));
+      let added = 0;
+      db.members.forEach((m) => {
+        const clean = String(m.no_hp || '').replace(/[^0-9]/g, '');
+        const p62 = clean.startsWith('0') ? ('62' + clean.slice(1)) : clean;
+        const p08 = clean.startsWith('62') ? ('0' + clean.slice(2)) : clean;
+        if (p62 && !seen.has(p62)) {
+          seen.add(p62);
+          db.crm_kontak.push({ id_kontak: 'CRM-' + Date.now().toString().slice(-4) + added, nama: m.nama_pasien, no_wa_08: p08, no_wa_62: p62, segmen: m.program_prb === 'PRB_BPJS' ? 'PRB_KRONIS' : 'UMUM', catatan_medis: m.penyakit_kronis || '-', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: '' });
+          added++;
+        }
+      });
+      saveDb(db);
+      return { synced: added, total: db.crm_kontak.length };
+    }
+    if (action === 'crm.save') {
+      const raw = String(d.no_wa || '').replace(/[^0-9]/g, '');
+      const p62 = raw.startsWith('0') ? ('62' + raw.slice(1)) : (raw.startsWith('62') ? raw : ('62' + raw));
+      const p08 = '0' + p62.slice(2);
+      const item = { id_kontak: 'CRM-' + Date.now().toString().slice(-5), nama: d.nama, no_wa_08: p08, no_wa_62: p62, segmen: d.segmen || 'UMUM', catatan_medis: d.catatan_medis || '', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: '' };
+      db.crm_kontak.unshift(item);
+      saveDb(db);
+      return { item };
+    }
+    if (action === 'crm.toggleOptOut') {
+      const c = (db.crm_kontak || []).find((x) => x.id_kontak === d.id_kontak);
+      if (c) c.status_aktif = c.status_aktif === 'OPT_OUT' ? 'OPT_IN' : 'OPT_OUT';
+      saveDb(db);
+      return { ok: true, item: c };
+    }
+    if (action === 'crm.blastWa') {
+      const targets = (db.crm_kontak || []).filter((c) => c.status_aktif !== 'OPT_OUT' && (!d.segmen || d.segmen === 'SEMUA' || c.segmen === d.segmen));
+      targets.forEach((c, idx) => {
+        db.antrian_notif.unshift({
+          id_notif: 'NTF-BL-' + Date.now().toString().slice(-4) + idx, created_at: nowIso, channel: 'WA',
+          tujuan: c.no_wa_62, nama_penerima: c.nama, jenis_event: 'BLAST_CRM', referensi_id: d.segmen || 'SEMUA',
+          pesan: String(d.pesan || '').replace(/\{nama\}/gi, c.nama), status: 'ANTRI', percobaan: 0, catatan_error: '', sent_at: ''
+        });
+      });
+      saveDb(db);
+      return { queued: targets.length, segmen: d.segmen || 'SEMUA' };
+    }
+    if (action === 'notif.list') return { items: db.antrian_notif || [] };
+    if (action === 'notif.processQueue') {
+      let sent = 0;
+      (db.antrian_notif || []).forEach((q) => {
+        if (q.status === 'ANTRI') { q.status = 'TERKIRIM'; q.percobaan = Number(q.percobaan || 0) + 1; q.sent_at = nowIso; sent++; }
+      });
+      saveDb(db);
+      return { ok: true, processed: sent, terkirim: sent, gagal: 0, mode: 'DEMO_SIMULASI' };
+    }
+    if (action === 'struk.templates') return { items: db.st_template || [] };
+    if (action === 'struk.saveTemplate') {
+      const idx = (db.st_template || []).findIndex((t) => t.kode === d.kode || t.id_tpl === d.id_tpl);
+      const tpl = { id_tpl: d.id_tpl || ('TPL-' + Date.now().toString().slice(-4)), kode: d.kode || 'STRUK_CUSTOM', nama: d.nama || 'Template Custom', lebar_mm: Number(d.lebar_mm || 58), template_teks: d.template_teks || '', aktif: 'YA', updated_at: isoToday };
+      if (idx >= 0) db.st_template[idx] = tpl;
+      else db.st_template.push(tpl);
+      saveDb(db);
+      return { item: tpl };
     }
 
     return { ok: true };

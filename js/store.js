@@ -8,6 +8,22 @@
 
   const AppState = {
     activeView: 'dashboard',
+    activeSubTab: '',
+    subTabs: {
+      pos: 'kasir',
+      omnichannel: 'SEMUA',
+      gudang: 'batch',
+      defecta: 'order',
+      faktur: 'daftar',
+      klinis: 'soap',
+      'eresep-prb': 'erx',
+      'crm-wa': 'kontak',
+      finance: 'pnl',
+      billing: 'tagihan',
+      sipnap: 'narkotika',
+      'doc-engine': 'surat',
+      settings: 'akun'
+    },
     booted: false,
     loading: false,
     darkMode: localStorage.getItem(DARK_KEY) === '1',
@@ -20,6 +36,12 @@
     coldChain: [],
     rekamKlinis: [],
     penjualan: [],
+    detailPenjualan: [],
+    mutasiStok: [],
+    omnichannelOrders: [],
+    strukTemplates: [],
+    crmKontak: [],
+    antrianNotif: [],
     fakturPbf: [],
     jurnalKeuangan: [],
     carts: [
@@ -83,8 +105,8 @@
     const r = getRole();
     if (r === 'Pemilik') return true;
     if (r === 'APJ') return viewId !== 'settings' || true; // APJ akses penuh klinis/gudang/sipnap; settings secrets disensor
-    // Kasir dibatasi strictly hanya Dashboard, POS, Gudang Baca/Cek ED, Billing Tagihan Pasien, Tutup Shift & Mobile
-    const kasirAllowed = ['dashboard', 'pos', 'gudang', 'billing', 'tutup-shift', 'mobile-preview'];
+    // Kasir dibatasi strictly hanya Dashboard, POS, Gudang Baca/Cek ED, Omnichannel Dispatch, Billing Tagihan Pasien, Tutup Shift & Mobile
+    const kasirAllowed = ['dashboard', 'pos', 'gudang', 'omnichannel', 'billing', 'tutup-shift', 'mobile-preview'];
     return kasirAllowed.includes(viewId);
   }
 
@@ -115,17 +137,21 @@
   function checkCartCdss(cart) {
     const alerts = [];
     const member = AppState.members.find((m) => m.id_member === cart.id_member);
-    const zatSet = new Set();
+    const zatList = [];
     let needsApjPin = false;
+    let betaLactamCount = 0;
+    let nsaidCount = 0;
 
     cart.items.forEach((it) => {
       const obat = AppState.masterObat.find((o) => o.id_obat === it.id_obat);
       if (!obat) return;
       const zat = String(obat.zat_aktif || '').toLowerCase();
-      zatSet.add(zat);
+      zatList.push(zat);
+      if (/amoxicillin|ampicillin|cefadroxil|cefixime|cefuroxime/.test(zat)) betaLactamCount++;
+      if (/ibuprofen|mefenam|meloxicam|diclofenac|piroxicam|ketorolac/.test(zat)) nsaidCount++;
 
       const gol = String(obat.golongan_bpom || '').toUpperCase();
-      if (gol === 'KERAS' || gol === 'NARKOTIKA' || gol === 'PSIKOTROPIKA') {
+      if (gol === 'KERAS' || gol === 'NARKOTIKA' || gol === 'PSIKOTROPIKA' || gol === 'OOT' || gol === 'PREKURSOR') {
         needsApjPin = true;
       }
 
@@ -134,21 +160,50 @@
         if (alg.includes('penisilin') && (zat.includes('amoxicillin') || zat.includes('ampicillin'))) {
           alerts.push({ level: 'DANGER', msg: `BAHAYA ALERGI PENISILIN: Pasien ${member.nama_pasien} memiliki alergi Penisilin! Hindari ${obat.nama_dagang}. Gunakan substitusi non-beta-laktam.` });
           needsApjPin = true;
+        } else if (alg.includes('penisilin') && (zat.includes('cefadroxil') || zat.includes('cefixime'))) {
+          alerts.push({ level: 'WARN', msg: `REAKSI SILANG BETA-LAKTAM: Pasien ${member.nama_pasien} alergi Penisilin. Pantau tanda alergi pada pemberian Sefalosporin (${obat.nama_dagang}).` });
         }
-        if (alg.includes('sulfa') && zat.includes('sulfameth')) {
+        if (alg.includes('sulfa') && /sulfameth|cotrimox/.test(zat)) {
           alerts.push({ level: 'DANGER', msg: `BAHAYA ALERGI SULFA pada ${member.nama_pasien} untuk ${obat.nama_dagang}!` });
           needsApjPin = true;
         }
+        if (/nsaid|aspirin/.test(alg) && /ibuprofen|mefenam|meloxicam|diclofenac/.test(zat)) {
+          alerts.push({ level: 'DANGER', msg: `ALERGI NSAID/ASPIRIN terdeteksi pada ${member.nama_pasien} untuk ${obat.nama_dagang}!` });
+          needsApjPin = true;
+        }
       }
-      if (member && String(member.penyakit_kronis || '').toLowerCase().includes('gastritis') && zat.includes('ibuprofen')) {
-        alerts.push({ level: 'WARN', msg: `PERINGATAN NSAID: Pasien memiliki riwayat Gastritis. Edukasikan diminum sesudah makan atau pertimbangkan Paracetamol.` });
+
+      const kondisi = member ? String(member.penyakit_kronis || '').toLowerCase() : '';
+      if (kondisi) {
+        if ((kondisi.includes('gastritis') || kondisi.includes('lambung') || kondisi.includes('gerd')) && /ibuprofen|mefenam|meloxicam|diclofenac/.test(zat)) {
+          alerts.push({ level: 'WARN', msg: `PERINGATAN NSAID LAMBUNG: Pasien memiliki riwayat Gastritis/GERD. Wajib minum sesudah makan atau ganti ke Paracetamol.` });
+        }
+        if ((kondisi.includes('hipertensi') || kondisi.includes('jantung')) && zat.includes('pseudoephedrine')) {
+          alerts.push({ level: 'DANGER', msg: `RISIKO KRISIS HIPERTENSI: ${obat.nama_dagang} mengandung Pseudoephedrine! Hati-hati pada pasien Hipertensi/Jantung ${member.nama_pasien}.` });
+          needsApjPin = true;
+        }
       }
     });
 
-    const zatJoined = Array.from(zatSet).join('|');
-    if (zatJoined.includes('warfarin') && (zatJoined.includes('ibuprofen') || zatJoined.includes('amoxicillin'))) {
-      alerts.push({ level: 'DANGER', msg: `INTERAKSI OBAT MAYOR (DDI): Warfarin + Ibuprofen/Amoxicillin meningkatkan risiko perdarahan serius (INR meningkat). Wajib verifikasi APJ!` });
+    const zatJoined = zatList.join(' | ');
+    if (zatJoined.includes('warfarin') && /ibuprofen|mefenam|meloxicam|diclofenac|amoxicillin|sulfameth|ciprofloxacin/.test(zatJoined)) {
+      alerts.push({ level: 'DANGER', msg: `INTERAKSI OBAT MAYOR (DDI): Warfarin + NSAID/Antibiotik meningkatkan risiko perdarahan serius (INR meningkat). Wajib verifikasi APJ!` });
       needsApjPin = true;
+    }
+    if (/simvastatin|atorvastatin/.test(zatJoined) && zatJoined.includes('amlodipine')) {
+      alerts.push({ level: 'WARN', msg: `INTERAKSI MODERAT (FDA Limit): Amlodipine meningkatkan kadar Simvastatin. Batasi dosis Simvastatin maksimal 20 mg/hari.` });
+    }
+    if (/ciprofloxacin|levofloxacin|tetracycline|doxycycline/.test(zatJoined) && /antasida|aluminium|magnesium|zinc|ferro|kalsium/.test(zatJoined)) {
+      alerts.push({ level: 'WARN', msg: `INTERAKSI ABSORPSI KHELASI: Beri jeda minimal 2-4 jam antara Antibiotik KuinoIon/Tetrasiklin dengan Antasida/Zat Besi/Zinc.` });
+    }
+    if (/captopril|lisinopril|valsartan|candesartan|ramipril/.test(zatJoined) && /ibuprofen|mefenam|meloxicam|diclofenac/.test(zatJoined)) {
+      alerts.push({ level: 'WARN', msg: `INTERAKSI ANTIHIPERTENSI + NSAID: NSAID menurunkan efek ACEi/ARB & membebani fungsi ginjal pada pemakaian rutin.` });
+    }
+    if (betaLactamCount > 1) {
+      alerts.push({ level: 'WARN', msg: `DUPLIKASI TERAPI ANTIBIOTIK: Terdapat ${betaLactamCount} jenis Beta-Laktam bersamaan di keranjang.` });
+    }
+    if (nsaidCount > 1) {
+      alerts.push({ level: 'WARN', msg: `DUPLIKASI TERAPI NSAID: Hindari kombinasi >1 obat NSAID bersamaan (risiko perdarahan GI).` });
     }
 
     return { alerts, needsApjPin, member };
@@ -363,6 +418,17 @@
         await this.characteristic.writeValue(enc.slice(i, i + 20));
       }
       showToast('Struk terkirim ke printer Bluetooth!', 'ok');
+    },
+    async printRawBytes(bytes) {
+      if (!this.characteristic) {
+        await this.connect();
+        if (!this.characteristic) return;
+      }
+      const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+      for (let i = 0; i < arr.length; i += 20) {
+        await this.characteristic.writeValue(arr.slice(i, i + 20));
+      }
+      showToast('Perintah ESC/POS RAW terkirim ke printer Bluetooth!', 'ok');
     }
   };
 
