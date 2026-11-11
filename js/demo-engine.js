@@ -646,6 +646,47 @@
       return { item: maskRow(item, role) };
     }
 
+    if (action === 'obat.updatePrices') {
+      if (role !== 'Pemilik' && role !== 'APJ') throw new Error('AKSES DITOLAK: Hanya Pemilik / APJ yang berhak mengubah harga.');
+      const list = Array.isArray(d.items) ? d.items : (d.id_obat ? [d] : []);
+      if (!list.length) throw new Error('Daftar perubahan harga obat kosong.');
+      const updatedRows = [];
+      list.forEach((p) => {
+        if (!p || !p.id_obat) return;
+        const idx = db.master_obat.findIndex((o) => o.id_obat === p.id_obat);
+        if (idx < 0) return;
+        const m = db.master_obat[idx];
+        if (p.harga_umum !== undefined && Number(p.harga_umum) > 0) m.harga_umum = Math.round(Number(p.harga_umum));
+        if (p.harga_member !== undefined && Number(p.harga_member) > 0) m.harga_member = Math.round(Number(p.harga_member));
+        if (p.harga_grosir !== undefined && Number(p.harga_grosir) > 0) m.harga_grosir = Math.round(Number(p.harga_grosir));
+        if (p.harga_faskes !== undefined && Number(p.harga_faskes) > 0) m.harga_faskes = Math.round(Number(p.harga_faskes));
+        m.updated_at = nowIso;
+        updatedRows.push({
+          id_obat: m.id_obat,
+          nama_dagang: m.nama_dagang,
+          harga_umum: m.harga_umum,
+          harga_member: m.harga_member,
+          harga_grosir: m.harga_grosir,
+          harga_faskes: m.harga_faskes
+        });
+      });
+      if (!updatedRows.length) throw new Error('Produk Master Obat tidak ditemukan untuk pembaruan harga.');
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(),
+        timestamp: nowIso,
+        user_id: userId,
+        role,
+        cabang_id: d.cabang_id || cabang || 'ONS-01',
+        aksi: 'OBAT_PRICE_ANALYSER_UPDATE',
+        entitas: 'MASTER_OBAT',
+        entitas_id: updatedRows.map((x) => x.id_obat).slice(0, 5).join(','),
+        diff_sesudah_json: JSON.stringify({ count: updatedRows.length, reason: String(d.catatan || 'Analisa Harga & Margin') })
+      });
+      db.epoch++;
+      saveDb(db);
+      return { updated: updatedRows.length, items: updatedRows };
+    }
+
     if (action === 'pos.checkout') {
       const itemsReq = Array.isArray(d.items) ? d.items : [];
       if (!itemsReq.length) throw new Error('Keranjang POS masih kosong.');
@@ -1113,9 +1154,12 @@
         });
       }
       if (d.id_sp || (noSp && noSp !== '-')) {
+        const nextSpStatus = String(d.sp_status || '').toUpperCase() === 'DITERIMA_SEBAGIAN'
+          ? 'DITERIMA_SEBAGIAN'
+          : 'SELESAI_DITERIMA';
         (db.surat_pesanan || []).forEach((sp) => {
           if ((d.id_sp && sp.id_sp === d.id_sp) || (noSp !== '-' && sp.no_sp === noSp)) {
-            sp.status_sp = 'SELESAI_DITERIMA';
+            sp.status_sp = nextSpStatus;
             sp.no_faktur_pbf = d.no_faktur_pbf;
             sp.tgl_diterima = f.tgl_faktur || isoToday;
           }

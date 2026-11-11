@@ -20,6 +20,7 @@ const CORE_ASSETS = [
   './js/invoice-scanner.js',
   './js/barcode-scanner.js',
   './js/views-auth-dash-pos.js',
+  './js/views-procurement-pro.js',
   './js/views-inventory-procurement.js',
   './js/views-clinical-finance-admin.js',
   './js/views-pemeriksaan.js',

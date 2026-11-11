@@ -125,6 +125,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk (Wizard)</button>
+          <button onclick="window.navigateView('faktur','harga')" class="ons-btn ons-btn-ghost text-xs">Analisa Harga &amp; Margin</button>
           <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">Import Excel (.xlsx)</button>` : ''}
           <button onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-ghost text-xs" title="Cetak Stiker Barcode Obat / Rak Mandiri">Cetak Label Barcode</button>
           <button onclick="window.exportMasterObat('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
@@ -1209,6 +1210,8 @@
    */
   let gudangBatchQ = '';
   let gudangBatchFilter = 'SEMUA';
+  let mutasiFilterArah = 'SEMUA';
+  let mutasiSearchQ = '';
   let opnameDraftQty = {};
   let opnameDraftReason = '';
 
@@ -1233,10 +1236,18 @@
     const seeCost = S().canSeeFinancialCost();
     const sorted = st.stokBatch.slice().sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
 
+    const mq = mutasiSearchQ.trim().toLowerCase();
     const mutasiRows = (st.mutasiStok || []).filter((m) => {
       const okOb = !mutasiFilterObat || String(m.id_obat) === mutasiFilterObat;
       const okJn = matchMutasiJenis(m.jenis_mutasi, mutasiFilterJenis);
-      return okOb && okJn;
+      const qU = Number(m.qty_ubah || 0);
+      const okAr = mutasiFilterArah === 'MASUK' ? qU > 0 : (mutasiFilterArah === 'KELUAR' ? qU < 0 : true);
+      if (!okOb || !okJn || !okAr) return false;
+      if (mq) {
+        const hay = `${m.nama_dagang || m.id_obat || ''} ${m.no_batch || m.id_batch || ''} ${m.referensi_id || ''} ${m.catatan || ''} ${m.jenis_mutasi || ''}`.toLowerCase();
+        if (!hay.includes(mq)) return false;
+      }
+      return true;
     });
 
     const totalNilaiGudang = seeCost ? st.stokBatch.reduce((s, b) => s + (Number(b.qty_sisa || 0) * Number(b.hpp_beli || 0)), 0) : 0;
@@ -1417,9 +1428,16 @@
       })() : ''}
       ${gudangTab === 'transfer' ? '' : (gudangTab === 'kartu-stok' ? `
         <div class="ons-card p-4 space-y-4">
+          ${global.ONSProcurementPro ? global.ONSProcurementPro.renderStockFlowSummary(mutasiRows) : ''}
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap gap-2">
-              <select class="ons-select w-60 text-xs" onchange="window.setMutasiFilterObat(this.value)">
+            <div class="flex flex-wrap gap-2 flex-1">
+              <input class="ons-input w-56 text-xs" placeholder="Cari obat, batch, faktur/nota..." value="${S().esc(mutasiSearchQ)}" oninput="window.setMutasiSearchQ(this.value)"/>
+              <select class="ons-select w-44 text-xs" onchange="window.setMutasiFilterArah(this.value)" aria-label="Filter Arah Alur Obat">
+                <option value="SEMUA" ${mutasiFilterArah === 'SEMUA' ? 'selected' : ''}>Semua Arus (Masuk &amp; Keluar)</option>
+                <option value="MASUK" ${mutasiFilterArah === 'MASUK' ? 'selected' : ''}>Hanya Obat Masuk (+)</option>
+                <option value="KELUAR" ${mutasiFilterArah === 'KELUAR' ? 'selected' : ''}>Hanya Obat Keluar (-)</option>
+              </select>
+              <select class="ons-select w-56 text-xs" onchange="window.setMutasiFilterObat(this.value)">
                 <option value="">-- Semua Produk Obat --</option>
                 ${st.masterObat.map((o) => `<option value="${S().esc(o.id_obat)}" ${mutasiFilterObat === o.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)}</option>`).join('')}
               </select>
@@ -1435,13 +1453,13 @@
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
-              <thead><tr><th>Waktu</th><th>Produk Obat</th><th>No Batch</th><th>Jenis Mutasi</th><th>Qty Perubahan</th><th>Stok Akhir</th><th>Referensi</th><th>Catatan</th></tr></thead>
+              <thead><tr><th>Waktu</th><th>Produk Obat</th><th>No Batch</th><th>Arah &amp; Jenis Mutasi</th><th>Qty Perubahan</th><th>Stok Akhir</th><th>Referensi</th><th>Catatan</th></tr></thead>
               <tbody>
                 ${mutasiRows.length === 0 ? `<tr><td colspan="8" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada histori mutasi pada filter ini.</td></tr>` : mutasiRows.slice(0, 120).map((m) => `<tr>
                   <td class="text-xs whitespace-nowrap font-mono-num">${S().formatTgl(m.timestamp, true)}</td>
                   <td class="font-semibold text-xs">${S().esc(m.nama_dagang || m.id_obat)}</td>
                   <td class="font-mono-num text-xs">${S().esc(m.no_batch || m.id_batch)}</td>
-                  <td><span class="badge-bpom ${Number(m.qty_ubah) >= 0 ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(m.jenis_mutasi)}</span></td>
+                  <td><span class="badge-bpom ${Number(m.qty_ubah) >= 0 ? 'bpom-bebas' : 'bpom-prekursor'}">${Number(m.qty_ubah) >= 0 ? 'MASUK' : 'KELUAR'} &bull; ${S().esc(m.jenis_mutasi)}</span></td>
                   <td class="font-mono-num font-bold ${Number(m.qty_ubah) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${Number(m.qty_ubah) > 0 ? '+' : ''}${m.qty_ubah}</td>
                   <td class="font-mono-num font-bold">${m.stok_akhir}</td>
                   <td class="font-mono-num text-xs">${S().esc(m.referensi_id || '-')}</td>
@@ -1702,6 +1720,8 @@
   };
   global.setMutasiFilterObat = (v) => { mutasiFilterObat = v; global.renderActiveView(); };
   global.setMutasiFilterJenis = (v) => { mutasiFilterJenis = v; global.renderActiveView(); };
+  global.setMutasiFilterArah = (v) => { mutasiFilterArah = v || 'SEMUA'; global.renderActiveView(); };
+  global.setMutasiSearchQ = (v) => { mutasiSearchQ = v || ''; global.renderActiveView(); };
   global.refreshMutasiStokServer = async () => {
     try {
       const res = await API().callApi('stok.mutasiList', { id_obat: mutasiFilterObat, jenis_mutasi: mutasiFilterJenis });
@@ -1859,17 +1879,18 @@
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Smart Defecta (DOS), SP BPOM 5 Golongan &amp; Supplier PBF</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis Days-of-Stock (DOS), ubah jumlah pesanan per item, terbitkan SP BPOM ke Doc Engine, &amp; kelola Master PBF CDOB.</p>
+          <h1 class="text-xl font-extrabold">Defecta Stok, Surat Pesanan (SP A4) &amp; Supplier PBF</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis stok menipis, buat SP otomatis atau manual, pratinjau/cetak Kertas A4 sebelum print, kirim WA PBF, &amp; kelola PBF CDOB.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
-            <button onclick="window.setDefectaTab('order')" class="ons-tab-btn ${defectaTab === 'order' ? 'active' : ''}">Defecta &amp; SP BPOM (${lowStock.length})</button>
+            <button onclick="window.setDefectaTab('order')" class="ons-tab-btn ${defectaTab === 'order' ? 'active' : ''}">Defecta Order (${lowStock.length})</button>
+            <button onclick="window.setDefectaTab('sp')" class="ons-tab-btn ${defectaTab === 'sp' ? 'active' : ''}">Surat Pesanan &amp; A4 (${(st.suratPesanan || []).length})</button>
             <button onclick="window.setDefectaTab('supplier')" class="ons-tab-btn ${defectaTab === 'supplier' ? 'active' : ''}">Direktori PBF CDOB (${(st.supplierPbf || []).length})</button>
           </div>
           ${defectaTab === 'supplier'
             ? `<button onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs">+ Tambah Supplier PBF</button>`
-            : `<button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs">Terbitkan Draf SP Otomatis</button>`}
+            : `<button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-emerald text-xs">+ Buat SP Manual</button><button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs">Terbitkan SP Otomatis Defecta</button>`}
         </div>
       </div>
 
@@ -1896,7 +1917,7 @@
             </table>
           </div>
         </div>
-      ` : `
+      ` : defectaTab === 'sp' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderSuratPesananTab() : '') : `
         <div class="ons-card p-4">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-bold text-sm">Komparator SLA &amp; Termin Supplier PBF Resmi CDOB</h3>
@@ -1980,9 +2001,12 @@
                     <td class="font-mono-num text-xs font-bold">${S().rp(sp.estimasi_total || 0)}</td>
                     <td><span class="badge-bpom ${done ? 'bpom-bebas' : 'bpom-terbatas'}">${done ? ('DITERIMA: ' + S().esc(sp.no_faktur_pbf || 'OK')) : S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</span></td>
                     <td>
-                      ${!done
-                        ? `<button onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Faktur (GRN) &rarr;</button>`
-                        : `<button onclick="navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Lihat Faktur</button>`}
+                      <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Preview A4</button>
+                        ${!done
+                          ? `<button onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Faktur (GRN) &rarr;</button>`
+                          : `<button onclick="navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Lihat Faktur</button>`}
+                      </div>
                     </td>
                   </tr>`;
                 }).join('') : '<tr><td colspan="6" class="text-center py-5 text-xs">Belum ada Surat Pesanan tercatat. Klik tombol "Buat SP" di atas untuk menerbitkan SP resmi.</td></tr>'}
@@ -2116,6 +2140,7 @@
     grnHeader.id_sp = sp.id_sp;
     grnHeader.no_sp = sp.no_sp;
     grnHeader.id_pbf = sp.nama_pbf || sp.id_pbf || grnHeader.id_pbf;
+    grnHeader.sp_status = 'SELESAI_DITERIMA';
     grnHeader.tgl_jatuh_tempo = new Date(Date.now() + termin * 86400000).toISOString().slice(0, 10);
     if (!grnHeader.no_faktur_pbf) grnHeader.no_faktur_pbf = 'FK-PBF-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-01';
     let spItems = [];
@@ -2123,12 +2148,14 @@
     if (spItems.length) {
       grnItems = spItems.map((it, idx) => {
         const obat = st.masterObat.find((m) => m.id_obat === it.id_obat) || {};
+        const qtyPesan = Number(it.qty || it.qty_pesan || it.qty_order || 10);
         return {
           id_obat: it.id_obat,
           no_batch: 'B-' + new Date().getFullYear() + '-SP' + (idx + 1),
           tgl_kadaluarsa: '2028-12-31',
-          qty_dasar: Number(it.qty || it.qty_order || 10),
-          hpp_unit: Number(it.hpp_unit || obat.hpp_terakhir || obat.hpp_avg || 0)
+          qty_sp: qtyPesan,
+          qty_dasar: qtyPesan,
+          hpp_unit: Number(it.hpp_unit || it.hpp_terakhir || obat.hpp_terakhir || obat.hpp_avg || 0)
         };
       });
     }
@@ -2191,18 +2218,48 @@
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Penerimaan Faktur PBF (GRN Multi-Item) &amp; Retur BAR-PBF</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Scan foto/PDF faktur gratis tanpa API berbayar, ekstraksi otomatis multi-obat &amp; batch FEFO, pelunasan PBF, serta retur BAR-PBF.</p>
+          <h1 class="text-xl font-extrabold">Terima Faktur (Scan / SP), Analisa Harga &amp; Retur PBF</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Sinkronkan barang datang dari Surat Pesanan (SP), scan foto/PDF faktur (OCR Multi-Item), analisa kenaikan harga &amp; margin, serta kelola hutang/retur PBF.</p>
         </div>
         <div class="ons-tab-bar">
           <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">Daftar Faktur (${st.fakturPbf.length})</button>
-          <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Scan &amp; Input GRN</button>
+          <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Terima Faktur (Scan OCR / SP)</button>
+          <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active' : ''}">Analisa Harga &amp; Margin</button>
           <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active' : ''}">Retur BAR-PBF (${returCandidates.length})</button>
         </div>
       </div>
 
       ${fakturTab === 'input' ? `
         <div class="space-y-4">
+          ${(() => {
+            const openSps = (st.suratPesanan || []).filter((sp) => String(sp.status_sp || '').toUpperCase() !== 'SELESAI_DITERIMA');
+            const activeSp = grnHeader.id_sp ? (st.suratPesanan || []).find((x) => x.id_sp === grnHeader.id_sp) : null;
+            return `<div class="ons-card p-4 space-y-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div class="font-extrabold text-sm">1. Sinkronisasi Barang Tiba dari Surat Pesanan (SP &rarr; Terima Faktur)</div>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Pilih SP aktif di bawah agar daftar item terisi otomatis &amp; status SP sinkron otomatis setelah faktur disimpan. Anda tetap bisa scan faktur di panel berikutnya.</p>
+                </div>
+                <button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs">Buka Daftar SP &amp; Preview A4 &rarr;</button>
+              </div>
+              ${activeSp ? `
+                <div class="p-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-xs" style="background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.35)">
+                  <div><b class="text-emerald-700">&#10003; Terhubung ke SP:</b> <span class="font-mono-num font-bold">${S().esc(activeSp.no_sp)}</span> (${S().esc(activeSp.nama_pbf)}) &mdash; Scan faktur tidak akan melepas tautan SP ini.</div>
+                  <div class="flex gap-1.5">
+                    <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(activeSp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Lihat SP A4</button>
+                    <button type="button" onclick="window.setGrnField('id_sp','',true);window.setGrnField('no_sp','',true);" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-red-600">Lepas Tautan SP</button>
+                  </div>
+                </div>
+              ` : ''}
+              ${openSps.length ? `
+                <div class="flex flex-wrap gap-2">
+                  ${openSps.map((sp) => `<button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ${grnHeader.id_sp === sp.id_sp ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3">
+                    Tarik SP: <span class="font-mono-num ml-1">${S().esc(sp.no_sp)}</span> (${S().esc(sp.nama_pbf)})
+                  </button>`).join('')}
+                </div>
+              ` : `<div class="text-xs" style="color:var(--ons-text-soft)">Semua SP sudah selesai diterima. Gunakan Smart Invoice Scanner di bawah untuk terima faktur langsung, atau buat SP baru di menu Defecta &amp; Surat Pesanan.</div>`}
+            </div>`;
+          })()}
           <div class="ons-card p-4 sm:p-5 space-y-3.5">
             <div class="flex flex-wrap justify-between items-start gap-3">
               <div>
@@ -2342,7 +2399,10 @@
                     </td>
                     <td><input class="ons-input font-mono-num text-xs w-32" value="${S().esc(it.no_batch)}" onchange="window.updateGrnItem(${idx}, 'no_batch', this.value)"/></td>
                     <td><input type="date" class="ons-input text-xs w-36" value="${S().esc(it.tgl_kadaluarsa)}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
-                    <td><input type="number" min="1" class="ons-input font-mono-num text-xs w-20 text-right" value="${it.qty_dasar}" onchange="window.updateGrnItem(${idx}, 'qty_dasar', Number(this.value||1))"/></td>
+                    <td>
+                      <input type="number" min="1" class="ons-input font-mono-num text-xs w-20 text-right" value="${it.qty_dasar}" onchange="window.updateGrnItem(${idx}, 'qty_dasar', Number(this.value||1))"/>
+                      ${Number(it.qty_sp || 0) > 0 ? `<div class="text-[10px] font-mono-num mt-0.5 ${Number(it.qty_dasar) === Number(it.qty_sp) ? 'text-emerald-600' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'text-amber-600 font-bold' : 'text-blue-600 font-bold')}">SP: ${it.qty_sp} (${Number(it.qty_dasar) === Number(it.qty_sp) ? 'Cocok' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'Kurang' : '+' + (Number(it.qty_dasar) - Number(it.qty_sp)))})</div>` : ''}
+                    </td>
                     <td><input type="number" min="0" class="ons-input font-mono-num text-xs w-28 text-right" value="${it.hpp_unit}" onchange="window.updateGrnItem(${idx}, 'hpp_unit', Number(this.value||0))"/></td>
                     <td class="font-mono-num font-bold text-xs">${S().rp(Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0))}</td>
                     <td><button type="button" onclick="window.removeGrnItemRow(${idx})" ${grnItems.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button></td>
@@ -2353,15 +2413,22 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-4 pt-3 border-t" style="border-color:var(--ons-border)">
-              <div class="text-xs space-y-0.5">
+              <div class="text-xs space-y-1">
                 <div>Total Bruto Item: <b class="font-mono-num">${S().rp(totalBruto)}</b></div>
                 <div class="text-base font-extrabold text-blue-600">Netto Hutang Faktur: <span class="font-mono-num">${S().rp(nettoGrn)}</span></div>
+                ${grnHeader.id_sp ? `<label class="inline-flex items-center gap-2 text-[11px] font-semibold mt-1">
+                  <span>Status SP (${S().esc(grnHeader.no_sp)}):</span>
+                  <select class="ons-select text-[11px] py-1 min-h-0 w-56" onchange="window.setGrnField('sp_status', this.value)">
+                    <option value="SELESAI_DITERIMA" ${grnHeader.sp_status !== 'DITERIMA_SEBAGIAN' ? 'selected' : ''}>Tutup SP (Selesai Diterima Penuh)</option>
+                    <option value="DITERIMA_SEBAGIAN" ${grnHeader.sp_status === 'DITERIMA_SEBAGIAN' ? 'selected' : ''}>Diterima Sebagian (Sisa Menyusul)</option>
+                  </select>
+                </label>` : ''}
               </div>
               <button type="button" onclick="window.submitGrnFaktur()" class="ons-btn ons-btn-emerald text-xs px-5 py-2.5">Simpan Faktur Multi-Item &amp; Masukkan ke Stok FEFO</button>
             </div>
           </div>
         </div>
-      ` : fakturTab === 'retur' ? `
+      ` : fakturTab === 'harga' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : fakturTab === 'retur' ? `
         <div class="ons-card p-4 space-y-3">
           <h3 class="font-bold text-sm">Radar Retur PBF (Batch &le; 180 Hari Sebelum Kadaluarsa)</h3>
           <div class="ons-table-wrap">
@@ -2620,17 +2687,22 @@
     if (scanner && typeof scanner.parseInvoiceText === 'function') {
       const parsed = scanner.parseInvoiceText(raw, st.masterObat, st.supplierPbf);
       if (parsed.header.no_faktur_pbf) grnHeader.no_faktur_pbf = parsed.header.no_faktur_pbf;
-      if (parsed.header.no_sp) grnHeader.no_sp = parsed.header.no_sp;
-      if (parsed.header.id_pbf) grnHeader.id_pbf = parsed.header.id_pbf;
+      if (parsed.header.no_sp && !grnHeader.id_sp) grnHeader.no_sp = parsed.header.no_sp;
+      if (parsed.header.id_pbf && !grnHeader.id_sp) grnHeader.id_pbf = parsed.header.id_pbf;
       if (parsed.header.tgl_jatuh_tempo) grnHeader.tgl_jatuh_tempo = parsed.header.tgl_jatuh_tempo;
       if (parsed.header.diskon_pbf > 0) grnHeader.diskon_pbf = parsed.header.diskon_pbf;
       if (parsed.header.status_bayar) grnHeader.status_bayar = parsed.header.status_bayar;
 
       if (parsed.items && parsed.items.length) {
+        const spQtyMap = {};
+        grnItems.forEach((oldIt) => {
+          if (oldIt.id_obat && Number(oldIt.qty_sp || 0) > 0) spQtyMap[oldIt.id_obat] = Number(oldIt.qty_sp);
+        });
         grnItems = parsed.items.map((it) => ({
           id_obat: it.id_obat,
           no_batch: it.no_batch,
           tgl_kadaluarsa: it.tgl_kadaluarsa,
+          qty_sp: spQtyMap[it.id_obat] || 0,
           qty_dasar: Number(it.qty_dasar || 1),
           hpp_unit: Number(it.hpp_unit || 0)
         }));
@@ -2671,6 +2743,7 @@
       const netto = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
       const res = await API().callApi('pengadaan.fakturSave', {
         id_sp: grnHeader.id_sp || '',
+        sp_status: grnHeader.id_sp ? (grnHeader.sp_status || 'SELESAI_DITERIMA') : '',
         no_faktur_pbf: grnHeader.no_faktur_pbf.trim(),
         no_sp: grnHeader.no_sp,
         id_pbf: grnHeader.id_pbf,
@@ -2699,12 +2772,15 @@
       grnScanState.processedDataUrl = '';
       grnScanState.statusText = '';
       if (res && Array.isArray(res.hpp_alerts) && res.hpp_alerts.length) {
+        S().AppState._lastHppAlerts = res.hpp_alerts;
         const listTxt = res.hpp_alerts.map((a) => `${a.nama_dagang} (HPP naik +${a.pct_naik !== undefined ? a.pct_naik : a.pct_up}% -> ${S().rp(a.new_hpp)})`).join(', ');
-        global.toast('Faktur masuk gudang! PERINGATAN KENAIKAN HPP: ' + listTxt, 'warn');
+        global.toast('Faktur masuk gudang! HPP NAIK TERDETEKSI: ' + listTxt + ' — Mengalihkan ke Analisa Harga & Margin.', 'warn');
+        window.setFakturTab('harga');
       } else {
+        S().AppState._lastHppAlerts = [];
         global.toast('Faktur Multi-Item & semua batch FEFO berhasil masuk ke gudang!', 'ok');
+        window.setFakturTab('daftar');
       }
-      window.setFakturTab('daftar');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };

@@ -41,6 +41,7 @@
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v15.0 -->
   <script src="./js/views-auth-dash-pos.js"></script>
+  <script src="./js/views-procurement-pro.js"></script>
   <script src="./js/views-inventory-procurement.js"></script>
   <script src="./js/views-clinical-finance-admin.js"></script>
   <script src="./js/views-pemeriksaan.js"></script>
@@ -118,37 +119,39 @@
           label: 'Gudang & Pengadaan',
           items: [
             {
-              viewId: 'gudang', label: 'Gudang Batch & Opname', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
-              desc: 'Stok batch FEFO, kartu stok BPOM & stock opname fisik.',
-              kw: 'gudang stok batch fefo kartu stok opname recall kadaluarsa',
+              viewId: 'gudang', label: 'Stok & Alur Obat', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
+              desc: 'Stok batch FEFO, alur obat masuk/keluar, kartu stok BPOM & stock opname.',
+              kw: 'gudang stok batch fefo alur obat masuk keluar kartu stok opname recall kadaluarsa',
               tabs: [
                 { subTab: 'batch', label: 'Stok Batch & Recall', kw: 'batch fefo near ed kadaluarsa karantina recall' },
-                { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'kartu stok mutasi masuk keluar bpom xlsx' },
+                { subTab: 'kartu-stok', label: 'Alur Obat & Kartu Stok Digital', kw: 'alur obat masuk keluar kartu stok mutasi bpom xlsx' },
                 { subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'transfer', label: 'Mutasi Antar-Cabang', kw: 'mutasi transfer antar cabang stok multi cabang surat jalan', roles: ['Pemilik', 'APJ'] }
               ]
             },
             {
-              viewId: 'obat', label: 'Master Katalog Obat', icon: 'pill',
-              desc: 'Database produk KFA, NIE BPOM, multi-satuan, harga & label barcode Code128.',
-              kw: 'master obat kfa nie bpom harga jual beli code128'
+              viewId: 'obat', label: 'Master Obat & Harga', icon: 'pill',
+              desc: 'Database produk KFA, NIE BPOM, multi-satuan, harga jual & label barcode Code128.',
+              kw: 'master obat kfa nie bpom harga jual beli margin code128'
             },
             {
-              viewId: 'defecta', label: 'Defecta & Supplier PBF', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
-              desc: 'Analisis stok minimum, buat SP 5 golongan BPOM & kelola PBF CDOB.',
-              kw: 'defecta surat pesanan sp supplier pbf cdob sla',
+              viewId: 'defecta', label: 'Defecta & Surat Pesanan', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
+              desc: 'Analisis stok minimum, buat Surat Pesanan (SP), preview A4 & kelola PBF CDOB.',
+              kw: 'defecta surat pesanan sp print preview a4 supplier pbf cdob sla',
               tabs: [
-                { subTab: 'order', label: 'Smart Defecta & SP', kw: 'defecta stok minimum surat pesanan pbf' },
-                { subTab: 'supplier', label: 'Direktori Supplier PBF', kw: 'supplier pbf cdob termin kontak tambah edit' }
+                { subTab: 'order', label: 'Smart Defecta (Order)', kw: 'defecta stok minimum rekomendasi order pbf' },
+                { subTab: 'sp', label: 'Surat Pesanan & Preview A4', kw: 'surat pesanan sp a4 print preview pbf kirim wa' },
+                { subTab: 'supplier', label: 'Supplier PBF Resmi', kw: 'supplier pbf cdob termin kontak tambah edit' }
               ]
             },
             {
-              viewId: 'faktur', label: 'Faktur Masuk & Retur', icon: 'receipt',
-              desc: 'Input Multi-Item GRN / OCR faktur masuk, daftar hutang & retur BAR-PBF.',
-              kw: 'faktur pbf grn multi item ocr hutang retur bar',
+              viewId: 'faktur', label: 'Terima Faktur & Harga', icon: 'receipt',
+              desc: 'Terima barang dari SP, scan foto/PDF faktur PBF, analisa kenaikan HPP & margin harga.',
+              kw: 'terima faktur pbf grn sp scan ocr analisa harga margin naik hutang retur bar',
               tabs: [
-                { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf' },
-                { subTab: 'input', label: 'Input GRN & OCR', kw: 'input faktur grn multi item ocr batch masuk' },
+                { subTab: 'daftar', label: 'Daftar Faktur & Hutang', kw: 'daftar faktur pembelian hutang pbf' },
+                { subTab: 'input', label: 'Terima Faktur (Scan / SP)', kw: 'terima faktur grn sp multi item ocr scan batch masuk' },
+                { subTab: 'harga', label: 'Analisa Harga & Margin', kw: 'analisa harga margin hpp naik keputusan harga jual' },
                 { subTab: 'retur', label: 'Retur BAR-PBF', kw: 'retur barang pbf near ed kadaluarsa' }
               ]
             }
