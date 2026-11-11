@@ -166,7 +166,7 @@
       <div class="relative rounded-xl overflow-hidden bg-slate-950 aspect-[4/3] flex items-center justify-center border" style="border-color:var(--ons-border)">
         <video id="onsBarcodeVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div class="w-4/5 h-1/2 rounded-xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(9,32,42,0.45)] flex items-end justify-center pb-2">
+          <div class="w-4/5 h-1/2 rounded-xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.45)] flex items-end justify-center pb-2">
             <span class="px-2 py-0.5 rounded bg-emerald-600/90 text-white text-[10px] font-bold">Area Pindai Barcode / QR</span>
           </div>
         </div>
@@ -177,7 +177,8 @@
         <button type="button" id="onsBarcodeTorchBtn" onclick="window.__toggleScannerTorch()" class="ons-btn ons-btn-ghost text-xs">Senter / Flash</button>
         <button type="button" onclick="window.__submitManualBarcodeFromModal()" class="ons-btn ons-btn-primary text-xs">Gunakan Kode</button>
       </div>
-    </div>`, '560px');
+    </div>`, 'full');
+    if (typeof S.onModalClose === 'function') S.onModalClose(cleanup);
 
     setTimeout(() => {
       const inp = document.getElementById('onsBarcodeManualInp');

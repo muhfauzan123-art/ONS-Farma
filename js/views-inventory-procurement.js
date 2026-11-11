@@ -424,86 +424,621 @@
     }, 30);
   };
 
-  global.openObatWizardModal = (editId, stepOverride) => {
+  let wizardDraftSnapshot = null;
+
+  function readObatWizardDraftFromDom(baseObj) {
+    const val = (id, def) => {
+      const el = document.getElementById(id);
+      return el ? el.value : def;
+    };
+    const num = (id, def) => {
+      const el = document.getElementById(id);
+      return el ? Number(el.value || 0) : Number(def || 0);
+    };
+    return {
+      ...baseObj,
+      id_obat: val('wObatId', baseObj.id_obat),
+      nama_dagang: val('wNamaDagang', baseObj.nama_dagang),
+      zat_aktif: val('wZatAktif', baseObj.zat_aktif),
+      kode_kfa: val('wKfa', baseObj.kode_kfa),
+      nie_bpom: val('wNie', baseObj.nie_bpom),
+      golongan_bpom: val('wGol', baseObj.golongan_bpom),
+      suhu_simpan: val('wSuhu', baseObj.suhu_simpan),
+      rak_lokasi: val('wRak', baseObj.rak_lokasi),
+      satuan_dasar: val('wSatDasar', baseObj.satuan_dasar),
+      satuan_sedang: val('wSatSed', baseObj.satuan_sedang),
+      rasio_sedang: num('wRasioSed', baseObj.rasio_sedang),
+      satuan_besar: val('wSatBes', baseObj.satuan_besar),
+      rasio_besar: num('wRasioBes', baseObj.rasio_besar),
+      hpp_avg: num('wHpp', baseObj.hpp_avg),
+      harga_umum: num('wHrgUmum', baseObj.harga_umum),
+      harga_member: num('wHrgMem', baseObj.harga_member),
+      harga_grosir: num('wHrgGrosir', baseObj.harga_grosir),
+      min_qty_grosir: num('wMinQtyGrosir', baseObj.min_qty_grosir),
+      harga_faskes: num('wHrgFaskes', baseObj.harga_faskes),
+      stok_min: num('wStokMin', baseObj.stok_min),
+      stok_max: num('wStokMax', baseObj.stok_max),
+      substitusi_ids: val('wSubstitusi', baseObj.substitusi_ids)
+    };
+  }
+
+  global.openObatWizardModal = (editId, stepOverride, draftObj) => {
     if (stepOverride) wizardStep = Math.max(1, Math.min(5, stepOverride));
     else wizardStep = 1;
-    const o = S().AppState.masterObat.find((x) => x.id_obat === editId) || {
+    const baseDefault = (S().AppState.masterObat || []).find((x) => x.id_obat === editId) || {
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1', satuan_dasar: 'Tablet',
       satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 10, stok_max: 100,
-      hpp_avg: 0, harga_umum: 0, harga_member: 0, harga_grosir: 0, substitusi_ids: ''
+      hpp_avg: 0, harga_umum: 0, harga_member: 0, harga_grosir: 0, min_qty_grosir: 10, harga_faskes: 0, substitusi_ids: ''
     };
-    const steps = ['1. Identitas & KFA', '2. Golongan & Rak', '3. Multi-Satuan', '4. Harga & Stok', '5. Substitusi & Simpan'];
-    const secCls = (n) => (!wizardFullScrollMode && wizardStep !== n) ? 'hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3 rounded-xl border';
+    const o = draftObj ? { ...baseDefault, ...draftObj } : baseDefault;
+    wizardDraftSnapshot = o;
+
+    const steps = [
+      { n: 1, label: 'Identitas & KFA', sub: 'Nama, Zat Aktif, NIE' },
+      { n: 2, label: 'Golongan & Rak', sub: 'BPOM & Suhu CDOB' },
+      { n: 3, label: 'Multi-Satuan', sub: 'Dasar, Sedang, Besar' },
+      { n: 4, label: 'Harga & Stok', sub: 'HPP, 4 Tier, Defecta' },
+      { n: 5, label: 'Substitusi & Simpan', sub: 'Generik & Tinjauan' }
+    ];
+    const golList = [
+      { v: 'BEBAS', label: 'Obat Bebas', dot: 'bg-emerald-500' },
+      { v: 'TERBATAS', label: 'Bebas Terbatas', dot: 'bg-blue-500' },
+      { v: 'KERAS', label: 'Obat Keras (K)', dot: 'bg-red-500' },
+      { v: 'PREKURSOR', label: 'Prekursor', dot: 'bg-amber-500' },
+      { v: 'OOT', label: 'OOT', dot: 'bg-amber-600' },
+      { v: 'PSIKOTROPIKA', label: 'Psikotropika', dot: 'bg-rose-600' },
+      { v: 'NARKOTIKA', label: 'Narkotika', dot: 'bg-rose-700' }
+    ];
+    const suhuPresets = ['Suhu Ruang (15-25°C)', 'Sejuk (8-15°C)', 'Cold Chain / Chiller (2-8°C)'];
+    const rakPresets = ['RAK-A1', 'RAK-B2', 'RAK-OTC', 'LEMARI-OKT', 'CHILLER-01'];
+    const unitPresets = [
+      { label: 'Tablet / Strip (10) / Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
+      { label: 'Kapsul / Blister (10) / Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
+      { label: 'Botol / Paket (1) / Box (12)', d: 'Botol', s: 'Paket', rs: 1, b: 'Box', rb: 12 },
+      { label: 'Tube / Pcs Tunggal', d: 'Tube', s: 'Pack', rs: 5, b: 'Box', rb: 25 }
+    ];
+    const otherMeds = (S().AppState.masterObat || []).filter((m) => m.id_obat !== o.id_obat).slice(0, 10);
+    const curSubs = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
+
+    const secCls = (n) => (!wizardFullScrollMode && wizardStep !== n) ? 'hidden' : 'ons-wiz-card';
+    const inpCls = 'ons-input min-h-[44px] text-sm';
+
     const renderForm = () => `
-      <div class="p-6 space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-3" style="border-color:var(--ons-border)">
-          <h3 class="font-bold text-lg">${o.id_obat ? 'Edit Produk Obat' : 'Wizard Tambah Produk Obat (5 Langkah)'}</h3>
-          <div class="flex gap-2 items-center">
-            <button type="button" onclick="window.toggleObatWizardMode('${editId || ''}')" class="ons-btn ons-btn-ghost text-xs">Mode: ${wizardFullScrollMode ? 'Scroll Penuh' : 'Stepper 5 Tahap'}</button>
-            <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      <div data-ws-custom="1" class="ons-wiz-shell">
+        <header class="ons-wiz-header">
+          <div class="flex items-center gap-3 min-w-0">
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-ws-back-btn">
+              <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+              <span>Kembali</span>
+            </button>
+            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+            </div>
+            <div class="min-w-0">
+              <h2 class="font-extrabold text-base md:text-lg tracking-tight truncate">${o.id_obat ? 'Edit Produk Obat: ' + S().esc(o.nama_dagang) : 'Tambah Produk Obat Baru'}</h2>
+              <div class="text-xs truncate" style="color:var(--ons-text-soft)">Katalog KFA SATUSEHAT &bull; Regulasi CDOB BPOM &bull; Multi-Satuan &amp; Valuasi Bertingkat</div>
+            </div>
           </div>
-        </div>
-        ${!wizardFullScrollMode ? `<div class="grid grid-cols-5 gap-1.5 text-[11px]" id="wizStepNav">
-          ${steps.map((lbl, idx) => {
-            const n = idx + 1;
-            const act = wizardStep === n;
-            return `<button type="button" onclick="window.setObatWizardStep(${n})" class="py-1.5 px-2 rounded-lg font-semibold border text-center transition-all ${act ? 'ons-btn-primary border-blue-600' : 'ons-btn-ghost'}">${lbl}</button>`;
-          }).join('')}
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <span id="wizCompBadge" class="ons-ws-pill font-mono-num">Kelengkapan: 0%</span>
+            <button type="button" onclick="window.toggleObatWizardMode('${S().esc(editId || '')}')" class="ons-btn ons-btn-ghost text-xs min-h-[40px]">
+              ${wizardFullScrollMode ? 'Ganti ke Stepper 5 Tahap' : 'Tampilkan Semua Sekaligus'}
+            </button>
+            <button type="button" onclick="ONSStore.closeModal()" aria-label="Tutup" class="ons-ws-close-btn" title="Tutup (Esc)">&times;</button>
+          </div>
+        </header>
+
+        ${!wizardFullScrollMode ? `<div class="ons-wiz-stepper-wrap">
+          <div class="max-w-[1440px] mx-auto">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2" id="wizStepNav">
+              ${steps.map((stItem) => {
+                const stCls = stItem.n === wizardStep ? 'is-active' : (stItem.n < wizardStep ? 'is-done' : '');
+                return `<button type="button" onclick="window.setObatWizardStep(${stItem.n})" class="ons-wiz-step-btn ${stCls}">
+                  <span class="ons-wiz-step-num">${stItem.n < wizardStep ? '&#10003;' : stItem.n}</span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs truncate">${stItem.label}</div>
+                    <div class="text-[11px] opacity-80 truncate hidden sm:block">${stItem.sub}</div>
+                  </div>
+                </button>`;
+              }).join('')}
+            </div>
+            <div class="ons-wiz-progress-track">
+              <div id="wizProgFill" class="ons-wiz-progress-fill" style="width:${(wizardStep / 5) * 100}%"></div>
+            </div>
+          </div>
         </div>` : ''}
-        <form id="obatWizardForm" onsubmit="event.preventDefault();window.saveObatFromWizard();" class="space-y-4 text-xs">
-          <input type="hidden" id="wObatId" value="${S().esc(o.id_obat)}"/>
-          <div id="wizSec1" class="${secCls(1)}" style="border-color:var(--ons-border)">
-            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">1. Identitas &amp; Regulasi KFA / NIE BPOM</div>
-            <div><label class="font-semibold block mb-1">Nama Dagang *</label><input id="wNamaDagang" class="ons-input" value="${S().esc(o.nama_dagang)}" required/></div>
-            <div><label class="font-semibold block mb-1">Zat Aktif &amp; Kekuatan</label><input id="wZatAktif" class="ons-input" value="${S().esc(o.zat_aktif)}"/></div>
-            <div><label class="font-semibold block mb-1">Kode KFA SATUSEHAT</label><input id="wKfa" class="ons-input font-mono-num" value="${S().esc(o.kode_kfa)}"/></div>
-            <div><label class="font-semibold block mb-1">NIE BPOM</label><input id="wNie" class="ons-input font-mono-num" value="${S().esc(o.nie_bpom)}"/></div>
-          </div>
-          <div id="wizSec2" class="${secCls(2)}" style="border-color:var(--ons-border)">
-            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">2. Golongan &amp; Penyimpanan CDOB</div>
-            <div><label class="font-semibold block mb-1">Golongan BPOM</label>
-              <select id="wGol" class="ons-select">${['BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].map((g) => `<option ${o.golongan_bpom === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
+
+        <div class="ons-wiz-body">
+          <form id="obatWizardForm" novalidate onsubmit="event.preventDefault();window.saveObatFromWizard();" oninput="window.updateObatWizardPreview()" onchange="window.updateObatWizardPreview()" class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <input type="hidden" id="wObatId" value="${S().esc(o.id_obat)}"/>
+
+            <!-- Panel Kiri: Form Pengisian Terstruktur -->
+            <div class="lg:col-span-8 space-y-5">
+
+              <!-- TAHAP 1 -->
+              <section id="wizSec1" class="${secCls(1)}">
+                <div class="ons-wiz-card-head">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">1</span>
+                    <div>
+                      <h3 class="font-extrabold text-sm md:text-base">Identitas &amp; Regulasi KFA / NIE BPOM</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Isi nama dagang resmi, kandungan zat aktif, serta kode standar Kemenkes &amp; BPOM.</p>
+                    </div>
+                  </div>
+                  ${!o.id_obat ? `<div class="flex flex-wrap gap-1.5 items-center">
+                    <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Templat Cepat:</span>
+                    <button type="button" onclick="window.applyObatProductTemplate('tablet')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">Tablet Generik</button>
+                    <button type="button" onclick="window.applyObatProductTemplate('sirup')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">Sirup Botol</button>
+                    <button type="button" onclick="window.applyObatProductTemplate('chiller')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">Insulin Chiller</button>
+                  </div>` : ''}
+                </div>
+                <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div class="md:col-span-2">
+                    <label class="font-bold text-sm flex items-center gap-2 mb-1.5">
+                      <span>Nama Dagang Produk</span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600">Wajib *</span>
+                    </label>
+                    <input id="wNamaDagang" class="${inpCls} font-semibold" value="${S().esc(o.nama_dagang)}" placeholder="Cth: Paracetamol 500mg Kaplet / Amoxicillin 500mg" required/>
+                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Gunakan nama merek + kekuatan sediaan agar mudah dicari saat transaksi Kasir POS.</div>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="font-bold block mb-1.5">Zat Aktif &amp; Kekuatan</label>
+                    <input id="wZatAktif" class="${inpCls}" value="${S().esc(o.zat_aktif)}" placeholder="Cth: Paracetamol 500 mg"/>
+                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Dipakai untuk deteksi interaksi obat CDSS &amp; pencocokan substitusi generik.</div>
+                  </div>
+                  <div>
+                    <label class="font-bold block mb-1.5">Kode KFA SATUSEHAT</label>
+                    <input id="wKfa" class="${inpCls} font-mono-num" value="${S().esc(o.kode_kfa)}" placeholder="Cth: 93001024"/>
+                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kode Kamus Farmasi &amp; Alkes Kemenkes (opsional untuk OTC).</div>
+                  </div>
+                  <div>
+                    <label class="font-bold block mb-1.5">Nomor Izin Edar (NIE BPOM)</label>
+                    <input id="wNie" class="${inpCls} font-mono-num" value="${S().esc(o.nie_bpom)}" placeholder="Cth: DBL8512304504A1"/>
+                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Tertera pada boks/blister kemasan pabrik.</div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- TAHAP 2 -->
+              <section id="wizSec2" class="${secCls(2)}">
+                <div class="ons-wiz-card-head">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">2</span>
+                    <div>
+                      <h3 class="font-extrabold text-sm md:text-base">Golongan BPOM &amp; Penyimpanan CDOB</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Menentukan aturan otorisasi PIN APJ di Kasir, pelaporan SIPNAP, suhu, serta rak gudang.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-5 md:p-6 space-y-5 text-xs">
+                  <div>
+                    <label class="font-bold block mb-2">Pilih Golongan Regulasi BPOM</label>
+                    <div id="wizGolPicker" class="flex flex-wrap gap-2 mb-3">
+                      ${golList.map((g) => `<button type="button" data-gol-val="${g.v}" onclick="window.pickObatGolChip('${g.v}')" class="ons-wiz-chip ${o.golongan_bpom === g.v ? 'is-selected' : ''}">
+                        <span class="w-2.5 h-2.5 rounded-full ${g.dot}"></span>
+                        <span>${g.label}</span>
+                      </button>`).join('')}
+                    </div>
+                    <select id="wGol" class="${inpCls}" onchange="window.updateObatWizardPreview()">${golList.map((g) => `<option value="${g.v}" ${o.golongan_bpom === g.v ? 'selected' : ''}>${g.v} — ${g.label}</option>`).join('')}</select>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="font-bold block mb-1.5">Suhu Penyimpanan CDOB</label>
+                      <input id="wSuhu" class="${inpCls}" value="${S().esc(o.suhu_simpan)}" placeholder="Suhu Ruang (15-25°C)"/>
+                      <div class="flex flex-wrap gap-1.5 mt-2">
+                        ${suhuPresets.map((sp) => `<button type="button" onclick="window.pickObatFieldChip('wSuhu','${S().esc(sp)}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">${S().esc(sp)}</button>`).join('')}
+                      </div>
+                    </div>
+                    <div>
+                      <label class="font-bold block mb-1.5">Lokasi Rak / Lemari</label>
+                      <input id="wRak" class="${inpCls} font-mono-num" value="${S().esc(o.rak_lokasi)}" placeholder="RAK-A1"/>
+                      <div class="flex flex-wrap gap-1.5 mt-2">
+                        ${rakPresets.map((rpVal) => `<button type="button" onclick="window.pickObatFieldChip('wRak','${rpVal}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px] font-mono-num">${rpVal}</button>`).join('')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- TAHAP 3 -->
+              <section id="wizSec3" class="${secCls(3)}">
+                <div class="ons-wiz-card-head">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">3</span>
+                    <div>
+                      <h3 class="font-extrabold text-sm md:text-base">Konversi Multi-Satuan (Dasar / Sedang / Besar)</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Memudahkan konversi otomatis ketika menerima Faktur PBF per Box dan menjual eceran di Kasir.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-5 md:p-6 space-y-4 text-xs">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Preset Rasio Cepat:</span>
+                    ${unitPresets.map((up) => `<button type="button" onclick="window.applyObatUnitPreset('${up.d}','${up.s}',${up.rs},'${up.b}',${up.rb})" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">${up.label}</button>`).join('')}
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Dasar (Eceran)</div>
+                      <label class="font-semibold block">Nama Satuan Terkecil</label>
+                      <input id="wSatDasar" class="${inpCls}" value="${S().esc(o.satuan_dasar)}" placeholder="Tablet / Botol / Tube"/>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Stok batch &amp; HPP dicatat per satuan ini.</div>
+                    </div>
+                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Sedang</div>
+                      <label class="font-semibold block">Nama &amp; Isi per Satuan Dasar</label>
+                      <div class="grid grid-cols-2 gap-2">
+                        <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_sedang || 'Strip')}" placeholder="Strip"/>
+                        <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_sedang}" placeholder="10"/>
+                      </div>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Misal: 1 Strip = 10 Tablet.</div>
+                    </div>
+                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Besar (Boks PBF)</div>
+                      <label class="font-semibold block">Nama &amp; Isi per Satuan Dasar</label>
+                      <div class="grid grid-cols-2 gap-2">
+                        <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_besar || 'Box')}" placeholder="Box"/>
+                        <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_besar}" placeholder="100"/>
+                      </div>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Misal: 1 Box = 100 Tablet.</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- TAHAP 4 -->
+              <section id="wizSec4" class="${secCls(4)}">
+                <div class="ons-wiz-card-head">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">4</span>
+                    <div>
+                      <h3 class="font-extrabold text-sm md:text-base">Valuasi Harga Bertingkat (4 Tier) &amp; Batas Stok</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Atur HPP modal, 4 kategori harga jual otomatis di POS, serta batas minimum alert Defecta.</p>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Hitung Harga Otomatis:</span>
+                    <button type="button" onclick="window.applyObatMarkupHelper(20)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+20% Margin</button>
+                    <button type="button" onclick="window.applyObatMarkupHelper(25)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+25% Margin</button>
+                    <button type="button" onclick="window.applyObatMarkupHelper(35)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+35% Margin</button>
+                  </div>
+                </div>
+                <div class="p-5 md:p-6 space-y-4 text-xs">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <label class="font-bold block mb-1">HPP Beli Rata-Rata (Rp)</label>
+                      <input id="wHpp" type="number" min="0" class="${inpCls} font-mono-num font-bold" value="${o.hpp_avg}"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Harga pokok modal per satuan dasar.</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <label class="font-bold block mb-1">Harga Umum / Reguler (Rp)</label>
+                      <input id="wHrgUmum" type="number" min="0" class="${inpCls} font-mono-num font-bold text-blue-600" value="${o.harga_umum}"/>
+                      <div id="wizMarginUmumTxt" class="text-[11px] mt-1 font-semibold text-emerald-600">Margin: -</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <label class="font-bold block mb-1">Harga Member / PRB (Rp)</label>
+                      <input id="wHrgMem" type="number" min="0" class="${inpCls} font-mono-num font-bold" value="${o.harga_member}"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Aktif otomatis untuk pasien PRB terdaftar.</div>
+                    </div>
+                    <div>
+                      <label class="font-bold block mb-1.5">Harga Grosir / B2B (Rp)</label>
+                      <input id="wHrgGrosir" type="number" min="0" class="${inpCls} font-mono-num" value="${o.harga_grosir || o.harga_member}"/>
+                    </div>
+                    <div>
+                      <label class="font-bold block mb-1.5">Minimal Qty Grosir</label>
+                      <input id="wMinQtyGrosir" type="number" min="1" class="${inpCls} font-mono-num" value="${o.min_qty_grosir || 10}"/>
+                    </div>
+                    <div>
+                      <label class="font-bold block mb-1.5">Harga Faskes / Klinik Mitra (Rp)</label>
+                      <input id="wHrgFaskes" type="number" min="0" class="${inpCls} font-mono-num" value="${o.harga_faskes || o.harga_grosir || o.harga_member || o.harga_umum}"/>
+                    </div>
+                  </div>
+                  <div id="wizStep4MarginHint" class="hidden p-3 rounded-xl border border-red-400 bg-red-500/10 text-red-600 font-semibold text-xs"></div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t" style="border-color:var(--ons-border)">
+                    <div>
+                      <label class="font-bold block mb-1.5">Stok Minimum (Alert Defecta)</label>
+                      <input id="wStokMin" type="number" min="0" class="${inpCls} font-mono-num" value="${o.stok_min}"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Sistem memberi notifikasi pesan ulang jika total batch &le; angka ini.</div>
+                    </div>
+                    <div>
+                      <label class="font-bold block mb-1.5">Stok Maksimum Gudang</label>
+                      <input id="wStokMax" type="number" min="1" class="${inpCls} font-mono-num" value="${o.stok_max || 100}"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Acuan kuantitas ideal saat membuat Surat Pesanan PBF.</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- TAHAP 5 -->
+              <section id="wizSec5" class="${secCls(5)}">
+                <div class="ons-wiz-card-head">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center">5</span>
+                    <div>
+                      <h3 class="font-extrabold text-sm md:text-base">Substitusi Generik &amp; Konfirmasi Simpan</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Pilih produk pengganti aman jika stok utama sedang kosong atau kadaluarsa.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-5 md:p-6 space-y-4 text-xs">
+                  <div>
+                    <label class="font-bold block mb-1.5">ID Obat Substitusi Terapeutik (pisahkan koma)</label>
+                    <input id="wSubstitusi" class="${inpCls} font-mono-num" value="${S().esc(o.substitusi_ids || '')}" placeholder="Cth: OBT-002, OBT-005"/>
+                  </div>
+                  ${otherMeds.length ? `<div>
+                    <div class="font-bold mb-2" style="color:var(--ons-text-soft)">Klik Cepat Produk Apotek untuk Tambah/Hapus Substitusi:</div>
+                    <div id="wizSubPicker" class="flex flex-wrap gap-1.5">
+                      ${otherMeds.map((m) => {
+                        const sel = curSubs.includes(m.id_obat);
+                        return `<button type="button" data-sub-id="${S().esc(m.id_obat)}" onclick="window.toggleObatSubstitusiTag('${S().esc(m.id_obat)}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[34px] ${sel ? 'is-selected' : ''}">
+                          <span class="font-mono-num font-bold">${S().esc(m.id_obat)}</span>
+                          <span>${S().esc(m.nama_dagang)}</span>
+                        </button>`;
+                      }).join('')}
+                    </div>
+                  </div>` : ''}
+                  <div class="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-1.5">
+                    <div class="font-extrabold text-emerald-700 dark:text-emerald-300">Siap Disimpan ke Master Katalog &amp; Disinkronkan</div>
+                    <p style="color:var(--ons-text-soft)">Produk ini akan langsung tersedia di Kasir POS FEFO, Pembelian &amp; Scan Faktur PBF, Stock Opname Gudang, serta Katalog Digital.</p>
+                  </div>
+                </div>
+              </section>
+
             </div>
-            <div><label class="font-semibold block mb-1">Suhu Simpan</label><input id="wSuhu" class="ons-input" value="${S().esc(o.suhu_simpan)}"/></div>
-            <div><label class="font-semibold block mb-1">Lokasi Rak / Chiller</label><input id="wRak" class="ons-input" value="${S().esc(o.rak_lokasi)}"/></div>
+
+            <!-- Panel Kanan: Pratinjau Kartu Produk Real-Time -->
+            <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-0">
+              <div class="ons-wiz-preview">
+                <div class="px-4 py-3 border-b flex items-center justify-between gap-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                  <span class="font-extrabold text-xs uppercase tracking-wider text-blue-600">Pratinjau Kartu Produk (Live)</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-600">Preview POS</span>
+                </div>
+                <div class="p-4 space-y-3.5 text-xs">
+                  <div class="p-3.5 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0">
+                        <div id="wizPrevNama" class="font-extrabold text-sm leading-snug break-words">-</div>
+                        <div id="wizPrevZat" class="text-[11px] mt-0.5 truncate" style="color:var(--ons-text-soft)">-</div>
+                      </div>
+                      <span id="wizPrevBpom" class="badge-bpom bpom-bebas shrink-0">BEBAS</span>
+                    </div>
+                    <div id="wizPrevKode" class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">KFA: - &bull; NIE: -</div>
+                    <div id="wizPrevLokasi" class="text-[11px]" style="color:var(--ons-text-soft)">Rak: - &bull; Suhu: -</div>
+                  </div>
+
+                  <div class="p-3 rounded-xl border space-y-1.5" style="border-color:var(--ons-border)">
+                    <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Konversi Satuan</div>
+                    <div id="wizPrevRasio" class="font-mono-num font-bold text-xs text-blue-600">-</div>
+                  </div>
+
+                  <div class="p-3 rounded-xl border space-y-2" style="border-color:var(--ons-border)">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Estimasi Harga &amp; Profit</span>
+                      <span id="wizPrevMargin" class="font-mono-num text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600">Margin 0%</span>
+                    </div>
+                    <div class="flex items-baseline justify-between">
+                      <span id="wizPrevUmum" class="font-mono-num font-extrabold text-lg text-blue-600">Rp 0</span>
+                      <span id="wizPrevHpp" class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">HPP: Rp 0</span>
+                    </div>
+                    <div id="wizPrevTierGrid" class="grid grid-cols-3 gap-1.5 pt-2 border-t text-[11px] font-mono-num" style="border-color:var(--ons-border)"></div>
+                  </div>
+
+                  <div>
+                    <div class="flex justify-between text-[11px] font-semibold mb-1">
+                      <span>Skor Kelengkapan Data</span>
+                      <span id="wizCompPctSide" class="font-mono-num text-blue-600">0%</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full overflow-hidden" style="background:var(--ons-bg-subtle)">
+                      <div id="wizCompBar" class="h-full rounded-full transition-all duration-200 bg-blue-600" style="width:0%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </form>
+        </div>
+
+        <footer class="ons-wiz-footer" id="wizFooterBar">
+          <div class="flex gap-2">
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost min-h-[42px]">Batal</button>
+            ${!wizardFullScrollMode && wizardStep > 1 ? `<button type="button" id="wizPrevBtn" onclick="window.setObatWizardStep(window._wizCurStep - 1)" class="ons-btn ons-btn-ghost min-h-[42px]">&larr; Sebelumnya</button>` : ''}
           </div>
-          <div id="wizSec3" class="${secCls(3)}" style="border-color:var(--ons-border)">
-            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">3. Multi-Satuan (Dasar / Sedang / Besar)</div>
-            <div><label class="font-semibold block mb-1">Satuan Dasar (Terkecil)</label><input id="wSatDasar" class="ons-input" value="${S().esc(o.satuan_dasar)}"/></div>
-            <div><label class="font-semibold block mb-1">Satuan Sedang &amp; Rasio</label><div class="flex gap-1.5"><input id="wSatSed" class="ons-input w-1/2" value="${S().esc(o.satuan_sedang || 'Strip')}"/><input id="wRasioSed" type="number" class="ons-input w-1/2 font-mono-num" value="${o.rasio_sedang}"/></div></div>
-            <div><label class="font-semibold block mb-1">Satuan Besar &amp; Rasio</label><div class="flex gap-1.5"><input id="wSatBes" class="ons-input w-1/2" value="${S().esc(o.satuan_besar || 'Box')}"/><input id="wRasioBes" type="number" class="ons-input w-1/2 font-mono-num" value="${o.rasio_besar}"/></div></div>
+          <div id="wizFooterStepLabel" class="hidden sm:block text-xs font-bold font-mono-num" style="color:var(--ons-text-soft)">
+            ${wizardFullScrollMode ? 'Mode Scroll Penuh &bull; Semua 5 Tahap' : 'Langkah ' + wizardStep + ' dari 5'}
           </div>
-          <div id="wizSec4" class="${secCls(4)}" style="border-color:var(--ons-border)">
-            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">4. Valuasi Harga Bertingkat &amp; Threshold Stok</div>
-            <div><label class="font-semibold block mb-1">HPP Beli Rata-Rata (Rp)</label><input id="wHpp" type="number" class="ons-input font-mono-num" value="${o.hpp_avg}"/></div>
-            <div><label class="font-semibold block mb-1">Harga Umum (Rp)</label><input id="wHrgUmum" type="number" class="ons-input font-mono-num" value="${o.harga_umum}"/></div>
-            <div><label class="font-semibold block mb-1">Harga Member / PRB (Rp)</label><input id="wHrgMem" type="number" class="ons-input font-mono-num" value="${o.harga_member}"/></div>
-            <div><label class="font-semibold block mb-1">Harga Grosir / B2B (Rp)</label><input id="wHrgGrosir" type="number" class="ons-input font-mono-num" value="${o.harga_grosir || o.harga_member}"/></div>
-            <div><label class="font-semibold block mb-1">Min. Qty Grosir (${S().esc(o.satuan_dasar || 'Unit')})</label><input id="wMinQtyGrosir" type="number" min="1" class="ons-input font-mono-num" value="${o.min_qty_grosir || 10}"/></div>
-            <div><label class="font-semibold block mb-1">Harga Faskes / Klinik (Rp)</label><input id="wHrgFaskes" type="number" class="ons-input font-mono-num" value="${o.harga_faskes || o.harga_grosir || o.harga_member || o.harga_umum}"/></div>
-            <div><label class="font-semibold block mb-1">Stok Minimum (Defecta)</label><input id="wStokMin" type="number" class="ons-input font-mono-num" value="${o.stok_min}"/></div>
-            <div><label class="font-semibold block mb-1">Stok Maksimum</label><input id="wStokMax" type="number" class="ons-input font-mono-num" value="${o.stok_max || 100}"/></div>
+          <div class="flex gap-2" id="wizFooterRight">
+            ${!wizardFullScrollMode && wizardStep < 5 ? `<button type="button" id="wizNextBtn" onclick="window.setObatWizardStep(window._wizCurStep + 1)" class="ons-btn ons-btn-primary min-h-[42px]">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
+            ${(wizardFullScrollMode || wizardStep === 5) ? `<button type="submit" form="obatWizardForm" class="ons-btn ons-btn-emerald min-h-[42px] px-5">&#9989; Simpan Produk ke Master Obat</button>` : ''}
           </div>
-          <div id="wizSec5" class="${secCls(5)}" style="border-color:var(--ons-border)">
-            <div class="md:col-span-2 lg:col-span-3 font-bold text-blue-600">5. Substitusi Generik &amp; Konfirmasi Simpan</div>
-            <div class="md:col-span-2 lg:col-span-3"><label class="font-semibold block mb-1">ID Obat Substitusi (pisahkan koma, cth: OBT-002)</label><input id="wSubstitusi" class="ons-input font-mono-num" value="${S().esc(o.substitusi_ids || '')}"/></div>
-            <div class="md:col-span-2 lg:col-span-3 p-2.5 rounded-lg text-[11px]" style="background:var(--ons-bg-subtle)">Pastikan Nama Dagang, Satuan Dasar, dan Harga Jual telah terisi benar sebelum menyimpan ke database Master Obat.</div>
-          </div>
-          <div class="flex flex-wrap justify-between gap-2 pt-2">
-            <div class="flex gap-2">
-              <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost">Batal</button>
-              ${!wizardFullScrollMode && wizardStep > 1 ? `<button type="button" id="wizPrevBtn" onclick="window.setObatWizardStep(window._wizCurStep - 1)" class="ons-btn ons-btn-ghost">&larr; Sebelumnya</button>` : ''}
-            </div>
-            <div class="flex gap-2">
-              ${!wizardFullScrollMode && wizardStep < 5 ? `<button type="button" id="wizNextBtn" onclick="window.setObatWizardStep(window._wizCurStep + 1)" class="ons-btn ons-btn-primary">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
-              ${(wizardFullScrollMode || wizardStep === 5) ? `<button type="submit" class="ons-btn ons-btn-emerald">&#9989; Simpan Produk ke Master Obat</button>` : ''}
-            </div>
-          </div>
-        </form>
+        </footer>
       </div>`;
     global._wizCurStep = wizardStep;
-    S().openModal(renderForm(), '780px');
+    S().openModal(renderForm(), 'full');
+    global.updateObatWizardPreview();
+  };
+
+  global.updateObatWizardPreview = () => {
+    const val = (id, fb = '') => {
+      const el = document.getElementById(id);
+      return el ? String(el.value || '').trim() : fb;
+    };
+    const num = (id) => {
+      const el = document.getElementById(id);
+      return el ? Number(el.value || 0) : 0;
+    };
+    const nama = val('wNamaDagang') || 'Nama Obat Belum Diisi';
+    const zat = val('wZatAktif') || 'Zat aktif & kekuatan belum diisi';
+    const kfa = val('wKfa') || '-';
+    const nie = val('wNie') || '-';
+    const gol = val('wGol', 'BEBAS');
+    const suhu = val('wSuhu') || '-';
+    const rak = val('wRak') || '-';
+    const satD = val('wSatDasar') || 'Unit';
+    const satS = val('wSatSed') || 'Strip';
+    const rasS = Math.max(1, num('wRasioSed') || 10);
+    const satB = val('wSatBes') || 'Box';
+    const rasB = Math.max(1, num('wRasioBes') || 100);
+    const hpp = Math.max(0, num('wHpp'));
+    const umum = Math.max(0, num('wHrgUmum'));
+    const mem = Math.max(0, num('wHrgMem'));
+    const grosir = Math.max(0, num('wHrgGrosir'));
+    const faskes = Math.max(0, num('wHrgFaskes'));
+
+    const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+    setTxt('wizPrevNama', nama);
+    setTxt('wizPrevZat', zat);
+    setTxt('wizPrevKode', `KFA: ${kfa} • NIE: ${nie}`);
+    setTxt('wizPrevLokasi', `Rak: ${rak} • ${suhu}`);
+    setTxt('wizPrevRasio', `1 ${satB} = ${rasB} ${satD}  |  1 ${satS} = ${rasS} ${satD}`);
+    setTxt('wizPrevUmum', `${S().rp(umum)} / ${satD}`);
+    setTxt('wizPrevHpp', `HPP: ${S().rp(hpp)}`);
+
+    const badge = document.getElementById('wizPrevBpom');
+    if (badge) {
+      badge.textContent = gol;
+      badge.className = 'badge-bpom shrink-0 ' + (gol === 'BEBAS' ? 'bpom-bebas' : (gol === 'TERBATAS' ? 'bpom-terbatas' : 'bpom-keras'));
+    }
+
+    const golPicker = document.getElementById('wizGolPicker');
+    if (golPicker) {
+      golPicker.querySelectorAll('[data-gol-val]').forEach((btn) => {
+        btn.classList.toggle('is-selected', btn.getAttribute('data-gol-val') === gol);
+      });
+    }
+
+    const marginPct = hpp > 0 && umum > 0 ? Math.round(((umum - hpp) / hpp) * 100) : 0;
+    const laba = umum - hpp;
+    const mEl = document.getElementById('wizPrevMargin');
+    if (mEl) {
+      mEl.textContent = hpp > 0 && umum > 0 ? `Margin ${marginPct >= 0 ? '+' : ''}${marginPct}%` : 'Belum dihitung';
+      mEl.className = 'font-mono-num text-[11px] font-bold px-2 py-0.5 rounded ' + (hpp > 0 && umum > 0 && umum < hpp ? 'bg-red-500/15 text-red-600' : 'bg-emerald-500/15 text-emerald-600');
+    }
+    const mHint = document.getElementById('wizMarginUmumTxt');
+    if (mHint) {
+      if (hpp > 0 && umum > 0) {
+        mHint.textContent = umum < hpp ? `Rugi ${S().rp(hpp - umum)} (${marginPct}%) di bawah HPP!` : `Margin: +${marginPct}% (Laba ${S().rp(laba)}/${satD})`;
+        mHint.className = 'text-[11px] mt-1 font-semibold ' + (umum < hpp ? 'text-red-600' : 'text-emerald-600');
+      } else {
+        mHint.textContent = 'Isi HPP & Harga Umum untuk lihat margin.';
+        mHint.className = 'text-[11px] mt-1';
+      }
+    }
+    const antiRugiEl = document.getElementById('wizStep4MarginHint');
+    if (antiRugiEl) {
+      const below = hpp > 0 && ((umum > 0 && umum < hpp) || (mem > 0 && mem < hpp) || (grosir > 0 && grosir < hpp) || (faskes > 0 && faskes < hpp));
+      if (below) {
+        antiRugiEl.classList.remove('hidden');
+        antiRugiEl.textContent = `Peringatan Anti-Rugi: Ada harga tier yang lebih rendah dari HPP (${S().rp(hpp)}).`;
+      } else {
+        antiRugiEl.classList.add('hidden');
+      }
+    }
+
+    const tierGrid = document.getElementById('wizPrevTierGrid');
+    if (tierGrid) {
+      tierGrid.innerHTML = `
+        <div><div style="color:var(--ons-text-soft)">Member</div><div class="font-bold">${S().rp(mem)}</div></div>
+        <div><div style="color:var(--ons-text-soft)">Grosir</div><div class="font-bold">${S().rp(grosir)}</div></div>
+        <div><div style="color:var(--ons-text-soft)">Faskes</div><div class="font-bold">${S().rp(faskes)}</div></div>`;
+    }
+
+    const checks = [
+      Boolean(val('wNamaDagang')),
+      Boolean(val('wZatAktif')),
+      Boolean(val('wKfa') || val('wNie')),
+      Boolean(val('wGol') && val('wRak')),
+      Boolean(val('wSatDasar')),
+      umum > 0
+    ];
+    const pct = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    setTxt('wizCompBadge', `Kelengkapan: ${pct}%`);
+    setTxt('wizCompPctSide', `${pct}%`);
+    const bar = document.getElementById('wizCompBar');
+    if (bar) bar.style.width = pct + '%';
+  };
+
+  global.pickObatGolChip = (gol) => {
+    const sel = document.getElementById('wGol');
+    if (sel) sel.value = gol;
+    global.updateObatWizardPreview();
+  };
+
+  global.pickObatFieldChip = (inputId, v) => {
+    const el = document.getElementById(inputId);
+    if (el) el.value = v;
+    global.updateObatWizardPreview();
+  };
+
+  global.applyObatUnitPreset = (d, s, rs, b, rb) => {
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    set('wSatDasar', d);
+    set('wSatSed', s);
+    set('wRasioSed', rs);
+    set('wSatBes', b);
+    set('wRasioBes', rb);
+    global.updateObatWizardPreview();
+  };
+
+  global.applyObatMarkupHelper = (pct) => {
+    const hpp = Number((document.getElementById('wHpp') || {}).value || 0);
+    if (hpp <= 0) {
+      global.toast('Masukkan nilai HPP Beli terlebih dahulu agar markup bisa dihitung.', 'warn');
+      return;
+    }
+    const rnd = (x) => Math.max(100, Math.round(x / 100) * 100);
+    const umum = rnd(hpp * (1 + Number(pct || 25) / 100));
+    const mem = rnd(Math.max(hpp, umum * 0.94));
+    const grosir = rnd(Math.max(hpp, umum * 0.88));
+    const faskes = rnd(Math.max(hpp, umum * 0.90));
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    set('wHrgUmum', umum);
+    set('wHrgMem', mem);
+    set('wHrgGrosir', grosir);
+    set('wHrgFaskes', faskes);
+    global.updateObatWizardPreview();
+  };
+
+  global.applyObatProductTemplate = (tpl) => {
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    if (tpl === 'tablet') {
+      set('wNamaDagang', 'Paracetamol 500mg Kaplet');
+      set('wZatAktif', 'Paracetamol 500 mg');
+      set('wGol', 'BEBAS');
+      set('wSuhu', 'Suhu Ruang (15-25°C)');
+      set('wRak', 'RAK-A1');
+      global.applyObatUnitPreset('Tablet', 'Strip', 10, 'Box', 100);
+    } else if (tpl === 'sirup') {
+      set('wNamaDagang', 'Amoxicillin Dry Syrup 125mg/5ml 60ml');
+      set('wZatAktif', 'Amoxicillin Trihydrate 125mg/5ml');
+      set('wGol', 'KERAS');
+      set('wSuhu', 'Suhu Ruang (15-25°C)');
+      set('wRak', 'RAK-B2');
+      global.applyObatUnitPreset('Botol', 'Paket', 1, 'Box', 12);
+    } else if (tpl === 'chiller') {
+      set('wNamaDagang', 'Insulin Glargine 100 IU/ml FlexPen');
+      set('wZatAktif', 'Insulin Glargine 100 IU/ml');
+      set('wGol', 'KERAS');
+      set('wSuhu', 'Cold Chain / Chiller (2-8°C)');
+      set('wRak', 'CHILLER-01');
+      global.applyObatUnitPreset('Pen', 'Box', 5, 'Karton', 20);
+    }
+    global.updateObatWizardPreview();
+  };
+
+  global.toggleObatSubstitusiTag = (idObat) => {
+    const inp = document.getElementById('wSubstitusi');
+    if (!inp) return;
+    const arr = String(inp.value || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const idx = arr.indexOf(idObat);
+    if (idx >= 0) arr.splice(idx, 1);
+    else arr.push(idObat);
+    inp.value = arr.join(', ');
+    const picker = document.getElementById('wizSubPicker');
+    if (picker) {
+      picker.querySelectorAll('[data-sub-id]').forEach((b) => {
+        b.classList.toggle('is-selected', arr.includes(b.getAttribute('data-sub-id')));
+      });
+    }
   };
 
   global.setObatWizardStep = (nextStep) => {
@@ -511,35 +1046,48 @@
     global._wizCurStep = wizardStep;
     for (let i = 1; i <= 5; i++) {
       const sec = document.getElementById('wizSec' + i);
-      if (sec) sec.className = (!wizardFullScrollMode && wizardStep !== i) ? 'hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3 rounded-xl border';
+      if (sec) sec.className = (!wizardFullScrollMode && wizardStep !== i) ? 'hidden' : 'ons-wiz-card';
     }
     const nav = document.getElementById('wizStepNav');
     if (nav) {
       Array.from(nav.children).forEach((btn, idx) => {
-        const active = (idx + 1) === wizardStep;
-        btn.className = 'py-1.5 px-2 rounded-lg font-semibold border text-center transition-all ' + (active ? 'ons-btn-primary border-blue-600' : 'ons-btn-ghost');
+        const n = idx + 1;
+        btn.classList.toggle('is-active', n === wizardStep);
+        btn.classList.toggle('is-done', n < wizardStep);
+        const numBadge = btn.querySelector('.ons-wiz-step-num');
+        if (numBadge) numBadge.innerHTML = n < wizardStep ? '&#10003;' : String(n);
       });
     }
-    const form = document.getElementById('obatWizardForm');
-    if (form && form.lastElementChild) {
-      form.lastElementChild.innerHTML = `<div class="flex gap-2">
-        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost">Batal</button>
-        ${wizardStep > 1 ? `<button type="button" onclick="window.setObatWizardStep(${wizardStep - 1})" class="ons-btn ons-btn-ghost">&larr; Sebelumnya</button>` : ''}
-      </div>
-      <div class="flex gap-2">
-        ${wizardStep < 5 ? `<button type="button" onclick="window.setObatWizardStep(${wizardStep + 1})" class="ons-btn ons-btn-primary">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
-        ${wizardStep === 5 ? `<button type="submit" class="ons-btn ons-btn-emerald">&#9989; Simpan Produk ke Master Obat</button>` : ''}
-      </div>`;
+    const prog = document.getElementById('wizProgFill');
+    if (prog) prog.style.width = ((wizardStep / 5) * 100) + '%';
+    const lbl = document.getElementById('wizFooterStepLabel');
+    if (lbl) lbl.textContent = wizardFullScrollMode ? 'Mode Scroll Penuh • Semua 5 Tahap' : `Langkah ${wizardStep} dari 5`;
+    const fBar = document.getElementById('wizFooterBar');
+    if (fBar && fBar.children.length >= 3) {
+      fBar.children[0].innerHTML = `<button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost min-h-[42px]">Batal</button>
+        ${!wizardFullScrollMode && wizardStep > 1 ? `<button type="button" id="wizPrevBtn" onclick="window.setObatWizardStep(window._wizCurStep - 1)" class="ons-btn ons-btn-ghost min-h-[42px]">&larr; Sebelumnya</button>` : ''}`;
+      fBar.children[2].innerHTML = `${!wizardFullScrollMode && wizardStep < 5 ? `<button type="button" id="wizNextBtn" onclick="window.setObatWizardStep(window._wizCurStep + 1)" class="ons-btn ons-btn-primary min-h-[42px]">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
+        ${(wizardFullScrollMode || wizardStep === 5) ? `<button type="submit" form="obatWizardForm" class="ons-btn ons-btn-emerald min-h-[42px] px-5">&#9989; Simpan Produk ke Master Obat</button>` : ''}`;
     }
   };
 
   global.toggleObatWizardMode = (id) => {
+    const draft = readObatWizardDraftFromDom(wizardDraftSnapshot || {});
     wizardFullScrollMode = !wizardFullScrollMode;
-    global.openObatWizardModal(id, wizardStep);
+    global.openObatWizardModal(id, wizardStep, draft);
   };
 
   global.saveObatFromWizard = async () => {
     try {
+      const namaEl = document.getElementById('wNamaDagang');
+      if (!namaEl || !String(namaEl.value || '').trim()) {
+        if (!wizardFullScrollMode && typeof global.setObatWizardStep === 'function') {
+          global.setObatWizardStep(1);
+        }
+        global.toast('Nama Dagang Produk wajib diisi terlebih dahulu!', 'warn');
+        if (namaEl) namaEl.focus();
+        return;
+      }
       const hppVal = Number(document.getElementById('wHpp').value || 0);
       const hUmum = Number(document.getElementById('wHrgUmum').value || 0);
       const hMem = Number(document.getElementById('wHrgMem').value || 0);

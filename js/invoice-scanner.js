@@ -458,7 +458,8 @@
         <button type="button" onclick="window.__closeScannerCamModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
         <button type="button" onclick="window.__snapScannerCamPhoto()" class="ons-btn ons-btn-primary text-xs px-5">&#128247; Jepret &amp; Scan Faktur</button>
       </div>
-    </div>`, '640px');
+    </div>`, 'full');
+    if (typeof S.onModalClose === 'function') S.onModalClose(stopCam);
 
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },

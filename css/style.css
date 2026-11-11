@@ -275,7 +275,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   background-color: var(--ons-primary-tint);
 }
 
-/* Modal Backdrop & Dialog langsung di root body (/gas-tagihan-pembayaran R-popup) */
+/* Modal Backdrop, Spotlight & Full-Viewport Workspace Dialogs */
 .ons-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -287,6 +287,17 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   justify-content: center;
   padding: 1rem;
 }
+.ons-modal-backdrop.is-spotlight {
+  align-items: flex-start;
+  padding-top: min(10vh, 72px);
+}
+.ons-modal-backdrop.is-full {
+  padding: 0;
+  background: var(--ons-bg-canvas);
+  backdrop-filter: none;
+  align-items: stretch;
+  justify-content: stretch;
+}
 
 .ons-modal-box {
   background: var(--ons-bg-card);
@@ -297,6 +308,310 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
+}
+.ons-modal-box.is-full {
+  width: 100%;
+  max-width: 100% !important;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+  background: var(--ons-bg-canvas);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: onsViewEnter 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ons-ws-topbar {
+  width: 100%;
+  background: var(--ons-bg-card);
+  border-bottom: 1px solid var(--ons-border);
+  padding: 0.72rem clamp(1rem, 2.8vw, 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.ons-ws-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 40px;
+  padding: 0.42rem 0.9rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-main);
+  font-size: 0.81rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.ons-ws-back-btn:hover {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+  color: #0050CA;
+}
+html.dark .ons-ws-back-btn:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(96, 165, 250, 0.45);
+  color: #93C5FD;
+}
+.ons-ws-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0.25rem 0.62rem;
+  border-radius: 999px;
+  background: var(--ons-primary-tint);
+  color: var(--ons-primary);
+  border: 1px solid rgba(0, 80, 202, 0.18);
+}
+html.dark .ons-ws-pill {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93C5FD;
+  border-color: rgba(96, 165, 250, 0.3);
+}
+.ons-ws-close-btn {
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 0.65rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  color: var(--ons-text-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+.ons-ws-close-btn:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FCA5A5;
+}
+.ons-ws-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(0.9rem, 2.2vw, 1.75rem);
+}
+.ons-ws-surface {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 1.1rem;
+  box-shadow: var(--ons-shadow-card);
+}
+.ons-ws-surface > div {
+  padding: clamp(1.2rem, 2.5vw, 2.2rem) !important;
+  font-size: 0.875rem;
+}
+.ons-ws-surface > div > .flex:first-child {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--ons-border);
+  margin-bottom: 0.35rem;
+}
+.ons-ws-surface > div h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+.ons-ws-surface button.text-xl[onclick*="closeModal"],
+.ons-ws-surface button.text-xl[onclick*="__close"] {
+  display: none;
+}
+.ons-ws-surface .ons-input,
+.ons-ws-surface .ons-select {
+  min-height: 42px;
+  font-size: 0.875rem;
+}
+.ons-ws-surface [class*="max-h-"] {
+  max-height: clamp(240px, 54vh, 620px);
+}
+.ons-ws-surface .aspect-\[4\/3\] {
+  max-height: 62vh;
+  width: 100%;
+}
+
+/* Full-Viewport Product & Workflow Studio (Wizard Obat & Form Kaya Visual) */
+.ons-wiz-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--ons-bg-canvas);
+}
+.ons-wiz-header {
+  background: var(--ons-bg-card);
+  border-bottom: 1px solid var(--ons-border);
+  padding: 0.85rem clamp(1rem, 2.8vw, 2rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+.ons-wiz-stepper-wrap {
+  background: var(--ons-bg-card);
+  border-bottom: 1px solid var(--ons-border);
+  padding: 0.75rem clamp(1rem, 2.8vw, 2rem) 0.9rem;
+  flex-shrink: 0;
+}
+.ons-wiz-progress-track {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--ons-bg-subtle);
+  overflow: hidden;
+  margin-top: 0.65rem;
+}
+.ons-wiz-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0066FE 0%, #10B981 100%);
+  transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ons-wiz-step-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 46px;
+}
+.ons-wiz-step-btn:hover {
+  border-color: #93C5FD;
+  color: var(--ons-text-main);
+}
+.ons-wiz-step-btn.is-active {
+  background: #EFF6FF;
+  border-color: #0050CA;
+  color: #0050CA;
+  box-shadow: 0 2px 10px rgba(0, 80, 202, 0.14);
+}
+html.dark .ons-wiz-step-btn.is-active {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: #60A5FA;
+  color: #93C5FD;
+}
+.ons-wiz-step-btn.is-done {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #047857;
+}
+html.dark .ons-wiz-step-btn.is-done {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #6EE7B7;
+}
+.ons-wiz-step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+}
+.ons-wiz-step-btn.is-active .ons-wiz-step-num {
+  background: #0050CA;
+  border-color: #0050CA;
+  color: #FFFFFF;
+}
+.ons-wiz-step-btn.is-done .ons-wiz-step-num {
+  background: #059669;
+  border-color: #059669;
+  color: #FFFFFF;
+}
+.ons-wiz-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(1rem, 2.4vw, 1.85rem);
+}
+.ons-wiz-card {
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 1.05rem;
+  box-shadow: var(--ons-shadow-card);
+  overflow: hidden;
+}
+.ons-wiz-card-head {
+  padding: 1rem 1.35rem;
+  background: var(--ons-bg-subtle);
+  border-bottom: 1px solid var(--ons-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.ons-wiz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.72rem;
+  min-height: 36px;
+  border-radius: 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-main);
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.ons-wiz-chip:hover {
+  border-color: #60A5FA;
+  background: #EFF6FF;
+  color: #0050CA;
+}
+.ons-wiz-chip.is-selected {
+  background: #0050CA;
+  border-color: #0050CA;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 80, 202, 0.22);
+}
+html.dark .ons-wiz-chip:hover {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93C5FD;
+}
+.ons-wiz-preview {
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 1.05rem;
+  box-shadow: var(--ons-shadow-card);
+  overflow: hidden;
+}
+.ons-wiz-footer {
+  background: var(--ons-bg-card);
+  border-top: 1px solid var(--ons-border);
+  padding: 0.85rem clamp(1rem, 2.8vw, 2rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 /* Shimmer Skeleton */
@@ -1230,7 +1545,7 @@ html.dark .ons-scan-zone {
 .ons-context-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(9, 32, 42, 0.56);
+  background: rgba(15, 23, 42, 0.52);
   backdrop-filter: blur(4px);
   z-index: 9980;
   display: flex;
@@ -1238,7 +1553,7 @@ html.dark .ons-scan-zone {
   animation: onsBackdropFade 0.18s ease-out both;
 }
 .ons-context-drawer-panel {
-  width: min(560px, 96vw);
+  width: min(720px, 96vw);
   height: 100%;
   background: var(--ons-bg-card);
   color: var(--ons-text-main);

@@ -316,22 +316,67 @@
   }
   global.toast = showToast;
 
+  let _modalCloseHook = null;
+
+  function onModalClose(fn) {
+    _modalCloseHook = typeof fn === 'function' ? fn : null;
+  }
+
   /**
-   * Modal Portal Root langsung di <body> (/gas-tagihan-pembayaran anti-terpotong container!)
+   * Modal Portal Root langsung di <body>
+   * v16.1: Default membuka Workspace Layar Penuh (100vw x 100vh) agar form & tabel nyaman,
+   * kecuali mode: 'spotlight' untuk pencarian cepat Ctrl+K.
    */
-  function openModal(html, maxWidth = '640px') {
+  function openModal(html, widthOrOpts = 'full') {
     closeModal();
+    const isObj = typeof widthOrOpts === 'object' && widthOrOpts !== null;
+    const isSpotlight = isObj && widthOrOpts.mode === 'spotlight';
+    const maxWidth = isObj ? (widthOrOpts.maxWidth || '680px') : (typeof widthOrOpts === 'string' && widthOrOpts !== 'full' ? widthOrOpts : '680px');
     const back = document.createElement('div');
     back.id = 'onsModalRoot';
-    back.className = 'ons-modal-backdrop';
-    back.innerHTML = `<div class="ons-modal-box" style="max-width:${maxWidth};">${html}</div>`;
-    back.addEventListener('click', (e) => {
-      if (e.target === back) closeModal();
-    });
+    if (isSpotlight) {
+      back.className = 'ons-modal-backdrop is-spotlight';
+      back.innerHTML = `<div class="ons-modal-box" role="dialog" aria-modal="true" style="max-width:${maxWidth};">${html}</div>`;
+      back.addEventListener('click', (e) => {
+        if (e.target === back) closeModal();
+      });
+    } else {
+      const isCustom = String(html || '').includes('data-ws-custom="1"');
+      back.className = 'ons-modal-backdrop is-full';
+      back.innerHTML = isCustom
+        ? `<div class="ons-modal-box is-full is-custom" role="dialog" aria-modal="true">${html}</div>`
+        : `<div class="ons-modal-box is-full" role="dialog" aria-modal="true">
+            <div class="ons-ws-topbar">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <button type="button" onclick="ONSStore.closeModal()" class="ons-ws-back-btn">
+                  <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                  <span>Kembali</span>
+                </button>
+                <span class="ons-ws-pill hidden sm:inline-flex">Tampilan Penuh</span>
+                <span class="text-xs font-semibold truncate hidden md:inline" style="color:var(--ons-text-soft)">Apotek ONS Farma</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="hidden sm:inline text-[11px] font-mono-num" style="color:var(--ons-text-muted)">Tekan Esc untuk tutup</span>
+                <button type="button" onclick="ONSStore.closeModal()" aria-label="Tutup Tampilan" class="ons-ws-close-btn" title="Tutup (Esc)">&times;</button>
+              </div>
+            </div>
+            <div class="ons-ws-body">
+              <div class="ons-ws-surface">${html}</div>
+            </div>
+          </div>`;
+    }
+    if (isObj && typeof widthOrOpts.onClose === 'function') {
+      _modalCloseHook = widthOrOpts.onClose;
+    }
     document.body.appendChild(back);
   }
 
   function closeModal() {
+    const hook = _modalCloseHook;
+    _modalCloseHook = null;
+    if (typeof hook === 'function') {
+      try { hook(); } catch (_) {}
+    }
     const el = document.getElementById('onsModalRoot');
     if (el) el.remove();
   }
@@ -824,6 +869,7 @@
     buildPioScheduleWaText,
     openModal,
     closeModal,
+    onModalClose,
     openDrawer,
     closeDrawer,
     buildQrisEmvcoPayload,

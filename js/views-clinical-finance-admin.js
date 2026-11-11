@@ -1752,7 +1752,7 @@
     const defaultAktual = denomSum > 0 ? denomSum : (modalDefault + sisTunai);
     const shiftHist = st.shiftHistory || [];
 
-    return `<div class="max-w-3xl mx-auto space-y-5 ons-view-enter">
+    return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Rekonsiliasi &amp; Tutup Shift Kasir (Blind Count + Denominasi)</h1>

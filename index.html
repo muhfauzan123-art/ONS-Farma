@@ -717,7 +717,7 @@
             <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Esc</button>
           </div>
           <div id="cmdkResultsBox" class="max-h-80 overflow-y-auto space-y-1 text-xs"></div>
-        </div>`, '620px');
+        </div>`, { mode: 'spotlight', maxWidth: '680px' });
         window.filterCmdk = function (rawQ) {
           const q = String(rawQ || '').trim().toLowerCase();
           const box = document.getElementById('cmdkResultsBox');
