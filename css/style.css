@@ -1,0 +1,347 @@
+/* ==========================================================================
+   ONS FARMA DIGITAL ENTERPRISE v10.0 — CLINICAL ROYAL ENTERPRISE DESIGN SYSTEM
+   Daylight Mode (#F8FAFC / #FFFFFF) & Shift Malam Dark Mode (.dark: #0F172A / #1E293B)
+   ========================================================================== */
+
+:root {
+  --ons-bg-canvas: #F8FAFC;
+  --ons-bg-card: #FFFFFF;
+  --ons-bg-subtle: #F1F5F9;
+  --ons-border: #E2E8F0;
+  --ons-border-strong: #CBD5E1;
+  --ons-text-main: #0B1C30;
+  --ons-text-muted: #424655;
+  --ons-text-soft: #64748B;
+
+  --ons-primary: #0050CA;
+  --ons-primary-bright: #0066FE;
+  --ons-primary-hover: #004BBD;
+  --ons-primary-tint: #EFF6FF;
+
+  --ons-secondary: #006C4A;
+  --ons-emerald: #10B981;
+  --ons-emerald-tint: #ECFDF5;
+  --ons-tertiary: #00655C;
+  --ons-cyan: #0284C7;
+  --ons-amber: #F59E0B;
+  --ons-amber-tint: #FFFBEB;
+  --ons-red: #DC2626;
+  --ons-red-tint: #FEF2F2;
+  --ons-purple: #7C3AED;
+  --ons-purple-tint: #F5F3FF;
+
+  --ons-nav-start: #09202A;
+  --ons-nav-end: #06171F;
+  --ons-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ons-shadow-elev: 0 12px 32px rgba(11, 28, 48, 0.12);
+}
+
+html.dark {
+  --ons-bg-canvas: #0F172A;
+  --ons-bg-card: #1E293B;
+  --ons-bg-subtle: #0F172A;
+  --ons-border: #334155;
+  --ons-border-strong: #475569;
+  --ons-text-main: #F1F5F9;
+  --ons-text-muted: #CBD5E1;
+  --ons-text-soft: #94A3B8;
+
+  --ons-primary: #3B82F6;
+  --ons-primary-bright: #60A5FA;
+  --ons-primary-hover: #2563EB;
+  --ons-primary-tint: rgba(59, 130, 246, 0.14);
+
+  --ons-emerald-tint: rgba(16, 185, 129, 0.14);
+  --ons-amber-tint: rgba(245, 158, 11, 0.14);
+  --ons-red-tint: rgba(220, 38, 38, 0.15);
+  --ons-purple-tint: rgba(124, 58, 237, 0.16);
+  --ons-shadow-card: 0 4px 12px rgba(2, 6, 23, 0.45);
+  --ons-shadow-elev: 0 16px 40px rgba(2, 6, 23, 0.72);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--ons-bg-canvas);
+  color: var(--ons-text-main);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono-num {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sidebar Clinical Navy */
+.ons-sidebar {
+  background: linear-gradient(180deg, var(--ons-nav-start) 0%, var(--ons-nav-end) 100%);
+  color: #E2E8F0;
+}
+
+.ons-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.62rem 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #94A3B8;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+  text-align: left;
+  min-height: 40px;
+}
+
+.ons-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.ons-nav-btn.active {
+  background: linear-gradient(90deg, #0066FE 0%, #0050CA 100%);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 102, 254, 0.35);
+}
+
+/* Cards & Inputs adaptive Daylight <-> Dark Mode */
+.ons-card {
+  background-color: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 0.85rem;
+  box-shadow: var(--ons-shadow-card);
+}
+
+.ons-input, .ons-select, .ons-textarea {
+  width: 100%;
+  background-color: var(--ons-bg-card);
+  color: var(--ons-text-main);
+  border: 1px solid var(--ons-border-strong);
+  border-radius: 0.55rem;
+  padding: 0.52rem 0.78rem;
+  font-size: 0.875rem;
+  min-height: 40px;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.ons-input:focus, .ons-select:focus, .ons-textarea:focus {
+  border-color: var(--ons-primary-bright);
+  box-shadow: 0 0 0 3px rgba(0, 102, 254, 0.18);
+}
+
+.ons-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.52rem 0.95rem;
+  min-height: 40px;
+  border-radius: 0.6rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.08s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+  user-select: none;
+}
+.ons-btn:active { transform: scale(0.98); }
+
+.ons-btn-primary { background: #0050CA; color: #FFFFFF; }
+.ons-btn-primary:hover { background: #004BBD; }
+.ons-btn-emerald { background: #006C4A; color: #FFFFFF; }
+.ons-btn-emerald:hover { background: #059669; }
+.ons-btn-danger { background: #DC2626; color: #FFFFFF; }
+.ons-btn-danger:hover { background: #B91C1C; }
+.ons-btn-amber { background: #D97706; color: #FFFFFF; }
+.ons-btn-ghost {
+  background: var(--ons-bg-card);
+  color: var(--ons-text-main);
+  border-color: var(--ons-border-strong);
+}
+.ons-btn-ghost:hover { background: var(--ons-bg-subtle); }
+
+/* Badges Golongan BPOM (5 Golongan + Status) */
+.badge-bpom {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.bpom-bebas { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+.bpom-terbatas { background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
+.bpom-keras { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+.bpom-prekursor, .bpom-oot { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+.bpom-narkotika, .bpom-psikotropika { background: #F5F3FF; color: #6D28D9; border: 1px solid #DDD6FE; }
+html.dark .bpom-bebas { background: rgba(16,185,129,.18); color: #34D399; border-color: rgba(52,211,153,.35); }
+html.dark .bpom-terbatas { background: rgba(2,132,199,.22); color: #38BDF8; border-color: rgba(56,189,248,.35); }
+html.dark .bpom-keras { background: rgba(220,38,38,.2); color: #FCA5A5; border-color: rgba(252,165,165,.35); }
+html.dark .bpom-prekursor, html.dark .bpom-oot { background: rgba(245,158,11,.2); color: #FCD34D; border-color: rgba(252,211,77,.35); }
+html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,58,237,.22); color: #C4B5FD; border-color: rgba(196,181,253,.35); }
+
+/* Table styling adaptive */
+.ons-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--ons-border);
+}
+
+.ons-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.835rem;
+}
+
+.ons-table th {
+  text-align: left;
+  padding: 0.68rem 0.85rem;
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--ons-text-soft);
+  background: var(--ons-bg-subtle);
+  border-bottom: 1px solid var(--ons-border);
+  white-space: nowrap;
+}
+
+.ons-table td {
+  padding: 0.68rem 0.85rem;
+  border-bottom: 1px solid var(--ons-border);
+  vertical-align: middle;
+}
+
+.ons-table tbody tr:hover {
+  background-color: var(--ons-primary-tint);
+}
+
+/* Modal Backdrop & Dialog langsung di root body (/gas-tagihan-pembayaran R-popup) */
+.ons-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 32, 42, 0.68);
+  backdrop-filter: blur(4px);
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.ons-modal-box {
+  background: var(--ons-bg-card);
+  color: var(--ons-text-main);
+  border: 1px solid var(--ons-border);
+  border-radius: 1rem;
+  box-shadow: var(--ons-shadow-elev);
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+/* Shimmer Skeleton */
+@keyframes onsShimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.ons-skeleton {
+  background: linear-gradient(90deg, var(--ons-bg-subtle) 25%, var(--ons-border) 50%, var(--ons-bg-subtle) 75%);
+  background-size: 800px 100%;
+  animation: onsShimmer 1.3s infinite linear;
+  border-radius: 0.45rem;
+}
+
+/* Responsive Mobile Targets <768px (W-14) */
+@media (max-width: 767px) {
+  .ons-btn, .ons-nav-btn, .ons-input, .ons-select {
+    min-height: 44px;
+  }
+  .ons-desktop-only { display: none !important; }
+  .ons-main-scroll { padding-bottom: 5.5rem !important; }
+}
+
+@media (min-width: 768px) {
+  .ons-mobile-only { display: none !important; }
+}
+
+/* Print Layout (A4 Laporan / Kwitansi / Etiket Putih & Biru 50x30mm / Thermal Struk) */
+@media print {
+  body * { visibility: hidden !important; }
+  #onsPrintZone, #onsPrintZone * {
+    visibility: visible !important;
+    color: #000000 !important;
+    background: #FFFFFF !important;
+  }
+  #onsPrintZone {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .no-print { display: none !important; }
+}
+
+/* Zero-specificity :where() PWA Offline Fallback (jika CDN Tailwind tidak tersedia offline) */
+:where(.hidden) { display: none; }
+:where(.flex) { display: flex; }
+:where(.flex-col) { flex-direction: column; }
+:where(.flex-wrap) { flex-wrap: wrap; }
+:where(.items-center) { align-items: center; }
+:where(.justify-between) { justify-content: space-between; }
+:where(.justify-center) { justify-content: center; }
+:where(.flex-1) { flex: 1 1 0%; }
+:where(.shrink-0) { flex-shrink: 0; }
+:where(.grid) { display: grid; }
+:where(.grid-cols-1) { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+:where(.grid-cols-2) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+:where(.grid-cols-3) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+:where(.grid-cols-4) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+:where(.gap-2) { gap: 0.5rem; }
+:where(.gap-3) { gap: 0.75rem; }
+:where(.gap-4) { gap: 1rem; }
+:where(.p-3) { padding: 0.75rem; }
+:where(.p-4) { padding: 1rem; }
+:where(.p-5) { padding: 1.25rem; }
+:where(.p-6) { padding: 1.5rem; }
+:where(.px-4) { padding-left: 1rem; padding-right: 1rem; }
+:where(.min-h-screen) { min-height: 100vh; }
+:where(.w-full) { width: 100%; }
+:where(.w-64) { width: 16rem; }
+:where(.space-y-3 > :not([hidden]) ~ :not([hidden])) { margin-top: 0.75rem; }
+:where(.space-y-4 > :not([hidden]) ~ :not([hidden])) { margin-top: 1rem; }
+:where(.space-y-5 > :not([hidden]) ~ :not([hidden])) { margin-top: 1.25rem; }
+@media (min-width: 768px) {
+  :where(.md\:flex-row) { flex-direction: row; }
+  :where(.md\:grid-cols-2) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :where(.md\:grid-cols-12) { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  :where(.md\:col-span-5) { grid-column: span 5 / span 5; }
+  :where(.md\:col-span-7) { grid-column: span 7 / span 7; }
+}
+@media (min-width: 1024px) {
+  :where(.lg\:grid-cols-2) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :where(.lg\:grid-cols-5) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  :where(.lg\:grid-cols-12) { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  :where(.lg\:col-span-3) { grid-column: span 3 / span 3; }
+  :where(.lg\:col-span-4) { grid-column: span 4 / span 4; }
+  :where(.lg\:col-span-5) { grid-column: span 5 / span 5; }
+  :where(.lg\:col-span-6) { grid-column: span 6 / span 6; }
+  :where(.lg\:col-span-7) { grid-column: span 7 / span 7; }
+}

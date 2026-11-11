@@ -1,0 +1,25 @@
+{
+  "name": "Apotek ONS Farma Enterprise v10",
+  "short_name": "ONS Farma",
+  "description": "Sistem ERP, POS Kecepatan Tinggi, Layanan Klinis & Keuangan Terintegrasi Apotek ONS Farma",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09202A",
+  "theme_color": "#09202A",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

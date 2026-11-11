@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+  <meta name="theme-color" content="#09202A"/>
+  <title>Apotek ONS Farma Enterprise v10</title>
+  <link rel="manifest" href="./manifest.json"/>
+  <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
+  <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
+    };
+  </script>
+  <link rel="stylesheet" href="./css/style.css"/>
+</head>
+<body>
+  <div id="appRoot"></div>
+  <div id="onsPrintZone" aria-hidden="true"></div>
+
+  <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
+  <script src="./vendor/ons-code128.js"></script>
+  <script src="./vendor/ons-xlsx-export.js"></script>
+  <script src="./vendor/ons-xlsx-lite.js"></script>
+
+  <!-- Core Config, Scale Turbo REST API & Sandbox Engine -->
+  <script src="./js/config.js"></script>
+  <script src="./js/demo-engine.js"></script>
+  <script src="./js/api-turbo.js"></script>
+  <script src="./js/store.js"></script>
+
+  <!-- 14 Tampilan Layar & Modul Terintegrasi -->
+  <script src="./js/views-auth-dash-pos.js"></script>
+  <script src="./js/views-inventory-procurement.js"></script>
+  <script src="./js/views-clinical-finance-admin.js"></script>
+
+  <!-- Bootstrap Utama & Navigasi Instan (<50ms) -->
+  <script>
+    (function () {
+      'use strict';
+
+      const NAV_ITEMS = [
+        { id: 'dashboard', label: 'Pusat Komando', icon: '&#128202;', minRole: 'Kasir' },
+        { id: 'pos', label: 'Kasir POS Cepat', icon: '&#9889;', minRole: 'Kasir' },
+        { id: 'obat', label: 'Master Obat KFA', icon: '&#128138;', minRole: 'APJ' },
+        { id: 'gudang', label: 'Gudang FEFO & Recall', icon: '&#128230;', minRole: 'Kasir' },
+        { id: 'defecta', label: 'Defecta & SP BPOM', icon: '&#128221;', minRole: 'APJ' },
+        { id: 'faktur', label: 'Faktur & Retur PBF', icon: '&#129534;', minRole: 'APJ' },
+        { id: 'klinis', label: 'Klinis & SATUSEHAT', icon: '&#129658;', minRole: 'APJ' },
+        { id: 'eresep-prb', label: 'E-Resep & PRB', icon: '&#128197;', minRole: 'APJ' },
+        { id: 'finance', label: 'Keuangan & Pajak', icon: '&#128176;', minRole: 'APJ' },
+        { id: 'billing', label: 'Tagihan & Kwitansi QR', icon: '&#128179;', minRole: 'Kasir' },
+        { id: 'doc-engine', label: 'Mesin Surat Resmi', icon: '&#128196;', minRole: 'APJ' },
+        { id: 'tutup-shift', label: 'Tutup Shift PIN', icon: '&#128274;', minRole: 'Kasir' },
+        { id: 'sipnap', label: 'SIPNAP & Pareto', icon: '&#128200;', minRole: 'APJ' },
+        { id: 'settings', label: 'Pengaturan & Migrasi', icon: '&#9881;&#65039;', minRole: 'Pemilik' },
+        { id: 'mobile-preview', label: 'PWA & Mobile Info', icon: '&#128241;', minRole: 'Kasir' }
+      ];
+
+      window.navigateView = function (viewId) {
+        if (!ONSStore.canAccessView(viewId)) {
+          toast('Akses dibatasi untuk peran ' + ONSStore.getRole(), 'warn');
+          return;
+        }
+        ONSStore.AppState.activeView = viewId;
+        window.renderActiveView();
+        // Highlight nav secara instan tanpa re-render penuh
+        document.querySelectorAll('[data-nav-id]').forEach((el) => {
+          el.classList.toggle('active', el.getAttribute('data-nav-id') === viewId);
+        });
+      };
+
+      window.bootLoadState = async function (forceRefresh) {
+        const st = ONSStore.AppState;
+        const ses = ONSApi.getSession();
+        if (!ses || !ses.token) return;
+        st.user = ses.user;
+        st.cabangId = ses.cabang_id || (ses.user && ses.user.cabang_id) || 'ONS-01';
+
+        // SWR Instant Cache Render
+        const cached = ONSApi.getCachedRead('boot.getState', { cabang_id: st.cabangId });
+        if (cached && !forceRefresh) {
+          applyBootPayload(cached);
+          window.renderApp();
+        }
+
+        try {
+          const live = await ONSApi.callApi('boot.getState', { cabang_id: st.cabangId });
+          applyBootPayload(live);
+          st.booted = true;
+          window.renderApp();
+        } catch (err) {
+          if (!cached) toast('Gagal memuat state: ' + err.message, 'err');
+        }
+      };
+
+      function applyBootPayload(data) {
+        const st = ONSStore.AppState;
+        st.masterObat = data.master_obat || [];
+        st.stokBatch = data.stok_batch || [];
+        st.members = data.members || [];
+        st.supplierPbf = data.supplier_pbf || [];
+        st.coldChain = data.cold_chain || [];
+        st.rekamKlinis = data.rekam_klinis || [];
+        st.penjualan = data.penjualan || [];
+        st.fakturPbf = data.faktur_pbf || [];
+        st.jurnalKeuangan = data.jurnal_keuangan || [];
+      }
+
+      window.logoutUser = function () {
+        ONSApi.setSession(null);
+        ONSStore.AppState.user = null;
+        ONSStore.AppState.booted = false;
+        window.renderApp();
+      };
+
+      window.renderActiveView = function () {
+        const slot = document.getElementById('mainViewSlot');
+        if (!slot) return;
+        const v = ONSStore.AppState.activeView;
+        const v1 = window.ONSViewsAuthDashPos;
+        const v2 = window.ONSViewsInventoryProcurement;
+        const v3 = window.ONSViewsClinicalFinanceAdmin;
+
+        switch (v) {
+          case 'dashboard': slot.innerHTML = v1.renderDashboardView(); break;
+          case 'pos': slot.innerHTML = v1.renderPosView(); break;
+          case 'obat': slot.innerHTML = v2.renderMasterObatView(); break;
+          case 'gudang': slot.innerHTML = v2.renderGudangView(); break;
+          case 'defecta': slot.innerHTML = v2.renderDefectaView(); break;
+          case 'faktur': slot.innerHTML = v2.renderFakturView(); break;
+          case 'klinis': slot.innerHTML = v3.renderKlinisView(); break;
+          case 'eresep-prb': slot.innerHTML = v3.renderEresepPrbView(); break;
+          case 'finance': slot.innerHTML = v3.renderFinanceView(); break;
+          case 'billing': slot.innerHTML = v3.renderBillingModuleView(); break;
+          case 'doc-engine': slot.innerHTML = v3.renderDocEngineView(); break;
+          case 'tutup-shift': slot.innerHTML = v3.renderTutupShiftView(); break;
+          case 'sipnap': slot.innerHTML = v3.renderSipnapParetoView(); break;
+          case 'settings': slot.innerHTML = v3.renderSettingsView(); break;
+          case 'mobile-preview': slot.innerHTML = v3.renderMobilePreviewView(); break;
+          default: slot.innerHTML = v1.renderDashboardView();
+        }
+      };
+
+      window.renderApp = function () {
+        const root = document.getElementById('appRoot');
+        if (window.ONSViewsAuthDashPos.renderPublicStandaloneIfApplicable(root)) return;
+
+        const ses = ONSApi.getSession();
+        if (!ses || !ses.token) {
+          window.ONSViewsAuthDashPos.renderLoginView(root);
+          return;
+        }
+
+        const st = ONSStore.AppState;
+        st.user = ses.user;
+        const allowedNav = NAV_ITEMS.filter((it) => ONSStore.canAccessView(it.id));
+
+        root.innerHTML = `
+          <div class="min-h-screen flex flex-col md:flex-row">
+            <!-- Sidebar Desktop -->
+            <aside class="ons-sidebar w-64 shrink-0 p-3 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
+              <div>
+                <div class="flex items-center gap-2.5 px-2 py-2.5 mb-3 border-b border-white/10">
+                  <img src="./icons/ons-farma-app-icon.png" alt="Logo" class="w-9 h-9 rounded-lg"/>
+                  <div class="min-w-0">
+                    <div class="font-bold text-sm text-white truncate">ONS FARMA v10</div>
+                    <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                  </div>
+                </div>
+                <nav class="space-y-1">
+                  ${allowedNav.map((it) => `
+                    <button data-nav-id="${it.id}" onclick="navigateView('${it.id}')" class="ons-nav-btn ${st.activeView === it.id ? 'active' : ''}">
+                      <span>${it.icon}</span><span class="truncate">${it.label}</span>
+                    </button>`).join('')}
+                </nav>
+              </div>
+              <div class="pt-3 mt-3 border-t border-white/10 space-y-2 text-xs">
+                <div class="px-2 text-slate-300 truncate"><b>${ONSStore.esc(st.user.nama_lengkap)}</b></div>
+                <button onclick="logoutUser()" class="ons-nav-btn text-red-300 hover:bg-red-500/20"><span>&#128682;</span><span>Keluar Sesi</span></button>
+              </div>
+            </aside>
+
+            <!-- Konten Utama -->
+            <div class="flex-1 flex flex-col min-w-0">
+              <header class="h-14 border-b px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                <div class="flex items-center gap-2">
+                  <img src="./icons/ons-farma-app-icon.png" class="w-7 h-7 rounded md:hidden"/>
+                  <span class="font-bold text-sm md:hidden">ONS Farma</span>
+                  <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden">&#128242; Install PWA</button>
+                  <button onclick="ONSStore.toggleDarkMode();renderApp();" class="ons-btn ons-btn-ghost text-xs px-2.5">${st.darkMode ? '&#9728;&#65039; Shift Terang' : '&#127769; Shift Malam'}</button>
+                  <button onclick="logoutUser()" class="ons-btn ons-btn-ghost text-xs md:hidden">Keluar</button>
+                </div>
+              </header>
+
+              <main id="mainViewSlot" class="flex-1 p-4 md:p-6 ons-main-scroll"></main>
+            </div>
+
+            <!-- Mobile Bottom Nav (<768px) -->
+            <nav class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-4 h-16" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+              ${[
+                { id: 'dashboard', l: 'Beranda', i: '&#128202;' },
+                { id: 'pos', l: 'Kasir POS', i: '&#9889;' },
+                { id: 'gudang', l: 'Gudang', i: '&#128230;' },
+                { id: 'billing', l: 'Tagihan', i: '&#128179;' }
+              ].map((b) => `<button data-nav-id="${b.id}" onclick="navigateView('${b.id}')" class="flex flex-col items-center justify-center text-[11px] font-semibold ${st.activeView === b.id ? 'text-blue-600' : ''}">
+                <span class="text-lg leading-none">${b.i}</span><span class="mt-0.5">${b.l}</span>
+              </button>`).join('')}
+            </nav>
+          </div>
+        `;
+        window.renderActiveView();
+      };
+
+      // Hotkey POS (F2 fokus barcode, F4 checkout Tunai, F8 QRIS)
+      window.addEventListener('keydown', (e) => {
+        if (!ONSApi.getSession()) return;
+        if (e.key === 'F2') {
+          e.preventDefault();
+          window.navigateView('pos');
+          setTimeout(() => document.getElementById('posSearchInput')?.focus(), 40);
+        }
+      });
+
+      // PWA Install Prompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        ONSStore.AppState.deferredInstallPrompt = e;
+        document.getElementById('pwaInstallBtn')?.classList.remove('hidden');
+      });
+
+      window.triggerPwaInstall = async () => {
+        const promptEv = ONSStore.AppState.deferredInstallPrompt;
+        if (promptEv) {
+          promptEv.prompt();
+          await promptEv.userChoice;
+          ONSStore.AppState.deferredInstallPrompt = null;
+        } else {
+          toast('Gunakan menu browser (Add to Home Screen / Install App) untuk memasang PWA.', 'info');
+        }
+      };
+
+      if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+
+      window.renderApp();
+      if (ONSApi.getSession()) window.bootLoadState(false);
+    })();
+  </script>
+</body>
+</html>
