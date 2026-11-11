@@ -30,8 +30,24 @@
   --ons-purple: #7C3AED;
   --ons-purple-tint: #F5F3FF;
 
-  --ons-nav-start: #09202A;
-  --ons-nav-end: #06171F;
+  --ons-nav-start: #FFFFFF;
+  --ons-nav-end: #F8FAFC;
+  --ons-nav-border: #E2E8F0;
+  --ons-nav-divider: #E2E8F0;
+  --ons-nav-text: #334155;
+  --ons-nav-text-strong: #0F172A;
+  --ons-nav-muted: #64748B;
+  --ons-nav-hover-bg: #F1F5F9;
+  --ons-nav-hover-text: #0F172A;
+  --ons-nav-active-bg: #EFF6FF;
+  --ons-nav-active-border: #BFDBFE;
+  --ons-nav-active-text: #0050CA;
+  --ons-nav-accent: #0066FE;
+  --ons-nav-brand-sub: #0050CA;
+  --ons-nav-subline: #CBD5E1;
+  --ons-nav-danger: #DC2626;
+  --ons-nav-danger-bg: #FEF2F2;
+  --ons-nav-status-ok: #047857;
   --ons-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
   --ons-shadow-elev: 0 12px 32px rgba(11, 28, 48, 0.12);
 }
@@ -39,6 +55,24 @@
 html.dark {
   --ons-bg-canvas: #0F172A;
   --ons-bg-card: #1E293B;
+  --ons-nav-start: #0F172A;
+  --ons-nav-end: #111827;
+  --ons-nav-border: #1E293B;
+  --ons-nav-divider: rgba(148, 163, 184, 0.18);
+  --ons-nav-text: #CBD5E1;
+  --ons-nav-text-strong: #F8FAFC;
+  --ons-nav-muted: #94A3B8;
+  --ons-nav-hover-bg: rgba(255, 255, 255, 0.07);
+  --ons-nav-hover-text: #FFFFFF;
+  --ons-nav-active-bg: rgba(59, 130, 246, 0.16);
+  --ons-nav-active-border: rgba(96, 165, 250, 0.34);
+  --ons-nav-active-text: #93C5FD;
+  --ons-nav-accent: #38BDF8;
+  --ons-nav-brand-sub: #7DD3FC;
+  --ons-nav-subline: rgba(148, 163, 184, 0.25);
+  --ons-nav-danger: #FCA5A5;
+  --ons-nav-danger-bg: rgba(239, 68, 68, 0.18);
+  --ons-nav-status-ok: #6EE7B7;
   --ons-bg-subtle: #0F172A;
   --ons-border: #334155;
   --ons-border-strong: #475569;
@@ -79,10 +113,11 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Sidebar Clinical Navy */
+/* Sidebar Putih Bersih & Biru Klinik (adaptif Shift Malam) */
 .ons-sidebar {
   background: linear-gradient(180deg, var(--ons-nav-start) 0%, var(--ons-nav-end) 100%);
-  color: #E2E8F0;
+  color: var(--ons-nav-text);
+  border-right: 1px solid var(--ons-nav-border);
 }
 
 .ons-nav-btn {
@@ -94,7 +129,7 @@ html, body {
   border-radius: 0.65rem;
   font-size: 0.84rem;
   font-weight: 500;
-  color: #94A3B8;
+  color: var(--ons-nav-text);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
@@ -104,15 +139,15 @@ html, body {
 }
 
 .ons-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FFFFFF;
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-hover-text);
 }
 
 .ons-nav-btn.active {
   background: linear-gradient(90deg, #0066FE 0%, #0050CA 100%);
   color: #FFFFFF;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 102, 254, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 80, 202, 0.25);
 }
 
 /* Cards & Inputs adaptive Daylight <-> Dark Mode */
@@ -244,7 +279,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
 .ons-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(9, 32, 42, 0.68);
+  background: rgba(15, 23, 42, 0.56);
   backdrop-filter: blur(4px);
   z-index: 9990;
   display: flex;
@@ -425,7 +460,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   background: var(--ons-bg-card);
   border: 1px solid var(--ons-border-strong);
   border-radius: 0.9rem;
-  box-shadow: 0 20px 45px -10px rgba(9, 32, 42, 0.25);
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.18);
   z-index: 60;
 }
 
@@ -498,7 +533,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   border-radius: 0.65rem;
   font-size: 0.81rem;
   font-weight: 700;
-  color: #CBD5E1;
+  color: var(--ons-nav-text);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
@@ -506,13 +541,13 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   text-align: left;
 }
 .ons-menu-parent:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FFFFFF;
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-hover-text);
 }
 .ons-menu-parent.has-active {
-  background: rgba(56, 189, 248, 0.13);
-  border-color: rgba(56, 189, 248, 0.24);
-  color: #FFFFFF;
+  background: var(--ons-nav-active-bg);
+  border-color: var(--ons-nav-active-border);
+  color: var(--ons-nav-active-text);
 }
 .ons-menu-parent:focus-visible,
 .ons-submenu-btn:focus-visible,
@@ -541,16 +576,31 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   line-height: 1;
   padding: 0.2rem 0.44rem;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.2);
-  color: #FCD34D;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
 }
 .ons-nav-badge.danger {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border-color: #FECACA;
+}
+.ons-nav-badge.info {
+  background: #E0F2FE;
+  color: #0369A1;
+  border-color: #BAE6FD;
+}
+html.dark .ons-nav-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #FCD34D;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+html.dark .ons-nav-badge.danger {
   background: rgba(239, 68, 68, 0.22);
   color: #FCA5A5;
   border-color: rgba(239, 68, 68, 0.4);
 }
-.ons-nav-badge.info {
+html.dark .ons-nav-badge.info {
   background: rgba(56, 189, 248, 0.2);
   color: #7DD3FC;
   border-color: rgba(56, 189, 248, 0.35);
@@ -567,7 +617,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
 }
 
 .ons-submenu-list {
-  border-left: 1.5px solid rgba(148, 163, 184, 0.22);
+  border-left: 1.5px solid var(--ons-nav-subline);
   padding-left: 0.52rem;
   display: flex;
   flex-direction: column;
@@ -585,7 +635,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   border-radius: 0.55rem;
   font-size: 0.775rem;
   font-weight: 500;
-  color: #94A3B8;
+  color: var(--ons-nav-text);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
@@ -593,14 +643,14 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   transition: background-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
 }
 .ons-submenu-btn:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #F1F5F9;
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-hover-text);
 }
 .ons-submenu-btn.active {
-  background: linear-gradient(90deg, #0066FE 0%, #0284C7 100%);
+  background: linear-gradient(90deg, #0066FE 0%, #0050CA 100%);
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 3px 10px rgba(0, 102, 254, 0.34);
+  box-shadow: 0 3px 10px rgba(0, 80, 202, 0.24);
 }
 
 .ons-submenu-dot {
@@ -687,7 +737,8 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   width: min(320px, 86vw);
   height: 100%;
   background: linear-gradient(180deg, var(--ons-nav-start) 0%, var(--ons-nav-end) 100%);
-  color: #E2E8F0;
+  color: var(--ons-nav-text);
+  border-right: 1px solid var(--ons-nav-border);
   display: flex;
   flex-direction: column;
   padding: 0.85rem;
@@ -762,7 +813,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(148, 163, 184, 0.72);
+  color: var(--ons-nav-muted);
   padding: 0.72rem 0.7rem 0.28rem;
   display: flex;
   align-items: center;
@@ -784,7 +835,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   border-radius: 0.62rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #CBD5E1;
+  color: var(--ons-nav-text);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
@@ -792,15 +843,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   transition: background-color 0.13s ease, color 0.13s ease, border-color 0.13s ease;
 }
 .ons-nav-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #FFFFFF;
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-hover-text);
 }
 .ons-nav-item.active {
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.2) 0%, rgba(0, 80, 202, 0.16) 100%);
-  border-color: rgba(56, 189, 248, 0.32);
-  color: #FFFFFF;
+  background: var(--ons-nav-active-bg);
+  border-color: var(--ons-nav-active-border);
+  color: var(--ons-nav-active-text);
   font-weight: 700;
-  box-shadow: inset 3px 0 0 #38BDF8;
+  box-shadow: inset 3px 0 0 var(--ons-nav-accent);
 }
 .ons-sidebar.collapsed .ons-nav-item {
   justify-content: center;
@@ -808,7 +859,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 .ons-identity-hero {
-  background: linear-gradient(135deg, #09202A 0%, #0F2942 58%, #004BBD 100%);
+  background: linear-gradient(135deg, #0B2545 0%, #0F3B82 55%, #0050CA 100%);
   color: #FFFFFF;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -899,20 +950,52 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   min-height: 39px;
   padding: 0.15rem 0.35rem 0.15rem 0.65rem;
   border-radius: 0.65rem;
-  color: #CBD5E1;
+  color: var(--ons-nav-text);
   background: transparent;
   border: 1px solid transparent;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .ons-nav-row:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #FFFFFF;
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-hover-text);
 }
 .ons-nav-row.active {
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.2) 0%, rgba(0, 80, 202, 0.16) 100%);
-  border-color: rgba(56, 189, 248, 0.34);
-  color: #FFFFFF;
-  box-shadow: inset 3px 0 0 #38BDF8;
+  background: var(--ons-nav-active-bg);
+  border-color: var(--ons-nav-active-border);
+  color: var(--ons-nav-active-text);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--ons-nav-accent);
+}
+
+.ons-nav-divider { border-color: var(--ons-nav-divider); }
+.ons-nav-muted { color: var(--ons-nav-muted); }
+.ons-nav-brand-title { color: var(--ons-nav-text-strong); }
+.ons-nav-brand-sub { color: var(--ons-nav-brand-sub); }
+.ons-nav-logo-box { background: #FFFFFF; border: 1px solid var(--ons-nav-border); }
+.ons-nav-icon-btn {
+  color: var(--ons-nav-muted);
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+.ons-nav-icon-btn:hover {
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-hover-text);
+}
+.ons-nav-all-btn {
+  color: var(--ons-nav-brand-sub);
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+.ons-nav-all-btn:hover {
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-active-text);
+}
+.ons-nav-profile-btn { transition: background-color 0.14s ease; }
+.ons-nav-profile-btn:hover { background: var(--ons-nav-hover-bg); }
+.ons-nav-profile-name { color: var(--ons-nav-text-strong); }
+.ons-nav-profile-status { color: var(--ons-nav-status-ok); }
+.ons-nav-logout-btn { color: var(--ons-nav-danger); }
+.ons-nav-logout-btn:hover {
+  background: var(--ons-nav-danger-bg);
+  color: var(--ons-nav-danger);
 }
 .ons-nav-row-btn {
   flex: 1;
@@ -940,7 +1023,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #94A3B8;
+  color: var(--ons-nav-muted);
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -948,8 +1031,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   transition: background-color 0.14s ease, color 0.14s ease;
 }
 .ons-nav-caret:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #FFFFFF;
+  background: var(--ons-nav-hover-bg);
+  color: var(--ons-nav-hover-text);
 }
 .ons-chevron-sub {
   width: 14px;
@@ -957,8 +1040,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .ons-nav-caret[aria-expanded="true"] {
-  color: #7DD3FC;
-  background: rgba(56, 189, 248, 0.14);
+  color: var(--ons-nav-active-text);
+  background: var(--ons-nav-active-bg);
 }
 .ons-nav-caret[aria-expanded="true"] .ons-chevron-sub {
   transform: rotate(180deg);

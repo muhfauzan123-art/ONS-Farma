@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
-  <meta name="theme-color" content="#09202A"/>
+  <meta name="theme-color" content="#0050CA"/>
   <title>Apotek ONS Farma Enterprise v16.0</title>
   <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
@@ -347,9 +347,9 @@
         const st = ONSStore.AppState;
         const curView = st.activeView;
         const allTabViewsCount = tree.reduce((n, s) => n + s.items.filter((i) => (i.tabs || []).length > 1).length, 0);
-        const topToggle = allTabViewsCount > 0 ? `<div class="flex items-center justify-between px-2 pb-1 text-[10px] text-slate-400 ons-hide-collapsed">
+        const topToggle = allTabViewsCount > 0 ? `<div class="flex items-center justify-between px-2 pb-1 text-[10px] ons-nav-muted ons-hide-collapsed">
           <span class="uppercase tracking-wider font-bold">Navigasi Modul</span>
-          <button type="button" onclick="window.toggleAllSubmenus()" class="px-1.5 py-0.5 rounded hover:bg-white/10 text-sky-300 font-semibold transition-colors" title="Buka atau tutup semua sub-menu">${openSubmenus.size > 0 ? 'Tutup Sub' : 'Buka Semua'}</button>
+          <button type="button" onclick="window.toggleAllSubmenus()" class="px-1.5 py-0.5 rounded ons-nav-all-btn font-semibold" title="Buka atau tutup semua sub-menu">${openSubmenus.size > 0 ? 'Tutup Sub' : 'Buka Semua'}</button>
         </div>` : '';
 
         return topToggle + tree.map((sect) => `
@@ -475,20 +475,20 @@
         dr.id = 'mobileNavDrawer';
         dr.className = 'ons-drawer-backdrop md:hidden';
         dr.innerHTML = `<div class="ons-drawer-panel" role="dialog" aria-label="Menu Apotek">
-          <div class="flex items-center justify-between gap-2 pb-3 mb-2 border-b border-white/10">
+          <div class="flex items-center justify-between gap-2 pb-3 mb-2 border-b ons-nav-divider">
             <div class="flex items-center gap-2.5 min-w-0">
-              <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover bg-white shrink-0"/>
+              <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
               <div class="min-w-0">
-                <div class="font-bold text-sm text-white truncate">${ONSStore.esc(usahaNama)}</div>
-                <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                <div class="font-bold text-sm ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
+                <div class="text-[11px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
               </div>
             </div>
-            <button onclick="window.closeMobileDrawer()" aria-label="Tutup Menu" class="p-2 rounded-lg text-slate-300 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center">${svgIcon('close')}</button>
+            <button onclick="window.closeMobileDrawer()" aria-label="Tutup Menu" class="p-2 rounded-lg ons-nav-icon-btn min-w-[44px] min-h-[44px] flex items-center justify-center">${svgIcon('close')}</button>
           </div>
           <div id="drawerMenuMount" class="flex-1 space-y-1">${renderMenuTreeHtml()}</div>
-          <div class="pt-3 mt-3 border-t border-white/10 space-y-2 text-xs">
-            <div class="px-2 text-slate-300 truncate"><b>${ONSStore.esc((st.user && st.user.nama_lengkap) || '')}</b></div>
-            <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn text-red-300 hover:bg-red-500/20">${svgIcon('logout')}<span>Keluar Sesi</span></button>
+          <div class="pt-3 mt-3 border-t ons-nav-divider space-y-2 text-xs">
+            <div class="px-2 ons-nav-profile-name font-medium truncate"><b>${ONSStore.esc((st.user && st.user.nama_lengkap) || '')}</b></div>
+            <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn ons-nav-logout-btn">${svgIcon('logout')}<span>Keluar Sesi</span></button>
           </div>
         </div>`;
         dr.addEventListener('click', (e) => { if (e.target === dr) window.closeMobileDrawer(); });
@@ -775,15 +775,15 @@
             <!-- Sidebar Desktop Menu Terstruktur v13.0 -->
             <aside id="desktopSidebar" class="ons-sidebar ${sidebarCollapsed ? 'collapsed' : ''} shrink-0 p-3 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
               <div>
-                <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-1.5 border-b border-white/10">
+                <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-1.5 border-b ons-nav-divider">
                   <div class="flex items-center gap-2.5 min-w-0">
-                    <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover bg-white p-0.5 shrink-0"/>
+                    <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
                     <div class="min-w-0 ons-hide-collapsed">
-                      <div class="font-bold text-sm text-white truncate">${ONSStore.esc(usahaNama)}</div>
-                      <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                      <div class="font-bold text-sm ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
+                      <div class="text-[11px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
                     </div>
                   </div>
-                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 shrink-0 transition-colors">
+                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1.5 rounded-lg ons-nav-icon-btn shrink-0">
                     ${svgIcon('collapse', 'ons-collapse-ico')}
                   </button>
                 </div>
@@ -791,17 +791,17 @@
                   ${renderMenuTreeHtml()}
                 </nav>
               </div>
-              <div class="pt-3 mt-3 border-t border-white/10 space-y-2 text-xs">
-                <button type="button" onclick="navigateView('settings','profil')" class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-white/10 text-left ons-hide-collapsed" title="Lihat & Konfirmasi Profil Pemilik">
+              <div class="pt-3 mt-3 border-t ons-nav-divider space-y-2 text-xs">
+                <button type="button" onclick="navigateView('settings','profil')" class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg ons-nav-profile-btn text-left ons-hide-collapsed" title="Lihat & Konfirmasi Profil Pemilik">
                   ${(fotoPem && ONSStore.getRole() === 'Pemilik')
-                    ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-8 h-8 rounded-full object-cover border border-sky-400 shrink-0"/>`
-                    : `<span class="w-8 h-8 rounded-full bg-blue-600/80 text-white font-bold text-[11px] flex items-center justify-center shrink-0">${ONSStore.esc(initials)}</span>`}
+                    ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-8 h-8 rounded-full object-cover border border-blue-500 shrink-0"/>`
+                    : `<span class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">${ONSStore.esc(initials)}</span>`}
                   <div class="min-w-0">
-                    <div class="text-slate-100 font-semibold truncate">${ONSStore.esc(st.user.nama_lengkap)}</div>
-                    <div class="text-[10px] text-emerald-300 truncate">${prof.terkonfirmasi === 'YA' ? 'Profil Terkonfirmasi' : 'Lengkapi Profil Usaha'}</div>
+                    <div class="ons-nav-profile-name font-semibold truncate">${ONSStore.esc(st.user.nama_lengkap)}</div>
+                    <div class="text-[10px] ons-nav-profile-status font-medium truncate">${prof.terkonfirmasi === 'YA' ? 'Profil Terkonfirmasi' : 'Lengkapi Profil Usaha'}</div>
                   </div>
                 </button>
-                <button onclick="logoutUser()" title="Keluar Sesi" class="ons-nav-btn text-red-300 hover:bg-red-500/20">
+                <button onclick="logoutUser()" title="Keluar Sesi" class="ons-nav-btn ons-nav-logout-btn">
                   ${svgIcon('logout')}
                   <span class="ons-hide-collapsed">Keluar Sesi</span>
                 </button>

@@ -59,8 +59,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first untuk HTML shell & config.js agar setiap revisi langsung tampil
-  if (event.request.mode === 'navigate' || url.endsWith('/index.html') || url.endsWith('/config.js')) {
+  // Network-first untuk HTML shell, style.css & config.js agar setiap revisi langsung tampil
+  if (event.request.mode === 'navigate' || url.endsWith('/index.html') || url.endsWith('/css/style.css') || url.endsWith('/config.js')) {
     event.respondWith(
       fetch(event.request).then((resp) => {
         if (resp && resp.status === 200) {
