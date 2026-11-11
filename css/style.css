@@ -445,13 +445,22 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
 .ons-sidebar.collapsed .ons-hide-collapsed {
   display: none !important;
 }
-.ons-sidebar.collapsed .ons-menu-parent {
+.ons-sidebar.collapsed .ons-menu-parent,
+.ons-sidebar.collapsed .ons-nav-row {
   justify-content: center;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
 }
-.ons-sidebar.collapsed .ons-submenu-wrap {
+.ons-sidebar.collapsed .ons-nav-caret,
+.ons-sidebar.collapsed .ons-submenu-wrap,
+.ons-sidebar.collapsed .ons-nav-subwrap {
   display: none !important;
+}
+.ons-sidebar.collapsed .ons-collapse-ico {
+  transform: rotate(180deg);
+}
+.ons-collapse-ico {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ons-nav-svg {
@@ -646,6 +655,15 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   box-shadow: 0 2px 8px rgba(0, 80, 202, 0.25);
 }
 
+@keyframes onsBackdropFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes onsDrawerSlideIn {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 /* Mobile Slide-Over Menu Drawer & Safe Area Bottom Nav */
 .ons-drawer-backdrop {
   position: fixed;
@@ -654,6 +672,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   backdrop-filter: blur(3px);
   z-index: 80;
   display: flex;
+  animation: onsBackdropFade 0.18s ease-out both;
 }
 .ons-drawer-panel {
   width: min(320px, 86vw);
@@ -666,9 +685,11 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   box-shadow: 8px 0 32px rgba(2, 6, 23, 0.55);
+  animation: onsDrawerSlideIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .ons-drawer-panel .ons-menu-parent,
 .ons-drawer-panel .ons-submenu-btn,
+.ons-drawer-panel .ons-nav-row,
 .ons-drawer-panel .ons-nav-btn {
   min-height: 44px;
 }
@@ -722,4 +743,263 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--ons-primary-bright);
   outline-offset: 1px;
+}
+
+/* =========================================================
+   v13.0 VISUAL POLISH: SECTIONED NAV, AIRY CARDS & PROFILE UI
+   ========================================================= */
+.ons-nav-section-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(148, 163, 184, 0.72);
+  padding: 0.72rem 0.7rem 0.28rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ons-sidebar.collapsed .ons-nav-section-title {
+  display: none !important;
+}
+
+.ons-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 39px;
+  padding: 0.48rem 0.74rem;
+  border-radius: 0.62rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #CBD5E1;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+.ons-nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #FFFFFF;
+}
+.ons-nav-item.active {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.2) 0%, rgba(0, 80, 202, 0.16) 100%);
+  border-color: rgba(56, 189, 248, 0.32);
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 #38BDF8;
+}
+.ons-sidebar.collapsed .ons-nav-item {
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.ons-identity-hero {
+  background: linear-gradient(135deg, #09202A 0%, #0F2942 58%, #004BBD 100%);
+  color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(9, 32, 42, 0.22);
+}
+
+.ons-upload-zone {
+  border: 1.5px dashed var(--ons-border-strong);
+  background: var(--ons-bg-subtle);
+  border-radius: 0.85rem;
+  padding: 0.85rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.ons-upload-zone:hover {
+  border-color: var(--ons-primary-bright);
+  background: var(--ons-primary-tint);
+}
+
+.ons-avatar-frame {
+  width: 76px;
+  height: 76px;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 2.5px solid #38BDF8;
+  background: linear-gradient(135deg, #0050CA, #0284C7);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 80, 202, 0.22);
+}
+.ons-avatar-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ons-logo-frame {
+  width: 76px;
+  height: 76px;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  border: 1.5px solid var(--ons-border-strong);
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  flex-shrink: 0;
+  box-shadow: var(--ons-shadow-card);
+}
+.ons-logo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ons-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.ons-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #34D399, #38BDF8);
+  transition: width 0.25s ease;
+}
+
+/* =========================================================
+   v13.1 COLLAPSIBLE SUB-MENU ACCORDION & MASTER OBAT CARDS
+   ========================================================= */
+.ons-nav-group {
+  margin-bottom: 0.16rem;
+}
+.ons-nav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 39px;
+  padding: 0.15rem 0.35rem 0.15rem 0.65rem;
+  border-radius: 0.65rem;
+  color: #CBD5E1;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.ons-nav-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #FFFFFF;
+}
+.ons-nav-row.active {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.2) 0%, rgba(0, 80, 202, 0.16) 100%);
+  border-color: rgba(56, 189, 248, 0.34);
+  color: #FFFFFF;
+  box-shadow: inset 3px 0 0 #38BDF8;
+}
+.ons-nav-row-btn {
+  flex: 1;
+  min-width: 0;
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.28rem 0;
+}
+.ons-nav-row.active .ons-nav-row-btn {
+  font-weight: 700;
+}
+.ons-nav-caret {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.48rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+.ons-nav-caret:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+.ons-chevron-sub {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ons-nav-caret[aria-expanded="true"] {
+  color: #7DD3FC;
+  background: rgba(56, 189, 248, 0.14);
+}
+.ons-nav-caret[aria-expanded="true"] .ons-chevron-sub {
+  transform: rotate(180deg);
+}
+.ons-nav-subwrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-top: 0;
+  transition: grid-template-rows 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease, margin 0.2s ease;
+}
+.ons-nav-subwrap.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0.18rem;
+  margin-bottom: 0.28rem;
+}
+.ons-nav-subinner {
+  overflow: hidden;
+  padding-left: 0.88rem;
+}
+.ons-stock-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--ons-bg-subtle);
+  border: 1px solid var(--ons-border);
+  overflow: hidden;
+}
+.ons-stock-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.25s ease;
+}
+.ons-product-card {
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 0.9rem;
+  padding: 0.95rem;
+  box-shadow: var(--ons-shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.ons-product-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ons-primary-bright);
+  box-shadow: 0 10px 24px rgba(0, 80, 202, 0.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-collapse-ico, .ons-product-card {
+    transition: none !important;
+    animation: none !important;
+  }
 }

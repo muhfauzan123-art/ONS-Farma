@@ -12,6 +12,9 @@
   function renderPublicStandaloneIfApplicable(root) {
     const hash = global.location.hash || '';
     const search = new URLSearchParams(global.location.search || '');
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
 
     if (hash.startsWith('#kwitansi=') || hash.startsWith('#doc=')) {
       const isKw = hash.startsWith('#kwitansi=');
@@ -20,8 +23,9 @@
       const sig = params.get('sig') || '';
       root.innerHTML = `<div class="min-h-screen flex items-center justify-center p-4" style="background:linear-gradient(135deg,#09202A,#0F172A);">
         <div class="ons-card max-w-lg w-full p-6 text-center space-y-4">
-          <img src="./icons/ons-farma-app-icon.png" alt="ONS Farma" class="w-14 h-14 mx-auto rounded-xl shadow"/>
+          <img src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 mx-auto rounded-xl shadow object-cover bg-white"/>
           <h1 class="text-xl font-bold">Verifikasi Keaslian ${isKw ? 'Kwitansi Pembayaran' : 'Dokumen Resmi Apotek'}</h1>
+          <p class="text-xs font-semibold" style="color:var(--ons-text-soft)">${S().esc(usahaNama)} &bull; ${S().esc(prof.no_sia || '')}</p>
           <p class="text-sm" style="color:var(--ons-text-soft)">Memeriksa tanda tangan kriptografis HMAC-SHA256 secara langsung...</p>
           <div id="publicVerifyResult" class="p-4 rounded-xl border text-left text-sm">Memuat...</div>
           <a href="./index.html" class="ons-btn ons-btn-primary w-full">Kembali ke Aplikasi Utama</a>
@@ -53,15 +57,91 @@
       return true;
     }
 
+    if (search.get('nota')) {
+      const notaNo = search.get('nota');
+      const totParam = Number(search.get('tot') || 0);
+      const tglParam = search.get('tgl') || '';
+      const waInit = S().buildWaUrl ? S().buildWaUrl(prof.wa_usaha || '628110000990', `Halo Apoteker ${usahaNama}, saya ingin konsultasi cara minum / aturan pakai obat untuk Nota ${notaNo}.`) : 'https://wa.me/';
+      root.innerHTML = `<div class="min-h-screen flex items-center justify-center p-4" style="background:linear-gradient(135deg,#09202A,#0F172A);">
+        <div class="ons-card max-w-lg w-full p-6 space-y-4">
+          <div class="flex items-center gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
+            <img id="pubNotaLogo" src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-12 h-12 rounded-xl border object-cover bg-white"/>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <h1 id="pubNotaApotek" class="font-extrabold text-base truncate">${S().esc(usahaNama)}</h1>
+                <span class="badge-bpom bpom-bebas">RESMI BPOM</span>
+              </div>
+              <div id="pubNotaApj" class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
+            </div>
+          </div>
+          <div class="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold text-emerald-700 dark:text-emerald-300 text-sm">&#9989; Nota Pembelian Digital</span>
+              <span class="font-mono-num font-bold text-emerald-700 dark:text-emerald-300">${S().esc(notaNo)}</span>
+            </div>
+            ${totParam > 0 ? `<div class="font-mono-num"><b>Total Transaksi:</b> ${S().rp(totParam)}${tglParam ? (' &bull; ' + S().esc(tglParam)) : ''}</div>` : ''}
+            <div id="pubNotaDetailBox" class="pt-1 text-[11px]" style="color:var(--ons-text-soft)">Memeriksa rincian item &amp; info apotek...</div>
+          </div>
+          <div class="p-3 rounded-xl border text-xs space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="font-bold">Edukasi Penyimpanan &amp; Keamanan Obat</div>
+            <p style="color:var(--ons-text-soft)">Simpan obat di tempat sejuk &amp; kering (suhu &lt;25&deg;C), terlindung dari sinar matahari langsung, dan jauhkan dari jangkauan anak-anak.</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <a id="pubNotaWaLink" target="_blank" rel="noopener" href="${S().esc(waInit)}" class="ons-btn ons-btn-emerald text-xs font-bold py-2.5 text-center">Tanya Apoteker (WA Gratis)</a>
+            <a href="./index.html?katalog=1" class="ons-btn ons-btn-primary text-xs font-bold py-2.5 text-center">Pesan Lagi / Refill Obat</a>
+          </div>
+          <a href="./index.html" class="block text-center text-xs underline" style="color:var(--ons-text-soft)">Masuk ke Portal Staf Apotek</a>
+        </div>
+      </div>`;
+
+      API().callApi('public.catalog', { cabang_id: 'ONS-01' }, { token: '' }).then((res) => {
+        if (res && res.apotek) {
+          const ap = res.apotek;
+          const logoEl = document.getElementById('pubNotaLogo');
+          const namEl = document.getElementById('pubNotaApotek');
+          const apjEl = document.getElementById('pubNotaApj');
+          const waEl = document.getElementById('pubNotaWaLink');
+          if (logoEl && ap.logo_usaha_url) logoEl.src = ap.logo_usaha_url;
+          if (namEl && ap.nama) namEl.textContent = ap.nama;
+          if (apjEl) apjEl.textContent = (ap.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi') + (ap.no_sia ? ' • SIA: ' + ap.no_sia : '');
+          if (waEl && S().buildWaUrl) {
+            waEl.href = S().buildWaUrl(ap.wa_admin || prof.wa_usaha || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya pasien Nota ${notaNo} ingin konsultasi aturan pakai obat.`);
+          }
+        }
+      }).catch(() => {});
+
+      const detBox = document.getElementById('pubNotaDetailBox');
+      const sess = API().getSession ? API().getSession() : null;
+      const hasAuth = Boolean((sess && sess.token) || API().isDemoMode());
+      if (hasAuth && detBox) {
+        API().callApi('pos.details', { no_invoice: notaNo }).then((d) => {
+          const items = (d && d.items) || [];
+          const trx = (d && d.penjualan) || {};
+          if (!items.length && !trx.no_invoice) {
+            detBox.textContent = 'Struk digital terbit resmi. Tunjukkan QR atau Nomor Nota ini saat konsultasi atau penukaran retur di apotek.';
+            return;
+          }
+          detBox.innerHTML = `
+            <div class="font-semibold mb-1">Tanggal: ${S().formatTgl(trx.tanggal, true)} &bull; Total: <b>${S().rp(trx.grand_total || totParam)}</b> (${S().esc(trx.metode_bayar || 'LUNAS')})</div>
+            ${items.length ? `<ul class="list-disc pl-4 space-y-0.5">${items.map((it) => `<li><b>${S().esc(it.nama_dagang || it.id_obat)}</b> (${it.qty} ${S().esc(it.satuan || '')}) — ${S().rp(it.subtotal_item || (Number(it.qty) * Number(it.harga_jual)))}</li>`).join('')}</ul>` : ''}`;
+        }).catch(() => {
+          if (detBox) detBox.textContent = 'Struk digital terbit resmi dari Apotek. Hubungi Apoteker via WhatsApp di bawah bila membutuhkan informasi dosis.';
+        });
+      } else if (detBox) {
+        detBox.textContent = 'Struk digital terbit resmi. Hubungi Apoteker kami via WhatsApp gratis di bawah bila membutuhkan informasi cara minum obat.';
+      }
+      return true;
+    }
+
     if (search.get('erx')) {
       const tok = search.get('erx');
       root.innerHTML = `<div class="min-h-screen flex items-center justify-center p-4" style="background:linear-gradient(135deg,#09202A,#0B1C30);">
         <div class="ons-card max-w-xl w-full p-6 space-y-4">
           <div class="flex items-center gap-3">
-            <img src="./icons/ons-farma-app-icon.png" class="w-11 h-11 rounded-lg"/>
+            <img src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-11 h-11 rounded-lg object-cover bg-white border"/>
             <div>
-              <h1 class="text-lg font-bold">Mini-Portal E-Resep Dokter Mitra ONS Farma</h1>
-              <p class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Token Sesi: ${S().esc(tok)}</p>
+              <h1 class="text-lg font-bold">Mini-Portal E-Resep Dokter Mitra ${S().esc(usahaNama)}</h1>
+              <p class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Token Sesi: ${S().esc(tok)} &bull; APJ: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -80,43 +160,83 @@
     }
 
     if (search.get('katalog')) {
+      const shortUsaha = String(usahaNama || 'ONS Farma').replace(/^Apotek\s+/i, '');
+      const waConsultInit = S().buildWaUrl ? S().buildWaUrl(prof.wa_usaha || '628110000990', `Halo Apoteker ${usahaNama}, saya ingin konsultasi keluhan & ketersediaan obat.`) : 'https://wa.me/';
       root.innerHTML = `<div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-        <header class="sticky top-0 z-30 border-b backdrop-blur bg-white/90 dark:bg-slate-900/90 px-4 py-3" style="border-color:var(--ons-border)">
+        <header class="sticky top-0 z-30 border-b backdrop-blur bg-white/95 dark:bg-slate-900/95 px-4 py-3" style="border-color:var(--ons-border)">
           <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5">
-              <img src="./icons/ons-farma-app-icon.png" class="w-9 h-9 rounded-lg"/>
-              <div>
-                <h1 class="font-extrabold text-base leading-tight">E-Apotek Publik ONS Farma</h1>
-                <div class="text-[11px]" style="color:var(--ons-text-soft)">Pesan Obat Asli BPOM &amp; Konsultasi Apoteker Cepat</div>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img id="pubKatLogo" src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-10 h-10 rounded-xl object-cover bg-white border shrink-0"/>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h1 id="pubKatTitle" class="font-extrabold text-base leading-tight truncate">E-Apotek Publik ${S().esc(shortUsaha)}</h1>
+                  <span id="pubKatOpenBadge" class="badge-bpom bpom-bebas">ONLINE OPEN</span>
+                </div>
+                <div id="pubKatSub" class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(prof.alamat_usaha || 'Pesan Obat Asli BPOM')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <input id="pubKatSearch" oninput="window.filterPublicCatalog(this.value)" class="ons-input w-56 text-xs" placeholder="Cari obat / vitamin / gejala..."/>
-              <a href="./index.html" class="ons-btn ons-btn-ghost text-xs">Login Staf</a>
+            <div class="flex flex-wrap items-center gap-2">
+              <input id="pubKatSearch" oninput="window.filterPublicCatalog(this.value)" class="ons-input w-48 sm:w-56 text-xs" placeholder="Cari obat / vitamin / zat aktif..."/>
+              <a id="pubKatConsultWa" target="_blank" rel="noopener" href="${S().esc(waConsultInit)}" class="ons-btn ons-btn-emerald text-xs py-2">Tanya Apoteker (WA)</a>
+              <a href="./index.html" class="ons-btn ons-btn-ghost text-xs py-2">Login Staf</a>
             </div>
           </div>
         </header>
         <main class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div class="lg:col-span-8 space-y-3">
-            <div class="ons-card p-3 flex items-center justify-between text-xs">
-              <span><b>Layanan Resmi Apotek Berizin SIA/SIPA</b> — Pengiriman Kurir Lokal &amp; Ambil di Apotek</span>
-              <span class="badge-bpom bpom-bebas">ONLINE OPEN</span>
+            <div class="ons-card p-4 space-y-2.5" style="background:linear-gradient(125deg,rgba(0,102,254,0.08),rgba(16,185,129,0.08));">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div>
+                  <div id="pubKatApjLine" class="font-extrabold text-sm">Layanan Farmasi Digital &bull; ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+                  <div id="pubKatHoursLine" class="text-[11px]" style="color:var(--ons-text-soft)">SIPA: ${S().esc(prof.sipa_pemilik || '-')} &bull; Jam Operasional: ${S().esc(prof.jam_operasional || 'Senin - Minggu 07.00 - 22.00 WITA')}</div>
+                </div>
+                <span class="badge-bpom bpom-bebas">100% OBAT ASLI BPOM</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border)">
+                <div><b>1. Pilih Obat</b> &amp; cek stok</div>
+                <div><b>2. Isi Data</b> Ambil / Kurir</div>
+                <div><b>3. Lanjut WA</b> Apotek Gratis</div>
+              </div>
+            </div>
+            <div id="pubKatFilters" class="flex flex-wrap items-center justify-between gap-2">
+              <div class="ons-tab-bar">
+                <button type="button" onclick="window.setPublicCatalogFilter('SEMUA')" data-pcat="SEMUA" class="ons-tab-btn active">Semua Produk</button>
+                <button type="button" onclick="window.setPublicCatalogFilter('BEBAS')" data-pcat="BEBAS" class="ons-tab-btn">Obat Bebas (OTC)</button>
+                <button type="button" onclick="window.setPublicCatalogFilter('TERBATAS')" data-pcat="TERBATAS" class="ons-tab-btn">Bebas Terbatas</button>
+                <button type="button" onclick="window.setPublicCatalogFilter('KERAS')" data-pcat="KERAS" class="ons-tab-btn">Obat Resep (Keras)</button>
+                <button type="button" onclick="window.setPublicCatalogFilter('TERSEDIA')" data-pcat="TERSEDIA" class="ons-tab-btn">Stok Tersedia</button>
+              </div>
+              <span id="pubKatCountLabel" class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Memuat...</span>
             </div>
             <div id="pubKatGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">Memuat katalog obat Apotek ONS Farma...</div>
           </div>
           <div class="lg:col-span-4">
             <div class="ons-card p-4 space-y-3 sticky top-20">
-              <h2 class="font-extrabold text-sm">Keranjang Pemesanan Online</h2>
+              <div class="flex items-center justify-between">
+                <h2 class="font-extrabold text-sm">Keranjang E-Apotek</h2>
+                <span id="pubCartCountBadge" class="badge-bpom bpom-terbatas">0 Item</span>
+              </div>
               <div id="pubCartList" class="space-y-1.5 text-xs max-h-48 overflow-y-auto border-y py-2" style="border-color:var(--ons-border)">Keranjang masih kosong.</div>
-              <div class="flex justify-between font-extrabold text-sm"><span>Estimasi Obat:</span><span id="pubCartTotal" class="font-mono-num text-blue-600">Rp 0</span></div>
+              <div class="space-y-1 text-xs">
+                <label class="font-semibold block">Metode Penerimaan</label>
+                <div class="grid grid-cols-2 gap-1.5">
+                  <button type="button" id="pubDelivAmbilBtn" onclick="window.setPublicDeliveryMode('AMBIL')" class="ons-btn ons-btn-primary text-xs py-1.5">Ambil di Apotek (Rp 0)</button>
+                  <button type="button" id="pubDelivKurirBtn" onclick="window.setPublicDeliveryMode('KURIR')" class="ons-btn ons-btn-ghost text-xs py-1.5">Kurir Lokal (Rp 10rb)</button>
+                </div>
+              </div>
+              <div class="space-y-1 text-xs border-t pt-2" style="border-color:var(--ons-border)">
+                <div class="flex justify-between"><span>Subtotal Obat</span><span id="pubCartSub" class="font-mono-num">Rp 0</span></div>
+                <div class="flex justify-between"><span>Biaya Antar (Kurir)</span><span id="pubCartOngkir" class="font-mono-num">Rp 0</span></div>
+                <div class="flex justify-between font-extrabold text-sm"><span>Total Estimasi</span><span id="pubCartTotal" class="font-mono-num text-blue-600">Rp 0</span></div>
+              </div>
               <div class="space-y-2 text-xs">
-                <input id="pubNama" class="ons-input" placeholder="Nama Penerima *"/>
-                <input id="pubWa" class="ons-input font-mono-num" placeholder="No. WhatsApp Aktif (08xx) *"/>
-                <textarea id="pubAlamat" rows="2" class="ons-textarea" placeholder="Alamat Pengantaran / Ketik 'Ambil di Apotek'"></textarea>
-                <input id="pubCatatan" class="ons-input" placeholder="Catatan / Keluhan untuk Apoteker"/>
+                <input id="pubNama" class="ons-input" placeholder="Nama Penerima / Pasien *"/>
+                <input id="pubWa" type="tel" class="ons-input font-mono-num" placeholder="No. WhatsApp Aktif (08xx) *"/>
+                <textarea id="pubAlamat" rows="2" class="ons-textarea" placeholder="Alamat Pengantaran Lengkap / Keterangan Pengambilan">Ambil Langsung di Apotek</textarea>
+                <input id="pubCatatan" class="ons-input" placeholder="Catatan / Keluhan / Keterangan Resep untuk Apoteker"/>
                 <button onclick="window.submitPublicStoreOrder()" class="ons-btn ons-btn-emerald w-full py-2.5 font-bold">Kirim Pesanan &amp; Lanjut WA Apoteker</button>
               </div>
-              <div id="pubOrderSuccessBox" class="hidden p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-xs space-y-1.5"></div>
+              <div id="pubOrderSuccessBox" class="hidden p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-xs space-y-2"></div>
             </div>
           </div>
         </main>
@@ -124,38 +244,104 @@
 
       global._pubCatalogItems = [];
       global._pubCart = [];
+      global._pubKatFilter = 'SEMUA';
+      global._pubDeliveryMode = 'AMBIL';
+      global._pubApotekMeta = {
+        nama: usahaNama,
+        alamat: prof.alamat_usaha || '',
+        wa_admin: (prof.wa_usaha || '628110000990').replace(/[^0-9]/g, ''),
+        nama_pemilik: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
+        sipa_pemilik: prof.sipa_pemilik || '',
+        no_sia: prof.no_sia || '',
+        jam_operasional: prof.jam_operasional || ''
+      };
+
       API().callApi('public.catalog', { cabang_id: 'ONS-01' }, { token: '' }).then((res) => {
         global._pubCatalogItems = (res && res.items) || [];
-        window.renderPublicCatalogGrid('');
+        if (res && res.apotek) {
+          const ap = res.apotek;
+          global._pubApotekMeta = Object.assign({}, global._pubApotekMeta, ap);
+          const logoEl = document.getElementById('pubKatLogo');
+          const titleEl = document.getElementById('pubKatTitle');
+          const subEl = document.getElementById('pubKatSub');
+          const apjEl = document.getElementById('pubKatApjLine');
+          const hrsEl = document.getElementById('pubKatHoursLine');
+          const waTopEl = document.getElementById('pubKatConsultWa');
+          if (logoEl && ap.logo_usaha_url) logoEl.src = ap.logo_usaha_url;
+          if (titleEl && ap.nama) titleEl.textContent = 'E-Apotek Publik ' + String(ap.nama).replace(/^Apotek\s+/i, '');
+          if (subEl && ap.alamat) subEl.textContent = ap.alamat + (ap.no_sia ? ' • SIA: ' + ap.no_sia : '');
+          if (apjEl && ap.nama_pemilik) apjEl.textContent = 'Layanan Farmasi Digital • ' + ap.nama_pemilik;
+          if (hrsEl) hrsEl.textContent = (ap.sipa_pemilik ? ('SIPA: ' + ap.sipa_pemilik + ' • ') : '') + (ap.jam_operasional || 'Buka Setiap Hari');
+          if (waTopEl && S().buildWaUrl) {
+            waTopEl.href = S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya ingin konsultasi keluhan & ketersediaan obat.`);
+          }
+        }
+        window.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
       }).catch((err) => {
         const g = document.getElementById('pubKatGrid');
         if (g) g.innerHTML = `<div class="ons-card p-4 text-red-600">${S().esc(err.message)}</div>`;
       });
 
+      window.setPublicCatalogFilter = (cat) => {
+        global._pubKatFilter = cat || 'SEMUA';
+        document.querySelectorAll('#pubKatFilters [data-pcat]').forEach((btn) => {
+          btn.classList.toggle('active', btn.getAttribute('data-pcat') === global._pubKatFilter);
+        });
+        window.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
+      };
+      window.setPublicDeliveryMode = (mode) => {
+        global._pubDeliveryMode = mode === 'KURIR' ? 'KURIR' : 'AMBIL';
+        const btnAmbil = document.getElementById('pubDelivAmbilBtn');
+        const btnKurir = document.getElementById('pubDelivKurirBtn');
+        const almEl = document.getElementById('pubAlamat');
+        if (btnAmbil) btnAmbil.className = 'ons-btn text-xs py-1.5 ' + (global._pubDeliveryMode === 'AMBIL' ? 'ons-btn-primary' : 'ons-btn-ghost');
+        if (btnKurir) btnKurir.className = 'ons-btn text-xs py-1.5 ' + (global._pubDeliveryMode === 'KURIR' ? 'ons-btn-primary' : 'ons-btn-ghost');
+        if (almEl) {
+          if (global._pubDeliveryMode === 'AMBIL' && !almEl.value.toLowerCase().includes('ambil')) almEl.value = 'Ambil Langsung di Apotek';
+          if (global._pubDeliveryMode === 'KURIR' && almEl.value.toLowerCase().includes('ambil')) almEl.value = '';
+        }
+        window.renderPublicCartUi();
+      };
       window.filterPublicCatalog = (q) => window.renderPublicCatalogGrid(q);
       window.renderPublicCatalogGrid = (qRaw) => {
         const q = String(qRaw || '').toLowerCase();
-        const items = global._pubCatalogItems.filter((o) => !q || `${o.nama_dagang} ${o.zat_aktif}`.toLowerCase().includes(q));
+        const cat = global._pubKatFilter || 'SEMUA';
+        const items = global._pubCatalogItems.filter((o) => {
+          if (q && !`${o.nama_dagang} ${o.zat_aktif} ${o.bentuk_sediaan || ''}`.toLowerCase().includes(q)) return false;
+          const gol = String(o.golongan_bpom || '').toUpperCase();
+          if (cat === 'TERSEDIA' && Number(o.stok_tersedia || 0) <= 0) return false;
+          if ((cat === 'BEBAS' || cat === 'TERBATAS' || cat === 'KERAS') && !gol.includes(cat)) return false;
+          return true;
+        });
+        const cntEl = document.getElementById('pubKatCountLabel');
+        if (cntEl) cntEl.textContent = items.length + ' produk ditemukan';
         const g = document.getElementById('pubKatGrid');
         if (!g) return;
-        g.innerHTML = items.length ? items.map((o) => `
-          <div class="ons-card p-3.5 flex flex-col justify-between gap-2 ons-card-interactive">
+        const ap = global._pubApotekMeta || {};
+        g.innerHTML = items.length ? items.map((o) => {
+          const askWa = S().buildWaUrl ? S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya mau tanya ketersediaan / dosis obat: ${o.nama_dagang} (${o.zat_aktif}).`) : 'https://wa.me/';
+          return `
+          <div class="ons-product-card flex flex-col justify-between gap-2.5">
             <div>
               <div class="flex justify-between gap-2 items-start">
-                <span class="font-bold text-sm">${S().esc(o.nama_dagang)}</span>
+                <span class="font-bold text-sm leading-snug">${S().esc(o.nama_dagang)}</span>
                 ${S().bpomBadge(o.golongan_bpom)}
               </div>
-              <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; ${S().esc(o.bentuk_sediaan)}</div>
-              ${String(o.golongan_bpom).toUpperCase() === 'KERAS' ? '<div class="text-[10px] text-amber-600 font-semibold mt-1">Wajib verifikasi resep dokter oleh Apoteker</div>' : ''}
+              <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; ${S().esc(o.bentuk_sediaan)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
+              ${String(o.golongan_bpom).toUpperCase() === 'KERAS' ? '<div class="text-[10px] text-amber-600 font-semibold mt-1">Obat Keras — Wajib verifikasi resep dokter oleh APJ</div>' : ''}
             </div>
-            <div class="flex items-center justify-between pt-2 border-t" style="border-color:var(--ons-border)">
+            <div class="flex items-center justify-between pt-2 border-t gap-2" style="border-color:var(--ons-border)">
               <div>
                 <div class="font-mono-num font-extrabold text-sm text-blue-600">${S().rp(o.harga_umum)} <span class="text-[10px] font-normal">/ ${S().esc(o.satuan_dasar)}</span></div>
-                <div class="text-[10px] ${o.stok_tersedia > 0 ? 'text-emerald-600' : 'text-red-600'}">${o.stok_tersedia > 0 ? 'Stok Tersedia (' + o.stok_tersedia + ')' : 'Stok Kosong'}</div>
+                <div class="text-[10px] font-semibold ${o.stok_tersedia > 0 ? 'text-emerald-600' : 'text-red-600'}">${o.stok_tersedia > 0 ? 'Stok Tersedia (' + o.stok_tersedia + ')' : 'Stok Kosong'}</div>
               </div>
-              <button onclick="window.addToPublicCart('${S().esc(o.id_obat)}')" ${o.stok_tersedia <= 0 ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs py-1 px-3">+ Pesan</button>
+              <div class="flex items-center gap-1">
+                <a target="_blank" rel="noopener" href="${S().esc(askWa)}" class="ons-btn ons-btn-ghost text-[11px] py-1.5 px-2" title="Tanya Apoteker via WhatsApp">Tanya</a>
+                <button onclick="window.addToPublicCart('${S().esc(o.id_obat)}')" ${o.stok_tersedia <= 0 ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs py-1.5 px-3">+ Keranjang</button>
+              </div>
             </div>
-          </div>`).join('') : '<div class="col-span-2 text-center py-8 opacity-70">Produk tidak ditemukan.</div>';
+          </div>`;
+        }).join('') : '<div class="col-span-2 text-center py-8 opacity-70">Produk tidak ditemukan.</div>';
       };
 
       window.addToPublicCart = (idObat) => {
@@ -166,38 +352,82 @@
         else global._pubCart.push({ id_obat: ob.id_obat, nama: ob.nama_dagang, satuan: ob.satuan_dasar, harga: Number(ob.harga_umum || 0), qty: 1 });
         window.renderPublicCartUi();
       };
+      window.stepPublicCartQty = (idx, delta) => {
+        const c = global._pubCart[idx];
+        if (!c) return;
+        c.qty += delta;
+        if (c.qty <= 0) global._pubCart.splice(idx, 1);
+        window.renderPublicCartUi();
+      };
       window.renderPublicCartUi = () => {
         const list = document.getElementById('pubCartList');
+        const subEl = document.getElementById('pubCartSub');
+        const ongEl = document.getElementById('pubCartOngkir');
         const totEl = document.getElementById('pubCartTotal');
+        const cntEl = document.getElementById('pubCartCountBadge');
         if (!list || !totEl) return;
-        const total = global._pubCart.reduce((s, c) => s + c.harga * c.qty, 0);
+        const subTotal = global._pubCart.reduce((s, c) => s + c.harga * c.qty, 0);
+        const ongkir = global._pubCart.length && global._pubDeliveryMode === 'KURIR' ? 10000 : 0;
+        const itemCount = global._pubCart.reduce((s, c) => s + Number(c.qty || 0), 0);
+        if (cntEl) cntEl.textContent = itemCount + ' Item';
         list.innerHTML = global._pubCart.length ? global._pubCart.map((c, idx) => `
-          <div class="flex justify-between items-center gap-2 p-1.5 rounded bg-slate-500/5">
-            <span class="truncate flex-1 font-semibold">${S().esc(c.nama)} x${c.qty}</span>
-            <span class="font-mono-num">${S().rp(c.harga * c.qty)}</span>
-            <button onclick="global._pubCart.splice(${idx},1);window.renderPublicCartUi();" class="text-red-600 font-bold px-1">&times;</button>
-          </div>`).join('') : 'Keranjang masih kosong.';
-        totEl.textContent = S().rp(total);
+          <div class="flex justify-between items-center gap-1.5 p-1.5 rounded bg-slate-500/5">
+            <div class="min-w-0 flex-1">
+              <div class="truncate font-semibold">${S().esc(c.nama)}</div>
+              <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(c.harga)} &times; ${c.qty} = ${S().rp(c.harga * c.qty)}</div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="window.stepPublicCartQty(${idx}, -1)" class="ons-btn ons-btn-ghost text-xs px-2 py-0.5 min-h-0 h-7">-</button>
+              <span class="font-mono-num font-bold w-5 text-center">${c.qty}</span>
+              <button type="button" onclick="window.stepPublicCartQty(${idx}, 1)" class="ons-btn ons-btn-ghost text-xs px-2 py-0.5 min-h-0 h-7">+</button>
+            </div>
+          </div>`).join('') : 'Keranjang masih kosong. Klik "+ Keranjang" pada produk obat.';
+        if (subEl) subEl.textContent = S().rp(subTotal);
+        if (ongEl) ongEl.textContent = S().rp(ongkir);
+        totEl.textContent = S().rp(subTotal + ongkir);
       };
       window.submitPublicStoreOrder = async () => {
         const nama = (document.getElementById('pubNama').value || '').trim();
         const wa = (document.getElementById('pubWa').value || '').trim();
+        const alamatRaw = (document.getElementById('pubAlamat').value || '').trim();
+        const catatanRaw = (document.getElementById('pubCatatan').value || '').trim();
         if (!nama || !wa) { global.toast('Nama & nomor WhatsApp wajib diisi.', 'warn'); return; }
-        const totalEst = global._pubCart.reduce((s, c) => s + c.harga * c.qty, 0);
+        if (!global._pubCart.length) { global.toast('Pilih minimal 1 obat ke keranjang terlebih dahulu.', 'warn'); return; }
+        const cartSnapshot = global._pubCart.slice();
+        const totalEst = cartSnapshot.reduce((s, c) => s + c.harga * c.qty, 0);
+        const ongkir = global._pubDeliveryMode === 'KURIR' && !alamatRaw.toLowerCase().includes('ambil') ? 10000 : 0;
         try {
           const res = await API().callApi('public.submitOrder', {
             nama_pelanggan: nama, no_wa: wa,
-            alamat: document.getElementById('pubAlamat').value,
-            catatan: document.getElementById('pubCatatan').value,
+            alamat: alamatRaw || (global._pubDeliveryMode === 'AMBIL' ? 'Ambil di Apotek' : '-'),
+            catatan: catatanRaw,
             total_estimasi: totalEst,
-            ongkir: document.getElementById('pubAlamat').value.toLowerCase().includes('ambil') ? 0 : 10000,
-            items_json: JSON.stringify(global._pubCart)
+            ongkir: ongkir,
+            items_json: JSON.stringify(cartSnapshot)
           }, { isWrite: true, token: '' });
+          const ap = global._pubApotekMeta || {};
+          const waSummary = [
+            `*PESANAN E-APOTEK ${(ap.nama || usahaNama).toUpperCase()}*`,
+            `No. Order : *${res.no_order}*`,
+            `Nama      : ${nama}`,
+            `No. WA    : ${wa}`,
+            `Metode    : ${global._pubDeliveryMode === 'KURIR' ? 'Kurir Lokal' : 'Ambil di Apotek'}`,
+            `Alamat    : ${alamatRaw || '-'}`,
+            '--------------------------------',
+            ...cartSnapshot.map((it, i) => `${i + 1}. ${it.nama} (${it.qty} ${it.satuan}) = ${S().rp(it.harga * it.qty)}`),
+            '--------------------------------',
+            `Subtotal Obat : ${S().rp(totalEst)}`,
+            `Ongkir        : ${S().rp(ongkir)}`,
+            `*Estimasi Total : ${S().rp(totalEst + ongkir)}*`,
+            catatanRaw ? `Catatan: ${catatanRaw}` : ''
+          ].filter(Boolean).join('\n');
+          const waOrderUrl = S().buildWaUrl ? S().buildWaUrl(ap.wa_admin || prof.wa_usaha || '628110000990', waSummary) : 'https://wa.me/';
           const box = document.getElementById('pubOrderSuccessBox');
           if (box) {
             box.classList.remove('hidden');
-            box.innerHTML = `<div class="font-bold text-emerald-700">&#9989; Order ${S().esc(res.no_order)} Diterima!</div>
-              <div>Tim Farmasi Apotek ONS Farma sedang menyiapkan pesanan Anda. Estimasi: <b>${S().rp(totalEst)}</b></div>`;
+            box.innerHTML = `<div class="font-bold text-emerald-700 dark:text-emerald-300">&#9989; Order ${S().esc(res.no_order)} Diterima!</div>
+              <div>Tim Farmasi ${S().esc(ap.nama || usahaNama)} siap memproses. Estimasi Total: <b>${S().rp(totalEst + ongkir)}</b></div>
+              <a target="_blank" rel="noopener" href="${S().esc(waOrderUrl)}" class="ons-btn ons-btn-emerald w-full py-2 font-bold text-center">Kirim Rincian ke WhatsApp Apotek (Gratis)</a>`;
           }
           global._pubCart = [];
           window.renderPublicCartUi();
@@ -229,19 +459,24 @@
    */
   function renderLoginView(root) {
     const demoMode = API().isDemoMode();
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
+    const usahaNama = prof.nama_usaha || 'APOTEK ONS FARMA';
+    const pemilikNama = prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
     root.innerHTML = `<div class="min-h-screen flex items-center justify-center p-4" style="background:radial-gradient(circle at top right,#0050CA22,transparent 50%),linear-gradient(155deg,#09202A 0%,#0F172A 100%);">
       <div class="ons-card max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 overflow-hidden shadow-2xl border-slate-700/40">
         <div class="md:col-span-5 p-7 text-white flex flex-col justify-between" style="background:linear-gradient(175deg,#09202A 0%,#06171F 100%);">
           <div>
             <div class="flex items-center gap-3 mb-5">
-              <img src="./icons/ons-farma-app-icon.png" alt="Logo" class="w-12 h-12 rounded-xl border border-white/15"/>
+              <img src="${S().esc(usahaLogo)}" alt="Logo" class="w-12 h-12 rounded-xl border border-white/15 object-cover bg-white"/>
               <div>
-                <div class="font-bold text-lg tracking-tight">APOTEK ONS FARMA</div>
-                <div class="text-xs text-sky-300 font-semibold">Clinical Royal Enterprise v10.0</div>
+                <div class="font-bold text-lg tracking-tight">${S().esc(usahaNama.toUpperCase())}</div>
+                <div class="text-xs text-sky-300 font-semibold">${S().esc(pemilikNama)}</div>
               </div>
             </div>
             <h2 class="text-xl font-bold leading-snug mb-3">Sistem Terpadu POS, FEFO Gudang, Layanan Klinis &amp; Keuangan</h2>
             <p class="text-xs text-slate-300 leading-relaxed">Arsitektur Terpisah GitHub Pages PWA + Google Apps Script REST API + Perlindungan HMAC-SHA256.</p>
+            <div class="mt-3 text-[11px] text-slate-400">SIA: ${S().esc(prof.no_sia || '-')} &bull; ${S().esc(prof.kota || 'Makassar')}</div>
           </div>
           <div class="mt-6 space-y-2 text-xs">
             <div class="p-3 rounded-lg bg-white/5 border border-white/10">
@@ -369,11 +604,23 @@
   };
 
   /**
-   * W-02: Pusat Komando & Dashboard Eksekutif
+   * W-02: Pusat Komando & Dashboard Eksekutif Apotek Digital
    */
+  global.copyPublicApotekLink = () => {
+    const url = global.location.origin + global.location.pathname + '?katalog=1';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).catch(() => {});
+    }
+    global.toast('Tautan Etalase E-Apotek Publik disalin: ' + url, 'ok');
+  };
+
   function renderDashboardView() {
     const st = S().AppState;
     const seeCost = S().canSeeFinancialCost();
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+    const pemilikNama = prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
 
     const todayIso = new Date().toISOString().slice(0, 10);
     const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || '') !== 'RETUR');
@@ -387,6 +634,7 @@
     const erxAntre = (st.rekamKlinis || []).filter((r) => String(r.status_klinis || '').includes('MENUNGGU')).length;
     const omniBaru = (st.omnichannelOrders || []).filter((o) => o.status_order === 'BARU').length;
     const billPending = (st.billingPending || []).length;
+    const prbUrgentCount = (st.members || []).filter((m) => m.tgl_habis_obat && S().daysUntil(m.tgl_habis_obat) <= 5).length;
 
     // Readiness Compliance Score (Audit, Cold-Chain, ED, Defecta)
     const readiness = Math.max(55, Math.min(100, 100 - nearEdBatches.length * 4 - defectaCount * 3 - (coldOk ? 0 : 15)));
@@ -411,17 +659,49 @@
     const maxVal = Math.max(...omzSeries, 100000);
     const total7Hari = omzSeries.reduce((a, b) => a + b, 0);
 
+    // Distribusi Channel Apotek Digital (Kasir Toko vs E-Apotek / WA / Marketplace)
+    const chTotals = {};
+    validSales.forEach((p) => {
+      const ch = String(p.channel || 'Toko Fisik');
+      chTotals[ch] = (chTotals[ch] || 0) + Number(p.grand_total || 0);
+    });
+    const channelRows = Object.keys(chTotals).map((k) => ({ name: k, total: chTotals[k] })).sort((a, b) => b.total - a.total);
+    const chDenom = channelRows.reduce((s, r) => s + r.total, 0) || 1;
+
+    // Top-5 Obat Terlaris dari AppState.detailPenjualan
+    const soldMap = {};
+    (st.detailPenjualan || []).forEach((d) => {
+      const key = d.id_obat || d.nama_dagang;
+      if (!key) return;
+      if (!soldMap[key]) {
+        const ob = st.masterObat.find((o) => o.id_obat === d.id_obat);
+        soldMap[key] = { nama: d.nama_dagang || (ob && ob.nama_dagang) || key, qty: 0, omz: 0 };
+      }
+      soldMap[key].qty += Number(d.qty || 1);
+      soldMap[key].omz += Number(d.subtotal_item || (Number(d.qty || 1) * Number(d.harga_jual || 0)));
+    });
+    const topObatList = Object.values(soldMap).sort((a, b) => b.qty - a.qty).slice(0, 5);
+
     return `<div class="space-y-5 ons-view-enter">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 class="text-xl font-bold">Pusat Komando &amp; Kepatuhan Apotek</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Cabang <b>${S().esc(st.cabangId)}</b> &bull; Peran aktif: <b>${S().esc(S().getRole())}</b> &bull; Sinkron Real-time (${todayIso})</p>
+      <!-- Header Eksekutif Apotek Digital -->
+      <div class="ons-card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-12 h-12 rounded-xl border object-cover bg-white shrink-0"/>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-lg sm:text-xl font-extrabold truncate">Pusat Komando ${S().esc(usahaNama)}</h1>
+              <span class="badge-bpom bpom-bebas">APOTEK DIGITAL</span>
+            </div>
+            <p class="text-xs truncate" style="color:var(--ons-text-soft)">Pemilik/APJ: <b>${S().esc(pemilikNama)}</b> &bull; Cabang <b>${S().esc(st.cabangId)}</b> &bull; Peran: <b>${S().esc(S().getRole())}</b></p>
+          </div>
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs">Buka Kasir POS (F2)</button>
           <button onclick="navigateView('omnichannel')" class="ons-btn ons-btn-ghost text-xs">Order Online (${omniBaru})</button>
-          ${seeCost ? `<button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-emerald text-xs">Tagihan &amp; Kwitansi</button>` : ''}
-          <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">Segarkan Data</button>
+          <button onclick="window.copyPublicApotekLink()" class="ons-btn ons-btn-ghost text-xs">Salin Link E-Apotek</button>
+          <a href="?katalog=1" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-xs">Lihat Etalase Publik</a>
+          ${seeCost ? `<button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-ghost text-xs">Tagihan</button>` : ''}
+          <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">Segarkan</button>
         </div>
       </div>
 
@@ -532,8 +812,8 @@
               <span class="font-bold font-mono-num text-indigo-600">${erxAntre}</span>
             </div>
             <div class="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/30 flex justify-between items-center cursor-pointer hover:bg-blue-500/15" onclick="navigateView('eresep-prb','prb')">
-              <span>Pasien PRB Refill Aktif</span>
-              <span class="font-bold font-mono-num text-blue-600">${st.members.filter((m) => m.program_prb === 'PRB_BPJS').length}</span>
+              <span>PRB Refill Mendesak (&le;5h)</span>
+              <span class="font-bold font-mono-num text-blue-600">${prbUrgentCount}</span>
             </div>
             ${seeCost ? `<div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex justify-between items-center cursor-pointer hover:bg-emerald-500/15" onclick="navigateView('billing','verifikasi')">
               <span>Verifikasi Bukti Bayar PRB</span>
@@ -541,8 +821,48 @@
             </div>` : ''}
           </div>
           <div class="p-3 rounded-lg border text-xs cursor-pointer" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)" onclick="navigateView('tutup-shift')">
-            <div class="font-bold mb-1">Akses Cepat Handover Shift</div>
+            <div class="font-bold mb-1">Akses Cepat Handover Shift (${todayIso})</div>
             <p style="color:var(--ons-text-soft)">Pastikan stok Chiller 2-8&deg;C &amp; kas laci terhitung sebelum pergantian shift.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Baris Analitik Apotek Digital: Bauran Channel + Top Obat Terlaris -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="ons-card p-5 lg:col-span-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-sm">Bauran Channel Apotek Digital</h3>
+            <button onclick="navigateView('omnichannel')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Kelola Omnichannel &rarr;</button>
+          </div>
+          <div class="space-y-2.5 text-xs">
+            ${channelRows.length ? channelRows.map((ch) => {
+              const pct = Math.min(100, Math.max(4, Math.round((ch.total / chDenom) * 100)));
+              return `<div>
+                <div class="flex justify-between font-semibold mb-1">
+                  <span>${S().esc(ch.name)}</span>
+                  <span class="font-mono-num">${S().rp(ch.total)} (${pct}%)</span>
+                </div>
+                <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${pct}%;background:#0066FE;"></div></div>
+              </div>`;
+            }).join('') : '<div class="py-4 text-center" style="color:var(--ons-text-soft)">Belum ada penjualan tercatat pada periode ini.</div>'}
+          </div>
+        </div>
+        <div class="ons-card p-5 lg:col-span-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-sm">Top Obat Terlaris (Fast Moving)</h3>
+            <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Buka Master Obat &rarr;</button>
+          </div>
+          <div class="space-y-2 text-xs">
+            ${topObatList.length ? topObatList.map((item, idx) => `
+              <div class="flex items-center justify-between gap-2 p-2 rounded-lg border" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">${idx + 1}</span>
+                  <span class="font-semibold truncate">${S().esc(item.nama)}</span>
+                </div>
+                <div class="font-mono-num shrink-0 text-right">
+                  <b>${item.qty}</b> unit &bull; <span class="text-blue-600 font-bold">${S().rp(item.omz)}</span>
+                </div>
+              </div>`).join('') : '<div class="py-4 text-center" style="color:var(--ons-text-soft)">Top produk akan otomatis terhitung setelah transaksi kasir berlangsung.</div>'}
           </div>
         </div>
       </div>
@@ -742,16 +1062,18 @@
             ${catalog.map((o) => {
               const totalStok = S().getTotalStok(o.id_obat);
               const nearest = S().getNearestEdBatch(o.id_obat);
+              const edDays = nearest ? S().daysUntil(nearest.tgl_kadaluarsa) : null;
+              const edBadgeCls = edDays === null ? '' : (edDays <= 90 ? 'text-red-600 font-bold' : (edDays <= 180 ? 'text-amber-600 font-semibold' : 'text-emerald-600'));
               const price = cart.id_member !== 'UMUM' ? o.harga_member : o.harga_umum;
-              return `<div class="ons-card p-3.5 flex flex-col justify-between gap-2 hover:border-blue-500 transition">
+              return `<div class="ons-product-card flex flex-col justify-between gap-2">
                 <div>
                   <div class="flex items-start justify-between gap-2">
                     <div class="font-bold text-sm leading-tight">${S().esc(o.nama_dagang)}</div>
                     ${S().bpomBadge(o.golongan_bpom)}
                   </div>
-                  <div class="text-xs mt-1" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; ${S().esc(o.rak_lokasi)}</div>
+                  <div class="text-xs mt-1" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; Rak ${S().esc(o.rak_lokasi || '-')}</div>
                   <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">
-                    FEFO: ${nearest ? S().esc(nearest.no_batch) + ' (ED ' + nearest.tgl_kadaluarsa + ')' : '<span class="text-red-500 font-bold">Stok Kosong</span>'}
+                    FEFO: ${nearest ? `${S().esc(nearest.no_batch)} &bull; <span class="${edBadgeCls}">ED ${nearest.tgl_kadaluarsa} (${edDays}h)</span>` : '<span class="text-red-500 font-bold">Stok Kosong</span>'}
                   </div>
                 </div>
                 <div class="flex items-center justify-between pt-2 border-t" style="border-color:var(--ons-border)">
@@ -799,20 +1121,28 @@
             </div>` : ''}
 
             <!-- Daftar Item Keranjang -->
-            <div class="space-y-2 max-h-60 overflow-y-auto border-y py-2" style="border-color:var(--ons-border)">
+            <div class="space-y-2 max-h-64 overflow-y-auto border-y py-2" style="border-color:var(--ons-border)">
               ${cart.items.length ? cart.items.map((it, idx) => `
-                <div class="flex items-center justify-between gap-2 text-xs p-2 rounded-lg" style="background:var(--ons-bg-subtle)">
-                  <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate">${S().esc(it.nama_dagang)}</div>
-                    <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(it.harga_jual)} / ${S().esc(it.satuan)} &times; ${it.faktor_konversi} dasar</div>
+                <div class="text-xs p-2 rounded-lg space-y-1.5" style="background:var(--ons-bg-subtle)">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                      <div class="font-bold truncate">${S().esc(it.nama_dagang)}</div>
+                      <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(it.harga_jual)} / ${S().esc(it.satuan)} &times; ${it.faktor_konversi} dasar</div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <button onclick="window.openCartEtiketModal(${idx})" class="ons-btn ons-btn-ghost text-[10px] py-1 px-1.5 min-h-0 h-8" title="Cetak Etiket Obat Putih/Biru">Etiket</button>
+                      <select onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-20">
+                        ${it.unitOptions.map((u) => `<option value="${u.label}" ${u.label === it.satuan ? 'selected' : ''}>${u.label}</option>`).join('')}
+                      </select>
+                      <input type="number" min="1" value="${it.qty}" onchange="window.posUpdateQty(${idx}, this.value)" class="ons-input font-mono-num text-center text-xs w-14 py-1 px-1 min-h-0 h-8"/>
+                      <button onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-8">&times;</button>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-1">
-                    <button onclick="window.openCartEtiketModal(${idx})" class="ons-btn ons-btn-ghost text-[10px] py-1 px-1.5 min-h-0 h-8" title="Cetak Etiket Obat Putih/Biru">Etiket</button>
-                    <select onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-20">
-                      ${it.unitOptions.map((u) => `<option value="${u.label}" ${u.label === it.satuan ? 'selected' : ''}>${u.label}</option>`).join('')}
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-semibold shrink-0" style="color:var(--ons-text-soft)">Aturan Pakai:</span>
+                    <select onchange="window.posSetAturanPakai(${idx}, this.value)" class="ons-select text-[11px] py-0.5 px-1.5 min-h-0 h-7 flex-1">
+                      ${['', '3 x 1 Sesudah Makan', '3 x 1 Sebelum Makan', '2 x 1 Sesudah Makan', '1 x 1 Malam Hari', '1 x 1 Pagi Hari', 'Oles Tipis 2x Sehari (Obat Luar)'].map((opt) => `<option value="${S().esc(opt)}" ${(it.aturan_pakai || '') === opt ? 'selected' : ''}>${opt || 'Standar / Sesuai Etiket'}</option>`).join('')}
                     </select>
-                    <input type="number" min="1" value="${it.qty}" onchange="window.posUpdateQty(${idx}, this.value)" class="ons-input font-mono-num text-center text-xs w-14 py-1 px-1 min-h-0 h-8"/>
-                    <button onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-8">&times;</button>
                   </div>
                 </div>`).join('') : '<div class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada item. Pilih obat dari katalog di sebelah kiri atau scan barcode.</div>'}
             </div>
@@ -928,6 +1258,8 @@
     const it = items[Number(itemIdx) || 0] || items[0];
     const member = S().AppState.members.find((m) => m.id_member === cart.id_member);
     const pasienName = (member && member.nama_pasien) || cart.pelanggan_nama || 'Pasien Umum';
+    const defAturan = (it && it.aturan_pakai) || '3 x 1 Sehari (Sesudah Makan)';
+    const defBiru = /luar|oles|tetes|salep|krim|injeksi/i.test(defAturan);
     S().openModal(`<div class="p-6 space-y-4 text-xs">
       <div class="flex justify-between items-center">
         <h3 class="font-bold text-base">Cetak Etiket Obat (Putih Oral / Biru Luar)</h3>
@@ -943,20 +1275,23 @@
         <div>
           <label class="font-semibold block mb-1">Jenis Etiket</label>
           <select id="etJenisSel" class="ons-select text-xs" onchange="window.refreshCartEtiketBox()">
-            <option value="putih">Etiket PUTIH — Obat Dalam / Oral</option>
-            <option value="biru">Etiket BIRU — Obat Luar / Injeksi</option>
+            <option value="putih" ${!defBiru ? 'selected' : ''}>Etiket PUTIH — Obat Dalam / Oral</option>
+            <option value="biru" ${defBiru ? 'selected' : ''}>Etiket BIRU — Obat Luar / Injeksi</option>
           </select>
         </div>
         <div><label class="font-semibold block mb-1">Nama Pasien</label><input id="etPasienInp" class="ons-input text-xs" value="${S().esc(pasienName)}" oninput="window.refreshCartEtiketBox()"/></div>
-        <div><label class="font-semibold block mb-1">Aturan Pakai</label><input id="etAturanInp" class="ons-input text-xs" value="3 x 1 Sehari (Sesudah Makan)" oninput="window.refreshCartEtiketBox()"/></div>
+        <div><label class="font-semibold block mb-1">Aturan Pakai</label><input id="etAturanInp" class="ons-input text-xs" value="${S().esc(defAturan)}" oninput="window.refreshCartEtiketBox()"/></div>
       </div>
-      <div id="etPreviewZone" class="ons-etiket-box putih space-y-1 text-center">
-        <div class="font-extrabold text-sm tracking-wide">APOTEK ONS FARMA ENTERPRISE</div>
-        <div class="text-[10px]">APA: apt. Siti Rahma, S.Farm &bull; SIPA: 19920412/SIPA_35.78/2025/1042</div>
+      <div id="etPreviewZone" class="ons-etiket-box ${defBiru ? 'biru' : 'putih'} space-y-1 text-center">
+        ${(() => {
+          const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+          return `<div class="font-extrabold text-sm tracking-wide">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+            <div class="text-[10px]">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>`;
+        })()}
         <div class="border-y border-slate-800 my-1 py-1 font-bold" id="etPrevSub">${S().esc(pasienName)} &bull; ${new Date().toLocaleDateString('id-ID')}</div>
         <div class="font-bold text-sm" id="etPrevObat">${S().esc(it.nama_dagang)} (${it.qty} ${S().esc(it.satuan)})</div>
-        <div class="font-extrabold text-sm underline" id="etPrevAturan">3 x 1 Sehari (Sesudah Makan)</div>
-        <div class="text-[10px] pt-1 font-semibold" id="etPrevFooter">OBAT DALAM &bull; SEMOGA LEKAS SEMBUH</div>
+        <div class="font-extrabold text-sm underline" id="etPrevAturan">${S().esc(defAturan)}</div>
+        <div class="text-[10px] pt-1 font-semibold" id="etPrevFooter">${defBiru ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA LEKAS SEMBUH'}</div>
       </div>
       <button onclick="ONSStore.printHtmlZone('etPreviewZone', 'Etiket Obat ONS Farma')" class="ons-btn ons-btn-primary w-full text-xs">Cetak Etiket Sekarang</button>
     </div>`, '540px');
@@ -1021,10 +1356,18 @@
         faktor_konversi: 1,
         harga_jual: priceBase,
         qty: 1,
+        aturan_pakai: '',
         unitOptions
       });
     }
     global.renderActiveView();
+  };
+
+  global.posSetAturanPakai = (idx, val) => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (cart && cart.items[idx]) {
+      cart.items[idx].aturan_pakai = String(val || '').trim();
+    }
   };
 
   global.posChangeUnit = (idx, label) => {
@@ -1157,7 +1500,10 @@
     const tplText = (activeTpl && activeTpl.template_teks) || (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '';
     const htmlPaper = global.StrukEngine ? global.StrukEngine.renderHtml(tplText, strukData, lebarMm || 58) : '<pre>Struk OK</pre>';
     const plainTxt = global.StrukEngine ? global.StrukEngine.formatPlainText(tplText, strukData, lebarMm || 58) : '';
-    global._lastStrukPayload = { tplText, strukData, lebarMm: lebarMm || 58, plainTxt, waTarget: waTarget || '', itemsForEtiket: itemsForEtiket || [] };
+    const waText = S().formatStrukWaMessage ? S().formatStrukWaMessage(strukData) : plainTxt;
+    const cleanWa = String(waTarget || '').trim();
+    const waHref = S().buildWaUrl ? S().buildWaUrl(cleanWa, waText) : ('https://wa.me/?text=' + encodeURIComponent(waText));
+    global._lastStrukPayload = { tplText, strukData, lebarMm: lebarMm || 58, plainTxt, waText, waTarget: cleanWa, itemsForEtiket: itemsForEtiket || [] };
 
     S().openModal(`<div class="p-5 space-y-3">
       <div class="flex items-center justify-between">
@@ -1168,21 +1514,58 @@
           <button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
         </div>
       </div>
-      <div class="max-h-80 overflow-y-auto py-2 rounded-xl" style="background:var(--ons-bg-subtle)">${htmlPaper}</div>
+      <div class="max-h-72 overflow-y-auto py-2 rounded-xl" style="background:var(--ons-bg-subtle)">${htmlPaper}</div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
-        <button onclick="window.printStrukWebBt()" class="ons-btn ons-btn-primary py-1.5">&#128424;&#65039; Bluetooth</button>
+        <button onclick="window.printStrukWebBt()" class="ons-btn ons-btn-primary py-1.5">Bluetooth</button>
         <button onclick="window.printStrukRawBt()" class="ons-btn ons-btn-ghost py-1.5">RawBT HP</button>
         <button onclick="window.printStrukBrowser()" class="ons-btn ons-btn-ghost py-1.5">Print / PDF</button>
         <button onclick="window.downloadStrukPngNow()" class="ons-btn ons-btn-ghost py-1.5">Unduh PNG</button>
       </div>
-      <div class="flex flex-wrap gap-1.5">
-        <a target="_blank" href="https://wa.me/${encodeURIComponent(String(waTarget || '6281234567890').replace(/[^0-9]/g, ''))}?text=${encodeURIComponent(plainTxt)}" class="ons-btn ons-btn-emerald flex-1 text-xs">&#128242; Kirim Struk via WhatsApp</a>
-        ${(itemsForEtiket && itemsForEtiket.length) ? `<button onclick="window.printAllEtiketObat()" class="ons-btn ons-btn-ghost text-xs">&#127991; Cetak Etiket Obat (${itemsForEtiket.length})</button>` : ''}
+      <div class="p-3 rounded-xl border space-y-2 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-bold text-emerald-600">Kirim Struk ke WhatsApp (Manual Gratis)</span>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Buka WA tanpa token berbayar</span>
+        </div>
+        <div class="flex flex-wrap gap-1.5 items-center">
+          <input id="strukWaTargetInput" type="tel" class="ons-input font-mono-num text-xs flex-1 min-w-[170px]" value="${S().esc(cleanWa)}" oninput="window.syncStrukWaHref(this.value)" placeholder="No. WA 08xx/628xx (kosong = pilih kontak di WA)"/>
+          <button type="button" onclick="window.copyStrukWaText()" class="ons-btn ons-btn-ghost text-xs py-2 px-3">Salin Teks</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <a id="strukWaManualBtn" target="_blank" rel="noopener" onclick="return window.launchStrukWaManual()" href="${S().esc(waHref)}" class="ons-btn ons-btn-emerald flex-1 text-xs py-2 font-bold">Kirim Struk ke WhatsApp (Gratis)</a>
+          ${(itemsForEtiket && itemsForEtiket.length) ? `<button onclick="window.printAllEtiketObat()" class="ons-btn ons-btn-ghost text-xs">Cetak Etiket (${itemsForEtiket.length})</button>` : ''}
+        </div>
+        <details class="text-[11px]">
+          <summary class="cursor-pointer font-semibold" style="color:var(--ons-text-soft)">Lihat Pratinjau Teks Pesan WA</summary>
+          <pre class="mt-1.5 p-2 rounded border font-mono-num whitespace-pre-wrap text-[11px] max-h-36 overflow-auto" style="background:var(--ons-bg-card);border-color:var(--ons-border)">${S().esc(waText)}</pre>
+        </details>
       </div>
       <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost w-full text-xs">Tutup &amp; Siap Transaksi Berikutnya</button>
-    </div>`, '540px');
+    </div>`, '560px');
   }
 
+  global.syncStrukWaHref = (rawPhone) => {
+    const p = global._lastStrukPayload;
+    if (!p) return;
+    p.waTarget = String(rawPhone || '').trim();
+    const btn = document.getElementById('strukWaManualBtn');
+    if (btn && S().buildWaUrl) {
+      btn.href = S().buildWaUrl(p.waTarget, p.waText);
+    }
+  };
+  global.launchStrukWaManual = () => {
+    const inp = document.getElementById('strukWaTargetInput');
+    if (inp) global.syncStrukWaHref(inp.value);
+    return true;
+  };
+  global.copyStrukWaText = () => {
+    const p = global._lastStrukPayload;
+    const txt = (p && p.waText) || (p && p.plainTxt) || '';
+    if (!txt) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).catch(() => {});
+    }
+    global.toast('Teks struk berhasil disalin! Tempel (Paste) langsung ke WhatsApp.', 'ok');
+  };
   global.switchStrukPreviewWidth = (mm) => {
     const p = global._lastStrukPayload;
     if (p) buildAndShowStrukModal(p.strukData, mm, p.waTarget || '', p.itemsForEtiket);
@@ -1216,7 +1599,7 @@
   global.printAllEtiketObat = () => {
     const p = global._lastStrukPayload;
     if (!p || !global.StrukEngine) return;
-    const htmlList = p.itemsForEtiket.map((it) => `<div style="margin-bottom:14px;">${global.StrukEngine.buildEtiketHtml(it, p.strukData.PELANGGAN, 'Sesuai Anjuran Apoteker', p.strukData.APJ_SIPA)}</div>`).join('');
+    const htmlList = p.itemsForEtiket.map((it) => `<div style="margin-bottom:14px;">${global.StrukEngine.buildEtiketHtml(it, p.strukData.PELANGGAN, it.ATURAN_PAKAI || it.aturan_pakai || 'Sesuai Anjuran Apoteker', p.strukData.APJ_SIPA)}</div>`).join('');
     S().printHtmlZone(htmlList);
   };
 
@@ -1227,17 +1610,20 @@
       const items = (res.items || []).map((it) => ({
         NAMA: it.nama_dagang || it.id_obat, QTY: it.qty, SATUAN: it.satuan || 'Tab',
         HARGA: Number(it.harga_jual || 0), SUBTOTAL: Number(it.subtotal_item || (it.qty * it.harga_jual) || 0),
-        nama: it.nama_dagang || it.id_obat, qty: it.qty, satuan: it.satuan
+        ATURAN_PAKAI: it.aturan_pakai || '',
+        nama: it.nama_dagang || it.id_obat, qty: it.qty, satuan: it.satuan, aturan_pakai: it.aturan_pakai || ''
       }));
+      const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+      const mem = (S().AppState.members || []).find((m) => m.id_member === trx.id_member);
       const strukData = {
-        NAMA_TOKO: 'APOTEK ONS FARMA ENTERPRISE',
-        ALAMAT_TOKO: 'Cabang ' + (trx.cabang_id || S().AppState.cabangId),
-        WA_TOKO: '0811-0000-990',
-        APJ_SIPA: '19920412/SIPA_35.78/2025/1042',
+        NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
+        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || ('Cabang ' + (trx.cabang_id || S().AppState.cabangId)),
+        WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
+        APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
         NOTA: trx.no_invoice,
         TANGGAL: S().formatTgl(trx.tanggal, true),
         KASIR: trx.kasir_id || 'Kasir',
-        PELANGGAN: trx.id_member && trx.id_member !== 'UMUM' ? trx.id_member : 'Pasien Umum',
+        PELANGGAN: mem ? mem.nama_pasien : (trx.id_member && trx.id_member !== 'UMUM' ? trx.id_member : 'Pasien Umum'),
         METODE: trx.metode_bayar || 'TUNAI',
         CHANNEL: trx.channel || 'Toko Fisik',
         ITEM: items.length ? items : [{ NAMA: 'Transaksi POS', QTY: 1, SATUAN: 'Paket', HARGA: trx.grand_total, SUBTOTAL: trx.grand_total }],
@@ -1249,9 +1635,9 @@
         KEMBALI: 0,
         POIN: trx.poin_didapat || 0,
         CATATAN: trx.status_trx === 'RETUR' ? 'STATUS: TRANSAKSI DIRETUR' : 'Terima kasih!',
-        QR_URL: global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(trx.no_invoice)
+        QR_URL: global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(trx.no_invoice) + '&tot=' + encodeURIComponent(String(trx.grand_total || 0))
       };
-      buildAndShowStrukModal(strukData, 58, '', items);
+      buildAndShowStrukModal(strukData, 58, (mem && mem.no_hp) || '', items);
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -1337,8 +1723,8 @@
       </div>` : ''}
 
       <div>
-        <label class="text-xs font-semibold">Kirim Struk Digital WhatsApp (Opsional)</label>
-        <input id="posWaStrukTarget" class="ons-input text-xs" value="${S().esc(cart.no_wa || (member && member.no_hp) || '')}" placeholder="62812xxxx"/>
+        <label class="text-xs font-semibold block mb-1">Nomor WA Pembeli (Opsional — untuk Kirim Struk Gratis)</label>
+        <input id="posWaStrukTarget" type="tel" class="ons-input font-mono-num text-xs" value="${S().esc(cart.no_wa || (member && member.no_hp) || '')}" placeholder="0812xxxx / 62812xxxx (atau isi setelah nota terbit)"/>
       </div>
 
       <button onclick="window.executePosCheckout('${S().esc(metode)}', ${total}, ${cdss.needsApjPin})" class="ons-btn ons-btn-emerald w-full py-2.5">Proses Transaksi, Potong FEFO &amp; Cetak Struk</button>
@@ -1381,7 +1767,7 @@
     const redeemPoin = Math.max(0, Number((document.getElementById('posRedeemPoinInp') || {}).value || 0));
     const poinDiskonRp = redeemPoin * 100;
     const grandTotal = Math.max(0, baseGrandTotal - poinDiskonRp);
-    const waTarget = ((document.getElementById('posWaStrukTarget') || {}).value || '').trim();
+    const waTarget = ((document.getElementById('posWaStrukTarget') || {}).value || (member && member.no_hp) || '').trim();
 
     let detailSplit = '';
     if (metode === 'SPLIT') {
@@ -1423,14 +1809,16 @@
       const itemsCopy = cart.items.map((it) => ({
         NAMA: it.nama_dagang, QTY: it.qty, SATUAN: it.satuan,
         HARGA: it.harga_jual, SUBTOTAL: it.qty * it.harga_jual,
-        nama: it.nama_dagang, qty: it.qty, satuan: it.satuan
+        ATURAN_PAKAI: it.aturan_pakai || '',
+        nama: it.nama_dagang, qty: it.qty, satuan: it.satuan, aturan_pakai: it.aturan_pakai || ''
       }));
 
+      const prof = S().getStoreProfile ? S().getStoreProfile() : {};
       buildAndShowStrukModal({
-        NAMA_TOKO: 'APOTEK ONS FARMA',
-        ALAMAT_TOKO: 'Cabang ' + st.cabangId + ' • Apotek Digital Terpadu',
-        WA_TOKO: '0811-0000-990',
-        APJ_SIPA: 'apt. Siti Rahma (19920412/SIPA)',
+        NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
+        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || ('Cabang ' + st.cabangId),
+        WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
+        APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
         NOTA: notaNo,
         TANGGAL: new Date().toLocaleString('id-ID'),
         KASIR: (st.user && st.user.nama_lengkap) || 'Kasir',
@@ -1446,7 +1834,7 @@
         KEMBALI: kembaliRp,
         POIN: Math.floor(grandTotal / 10000),
         CATATAN: apjOverride ? ('Diverifikasi APJ: ' + apjOverride) : 'Konsultasi obat GRATIS bersama Apoteker kami.',
-        QR_URL: global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(notaNo)
+        QR_URL: global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(notaNo) + '&tot=' + encodeURIComponent(String(grandTotal || 0))
       }, 58, waTarget, itemsCopy);
 
       cart.items = [];

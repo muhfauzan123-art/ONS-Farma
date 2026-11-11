@@ -31,9 +31,11 @@
   }
 
   function waHref(phone, text) {
+    if (S().buildWaUrl) return S().buildWaUrl(phone, text);
     const clean = String(phone || '').replace(/[^0-9]/g, '');
-    const p62 = clean.startsWith('0') ? ('62' + clean.slice(1)) : (clean.startsWith('62') ? clean : ('62' + clean));
-    return 'https://wa.me/' + p62 + (text ? ('?text=' + encodeURIComponent(text)) : '');
+    const p62 = clean.startsWith('0') ? ('62' + clean.slice(1)) : (clean.startsWith('62') ? clean : (clean ? ('62' + clean) : ''));
+    const q = text ? ('?text=' + encodeURIComponent(text)) : '';
+    return p62 ? ('https://wa.me/' + p62 + q) : ('https://wa.me/' + q);
   }
 
   async function refreshOmniOrders() {
@@ -455,7 +457,12 @@
                   <td><span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-500/10">${S().esc(c.segmen)}</span></td>
                   <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(c.catatan_medis || '-')}</td>
                   <td><span class="badge-bpom ${c.status_aktif === 'OPT_OUT' ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(c.status_aktif)}</span></td>
-                  <td><button onclick="ONSViewsOmniCrm.toggleOptOut('${S().esc(c.id_kontak)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">${c.status_aktif === 'OPT_OUT' ? 'Aktifkan WA' : 'Set Opt-Out'}</button></td>
+                  <td>
+                    <div class="flex flex-wrap gap-1.5">
+                      <a href="${S().esc(waHref(c.no_wa_62 || c.no_wa_08, 'Halo Kak ' + c.nama + ', salam sehat dari ' + ((S().getStoreProfile && S().getStoreProfile().nama_usaha) || 'Apotek ONS Farma') + '. '))}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Chat WA</a>
+                      <button onclick="ONSViewsOmniCrm.toggleOptOut('${S().esc(c.id_kontak)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">${c.status_aktif === 'OPT_OUT' ? 'Aktifkan WA' : 'Opt-Out'}</button>
+                    </div>
+                  </td>
                 </tr>`).join('')}
               </tbody>
             </table>
@@ -467,7 +474,7 @@
             <div class="space-y-3">
               <div>
                 <label class="text-xs font-bold block mb-1">Target Segmen Pasien</label>
-                <select id="blastSegmen" class="ons-select">
+                <select id="blastSegmen" onchange="ONSViewsOmniCrm.setCrmSeg(this.value)" class="ons-select">
                   <option value="SEMUA" ${crmFilterSeg === 'SEMUA' ? 'selected' : ''}>SEMUA PASIEN AKTIF</option>
                   <option value="PRB_KRONIS" ${crmFilterSeg === 'PRB_KRONIS' ? 'selected' : ''}>PASIEN PRB / PENYAKIT KRONIS</option>
                   <option value="ONLINE" ${crmFilterSeg === 'ONLINE' ? 'selected' : ''}>PELANGGAN ORDER ONLINE / WA</option>
@@ -480,15 +487,28 @@
               </div>
               <div>
                 <label class="text-xs font-bold block mb-1">Isi Pesan WhatsApp (Gunakan <code>{nama}</code> untuk personalisasi)</label>
-                <textarea id="blastPesanTxt" class="ons-textarea" rows="5" placeholder="Tulis pesan edukasi kesehatan atau reminder tebus obat..."></textarea>
+                <textarea id="blastPesanTxt" oninput="ONSViewsOmniCrm.refreshBlastManualList()" class="ons-textarea" rows="5" placeholder="Tulis pesan edukasi kesehatan atau reminder tebus obat..."></textarea>
               </div>
-              <button onclick="ONSViewsOmniCrm.sendBlastNow()" class="ons-btn ons-btn-emerald w-full">Antrikan Broadcast ke ${filteredTargets.length} Penerima Aktif</button>
+              <button onclick="ONSViewsOmniCrm.sendBlastNow()" class="ons-btn ons-btn-ghost w-full">Antrikan Broadcast Otomatis via Fonnte (${filteredTargets.length} Penerima)</button>
             </div>
-            <div class="p-4 rounded-xl border space-y-2 text-xs" style="background:var(--ons-bg-subtle)">
-              <div class="font-bold text-sm">Tata Kelola Anti-Blokir &amp; Etika Komunikasi</div>
-              <p>1. Penerima berstatus <strong>OPT_OUT</strong> dilewati secara otomatis oleh backend GAS.</p>
-              <p>2. Semua pesan masuk antrean <code>ANTRIAN_NOTIF</code> agar transaksi POS/Gudang tetap cepat tanpa delay.</p>
-              <p>3. Trigger GAS memproses batch bertahap sesuai limit Fonnte &amp; Apps Script.</p>
+            <div class="p-4 rounded-xl border space-y-2.5 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="flex items-center justify-between gap-2">
+                <div class="font-bold text-sm text-emerald-600">Kirim WA Manual Satu-per-Satu (100% Gratis)</div>
+                <span class="badge-bpom bpom-bebas">${filteredTargets.length} Aktif</span>
+              </div>
+              <p style="color:var(--ons-text-soft)">Klik tombol <b>Kirim WA</b> di bawah untuk membuka WhatsApp langsung ke pasien tanpa perlu langganan Fonnte berbayar:</p>
+              <div id="blastManualListWrap" class="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                ${filteredTargets.length === 0 ? `<div class="py-4 text-center" style="color:var(--ons-text-soft)">Tidak ada kontak aktif pada segmen ini.</div>` : filteredTargets.slice(0, 20).map((c) => {
+                  const defaultMsg = 'Halo Kak ' + c.nama + ', salam sehat dari Apotek kami.';
+                  return `<div class="p-2 rounded-lg border flex items-center justify-between gap-2" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                    <div class="min-w-0">
+                      <div class="font-bold truncate">${S().esc(c.nama)}</div>
+                      <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(c.no_wa_08 || c.no_wa_62)}</div>
+                    </div>
+                    <a data-wa-name="${S().esc(c.nama)}" data-wa-phone="${S().esc(c.no_wa_62 || c.no_wa_08)}" href="${S().esc(waHref(c.no_wa_62 || c.no_wa_08, defaultMsg))}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 shrink-0">Kirim WA</a>
+                  </div>`;
+                }).join('')}
+              </div>
             </div>
           </div>
         ` : ''}
@@ -544,7 +564,23 @@
     },
     setCrmSeg: (s) => { crmFilterSeg = s; if (typeof global.renderActiveView === 'function') global.renderActiveView(); },
     setCrmSearch: (q) => { crmSearchQ = q; if (typeof global.renderActiveView === 'function') global.renderActiveView(); },
-    fillBlastTpl: (txt) => { const el = document.getElementById('blastPesanTxt'); if (el) el.value = txt; },
+    fillBlastTpl: (txt) => {
+      const el = document.getElementById('blastPesanTxt');
+      if (el) el.value = txt;
+      if (global.ONSViewsOmniCrm && typeof global.ONSViewsOmniCrm.refreshBlastManualList === 'function') {
+        global.ONSViewsOmniCrm.refreshBlastManualList();
+      }
+    },
+    refreshBlastManualList: () => {
+      const txtEl = document.getElementById('blastPesanTxt');
+      const rawTpl = (txtEl && txtEl.value.trim()) || 'Halo Kak {nama}, salam sehat dari Apotek kami.';
+      document.querySelectorAll('#blastManualListWrap a[data-wa-phone]').forEach((a) => {
+        const nama = a.getAttribute('data-wa-name') || 'Pasien';
+        const phone = a.getAttribute('data-wa-phone') || '';
+        const msg = rawTpl.replace(/\{nama\}/gi, nama);
+        a.href = waHref(phone, msg);
+      });
+    },
     loadCrmAndQueue,
     syncCrmNow,
     openAddCrmModal,

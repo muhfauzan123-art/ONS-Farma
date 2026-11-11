@@ -288,27 +288,35 @@
     a.remove();
   }
 
-  function buildEtiketHtml(item, patientName, aturanPakai, apjInfo) {
+  function buildEtiketHtml(item, patientName, aturanPakai, apjInfo, labelColor) {
     const nowStr = new Date().toLocaleDateString('id-ID');
+    const prof = (global.ONSStore && typeof global.ONSStore.getStoreProfile === 'function') ? global.ONSStore.getStoreProfile() : {};
+    const storeName = (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase();
+    const apjText = apjInfo || [prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi', prof.sipa_pemilik ? ('SIPA: ' + prof.sipa_pemilik) : ''].filter(Boolean).join(' • ');
+    const rule = (item && (item.ATURAN_PAKAI || item.aturan_pakai)) || aturanPakai || '3 x 1 Sesudah Makan';
+    const isLuar = String(labelColor || ((item && item.etiket_warna) || '')).toLowerCase() === 'biru' || /luar|oles|tetes|salep|krim|injeksi/i.test(rule);
+    const accent = isLuar ? '#1d4ed8' : '#0f766e';
+    const boxBg = isLuar ? '#eff6ff' : '#f0fdfa';
+    const labelJenis = isLuar ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM / ORAL • JANGAN MELEBIHI DOSIS';
     return `
-      <div style="width:270px;border:2px solid #0f766e;border-radius:8px;padding:10px;background:#fff;color:#0f172a;font-family:'Plus Jakarta Sans',sans-serif;margin:0 auto;">
-        <div style="background:#0f766e;color:#fff;padding:5px 8px;border-radius:5px;display:flex;justify-content:space-between;align-items:center;">
-          <strong style="font-size:11px;">APOTEK ONS FARMA</strong>
+      <div style="width:270px;border:2px solid ${accent};border-radius:8px;padding:10px;background:#fff;color:#0f172a;font-family:'Plus Jakarta Sans',sans-serif;margin:0 auto;">
+        <div style="background:${accent};color:#fff;padding:5px 8px;border-radius:5px;display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:11px;">${escHtml(storeName)}</strong>
           <span style="font-size:10px;">${escHtml(nowStr)}</span>
         </div>
         <div style="font-size:9.5px;color:#475569;margin-top:4px;border-bottom:1px solid #cbd5e1;padding-bottom:3px;">
-          APJ: ${escHtml(apjInfo || 'apt. Siti Rahma, S.Farm')}
+          APJ: ${escHtml(apjText)}
         </div>
         <div style="margin-top:6px;font-size:11px;">
           <div>Pasien: <strong>${escHtml(patientName || 'Pasien Umum')}</strong></div>
-          <div style="margin-top:2px;">Obat: <strong>${escHtml(item.nama || item.nama_dagang || '-')}</strong></div>
-          <div>Jumlah: <strong>${escHtml(String(item.qty || 1))} ${escHtml(item.satuan || '')}</strong></div>
+          <div style="margin-top:2px;">Obat: <strong>${escHtml((item && (item.nama || item.nama_dagang || item.NAMA)) || '-')}</strong></div>
+          <div>Jumlah: <strong>${escHtml(String((item && (item.qty || item.QTY)) || 1))} ${escHtml((item && (item.satuan || item.SATUAN)) || '')}</strong></div>
         </div>
-        <div style="margin-top:8px;border:1.5px dashed #0f766e;padding:6px;border-radius:5px;text-align:center;font-weight:800;font-size:13px;background:#f0fdfa;">
-          ${escHtml(aturanPakai || '3 x 1 Sesudah Makan')}
+        <div style="margin-top:8px;border:1.5px dashed ${accent};padding:6px;border-radius:5px;text-align:center;font-weight:800;font-size:13px;background:${boxBg};">
+          ${escHtml(rule)}
         </div>
-        <div style="margin-top:6px;font-size:9px;text-align:center;color:#dc2626;font-weight:700;">
-          PERHATIAN: Simpan di tempat sejuk • Jauhkan dari jangkauan anak
+        <div style="margin-top:6px;font-size:8.5px;text-align:center;color:#dc2626;font-weight:700;">
+          ${labelJenis}
         </div>
       </div>`;
   }

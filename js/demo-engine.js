@@ -12,21 +12,54 @@
   const isoToday = today.toISOString().slice(0, 10);
   const addDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
+  function defaultProfilUsaha() {
+    return {
+      cabang_id: 'ONS-01',
+      nama_pemilik: 'apt. Anissa Faradifa R. Is Rumi',
+      jabatan_pemilik: 'Pemilik Sarana Apotek & Apoteker',
+      sipa_pemilik: '19920412/SIPA_35.78/2025/1042',
+      stra_pemilik: '19920412/STRA-14102029/1042',
+      wa_pemilik: '0811-0000-990',
+      email_pemilik: 'anissa@onsfarma.id',
+      npwp_pemilik: '09.254.294.3-805.000',
+      foto_pemilik_url: '',
+      nama_usaha: 'Apotek ONS Farma',
+      no_sia: '449/SIA-DPMPTSP/2025/0088',
+      nib_oss: '9120208142915',
+      npwp_usaha: '85.112.409.1-805.000',
+      status_pkp: 'PKP (PPN 11%)',
+      alamat_usaha: 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang',
+      kota: 'Makassar',
+      kode_pos: '90231',
+      telepon_usaha: '0411-458-990',
+      wa_usaha: '628110000990',
+      email_usaha: 'halo@onsfarma.id',
+      jam_operasional: 'Setiap Hari 07:30 - 22:00 WITA',
+      zona_waktu: 'Asia/Makassar (WITA)',
+      logo_usaha_url: './icons/ons-farma-app-icon.png',
+      terkonfirmasi: 'YA',
+      dikonfirmasi_oleh: 'apt. Anissa Faradifa R. Is Rumi',
+      dikonfirmasi_pada: isoToday,
+      updated_at: isoToday + 'T08:00:00Z'
+    };
+  }
+
   function buildSeedDb() {
     return {
       epoch: 1,
+      profil_usaha: defaultProfilUsaha(),
       secrets: {
         FONNTE_TOKEN: 'fnt_••••••89a',
         SATUSEHAT_CLIENT_ID: 'ss_c••••••210',
         SATUSEHAT_CLIENT_SECRET: 'ss_s••••••f7c',
         SATUSEHAT_ORG_ID: '1000••••••982',
         WA_OWNER_TARGET: '6281••••••990',
-        ADMIN_EMAIL: 'owner@onsfarma.id',
+        ADMIN_EMAIL: 'anissa@onsfarma.id',
         QRIS_MERCHANT_NMID: 'ID10••••••001',
         DE_VERIFY_URL_BASE: './index.html'
       },
       users: [
-        { id_user: 'USR-001', username: 'pemilik', nama_lengkap: 'dr. Hendra Wijaya (Pemilik)', role: 'Pemilik', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' },
+        { id_user: 'USR-001', username: 'pemilik', nama_lengkap: 'apt. Anissa Faradifa R. Is Rumi', role: 'Pemilik', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
         { id_user: 'USR-002', username: 'apj', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
         { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }
       ],
@@ -133,10 +166,10 @@
       ],
       de_pejabat: [
         { ID: 'PEJ-01', UserId: 'USR-002', Nama: 'apt. Siti Rahma, S.Farm', Jabatan: 'Apoteker Penanggung Jawab', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'apj@onsfarma.id', Aktif: 'YA' },
-        { ID: 'PEJ-02', UserId: 'USR-001', Nama: 'dr. Hendra Wijaya', Jabatan: 'Pemilik Sarana Apotek', NoSIPA: '-', Email: 'pemilik@onsfarma.id', Aktif: 'YA' }
+        { ID: 'PEJ-02', UserId: 'USR-001', Nama: 'apt. Anissa Faradifa R. Is Rumi', Jabatan: 'Pemilik Sarana Apotek & Apoteker', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'anissa@onsfarma.id', Aktif: 'YA' }
       ],
       audit_log: [
-        { id_audit: 'AUD-101', timestamp: isoToday + 'T07:55:00Z', user_id: 'USR-002', role: 'APJ', cabang_id: 'ONS-01', aksi: 'BOOT_SYSTEM_OK', entitas: 'SYSTEM', entitas_id: 'v10.0', diff_sebelum_json: '{}', diff_sesudah_json: JSON.stringify({ status: 'Kepatuhan BPOM & SATUSEHAT Siap' }), device_info: 'Desktop Chrome' }
+        { id_audit: 'AUD-101', timestamp: isoToday + 'T07:55:00Z', user_id: 'USR-002', role: 'APJ', cabang_id: 'ONS-01', aksi: 'BOOT_SYSTEM_OK', entitas: 'SYSTEM', entitas_id: 'v13.0', diff_sebelum_json: '{}', diff_sesudah_json: JSON.stringify({ status: 'Kepatuhan BPOM & SATUSEHAT Siap' }), device_info: 'Desktop Chrome' }
       ],
       kw_counter: 12,
       doc_counter: 13
@@ -149,6 +182,30 @@
     ['mutasi_stok', 'omnichannel_orders', 'crm_kontak', 'antrian_notif', 'st_template'].forEach((k) => {
       if (!Array.isArray(db[k])) { db[k] = def[k]; changed = true; }
     });
+    if (!db.profil_usaha || typeof db.profil_usaha !== 'object') {
+      db.profil_usaha = def.profil_usaha;
+      changed = true;
+    }
+    if (Array.isArray(db.users)) {
+      db.users.forEach((u) => {
+        if (u.id_user === 'USR-001' && String(u.nama_lengkap || '').includes('Hendra Wijaya')) {
+          u.nama_lengkap = 'apt. Anissa Faradifa R. Is Rumi';
+          u.no_sipa = '19920412/SIPA_35.78/2025/1042';
+          changed = true;
+        }
+      });
+    }
+    if (Array.isArray(db.de_pejabat)) {
+      db.de_pejabat.forEach((p) => {
+        if (p.ID === 'PEJ-02' && String(p.Nama || '').includes('Hendra Wijaya')) {
+          p.Nama = 'apt. Anissa Faradifa R. Is Rumi';
+          p.Jabatan = 'Pemilik Sarana Apotek & Apoteker';
+          p.NoSIPA = '19920412/SIPA_35.78/2025/1042';
+          p.Email = 'anissa@onsfarma.id';
+          changed = true;
+        }
+      });
+    }
     if (changed) saveDb(db);
     return db;
   }
@@ -188,15 +245,27 @@
     const userId = (tokenPayload && tokenPayload.uid) || 'USR-001';
     const nowIso = new Date().toISOString();
 
-    if (action === 'ping') return { app: 'Apotek ONS Farma Enterprise', version: '11.0.0-DEMO', epoch: db.epoch };
+    if (action === 'ping') return { app: 'Apotek ONS Farma Enterprise', version: '13.0.0-DEMO', epoch: db.epoch };
 
     if (action === 'public.catalog') {
+      const prof = db.profil_usaha || defaultProfilUsaha();
       const stockMap = {};
       db.stok_batch.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0).forEach((b) => {
         stockMap[b.id_obat] = (stockMap[b.id_obat] || 0) + Number(b.qty_sisa || 0);
       });
       return {
-        apotek: { nama: 'Apotek ONS Farma Digital', cabang: 'ONS-01', wa_admin: '628110000990' },
+        apotek: {
+          nama: prof.nama_usaha || 'Apotek ONS Farma',
+          cabang: prof.cabang_id || 'ONS-01',
+          alamat: [prof.alamat_usaha, prof.kota, prof.kode_pos].filter(Boolean).join(', '),
+          wa_admin: String(prof.wa_usaha || '628110000990').replace(/[^0-9]/g, ''),
+          telepon: prof.telepon_usaha || '',
+          jam_operasional: prof.jam_operasional || '',
+          no_sia: prof.no_sia || '',
+          nama_pemilik: prof.nama_pemilik || '',
+          sipa_pemilik: prof.sipa_pemilik || '',
+          logo_usaha_url: prof.logo_usaha_url || './icons/ons-farma-app-icon.png'
+        },
         items: db.master_obat.filter((o) => o.status_aktif !== 'NONAKTIF').map((o) => ({
           id_obat: o.id_obat, nama_dagang: o.nama_dagang, zat_aktif: o.zat_aktif, kekuatan: o.kekuatan,
           golongan_bpom: o.golongan_bpom, bentuk_sediaan: o.bentuk_sediaan, satuan_dasar: o.satuan_dasar,
@@ -263,6 +332,7 @@
         user: tokenPayload,
         epoch: db.epoch,
         cabang_id: d.cabang_id || 'ONS-01',
+        store_profile: db.profil_usaha || defaultProfilUsaha(),
         master_obat: db.master_obat.map((o) => maskRow(o, role)),
         stok_batch: db.stok_batch.map((b) => maskRow(b, role)),
         members: db.members,
@@ -848,6 +918,45 @@
       else db.st_template.push(tpl);
       saveDb(db);
       return { item: tpl };
+    }
+
+    if (action === 'profil.get') {
+      return Object.assign({}, defaultProfilUsaha(), db.profil_usaha || {});
+    }
+    if (action === 'profil.save') {
+      if (!String(d.nama_pemilik || '').trim() || !String(d.nama_usaha || '').trim()) {
+        throw new Error('Nama Pemilik dan Nama Tempat Usaha wajib diisi.');
+      }
+      const next = Object.assign({}, defaultProfilUsaha(), db.profil_usaha || {}, d, {
+        terkonfirmasi: (d.terkonfirmasi === false || d.terkonfirmasi === 'BELUM') ? 'BELUM' : 'YA',
+        dikonfirmasi_oleh: userNama || d.nama_pemilik,
+        dikonfirmasi_pada: nowIso,
+        updated_at: nowIso
+      });
+      db.profil_usaha = next;
+      if (d.sync_akun_pemilik !== false) {
+        const uPem = db.users.find((u) => u.id_user === 'USR-001' || u.username === 'pemilik');
+        if (uPem) {
+          uPem.nama_lengkap = next.nama_pemilik;
+          if (next.sipa_pemilik) uPem.no_sipa = next.sipa_pemilik;
+        }
+        const pejPem = (db.de_pejabat || []).find((p) => p.ID === 'PEJ-02');
+        if (pejPem) {
+          pejPem.Nama = next.nama_pemilik;
+          pejPem.Jabatan = next.jabatan_pemilik;
+          pejPem.NoSIPA = next.sipa_pemilik || '-';
+          if (next.email_pemilik) pejPem.Email = next.email_pemilik;
+        }
+      }
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: next.cabang_id || 'ONS-01',
+        aksi: 'STORE_PROFILE_CONFIRMED', entitas: 'PROFIL_USAHA', entitas_id: next.cabang_id || 'ONS-01',
+        diff_sesudah_json: JSON.stringify({ nama_pemilik: next.nama_pemilik, nama_usaha: next.nama_usaha, terkonfirmasi: next.terkonfirmasi }),
+        device_info: 'Browser PWA'
+      });
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, profile: next };
     }
 
     return { ok: true };

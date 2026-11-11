@@ -21,7 +21,7 @@
   let _batchScheduled = false;
 
   function isDemoMode() {
-    const ovr = localStorage.getItem(MODE_KEY);
+    const ovr = String(localStorage.getItem(MODE_KEY) || '').toUpperCase();
     if (ovr === 'DEMO') return true;
     if (ovr === 'LIVE') return false;
     const url = (global.ONS_CONFIG && global.ONS_CONFIG.GAS_URL) || '';
@@ -29,8 +29,9 @@
   }
 
   function setModeOverride(mode) {
-    if (mode === 'AUTO') localStorage.removeItem(MODE_KEY);
-    else localStorage.setItem(MODE_KEY, mode);
+    const clean = String(mode || 'AUTO').toUpperCase();
+    if (clean === 'AUTO') localStorage.removeItem(MODE_KEY);
+    else localStorage.setItem(MODE_KEY, clean);
   }
 
   function getSession() {

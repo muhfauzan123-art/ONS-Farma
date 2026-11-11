@@ -8,6 +8,9 @@
   const API = () => global.ONSApi;
 
   let masterFilterGol = '';
+  let masterFilterStok = 'SEMUA'; // SEMUA | AMAN | KRITIS | NEAR_ED
+  let masterSortBy = 'NAMA'; // NAMA | STOK_ASC | ED_ASC | HARGA_DESC
+  let masterViewMode = 'TABLE'; // TABLE | CARD
   let masterSearchQ = '';
   let wizardFullScrollMode = false;
   let wizardStep = 1;
@@ -16,91 +19,344 @@
   let mutasiFilterObat = '';
   let mutasiFilterJenis = '';
 
+  function buildObatMeta(o) {
+    const stok = S().getTotalStok(o.id_obat);
+    const min = Number(o.stok_min || 10);
+    const max = Math.max(Number(o.stok_max || 100), min * 2, stok, 1);
+    const pct = Math.min(100, Math.round((stok / max) * 100));
+    const isZero = stok <= 0;
+    const isLow = stok > 0 && stok <= min;
+    const isCritical = isZero || isLow;
+    const nearBatch = S().getNearestEdBatch(o.id_obat);
+    const edDays = nearBatch && nearBatch.tgl_kadaluarsa ? S().daysUntil(nearBatch.tgl_kadaluarsa) : null;
+    const isNearEd = edDays !== null && edDays <= 90;
+    const isCold = /2\s*[-–]\s*8|chiller|dingin|kulkas/i.test(String(o.suhu_simpan || ''));
+    const hpp = Number(o.hpp_avg || 0);
+    const harga = Number(o.harga_umum || 0);
+    const marginPct = (hpp > 0 && harga > 0) ? Math.round(((harga - hpp) / hpp) * 100) : null;
+    const stokTone = isZero
+      ? { label: 'Habis', color: '#DC2626', bar: '#EF4444', badge: 'bpom-keras' }
+      : (isLow
+        ? { label: 'Menipis', color: '#D97706', bar: '#F59E0B', badge: 'bpom-prekursor' }
+        : { label: 'Aman', color: '#059669', bar: '#10B981', badge: 'bpom-bebas' });
+    return { o, stok, min, max, pct, isZero, isLow, isCritical, nearBatch, edDays, isNearEd, isCold, hpp, harga, marginPct, stokTone };
+  }
+
+  function renderObatStockBarHtml(m) {
+    const edHtml = m.nearBatch
+      ? `<div class="text-[11px] font-mono-num mt-1" style="color:${m.isNearEd ? '#DC2626' : 'var(--ons-text-soft)'}">
+          ED ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'KADALUARSA' : m.edDays + 'h lagi'})
+        </div>`
+      : `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Belum ada batch aktif</div>`;
+    return `<div class="min-w-[130px]">
+      <div class="flex items-center justify-between gap-2 text-xs font-mono-num">
+        <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(m.o.satuan_dasar)}</span>
+        <span class="text-[10px] font-bold uppercase" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
+      </div>
+      <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${m.pct}%;background:${m.stokTone.bar}"></div></div>
+      ${edHtml}
+    </div>`;
+  }
+
   /**
    * W-04: Master Obat KFA & NIE + Masking HPP Kasir + Code128 Barcode Print
    */
   function renderMasterObatView() {
     const st = S().AppState;
     const seeCost = S().canSeeFinancialCost();
-    const filtered = st.masterObat.filter((o) => {
-      if (masterFilterGol && String(o.golongan_bpom).toUpperCase() !== masterFilterGol) return false;
-      if (masterSearchQ) {
-        const h = `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom}`.toLowerCase();
-        if (!h.includes(masterSearchQ.toLowerCase())) return false;
-      }
-      return true;
+    const allMeta = (st.masterObat || []).map(buildObatMeta);
+
+    const totalCount = allMeta.length;
+    const safeCount = allMeta.filter((m) => !m.isCritical).length;
+    const critCount = allMeta.filter((m) => m.isCritical).length;
+    const nearEdCount = allMeta.filter((m) => m.isNearEd).length;
+    const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (m.stok * m.hpp), 0) : 0;
+
+    const golOptions = ['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'];
+    const golCounts = {};
+    allMeta.forEach((m) => {
+      const g = String(m.o.golongan_bpom || 'BEBAS').toUpperCase();
+      golCounts[g] = (golCounts[g] || 0) + 1;
     });
 
-    return `<div class="space-y-4">
+    const filtered = allMeta.filter((m) => {
+      const o = m.o;
+      if (masterFilterGol && String(o.golongan_bpom || '').toUpperCase() !== masterFilterGol) return false;
+      if (masterFilterStok === 'AMAN' && m.isCritical) return false;
+      if (masterFilterStok === 'KRITIS' && !m.isCritical) return false;
+      if (masterFilterStok === 'NEAR_ED' && !m.isNearEd) return false;
+      if (masterSearchQ) {
+        const q = masterSearchQ.toLowerCase();
+        const hay = `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      if (masterSortBy === 'STOK_ASC') return a.stok - b.stok;
+      if (masterSortBy === 'HARGA_DESC') return b.harga - a.harga;
+      if (masterSortBy === 'ED_ASC') return (a.edDays === null ? 99999 : a.edDays) - (b.edDays === null ? 99999 : b.edDays);
+      return String(a.o.nama_dagang || '').localeCompare(String(b.o.nama_dagang || ''));
+    });
+
+    const kpiCard = (filterVal, title, val, sub, toneBorder, valCls) => {
+      const isAct = masterFilterStok === filterVal;
+      return `<button type="button" onclick="window.setMasterStokFilter('${filterVal}')" class="ons-card p-3.5 text-left transition-all cursor-pointer ${isAct ? 'ring-2 ring-blue-500' : ''}" style="${isAct ? ('border-color:' + toneBorder) : ''}">
+        <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">${title}</div>
+        <div class="text-2xl font-extrabold font-mono-num mt-0.5 ${valCls}">${val}</div>
+        <div class="text-[11px] mt-0.5 truncate" style="color:var(--ons-text-soft)">${sub}</div>
+      </button>`;
+    };
+
+    const actionButtons = (o) => `<div class="flex flex-wrap gap-1.5">
+      <button onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Detail</button>
+      <button onclick="window.printCode128Obat('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Barcode Rak">Barcode</button>
+      ${seeCost ? `<button onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>` : ''}
+    </div>`;
+
+    return `<div class="space-y-4 ons-view-enter">
+      <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-bold">Master Produk Obat KFA / NIE BPOM</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Katalog terstandar SATUSEHAT KFA, multi-satuan 3 tingkat, &amp; proteksi HPP berbasis RBAC.</p>
+          <h1 class="text-xl font-extrabold tracking-tight">Master Katalog Produk Obat (KFA &amp; NIE BPOM)</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Katalog terstandar SATUSEHAT, rasio 3 satuan, pemantauan ED batch FEFO, &amp; kendali akses HPP.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk (Wizard 5 Langkah)</button>
-          <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">&#128229; Import Excel (.xlsx)</button>` : ''}
+          ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk (Wizard)</button>
+          <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">Import Excel (.xlsx)</button>` : ''}
           <button onclick="window.exportMasterObat('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
           <button onclick="window.exportMasterObat('pdf')" class="ons-btn ons-btn-ghost text-xs">Cetak PDF</button>
         </div>
       </div>
 
-      <div class="ons-card p-3 flex flex-wrap items-center gap-2">
-        <input class="ons-input flex-1 min-w-[200px] text-xs" placeholder="Cari Nama Dagang, Zat Aktif, Kode KFA, NIE..." value="${S().esc(masterSearchQ)}" oninput="window.setMasterSearch(this.value)"/>
-        ${['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'NARKOTIKA'].map((g) => `
-          <button onclick="window.setMasterGol('${g}')" class="ons-btn text-xs py-1 px-3 ${masterFilterGol === g ? 'ons-btn-primary' : 'ons-btn-ghost'}">${g || 'Semua (' + st.masterObat.length + ')'}</button>
-        `).join('')}
+      <!-- 4 KPI Katalog Klik-Cepat -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        ${kpiCard('SEMUA', 'Total Item Katalog', totalCount, seeCost ? ('Valuasi Modal: ' + S().rp(totalValuasiHpp)) : 'Produk aktif apotek', '#0050CA', '')}
+        ${kpiCard('AMAN', 'Stok Aman Tersedia', safeCount, 'Di atas ambang batas minimum', '#059669', 'text-emerald-600')}
+        ${kpiCard('KRITIS', 'Perlu Restok / Habis', critCount, critCount ? 'Klik untuk lihat item defecta' : 'Semua stok mencukupi', '#D97706', critCount ? 'text-amber-600' : 'text-emerald-600')}
+        ${kpiCard('NEAR_ED', 'Near ED (&le; 90 Hari)', nearEdCount, nearEdCount ? 'Segera prioritaskan FEFO / retur' : 'Semua batch ED panjang', '#DC2626', nearEdCount ? 'text-red-600' : 'text-emerald-600')}
       </div>
 
+      <!-- Filter Bar Pintar & Mode Tampilan -->
+      <div class="ons-card p-3.5 space-y-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <input class="ons-input flex-1 min-w-[210px] text-xs" placeholder="Cari Nama Dagang, Zat Aktif, Kode KFA, NIE, atau Lokasi Rak..." value="${S().esc(masterSearchQ)}" oninput="window.setMasterSearch(this.value)"/>
+          <select class="ons-select w-40 text-xs" onchange="window.setMasterStokFilter(this.value)" aria-label="Filter Status Stok">
+            <option value="SEMUA" ${masterFilterStok === 'SEMUA' ? 'selected' : ''}>Semua Status Stok</option>
+            <option value="AMAN" ${masterFilterStok === 'AMAN' ? 'selected' : ''}>Stok Aman</option>
+            <option value="KRITIS" ${masterFilterStok === 'KRITIS' ? 'selected' : ''}>Stok Menipis / Habis</option>
+            <option value="NEAR_ED" ${masterFilterStok === 'NEAR_ED' ? 'selected' : ''}>Near ED (&le; 90 Hari)</option>
+          </select>
+          <select class="ons-select w-40 text-xs" onchange="window.setMasterSort(this.value)" aria-label="Urutkan Produk">
+            <option value="NAMA" ${masterSortBy === 'NAMA' ? 'selected' : ''}>Urut: Nama A &ndash; Z</option>
+            <option value="STOK_ASC" ${masterSortBy === 'STOK_ASC' ? 'selected' : ''}>Urut: Stok Terendah</option>
+            <option value="ED_ASC" ${masterSortBy === 'ED_ASC' ? 'selected' : ''}>Urut: ED Terdekat</option>
+            <option value="HARGA_DESC" ${masterSortBy === 'HARGA_DESC' ? 'selected' : ''}>Urut: Harga Tertinggi</option>
+          </select>
+          <div class="inline-flex rounded-lg border p-0.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <button type="button" onclick="window.setMasterViewMode('TABLE')" class="ons-btn text-xs py-1 px-2.5 ${masterViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Tabel</button>
+            <button type="button" onclick="window.setMasterViewMode('CARD')" class="ons-btn text-xs py-1 px-2.5 ${masterViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Kartu</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          ${golOptions.filter((g) => !g || golCounts[g] || masterFilterGol === g).map((g) => {
+            const cnt = g ? (golCounts[g] || 0) : totalCount;
+            return `<button type="button" onclick="window.setMasterGol('${g}')" class="ons-subnav-chip ${masterFilterGol === g ? 'active' : ''}">${g || 'Semua'} (${cnt})</button>`;
+          }).join('')}
+        </div>
+      </div>
+
+      ${filtered.length === 0 ? `<div class="ons-card p-10 text-center space-y-2">
+        <div class="font-bold text-sm">Tidak ada produk obat yang sesuai dengan filter saat ini.</div>
+        <button onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Semua Filter</button>
+      </div>` : (masterViewMode === 'CARD' ? `
+      <!-- Mode Kartu Katalog Modern -->
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+        ${filtered.map((m) => {
+          const o = m.o;
+          return `<div class="ons-product-card flex flex-col justify-between gap-3">
+            <div class="space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                    ${S().bpomBadge(o.golongan_bpom)}
+                    ${m.isCold ? `<span class="badge-bpom bpom-terbatas">CHILLER 2-8&deg;C</span>` : ''}
+                  </div>
+                  <h3 class="font-bold text-sm leading-snug">${S().esc(o.nama_dagang)}</h3>
+                  <div class="text-xs truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
+                </div>
+                <span class="font-mono-num text-[10px] px-2 py-0.5 rounded border shrink-0" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
+              </div>
+
+              <div class="flex flex-wrap gap-2 text-[11px] font-mono-num" style="color:var(--ons-text-soft)">
+                <span>KFA: <b>${S().esc(o.kode_kfa || o.id_obat)}</b></span>
+                <span>&bull; NIE: ${S().esc(o.nie_bpom || '-')}</span>
+              </div>
+
+              <div class="p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                ${renderObatStockBarHtml(m)}
+                <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">
+                  1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t flex flex-wrap items-end justify-between gap-2" style="border-color:var(--ons-border)">
+              <div>
+                <div class="text-[10px] font-semibold uppercase" style="color:var(--ons-text-soft)">Harga Umum / ${S().esc(o.satuan_dasar)}</div>
+                <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(o.harga_umum)}</div>
+                ${seeCost ? `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">HPP ${S().rp(o.hpp_avg)}${m.marginPct !== null ? ` &bull; Margin <b class="text-emerald-600">${m.marginPct}%</b>` : ''}</div>` : `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Member: ${S().rp(o.harga_member || o.harga_umum)}</div>`}
+              </div>
+              ${actionButtons(o)}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : `
+      <!-- Mode Tabel Enterprise -->
       <div class="ons-card p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 text-xs" style="color:var(--ons-text-soft)">
+          <span>Menampilkan <b>${filtered.length}</b> dari ${totalCount} produk obat</span>
+          <span>Klik <b>Detail</b> untuk melihat batch FEFO, suhu simpan &amp; substitusi generik</span>
+        </div>
         <div class="ons-table-wrap">
           <table class="ons-table">
             <thead>
               <tr>
                 <th>Kode KFA / NIE</th>
-                <th>Nama Obat &amp; Zat Aktif</th>
+                <th>Produk, Zat Aktif &amp; Penyimpanan</th>
                 <th>Golongan</th>
-                <th>Multi-Satuan (Rasio)</th>
-                <th>Stok Total</th>
-                ${seeCost ? '<th>HPP Avg</th>' : ''}
-                <th>Harga Umum</th>
+                <th>Multi-Satuan</th>
+                <th>Stok &amp; ED Terdekat</th>
+                ${seeCost ? '<th>HPP &amp; Margin</th>' : ''}
+                <th>Harga Jual</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              ${filtered.map((o) => {
-                const stok = S().getTotalStok(o.id_obat);
+              ${filtered.map((m) => {
+                const o = m.o;
                 return `<tr>
                   <td class="font-mono-num text-xs">
                     <div class="font-bold">${S().esc(o.kode_kfa || o.id_obat)}</div>
-                    <div style="color:var(--ons-text-soft)">${S().esc(o.nie_bpom)}</div>
+                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.nie_bpom || '-')}</div>
                   </td>
                   <td>
-                    <div class="font-bold">${S().esc(o.nama_dagang)}</div>
-                    <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} (${S().esc(o.kekuatan)}) &bull; ${S().esc(o.rak_lokasi)}</div>
-                  </td>
-                  <td>${S().bpomBadge(o.golongan_bpom)}</td>
-                  <td class="text-xs font-mono-num">1 ${S().esc(o.satuan_besar)} = ${o.rasio_besar} ${S().esc(o.satuan_dasar)}</td>
-                  <td class="font-mono-num font-bold ${stok <= o.stok_min ? 'text-red-600' : 'text-emerald-600'}">${stok} ${S().esc(o.satuan_dasar)}</td>
-                  ${seeCost ? `<td class="font-mono-num">${S().rp(o.hpp_avg)}</td>` : ''}
-                  <td class="font-mono-num font-bold text-blue-600">${S().rp(o.harga_umum)}</td>
-                  <td>
-                    <div class="flex gap-1">
-                      <button onclick="window.printCode128Obat('${o.id_obat}')" class="ons-btn ons-btn-ghost text-xs px-2 py-1" title="Cetak Barcode Rak">Barcode</button>
-                      ${seeCost ? `<button onclick="window.openObatWizardModal('${o.id_obat}')" class="ons-btn ons-btn-ghost text-xs px-2 py-1">Edit</button>` : ''}
+                    <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="font-bold text-left hover:text-blue-600 transition-colors">${S().esc(o.nama_dagang)}</button>
+                    <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                      <span class="text-[10px] font-mono-num px-1.5 py-0.5 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
+                      ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-600">Chiller 2-8&deg;C</span>` : ''}
                     </div>
                   </td>
+                  <td>${S().bpomBadge(o.golongan_bpom)}</td>
+                  <td class="text-xs font-mono-num">
+                    <div>1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)}</div>
+                    <div class="text-[11px]" style="color:var(--ons-text-soft)">1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}</div>
+                  </td>
+                  <td>${renderObatStockBarHtml(m)}</td>
+                  ${seeCost ? `<td class="font-mono-num text-xs">
+                    <div>${S().rp(o.hpp_avg)}</div>
+                    ${m.marginPct !== null ? `<div class="text-[11px] font-bold text-emerald-600">+${m.marginPct}% Margin</div>` : ''}
+                  </td>` : ''}
+                  <td class="font-mono-num text-xs">
+                    <div class="font-bold text-blue-600">${S().rp(o.harga_umum)}</div>
+                    <div class="text-[11px]" style="color:var(--ons-text-soft)">Mbr: ${S().rp(o.harga_member || o.harga_umum)}</div>
+                  </td>
+                  <td>${actionButtons(o)}</td>
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
         </div>
-      </div>
+      </div>`)}
     </div>`;
   }
 
   global.setMasterSearch = (v) => { masterSearchQ = v; global.renderActiveView(); };
   global.setMasterGol = (g) => { masterFilterGol = g; global.renderActiveView(); };
+  global.setMasterStokFilter = (f) => { masterFilterStok = f || 'SEMUA'; global.renderActiveView(); };
+  global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; global.renderActiveView(); };
+  global.setMasterViewMode = (m) => { masterViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
+  global.resetMasterFilter = () => { masterFilterGol = ''; masterFilterStok = 'SEMUA'; masterSearchQ = ''; masterSortBy = 'NAMA'; global.renderActiveView(); };
+
+  global.openObatDetailModal = (idObat) => {
+    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
+    if (!o) return;
+    const m = buildObatMeta(o);
+    const seeCost = S().canSeeFinancialCost();
+    const batches = (S().AppState.stokBatch || [])
+      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF')
+      .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
+        <div>
+          <div class="flex flex-wrap items-center gap-1.5 mb-1">
+            ${S().bpomBadge(o.golongan_bpom)}
+            <span class="font-mono-num px-2 py-0.5 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.id_obat)}</span>
+            ${m.isCold ? `<span class="badge-bpom bpom-terbatas">COLD CHAIN 2-8&deg;C</span>` : ''}
+          </div>
+          <h3 class="font-extrabold text-base">${S().esc(o.nama_dagang)}</h3>
+          <p style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('&bull; ' + S().esc(o.kekuatan)) : ''}</p>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div style="color:var(--ons-text-soft)">Stok Total</div>
+          <div class="text-base font-extrabold font-mono-num" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div style="color:var(--ons-text-soft)">Harga Umum</div>
+          <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(o.harga_umum)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div style="color:var(--ons-text-soft)">Member / PRB</div>
+          <div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(o.harga_member || o.harga_umum)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div style="color:var(--ons-text-soft)">${seeCost ? 'HPP Rata-Rata' : 'Batas Min. Stok'}</div>
+          <div class="text-base font-extrabold font-mono-num">${seeCost ? S().rp(o.hpp_avg) : (m.min + ' ' + S().esc(o.satuan_dasar))}</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl border" style="border-color:var(--ons-border)">
+        <div><b>Kode KFA:</b> <span class="font-mono-num">${S().esc(o.kode_kfa || '-')}</span></div>
+        <div><b>NIE BPOM:</b> <span class="font-mono-num">${S().esc(o.nie_bpom || '-')}</span></div>
+        <div><b>Lokasi Rak:</b> <span class="font-mono-num">${S().esc(o.rak_lokasi || '-')}</span></div>
+        <div><b>Suhu Simpan:</b> ${S().esc(o.suhu_simpan || 'Suhu Ruang')}</div>
+        <div class="sm:col-span-2"><b>Konversi Satuan:</b> 1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}</div>
+      </div>
+
+      <div>
+        <div class="font-bold mb-1.5">Daftar Batch Aktif FEFO (${batches.length})</div>
+        <div class="ons-table-wrap max-h-44 overflow-y-auto">
+          <table class="ons-table">
+            <thead><tr><th>No. Batch</th><th>Kadaluarsa</th><th>Sisa Qty</th><th>Rak</th></tr></thead>
+            <tbody>
+              ${batches.length ? batches.map((b) => {
+                const days = S().daysUntil(b.tgl_kadaluarsa);
+                return `<tr>
+                  <td class="font-mono-num font-bold">${S().esc(b.no_batch)}</td>
+                  <td class="font-mono-num ${days <= 90 ? 'text-red-600 font-bold' : ''}">${S().esc(b.tgl_kadaluarsa)} (${days}h)</td>
+                  <td class="font-mono-num font-bold">${Number(b.qty_sisa || 0)} ${S().esc(o.satuan_dasar)}</td>
+                  <td class="font-mono-num">${S().esc(b.rak_penyimpanan || o.rak_lokasi || '-')}</td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="4" class="text-center" style="color:var(--ons-text-soft)">Stok batch kosong — segera lakukan PO ke PBF.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button onclick="ONSStore.closeModal();navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs">Buka Modul Gudang &rarr;</button>
+        <div class="flex gap-2">
+          <button onclick="window.printCode128Obat('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs">Cetak Barcode</button>
+          ${seeCost ? `<button onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-xs">Edit Produk</button>` : ''}
+        </div>
+      </div>
+    </div>`, '680px');
+  };
 
   global.exportMasterObat = (fmt) => {
     const seeCost = S().canSeeFinancialCost();
@@ -933,6 +1189,7 @@
       return `${o.nama_dagang} (${q} ${o.satuan_dasar})`;
     }).join(', ') || 'Paket Reguler Apotek';
     try {
+      const prof = S().getStoreProfile();
       const res = await API().callApi('doc.createDraft', {
         kode_templat: 'SP_BPOM_5_GOL',
         judul: 'SP Defecta — ' + pbfName + ' (' + new Date().toLocaleDateString('id-ID') + ')',
@@ -940,9 +1197,9 @@
           GOLONGAN_SP: 'REGULER & PREKURSOR',
           NAMA_PBF: pbfName,
           ALAMAT_PBF: 'Gudang Farmasi Terdaftar CDOB',
-          NAMA_APJ: 'apt. Siti Rahma, S.Farm',
-          NO_SIPA: '19920412/SIPA_35.78/2025/1042',
-          NAMA_APOTEK: 'Apotek ONS Farma Enterprise',
+          NAMA_APJ: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
+          NO_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
+          NAMA_APOTEK: prof.nama_usaha || 'Apotek ONS Farma',
           DAFTAR_PESANAN: ringkasan
         }
       }, { isWrite: true });

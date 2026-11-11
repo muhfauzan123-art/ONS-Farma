@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="theme-color" content="#09202A"/>
-  <title>Apotek ONS Farma Enterprise v12.0</title>
+  <title>Apotek ONS Farma Enterprise v13.2</title>
   <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
@@ -69,109 +69,190 @@
         sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
         moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
         logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
-        truck: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>'
+        truck: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+        pill: '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
+        receipt: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/>',
+        chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+        shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+        doc: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/>',
+        clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'
       };
 
       function svgIcon(name, extraClass) {
         return `<svg viewBox="0 0 24 24" aria-hidden="true" class="ons-nav-svg ${extraClass || ''}">${SVG_ICONS[name] || SVG_ICONS.home}</svg>`;
       }
 
-      // Arsitektur Menu & Sub-Menu Apotek Digital v12.0
+      // Arsitektur Menu Ringkas v13.0: 5 Seksi Bersih, 16 Modul Utama + Sub-Tab Kontekstual
       const MENU_TREE = [
         {
-          id: 'grp-home',
-          label: 'Beranda & KPI',
-          icon: 'home',
-          directView: 'dashboard',
-          kw: 'beranda pusat komando dashboard kpi ringkasan kepatuhan'
-        },
-        {
-          id: 'grp-pos',
-          label: 'Penjualan & POS',
-          icon: 'pos',
-          badgeKey: 'omniNew',
-          badgeTone: 'info',
-          children: [
-            { viewId: 'pos', subTab: 'kasir', label: 'Kasir POS FEFO', kw: 'kasir jual scan barcode f2 split poin diskon etiket checkout' },
-            { viewId: 'pos', subTab: 'riwayat', label: 'Riwayat Nota & Retur PIN', kw: 'riwayat nota penjualan cetak ulang struk rincian void retur pin' },
-            { viewId: 'pos', subTab: 'online', label: 'Antrean Online di POS', kw: 'order online pos keranjang web wa', badgeKey: 'omniPending', badgeTone: 'info' },
-            { viewId: 'omnichannel', subTab: 'SEMUA', label: 'Omnichannel Delivery Hub', kw: 'omnichannel delivery kurir etalase publik', badgeKey: 'omniNew', badgeTone: 'info' },
-            { viewId: 'tutup-shift', subTab: '', label: 'Tutup Shift & Denominasi Kas', kw: 'tutup shift z-report kasir pecahan uang rekonsiliasi pin' }
+          id: 'sect-main',
+          label: 'Utama & Penjualan',
+          items: [
+            {
+              viewId: 'dashboard', label: 'Beranda & KPI', icon: 'home',
+              desc: 'Ringkasan omzet harian, stok kritis, kepatuhan BPOM & pintasan cepat.',
+              kw: 'beranda pusat komando dashboard kpi ringkasan kepatuhan'
+            },
+            {
+              viewId: 'pos', label: 'Kasir & Riwayat POS', icon: 'pos', badgeKey: 'omniPending', badgeTone: 'info',
+              desc: 'Transaksi kasir FEFO cepat, cetak struk/etiket, riwayat nota & retur PIN.',
+              kw: 'kasir pos fefo jual barcode f2 riwayat nota void retur',
+              tabs: [
+                { subTab: 'kasir', label: 'Kasir POS FEFO', kw: 'kasir jual scan barcode f2 split poin diskon etiket' },
+                { subTab: 'riwayat', label: 'Riwayat Nota & Void', kw: 'riwayat nota penjualan cetak ulang rincian void retur pin' },
+                { subTab: 'online', label: 'Order Online di POS', kw: 'order online web wa masuk ke kasir' }
+              ]
+            },
+            {
+              viewId: 'omnichannel', label: 'Order Online & Kurir', icon: 'truck', badgeKey: 'omniNew', badgeTone: 'info',
+              desc: 'Kelola pesanan E-Apotek publik, WhatsApp apotek & penugasan kurir.',
+              kw: 'omnichannel delivery kurir etalase publik whatsapp order'
+            },
+            {
+              viewId: 'tutup-shift', label: 'Tutup Shift & Kas', icon: 'clock',
+              desc: 'Hitung pecahan kas laci kasir, selisih setoran & serah terima shift.',
+              kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi'
+            }
           ]
         },
         {
-          id: 'grp-inv',
-          label: 'Inventaris & PBF',
-          icon: 'inventory',
-          badgeKey: 'invAlerts',
-          badgeTone: 'danger',
-          children: [
-            { viewId: 'gudang', subTab: 'batch', label: 'Stok Batch FEFO & Recall', kw: 'gudang batch ed kadaluarsa karantina recall bpom', badgeKey: 'nearEd', badgeTone: 'danger' },
-            { viewId: 'gudang', subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'kartu stok mutasi masuk keluar bpom xlsx' },
-            { viewId: 'gudang', subTab: 'coldchain', label: 'Monitor Chiller 2-8°C', kw: 'cold chain chiller suhu kulkas vaksin insulin alarm' },
-            { viewId: 'gudang', subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] },
-            { viewId: 'obat', subTab: '', label: 'Master Obat KFA BPOM', kw: 'master obat kfa nie bpom harga jual beli code128' },
-            { viewId: 'defecta', subTab: 'order', label: 'Smart Defecta & SP BPOM', kw: 'defecta stok minimum days of stock surat pesanan sp pbf', badgeKey: 'lowStock', badgeTone: '' },
-            { viewId: 'defecta', subTab: 'supplier', label: 'Direktori Supplier PBF CDOB', kw: 'supplier pbf cdob sla termin kontak wa tambah edit' },
-            { viewId: 'faktur', subTab: 'daftar', label: 'Daftar Faktur & Hutang PBF', kw: 'faktur pembelian penerimaan barang hutang pbf' },
-            { viewId: 'faktur', subTab: 'input', label: 'Input Faktur GRN & OCR', kw: 'input faktur grn multi item ocr parser batch masuk' },
-            { viewId: 'faktur', subTab: 'retur', label: 'Retur Near-ED BAR-PBF', kw: 'retur barang pbf bar near ed kadaluarsa' }
+          id: 'sect-inv',
+          label: 'Gudang & Pengadaan',
+          items: [
+            {
+              viewId: 'gudang', label: 'Gudang, Suhu & Opname', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
+              desc: 'Stok batch FEFO, kartu stok BPOM, monitor chiller 2-8°C & stock opname.',
+              kw: 'gudang stok batch fefo kartu stok chiller suhu cold chain opname',
+              tabs: [
+                { subTab: 'batch', label: 'Stok Batch & Recall', kw: 'batch fefo near ed kadaluarsa karantina recall' },
+                { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'kartu stok mutasi masuk keluar bpom xlsx' },
+                { subTab: 'coldchain', label: 'Monitor Chiller 2-8°C', kw: 'cold chain chiller kulkas suhu vaksin insulin' },
+                { subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] }
+              ]
+            },
+            {
+              viewId: 'obat', label: 'Master Katalog Obat', icon: 'pill',
+              desc: 'Database produk KFA, NIE BPOM, multi-satuan, harga & label barcode Code128.',
+              kw: 'master obat kfa nie bpom harga jual beli code128'
+            },
+            {
+              viewId: 'defecta', label: 'Defecta & Supplier PBF', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
+              desc: 'Analisis stok minimum, buat SP 5 golongan BPOM & kelola PBF CDOB.',
+              kw: 'defecta surat pesanan sp supplier pbf cdob sla',
+              tabs: [
+                { subTab: 'order', label: 'Smart Defecta & SP', kw: 'defecta stok minimum surat pesanan pbf' },
+                { subTab: 'supplier', label: 'Direktori Supplier PBF', kw: 'supplier pbf cdob termin kontak tambah edit' }
+              ]
+            },
+            {
+              viewId: 'faktur', label: 'Faktur Masuk & Retur', icon: 'receipt',
+              desc: 'Input Multi-Item GRN / OCR faktur masuk, daftar hutang & retur BAR-PBF.',
+              kw: 'faktur pbf grn multi item ocr hutang retur bar',
+              tabs: [
+                { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf' },
+                { subTab: 'input', label: 'Input GRN & OCR', kw: 'input faktur grn multi item ocr batch masuk' },
+                { subTab: 'retur', label: 'Retur BAR-PBF', kw: 'retur barang pbf near ed kadaluarsa' }
+              ]
+            }
           ]
         },
         {
-          id: 'grp-clin',
-          label: 'Layanan Klinis & CRM',
-          icon: 'clinical',
-          badgeKey: 'erxPending',
-          badgeTone: 'info',
-          children: [
-            { viewId: 'klinis', subTab: 'soap', label: 'Skrining Resep & SOAP FHIR', kw: 'klinis soap pio pto satusehat fhir skrining resep' },
-            { viewId: 'klinis', subTab: 'racikan', label: 'Kalkulator Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru cetak' },
-            { viewId: 'klinis', subTab: 'meso', label: 'Monitoring Efek Samping (MESO)', kw: 'naranjo meso efek samping obat rotd bpom' },
-            { viewId: 'eresep-prb', subTab: 'erx', label: 'Antrean E-Resep APJ', kw: 'e-resep dokter mitra pin apj validasi pos', badgeKey: 'erxPending', badgeTone: 'info' },
-            { viewId: 'eresep-prb', subTab: 'prb', label: 'Pasien PRB & Skrining', kw: 'prb kronis refill bpjs skrining gds sparkline wa' },
-            { viewId: 'crm-wa', subTab: 'kontak', label: 'Direktori CRM & Opt-Out', kw: 'crm kontak pasien whatsapp 08 62 opt out' },
-            { viewId: 'crm-wa', subTab: 'blast', label: 'Broadcast WA Terjadwal', kw: 'broadcast blast whatsapp edukasi reminder kontrol' },
-            { viewId: 'crm-wa', subTab: 'antrean', label: 'Antrean Notif Fonnte', kw: 'antrean notifikasi wa fonnte email log' }
+          id: 'sect-clin',
+          label: 'Klinis & Pelanggan',
+          items: [
+            {
+              viewId: 'klinis', label: 'Pelayanan Klinis Apoteker', icon: 'clinical',
+              desc: 'Skrining resep & SOAP SATUSEHAT, kalkulator racikan/etiket & MESO Naranjo.',
+              kw: 'klinis apoteker soap pio satusehat racikan etiket meso naranjo',
+              tabs: [
+                { subTab: 'soap', label: 'Skrining & SOAP FHIR', kw: 'soap pio pto skrining resep satusehat' },
+                { subTab: 'racikan', label: 'Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru' },
+                { subTab: 'meso', label: 'MESO (Naranjo)', kw: 'meso naranjo efek samping rotd bpom' }
+              ]
+            },
+            {
+              viewId: 'eresep-prb', label: 'E-Resep & Pasien PRB', icon: 'shield', badgeKey: 'erxPending', badgeTone: 'info',
+              desc: 'Validasi E-Resep dokter mitra via PIN SIPA & pantau terapi kronis PRB.',
+              kw: 'e-resep erx pin apj prb kronis bpjs skrining',
+              tabs: [
+                { subTab: 'erx', label: 'Antrean E-Resep APJ', kw: 'e-resep dokter mitra pin apj validasi pos' },
+                { subTab: 'prb', label: 'Monitoring Pasien PRB', kw: 'prb kronis refill gds sparkline wa' }
+              ]
+            },
+            {
+              viewId: 'crm-wa', label: 'CRM & Broadcast WA', icon: 'chat',
+              desc: 'Direktori pelanggan WhatsApp, broadcast terjadwal & status antrean Fonnte.',
+              kw: 'crm kontak pelanggan whatsapp broadcast blast fonnte opt out',
+              tabs: [
+                { subTab: 'kontak', label: 'Direktori Kontak CRM', kw: 'kontak crm pasien wa 08 62 opt out' },
+                { subTab: 'blast', label: 'Broadcast WA Massal', kw: 'broadcast blast wa reminder edukasi' },
+                { subTab: 'antrean', label: 'Antrean Notifikasi', kw: 'antrean log wa fonnte email' }
+              ]
+            }
           ]
         },
         {
-          id: 'grp-fin',
-          label: 'Keuangan & Tagihan',
-          icon: 'finance',
-          children: [
-            { viewId: 'finance', subTab: 'pnl', label: 'Laporan Laba-Rugi (P&L)', kw: 'keuangan laba rugi pnl omzet cogs margin valuasi aset xlsx' },
-            { viewId: 'finance', subTab: 'jurnal', label: 'Buku Kas & Lock Periode', kw: 'jurnal kas petty cash masuk keluar lock periode' },
-            { viewId: 'finance', subTab: 'hutang', label: 'Pelunasan Hutang PBF', kw: 'hutang pbf cicil bayar faktur outflow 4 minggu' },
-            { viewId: 'finance', subTab: 'pajak', label: 'Pajak PPN/PPh & Slip Gaji', kw: 'pajak ppn 11 pph final slip gaji karyawan a4' },
-            { viewId: 'billing', subTab: 'tagihan', label: 'Tagihan & Kwitansi QR', kw: 'tagihan prb kwitansi hmac piutang grupbayar' },
-            { viewId: 'billing', subTab: 'verifikasi', label: 'Verifikasi Transfer & QRIS', kw: 'verifikasi bukti transfer qris 1 klik' },
-            { viewId: 'billing', subTab: 'potongan', label: 'Potongan & Subsidi PRB', kw: 'potongan diskon beasiswa subsidi pasien' },
-            { viewId: 'billing', subTab: 'reminder', label: 'Reminder Jatuh Tempo WA', kw: 'reminder pengingat jatuh tempo h-3 h-0' }
+          id: 'sect-fin',
+          label: 'Keuangan & Kepatuhan',
+          items: [
+            {
+              viewId: 'finance', label: 'Keuangan, Hutang & Pajak', icon: 'finance',
+              desc: 'Laba-Rugi P&L, buku kas & kunci periode, pelunasan PBF, pajak & slip gaji A4.',
+              kw: 'keuangan laba rugi pnl jurnal kas lock hutang pajak ppn slip gaji',
+              tabs: [
+                { subTab: 'pnl', label: 'Laba-Rugi (P&L)', kw: 'laba rugi pnl omzet hpp margin valuasi aset xlsx' },
+                { subTab: 'jurnal', label: 'Jurnal & Kunci Periode', kw: 'jurnal petty cash kunci periode tutup buku' },
+                { subTab: 'hutang', label: 'Hutang Faktur PBF', kw: 'hutang pbf cicil bayar faktur' },
+                { subTab: 'pajak', label: 'Pajak & Slip Gaji A4', kw: 'pajak ppn pph slip gaji karyawan a4' }
+              ]
+            },
+            {
+              viewId: 'billing', label: 'Tagihan & Kwitansi QR', icon: 'receipt',
+              desc: 'Terbit tagihan multi-bulan, verifikasi transfer, potongan & pengingat WA.',
+              kw: 'tagihan pembayaran piutang kwitansi qr hmac verifikasi potongan reminder',
+              tabs: [
+                { subTab: 'tagihan', label: 'Daftar Tagihan', kw: 'tagihan prb piutang terbit multi bulan' },
+                { subTab: 'verifikasi', label: 'Verifikasi Bayar', kw: 'verifikasi bukti transfer qris grupbayar' },
+                { subTab: 'potongan', label: 'Potongan & Subsidi', kw: 'potongan diskon beasiswa subsidi' },
+                { subTab: 'reminder', label: 'Pengingat Jatuh Tempo', kw: 'reminder wa jatuh tempo' }
+              ]
+            },
+            {
+              viewId: 'sipnap', label: 'Laporan SIPNAP & Pareto', icon: 'report',
+              desc: 'Pelaporan 8 kolom Narkotika/Psikotropika Kemenkes, Pareto ABC & Dead Stock.',
+              kw: 'sipnap kemenkes narkotika psikotropika pareto abc dead stock',
+              tabs: [
+                { subTab: 'narkotika', label: 'SIPNAP Kemenkes', kw: 'sipnap narkotika psikotropika oot' },
+                { subTab: 'pareto', label: 'Pareto ABC & WHO', kw: 'pareto abc fast slow moving who' },
+                { subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock permintaan tertolak lost sales' }
+              ]
+            },
+            {
+              viewId: 'doc-engine', label: 'Dokumen Resmi QR', icon: 'doc',
+              desc: 'Terbitkan surat resmi apotek ber-QR HMAC & pindai templat {{Tag}}.',
+              kw: 'doc engine surat resmi bpom qr verifikasi ttd pin templat',
+              tabs: [
+                { subTab: 'surat', label: 'Terbitkan Surat QR', kw: 'buat surat resmi tanda tangan pin qr' },
+                { subTab: 'pindai', label: 'Pemindai Templat {{Tag}}', kw: 'templat google docs placeholder' }
+              ]
+            }
           ]
         },
         {
-          id: 'grp-rep',
-          label: 'Laporan & Surat Resmi',
-          icon: 'report',
-          children: [
-            { viewId: 'sipnap', subTab: 'narkotika', label: 'SIPNAP Kemenkes 8 Kolom', kw: 'sipnap kemenkes narkotika psikotropika oot mutasi' },
-            { viewId: 'sipnap', subTab: 'pareto', label: 'Pareto ABC & Indikator WHO', kw: 'pareto abc fast slow moving antibiotik who' },
-            { viewId: 'sipnap', subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock slow moving permintaan tertolak lost sales' },
-            { viewId: 'doc-engine', subTab: 'surat', label: 'Arsip & TTD Surat Resmi', kw: 'doc engine surat resmi kuasa bpom qr verifikasi ttd pin' },
-            { viewId: 'doc-engine', subTab: 'pindai', label: 'Templat & Pemindai {{Tag}}', kw: 'templat google docs sheets placeholder pemindai' }
-          ]
-        },
-        {
-          id: 'grp-sys',
-          label: 'Pengaturan & Perangkat',
-          icon: 'settings',
-          children: [
-            { viewId: 'settings', subTab: 'akun', label: 'Pengguna, Sandi & PIN', kw: 'pengaturan akun user kasir apj sipa ganti sandi pin' },
-            { viewId: 'settings', subTab: 'struk', label: 'Desain Struk Thermal 58/80', kw: 'template struk printer thermal 58mm 80mm escpos qr' },
-            { viewId: 'settings', subTab: 'vault', label: 'Brankas Rahasia & Migrasi', kw: 'script properties fonnte vault migrasi spreadsheet backup drive' },
-            { viewId: 'settings', subTab: 'audit', label: 'Log Audit Sistem', kw: 'log audit immutable keamanan' },
-            { viewId: 'mobile-preview', subTab: '', label: 'PWA, Etalase Publik & Printer', kw: 'pwa mobile preview etalase katalog bluetooth printer' }
+          id: 'sect-sys',
+          label: 'Pengaturan',
+          items: [
+            {
+              viewId: 'settings', label: 'Pengaturan Usaha & Sistem', icon: 'settings',
+              desc: 'Konfirmasi profil pemilik & tempat usaha (foto/logo), akun staf, struk thermal & API.',
+              kw: 'pengaturan profil pemilik usaha foto logo sia sipa akun sandi pin struk thermal script properties audit',
+              tabs: [
+                { subTab: 'profil', label: 'Profil Pemilik & Usaha', kw: 'profil pemilik anissa tempat usaha foto logo sia sipa konfirmasi' },
+                { subTab: 'akun', label: 'Pengguna & Akses', kw: 'akun user kasir apj sipa ganti sandi pin' },
+                { subTab: 'struk', label: 'Desain Struk Thermal', kw: 'desain struk thermal 58mm 80mm escpos qr' },
+                { subTab: 'vault', label: 'API, Backup & Audit', kw: 'script properties fonnte vault migrasi backup drive log audit' }
+              ]
+            }
           ]
         }
       ];
@@ -193,159 +274,182 @@
       function getAllowedMenuTree() {
         const tree = [];
         const curRole = ONSStore.getRole();
-        MENU_TREE.forEach((grp) => {
-          if (grp.directView) {
-            if (ONSStore.canAccessView(grp.directView)) tree.push(grp);
-            return;
-          }
-          const kids = (grp.children || []).filter((c) => {
-            if (!ONSStore.canAccessView(c.viewId)) return false;
-            if (c.roles && !c.roles.includes(curRole)) return false;
-            return true;
+        MENU_TREE.forEach((sect) => {
+          const allowedItems = [];
+          (sect.items || []).forEach((item) => {
+            if (!ONSStore.canAccessView(item.viewId)) return;
+            if (item.roles && !item.roles.includes(curRole)) return;
+            const filteredTabs = (item.tabs || []).filter((t) => !t.roles || t.roles.includes(curRole));
+            allowedItems.push(Object.assign({}, item, { tabs: filteredTabs }));
           });
-          if (kids.length) tree.push(Object.assign({}, grp, { children: kids }));
+          if (allowedItems.length) tree.push(Object.assign({}, sect, { items: allowedItems }));
         });
         return tree;
       }
 
-      function loadOpenGroups() {
-        try {
-          const parsed = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) || 'null');
-          if (Array.isArray(parsed)) return new Set(parsed);
-        } catch (e) {}
-        return new Set(['grp-pos', 'grp-inv']);
-      }
-      const openGroupsSet = loadOpenGroups();
       let sidebarCollapsed = localStorage.getItem(SIDEBAR_MINI_KEY) === '1';
+      let openSubmenus = new Set([ONSStore.AppState.activeView || 'dashboard']);
+      try {
+        const savedSubs = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) || 'null');
+        if (Array.isArray(savedSubs)) openSubmenus = new Set(savedSubs);
+      } catch (e) {}
 
-      function saveOpenGroups() {
-        try { localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify(Array.from(openGroupsSet))); } catch (e) {}
+      function persistOpenSubmenus() {
+        try { localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify(Array.from(openSubmenus))); } catch (e) {}
       }
 
-      function isSubItemActive(item, grp) {
-        const st = ONSStore.AppState;
-        if (st.activeView !== item.viewId) return false;
-        if (!item.subTab) return true;
-        const parent = grp || getActiveParentGroup();
-        if (parent && parent.children) {
-          const sameViewCount = parent.children.filter((c) => c.viewId === item.viewId).length;
-          if (sameViewCount <= 1) return true;
+      window.toggleMenuSub = function (viewId) {
+        if (!viewId) return;
+        const willOpen = !openSubmenus.has(viewId);
+        if (willOpen) openSubmenus.add(viewId);
+        else openSubmenus.delete(viewId);
+        persistOpenSubmenus();
+
+        const wraps = document.querySelectorAll('[data-subwrap-id="' + viewId + '"]');
+        const carets = document.querySelectorAll('[data-subcaret-id="' + viewId + '"]');
+        if (wraps && wraps.length) {
+          wraps.forEach((w) => w.classList.toggle('is-open', willOpen));
+          carets.forEach((c) => c.setAttribute('aria-expanded', willOpen ? 'true' : 'false'));
+        } else {
+          window.syncNavHighlight();
         }
-        const curSub = (st.subTabs && st.subTabs[item.viewId]) || '';
-        return !curSub ? item === parent?.children?.[0] : curSub === item.subTab;
-      }
+      };
 
-      function getActiveParentGroup() {
+      window.toggleAllSubmenus = function (expandAll) {
+        const tree = getAllowedMenuTree();
+        const tabViews = [];
+        tree.forEach((s) => s.items.forEach((it) => { if ((it.tabs || []).length > 1) tabViews.push(it.viewId); }));
+        const hasOpen = openSubmenus.size > 0;
+        const nextExpand = typeof expandAll === 'boolean' ? expandAll : !hasOpen;
+        openSubmenus = new Set(nextExpand ? tabViews : []);
+        persistOpenSubmenus();
+        window.syncNavHighlight();
+      };
+
+      window.onSelectMenuItem = function (viewId, defSub, hasTabs) {
+        if (hasTabs) {
+          openSubmenus.add(viewId);
+          persistOpenSubmenus();
+        }
+        window.navigateView(viewId, defSub || '');
+      };
+
+      function findActiveSectionAndItem() {
         const st = ONSStore.AppState;
         const tree = getAllowedMenuTree();
-        for (const grp of tree) {
-          if (grp.directView && grp.directView === st.activeView) return grp;
-          if ((grp.children || []).some((c) => c.viewId === st.activeView)) return grp;
+        for (const sect of tree) {
+          for (const item of sect.items) {
+            if (item.viewId === st.activeView) return { sect, item };
+          }
         }
-        return tree[0] || null;
+        const firstSect = tree[0] || { id: 'sect-main', label: 'Utama', items: [] };
+        return { sect: firstSect, item: firstSect.items[0] || null };
       }
 
-      function getActiveSubItem(grp) {
-        if (!grp || grp.directView) return null;
-        const st = ONSStore.AppState;
-        const curSub = (st.subTabs && st.subTabs[st.activeView]) || '';
-        return grp.children.find((c) => c.viewId === st.activeView && (!c.subTab || c.subTab === curSub))
-          || grp.children.find((c) => c.viewId === st.activeView)
-          || null;
-      }
-
-      function renderMenuTreeHtml(isDrawer) {
+      function renderMenuTreeHtml() {
         const tree = getAllowedMenuTree();
         const badges = getMenuBadges();
-        const activeGrp = getActiveParentGroup();
-        if (activeGrp && !activeGrp.directView) openGroupsSet.add(activeGrp.id);
+        const st = ONSStore.AppState;
+        const curView = st.activeView;
+        const allTabViewsCount = tree.reduce((n, s) => n + s.items.filter((i) => (i.tabs || []).length > 1).length, 0);
+        const topToggle = allTabViewsCount > 0 ? `<div class="flex items-center justify-between px-2 pb-1 text-[10px] text-slate-400 ons-hide-collapsed">
+          <span class="uppercase tracking-wider font-bold">Navigasi Modul</span>
+          <button type="button" onclick="window.toggleAllSubmenus()" class="px-1.5 py-0.5 rounded hover:bg-white/10 text-sky-300 font-semibold transition-colors" title="Buka atau tutup semua sub-menu">${openSubmenus.size > 0 ? 'Tutup Sub' : 'Buka Semua'}</button>
+        </div>` : '';
 
-        return tree.map((grp) => {
-          if (grp.directView) {
-            const isAct = ONSStore.AppState.activeView === grp.directView;
-            return `<div class="ons-menu-group">
-              <button onclick="navigateView('${grp.directView}')" title="${ONSStore.esc(grp.label)}" class="ons-menu-parent ${isAct ? 'has-active' : ''}">
-                <span class="flex items-center gap-2.5 min-w-0">${svgIcon(grp.icon)}<span class="truncate ons-hide-collapsed">${ONSStore.esc(grp.label)}</span></span>
-              </button>
-            </div>`;
-          }
-          const isExpanded = openGroupsSet.has(grp.id);
-          const hasAct = activeGrp && activeGrp.id === grp.id;
-          const bVal = grp.badgeKey ? Number(badges[grp.badgeKey] || 0) : 0;
-          const firstChild = grp.children[0];
-
-          return `<div class="ons-menu-group">
-            <button type="button"
-              aria-expanded="${isExpanded ? 'true' : 'false'}"
-              title="${ONSStore.esc(grp.label)}"
-              onclick="window.onClickParentMenu('${grp.id}','${firstChild ? firstChild.viewId : ''}','${firstChild ? firstChild.subTab : ''}')"
-              class="ons-menu-parent ${hasAct ? 'has-active' : ''}">
-              <span class="flex items-center gap-2.5 min-w-0">
-                ${svgIcon(grp.icon)}
-                <span class="truncate ons-hide-collapsed">${ONSStore.esc(grp.label)}</span>
-              </span>
-              <span class="flex items-center gap-1.5 ons-hide-collapsed shrink-0">
-                ${bVal > 0 ? `<span class="ons-nav-badge ${grp.badgeTone || ''}">${bVal}</span>` : ''}
-                ${svgIcon('chevron', 'ons-chevron')}
-              </span>
-            </button>
-            <div class="ons-submenu-wrap ${isExpanded ? '' : 'is-closed'}">
-              <div class="ons-submenu-list">
-                ${grp.children.map((sub) => {
-                  const subAct = isSubItemActive(sub, grp);
-                  const sbVal = sub.badgeKey ? Number(badges[sub.badgeKey] || 0) : 0;
-                  return `<button type="button"
-                    data-nav-id="${sub.viewId}"
-                    data-sub-tab="${sub.subTab || ''}"
-                    onclick="navigateView('${sub.viewId}','${sub.subTab || ''}')"
-                    class="ons-submenu-btn ${subAct ? 'active' : ''}">
-                    <span class="flex items-center gap-2 min-w-0">
-                      <span class="ons-submenu-dot"></span>
-                      <span class="truncate">${ONSStore.esc(sub.label)}</span>
-                    </span>
-                    ${sbVal > 0 ? `<span class="ons-nav-badge ${sub.badgeTone || ''}">${sbVal}</span>` : ''}
-                  </button>`;
-                }).join('')}
-              </div>
+        return topToggle + tree.map((sect) => `
+          <div class="ons-menu-section">
+            <div class="ons-nav-section-title">
+              <span>${ONSStore.esc(sect.label)}</span>
             </div>
-          </div>`;
-        }).join('');
+            <div class="space-y-0.5">
+              ${sect.items.map((item) => {
+                const isAct = curView === item.viewId;
+                const bVal = item.badgeKey ? Number(badges[item.badgeKey] || 0) : 0;
+                const tabs = item.tabs || [];
+                const hasTabs = tabs.length > 1;
+                const defSub = tabs.length ? tabs[0].subTab : '';
+                const curSub = (st.subTabs && st.subTabs[item.viewId]) || defSub;
+                const isOpen = hasTabs && openSubmenus.has(item.viewId);
+
+                return `<div class="ons-nav-group">
+                  <div class="ons-nav-row ${isAct ? 'active' : ''}">
+                    <button type="button"
+                      data-nav-id="${item.viewId}"
+                      title="${ONSStore.esc(item.label)}"
+                      onclick="window.onSelectMenuItem('${item.viewId}','${defSub}',${hasTabs})"
+                      class="ons-nav-row-btn">
+                      ${svgIcon(item.icon)}
+                      <span class="truncate ons-hide-collapsed">${ONSStore.esc(item.label)}</span>
+                    </button>
+                    ${bVal > 0 ? `<span class="ons-nav-badge ons-hide-collapsed ${item.badgeTone || ''}">${bVal}</span>` : ''}
+                    ${hasTabs ? `<button type="button"
+                      data-subcaret-id="${item.viewId}"
+                      aria-label="Buka atau tutup sub-menu ${ONSStore.esc(item.label)}"
+                      aria-expanded="${isOpen ? 'true' : 'false'}"
+                      onclick="window.toggleMenuSub('${item.viewId}')"
+                      class="ons-nav-caret ons-hide-collapsed"
+                      title="${isOpen ? 'Tutup sub-menu' : 'Buka sub-menu'} (${tabs.length})">
+                      ${svgIcon('chevron', 'ons-chevron-sub')}
+                    </button>` : ''}
+                  </div>
+                  ${hasTabs ? `<div data-subwrap-id="${item.viewId}" class="ons-nav-subwrap ${isOpen ? 'is-open' : ''}">
+                    <div class="ons-nav-subinner">
+                      <div class="ons-submenu-list">
+                        ${tabs.map((t) => {
+                          const subAct = isAct && curSub === t.subTab;
+                          return `<button type="button"
+                            data-subnav-id="${item.viewId}:${t.subTab}"
+                            onclick="navigateView('${item.viewId}','${t.subTab}')"
+                            class="ons-submenu-btn ${subAct ? 'active' : ''}">
+                            <span class="flex items-center gap-2 min-w-0">
+                              <span class="ons-submenu-dot"></span>
+                              <span class="truncate">${ONSStore.esc(t.label)}</span>
+                            </span>
+                          </button>`;
+                        }).join('')}
+                      </div>
+                    </div>
+                  </div>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`).join('');
       }
 
       function renderSubnavBarHtml() {
-        const grp = getActiveParentGroup();
-        if (!grp) return '';
-        const activeSub = getActiveSubItem(grp);
-        const badges = getMenuBadges();
-        const trail = activeSub
-          ? `<span>${ONSStore.esc(grp.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeSub.label)}</strong>`
-          : `<strong style="color:var(--ons-text-main)">${ONSStore.esc(grp.label)}</strong>`;
+        const { sect, item } = findActiveSectionAndItem();
+        if (!item) return '';
+        const st = ONSStore.AppState;
+        const tabs = item.tabs || [];
+        const curSub = (st.subTabs && st.subTabs[item.viewId]) || (tabs[0] && tabs[0].subTab) || '';
+        const activeTab = tabs.find((t) => t.subTab === curSub) || tabs[0] || null;
 
-        const chipsHtml = (grp.children && grp.children.length > 1) ? `
-          <div class="ons-subnav-ribbon mt-2" role="navigation" aria-label="Sub-menu cepat ${ONSStore.esc(grp.label)}">
-            ${grp.children.map((sub) => {
-              const act = isSubItemActive(sub, grp);
-              const b = sub.badgeKey ? Number(badges[sub.badgeKey] || 0) : 0;
-              return `<button type="button" onclick="navigateView('${sub.viewId}','${sub.subTab || ''}')" class="ons-subnav-chip ${act ? 'active' : ''}">
-                <span>${ONSStore.esc(sub.label)}</span>
-                ${b > 0 ? `<span class="font-mono-num text-[10px] px-1.5 py-0.2 rounded-full ${act ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600'}">${b}</span>` : ''}
-              </button>`;
+        const trail = activeTab
+          ? `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <span>${ONSStore.esc(item.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeTab.label)}</strong>`
+          : `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(item.label)}</strong>`;
+
+        const chipsHtml = tabs.length > 1 ? `
+          <div class="ons-subnav-ribbon mt-2" role="navigation" aria-label="Sub-tab ${ONSStore.esc(item.label)}">
+            ${tabs.map((t) => {
+              const act = curSub === t.subTab;
+              return `<button type="button" onclick="navigateView('${item.viewId}','${t.subTab}')" class="ons-subnav-chip ${act ? 'active' : ''}">${ONSStore.esc(t.label)}</button>`;
             }).join('')}
-          </div>` : '';
+          </div>` : (item.desc ? `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ONSStore.esc(item.desc)}</div>` : '');
 
         return `<div class="flex flex-wrap items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
           <div class="flex items-center flex-wrap gap-1">${trail}</div>
           <div class="hidden sm:flex items-center gap-2 text-[11px]">
-            <span>Pintasan: <kbd class="px-1 py-0.5 rounded border font-mono-num">F2</kbd> Kasir &bull; <kbd class="px-1 py-0.5 rounded border font-mono-num">Ctrl+K</kbd> Cari Sub-Menu</span>
+            <span>Pintasan: <kbd class="px-1 py-0.5 rounded border font-mono-num">F2</kbd> Kasir &bull; <kbd class="px-1 py-0.5 rounded border font-mono-num">Ctrl+K</kbd> Cari Cepat</span>
           </div>
         </div>${chipsHtml}`;
       }
 
       window.syncNavHighlight = function () {
         const sideMount = document.getElementById('sidebarMenuMount');
-        if (sideMount) sideMount.innerHTML = renderMenuTreeHtml(false);
+        if (sideMount) sideMount.innerHTML = renderMenuTreeHtml();
         const drawerMount = document.getElementById('drawerMenuMount');
-        if (drawerMount) drawerMount.innerHTML = renderMenuTreeHtml(true);
+        if (drawerMount) drawerMount.innerHTML = renderMenuTreeHtml();
         const subBar = document.getElementById('workspaceSubnavBar');
         if (subBar) subBar.innerHTML = renderSubnavBarHtml();
         const curView = ONSStore.AppState.activeView;
@@ -355,21 +459,8 @@
         });
       };
 
-      window.onClickParentMenu = function (grpId, firstViewId, firstSubTab) {
-        if (sidebarCollapsed) {
-          sidebarCollapsed = false;
-          localStorage.setItem(SIDEBAR_MINI_KEY, '0');
-          document.getElementById('desktopSidebar')?.classList.remove('collapsed');
-          openGroupsSet.add(grpId);
-          saveOpenGroups();
-          if (firstViewId) navigateView(firstViewId, firstSubTab || '');
-          else window.syncNavHighlight();
-          return;
-        }
-        if (openGroupsSet.has(grpId)) openGroupsSet.delete(grpId);
-        else openGroupsSet.add(grpId);
-        saveOpenGroups();
-        window.syncNavHighlight();
+      window.onClickParentMenu = function (_grpId, firstViewId, firstSubTab) {
+        if (firstViewId) navigateView(firstViewId, firstSubTab || '');
       };
 
       window.toggleSidebarCollapsed = function () {
@@ -382,21 +473,24 @@
       window.openMobileDrawer = function () {
         if (document.getElementById('mobileNavDrawer')) return;
         const st = ONSStore.AppState;
+        const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
+        const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
+        const usahaNama = prof.nama_usaha || 'ONS FARMA v13.0';
         const dr = document.createElement('div');
         dr.id = 'mobileNavDrawer';
         dr.className = 'ons-drawer-backdrop md:hidden';
         dr.innerHTML = `<div class="ons-drawer-panel" role="dialog" aria-label="Menu Apotek">
           <div class="flex items-center justify-between gap-2 pb-3 mb-2 border-b border-white/10">
             <div class="flex items-center gap-2.5 min-w-0">
-              <img src="./icons/ons-farma-app-icon.png" alt="Logo" class="w-9 h-9 rounded-lg"/>
+              <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover bg-white shrink-0"/>
               <div class="min-w-0">
-                <div class="font-bold text-sm text-white truncate">ONS FARMA v12.0</div>
+                <div class="font-bold text-sm text-white truncate">${ONSStore.esc(usahaNama)}</div>
                 <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
               </div>
             </div>
             <button onclick="window.closeMobileDrawer()" aria-label="Tutup Menu" class="p-2 rounded-lg text-slate-300 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center">${svgIcon('close')}</button>
           </div>
-          <div id="drawerMenuMount" class="flex-1 space-y-1">${renderMenuTreeHtml(true)}</div>
+          <div id="drawerMenuMount" class="flex-1 space-y-1">${renderMenuTreeHtml()}</div>
           <div class="pt-3 mt-3 border-t border-white/10 space-y-2 text-xs">
             <div class="px-2 text-slate-300 truncate"><b>${ONSStore.esc((st.user && st.user.nama_lengkap) || '')}</b></div>
             <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn text-red-300 hover:bg-red-500/20">${svgIcon('logout')}<span>Keluar Sesi</span></button>
@@ -418,6 +512,8 @@
         }
         const st = ONSStore.AppState;
         st.activeView = viewId;
+        openSubmenus.add(viewId);
+        persistOpenSubmenus();
         if (subTab !== undefined && subTab !== '') {
           if (!st.subTabs) st.subTabs = {};
           st.subTabs[viewId] = subTab;
@@ -482,6 +578,7 @@
 
       window.applyBootPayload = function (data) {
         const st = ONSStore.AppState;
+        if (data.store_profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(data.store_profile);
         st.masterObat = data.master_obat || [];
         st.stokBatch = data.stok_batch || [];
         st.members = data.members || [];
@@ -576,14 +673,16 @@
       window.openCommandPalette = function () {
         const st = ONSStore.AppState;
         const flatNav = [];
-        getAllowedMenuTree().forEach((grp) => {
-          if (grp.directView) {
-            flatNav.push({ viewId: grp.directView, subTab: '', grp: 'Utama', label: grp.label, icon: grp.icon, kw: grp.kw || '' });
-          } else {
-            (grp.children || []).forEach((c) => {
-              flatNav.push({ viewId: c.viewId, subTab: c.subTab || '', grp: grp.label, label: c.label, icon: grp.icon, kw: c.kw || '' });
-            });
-          }
+        getAllowedMenuTree().forEach((sect) => {
+          (sect.items || []).forEach((item) => {
+            if (item.tabs && item.tabs.length) {
+              item.tabs.forEach((t) => {
+                flatNav.push({ viewId: item.viewId, subTab: t.subTab, grp: item.label, label: t.label, icon: item.icon, kw: `${item.kw || ''} ${t.kw || ''}` });
+              });
+            } else {
+              flatNav.push({ viewId: item.viewId, subTab: '', grp: sect.label, label: item.label, icon: item.icon, kw: item.kw || '' });
+            }
+          });
         });
         ONSStore.openModal(`<div class="p-4 space-y-3">
           <div class="flex items-center gap-2 border-b pb-2" style="border-color:var(--ons-border)">
@@ -638,31 +737,44 @@
 
         const st = ONSStore.AppState;
         st.user = ses.user;
+        const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
+        const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
+        const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+        const fotoPem = prof.foto_pemilik_url || '';
         const alertsCount = buildOperationalAlerts().length;
+        const initials = String((st.user && st.user.nama_lengkap) || 'OF').replace(/^apt\.?\s*/i, '').slice(0, 2).toUpperCase();
 
         root.innerHTML = `
           <div class="min-h-screen flex flex-col md:flex-row">
-            <!-- Sidebar Desktop Menu + Sub-Menu Akordeon v12.0 -->
+            <!-- Sidebar Desktop Menu Terstruktur v13.0 -->
             <aside id="desktopSidebar" class="ons-sidebar ${sidebarCollapsed ? 'collapsed' : ''} shrink-0 p-3 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
               <div>
-                <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-2.5 border-b border-white/10">
+                <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-1.5 border-b border-white/10">
                   <div class="flex items-center gap-2.5 min-w-0">
-                    <img src="./icons/ons-farma-app-icon.png" alt="Logo" class="w-9 h-9 rounded-lg shrink-0"/>
+                    <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover bg-white p-0.5 shrink-0"/>
                     <div class="min-w-0 ons-hide-collapsed">
-                      <div class="font-bold text-sm text-white truncate">ONS FARMA v12.0</div>
+                      <div class="font-bold text-sm text-white truncate">${ONSStore.esc(usahaNama)}</div>
                       <div class="text-[11px] text-sky-300 truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
                     </div>
                   </div>
-                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 shrink-0">
-                    ${svgIcon('collapse')}
+                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 shrink-0 transition-colors">
+                    ${svgIcon('collapse', 'ons-collapse-ico')}
                   </button>
                 </div>
                 <nav id="sidebarMenuMount" aria-label="Menu Utama Apotek" class="space-y-1">
-                  ${renderMenuTreeHtml(false)}
+                  ${renderMenuTreeHtml()}
                 </nav>
               </div>
               <div class="pt-3 mt-3 border-t border-white/10 space-y-2 text-xs">
-                <div class="px-2 text-slate-300 truncate ons-hide-collapsed"><b>${ONSStore.esc(st.user.nama_lengkap)}</b></div>
+                <button type="button" onclick="navigateView('settings','profil')" class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-white/10 text-left ons-hide-collapsed" title="Lihat & Konfirmasi Profil Pemilik">
+                  ${(fotoPem && ONSStore.getRole() === 'Pemilik')
+                    ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-8 h-8 rounded-full object-cover border border-sky-400 shrink-0"/>`
+                    : `<span class="w-8 h-8 rounded-full bg-blue-600/80 text-white font-bold text-[11px] flex items-center justify-center shrink-0">${ONSStore.esc(initials)}</span>`}
+                  <div class="min-w-0">
+                    <div class="text-slate-100 font-semibold truncate">${ONSStore.esc(st.user.nama_lengkap)}</div>
+                    <div class="text-[10px] text-emerald-300 truncate">${prof.terkonfirmasi === 'YA' ? 'Profil Terkonfirmasi' : 'Lengkapi Profil Usaha'}</div>
+                  </div>
+                </button>
                 <button onclick="logoutUser()" title="Keluar Sesi" class="ons-nav-btn text-red-300 hover:bg-red-500/20">
                   ${svgIcon('logout')}
                   <span class="ons-hide-collapsed">Keluar Sesi</span>
@@ -674,10 +786,10 @@
             <div class="flex-1 flex flex-col min-w-0">
               <header class="h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
                 <div class="flex items-center gap-2 min-w-0">
-                  <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu & Sub-Menu" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
-                  <img src="./icons/ons-farma-app-icon.png" class="w-7 h-7 rounded md:hidden"/>
+                  <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
+                  <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v12.0 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v13.2 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>

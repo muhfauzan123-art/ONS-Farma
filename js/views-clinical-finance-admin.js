@@ -23,7 +23,8 @@
   let shiftDenomCounts = { 100000: 0, 50000: 0, 20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0 };
   let activeBillingTab = 'tagihan'; // tagihan | verifikasi | potongan | reminder
   let activeDocTab = 'surat'; // surat | pindai
-  let settingsTab = 'akun'; // akun | struk | vault | audit | semua
+  let settingsTab = 'profil'; // profil | akun | struk | vault | audit
+  let profileMediaDraft = { foto: null, logo: null };
   let billingCache = { tagihan: [], pending: [], history: [], potongan: [] };
   let docCache = { templates: [], docs: [], pejabat: [] };
   let mobilePreviewBp = '390px';
@@ -176,8 +177,11 @@
               <div class="col-span-2"><label class="font-semibold block mb-1">Aturan Pakai</label><input id="etAturan" class="ons-input" value="${S().esc(etiketDraft.aturan)}" oninput="window.setEtiketDraft('aturan', this.value)"/></div>
             </div>
             <div id="klinisEtiketBox" class="ons-etiket-box ${etiketDraft.jenis} space-y-1 text-center text-xs">
-              <div class="font-extrabold tracking-wide">APOTEK ONS FARMA ENTERPRISE</div>
-              <div class="text-[10px]">APA: apt. Siti Rahma, S.Farm &bull; SIPA: 19920412/SIPA_35.78/2025/1042</div>
+              ${(() => {
+                const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+                return `<div class="font-extrabold tracking-wide">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+                  <div class="text-[10px]">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>`;
+              })()}
               <div class="border-y border-slate-800 py-1 font-bold">${S().esc(etiketDraft.pasien)} &bull; ${new Date().toLocaleDateString('id-ID')}</div>
               <div class="font-bold text-sm">${S().esc(etiketDraft.obat)}</div>
               <div class="font-extrabold underline">${S().esc(etiketDraft.aturan)}</div>
@@ -327,8 +331,9 @@
     const o = (document.getElementById('etObat') || {}).value || etiketDraft.obat;
     const a = (document.getElementById('etAturan') || {}).value || etiketDraft.aturan;
     const bg = jenis === 'BIRU' ? '#E0F2FE' : '#FFFFFF';
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     S().printHtmlZone(`<div style="width:55mm;border:2px solid #000;background:${bg};padding:6px;font-family:Arial,sans-serif;font-size:10px;">
-      <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">APOTEK ONS FARMA<br/><span style="font-size:8px;font-weight:normal;">SIPA: 19920412/SIPA_35.78/2025/1042</span></div>
+      <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/><span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span></div>
       <div style="margin:4px 0;"><b>Pasien:</b> ${S().esc(p)}<br/><b>Obat:</b> ${S().esc(o)}</div>
       <div style="border:1px dashed #000;padding:4px;font-weight:bold;text-align:center;font-size:11px;">${S().esc(a)}</div>
       <div style="text-align:center;font-size:8px;margin-top:4px;">${jenis === 'BIRU' ? '*** OBAT LUAR / TIDAK UNTUK DITELAN ***' : 'Semoga Lekas Sembuh'}</div>
@@ -490,7 +495,22 @@
                     <td>
                       <div class="flex flex-wrap gap-1">
                         <button onclick="window.openSkriningModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">+ Skrining</button>
-                        ${m.no_hp ? `<a target="_blank" href="https://wa.me/${m.no_hp}?text=${encodeURIComponent('Halo ' + m.nama_pasien + ', obat rutin ' + m.penyakit_kronis + ' Anda segera habis pada ' + (m.tgl_habis_obat || 'minggu ini') + '. Hasil skrining terakhir: ' + (lastSkr ? ('TD ' + lastSkr.td + ', GDS ' + lastSkr.gds + ', BMI ' + lastSkr.bmi) : 'Terpantau baik') + '. Hubungi Apotek ONS Farma.')}" class="ons-btn ons-btn-emerald text-xs py-1 px-2">WA Kartu</a>` : ''}
+                        ${(() => {
+                          if (!m.no_hp) return '';
+                          const profPrb = S().getStoreProfile ? S().getStoreProfile() : {};
+                          const apotekNm = profPrb.nama_usaha || 'Apotek ONS Farma';
+                          const eApotekUrl = global.location.origin + global.location.pathname + '?katalog=1';
+                          const waBody = [
+                            'Halo *' + m.nama_pasien + '*,',
+                            'Pengingat Refill Obat Rutin (' + (m.penyakit_kronis || m.program_prb) + ') dari *' + apotekNm + '*.',
+                            'Jadwal habis obat: *' + (m.tgl_habis_obat || 'minggu ini') + '*.',
+                            'Skrining terakhir: ' + (lastSkr ? ('TD ' + lastSkr.td + ', GDS ' + lastSkr.gds + ', BMI ' + lastSkr.bmi) : 'Terpantau baik') + '.',
+                            'Pesan ulang online langsung: ' + eApotekUrl,
+                            'Apoteker: ' + (profPrb.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')
+                          ].join('\n');
+                          const hrefWa = S().buildWaUrl ? S().buildWaUrl(m.no_hp, waBody) : ('https://wa.me/' + m.no_hp + '?text=' + encodeURIComponent(waBody));
+                          return `<a target="_blank" rel="noopener" href="${S().esc(hrefWa)}" class="ons-btn ons-btn-emerald text-xs py-1 px-2">WA Refill (Gratis)</a>`;
+                        })()}
                       </div>
                     </td>
                   </tr>`;
@@ -954,9 +974,13 @@
     const pot = Number(document.getElementById('sgPot').value || 0);
     const per = document.getElementById('sgPer').value;
     const bersih = Math.max(0, pokok + tunj - pot);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     S().printHtmlZone(`<div style="font-family:Arial,sans-serif;border:2px solid #09202A;padding:24px;max-width:680px;margin:auto;font-size:12px;">
-      <div style="border-bottom:2px solid #09202A;padding-bottom:8px;margin-bottom:14px;display:flex;justify-content:space-between;">
-        <div><b style="font-size:16px;">APOTEK ONS FARMA ENTERPRISE</b><br/>SLIP GAJI PEGAWAI &bull; PERIODE ${S().esc(per)}</div>
+      <div style="border-bottom:2px solid #09202A;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="${S().esc(prof.logo_usaha_url || './icons/ons-farma-app-icon.png')}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;"/>
+          <div><b style="font-size:16px;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</b><br/><span style="font-size:10px;color:#555;">${S().esc(prof.alamat_usaha || '')}</span><br/>SLIP GAJI PEGAWAI &bull; PERIODE ${S().esc(per)}</div>
+        </div>
         <div style="text-align:right;">Dicetak: ${new Date().toLocaleDateString('id-ID')}</div>
       </div>
       <p><b>Nama:</b> ${S().esc(nama)}<br/><b>Jabatan:</b> ${S().esc(jab)}</p>
@@ -966,7 +990,7 @@
         <tr><td>Potongan BPJS / Kasbon</td><td style="text-align:right;color:#DC2626;">-${S().rp(pot)}</td></tr>
         <tr style="background:#f1f5f9;font-weight:bold;font-size:14px;"><td>THP / Gaji Bersih Diterima</td><td style="text-align:right;">${S().rp(bersih)}</td></tr>
       </table>
-      <div style="margin-top:28px;display:flex;justify-content:space-between;"><div>Diterima Oleh,<br/><br/><br/>(${S().esc(nama)})</div><div>Pemilik Apotek ONS Farma,<br/><br/><br/>(___________________)</div></div>
+      <div style="margin-top:28px;display:flex;justify-content:space-between;"><div>Diterima Oleh,<br/><br/><br/>(${S().esc(nama)})</div><div>Pemilik ${S().esc(prof.nama_usaha || 'Apotek ONS Farma')},<br/><br/><br/><b>${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</b></div></div>
     </div>`);
   };
 
@@ -1080,9 +1104,34 @@
         </div>
       </div>` : ''}
 
-      ${activeBillingTab === 'reminder' ? `<div class="ons-card p-4 space-y-3 text-xs">
-        <p>Mengantrikan pengingat WhatsApp otomatis H-3 &amp; H-0 jatuh tempo ke tabel <code>ReminderLog</code> dan Fonnte API secara asynchronous tanpa memblokir antrean transaksi.</p>
-        <button onclick="window.runWaReminderNow()" class="ons-btn ons-btn-emerald">Kirim / Antrikan WA Reminder Tagihan Aktif Sekarang</button>
+      ${activeBillingTab === 'reminder' ? `<div class="ons-card p-5 space-y-4 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Pengingat Tagihan Pasien — Manual WA Gratis &amp; Antrean Fonnte</h3>
+            <p style="color:var(--ons-text-soft)">Klik <b>Kirim WA Manual (Gratis)</b> untuk langsung membuka chat WhatsApp pasien tanpa biaya token API.</p>
+          </div>
+          <button onclick="window.runWaReminderNow()" class="ons-btn ons-btn-ghost text-xs">Antrikan via Fonnte API (Opsional)</button>
+        </div>
+        <div class="space-y-2">
+          ${(() => {
+            const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+            const namaApotek = prof.nama_usaha || 'Apotek ONS Farma';
+            const openBills = list.filter((t) => t.Status !== 'LUNAS' && t.Status !== 'BATAL');
+            if (!openBills.length) return '<div class="p-4 text-center rounded-xl border" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Semua tagihan periode ini sudah lunas.</div>';
+            return openBills.map((t) => {
+              const sisa = Math.max(0, Number(t.Netto || 0) - Number(t.Terbayar || 0));
+              const msg = `Halo Kak ${t.Nama_Pasien}, mengingatkan tagihan ${namaApotek} (${t.Deskripsi || t.ID}) sebesar ${S().rp(sisa)} dengan jatuh tempo ${t.JatuhTempo || '-'}. Terima kasih.`;
+              const href = S().buildWaUrl ? S().buildWaUrl(t.HP_Pasien || '', msg) : ('https://wa.me/?text=' + encodeURIComponent(msg));
+              return `<div class="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <div>
+                  <div class="font-bold">${S().esc(t.Nama_Pasien)} <span class="font-mono-num" style="color:var(--ons-text-soft)">(${S().esc(t.HP_Pasien || 'Pilih kontak di WA')})</span></div>
+                  <div style="color:var(--ons-text-soft)">${S().esc(t.Deskripsi)} &bull; Sisa: <b class="text-red-600 font-mono-num">${S().rp(sisa)}</b> &bull; JT: ${S().esc(t.JatuhTempo || '-')}</div>
+                </div>
+                <a target="_blank" rel="noopener" href="${S().esc(href)}" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 font-bold">Kirim WA Manual (Gratis)</a>
+              </div>`;
+            }).join('');
+          })()}
+        </div>
       </div>` : ''}
     </div>`;
   }
@@ -1189,11 +1238,12 @@
 
   global.openKwitansiQrModal = (noKw, nom, sig) => {
     const validSig = sig || btoa(noKw).slice(0, 12).toUpperCase();
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const verifyLink = `${global.location.origin}${global.location.pathname}#kwitansi=${encodeURIComponent(noKw)}&sig=${encodeURIComponent(validSig)}`;
     S().openModal(`<div class="p-6 text-center space-y-3">
       <div class="p-5 border-2 rounded-xl text-left space-y-3 bg-white text-black">
         <div class="flex justify-between items-start border-b pb-2">
-          <div><div class="font-bold text-base">KWITANSI PEMBAYARAN RESMI</div><div class="text-xs">Apotek ONS Farma Enterprise</div></div>
+          <div class="flex items-center gap-2"><img src="${S().esc(prof.logo_usaha_url || './icons/ons-farma-app-icon.png')}" class="w-8 h-8 rounded object-contain"/><div><div class="font-bold text-base">KWITANSI PEMBAYARAN RESMI</div><div class="text-xs">${S().esc(prof.nama_usaha || 'Apotek ONS Farma')} &bull; ${S().esc(prof.alamat_usaha || '')}</div></div></div>
           <div class="font-mono-num text-xs font-bold">${S().esc(noKw)}</div>
         </div>
         <div class="text-sm">Telah diterima pembayaran sejumlah: <b class="font-mono-num text-lg">${S().rp(nom)}</b></div>
@@ -1336,9 +1386,10 @@
           if (Array.isArray(parsed) && parsed.length) tags = parsed;
         } catch (e) {}
       }
+      const prof = S().getStoreProfile();
       return tags.map((tg) => {
         const clean = String(tg).replace(/^\{+|\}+$/g, '').split('|')[0];
-        const defVal = clean.includes('APJ') ? 'apt. Siti Rahma, S.Farm' : (clean.includes('SIPA') ? '19920412/SIPA_35.78/2025/1042' : (clean.includes('PBF') ? 'PT Bina San Prima' : ''));
+        const defVal = clean.includes('APJ') ? (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi') : (clean.includes('SIPA') ? (prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042') : (clean.includes('APOTEK') ? (prof.nama_usaha || 'Apotek ONS Farma') : (clean.includes('PBF') ? 'PT Bina San Prima' : '')));
         return `<div><label class="font-semibold block mb-1">${S().esc(clean)}</label><input data-doc-tag="${S().esc(clean)}" class="ons-input" value="${S().esc(defVal)}" placeholder="Isi ${S().esc(clean)}..."/></div>`;
       }).join('');
     };
@@ -1708,31 +1759,248 @@
   };
 
   /**
-   * W-13: Pengaturan Secrets Vault Masked, Audit Diff Viewer, Backup & Migrasi Database (/gas-migrasi-database)
+   * W-13: Pengaturan Konfirmasi Pemilik & Usaha (Foto & Logo), Akun, Struk Thermal, Secrets Vault & Audit
    */
   let settingsCache = { secrets: {}, audit: [], users: [] };
   global.setSettingsTab = (t) => {
-    settingsTab = t || 'akun';
+    settingsTab = t || 'profil';
     if (S().AppState.subTabs) S().AppState.subTabs.settings = settingsTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
 
+  function getOwnerInitials(name) {
+    const clean = String(name || 'AF').replace(/\b(apt|dr|drs|hj|h)\.?\s+/gi, '').trim();
+    const parts = clean.split(/\s+/).filter(Boolean);
+    return ((parts[0] && parts[0][0]) || 'A').toUpperCase() + ((parts[1] && parts[1][0]) || '').toUpperCase();
+  }
+
+  function renderProfileMediaInner(kind, url, ownerName) {
+    const cleanUrl = String(url || '').trim();
+    if (cleanUrl) {
+      return `<img src="${S().esc(cleanUrl)}" alt="${kind === 'foto' ? 'Foto Pemilik' : 'Logo Usaha'}"/>`;
+    }
+    if (kind === 'foto') {
+      return `<span>${S().esc(getOwnerInitials(ownerName))}</span>`;
+    }
+    return `<span class="text-xs font-extrabold" style="color:var(--ons-primary)">LOGO</span>`;
+  }
+
+  function renderProfileUploadCard(cfg) {
+    const frameCls = cfg.kind === 'foto' ? 'ons-avatar-frame' : 'ons-logo-frame';
+    return `<div class="ons-upload-zone space-y-2.5">
+      <div class="flex items-center gap-3.5">
+        <div id="${cfg.previewId}" class="${frameCls}">${renderProfileMediaInner(cfg.kind, cfg.currentUrl, cfg.ownerName)}</div>
+        <div class="min-w-0 flex-1 space-y-1">
+          <div class="font-bold text-xs">${S().esc(cfg.title)}</div>
+          <p class="text-[11px] leading-snug" style="color:var(--ons-text-soft)">${S().esc(cfg.hint)}</p>
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            ${cfg.canEdit ? `<label class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 cursor-pointer">
+              <span>${S().esc(cfg.uploadLabel)}</span>
+              <input type="file" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="window.handleProfileImageUpload('${cfg.kind}', this)"/>
+            </label>
+            <button type="button" onclick="window.resetProfileMedia('${cfg.kind}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">${S().esc(cfg.resetLabel)}</button>` : ''}
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-semibold block mb-1" style="color:var(--ons-text-soft)">Atau Tempel URL Gambar / Data URI</label>
+        <input id="${cfg.inputId}" ${cfg.canEdit ? '' : 'readonly'} class="ons-input text-[11px] font-mono-num" value="${S().esc(cfg.currentUrl)}" oninput="window.refreshProfileLivePreview('${cfg.kind}', this.value)" placeholder="https://... atau unggah dari tombol di atas"/>
+      </div>
+    </div>`;
+  }
+
+  function renderProfileTabHtml(prof, canEdit) {
+    const fotoUrl = profileMediaDraft.foto !== null ? profileMediaDraft.foto : (prof.foto_pemilik_url || '');
+    const logoUrl = profileMediaDraft.logo !== null ? profileMediaDraft.logo : (prof.logo_usaha_url || '');
+    const merged = Object.assign({}, prof, { foto_pemilik_url: fotoUrl, logo_usaha_url: logoUrl });
+    const comp = S().getProfileCompleteness(merged);
+    const isConfirmed = String(merged.terkonfirmasi || '').toUpperCase() === 'YA';
+    const ro = canEdit ? '' : 'readonly';
+    const field = (id, label, val, opts) => {
+      const o = opts || {};
+      return `<div>
+        <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">${label}${o.req ? ' *' : ''}</label>
+        <input id="${id}" ${ro} class="ons-input text-xs ${o.mono ? 'font-mono-num' : ''}" value="${S().esc(val || '')}" placeholder="${S().esc(o.ph || '')}" oninput="window.refreshProfileKopPreview()"/>
+      </div>`;
+    };
+
+    return `<div class="space-y-4">
+      <!-- Identity Hero + Profile Completeness -->
+      <div class="ons-identity-hero p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-4 min-w-0">
+            <div class="ons-avatar-frame">${renderProfileMediaInner('foto', fotoUrl, merged.nama_pemilik)}</div>
+            <div class="ons-logo-frame">${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}</div>
+            <div class="min-w-0 space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">Profil Resmi Apotek</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isConfirmed ? 'bg-emerald-400/20 text-emerald-200 border border-emerald-300/30' : 'bg-amber-400/20 text-amber-200 border border-amber-300/30'}">
+                  ${isConfirmed ? 'Terkonfirmasi Resmi' : 'Menunggu Konfirmasi'}
+                </span>
+              </div>
+              <h2 class="text-base md:text-lg font-extrabold tracking-tight truncate">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</h2>
+              <p class="text-xs text-sky-100 truncate">Pemilik / APJ: <b>${S().esc(merged.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</b></p>
+              <p class="text-[11px] text-sky-200/80 font-mono-num truncate">SIA: ${S().esc(merged.no_sia || '-')} &bull; SIPA: ${S().esc(merged.sipa_pemilik || '-')}</p>
+            </div>
+          </div>
+
+          <div class="w-full sm:w-64 p-3 rounded-xl bg-white/10 border border-white/15 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between font-bold">
+              <span>Kelengkapan Data</span>
+              <span class="font-mono-num">${comp.pct}% (${comp.done}/${comp.total})</span>
+            </div>
+            <div class="ons-progress-track"><div class="ons-progress-fill" style="width:${comp.pct}%"></div></div>
+            <div class="text-[11px] text-sky-100/90">
+              ${merged.dikonfirmasi_pada ? `Dikonfirmasi: ${S().formatTgl(merged.dikonfirmasi_pada)} (${S().esc(merged.dikonfirmasi_oleh || merged.nama_pemilik)})` : 'Lengkapi foto, logo & legalitas lalu klik Konfirmasi & Simpan.'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Foto Pemilik & Logo Usaha -->
+      <div class="ons-card p-5 space-y-3 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Foto Pemilik &amp; Logo Tempat Usaha</h3>
+            <p style="color:var(--ons-text-soft)">Otomatis dikompres &amp; disinkronkan ke Sidebar, Layar Login, Etiket Obat, Struk Thermal, Slip Gaji PDF, &amp; Katalog E-Apotek.</p>
+          </div>
+          ${!canEdit ? `<span class="badge-bpom bpom-keras">Mode Baca Saja (Khusus Pemilik / APJ)</span>` : ''}
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          ${renderProfileUploadCard({
+            kind: 'foto',
+            previewId: 'profPhotoPreview',
+            inputId: 'profFotoUrl',
+            title: 'Foto Pemilik / Apoteker Penanggung Jawab',
+            hint: 'Format JPG/PNG/WebP. Otomatis disesuaikan ke ukuran avatar ringan agar cepat dimuat.',
+            uploadLabel: 'Pilih Foto',
+            resetLabel: 'Hapus Foto',
+            currentUrl: fotoUrl,
+            ownerName: merged.nama_pemilik,
+            canEdit
+          })}
+          ${renderProfileUploadCard({
+            kind: 'logo',
+            previewId: 'profLogoPreview',
+            inputId: 'profLogoUrl',
+            title: 'Logo Resmi Tempat Usaha / Apotek',
+            hint: 'Tampil di Header Aplikasi, Struk Kasir, Etiket Resep, Slip Gaji & Etalase Publik.',
+            uploadLabel: 'Upload Logo',
+            resetLabel: 'Reset Default',
+            currentUrl: logoUrl,
+            ownerName: merged.nama_usaha,
+            canEdit
+          })}
+        </div>
+      </div>
+
+      <!-- Data Identitas Pemilik & Tempat Usaha -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 text-xs">
+        <div class="ons-card p-5 xl:col-span-5 space-y-3">
+          <div>
+            <h3 class="font-bold text-sm">1. Konfirmasi Data Pemilik &amp; APJ</h3>
+            <p style="color:var(--ons-text-soft)">Otomatis menyinkronkan akun Pemilik &amp; pejabat penanda tangan Mesin Surat.</p>
+          </div>
+          <div class="space-y-2.5">
+            ${field('profNamaPemilik', 'Nama Lengkap Pemilik / Apoteker', merged.nama_pemilik, { req: true })}
+            ${field('profJabatanPemilik', 'Jabatan Resmi', merged.jabatan_pemilik)}
+            ${field('profSipaPemilik', 'Nomor SIPA', merged.sipa_pemilik, { mono: true, req: true })}
+            ${field('profStraPemilik', 'Nomor STRA', merged.stra_pemilik, { mono: true })}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              ${field('profWaPemilik', 'No. HP / WhatsApp Pemilik', merged.wa_pemilik, { mono: true })}
+              ${field('profEmailPemilik', 'Email Pemilik', merged.email_pemilik)}
+            </div>
+            ${field('profNpwpPemilik', 'NPWP Pemilik (Opsional)', merged.npwp_pemilik, { mono: true })}
+          </div>
+        </div>
+
+        <div class="ons-card p-5 xl:col-span-7 space-y-3">
+          <div>
+            <h3 class="font-bold text-sm">2. Konfirmasi Data Tempat Usaha &amp; Legalitas Apotek</h3>
+            <p style="color:var(--ons-text-soft)">Identitas outlet resmi untuk faktur PBF, laporan pajak/SIPNAP, &amp; portal pasien.</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            ${field('profNamaUsaha', 'Nama Tempat Usaha / Apotek', merged.nama_usaha, { req: true })}
+            ${field('profNoSia', 'Nomor SIA (Surat Izin Apotek)', merged.no_sia, { mono: true, req: true })}
+            ${field('profNibOss', 'NIB OSS RBA', merged.nib_oss, { mono: true })}
+            ${field('profNpwpUsaha', 'NPWP Badan / Usaha', merged.npwp_usaha, { mono: true })}
+            <div>
+              <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Status Pajak (PKP)</label>
+              <select id="profStatusPkp" ${canEdit ? '' : 'disabled'} onchange="window.refreshProfileKopPreview()" class="ons-select text-xs">
+                <option value="PKP (PPN 11%)" ${String(merged.status_pkp || '').includes('PKP') && !String(merged.status_pkp || '').includes('Non') ? 'selected' : ''}>PKP (PPN 11%)</option>
+                <option value="Non-PKP / UMKM Final" ${String(merged.status_pkp || '').includes('Non') ? 'selected' : ''}>Non-PKP / UMKM Final</option>
+              </select>
+            </div>
+            ${field('profZonaWaktu', 'Zona Waktu Operasional', merged.zona_waktu)}
+          </div>
+          ${field('profAlamatUsaha', 'Alamat Lengkap Tempat Usaha', merged.alamat_usaha, { req: true })}
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            ${field('profKota', 'Kota / Kabupaten', merged.kota, { req: true })}
+            ${field('profKodePos', 'Kode Pos', merged.kode_pos, { mono: true })}
+            ${field('profJamOps', 'Jam Operasional', merged.jam_operasional)}
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            ${field('profTelpUsaha', 'Telepon Toko', merged.telepon_usaha, { mono: true })}
+            ${field('profWaUsaha', 'WhatsApp Resmi (628...)', merged.wa_usaha, { mono: true })}
+            ${field('profEmailUsaha', 'Email Apotek', merged.email_usaha)}
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Kop Surat & Konfirmasi Simpan -->
+      <div class="ons-card p-5 space-y-4 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-bold text-sm">3. Pratinjau Kop Resmi &amp; Konfirmasi Data</h3>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Menampilkan pratinjau langsung pada Etiket, Kwitansi, &amp; Dokumen Resmi.</span>
+        </div>
+        <div id="profKopPreviewBox" class="p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="flex items-center gap-3">
+            <div class="ons-logo-frame">${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}</div>
+            <div>
+              <div class="font-extrabold text-sm">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(merged.alamat_usaha || '-')}, ${S().esc(merged.kota || '-')} ${S().esc(merged.kode_pos || '')}</div>
+              <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Telp/WA: ${S().esc(merged.wa_usaha || merged.telepon_usaha || '-')} &bull; SIA: ${S().esc(merged.no_sia || '-')}</div>
+            </div>
+          </div>
+          <div class="text-left sm:text-right">
+            <div class="text-[10px] font-bold uppercase" style="color:var(--ons-text-soft)">Pemilik &amp; Apoteker Penanggung Jawab</div>
+            <div class="font-bold text-xs">${S().esc(merged.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+            <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">SIPA: ${S().esc(merged.sipa_pemilik || '-')}</div>
+          </div>
+        </div>
+
+        ${canEdit ? `<div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
+          <label class="flex items-center gap-2 cursor-pointer font-semibold">
+            <input id="profConfirmChk" type="checkbox" checked class="w-4 h-4 accent-blue-600"/>
+            <span>Saya menyatakan data pemilik, foto/logo, izin SIA/SIPA, &amp; alamat tempat usaha di atas adalah benar dan sah.</span>
+          </label>
+          <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn ons-btn-emerald text-xs px-5 py-2.5 font-bold">Konfirmasi &amp; Simpan Data Resmi</button>
+        </div>` : `<div class="p-3 rounded-xl border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">
+          Hanya peran <b>Pemilik</b> atau <b>APJ</b> yang dapat mengonfirmasi dan mengubah identitas resmi apotek.
+        </div>`}
+      </div>
+    </div>`;
+  }
+
   function renderSettingsView() {
     global.loadSettingsBundle();
     const st = S().AppState;
-    settingsTab = (st.subTabs && st.subTabs.settings) || settingsTab || 'akun';
+    settingsTab = (st.subTabs && st.subTabs.settings) || settingsTab || 'profil';
+    if (!['profil', 'akun', 'struk', 'vault', 'audit'].includes(settingsTab)) settingsTab = 'profil';
     const secrets = settingsCache.secrets || {};
     const audit = settingsCache.audit || [];
     const users = settingsCache.users || [];
-    const isOwner = S().getRole() === 'Pemilik';
-    const showAll = settingsTab === 'semua';
+    const role = S().getRole();
+    const isOwner = role === 'Pemilik';
+    const canEditProfile = role === 'Pemilik' || role === 'APJ';
+    const prof = S().getStoreProfile();
 
     return `<div class="space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-bold">Pengaturan Sistem, Struk Thermal &amp; Migrasi Database</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola akun kasir/APJ, desain struk 58/80mm, Script Properties tersensor, backup Drive, &amp; audit sistem.</p>
+          <h1 class="text-xl font-bold">Pengaturan Apotek, Konfirmasi Identitas &amp; Sistem</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Konfirmasi pemilik, foto/logo usaha, legalitas SIA/SIPA, manajemen akun, desain struk 58/80mm, &amp; audit sistem.</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi / PIN Saya</button>
@@ -1742,14 +2010,16 @@
       </div>
 
       <div class="ons-tab-bar">
+        <button onclick="window.setSettingsTab('profil')" class="ons-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">Identitas Pemilik &amp; Usaha</button>
         <button onclick="window.setSettingsTab('akun')" class="ons-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">Akun, Sandi &amp; PIN (${users.length})</button>
         <button onclick="window.setSettingsTab('struk')" class="ons-tab-btn ${settingsTab === 'struk' ? 'active' : ''}">Desain Struk Thermal</button>
         <button onclick="window.setSettingsTab('vault')" class="ons-tab-btn ${settingsTab === 'vault' ? 'active' : ''}">Brankas Rahasia &amp; Migrasi DB</button>
         <button onclick="window.setSettingsTab('audit')" class="ons-tab-btn ${settingsTab === 'audit' ? 'active' : ''}">Log Audit (${audit.length})</button>
-        <button onclick="window.setSettingsTab('semua')" class="ons-tab-btn ${settingsTab === 'semua' ? 'active' : ''}">Lihat Semua</button>
       </div>
 
-      ${(settingsTab === 'akun' || showAll) ? (isOwner ? `<div class="ons-card p-5 space-y-3 text-xs">
+      ${settingsTab === 'profil' ? renderProfileTabHtml(prof, canEditProfile) : ''}
+
+      ${settingsTab === 'akun' ? (isOwner ? `<div class="ons-card p-5 space-y-3 text-xs">
         <div class="flex flex-wrap justify-between items-center gap-2">
           <div>
             <h3 class="font-bold text-sm">Manajemen Akun Pengguna, Role &amp; Otorisasi PIN (PENGGUNA_CABANG)</h3>
@@ -1775,21 +2045,19 @@
         </div>
       </div>` : `<div class="ons-card p-5 text-xs">Gunakan tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk memperbarui kredensial akun Anda.</div>`) : ''}
 
-      ${(settingsTab === 'vault' || showAll) ? `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <!-- Secrets Vault Masked -->
+      ${settingsTab === 'vault' ? `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
           <h3 class="font-bold text-sm">Brankas Rahasia Script Properties (Read-Back Tersensor)</h3>
           <div class="space-y-2">
-            ${Object.keys(secrets).map((k) => `<div class="flex items-center justify-between gap-2 p-2 rounded border">
+            ${Object.keys(secrets).map((k) => `<div class="flex items-center justify-between gap-2 p-2 rounded border" style="border-color:var(--ons-border)">
               <div><b>${S().esc(k)}</b><div class="font-mono-num" style="color:var(--ons-text-soft)">${S().esc(secrets[k] || '(Belum diatur)')}</div></div>
               <button onclick="window.promptUpdateSecret('${S().esc(k)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Ubah</button>
             </div>`).join('')}
           </div>
         </div>
 
-        <!-- Wizard Migrasi Database Spreadsheet (/gas-migrasi-database) -->
         <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
-          <h3 class="font-bold text-sm">Wizard Migrasi Spreadsheet v9 &rarr; v10 (Aman Tanpa Ubah Sumber)</h3>
+          <h3 class="font-bold text-sm">Wizard Migrasi Spreadsheet v9 &rarr; v13 (Aman Tanpa Ubah Sumber)</h3>
           <p style="color:var(--ons-text-soft)">Membaca spreadsheet lama berbasis header, normalisasi nomor WA <code>628...</code>, &amp; upsert idempoten dengan Dry-Run Preview.</p>
           <input id="migSourceId" class="ons-input font-mono-num" placeholder="Tempel ID Spreadsheet Sumber v9 (contoh: 1BxiMVs0XRA5nFMd...)"/>
           <div class="flex gap-2">
@@ -1800,8 +2068,7 @@
         </div>
       </div>` : ''}
 
-      <!-- Editor Template Struk Thermal (/gas-struk-resi-printer) -->
-      ${(settingsTab === 'struk' || showAll) ? (() => {
+      ${settingsTab === 'struk' ? (() => {
         const tpls = (S().AppState && S().AppState.strukTemplates) || [];
         const curTpl = tpls[0] || {
           kode: 'STRUK_58_DEFAULT',
@@ -1810,13 +2077,13 @@
           template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || ''
         };
         const sampleData = {
-          NAMA_TOKO: 'APOTEK ONS FARMA',
-          ALAMAT_TOKO: 'Jl. Kesehatan Raya No. 88',
-          WA_TOKO: '0811-0000-990',
-          APJ_SIPA: '19920412/SIPA/2025',
+          NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
+          ALAMAT_TOKO: prof.alamat_usaha || 'Jl. Kesehatan Raya No. 88',
+          WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
+          APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
           NOTA: 'INV-PREVIEW-001',
           TANGGAL: new Date().toLocaleDateString('id-ID'),
-          KASIR: 'Budi Santoso',
+          KASIR: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
           PELANGGAN: 'Tn. Bambang (PRB)',
           METODE: 'QRIS',
           CHANNEL: 'Toko Fisik',
@@ -1853,8 +2120,7 @@
         </div>`;
       })() : ''}
 
-      <!-- Audit Log -->
-      ${(settingsTab === 'audit' || showAll) ? `<div class="ons-card p-4">
+      ${settingsTab === 'audit' ? `<div class="ons-card p-4">
         <h3 class="font-bold text-sm mb-3">Log Audit Immutable (Dengan Redaksi Secret Otomatis)</h3>
         <div class="ons-table-wrap">
           <table class="ons-table">
@@ -1874,16 +2140,143 @@
     </div>`;
   }
 
+  global.refreshProfileLivePreview = (kind, rawUrl) => {
+    const clean = String(rawUrl || '').trim();
+    if (kind === 'foto') profileMediaDraft.foto = clean;
+    else profileMediaDraft.logo = clean;
+    const ownerEl = document.getElementById('profNamaPemilik');
+    const usahaEl = document.getElementById('profNamaUsaha');
+    const targetId = kind === 'foto' ? 'profPhotoPreview' : 'profLogoPreview';
+    const box = document.getElementById(targetId);
+    if (box) {
+      box.innerHTML = renderProfileMediaInner(kind, clean, kind === 'foto' ? ((ownerEl && ownerEl.value) || '') : ((usahaEl && usahaEl.value) || ''));
+    }
+    if (typeof global.refreshProfileKopPreview === 'function') global.refreshProfileKopPreview();
+  };
+
+  global.refreshProfileKopPreview = () => {
+    const box = document.getElementById('profKopPreviewBox');
+    if (!box) return;
+    const val = (id, fb) => {
+      const el = document.getElementById(id);
+      return el ? el.value : (fb || '');
+    };
+    const prof = S().getStoreProfile();
+    const logoUrl = val('profLogoUrl', prof.logo_usaha_url);
+    const namaUsaha = val('profNamaUsaha', prof.nama_usaha);
+    const alamat = val('profAlamatUsaha', prof.alamat_usaha);
+    const kota = val('profKota', prof.kota);
+    const kodePos = val('profKodePos', prof.kode_pos);
+    const waUsaha = val('profWaUsaha', prof.wa_usaha) || val('profTelpUsaha', prof.telepon_usaha);
+    const noSia = val('profNoSia', prof.no_sia);
+    const namaPemilik = val('profNamaPemilik', prof.nama_pemilik);
+    const sipa = val('profSipaPemilik', prof.sipa_pemilik);
+    box.innerHTML = `<div class="flex items-center gap-3">
+      <div class="ons-logo-frame">${renderProfileMediaInner('logo', logoUrl, namaUsaha)}</div>
+      <div>
+        <div class="font-extrabold text-sm">${S().esc(namaUsaha || 'Apotek ONS Farma')}</div>
+        <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(alamat || '-')}, ${S().esc(kota || '-')} ${S().esc(kodePos || '')}</div>
+        <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Telp/WA: ${S().esc(waUsaha || '-')} &bull; SIA: ${S().esc(noSia || '-')}</div>
+      </div>
+    </div>
+    <div class="text-left sm:text-right">
+      <div class="text-[10px] font-bold uppercase" style="color:var(--ons-text-soft)">Pemilik &amp; Apoteker Penanggung Jawab</div>
+      <div class="font-bold text-xs">${S().esc(namaPemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+      <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">SIPA: ${S().esc(sipa || '-')}</div>
+    </div>`;
+  };
+
+  global.handleProfileImageUpload = async (kind, inputEl) => {
+    const file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await S().compressImageFile(file, kind === 'foto' ? 220 : 240, 0.82);
+      const urlInput = document.getElementById(kind === 'foto' ? 'profFotoUrl' : 'profLogoUrl');
+      if (urlInput) urlInput.value = dataUrl;
+      global.refreshProfileLivePreview(kind, dataUrl);
+      global.toast((kind === 'foto' ? 'Foto pemilik' : 'Logo usaha') + ' siap — klik Konfirmasi & Simpan untuk menyimpan permanen.', 'ok');
+    } catch (e) {
+      global.toast(e.message || 'Gagal memproses gambar.', 'err');
+    }
+  };
+
+  global.resetProfileMedia = (kind) => {
+    const val = kind === 'logo' ? './icons/ons-farma-app-icon.png' : '';
+    const urlInput = document.getElementById(kind === 'foto' ? 'profFotoUrl' : 'profLogoUrl');
+    if (urlInput) urlInput.value = val;
+    global.refreshProfileLivePreview(kind, val);
+  };
+
+  global.submitStoreProfileForm = async () => {
+    const chk = document.getElementById('profConfirmChk');
+    if (chk && !chk.checked) {
+      global.toast('Centang pernyataan konfirmasi keabsahan data terlebih dahulu.', 'err');
+      return;
+    }
+    const v = (id) => {
+      const el = document.getElementById(id);
+      return el ? String(el.value || '').trim() : '';
+    };
+    const payload = {
+      nama_pemilik: v('profNamaPemilik'),
+      jabatan_pemilik: v('profJabatanPemilik'),
+      sipa_pemilik: v('profSipaPemilik'),
+      stra_pemilik: v('profStraPemilik'),
+      wa_pemilik: v('profWaPemilik'),
+      email_pemilik: v('profEmailPemilik'),
+      npwp_pemilik: v('profNpwpPemilik'),
+      foto_pemilik_url: v('profFotoUrl'),
+      nama_usaha: v('profNamaUsaha'),
+      no_sia: v('profNoSia'),
+      nib_oss: v('profNibOss'),
+      npwp_usaha: v('profNpwpUsaha'),
+      status_pkp: v('profStatusPkp'),
+      alamat_usaha: v('profAlamatUsaha'),
+      kota: v('profKota'),
+      kode_pos: v('profKodePos'),
+      telepon_usaha: v('profTelpUsaha'),
+      wa_usaha: v('profWaUsaha'),
+      email_usaha: v('profEmailUsaha'),
+      jam_operasional: v('profJamOps'),
+      zona_waktu: v('profZonaWaktu'),
+      logo_usaha_url: v('profLogoUrl'),
+      terkonfirmasi: 'YA'
+    };
+    if (!payload.nama_pemilik || !payload.nama_usaha) {
+      global.toast('Nama Pemilik dan Nama Tempat Usaha wajib diisi.', 'err');
+      return;
+    }
+    try {
+      const res = await API().callApi('profil.save', payload, { isWrite: true });
+      const rawProf = (res && (res.profile || res.item)) || (res && res.nama_usaha ? res : null);
+      const saved = S().setStoreProfile(rawProf || payload);
+      if (S().AppState.user && S().AppState.user.role === 'Pemilik') {
+        S().AppState.user.nama_lengkap = saved.nama_pemilik;
+        S().AppState.user.no_sipa = saved.sipa_pemilik;
+      }
+      profileMediaDraft = { foto: null, logo: null };
+      settingsCache.users = [];
+      settingsCache.audit = [];
+      if (typeof global.renderApp === 'function') global.renderApp();
+      global.toast('Data Pemilik, Foto/Logo & Tempat Usaha berhasil dikonfirmasi dan disimpan!', 'ok');
+    } catch (e) {
+      global.toast(e.message || 'Gagal menyimpan profil apotek.', 'err');
+    }
+  };
+
   let _setLoading = false;
   global.loadSettingsBundle = async (force) => {
     if (_setLoading || (!force && Object.keys(settingsCache.secrets).length)) return;
     _setLoading = true;
     try {
-      const [sec, aud, usr] = await Promise.all([
+      const [sec, aud, usr, profRes] = await Promise.all([
         API().callApi('settings.getSecretsMasked', {}),
         API().callApi('audit.list', {}),
-        S().getRole() === 'Pemilik' ? API().callApi('users.list', {}).catch(() => ({ items: [] })) : Promise.resolve({ items: [] })
+        S().getRole() === 'Pemilik' ? API().callApi('users.list', {}).catch(() => ({ items: [] })) : Promise.resolve({ items: [] }),
+        API().callApi('profil.get', {}).catch(() => null)
       ]);
+      const rawProf = profRes && ((profRes.profile || profRes.item) || (profRes.nama_usaha ? profRes : null));
+      if (rawProf && S().setStoreProfile) S().setStoreProfile(rawProf);
       settingsCache = { secrets: sec.secrets || {}, audit: aud.items || [], users: usr.items || [] };
       if (S().AppState.activeView === 'settings') global.renderActiveView();
     } catch (e) {} finally { _setLoading = false; }
@@ -2104,12 +2497,16 @@
     const txt = (document.getElementById('strukTplText') || {}).value || '';
     const w = Number((document.getElementById('strukTplWidth') || {}).value || 58);
     const box = document.getElementById('strukEditorLivePreview');
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     if (box && global.StrukEngine) {
       box.innerHTML = global.StrukEngine.renderHtml(txt, {
-        NAMA_TOKO: 'APOTEK ONS FARMA', ALAMAT_TOKO: 'Jl. Kesehatan Raya No. 88',
-        WA_TOKO: '0811-0000-990', APJ_SIPA: '19920412/SIPA/2025',
+        NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
+        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Kesehatan Raya No. 88',
+        WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
+        APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
         NOTA: 'INV-PREVIEW-001', TANGGAL: new Date().toLocaleDateString('id-ID'),
-        KASIR: 'Budi Santoso', PELANGGAN: 'Tn. Bambang (PRB)', METODE: 'QRIS', CHANNEL: 'Toko Fisik',
+        KASIR: (S().AppState.user && S().AppState.user.nama_lengkap) || 'Kasir',
+        PELANGGAN: 'Tn. Bambang (PRB)', METODE: 'QRIS', CHANNEL: 'Toko Fisik',
         ITEM: [{ NAMA: 'Paracetamol Sanmol 500mg', QTY: 10, SATUAN: 'Tab', HARGA: 650, SUBTOTAL: 6500 }],
         SUBTOTAL: 6500, DISKON: 0, PPN: 0, TOTAL: 6500, DIBAYAR: 6500, KEMBALI: 0, POIN: 1,
         CATATAN: 'Semoga lekas sembuh!', QR_URL: 'https://onsfarma.id/v/PREVIEW'

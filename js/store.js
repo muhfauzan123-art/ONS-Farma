@@ -5,6 +5,47 @@
   'use strict';
 
   const DARK_KEY = 'ons_farma_v10_dark';
+  const PROFILE_CACHE_KEY = 'ons_farma_v13_profile';
+
+  function defaultStoreProfile() {
+    return {
+      cabang_id: 'ONS-01',
+      nama_pemilik: 'apt. Anissa Faradifa R. Is Rumi',
+      jabatan_pemilik: 'Pemilik Sarana Apotek & Apoteker',
+      sipa_pemilik: '19920412/SIPA_35.78/2025/1042',
+      stra_pemilik: '19920412/STRA-14102029/1042',
+      wa_pemilik: '0811-0000-990',
+      email_pemilik: 'anissa@onsfarma.id',
+      npwp_pemilik: '09.254.294.3-805.000',
+      foto_pemilik_url: '',
+      nama_usaha: 'Apotek ONS Farma',
+      no_sia: '449/SIA-DPMPTSP/2025/0088',
+      nib_oss: '9120208142915',
+      npwp_usaha: '85.112.409.1-805.000',
+      status_pkp: 'PKP (PPN 11%)',
+      alamat_usaha: 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang',
+      kota: 'Makassar',
+      kode_pos: '90231',
+      telepon_usaha: '0411-458-990',
+      wa_usaha: '628110000990',
+      email_usaha: 'halo@onsfarma.id',
+      jam_operasional: 'Setiap Hari 07:30 - 22:00 WITA',
+      zona_waktu: 'Asia/Makassar (WITA)',
+      logo_usaha_url: './icons/ons-farma-app-icon.png',
+      terkonfirmasi: 'YA',
+      dikonfirmasi_oleh: 'apt. Anissa Faradifa R. Is Rumi',
+      dikonfirmasi_pada: '',
+      updated_at: ''
+    };
+  }
+
+  function loadCachedProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+      if (raw) return Object.assign({}, defaultStoreProfile(), JSON.parse(raw));
+    } catch (e) {}
+    return defaultStoreProfile();
+  }
 
   const AppState = {
     activeView: 'dashboard',
@@ -22,13 +63,14 @@
       billing: 'tagihan',
       sipnap: 'narkotika',
       'doc-engine': 'surat',
-      settings: 'akun'
+      settings: 'profil'
     },
     booted: false,
     loading: false,
     darkMode: localStorage.getItem(DARK_KEY) === '1',
     user: null,
     cabangId: 'ONS-01',
+    storeProfile: loadCachedProfile(),
     masterObat: [],
     stokBatch: [],
     members: [],
@@ -432,8 +474,141 @@
     }
   };
 
+  function getStoreProfile() {
+    return Object.assign({}, defaultStoreProfile(), AppState.storeProfile || {});
+  }
+
+  function setStoreProfile(prof) {
+    const merged = Object.assign({}, defaultStoreProfile(), prof || {});
+    AppState.storeProfile = merged;
+    try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(merged)); } catch (e) {}
+    return merged;
+  }
+
+  function getProfileCompleteness(prof) {
+    const p = prof || getStoreProfile();
+    const checks = [
+      { key: 'nama_pemilik', label: 'Nama Lengkap Pemilik', ok: !!String(p.nama_pemilik || '').trim() },
+      { key: 'sipa_pemilik', label: 'No. SIPA / STRA', ok: !!String(p.sipa_pemilik || '').trim() },
+      { key: 'foto_pemilik_url', label: 'Foto Profil Pemilik', ok: !!String(p.foto_pemilik_url || '').trim() },
+      { key: 'nama_usaha', label: 'Nama Tempat Usaha', ok: !!String(p.nama_usaha || '').trim() },
+      { key: 'logo_usaha_url', label: 'Logo Apotek', ok: !!String(p.logo_usaha_url || '').trim() },
+      { key: 'no_sia', label: 'No. SIA & NIB OSS', ok: !!String(p.no_sia || '').trim() && !!String(p.nib_oss || '').trim() },
+      { key: 'alamat_usaha', label: 'Alamat & Kota Usaha', ok: !!String(p.alamat_usaha || '').trim() && !!String(p.kota || '').trim() },
+      { key: 'wa_usaha', label: 'Telepon / WhatsApp Resmi', ok: !!String(p.wa_usaha || p.telepon_usaha || '').trim() },
+      { key: 'jam_operasional', label: 'Jam Operasional', ok: !!String(p.jam_operasional || '').trim() },
+      { key: 'terkonfirmasi', label: 'Status Konfirmasi Legal', ok: String(p.terkonfirmasi || '').toUpperCase() === 'YA' }
+    ];
+    const done = checks.filter((c) => c.ok).length;
+    return { done, total: checks.length, pct: Math.round((done / checks.length) * 100), checks };
+  }
+
+  function compressImageFile(file, maxDim = 220, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+      if (!file) { reject(new Error('File gambar tidak dipilih.')); return; }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
+      reader.onload = () => {
+        const src = String(reader.result || '');
+        if (typeof Image === 'undefined' || typeof document === 'undefined' || !document.createElement) {
+          resolve(src);
+          return;
+        }
+        const img = new Image();
+        img.onerror = () => resolve(src);
+        img.onload = () => {
+          try {
+            const w = img.width || maxDim;
+            const h = img.height || maxDim;
+            const scale = Math.min(1, maxDim / Math.max(w, h));
+            const cw = Math.max(1, Math.round(w * scale));
+            const ch = Math.max(1, Math.round(h * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = cw;
+            canvas.height = ch;
+            const ctx = canvas.getContext && canvas.getContext('2d');
+            if (!ctx) { resolve(src); return; }
+            ctx.drawImage(img, 0, 0, cw, ch);
+            const isPng = String(file.type || '').toLowerCase().includes('png');
+            const mime = isPng ? 'image/png' : 'image/jpeg';
+            const out = canvas.toDataURL(mime, quality);
+            resolve(out.length > 38000 ? canvas.toDataURL('image/jpeg', 0.72) : out);
+          } catch (err) {
+            resolve(src);
+          }
+        };
+        img.src = src;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function normalizeWa62(raw) {
+    let digits = String(raw == null ? '' : raw).replace(/[^0-9]/g, '');
+    if (!digits || digits.length < 7) return '';
+    if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+    else if (digits.startsWith('8')) digits = '62' + digits;
+    return digits;
+  }
+
+  function buildWaUrl(phone, text) {
+    const p62 = normalizeWa62(phone);
+    const query = text ? ('?text=' + encodeURIComponent(String(text))) : '';
+    return p62 ? ('https://wa.me/' + p62 + query) : ('https://wa.me/' + query);
+  }
+
+  function formatStrukWaMessage(d) {
+    const s = d || {};
+    const prof = getStoreProfile();
+    const lines = [
+      '*STRUK PEMBELIAN DIGITAL*',
+      '*' + (s.NAMA_TOKO || prof.nama_usaha || 'APOTEK ONS FARMA') + '*'
+    ];
+    const almt = s.ALAMAT_TOKO || [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ');
+    if (almt) lines.push(almt);
+    if (prof.no_sia) lines.push('SIA: ' + prof.no_sia);
+    lines.push('--------------------------------');
+    lines.push('No. Nota  : *' + (s.NOTA || '-') + '*');
+    lines.push('Tanggal   : ' + (s.TANGGAL || new Date().toLocaleString('id-ID')));
+    lines.push('Pelanggan : ' + (s.PELANGGAN || 'Pasien Umum'));
+    lines.push('Kasir     : ' + (s.KASIR || '-'));
+    lines.push('--------------------------------');
+    (s.ITEM || []).forEach((it, idx) => {
+      const qty = Number(it.QTY || it.qty || 1);
+      const sat = it.SATUAN || it.satuan || 'Unit';
+      const hrg = Number(it.HARGA || it.harga_jual || 0);
+      const sub = Number(it.SUBTOTAL || (qty * hrg) || 0);
+      const aturan = String(it.ATURAN_PAKAI || it.aturan_pakai || '').trim();
+      lines.push((idx + 1) + '. ' + (it.NAMA || it.nama || 'Item'));
+      lines.push('   ' + qty + ' ' + sat + ' x ' + rp(hrg) + ' = *' + rp(sub) + '*');
+      if (aturan) lines.push('   _Aturan pakai: ' + aturan + '_');
+    });
+    lines.push('--------------------------------');
+    lines.push('Subtotal  : ' + rp(s.SUBTOTAL || s.TOTAL || 0));
+    if (Number(s.DISKON || 0) > 0) lines.push('Diskon    : -' + rp(s.DISKON));
+    if (Number(s.PPN || 0) > 0) lines.push('PPN       : ' + rp(s.PPN));
+    lines.push('*TOTAL    : ' + rp(s.TOTAL || 0) + '*');
+    lines.push('Bayar (' + (s.METODE || 'TUNAI') + ') : ' + rp(s.DIBAYAR || s.TOTAL || 0));
+    if (Number(s.KEMBALI || 0) > 0) lines.push('Kembali   : ' + rp(s.KEMBALI));
+    if (Number(s.POIN || 0) > 0) lines.push('Poin (+)  : +' + s.POIN + ' poin');
+    lines.push('--------------------------------');
+    if (s.CATATAN) lines.push('Catatan: ' + s.CATATAN);
+    if (s.QR_URL) lines.push('Verifikasi Nota: ' + s.QR_URL);
+    lines.push('APJ/Pemilik: ' + (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi'));
+    lines.push('_Terima kasih, semoga lekas sembuh!_');
+    return lines.join('\n');
+  }
+
   global.ONSStore = {
     AppState,
+    defaultStoreProfile,
+    getStoreProfile,
+    setStoreProfile,
+    getProfileCompleteness,
+    compressImageFile,
+    normalizeWa62,
+    buildWaUrl,
+    formatStrukWaMessage,
     toggleDarkMode,
     rp,
     esc,
