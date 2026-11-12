@@ -739,47 +739,366 @@
 
       window.openCommandPalette = function () {
         const st = ONSStore.AppState;
+        const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
+        const role = ONSStore.getRole();
+        const seeCost = ONSStore.canSeeFinancialCost();
         const flatNav = [];
         getAllowedMenuTree().forEach((sect) => {
           (sect.items || []).forEach((item) => {
             if (item.tabs && item.tabs.length) {
               item.tabs.forEach((t) => {
-                flatNav.push({ viewId: item.viewId, subTab: t.subTab, grp: item.label, label: t.label, icon: item.icon, kw: `${item.kw || ''} ${t.kw || ''}` });
+                flatNav.push({ viewId: item.viewId, subTab: t.subTab, grp: item.label, sect: sect.label, label: t.label, icon: item.icon, kw: `${item.kw || ''} ${t.kw || ''} ${item.desc || ''}` });
               });
             } else {
-              flatNav.push({ viewId: item.viewId, subTab: '', grp: sect.label, label: item.label, icon: item.icon, kw: item.kw || '' });
+              flatNav.push({ viewId: item.viewId, subTab: '', grp: sect.label, sect: sect.label, label: item.label, icon: item.icon, kw: `${item.kw || ''} ${item.desc || ''}` });
             }
           });
         });
-        ONSStore.openModal(`<div class="p-4 space-y-3">
-          <div class="flex items-center gap-2 border-b pb-2" style="border-color:var(--ons-border)">
-            <span class="text-sm font-bold text-blue-600">Ctrl+K</span>
-            <input id="cmdkSearchInp" class="ons-input flex-1 text-sm" placeholder="Cari menu / sub-menu (mis. kartu stok, struk, retur, blast), obat KFA, atau order..." oninput="window.filterCmdk(this.value)"/>
-            <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Esc</button>
+
+        let cmdkScope = 'SEMUA';
+        let cmdkActiveIdx = 0;
+        let currentEntries = [];
+
+        const quickShortcuts = [
+          { show: ONSStore.canAccessView('pos'), title: 'Kasir POS FEFO', sub: 'Transaksi cepat & scan barcode', kbd: 'F2', tone: 'bg-blue-500/10 text-blue-600', icon: 'pos', run: () => { ONSStore.closeModal(); navigateView('pos', 'kasir'); setTimeout(() => document.getElementById('posSearchInput')?.focus(), 40); } },
+          { show: ONSStore.canAccessView('pemeriksaan'), title: 'Pemeriksaan Pasien', sub: 'Tensi, Gula, Kolesterol & Asam Urat', kbd: 'POCT', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'activity', run: () => { ONSStore.closeModal(); navigateView('pemeriksaan', 'semua'); } },
+          { show: seeCost && ONSStore.canAccessView('obat'), title: 'Tambah Produk Obat', sub: 'Buka Studio Wizard 5 Langkah', kbd: '+OBT', tone: 'bg-amber-500/10 text-amber-600', icon: 'pill', run: () => { ONSStore.closeModal(); navigateView('obat', ''); setTimeout(() => window.openObatWizardModal && window.openObatWizardModal(), 40); } },
+          { show: seeCost && ONSStore.canAccessView('faktur'), title: 'Surat Pesanan & Faktur', sub: 'Buat SP A4 atau Scan Faktur PBF', kbd: 'PBF', tone: 'bg-blue-500/10 text-blue-600', icon: 'truck', run: () => { ONSStore.closeModal(); navigateView('faktur', 'sp'); } },
+          { show: ONSStore.canAccessView('gudang'), title: 'Cek Batch & Kadaluarsa', sub: 'Pantau FEFO & kartu stok gudang', kbd: 'FEFO', tone: 'bg-red-500/10 text-red-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'batch'); } },
+          { show: ONSStore.canAccessView('settings'), title: 'Sistem Audit, APJ & Kasir', sub: 'Edit identitas APJ/Kasir & hak akses', kbd: 'RBAC', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'settings', run: () => { ONSStore.closeModal(); navigateView('settings', 'audit'); } }
+        ].filter((q) => q.show);
+
+        ONSStore.openModal(`<div data-ws-custom="1" class="ons-cmdk-shell" onkeydown="window.handleCmdkKey(event)">
+          <div class="ons-cmdk-header">
+            <div class="max-w-[1440px] mx-auto space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <button type="button" onclick="ONSStore.closeModal()" class="ons-ws-back-btn">
+                    <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                    <span>Kembali</span>
+                  </button>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="font-extrabold text-sm sm:text-base tracking-tight truncate">Pencarian Cepat &amp; Pusat Navigasi</span>
+                      <span class="ons-ws-pill hidden sm:inline-flex">${ONSStore.esc(prof.nama_usaha || 'Apotek ONS Farma')}</span>
+                    </div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">Cabang ${ONSStore.esc(st.cabangId || 'ONS-01')} &bull; ${ONSStore.esc(role)} &bull; <span id="cmdkMatchMeta">Siap mencari seluruh modul &amp; data</span></div>
+                  </div>
+                </div>
+                <div class="hidden md:flex items-center gap-2 text-[11px]" style="color:var(--ons-text-soft)">
+                  <span class="ons-shortcut-kbd">&uarr;&darr;</span><span>Pilih</span>
+                  <span class="ons-shortcut-kbd">Enter</span><span>Buka</span>
+                  <span class="ons-shortcut-kbd">Esc</span><span>Tutup</span>
+                  <button type="button" onclick="ONSStore.closeModal()" aria-label="Tutup Pencarian" class="ons-ws-close-btn ml-1" title="Tutup (Esc)">&times;</button>
+                </div>
+              </div>
+
+              <div class="ons-cmdk-searchbox">
+                <span class="text-blue-600 shrink-0">${svgIcon('search', 'w-5 h-5')}</span>
+                <input id="cmdkSearchInp" autocomplete="off" placeholder="Ketik nama menu, sub-menu, obat / zat aktif / KFA, pasien PRB, no. SP / faktur / nota..." oninput="window.filterCmdk(this.value)"/>
+                <button type="button" id="cmdkClearBtn" onclick="window.clearCmdkQuery()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 hidden">Bersihkan</button>
+                <span class="ons-shortcut-kbd hidden sm:inline-flex">Ctrl+K</span>
+              </div>
+
+              <div id="cmdkScopeTabs" class="ons-cmdk-tabs"></div>
+            </div>
           </div>
-          <div id="cmdkResultsBox" class="max-h-80 overflow-y-auto space-y-1 text-xs"></div>
-        </div>`, { mode: 'spotlight', maxWidth: '680px' });
+
+          <div class="ons-cmdk-body">
+            <div class="ons-cmdk-grid">
+              <div class="ons-cmdk-panel space-y-2">
+                <div class="flex items-center justify-between pb-2 border-b text-xs" style="border-color:var(--ons-border)">
+                  <span class="font-bold uppercase tracking-wider text-[11px]" style="color:var(--ons-text-soft)">Hasil Pencarian Pintar</span>
+                  <span id="cmdkResultCountBadge" class="badge-bpom bpom-terbatas font-mono-num">0 item</span>
+                </div>
+                <div id="cmdkResultsBox" class="space-y-1.5 text-xs"></div>
+              </div>
+
+              <div class="space-y-4">
+                <div id="cmdkInspectorBox" class="ons-cmdk-panel space-y-2.5 text-xs"></div>
+                <div class="ons-cmdk-panel space-y-2.5">
+                  <div class="flex items-center justify-between pb-2 border-b" style="border-color:var(--ons-border)">
+                    <span class="font-bold text-xs">Aksi Kilat Apotek (1 Klik)</span>
+                    <span class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Sesuai Hak Akses</span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+                    ${quickShortcuts.map((s, idx) => `
+                      <button type="button" onclick="window.runCmdkQuick(${idx})" class="ons-cmdk-quickcard">
+                        <span class="ons-kpi-ico ${s.tone} w-9 h-9 rounded-lg">${svgIcon(s.icon, 'w-4 h-4')}</span>
+                        <div class="min-w-0 flex-1">
+                          <div class="font-bold text-xs truncate">${ONSStore.esc(s.title)}</div>
+                          <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(s.sub)}</div>
+                        </div>
+                        <span class="ons-shortcut-kbd shrink-0">${ONSStore.esc(s.kbd)}</span>
+                      </button>`).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`, 'full');
+
+        function renderInspectorPanel(entry) {
+          const box = document.getElementById('cmdkInspectorBox');
+          if (!box) return;
+          if (!entry) {
+            box.innerHTML = `<div class="py-4 text-center space-y-1" style="color:var(--ons-text-soft)">
+              <div class="font-bold text-xs" style="color:var(--ons-text-main)">Pratinjau Item Terpilih</div>
+              <p class="text-[11px]">Arahkan kursor atau tekan tombol panah &uarr;/&darr; untuk melihat detail cepat sebelum membuka.</p>
+            </div>`;
+            return;
+          }
+          box.innerHTML = `
+            <div class="flex items-start justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+              <div class="min-w-0">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-blue-600">${ONSStore.esc(entry.kindLabel)}</div>
+                <div class="font-extrabold text-sm leading-snug mt-0.5">${ONSStore.esc(entry.title)}</div>
+              </div>
+              ${entry.badgeHtml || ''}
+            </div>
+            <p class="text-[11px] leading-relaxed" style="color:var(--ons-text-soft)">${ONSStore.esc(entry.desc || entry.sub || '-')}</p>
+            ${entry.metaHtml ? `<div class="p-2.5 rounded-xl border text-[11px] space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${entry.metaHtml}</div>` : ''}
+            <button type="button" onclick="window.execCmdkEntry(${entry.idx})" class="ons-btn ons-btn-primary w-full text-xs">Buka / Jalankan Sekarang (Enter) &rarr;</button>`;
+        }
+
+        function syncSelectionHighlight(shouldScroll) {
+          const box = document.getElementById('cmdkResultsBox');
+          if (box) {
+            box.querySelectorAll('[data-cmdk-idx]').forEach((el) => {
+              const isSel = Number(el.getAttribute('data-cmdk-idx')) === cmdkActiveIdx;
+              el.classList.toggle('is-selected', isSel);
+              if (isSel && shouldScroll && typeof el.scrollIntoView === 'function') {
+                try { el.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+              }
+            });
+          }
+          renderInspectorPanel(currentEntries[cmdkActiveIdx] || null);
+        }
+
+        window.runCmdkQuick = (idx) => {
+          const item = quickShortcuts[idx];
+          if (item && typeof item.run === 'function') item.run();
+        };
+
+        window.setCmdkScope = (scope) => {
+          cmdkScope = scope || 'SEMUA';
+          cmdkActiveIdx = 0;
+          const inp = document.getElementById('cmdkSearchInp');
+          window.filterCmdk(inp ? inp.value : '');
+          inp?.focus();
+        };
+
+        window.clearCmdkQuery = () => {
+          const inp = document.getElementById('cmdkSearchInp');
+          if (inp) { inp.value = ''; inp.focus(); }
+          window.filterCmdk('');
+        };
+
+        window.hoverCmdkEntry = (idx) => {
+          if (cmdkActiveIdx === idx) return;
+          cmdkActiveIdx = idx;
+          syncSelectionHighlight(false);
+        };
+
+        window.execCmdkEntry = (idx) => {
+          const target = currentEntries[idx];
+          if (target && typeof target.run === 'function') target.run();
+        };
+
+        window.handleCmdkKey = (e) => {
+          if (!e) return;
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (currentEntries.length) {
+              cmdkActiveIdx = (cmdkActiveIdx + 1) % currentEntries.length;
+              syncSelectionHighlight(true);
+            }
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (currentEntries.length) {
+              cmdkActiveIdx = (cmdkActiveIdx - 1 + currentEntries.length) % currentEntries.length;
+              syncSelectionHighlight(true);
+            }
+          } else if (e.key === 'Enter' && currentEntries[cmdkActiveIdx]) {
+            e.preventDefault();
+            window.execCmdkEntry(cmdkActiveIdx);
+          }
+        };
+
         window.filterCmdk = function (rawQ) {
           const q = String(rawQ || '').trim().toLowerCase();
           const box = document.getElementById('cmdkResultsBox');
           if (!box) return;
-          const navMatches = flatNav.filter((n) => !q || `${n.label} ${n.grp} ${n.kw}`.toLowerCase().includes(q)).slice(0, 9);
-          const obatMatches = q ? (st.masterObat || []).filter((o) => `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa}`.toLowerCase().includes(q)).slice(0, 5) : [];
+          const clearBtn = document.getElementById('cmdkClearBtn');
+          if (clearBtn) clearBtn.classList.toggle('hidden', !q);
 
-          let html = navMatches.map((n) => `
-            <div onclick="ONSStore.closeModal();navigateView('${n.viewId}','${n.subTab}');" class="ons-cmdk-row">
-              <div class="flex items-center gap-2">${svgIcon(n.icon, 'opacity-70')}<strong>${ONSStore.esc(n.label)}</strong></div>
-              <span class="text-[11px]" style="color:var(--ons-text-soft)">${ONSStore.esc(n.grp)}</span>
-            </div>`).join('');
-          if (obatMatches.length) {
-            html += `<div class="ons-sidebar-group-label">Stok Obat &amp; Tambah ke Kasir</div>` + obatMatches.map((o) => `
-              <div onclick="ONSStore.closeModal();navigateView('pos','kasir');setTimeout(()=>window.addPosItemById && window.addPosItemById('${ONSStore.esc(o.id_obat)}'),30);" class="ons-cmdk-row">
-                <div><strong>${ONSStore.esc(o.nama_dagang)}</strong> <span style="color:var(--ons-text-soft)">(${ONSStore.getTotalStok(o.id_obat)} ${ONSStore.esc(o.satuan_dasar)})</span></div>
-                <span class="font-mono-num font-bold text-emerald-600">${ONSStore.rp(o.harga_umum)}</span>
-              </div>`).join('');
+          const navMatches = flatNav.filter((n) => !q || `${n.label} ${n.grp} ${n.sect} ${n.kw}`.toLowerCase().includes(q)).slice(0, q ? 14 : 10);
+          const canSeeObat = ONSStore.canAccessView('pos') || ONSStore.canAccessView('obat');
+          const obatMatches = canSeeObat ? (st.masterObat || []).filter((o) => !q || `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi}`.toLowerCase().includes(q)).slice(0, q ? 10 : 6) : [];
+          const canSeePasien = ONSStore.canAccessView('eresep-prb') || ONSStore.canAccessView('pemeriksaan') || ONSStore.canAccessView('crm-wa');
+          const pasienMatches = (canSeePasien && q) ? (st.members || []).filter((m) => `${m.nama_pasien} ${m.no_hp} ${m.penyakit_kronis} ${m.program_prb}`.toLowerCase().includes(q)).slice(0, 6) : [];
+          const canPos = ONSStore.canAccessView('pos');
+          const txPool = [];
+          if (canPos) {
+            (st.penjualan || []).forEach((p) => txPool.push({ kind: 'NOTA POS', id: p.no_invoice, title: p.no_invoice, sub: `${p.channel || 'Toko'} • ${p.metode_bayar || 'TUNAI'}`, nominal: p.grand_total, tone: 'bpom-bebas', viewId: 'pos', subTab: 'riwayat' }));
           }
-          box.innerHTML = html || '<div class="p-6 text-center opacity-60">Tidak ada hasil yang cocok.</div>';
+          if (seeCost && ONSStore.canAccessView('faktur')) {
+            (st.suratPesanan || []).forEach((sp) => txPool.push({ kind: 'SURAT PESANAN', id: sp.no_sp, title: sp.no_sp, sub: `${sp.nama_pbf} (${sp.golongan_sp || 'REGULER'})`, nominal: sp.estimasi_total, tone: 'bpom-terbatas', viewId: 'faktur', subTab: 'sp' }));
+            (st.fakturPbf || []).forEach((fk) => txPool.push({ kind: 'FAKTUR PBF', id: fk.no_faktur_pbf, title: fk.no_faktur_pbf, sub: `${fk.id_pbf} • ${fk.status_bayar || ''}`, nominal: fk.netto_hutang, tone: 'bpom-prekursor', viewId: 'faktur', subTab: 'daftar' }));
+          }
+          if (ONSStore.canAccessView('omnichannel')) {
+            (st.omnichannelOrders || []).forEach((o) => txPool.push({ kind: 'ORDER ONLINE', id: o.no_order, title: `${o.no_order} — ${o.nama_pelanggan}`, sub: `${o.channel} • ${o.status_order}`, nominal: o.total_estimasi, tone: 'bpom-terbatas', viewId: 'omnichannel', subTab: '' }));
+          }
+          const txMatches = q ? txPool.filter((t) => `${t.kind} ${t.title} ${t.sub}`.toLowerCase().includes(q)).slice(0, 6) : [];
+
+          const scopeCounts = {
+            SEMUA: navMatches.length + obatMatches.length + pasienMatches.length + txMatches.length,
+            MENU: navMatches.length,
+            OBAT: obatMatches.length,
+            PASIEN: pasienMatches.length,
+            TRANSAKSI: txMatches.length
+          };
+          const tabsEl = document.getElementById('cmdkScopeTabs');
+          if (tabsEl) {
+            const tabDefs = [
+              { id: 'SEMUA', label: 'Semua' },
+              { id: 'MENU', label: 'Menu &amp; Modul' },
+              { id: 'OBAT', label: 'Obat &amp; Stok' },
+              { id: 'PASIEN', label: 'Pasien &amp; PRB' },
+              { id: 'TRANSAKSI', label: 'Nota, SP &amp; Faktur' }
+            ];
+            tabsEl.innerHTML = tabDefs.map((tb) => `<button type="button" onclick="window.setCmdkScope('${tb.id}')" class="ons-cmdk-chip ${cmdkScope === tb.id ? 'active' : ''}">${tb.label} <span class="font-mono-num opacity-80">(${scopeCounts[tb.id] || 0})</span></button>`).join('');
+          }
+
+          currentEntries = [];
+          const sectionsHtml = [];
+          const addEntry = (e) => {
+            e.idx = currentEntries.length;
+            currentEntries.push(e);
+            return e.idx;
+          };
+
+          if ((cmdkScope === 'SEMUA' || cmdkScope === 'MENU') && navMatches.length) {
+            sectionsHtml.push(`<div class="ons-sidebar-group-label pt-1">Menu &amp; Sub-Modul (${navMatches.length})</div>` + navMatches.map((n) => {
+              const idx = addEntry({
+                kindLabel: 'Menu & Navigasi',
+                title: n.label,
+                sub: n.grp,
+                desc: `Buka halaman ${n.label} pada seksi ${n.sect}.`,
+                badgeHtml: `<span class="badge-bpom bpom-terbatas">${ONSStore.esc(n.sect)}</span>`,
+                metaHtml: `<div><b>Rute:</b> <span class="font-mono-num">${ONSStore.esc(n.viewId)}${n.subTab ? '#' + ONSStore.esc(n.subTab) : ''}</span></div>`,
+                run: () => { ONSStore.closeModal(); navigateView(n.viewId, n.subTab); }
+              });
+              return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 w-9 h-9 rounded-xl">${svgIcon(n.icon, 'w-4 h-4')}</span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs sm:text-sm truncate">${ONSStore.esc(n.label)}</div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(n.sect)} &rsaquo; ${ONSStore.esc(n.grp)}</div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-semibold text-blue-600 shrink-0">Buka &rarr;</span>
+              </div>`;
+            }).join(''));
+          }
+
+          if ((cmdkScope === 'SEMUA' || cmdkScope === 'OBAT') && obatMatches.length) {
+            sectionsHtml.push(`<div class="ons-sidebar-group-label">Katalog Obat &amp; Stok FEFO (${obatMatches.length})</div>` + obatMatches.map((o) => {
+              const stok = ONSStore.getSellableStok ? ONSStore.getSellableStok(o.id_obat) : ONSStore.getTotalStok(o.id_obat);
+              const idx = addEntry({
+                kindLabel: canPos ? 'Produk Obat -> Tambah ke Kasir' : 'Produk Master Obat',
+                title: o.nama_dagang,
+                sub: `${o.zat_aktif || '-'} (${o.rak_lokasi || 'RAK'})`,
+                desc: `Kode KFA ${o.kode_kfa || o.id_obat} • NIE ${o.nie_bpom || '-'}. ${canPos ? 'Klik untuk langsung memasukkan item ke keranjang Kasir POS.' : 'Klik untuk membuka Master Data Obat.'}`,
+                badgeHtml: ONSStore.bpomBadge(o.golongan_bpom),
+                metaHtml: `<div class="flex justify-between"><span>Stok Layak Jual</span><b class="font-mono-num">${stok} ${ONSStore.esc(o.satuan_dasar)}</b></div>
+                  <div class="flex justify-between"><span>Harga Umum</span><b class="font-mono-num text-blue-600">${ONSStore.rp(o.harga_umum)}</b></div>
+                  <div class="flex justify-between"><span>Lokasi Rak</span><b>${ONSStore.esc(o.rak_lokasi || '-')}</b></div>`,
+                run: () => {
+                  ONSStore.closeModal();
+                  if (canPos) {
+                    navigateView('pos', 'kasir');
+                    setTimeout(() => window.addPosItemById && window.addPosItemById(o.id_obat), 30);
+                  } else {
+                    navigateView('obat', '');
+                  }
+                }
+              });
+              return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
+                <div class="flex items-center gap-3 min-w-0">
+                  ${ONSStore.bpomBadge(o.golongan_bpom)}
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs sm:text-sm truncate">${ONSStore.esc(o.nama_dagang)}</div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(o.zat_aktif || '-')} &bull; Stok: <b class="${stok <= Number(o.stok_min || 10) ? 'text-amber-600' : 'text-emerald-600'}">${stok} ${ONSStore.esc(o.satuan_dasar)}</b> &bull; Rak ${ONSStore.esc(o.rak_lokasi || '-')}</div>
+                  </div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="font-mono-num font-bold text-blue-600">${ONSStore.rp(o.harga_umum)}</div>
+                  <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">${canPos ? '+ Kasir POS' : 'Lihat Master'}</div>
+                </div>
+              </div>`;
+            }).join(''));
+          }
+
+          if ((cmdkScope === 'SEMUA' || cmdkScope === 'PASIEN') && pasienMatches.length) {
+            sectionsHtml.push(`<div class="ons-sidebar-group-label">Pasien &amp; Member PRB (${pasienMatches.length})</div>` + pasienMatches.map((m) => {
+              const targetView = ONSStore.canAccessView('eresep-prb') ? 'eresep-prb' : (ONSStore.canAccessView('pemeriksaan') ? 'pemeriksaan' : 'crm-wa');
+              const targetSub = targetView === 'eresep-prb' ? 'prb' : (targetView === 'pemeriksaan' ? 'semua' : 'kontak');
+              const idx = addEntry({
+                kindLabel: 'Pasien & Member Apotek',
+                title: m.nama_pasien,
+                sub: `${m.program_prb || 'MEMBER'} • ${m.penyakit_kronis || '-'}`,
+                desc: `Alergi tercatat: ${m.alergi_list || 'Tidak ada'} • Poin loyalitas: ${Number(m.poin_loyalitas || 0)}.`,
+                badgeHtml: `<span class="badge-bpom bpom-bebas">${ONSStore.esc(m.program_prb || 'MEMBER')}</span>`,
+                metaHtml: `<div><b>No. WA:</b> <span class="font-mono-num">${ONSStore.esc(m.no_hp || '-')}</span></div>`,
+                run: () => { ONSStore.closeModal(); navigateView(targetView, targetSub); }
+              });
+              return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
+                <div class="min-w-0">
+                  <div class="font-bold text-xs sm:text-sm truncate">${ONSStore.esc(m.nama_pasien)}</div>
+                  <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(m.penyakit_kronis || m.program_prb || '-')} &bull; WA ${ONSStore.esc(m.no_hp || '-')}</div>
+                </div>
+                <span class="badge-bpom bpom-bebas font-mono-num shrink-0">${Number(m.poin_loyalitas || 0)} poin</span>
+              </div>`;
+            }).join(''));
+          }
+
+          if ((cmdkScope === 'SEMUA' || cmdkScope === 'TRANSAKSI') && txMatches.length) {
+            sectionsHtml.push(`<div class="ons-sidebar-group-label">Nota, Surat Pesanan &amp; Faktur (${txMatches.length})</div>` + txMatches.map((t) => {
+              const idx = addEntry({
+                kindLabel: t.kind,
+                title: t.title,
+                sub: t.sub,
+                desc: `Nominal tercatat: ${ONSStore.rp(t.nominal)}. Klik untuk membuka halaman terkait.`,
+                badgeHtml: `<span class="badge-bpom ${t.tone}">${ONSStore.esc(t.kind)}</span>`,
+                run: () => { ONSStore.closeModal(); navigateView(t.viewId, t.subTab); }
+              });
+              return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="badge-bpom ${t.tone} shrink-0">${ONSStore.esc(t.kind)}</span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs sm:text-sm truncate">${ONSStore.esc(t.title)}</div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(t.sub)}</div>
+                  </div>
+                </div>
+                <span class="font-mono-num font-bold text-blue-600 shrink-0">${ONSStore.rp(t.nominal)}</span>
+              </div>`;
+            }).join(''));
+          }
+
+          box.innerHTML = sectionsHtml.join('') || `<div class="p-10 text-center space-y-2 rounded-xl border border-dashed" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <div class="font-bold text-sm">Tidak ada hasil yang cocok</div>
+            <p class="text-xs">Coba kata kunci lain (mis. <i>Paracetamol</i>, <i>faktur</i>, <i>tensi</i>, atau <i>retur</i>) atau ubah filter tab di atas.</p>
+          </div>`;
+
+          const countBadge = document.getElementById('cmdkResultCountBadge');
+          if (countBadge) countBadge.textContent = `${currentEntries.length} item`;
+          const metaEl = document.getElementById('cmdkMatchMeta');
+          if (metaEl) metaEl.textContent = q ? `Menampilkan ${currentEntries.length} hasil untuk "${rawQ}"` : `${flatNav.length} rute menu & ${st.masterObat.length} produk obat siap dicari`;
+          if (cmdkActiveIdx >= currentEntries.length) cmdkActiveIdx = 0;
+          syncSelectionHighlight(false);
         };
+
         window.filterCmdk('');
         setTimeout(() => document.getElementById('cmdkSearchInp')?.focus(), 20);
       };
@@ -903,7 +1222,9 @@
         }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
-          window.openCommandPalette();
+          const curInp = document.getElementById('cmdkSearchInp');
+          if (curInp) { curInp.focus(); curInp.select && curInp.select(); }
+          else window.openCommandPalette();
           return;
         }
         if (e.key === 'F2') {

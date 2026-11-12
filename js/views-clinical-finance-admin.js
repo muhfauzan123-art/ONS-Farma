@@ -2402,7 +2402,6 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi / PIN Saya</button>
-          ${isOwner ? `<button onclick="window.seedStarterCatalogFromSettings()" class="ons-btn ons-btn-ghost text-xs">Isi Katalog Awal (Seed)</button>` : ''}
           <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-emerald text-xs">Snapshot Backup Drive</button>
           ${isOwner ? `<button onclick="window.openFactoryResetModal()" class="ons-btn ons-btn-danger text-xs">Reset Data Pabrik</button>` : ''}
         </div>
@@ -2541,6 +2540,14 @@
         <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-red-200">
           ${renderFactoryResetPanelHtml(isOwner, 'vault')}
         </div>
+
+        ${isOwner ? `<div class="ons-card p-5 lg:col-span-12 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div>
+            <h3 class="font-bold text-sm">Data Sampel Uji Coba (Saat Katalog Kosong)</h3>
+            <p style="color:var(--ons-text-soft)">Khusus mode uji coba pada Google Sheets yang masih kosong: mengisi 6 contoh produk obat KFA, batch FEFO, PBF, &amp; member PRB. Tidak menimpa data obat yang sudah ada.</p>
+          </div>
+          <button type="button" onclick="window.seedStarterCatalogFromSettings()" class="ons-btn ons-btn-ghost text-xs">Muat 6 Produk Sampel</button>
+        </div>` : ''}
       </div>` : ''}
 
       ${settingsTab === 'struk' ? (() => {

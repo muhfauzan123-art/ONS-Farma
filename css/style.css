@@ -758,13 +758,149 @@ html.dark .ons-wiz-chip:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 0.85rem;
-  border-radius: 0.6rem;
+  gap: 0.75rem;
+  padding: 0.72rem 0.95rem;
+  border-radius: 0.85rem;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color 0.1s ease;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.12s ease, box-shadow 0.14s ease;
 }
-.ons-cmdk-row:hover, .ons-cmdk-row.active {
+.ons-cmdk-row:hover, .ons-cmdk-row.active, .ons-cmdk-row.is-selected {
   background: var(--ons-bg-subtle);
+  border-color: rgba(0, 102, 254, 0.28);
+  box-shadow: 0 4px 12px rgba(0, 80, 202, 0.08);
+}
+.ons-cmdk-row.is-selected {
+  background: var(--ons-primary-tint);
+  border-color: var(--ons-primary-bright);
+}
+html.dark .ons-cmdk-row.is-selected {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(96, 165, 250, 0.55);
+}
+
+/* Full-Screen Ctrl+K Command Palette Workspace */
+.ons-cmdk-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: radial-gradient(circle at 88% 8%, rgba(16, 185, 129, 0.08), transparent 36%),
+              radial-gradient(circle at 12% 14%, rgba(0, 102, 254, 0.08), transparent 40%),
+              var(--ons-bg-canvas);
+}
+html.dark .ons-cmdk-shell {
+  background: radial-gradient(circle at 88% 8%, rgba(16, 185, 129, 0.14), transparent 38%),
+              radial-gradient(circle at 12% 14%, rgba(59, 130, 246, 0.16), transparent 44%),
+              var(--ons-bg-canvas);
+}
+.ons-cmdk-header {
+  flex-shrink: 0;
+  background: var(--ons-bg-card);
+  border-bottom: 1px solid var(--ons-border);
+  padding: 0.9rem clamp(1rem, 3vw, 2.25rem) 1rem;
+  box-shadow: 0 8px 24px -14px rgba(15, 23, 42, 0.14);
+}
+.ons-cmdk-searchbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.65rem 0.45rem 1rem;
+  border-radius: 1rem;
+  border: 1.5px solid var(--ons-border-strong);
+  background: var(--ons-bg-subtle);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+.ons-cmdk-searchbox:focus-within {
+  border-color: var(--ons-primary-bright);
+  background: var(--ons-bg-card);
+  box-shadow: 0 0 0 4px rgba(0, 102, 254, 0.14);
+}
+.ons-cmdk-searchbox input {
+  width: 100%;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: var(--ons-text-main);
+  font-size: 1rem;
+  font-weight: 500;
+  min-height: 44px;
+}
+.ons-cmdk-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+.ons-cmdk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.36rem 0.8rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-soft);
+  cursor: pointer;
+  transition: all 0.13s ease;
+}
+.ons-cmdk-chip:hover {
+  color: var(--ons-text-main);
+  border-color: var(--ons-primary-bright);
+}
+.ons-cmdk-chip.active {
+  background: linear-gradient(135deg, #0050CA 0%, #0066FE 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(0, 80, 202, 0.25);
+}
+.ons-cmdk-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(0.9rem, 2.2vw, 1.65rem) clamp(1rem, 3vw, 2.25rem);
+}
+.ons-cmdk-grid {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.15rem;
+}
+@media (min-width: 1024px) {
+  .ons-cmdk-grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
+    align-items: start;
+  }
+}
+.ons-cmdk-panel {
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 1.1rem;
+  box-shadow: var(--ons-shadow-card);
+  padding: 1rem;
+}
+.ons-cmdk-quickcard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.72rem 0.85rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
+}
+.ons-cmdk-quickcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--ons-primary-bright);
+  background: var(--ons-primary-tint);
+  box-shadow: 0 8px 18px -10px rgba(0, 80, 202, 0.25);
 }
 
 .ons-popover-panel {

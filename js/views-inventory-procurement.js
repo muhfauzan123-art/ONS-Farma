@@ -171,9 +171,18 @@
         </div>
       </div>
 
-      ${filtered.length === 0 ? `<div class="ons-card p-10 text-center space-y-2">
-        <div class="font-bold text-sm">Tidak ada produk obat yang sesuai dengan filter saat ini.</div>
-        <button onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Semua Filter</button>
+      ${filtered.length === 0 ? `<div class="ons-card p-10 text-center space-y-3">
+        ${totalCount === 0 ? `
+          <div class="font-bold text-sm">Katalog Master Obat Masih Kosong</div>
+          <p class="text-xs max-w-md mx-auto" style="color:var(--ons-text-soft)">Tambahkan produk obat pertama satu per satu melalui Wizard 5 Langkah atau import daftar produk sekaligus dari file Excel (<code>.xlsx</code> / <code>.csv</code>).</p>
+          ${seeCost ? `<div class="flex flex-wrap justify-center gap-2 pt-1">
+            <button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk Obat Pertama</button>
+            <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">Import Excel (.xlsx / .csv)</button>
+          </div>` : ''}
+        ` : `
+          <div class="font-bold text-sm">Tidak ada produk obat yang sesuai dengan filter saat ini.</div>
+          <button onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Semua Filter</button>
+        `}
       </div>` : (masterViewMode === 'CARD' ? `
       <!-- Mode Kartu Katalog Modern -->
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">

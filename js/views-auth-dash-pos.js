@@ -614,8 +614,30 @@
     global.toast('Tautan Etalase E-Apotek Publik disalin: ' + url, 'ok');
   };
 
+  function toLocalYmd_(val) {
+    const s = String(val || '').trim();
+    if (s) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !s.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(s)) {
+        return s.slice(0, 10);
+      }
+      const dt = new Date(s);
+      if (!isNaN(dt.getTime())) {
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      }
+      return s.slice(0, 10);
+    }
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+
+  function sameCabang_(row, cabId) {
+    return !row || !row.cabang_id || String(row.cabang_id) === String(cabId);
+  }
+
   function renderDashboardView() {
     const st = S().AppState;
+    const cabId = st.cabangId || 'ONS-01';
     const seeCost = S().canSeeFinancialCost();
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
@@ -627,17 +649,54 @@
     const hourNow = nowDt.getHours();
     const greetText = hourNow < 11 ? 'Selamat Pagi' : (hourNow < 15 ? 'Selamat Siang' : (hourNow < 19 ? 'Selamat Sore' : 'Selamat Malam'));
     const fullDateLabel = nowDt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const todayIso = nowDt.toISOString().slice(0, 10);
+    const todayIso = toLocalYmd_(nowDt);
 
-    const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || '') !== 'RETUR');
-    const omzetHari = validSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
-    const marginHari = seeCost ? validSales.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : null;
-    const nearEdBatches = st.stokBatch.filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && S().daysUntil(b.tgl_kadaluarsa) <= 90);
-    const defectaCount = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).length;
-    const apTotal = seeCost ? st.fakturPbf.reduce((s, f) => s + Number(f.sisa_hutang || 0), 0) : null;
-    const erxAntre = (st.rekamKlinis || []).filter((r) => String(r.status_klinis || '').includes('MENUNGGU')).length;
-    const billPending = (st.billingPending || []).length;
+    const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || '') !== 'RETUR' && sameCabang_(p, cabId));
+    const validTrxIds = new Set(validSales.map((p) => p.id_transaksi));
+    const todaySales = validSales.filter((p) => toLocalYmd_(p.tanggal) === todayIso);
+    const omzetHariIni = todaySales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const omzetTotal = validSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const marginHariIni = seeCost ? todaySales.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : null;
+    const marginTotal = seeCost ? validSales.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : null;
+    const marginDenom = omzetHariIni > 0 ? omzetHariIni : omzetTotal;
+    const marginNum = omzetHariIni > 0 ? (marginHariIni || 0) : (marginTotal || 0);
+    const marginPct = seeCost && marginDenom > 0 ? Math.round((marginNum / marginDenom) * 100) : 0;
+
+    const activeBatches = (st.stokBatch || []).filter((b) => sameCabang_(b, cabId) && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0);
+    const expiredBatches = activeBatches.filter((b) => S().daysUntil(b.tgl_kadaluarsa) < 0);
+    const nearEdBatches = activeBatches.filter((b) => {
+      const d = S().daysUntil(b.tgl_kadaluarsa);
+      return d >= 0 && d <= 90;
+    });
+    const warningEdCount = expiredBatches.length + nearEdBatches.length;
+    const defectaCount = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).length;
+
+    const branchFaktur = seeCost ? (st.fakturPbf || []).filter((f) => sameCabang_(f, cabId)) : [];
+    const openFaktur = branchFaktur.filter((f) => Number(f.sisa_hutang || 0) > 0);
+    const apTotal = seeCost ? openFaktur.reduce((s, f) => s + Number(f.sisa_hutang || 0), 0) : 0;
+    const apNearDueCount = seeCost ? openFaktur.filter((f) => f.tgl_jatuh_tempo && S().daysUntil(f.tgl_jatuh_tempo) <= 7).length : 0;
+
+    const openPiutang = (st.piutangPelanggan || []).filter((pt) => sameCabang_(pt, cabId) && String(pt.status_piutang || '') !== 'LUNAS' && Number(pt.sisa_piutang || 0) > 0);
+    const piutangTotal = openPiutang.reduce((s, pt) => s + Number(pt.sisa_piutang || 0), 0);
+
+    const erxAntre = (st.rekamKlinis || []).filter((r) => {
+      const sk = String(r.status_klinis || '').toUpperCase();
+      return sameCabang_(r, cabId) && (sk.includes('ANTRIAN') || sk.includes('MENUNGGU'));
+    }).length;
     const prbUrgentCount = (st.members || []).filter((m) => m.tgl_habis_obat && S().daysUntil(m.tgl_habis_obat) <= 5).length;
+
+    const branchOnline = (st.omnichannelOrders || []).filter((o) => sameCabang_(o, cabId));
+    const onlinePendingCount = branchOnline.filter((o) => ['BARU', 'DIPROSES', 'SIAP_KIRIM'].includes(String(o.status_order || '').toUpperCase())).length;
+
+    const branchPoct = (st.pemeriksaanPasien || []).filter((px) => sameCabang_(px, cabId));
+    const poctTodayCount = branchPoct.filter((px) => toLocalYmd_(px.tanggal) === todayIso).length;
+
+    const branchSp = seeCost ? (st.suratPesanan || []).filter((sp) => sameCabang_(sp, cabId)) : [];
+    const spOpenCount = seeCost ? branchSp.filter((sp) => !['SELESAI_DITERIMA', 'DITERIMA_PENUH', 'BATAL'].includes(String(sp.status_sp || '').toUpperCase())).length : 0;
+
+    const branchCold = (st.coldChain || []).filter((c) => sameCabang_(c, cabId));
+    const latestCold = branchCold.length ? branchCold[branchCold.length - 1] : null;
+    const activeShift = st.activeShift || null;
     const totalPoinMember = validSales.reduce((a, b) => a + Number(b.poin_didapat || 0), 0);
 
     // Readiness Compliance Score (Checklist Audit + APJ/Kasir, ED, Defecta)
@@ -645,28 +704,26 @@
     const auditItems = Array.isArray(auditSys.items) ? auditSys.items : [];
     const auditChecked = auditItems.filter((it) => it.checked).length;
     const auditPct = auditItems.length ? Math.round((auditChecked / auditItems.length) * 100) : 100;
-    const stockScore = Math.max(40, Math.min(100, 100 - nearEdBatches.length * 4 - defectaCount * 3));
+    const stockScore = Math.max(40, Math.min(100, 100 - warningEdCount * 4 - defectaCount * 3));
     const readiness = Math.max(55, Math.min(100, Math.round((stockScore * 0.65) + (auditPct * 0.35))));
     const dashArray = Math.round((readiness / 100) * 251.2);
 
-    // Agregasi Penjualan Nyata 7 Hari Terakhir dari AppState.penjualan
+    // Agregasi Penjualan Nyata 7 Hari Terakhir (Zona Waktu Lokal)
     const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     const days = [];
     const omzSeries = [];
     const labaSeries = [];
     for (let offset = 6; offset >= 0; offset--) {
-      const dt = new Date();
-      dt.setDate(dt.getDate() - offset);
-      const iso = dt.toISOString().slice(0, 10);
+      const dt = new Date(nowDt.getFullYear(), nowDt.getMonth(), nowDt.getDate() - offset);
+      const iso = toLocalYmd_(dt);
       days.push(offset === 0 ? 'Hari Ini' : dayNames[dt.getDay()]);
-      const daySales = validSales.filter((p) => String(p.tanggal || '').slice(0, 10) === iso);
-      const sumOmz = daySales.reduce((acc, p) => acc + Number(p.grand_total || 0), 0);
-      const sumLaba = seeCost ? daySales.reduce((acc, p) => acc + Number(p.estimasi_margin || 0), 0) : 0;
-      omzSeries.push(sumOmz);
-      labaSeries.push(sumLaba);
+      const daySales = validSales.filter((p) => toLocalYmd_(p.tanggal) === iso);
+      omzSeries.push(daySales.reduce((acc, p) => acc + Number(p.grand_total || 0), 0));
+      labaSeries.push(seeCost ? daySales.reduce((acc, p) => acc + Number(p.estimasi_margin || 0), 0) : 0);
     }
     const maxVal = Math.max(...omzSeries, 100000);
     const total7Hari = omzSeries.reduce((a, b) => a + b, 0);
+    const avg7Hari = Math.round(total7Hari / 7);
 
     // SVG smooth trend line across 7 days
     const trendCoords = omzSeries.map((val, idx) => {
@@ -683,16 +740,17 @@
     });
     const payRows = Object.keys(payTotals).map((k) => ({ name: k, total: payTotals[k] })).sort((a, b) => b.total - a.total);
     const payDenom = payRows.reduce((s, r) => s + r.total, 0) || 1;
-    const payColors = { TUNAI: '#10B981', QRIS: '#0066FE', TRANSFER: '#0284C7', SPLIT: '#F59E0B' };
+    const payColors = { TUNAI: '#10B981', QRIS: '#0066FE', TRANSFER: '#0284C7', SPLIT: '#F59E0B', TEMPO: '#D97706' };
 
-    // Top-5 Obat Terlaris dari AppState.detailPenjualan
+    // Top-5 Obat Terlaris dari transaksi LUNAS/valid (kecualikan RETUR)
     const soldMap = {};
     (st.detailPenjualan || []).forEach((d) => {
+      if (d.id_transaksi && validTrxIds.size && !validTrxIds.has(d.id_transaksi)) return;
       const key = d.id_obat || d.nama_dagang;
       if (!key) return;
       if (!soldMap[key]) {
         const ob = st.masterObat.find((o) => o.id_obat === d.id_obat);
-        soldMap[key] = { nama: d.nama_dagang || (ob && ob.nama_dagang) || key, qty: 0, omz: 0 };
+        soldMap[key] = { id_obat: d.id_obat || '', nama: d.nama_dagang || (ob && ob.nama_dagang) || key, qty: 0, omz: 0 };
       }
       soldMap[key].qty += Number(d.qty || 1);
       soldMap[key].omz += Number(d.subtotal_item || (Number(d.qty || 1) * Number(d.harga_jual || 0)));
@@ -700,100 +758,171 @@
     const topObatList = Object.values(soldMap).sort((a, b) => b.qty - a.qty).slice(0, 5);
 
     const activeUserDisplay = (S().getRole() === 'Pemilik' ? pemilikNama : ((st.user && st.user.nama_lengkap) || pemilikNama));
+    const canPos = S().canAccessView('pos');
+    const canObat = S().canAccessView('obat');
+    const canPoct = S().canAccessView('pemeriksaan');
+    const canGudang = S().canAccessView('gudang');
+    const canShift = S().canAccessView('tutup-shift');
+    const canFin = S().canAccessView('finance');
+    const canErx = S().canAccessView('eresep-prb');
+    const canOnline = S().canAccessView('omnichannel');
 
-    return `<div class="space-y-5 ons-view-enter">
+    return `<div class="space-y-4 ons-view-enter">
       <!-- Fluid Hero Greeting Cockpit -->
       <div class="ons-hero-welcome p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
           <div class="relative shrink-0">
             <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/80 dark:border-slate-700 shadow-md object-cover bg-white"/>
-            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-800" title="Operasional Aktif"></span>
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${activeShift ? 'bg-emerald-500' : 'bg-amber-500'} border-2 border-white dark:border-slate-800" title="${activeShift ? 'Shift Kasir Terbuka' : 'Shift Belum Dibuka'}"></span>
           </div>
           <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
               <span class="badge-bpom bpom-bebas">${S().esc(fullDateLabel)}</span>
-              <span class="badge-bpom bpom-terbatas">Cabang ${S().esc(st.cabangId)} &bull; ${S().esc(S().getRole())}</span>
+              <span class="badge-bpom bpom-terbatas">Cabang ${S().esc(cabId)} &bull; ${S().esc(S().getRole())}</span>
+              ${canShift ? `<button type="button" onclick="navigateView('tutup-shift','')" class="badge-bpom ${activeShift ? 'bpom-bebas' : 'bpom-prekursor'} cursor-pointer">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
             </div>
             <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight truncate">${greetText}, ${S().esc(activeUserDisplay)}</h1>
             <p class="text-xs sm:text-sm truncate" style="color:var(--ons-text-soft)">${S().esc(usahaNama)} &bull; SIA: ${S().esc(prof.no_sia || '-')} &bull; ${S().esc(prof.jam_operasional || 'Siap Melayani')}</p>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 shrink-0">
-          <button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm">Buka Kasir POS (F2)</button>
-          <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>
-          ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs" title="Kirim Ringkasan Harian ke WA Pemilik (100% Gratis)">Rekap WA Pemilik</button>` : ''}
-          ${seeCost ? `<button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-ghost text-xs">Tagihan</button>` : ''}
+          ${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm">Buka Kasir POS (F2)</button>` : ''}
+          ${canPoct ? `<button onclick="navigateView('pemeriksaan','semua')" class="ons-btn ons-btn-ghost text-xs">Pemeriksaan Pasien</button>` : ''}
+          ${canObat ? `<button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>` : ''}
+          ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs" title="Kirim Ringkasan Harian ke WA Pemilik">Rekap WA Pemilik</button>` : ''}
           <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
         </div>
       </div>
 
-      ${st.masterObat.length === 0 ? `<div class="ons-card p-4 border-l-4 flex flex-wrap items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.07)">
-        <div>
-          <div class="font-bold text-sm">Katalog Obat Masih Kosong (Mode Live Baru Terhubung)</div>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Klik tombol di kanan untuk mengisi otomatis katalog awal obat BPOM/KFA, batch FEFO, PBF, &amp; member ke Google Sheets, atau import dari Excel (.xlsx).</p>
+      ${st.masterObat.length === 0 ? `<div class="ons-card p-4 border-l-4 flex flex-wrap items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.06)">
+        <div class="min-w-0">
+          <div class="font-bold text-sm">Belum Ada Produk Obat di Katalog Cabang Ini</div>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan daftar obat melalui menu <b>Master Katalog Obat</b> atau catat penerimaan barang lewat <b>Faktur Masuk</b> agar transaksi POS dan pemantauan stok langsung aktif.</p>
         </div>
-        <div class="flex flex-wrap gap-2">
-          ${seeCost ? `<button onclick="window.seedStarterCatalogNow()" class="ons-btn ons-btn-primary text-xs">Isi Katalog Awal (1 Klik)</button>` : ''}
-          <button onclick="navigateView('${seeCost ? 'obat' : 'pos'}')" class="ons-btn ons-btn-ghost text-xs">Kelola Katalog / Import Excel</button>
-        </div>
+        ${canObat ? `<button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-primary text-xs shrink-0">Buka Master Katalog Obat &rarr;</button>` : ''}
       </div>` : ''}
 
-      <!-- 4 Kartu KPI Utama yang Lega & Interaktif -->
+      <!-- 4 Kartu KPI Utama yang Jelas, Akurat & Berlogo Rp -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-        <div class="ons-kpi-card" onclick="navigateView('pos','riwayat')">
+        <div class="ons-kpi-card" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
           <div class="flex items-start justify-between gap-2">
             <div>
-              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Omzet Penjualan</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-blue-600">${S().rp(omzetHari)}</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Omzet Penjualan Hari Ini</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-blue-600">${S().rp(omzetHariIni)}</div>
             </div>
-            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 font-extrabold text-[15px] tracking-tight" aria-hidden="true">Rp</span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
-            <span class="text-emerald-600 font-bold">${validSales.length} nota lunas</span>
-            <span style="color:var(--ons-text-soft)">Lihat Riwayat &rarr;</span>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="font-semibold truncate" style="color:var(--ons-text-soft)"><b class="text-emerald-600">${todaySales.length} nota</b> hari ini &bull; Total ${S().rp(omzetTotal)}</span>
+            ${canPos ? `<span class="font-semibold text-blue-600 shrink-0">Riwayat &rarr;</span>` : ''}
           </div>
         </div>
 
-        <div class="ons-kpi-card" onclick="navigateView('${seeCost ? 'finance' : 'pos'}','${seeCost ? 'pnl' : 'kasir'}')">
+        ${seeCost ? `<div class="ons-kpi-card" ${canFin ? `onclick="navigateView('finance','pnl')"` : ''}>
           <div class="flex items-start justify-between gap-2">
             <div>
-              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Estimasi Laba Kotor' : 'Poin Loyalitas Member'}</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600">${seeCost ? S().rp(marginHari) : (totalPoinMember + ' Poin')}</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Estimasi Laba Kotor</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600">${S().rp(omzetHariIni > 0 ? marginHariIni : marginTotal)}</div>
             </div>
-            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 font-extrabold text-[13px] tracking-tight" aria-hidden="true">${marginPct}%</span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
-            <span style="color:var(--ons-text-soft)">${seeCost ? 'Margin bersih tercatat' : 'Data HPP disembunyikan'}</span>
-            <span class="font-semibold text-emerald-600">${seeCost ? 'Buka P&amp;L &rarr;' : 'Ke Kasir &rarr;'}</span>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="truncate" style="color:var(--ons-text-soft)">${omzetHariIni > 0 ? 'Hari ini &bull; Akumulasi ' + S().rp(marginTotal) : 'Akumulasi tercatat (' + validSales.length + ' nota)'}</span>
+            ${canFin ? `<span class="font-semibold text-emerald-600 shrink-0">Buka P&amp;L &rarr;</span>` : ''}
           </div>
-        </div>
+        </div>` : `<div class="ons-kpi-card" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pemeriksaan Pasien (POCT)</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600">${poctTodayCount} Pasien</div>
+            </div>
+            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+          </div>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="truncate" style="color:var(--ons-text-soft)">${branchPoct.length} riwayat &bull; ${totalPoinMember} poin member</span>
+            ${canPoct ? `<span class="font-semibold text-emerald-600 shrink-0">Periksa &rarr;</span>` : ''}
+          </div>
+        </div>`}
 
-        <div class="ons-kpi-card" onclick="navigateView('gudang','batch')">
+        <div class="ons-kpi-card" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
           <div class="flex items-start justify-between gap-2">
             <div>
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Kesehatan Stok &amp; FEFO</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 ${nearEdBatches.length ? 'text-red-600' : 'text-emerald-600'}">${nearEdBatches.length} Batch ED</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 ${warningEdCount ? 'text-red-600' : 'text-emerald-600'}">${warningEdCount} Batch ED</div>
             </div>
-            <span class="ons-kpi-ico ${nearEdBatches.length ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
+            <span class="ons-kpi-ico ${warningEdCount ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
-            <span class="${defectaCount ? 'text-amber-600 font-bold' : 'text-emerald-600 font-semibold'}">${defectaCount} item stok menipis</span>
-            <span style="color:var(--ons-text-soft)">Cek Gudang &rarr;</span>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="${defectaCount ? 'text-amber-600 font-bold' : 'text-emerald-600 font-semibold'} truncate">${expiredBatches.length ? expiredBatches.length + ' kadaluarsa &bull; ' : ''}${defectaCount} item menipis</span>
+            ${canGudang ? `<span class="shrink-0" style="color:var(--ons-text-soft)">Cek Gudang &rarr;</span>` : ''}
           </div>
         </div>
 
-        <div class="ons-kpi-card" onclick="navigateView('${seeCost ? 'finance' : 'tutup-shift'}','${seeCost ? 'hutang' : ''}')">
+        ${seeCost ? `<div class="ons-kpi-card" ${canFin ? `onclick="navigateView('finance','hutang')"` : ''}>
           <div class="flex items-start justify-between gap-2">
             <div>
-              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Tagihan PBF Berjalan' : 'Handover Shift Kasir'}</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-amber-600">${seeCost ? S().rp(apTotal) : 'Siap Hitung'}</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Hutang PBF &amp; Piutang</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-amber-600">${S().rp(apTotal)}</div>
             </div>
             <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color:var(--ons-border)">
-            <span style="color:var(--ons-text-soft)">${seeCost ? st.fakturPbf.length + ' faktur PBF aktif' : 'Rekonsiliasi kas laci'}</span>
-            <span class="font-semibold text-amber-600">${seeCost ? 'Kelola AP &rarr;' : 'Tutup Shift &rarr;'}</span>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="truncate" style="color:var(--ons-text-soft)">${openFaktur.length} faktur (${apNearDueCount} tempo &le;7h)${piutangTotal > 0 ? ' &bull; Piutang ' + S().rp(piutangTotal) : ''}</span>
+            ${canFin ? `<span class="font-semibold text-amber-600 shrink-0">Kelola AP &rarr;</span>` : ''}
           </div>
+        </div>` : `<div class="ons-kpi-card" ${canShift ? `onclick="navigateView('tutup-shift','')"` : ''}>
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Status Shift &amp; Laci Kas</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 ${activeShift ? 'text-emerald-600' : 'text-amber-600'}">${activeShift ? 'Shift Buka' : 'Belum Buka'}</div>
+            </div>
+            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          </div>
+          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="truncate" style="color:var(--ons-text-soft)">${activeShift ? ('Modal awal ' + S().rp(activeShift.modal_awal || 0)) : 'Klik untuk buka / rekap shift'}</span>
+            ${canShift ? `<span class="font-semibold text-amber-600 shrink-0">Shift Kasir &rarr;</span>` : ''}
+          </div>
+        </div>`}
+      </div>
+
+      <!-- Strip Ringkas Operasional & Klinis Tersinkron -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        ${canOnline ? `<div class="ons-card p-3.5 flex items-center justify-between gap-2 cursor-pointer hover:border-blue-500" onclick="navigateView('omnichannel','')">
+          <div class="min-w-0">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Pesanan E-Apotek / WA</div>
+            <div class="font-extrabold text-sm mt-0.5 font-mono-num ${onlinePendingCount ? 'text-blue-600' : ''}">${onlinePendingCount} Perlu Proses</div>
+          </div>
+          <span class="badge-bpom bpom-terbatas shrink-0">${branchOnline.length} total</span>
+        </div>` : `<div class="ons-card p-3.5 flex items-center justify-between gap-2 ${canPos ? 'cursor-pointer hover:border-blue-500' : ''}" ${canPos ? `onclick="navigateView('pos','kasir')"` : ''}>
+          <div class="min-w-0">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Pelayanan Kasir POS</div>
+            <div class="font-extrabold text-sm mt-0.5 font-mono-num text-blue-600">${todaySales.length} Nota Hari Ini</div>
+          </div>
+          <span class="badge-bpom bpom-terbatas shrink-0">${validSales.length} total</span>
+        </div>`}
+
+        <div class="ons-card p-3.5 flex items-center justify-between gap-2 ${canPoct ? 'cursor-pointer hover:border-emerald-500' : ''}" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
+          <div class="min-w-0">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Pemeriksaan Kesehatan</div>
+            <div class="font-extrabold text-sm mt-0.5 font-mono-num text-emerald-600">${poctTodayCount} Hari Ini</div>
+          </div>
+          <span class="badge-bpom bpom-bebas shrink-0">${branchPoct.length} riwayat</span>
+        </div>
+
+        <div class="ons-card p-3.5 flex items-center justify-between gap-2 ${seeCost && S().canAccessView('faktur') ? 'cursor-pointer hover:border-amber-500' : ''}" ${seeCost && S().canAccessView('faktur') ? `onclick="navigateView('faktur','sp')"` : ''}>
+          <div class="min-w-0">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">${seeCost ? 'Surat Pesanan PBF' : 'Katalog Produk Aktif'}</div>
+            <div class="font-extrabold text-sm mt-0.5 font-mono-num">${seeCost ? (spOpenCount + ' SP Terbuka') : (st.masterObat.length + ' Produk')}</div>
+          </div>
+          <span class="badge-bpom ${seeCost && spOpenCount ? 'bpom-prekursor' : 'bpom-bebas'} shrink-0">${seeCost ? (branchSp.length + ' SP') : (activeBatches.length + ' batch')}</span>
+        </div>
+
+        <div class="ons-card p-3.5 flex items-center justify-between gap-2 ${canGudang ? 'cursor-pointer hover:border-blue-500' : ''}" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
+          <div class="min-w-0">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Monitor Suhu (2&ndash;8&deg;C)</div>
+            <div class="font-extrabold text-sm mt-0.5 font-mono-num ${latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'text-red-600' : 'text-emerald-600'}">${latestCold ? (Number(latestCold.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}</div>
+          </div>
+          <span class="badge-bpom ${latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'bpom-keras' : 'bpom-bebas'} shrink-0">${latestCold ? S().esc(latestCold.status_alarm || 'NORMAL') : '-'}</span>
         </div>
       </div>
 
@@ -803,7 +932,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 class="font-bold text-sm">Tren ${seeCost ? 'Omzet vs Laba Kotor' : 'Penjualan'} 7 Hari</h3>
-              <div class="text-[11px]" style="color:var(--ons-text-soft)">Total 7 hari terakhir: <b>${S().rp(total7Hari)}</b></div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Total 7 hari: <b>${S().rp(total7Hari)}</b> &bull; Rata-rata: <b>${S().rp(avg7Hari)}/hr</b></div>
             </div>
             <div class="flex items-center gap-2 text-[10px]">
               <span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#0066FE"></span> Omzet</span>
@@ -844,25 +973,29 @@
             <span class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${todayIso}</span>
           </div>
           <div class="space-y-2 text-xs">
-            <div class="ons-priority-pill" onclick="navigateView('gudang','batch')">
-              <span class="font-medium">Batch Mendekati ED (&le;90 hari)</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-red-500/15 text-red-600">${nearEdBatches.length}</span>
+            <div class="ons-priority-pill" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
+              <span class="font-medium">Batch Kadaluarsa &amp; Near ED (&le;90h)</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-red-500/15 text-red-600">${warningEdCount}</span>
             </div>
-            <div class="ons-priority-pill" onclick="navigateView('${seeCost ? 'defecta' : 'gudang'}','${seeCost ? 'order' : 'batch'}')">
+            <div class="ons-priority-pill" ${seeCost && S().canAccessView('defecta') ? `onclick="navigateView('defecta','order')"` : (canGudang ? `onclick="navigateView('gudang','batch')"` : '')}>
               <span class="font-medium">Item Defecta / Stok Menipis</span>
               <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">${defectaCount}</span>
             </div>
-            <div class="ons-priority-pill" onclick="navigateView('eresep-prb','erx')">
-              <span class="font-medium">Antrean E-Resep Dokter</span>
+            <div class="ons-priority-pill" ${canErx ? `onclick="navigateView('eresep-prb','erx')"` : ''}>
+              <span class="font-medium">Antrean Validasi E-Resep APJ</span>
               <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600">${erxAntre}</span>
             </div>
-            <div class="ons-priority-pill" onclick="navigateView('eresep-prb','prb')">
+            <div class="ons-priority-pill" ${canErx ? `onclick="navigateView('eresep-prb','prb')"` : ''}>
               <span class="font-medium">Pasien PRB Refill (&le;5 hari)</span>
               <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600">${prbUrgentCount}</span>
             </div>
-            ${seeCost ? `<div class="ons-priority-pill" onclick="navigateView('billing','verifikasi')">
-              <span class="font-medium">Verifikasi Pembayaran PRB</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600">${billPending}</span>
+            ${canOnline ? `<div class="ons-priority-pill" onclick="navigateView('omnichannel','')">
+              <span class="font-medium">Pesanan E-Apotek / WA Perlu Proses</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600">${onlinePendingCount}</span>
+            </div>` : ''}
+            ${seeCost && canFin ? `<div class="ons-priority-pill" onclick="navigateView('finance','${openPiutang.length && !apNearDueCount ? 'piutang' : 'hutang'}')">
+              <span class="font-medium">Tagihan PBF Tempo (&le;7h) &amp; Piutang</span>
+              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">${apNearDueCount + openPiutang.length}</span>
             </div>` : ''}
           </div>
         </div>
@@ -903,7 +1036,7 @@
         <div class="ons-card p-5 lg:col-span-6 space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="font-bold text-sm">Komposisi Metode Pembayaran Kasir</h3>
-            <button onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Riwayat Nota &rarr;</button>
+            ${canPos ? `<button onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Riwayat Nota &rarr;</button>` : ''}
           </div>
           <div class="space-y-3 text-xs">
             ${payRows.length ? payRows.map((ch) => {
@@ -922,7 +1055,7 @@
         <div class="ons-card p-5 lg:col-span-6 space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="font-bold text-sm">Top Obat Terlaris (Fast Moving)</h3>
-            <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Buka Master Obat &rarr;</button>
+            ${canObat ? `<button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Buka Master Obat &rarr;</button>` : ''}
           </div>
           <div class="space-y-2 text-xs">
             ${topObatList.length ? topObatList.map((item, idx) => `
@@ -944,41 +1077,34 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div>
             <h3 class="font-bold text-sm">Radar Batch Mendekati Kadaluarsa (FEFO Terdekat)</h3>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Prioritaskan penjualan batch yang paling cepat mendekati tanggal kedaluwarsa.</p>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Prioritaskan penjualan batch aktif cabang ${S().esc(cabId)} yang paling cepat mendekati tanggal kedaluwarsa.</p>
           </div>
-          <button onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs">Kelola Gudang &amp; Recall &rarr;</button>
+          ${canGudang ? `<button onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs">Kelola Gudang &amp; Recall &rarr;</button>` : ''}
         </div>
-        <div class="ons-table-wrap">
+        ${activeBatches.length ? `<div class="ons-table-wrap">
           <table class="ons-table">
             <thead><tr><th>Nama Obat</th><th>No. Batch</th><th>Tanggal ED</th><th>Sisa Hari</th><th>Stok Sisa</th><th>Aksi</th></tr></thead>
             <tbody>
-              ${st.stokBatch.slice().sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa))).slice(0, 6).map((b) => {
+              ${activeBatches.slice().sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa))).slice(0, 6).map((b) => {
                 const ob = st.masterObat.find((o) => o.id_obat === b.id_obat);
                 const d = S().daysUntil(b.tgl_kadaluarsa);
                 const badgeCls = d <= 90 ? 'bpom-keras' : (d <= 180 ? 'bpom-prekursor' : 'bpom-bebas');
+                const dayTxt = d < 0 ? ('EXPIRED (' + Math.abs(d) + 'h lalu)') : (d + ' hari');
                 return `<tr>
                   <td class="font-semibold">${S().esc(ob ? ob.nama_dagang : b.id_obat)}</td>
                   <td class="font-mono-num">${S().esc(b.no_batch)}</td>
                   <td class="font-mono-num">${S().esc(b.tgl_kadaluarsa)}</td>
-                  <td><span class="badge-bpom ${badgeCls} font-mono-num">${d} hari</span></td>
+                  <td><span class="badge-bpom ${badgeCls} font-mono-num">${dayTxt}</span></td>
                   <td class="font-mono-num font-bold">${b.qty_sisa}</td>
-                  <td><button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Prioritaskan Jual</button></td>
+                  <td>${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">${d < 0 ? 'Cek Recall' : 'Prioritaskan Jual'}</button>` : '-'}</td>
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
-        </div>
+        </div>` : `<div class="py-6 text-center text-xs rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Belum ada stok batch aktif pada cabang ${S().esc(cabId)}.</div>`}
       </div>
     </div>`;
   }
-
-  global.seedStarterCatalogNow = async () => {
-    try {
-      const res = await API().callApi('system.seedStarterCatalog', {}, { isWrite: true });
-      global.toast(res.pesan || res.message || 'Katalog awal berhasil diisi ke Google Sheets!', 'ok');
-      await global.bootLoadState(true);
-    } catch (e) { global.toast(e.message, 'err'); }
-  };
 
   /**
    * W-03: Kasir POS Next-Gen v11 (Kasir FEFO, Split Pay, Poin, Riwayat/Retur PIN & Struk Thermal)

@@ -8,9 +8,10 @@
   'use strict';
 
   const STORAGE_KEY = 'ons_farma_v10_demo_db';
+  const toLocalYmd = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   const today = new Date();
-  const isoToday = today.toISOString().slice(0, 10);
-  const addDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+  const isoToday = toLocalYmd(today);
+  const addDays = (n) => toLocalYmd(new Date(today.getFullYear(), today.getMonth(), today.getDate() + Number(n || 0)));
 
   function defaultProfilUsaha() {
     return {
