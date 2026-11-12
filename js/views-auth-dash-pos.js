@@ -640,8 +640,13 @@
     const prbUrgentCount = (st.members || []).filter((m) => m.tgl_habis_obat && S().daysUntil(m.tgl_habis_obat) <= 5).length;
     const totalPoinMember = validSales.reduce((a, b) => a + Number(b.poin_didapat || 0), 0);
 
-    // Readiness Compliance Score (Audit, ED, Defecta)
-    const readiness = Math.max(60, Math.min(100, 100 - nearEdBatches.length * 4 - defectaCount * 3));
+    // Readiness Compliance Score (Checklist Audit + APJ/Kasir, ED, Defecta)
+    const auditSys = S().getAuditSystem ? S().getAuditSystem() : { apj_nama: 'apt. Siti Rahma, S.Farm', kasir_nama: 'Budi Santoso (Kasir)', items: [] };
+    const auditItems = Array.isArray(auditSys.items) ? auditSys.items : [];
+    const auditChecked = auditItems.filter((it) => it.checked).length;
+    const auditPct = auditItems.length ? Math.round((auditChecked / auditItems.length) * 100) : 100;
+    const stockScore = Math.max(40, Math.min(100, 100 - nearEdBatches.length * 4 - defectaCount * 3));
+    const readiness = Math.max(55, Math.min(100, Math.round((stockScore * 0.65) + (auditPct * 0.35))));
     const dashArray = Math.round((readiness / 100) * 251.2);
 
     // Agregasi Penjualan Nyata 7 Hari Terakhir dari AppState.penjualan
@@ -862,22 +867,33 @@
           </div>
         </div>
 
-        <div class="ons-card p-5 lg:col-span-3 flex flex-col items-center justify-between">
-          <div class="w-full flex items-center justify-between mb-1">
+        <div class="ons-card p-5 lg:col-span-3 flex flex-col items-center justify-between gap-2">
+          <div class="w-full flex items-center justify-between gap-1">
             <h3 class="font-bold text-sm">Kepatuhan BPOM</h3>
             <span class="badge-bpom bpom-bebas">SIAP AUDIT</span>
           </div>
-          <svg viewBox="0 0 120 120" class="w-32 h-32 my-1">
+          <svg viewBox="0 0 120 120" class="w-28 h-28 my-0.5">
             <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ons-border)" stroke-width="11"/>
             <circle cx="60" cy="60" r="40" fill="none" stroke="#10B981" stroke-width="11" stroke-linecap="round"
               stroke-dasharray="${dashArray} 251.2" transform="rotate(-90 60 60)"/>
             <text x="60" y="57" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor">${readiness}%</text>
-            <text x="60" y="74" text-anchor="middle" font-size="9" fill="#64748B">Skor CDOB</text>
+            <text x="60" y="74" text-anchor="middle" font-size="9" fill="#64748B">Skor ${auditChecked}/${auditItems.length || 3} Audit</text>
           </svg>
           <div class="w-full space-y-1.5 text-xs pt-2 border-t" style="border-color:var(--ons-border)">
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-blue-600 rounded"/> Verifikasi Laci Narkotika</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-blue-600 rounded"/> Prioritas Jual Batch FEFO</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-blue-600 rounded"/> Order SP PBF Sebelum 14:00</label>
+            ${auditItems.slice(0, 4).map((it) => `
+              <label class="flex items-start justify-between gap-2 cursor-pointer">
+                <span class="flex items-start gap-2 min-w-0">
+                  <input type="checkbox" ${it.checked ? 'checked' : ''} onchange="window.toggleDashAuditCheck('${S().esc(it.id)}', this.checked)" class="accent-blue-600 rounded mt-0.5 shrink-0"/>
+                  <span class="leading-snug">${S().esc(it.label)}</span>
+                </span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 shrink-0">${S().esc(it.pj_role || 'APJ')}</span>
+              </label>
+            `).join('')}
+          </div>
+          <div class="w-full pt-2 border-t text-[11px] space-y-1.5" style="border-color:var(--ons-border)">
+            <div class="truncate" style="color:var(--ons-text-soft)">APJ: <b style="color:var(--ons-text)">${S().esc(auditSys.apj_nama || '-')}</b></div>
+            <div class="truncate" style="color:var(--ons-text-soft)">Kasir: <b style="color:var(--ons-text)">${S().esc(auditSys.kasir_nama || '-')}</b></div>
+            ${S().canAccessView('settings') ? `<button type="button" onclick="navigateView('settings','audit')" class="ons-btn ons-btn-ghost w-full text-[11px] py-1 mt-1">Edit Sistem Audit, APJ &amp; Kasir &rarr;</button>` : ''}
           </div>
         </div>
       </div>
@@ -1292,6 +1308,20 @@
       </div>
     </div>`;
   }
+
+  global.toggleDashAuditCheck = async (itemId, isChecked) => {
+    const cur = S().getAuditSystem();
+    const nextItems = (cur.items || []).map((it) => it.id === itemId ? Object.assign({}, it, { checked: !!isChecked }) : it);
+    const nextSys = S().setAuditSystem(Object.assign({}, cur, { items: nextItems }));
+    global.renderActiveView();
+    try {
+      const res = await API().callApi('audit.saveChecklist', Object.assign({}, nextSys, { sync_staff_accounts: false }), { isWrite: true });
+      if (res && res.audit_system) S().setAuditSystem(res.audit_system);
+      global.toast('Checklist audit CDOB diperbarui.', 'ok');
+    } catch (e) {
+      global.toast(e.message || 'Gagal menyimpan checklist audit.', 'err');
+    }
+  };
 
   global.setPosSubTab = (t) => {
     posSubTab = (t && t !== 'online') ? t : 'kasir';

@@ -6,6 +6,71 @@
 
   const DARK_KEY = 'ons_farma_v10_dark';
   const PROFILE_CACHE_KEY = 'ons_farma_v13_profile';
+  const AUDIT_SYS_KEY = 'ons_farma_v164_audit_sys';
+
+  const RBAC_MODULE_CATALOG = [
+    { key: 'dashboard', label: 'Beranda & Audit BPOM', group: 'Operasional' },
+    { key: 'pos', label: 'Kasir POS FEFO & Riwayat', group: 'Operasional' },
+    { key: 'tutup-shift', label: 'Tutup Shift & Laci Kas', group: 'Operasional' },
+    { key: 'obat', label: 'Master Data Obat & Harga', group: 'Persediaan' },
+    { key: 'gudang', label: 'Persediaan & Kartu Stok', group: 'Persediaan' },
+    { key: 'gudang:opname', label: 'Stock Opname Fisik', group: 'Persediaan' },
+    { key: 'gudang:transfer', label: 'Mutasi Antar-Cabang', group: 'Persediaan' },
+    { key: 'defecta', label: 'Defecta & Surat Pesanan A4', group: 'Pembelian' },
+    { key: 'faktur', label: 'Terima Faktur, Scan & Retur', group: 'Pembelian' },
+    { key: 'eresep-prb', label: 'E-Resep Dokter & PRB', group: 'Klinis' },
+    { key: 'pemeriksaan', label: 'Pemeriksaan Pasien (POCT)', group: 'Klinis' },
+    { key: 'klinis', label: 'Pelayanan Klinis (SOAP/PIO)', group: 'Klinis' },
+    { key: 'crm-wa', label: 'Pelanggan & CRM Broadcast WA', group: 'Klinis' },
+    { key: 'finance', label: 'Keuangan, P&L, Piutang & Pajak', group: 'Keuangan' },
+    { key: 'billing', label: 'Tagihan & Kwitansi QR', group: 'Keuangan' },
+    { key: 'sipnap', label: 'Laporan SIPNAP & Pareto ABC', group: 'Keuangan' },
+    { key: 'doc-engine', label: 'Dokumen Resmi QR HMAC', group: 'Keuangan' },
+    { key: 'settings', label: 'Pengaturan Usaha & Akun', group: 'Sistem' },
+    { key: 'settings:audit', label: 'Edit Sistem Audit & Log Audit', group: 'Sistem' },
+    { key: 'mobile-preview', label: 'Tampilan Mode HP', group: 'Sistem' }
+  ];
+
+  const ALL_PERM_KEYS = RBAC_MODULE_CATALOG.map((m) => m.key);
+  const DEFAULT_ROLE_PERMS = {
+    Pemilik: ALL_PERM_KEYS.slice(),
+    APJ: ALL_PERM_KEYS.slice(),
+    Kasir: ['dashboard', 'pos', 'gudang', 'pemeriksaan', 'billing', 'tutup-shift', 'mobile-preview']
+  };
+
+  function defaultAuditSystem(cabangId) {
+    return {
+      cabang_id: cabangId || 'ONS-01',
+      apj_user_id: 'USR-002',
+      apj_nama: 'apt. Siti Rahma, S.Farm',
+      apj_sipa: '19920412/SIPA_35.78/2025/1042',
+      kasir_user_id: 'USR-003',
+      kasir_nama: 'Budi Santoso (Kasir)',
+      catatan_audit: 'Pemeriksaan rutin CDOB & kesiapan stok harian.',
+      updated_at: '',
+      updated_by: 'Sistem',
+      items: [
+        { id: 'AUDC-1', label: 'Verifikasi Laci Narkotika', checked: true, pj_role: 'APJ', pj_nama: 'apt. Siti Rahma, S.Farm', keterangan: 'Terkunci ganda & kartu stok sesuai' },
+        { id: 'AUDC-2', label: 'Prioritas Jual Batch FEFO', checked: true, pj_role: 'Kasir', pj_nama: 'Budi Santoso (Kasir)', keterangan: 'Batch ED terdekat diprioritaskan di POS' },
+        { id: 'AUDC-3', label: 'Order SP PBF Sebelum 14:00', checked: false, pj_role: 'APJ', pj_nama: 'apt. Siti Rahma, S.Farm', keterangan: 'Menunggu approval SP harian' }
+      ]
+    };
+  }
+
+  function loadCachedAuditSystem() {
+    const def = defaultAuditSystem('ONS-01');
+    try {
+      const raw = localStorage.getItem(AUDIT_SYS_KEY);
+      if (!raw) return def;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return def;
+      return Object.assign({}, def, parsed, {
+        items: Array.isArray(parsed.items) && parsed.items.length ? parsed.items : def.items
+      });
+    } catch (e) {
+      return def;
+    }
+  }
 
   function defaultStoreProfile() {
     return {
@@ -85,6 +150,9 @@
     user: null,
     cabangId: 'ONS-01',
     storeProfile: loadCachedProfile(),
+    staffDirectory: [],
+    rbacPermissions: {},
+    auditSystem: loadCachedAuditSystem(),
     masterObat: [],
     stokBatch: [],
     members: [],
@@ -167,13 +235,63 @@
     return (AppState.user && AppState.user.role) || 'Kasir';
   }
 
+  function getUserPermissions(userObj) {
+    const u = userObj || AppState.user;
+    const role = (u && u.role) || 'Kasir';
+    if (role === 'Pemilik') return ALL_PERM_KEYS.slice();
+    const map = AppState.rbacPermissions || {};
+    const uid = u && u.id_user ? String(u.id_user) : '';
+    const uname = u && u.username ? String(u.username).toLowerCase() : '';
+    const custom = (uid && Array.isArray(map[uid]) ? map[uid] : null)
+      || (uname && Array.isArray(map[uname]) ? map[uname] : null)
+      || (u && Array.isArray(u.hak_akses) ? u.hak_akses : null);
+    if (custom && custom.length) return custom.slice();
+    return (DEFAULT_ROLE_PERMS[role] || DEFAULT_ROLE_PERMS.Kasir).slice();
+  }
+
   function canAccessView(viewId) {
     const r = getRole();
     if (r === 'Pemilik') return true;
-    if (r === 'APJ') return viewId !== 'settings' || true; // APJ akses penuh klinis/gudang/sipnap; settings secrets disensor
-    // Kasir dibatasi strictly hanya Dashboard, POS, Gudang Baca/Cek ED, Billing Tagihan Pasien, Pemeriksaan Pasien, Tutup Shift & Mobile
-    const kasirAllowed = ['dashboard', 'pos', 'gudang', 'pemeriksaan', 'billing', 'tutup-shift', 'mobile-preview'];
-    return kasirAllowed.includes(viewId);
+    const perms = getUserPermissions(AppState.user);
+    if (viewId === 'settings' && perms.includes('settings:audit')) return true;
+    return perms.includes(viewId);
+  }
+
+  function canAccessSubTab(viewId, subTab) {
+    const r = getRole();
+    if (r === 'Pemilik') return true;
+    const perms = getUserPermissions(AppState.user);
+    const compound = `${viewId}:${subTab}`;
+    if (compound === 'gudang:opname' || compound === 'gudang:transfer' || compound === 'settings:audit') {
+      return perms.includes(compound);
+    }
+    return perms.includes(viewId);
+  }
+
+  function getAuditSystem() {
+    const def = defaultAuditSystem(AppState.cabangId || 'ONS-01');
+    const cur = AppState.auditSystem && typeof AppState.auditSystem === 'object' ? AppState.auditSystem : def;
+    const staff = Array.isArray(AppState.staffDirectory) ? AppState.staffDirectory : [];
+    const apjUser = staff.find((u) => u.role === 'APJ' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staff.find((u) => u.role === 'APJ');
+    const kasirUser = staff.find((u) => u.role === 'Kasir' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staff.find((u) => u.role === 'Kasir');
+    const apjNama = cur.apj_nama || (apjUser && apjUser.nama_lengkap) || def.apj_nama;
+    const apjSipa = cur.apj_sipa || (apjUser && apjUser.no_sipa) || def.apj_sipa;
+    const kasirNama = cur.kasir_nama || (kasirUser && kasirUser.nama_lengkap) || def.kasir_nama;
+    return Object.assign({}, def, cur, {
+      apj_user_id: cur.apj_user_id || (apjUser && apjUser.id_user) || def.apj_user_id,
+      apj_nama: apjNama,
+      apj_sipa: apjSipa,
+      kasir_user_id: cur.kasir_user_id || (kasirUser && kasirUser.id_user) || def.kasir_user_id,
+      kasir_nama: kasirNama,
+      items: Array.isArray(cur.items) && cur.items.length ? cur.items : def.items
+    });
+  }
+
+  function setAuditSystem(nextObj) {
+    const merged = Object.assign({}, defaultAuditSystem(AppState.cabangId || 'ONS-01'), AppState.auditSystem || {}, nextObj || {});
+    AppState.auditSystem = merged;
+    try { localStorage.setItem(AUDIT_SYS_KEY, JSON.stringify(merged)); } catch (e) {}
+    return merged;
   }
 
   function canSeeFinancialCost() {
@@ -860,7 +978,13 @@
     daysUntil,
     bpomBadge,
     getRole,
+    RBAC_MODULE_CATALOG,
+    DEFAULT_ROLE_PERMS,
+    getUserPermissions,
     canAccessView,
+    canAccessSubTab,
+    getAuditSystem,
+    setAuditSystem,
     canSeeFinancialCost,
     isBatchExpired,
     getTotalStok,

@@ -1308,13 +1308,13 @@
           <div class="ons-tab-bar">
             <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Batch &amp; FEFO (${sorted.length})</button>
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok (${(st.mutasiStok || []).length})</button>
-            ${seeCost ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
-            ${seeCost ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
+            ${(seeCost || S().canAccessSubTab('gudang', 'opname')) ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
+            ${(seeCost || S().canAccessSubTab('gudang', 'transfer')) ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
           </div>
         </div>
       </div>
 
-      ${gudangTab === 'transfer' && seeCost ? (() => {
+      ${gudangTab === 'transfer' && (seeCost || S().canAccessSubTab('gudang', 'transfer')) ? (() => {
         const cmpObj = st.branchStockCompare && !Array.isArray(st.branchStockCompare) ? st.branchStockCompare : null;
         const branchIds = (cmpObj && Array.isArray(cmpObj.branches) && cmpObj.branches.length)
           ? cmpObj.branches
@@ -1469,7 +1469,7 @@
             </table>
           </div>
         </div>
-      ` : (gudangTab === 'opname' && seeCost) ? `
+      ` : (gudangTab === 'opname' && (seeCost || S().canAccessSubTab('gudang', 'opname'))) ? `
         <div class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Aktif Dipindai</div><div class="text-lg font-bold font-mono-num">${activeForOpname.length}</div></div>

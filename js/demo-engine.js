@@ -207,6 +207,10 @@
 
   function buildPemeriksaanSeed(isoToday) {
     const yesterday = addDays(-1);
+    const twoWeeksAgo = addDays(-14);
+    const threeWeeksAgo = addDays(-18);
+    const ctrlSoon = addDays(5);
+    const ctrlNextWeek = addDays(14);
     return [
       {
         id_periksa: 'CHK-DEMO-01',
@@ -217,6 +221,9 @@
         no_wa: '6281234567801',
         jenis_kelamin: 'L',
         usia_tahun: 61,
+        berat_badan: 74,
+        tinggi_badan: 168,
+        imt_bmi: 26.2,
         tensi_sistol: 136,
         tensi_diastol: 86,
         nadi_bpm: 78,
@@ -228,8 +235,11 @@
         status_gula: 'NORMAL',
         status_kolesterol: 'BATAS_TINGGI',
         status_asam_urat: 'TINGGI',
+        tingkat_risiko: 'TINGGI_KONTROL',
+        riwayat_terapi: 'Amlodipine 10 mg (1x1 malam)',
         keluhan_catatan: 'Cek rutin bulanan + kadang pegal di sendi jari kaki',
         saran_apoteker: 'Lanjutkan Amlodipine 10mg malam, kurangi garam/jeroan/melinjo, cukupi air putih 2L/hari.',
+        tgl_kontrol: ctrlNextWeek,
         biaya_cek: 45000,
         petugas: 'apt. Siti Rahma, S.Farm',
         wa_terkirim: 'TERKIRIM_WA (' + isoToday + ' 09:15)',
@@ -244,6 +254,9 @@
         no_wa: '6281234567802',
         jenis_kelamin: 'P',
         usia_tahun: 57,
+        berat_badan: 63,
+        tinggi_badan: 156,
+        imt_bmi: 25.9,
         tensi_sistol: 124,
         tensi_diastol: 78,
         nadi_bpm: 74,
@@ -255,8 +268,11 @@
         status_gula: 'TINGGI',
         status_kolesterol: 'NORMAL',
         status_asam_urat: 'NORMAL',
+        tingkat_risiko: 'TINGGI_KONTROL',
+        riwayat_terapi: 'Metformin 500 mg + Insulin basal malam',
         keluhan_catatan: 'Kontrol GDP pagi sebelum suntik insulin',
         saran_apoteker: 'Pertahankan dosis Insulin sesuai jadwal dokter & kurangi karbohidrat sederhana.',
+        tgl_kontrol: ctrlSoon,
         biaya_cek: 35000,
         petugas: 'apt. Siti Rahma, S.Farm',
         wa_terkirim: 'BELUM',
@@ -271,6 +287,9 @@
         no_wa: '6281344559901',
         jenis_kelamin: 'P',
         usia_tahun: 49,
+        berat_badan: 68,
+        tinggi_badan: 159,
+        imt_bmi: 26.9,
         tensi_sistol: 116,
         tensi_diastol: 76,
         nadi_bpm: 72,
@@ -282,12 +301,81 @@
         status_gula: 'NORMAL',
         status_kolesterol: 'TINGGI',
         status_asam_urat: 'TINGGI',
+        tingkat_risiko: 'TINGGI_KONTROL',
+        riwayat_terapi: 'Belum rutin obat kronis',
         keluhan_catatan: 'Leher terasa kaku & nyeri lutut ringan',
         saran_apoteker: 'Kolesterol & Asam Urat di atas batas normal. Disarankan konsultasi dokter & batasi makanan berlemak/purin.',
+        tgl_kontrol: ctrlSoon,
         biaya_cek: 45000,
         petugas: 'Budi Santoso (Kasir)',
         wa_terkirim: 'BELUM',
         updated_at: yesterday + 'T16:20:00Z'
+      },
+      {
+        id_periksa: 'CHK-DEMO-04',
+        tanggal: twoWeeksAgo + 'T08:45:00',
+        cabang_id: 'ONS-01',
+        id_member: 'MBR-001',
+        nama_pasien: 'Tn. Bambang Suryono',
+        no_wa: '6281234567801',
+        jenis_kelamin: 'L',
+        usia_tahun: 61,
+        berat_badan: 76,
+        tinggi_badan: 168,
+        imt_bmi: 26.9,
+        tensi_sistol: 152,
+        tensi_diastol: 96,
+        nadi_bpm: 84,
+        gula_jenis: 'GDS',
+        gula_darah: 118,
+        kolesterol_total: 232,
+        asam_urat: 8.2,
+        status_tensi: 'HIPERTENSI_2',
+        status_gula: 'NORMAL',
+        status_kolesterol: 'BATAS_TINGGI',
+        status_asam_urat: 'TINGGI',
+        tingkat_risiko: 'TINGGI_KONTROL',
+        riwayat_terapi: 'Amlodipine 10 mg (baru mulai rutin)',
+        keluhan_catatan: 'Kunjungan awal keluhan tengkuk tegang & nyeri jempol kaki',
+        saran_apoteker: 'Disiplin minum Amlodipine tiap malam & pantau ulang tensi 2 minggu lagi.',
+        tgl_kontrol: isoToday,
+        biaya_cek: 45000,
+        petugas: 'apt. Siti Rahma, S.Farm',
+        wa_terkirim: 'TERKIRIM_WA (' + twoWeeksAgo + ' 08:52)',
+        updated_at: twoWeeksAgo + 'T08:52:00Z'
+      },
+      {
+        id_periksa: 'CHK-DEMO-05',
+        tanggal: threeWeeksAgo + 'T09:15:00',
+        cabang_id: 'ONS-01',
+        id_member: 'MBR-002',
+        nama_pasien: 'Ny. Hj. Aminah Kusuma',
+        no_wa: '6281234567802',
+        jenis_kelamin: 'P',
+        usia_tahun: 57,
+        berat_badan: 64,
+        tinggi_badan: 156,
+        imt_bmi: 26.3,
+        tensi_sistol: 132,
+        tensi_diastol: 84,
+        nadi_bpm: 78,
+        gula_jenis: 'GDP',
+        gula_darah: 156,
+        kolesterol_total: 208,
+        asam_urat: 5.8,
+        status_tensi: 'HIPERTENSI_1',
+        status_gula: 'TINGGI',
+        status_kolesterol: 'BATAS_TINGGI',
+        status_asam_urat: 'NORMAL',
+        tingkat_risiko: 'TINGGI_KONTROL',
+        riwayat_terapi: 'Metformin 500 mg',
+        keluhan_catatan: 'Cek GDP awal sebelum penyesuaian dosis dokter',
+        saran_apoteker: 'Bawa hasil ini saat kontrol ke dokter untuk evaluasi terapi GDP.',
+        tgl_kontrol: isoToday,
+        biaya_cek: 35000,
+        petugas: 'apt. Siti Rahma, S.Farm',
+        wa_terkirim: 'TERKIRIM_WA (' + threeWeeksAgo + ' 09:20)',
+        updated_at: threeWeeksAgo + 'T09:20:00Z'
       }
     ];
   }
@@ -358,6 +446,31 @@
           changed = true;
         }
       });
+    }
+    if (!db.rbac_permissions || typeof db.rbac_permissions !== 'object') {
+      db.rbac_permissions = {};
+      changed = true;
+    }
+    if (!db.audit_system || typeof db.audit_system !== 'object' || !Array.isArray(db.audit_system.items)) {
+      const uApj = (db.users || []).find((u) => u.role === 'APJ') || { id_user: 'USR-002', nama_lengkap: 'apt. Siti Rahma, S.Farm', no_sipa: '19920412/SIPA_35.78/2025/1042' };
+      const uKas = (db.users || []).find((u) => u.role === 'Kasir') || { id_user: 'USR-003', nama_lengkap: 'Budi Santoso (Kasir)' };
+      db.audit_system = {
+        cabang_id: 'ONS-01',
+        apj_user_id: uApj.id_user,
+        apj_nama: uApj.nama_lengkap,
+        apj_sipa: uApj.no_sipa || '-',
+        kasir_user_id: uKas.id_user,
+        kasir_nama: uKas.nama_lengkap,
+        catatan_audit: 'Pemeriksaan rutin CDOB & kesiapan stok harian.',
+        updated_at: isoToday + 'T07:55:00Z',
+        updated_by: uApj.nama_lengkap,
+        items: [
+          { id: 'AUDC-1', label: 'Verifikasi Laci Narkotika', checked: true, pj_role: 'APJ', pj_nama: uApj.nama_lengkap, keterangan: 'Terkunci ganda & kartu stok sesuai' },
+          { id: 'AUDC-2', label: 'Prioritas Jual Batch FEFO', checked: true, pj_role: 'Kasir', pj_nama: uKas.nama_lengkap, keterangan: 'Batch ED terdekat diprioritaskan di POS' },
+          { id: 'AUDC-3', label: 'Order SP PBF Sebelum 14:00', checked: false, pj_role: 'APJ', pj_nama: uApj.nama_lengkap, keterangan: 'Menunggu approval SP harian' }
+        ]
+      };
+      changed = true;
     }
     if (changed) saveDb(db);
     return db;
@@ -557,6 +670,10 @@
     if (action === 'auth.login') {
       const u = db.users.find((x) => x.username.toLowerCase() === String(d.username || '').toLowerCase());
       if (!u) throw new Error('Username tidak ditemukan (gunakan: pemilik / apj / kasir).');
+      if (String(u.status_aktif || 'AKTIF').toUpperCase() === 'NONAKTIF') {
+        throw new Error('Akun sedang dinonaktifkan oleh Pemilik.');
+      }
+      const userPerms = (db.rbac_permissions && db.rbac_permissions[u.id_user]) || null;
       const sesObj = {
         uid: u.id_user,
         u: u.username,
@@ -566,9 +683,9 @@
         branch: d.cabang_id || 'ONS-01'
       };
       const fakeTok = 'DEMO.' + btoa(unescape(encodeURIComponent(JSON.stringify(sesObj))));
-      const out = { token: fakeTok, user: Object.assign({}, u, { cabang_id: sesObj.branch }) };
+      const out = { token: fakeTok, user: Object.assign({}, u, { cabang_id: sesObj.branch, hak_akses: userPerms }) };
       if (d.include_boot) {
-        out.boot = handleAction('boot.getState', d, { uid: sesObj.uid, nama: sesObj.nama, role: sesObj.role, sipa: sesObj.sipa, branch: sesObj.branch });
+        out.boot = handleAction('boot.getState', d, { uid: sesObj.uid, nama: sesObj.nama, role: sesObj.role, sipa: sesObj.sipa, branch: sesObj.branch, hak_akses: userPerms });
       }
       return out;
     }
@@ -577,7 +694,12 @@
       if (String(d.pin || '') !== '123456') {
         throw new Error('PIN Otorisasi salah (Demo PIN default: 123456).');
       }
-      return { verified: true, supervisor_id: 'USR-002', supervisor_nama: 'apt. Siti Rahma, S.Farm', supervisor_role: 'APJ' };
+      const reqU = String(d.username || '').toLowerCase();
+      const spv = (reqU && (db.users || []).find((x) => (x.role === 'APJ' || x.role === 'Pemilik') && String(x.status_aktif || 'AKTIF') === 'AKTIF' && String(x.username || '').toLowerCase() === reqU))
+        || (db.users || []).find((x) => x.role === 'APJ' && String(x.status_aktif || 'AKTIF') === 'AKTIF')
+        || (db.users || []).find((x) => x.role === 'Pemilik' && String(x.status_aktif || 'AKTIF') === 'AKTIF')
+        || { id_user: 'USR-002', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ' };
+      return { verified: true, supervisor_id: spv.id_user, supervisor_nama: spv.nama_lengkap, supervisor_role: spv.role };
     }
 
     if (action === 'boot.getState') {
@@ -600,11 +722,28 @@
         });
       });
       const activeBr = (d && d.cabang_id) || 'ONS-01';
+      const permsMap = db.rbac_permissions || {};
+      const uidBoot = (tokenPayload && (tokenPayload.uid || tokenPayload.id_user)) || '';
+      const bootUser = Object.assign({}, tokenPayload || {}, {
+        hak_akses: (uidBoot && permsMap[uidBoot]) || (tokenPayload && tokenPayload.hak_akses) || null
+      });
       return {
-        user: tokenPayload,
+        user: bootUser,
         epoch: db.epoch,
         cabang_id: activeBr,
         store_profile: db.profil_usaha || defaultProfilUsaha(),
+        rbac_permissions: permsMap,
+        staff_directory: (db.users || []).map((u) => ({
+          id_user: u.id_user,
+          username: u.username,
+          nama_lengkap: u.nama_lengkap,
+          role: u.role,
+          cabang_id: u.cabang_id || 'ONS-01',
+          no_sipa: u.no_sipa || '-',
+          masa_berlaku_sipa: u.masa_berlaku_sipa || '-',
+          status_aktif: u.status_aktif || 'AKTIF'
+        })),
+        audit_system: db.audit_system || null,
         master_obat: db.master_obat.map((o) => maskRow(o, role)),
         stok_batch: db.stok_batch.filter((b) => !b.cabang_id || b.cabang_id === activeBr).map((b) => maskRow(b, role)),
         members: db.members,
@@ -1393,14 +1532,100 @@
     if (action === 'billing.history') {
       return { items: db.pembayaran.map((p) => Object.assign({}, p, { Sig: p.NoKwitansi ? btoa(p.NoKwitansi).slice(0, 12).toUpperCase() : '' })) };
     }
-    if (action === 'users.list') return { items: db.users };
+    if (action === 'users.list') {
+      const permsMap = db.rbac_permissions || {};
+      return {
+        items: (db.users || []).map((u) => Object.assign({}, u, { hak_akses: permsMap[u.id_user] || null })),
+        rbac_permissions: permsMap,
+        audit_system: db.audit_system || null
+      };
+    }
     if (action === 'users.save') {
-      const idx = db.users.findIndex((u) => u.username.toLowerCase() === String(d.username || '').toLowerCase());
-      const usr = Object.assign({ id_user: 'USR-' + String(db.users.length + 1).padStart(3, '0'), cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }, d);
-      if (idx >= 0) db.users[idx] = Object.assign(db.users[idx], usr);
-      else db.users.push(usr);
+      if (role !== 'Pemilik') throw new Error('AKSES DITOLAK: Hanya Pemilik yang dapat mengubah akun & hak akses.');
+      const uname = String(d.username || '').trim();
+      const nama = String(d.nama_lengkap || '').trim();
+      if (!uname || !nama) throw new Error('Username dan nama lengkap wajib diisi.');
+      const targetId = String(d.id_user || '').trim();
+      let idx = targetId ? db.users.findIndex((u) => u.id_user === targetId) : -1;
+      if (idx < 0) idx = db.users.findIndex((u) => u.username.toLowerCase() === uname.toLowerCase());
+      const clash = db.users.find((u, i) => i !== idx && u.username.toLowerCase() === uname.toLowerCase());
+      if (clash) throw new Error('Username "' + uname + '" sudah dipakai akun lain.');
+
+      db.rbac_permissions = db.rbac_permissions || {};
+      if (idx >= 0) {
+        const old = Object.assign({}, db.users[idx]);
+        const updatedUser = Object.assign({}, old, {
+          username: uname,
+          nama_lengkap: nama,
+          role: d.role || old.role || 'Kasir',
+          cabang_id: d.cabang_id || old.cabang_id || 'ONS-01',
+          no_sipa: d.no_sipa !== undefined ? (d.no_sipa || '-') : old.no_sipa,
+          masa_berlaku_sipa: d.masa_berlaku_sipa !== undefined ? (d.masa_berlaku_sipa || '-') : old.masa_berlaku_sipa,
+          status_aktif: d.status_aktif || old.status_aktif || 'AKTIF'
+        });
+        db.users[idx] = updatedUser;
+        if (Array.isArray(d.hak_akses)) {
+          db.rbac_permissions[updatedUser.id_user] = d.hak_akses.slice();
+        }
+        if (updatedUser.role === 'APJ' || updatedUser.id_user === 'USR-002') {
+          const pejApj = (db.de_pejabat || []).find((p) => p.UserId === updatedUser.id_user || p.ID === 'PEJ-01');
+          if (pejApj) {
+            pejApj.Nama = nama;
+            pejApj.NoSIPA = updatedUser.no_sipa || '-';
+            pejApj.Aktif = updatedUser.status_aktif === 'AKTIF' ? 'YA' : 'TIDAK';
+          }
+          if (db.audit_system && (db.audit_system.apj_user_id === updatedUser.id_user || updatedUser.id_user === 'USR-002')) {
+            db.audit_system.apj_nama = nama;
+            db.audit_system.apj_sipa = updatedUser.no_sipa || '-';
+          }
+        } else if (updatedUser.role === 'Pemilik' || updatedUser.id_user === 'USR-001') {
+          const pejPem = (db.de_pejabat || []).find((p) => p.UserId === updatedUser.id_user || p.ID === 'PEJ-02');
+          if (pejPem) {
+            pejPem.Nama = nama;
+            pejPem.NoSIPA = updatedUser.no_sipa || '-';
+          }
+          if (updatedUser.id_user === 'USR-001' && db.profil_usaha) {
+            db.profil_usaha.nama_pemilik = nama;
+          }
+        }
+        if (updatedUser.role === 'Kasir' && db.audit_system && (db.audit_system.kasir_user_id === updatedUser.id_user || updatedUser.id_user === 'USR-003')) {
+          db.audit_system.kasir_nama = nama;
+        }
+        db.audit_log.unshift({
+          id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: updatedUser.cabang_id,
+          aksi: 'USER_UPDATED', entitas: 'PENGGUNA_CABANG', entitas_id: updatedUser.id_user,
+          diff_sebelum_json: JSON.stringify({ username: old.username, nama_lengkap: old.nama_lengkap, role: old.role }),
+          diff_sesudah_json: JSON.stringify({ username: uname, nama_lengkap: nama, role: updatedUser.role, hak_akses_count: Array.isArray(d.hak_akses) ? d.hak_akses.length : 'default' })
+        });
+        db.epoch++;
+        saveDb(db);
+        return { ok: true, mode: 'UPDATED', id_user: updatedUser.id_user, username: uname, user: updatedUser, rbac_permissions: db.rbac_permissions, audit_system: db.audit_system };
+      }
+
+      if (!d.password_baru) throw new Error('Kata sandi awal wajib diisi untuk akun baru.');
+      const newId = 'USR-' + String(db.users.length + 1).padStart(3, '0');
+      const usr = {
+        id_user: newId,
+        username: uname,
+        nama_lengkap: nama,
+        role: d.role || 'Kasir',
+        cabang_id: d.cabang_id || 'ONS-01',
+        no_sipa: d.no_sipa || '-',
+        masa_berlaku_sipa: d.masa_berlaku_sipa || '-',
+        status_aktif: d.status_aktif || 'AKTIF'
+      };
+      db.users.push(usr);
+      if (Array.isArray(d.hak_akses)) {
+        db.rbac_permissions[newId] = d.hak_akses.slice();
+      }
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: usr.cabang_id,
+        aksi: 'USER_CREATED', entitas: 'PENGGUNA_CABANG', entitas_id: newId,
+        diff_sesudah_json: JSON.stringify({ username: uname, nama_lengkap: nama, role: usr.role })
+      });
+      db.epoch++;
       saveDb(db);
-      return { ok: true, username: usr.username };
+      return { ok: true, mode: 'CREATED', id_user: newId, username: uname, user: usr, rbac_permissions: db.rbac_permissions, audit_system: db.audit_system };
     }
     if (action === 'users.changeCredentials') return { ok: true, pesan: 'Sandi/PIN diperbarui pada sesi lokal!' };
     if (action === 'system.seedStarterCatalog') return { ok: true, pesan: 'Data katalog awal sudah tersedia!' };
@@ -1534,6 +1759,77 @@
       return { ok: true, key: d.key, masked: db.secrets[d.key] };
     }
     if (action === 'audit.list') return { items: db.audit_log };
+    if (action === 'audit.getChecklist') return db.audit_system;
+    if (action === 'audit.saveChecklist') {
+      const cur = db.audit_system || {};
+      const perms = (db.rbac_permissions && db.rbac_permissions[userId]) || [];
+      const canEditMeta = role === 'Pemilik' || role === 'APJ' || perms.includes('settings:audit');
+      const itemsIn = Array.isArray(d.items) ? d.items : (cur.items || []);
+      const cleanItems = itemsIn.map((it, idx) => {
+        const oldIt = (cur.items && cur.items[idx]) || {};
+        const pjRole = String((it && it.pj_role) || oldIt.pj_role || 'APJ');
+        return {
+          id: String((it && it.id) || oldIt.id || ('AUDC-' + (idx + 1))),
+          label: canEditMeta ? String((it && it.label) || oldIt.label || '').trim() : String(oldIt.label || (it && it.label) || '').trim(),
+          checked: !!(it && it.checked),
+          pj_role: pjRole,
+          pj_nama: canEditMeta ? String((it && it.pj_nama) || (pjRole === 'Kasir' ? (d.kasir_nama || cur.kasir_nama) : (d.apj_nama || cur.apj_nama))).trim() : String(oldIt.pj_nama || ''),
+          keterangan: String((it && it.keterangan) !== undefined ? it.keterangan : (oldIt.keterangan || '')).trim()
+        };
+      }).filter((x) => !!x.label);
+
+      const apjUid = String(d.apj_user_id || cur.apj_user_id || 'USR-002').trim();
+      const kasirUid = String(d.kasir_user_id || cur.kasir_user_id || 'USR-003').trim();
+      const apjNama = canEditMeta && d.apj_nama !== undefined ? (String(d.apj_nama).trim() || cur.apj_nama) : cur.apj_nama;
+      const apjSipa = canEditMeta && d.apj_sipa !== undefined ? (String(d.apj_sipa).trim() || cur.apj_sipa) : cur.apj_sipa;
+      const kasirNama = canEditMeta && d.kasir_nama !== undefined ? (String(d.kasir_nama).trim() || cur.kasir_nama) : cur.kasir_nama;
+
+      db.audit_system = {
+        cabang_id: d.cabang_id || cabang || 'ONS-01',
+        apj_user_id: apjUid,
+        apj_nama: apjNama,
+        apj_sipa: apjSipa,
+        kasir_user_id: kasirUid,
+        kasir_nama: kasirNama,
+        catatan_audit: String(d.catatan_audit !== undefined ? d.catatan_audit : (cur.catatan_audit || '')).trim(),
+        updated_at: nowIso,
+        updated_by: userNama || userId,
+        items: cleanItems
+      };
+
+      if (role === 'Pemilik' && d.sync_staff_accounts !== false) {
+        const apjAcc = db.users.find((u) => u.id_user === apjUid) || db.users.find((u) => u.role === 'APJ');
+        if (apjAcc && apjNama) {
+          apjAcc.nama_lengkap = apjNama;
+          if (apjSipa) apjAcc.no_sipa = apjSipa;
+          const pej1 = (db.de_pejabat || []).find((p) => p.ID === 'PEJ-01' || p.UserId === apjAcc.id_user);
+          if (pej1) {
+            pej1.Nama = apjNama;
+            if (apjSipa) pej1.NoSIPA = apjSipa;
+          }
+        }
+        const kasirAcc = db.users.find((u) => u.id_user === kasirUid) || db.users.find((u) => u.role === 'Kasir');
+        if (kasirAcc && kasirNama) {
+          kasirAcc.nama_lengkap = kasirNama;
+        }
+      }
+
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: db.audit_system.cabang_id,
+        aksi: 'AUDIT_CHECKLIST_UPDATED', entitas: 'SYSTEM_AUDIT', entitas_id: db.audit_system.cabang_id,
+        diff_sebelum_json: JSON.stringify({ apj_nama: cur.apj_nama, kasir_nama: cur.kasir_nama }),
+        diff_sesudah_json: JSON.stringify({ apj_nama: apjNama, kasir_nama: kasirNama, checked: cleanItems.filter((x) => x.checked).length + '/' + cleanItems.length })
+      });
+      db.epoch++;
+      saveDb(db);
+      return {
+        ok: true,
+        audit_system: db.audit_system,
+        staff_directory: db.users.map((u) => ({
+          id_user: u.id_user, username: u.username, nama_lengkap: u.nama_lengkap, role: u.role, cabang_id: u.cabang_id, no_sipa: u.no_sipa, status_aktif: u.status_aktif
+        }))
+      };
+    }
     if (action === 'backup.driveSnapshot') return { ok: true, file_name: 'ONS_Farma_Backup_' + isoToday + '.json', file_url: '#' };
     if (action === 'migrasi.preview') {
       return {
@@ -1957,6 +2253,20 @@
         statusAu = auVal > hi ? 'TINGGI' : (auVal < lo ? 'RENDAH' : 'NORMAL');
       }
 
+      const bbVal = Number(d.berat_badan || (existing && existing.berat_badan) || 0);
+      const tbVal = Number(d.tinggi_badan || (existing && existing.tinggi_badan) || 0);
+      const imtBmi = (bbVal > 0 && tbVal >= 50) ? Math.round((bbVal / Math.pow(tbVal / 100, 2)) * 10) / 10 : '';
+      const allSt = [statusTensi, statusGula, statusKol, statusAu].filter(Boolean);
+      const abnCnt = allSt.filter((s) => s !== 'NORMAL').length;
+      let tingkatRisiko = 'NORMAL';
+      if (statusTensi === 'KRISIS_HIPERTENSI' || (sistol > 0 && sistol < 80) || statusGula === 'HIPOGLIKEMIA' || gulaVal >= 300) {
+        tingkatRisiko = 'KRISIS_RUJUK';
+      } else if (statusTensi === 'HIPERTENSI_2' || statusGula === 'TINGGI' || statusKol === 'TINGGI' || statusAu === 'TINGGI' || abnCnt >= 2) {
+        tingkatRisiko = 'TINGGI_KONTROL';
+      } else if (abnCnt >= 1) {
+        tingkatRisiko = 'PANTAU';
+      }
+
       let waNorm = String(d.no_wa || (existing && existing.no_wa) || '').replace(/[^0-9]/g, '');
       if (waNorm.startsWith('0')) waNorm = '62' + waNorm.slice(1);
       else if (waNorm.startsWith('8')) waNorm = '62' + waNorm;
@@ -1971,6 +2281,9 @@
         no_wa: waNorm || String(d.no_wa || '').trim(),
         jenis_kelamin: jk,
         usia_tahun: d.usia_tahun !== undefined && d.usia_tahun !== '' ? Number(d.usia_tahun) : '',
+        berat_badan: bbVal > 0 ? bbVal : '',
+        tinggi_badan: tbVal >= 50 ? tbVal : '',
+        imt_bmi: imtBmi,
         tensi_sistol: (sistol > 0 && diastol > 0) ? sistol : '',
         tensi_diastol: (sistol > 0 && diastol > 0) ? diastol : '',
         nadi_bpm: Number(d.nadi_bpm || 0) > 0 ? Number(d.nadi_bpm) : '',
@@ -1982,8 +2295,11 @@
         status_gula: statusGula,
         status_kolesterol: statusKol,
         status_asam_urat: statusAu,
+        tingkat_risiko: tingkatRisiko,
+        riwayat_terapi: String(d.riwayat_terapi !== undefined ? d.riwayat_terapi : ((existing && existing.riwayat_terapi) || '')).trim(),
         keluhan_catatan: String(d.keluhan_catatan || '').trim(),
         saran_apoteker: String(d.saran_apoteker || '').trim(),
+        tgl_kontrol: String(d.tgl_kontrol !== undefined ? d.tgl_kontrol : ((existing && existing.tgl_kontrol) || '')).trim().slice(0, 10),
         biaya_cek: biaya,
         petugas: d.petugas || userNama,
         wa_terkirim: d.queue_wa && waNorm ? ('ANTRIAN_FONNTE (' + nowIso.slice(0, 16).replace('T', ' ') + ')') : ((existing && existing.wa_terkirim) || 'BELUM'),
@@ -2016,12 +2332,16 @@
             gds: row.gula_darah || '',
             kolesterol: row.kolesterol_total || '',
             asam_urat: row.asam_urat || '',
+            bmi: row.imt_bmi || '',
+            risiko: row.tingkat_risiko || '',
+            tgl_kontrol: row.tgl_kontrol || '',
             id_periksa: id
           };
           const sIdx = arr.findIndex((s) => s.id_periksa === id);
           if (sIdx >= 0) arr[sIdx] = snap;
           else arr.push(snap);
           mbr.riwayat_skrining_json = JSON.stringify(arr.slice(-20));
+          if (row.tgl_kontrol && !mbr.tgl_reminder_berikut) mbr.tgl_reminder_berikut = row.tgl_kontrol;
         }
       }
 

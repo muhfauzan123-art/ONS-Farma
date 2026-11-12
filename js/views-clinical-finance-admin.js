@@ -2142,6 +2142,24 @@
    * W-13: Pengaturan Konfirmasi Pemilik & Usaha (Foto & Logo), Akun, Struk Thermal, Secrets Vault & Audit
    */
   let settingsCache = { secrets: {}, audit: [], users: [] };
+  let auditDraft = null;
+  let auditLogSearchQ = '';
+
+  function ensureAuditDraft() {
+    if (!auditDraft) {
+      const src = S().getAuditSystem ? S().getAuditSystem() : { items: [] };
+      auditDraft = Object.assign({}, src, {
+        items: (src.items || []).map((it) => Object.assign({}, it))
+      });
+    }
+    return auditDraft;
+  }
+
+  function resetAuditDraftFromStore() {
+    auditDraft = null;
+    return ensureAuditDraft();
+  }
+
   global.setSettingsTab = (t) => {
     settingsTab = t || 'profil';
     if (S().AppState.subTabs) S().AppState.subTabs.settings = settingsTab;
@@ -2400,31 +2418,103 @@
 
       ${settingsTab === 'profil' ? renderProfileTabHtml(prof, canEditProfile) : ''}
 
-      ${settingsTab === 'akun' ? (isOwner ? `<div class="ons-card p-5 space-y-3 text-xs">
-        <div class="flex flex-wrap justify-between items-center gap-2">
-          <div>
-            <h3 class="font-bold text-sm">Manajemen Akun Pengguna, Role &amp; Otorisasi PIN (PENGGUNA_CABANG)</h3>
-            <p style="color:var(--ons-text-soft)">Tambah akun staf baru, atur SIPA Apoteker, atau reset kata sandi &amp; PIN otorisasi tanpa menyentuh database.</p>
+      ${settingsTab === 'akun' ? (isOwner ? (() => {
+        const staffList = users.length ? users : (S().AppState.staffDirectory || []);
+        const apjAcc = staffList.find((u) => u.role === 'APJ' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'APJ') || { id_user: 'USR-002', username: 'apj', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ', no_sipa: '19920412/SIPA_35.78/2025/1042' };
+        const kasirAcc = staffList.find((u) => u.role === 'Kasir' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'Kasir') || { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', status_aktif: 'AKTIF' };
+        return `<div class="space-y-4 text-xs">
+          <!-- Panel Edit Cepat Identitas APJ & Kasir Aktif -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="ons-card p-4 space-y-2.5 border-l-4" style="border-left-color:#0284C7">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-bold text-sm">Edit Cepat Identitas APJ Penanggung Jawab</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis memperbarui akun APJ, penanda tangan Surat Pesanan / E-Resep &amp; Audit BPOM.</p>
+                </div>
+                <span class="badge-bpom bpom-terbatas">APJ</span>
+              </div>
+              <input type="hidden" id="quickApjId" value="${S().esc(apjAcc.id_user || 'USR-002')}"/>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div class="sm:col-span-2"><label class="font-semibold block mb-1">Nama Lengkap APJ *</label><input id="quickApjNama" class="ons-input text-xs" value="${S().esc(apjAcc.nama_lengkap || '')}" placeholder="Contoh: apt. Dewi Kartika, S.Farm"/></div>
+                <div><label class="font-semibold block mb-1">Username Login APJ *</label><input id="quickApjUser" class="ons-input font-mono-num text-xs" value="${S().esc(apjAcc.username || 'apj')}"/></div>
+                <div><label class="font-semibold block mb-1">Nomor SIPA APJ</label><input id="quickApjSipa" class="ons-input font-mono-num text-xs" value="${S().esc(apjAcc.no_sipa || '-')}"/></div>
+              </div>
+              <div class="flex flex-wrap gap-2 pt-1">
+                <button type="button" onclick="window.saveQuickStaffCard('APJ')" class="ons-btn ons-btn-primary text-xs">Simpan Nama &amp; SIPA APJ</button>
+                <button type="button" onclick="window.openAddUserModal('${S().esc(apjAcc.id_user || apjAcc.username)}')" class="ons-btn ons-btn-ghost text-xs">Atur Hak Akses APJ</button>
+              </div>
+            </div>
+
+            <div class="ons-card p-4 space-y-2.5 border-l-4" style="border-left-color:#10B981">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-bold text-sm">Edit Cepat Identitas Kasir Aktif</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis memperbarui akun Kasir pada struk POS, Tutup Shift, Pemeriksaan &amp; Audit Harian.</p>
+                </div>
+                <span class="badge-bpom bpom-bebas">KASIR</span>
+              </div>
+              <input type="hidden" id="quickKasirId" value="${S().esc(kasirAcc.id_user || 'USR-003')}"/>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div class="sm:col-span-2"><label class="font-semibold block mb-1">Nama Lengkap Kasir *</label><input id="quickKasirNama" class="ons-input text-xs" value="${S().esc(kasirAcc.nama_lengkap || '')}" placeholder="Contoh: Rina Marlina (Kasir Shift 1)"/></div>
+                <div><label class="font-semibold block mb-1">Username Login Kasir *</label><input id="quickKasirUser" class="ons-input font-mono-num text-xs" value="${S().esc(kasirAcc.username || 'kasir')}"/></div>
+                <div><label class="font-semibold block mb-1">Status Akun Kasir</label>
+                  <select id="quickKasirStatus" class="ons-select text-xs">
+                    <option value="AKTIF" ${String(kasirAcc.status_aktif || 'AKTIF') === 'AKTIF' ? 'selected' : ''}>AKTIF</option>
+                    <option value="NONAKTIF" ${String(kasirAcc.status_aktif || '') === 'NONAKTIF' ? 'selected' : ''}>NONAKTIF</option>
+                  </select>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2 pt-1">
+                <button type="button" onclick="window.saveQuickStaffCard('Kasir')" class="ons-btn ons-btn-emerald text-xs">Simpan Nama Kasir</button>
+                <button type="button" onclick="window.openAddUserModal('${S().esc(kasirAcc.id_user || kasirAcc.username)}')" class="ons-btn ons-btn-ghost text-xs">Atur Hak Akses Kasir</button>
+              </div>
+            </div>
           </div>
-          <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah / Edit Akun</button>
-        </div>
-        <div class="ons-table-wrap">
-          <table class="ons-table">
-            <thead><tr><th>Username</th><th>Nama Lengkap</th><th>Role</th><th>Cabang</th><th>No. SIPA</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody>
-              ${users.length ? users.map((u) => `<tr>
-                <td class="font-mono-num font-bold">${S().esc(u.username)}</td>
-                <td>${S().esc((u.role === 'Pemilik' && S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(u.nama_lengkap, prof.nama_pemilik) : u.nama_lengkap)}</td>
-                <td><span class="badge-bpom ${u.role === 'Pemilik' ? 'bpom-narkotika' : (u.role === 'APJ' ? 'bpom-terbatas' : 'bpom-bebas')}">${S().esc(u.role)}</span></td>
-                <td class="font-mono-num">${S().esc(u.cabang_id)}</td>
-                <td class="font-mono-num">${S().esc(u.no_sipa || '-')}</td>
-                <td><span class="badge-bpom ${u.status_aktif === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(u.status_aktif)}</span></td>
-                <td><button onclick="window.openChangeCredModal('${S().esc(u.username)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reset Sandi / PIN</button></td>
-              </tr>`).join('') : '<tr><td colspan="7" class="text-center" style="color:var(--ons-text-soft)">Memuat daftar pengguna...</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>` : `<div class="ons-card p-5 text-xs">Gunakan tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk memperbarui kredensial akun Anda.</div>`) : ''}
+
+          <!-- Tabel Penuh Akun & Hak Akses RBAC -->
+          <div class="ons-card p-5 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+              <div>
+                <h3 class="font-bold text-sm">Manajemen Akun Pengguna, Matriks Hak Akses &amp; Otorisasi PIN (PENGGUNA_CABANG)</h3>
+                <p style="color:var(--ons-text-soft)">Edit nama Pemilik / APJ / Kasir, atur modul yang boleh diakses per pengguna (bukan sekadar centang statis), atau reset sandi &amp; PIN.</p>
+              </div>
+              <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Akun Staf Baru</button>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>Username</th><th>Nama Lengkap</th><th>Role &amp; Cabang</th><th>No. SIPA</th><th>Hak Akses Modul</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                  ${staffList.length ? staffList.map((u) => {
+                    const effPerms = S().getUserPermissions ? S().getUserPermissions(u) : [];
+                    const isCustom = Array.isArray(u.hak_akses) && u.hak_akses.length > 0;
+                    return `<tr>
+                      <td class="font-mono-num font-bold">${S().esc(u.username)}</td>
+                      <td class="font-semibold">${S().esc((u.role === 'Pemilik' && S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(u.nama_lengkap, prof.nama_pemilik) : u.nama_lengkap)}</td>
+                      <td>
+                        <span class="badge-bpom ${u.role === 'Pemilik' ? 'bpom-narkotika' : (u.role === 'APJ' ? 'bpom-terbatas' : 'bpom-bebas')}">${S().esc(u.role)}</span>
+                        <span class="font-mono-num text-[11px] ml-1" style="color:var(--ons-text-soft)">${S().esc(u.cabang_id)}</span>
+                      </td>
+                      <td class="font-mono-num">${S().esc(u.no_sipa || '-')}</td>
+                      <td>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-500/10">
+                          ${u.role === 'Pemilik' ? 'Penuh (Pemilik)' : `${isCustom ? 'Custom' : 'Standar'} (${effPerms.length} Izin)`}
+                        </span>
+                      </td>
+                      <td><span class="badge-bpom ${u.status_aktif === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(u.status_aktif)}</span></td>
+                      <td>
+                        <div class="flex flex-wrap gap-1.5">
+                          <button onclick="window.openAddUserModal('${S().esc(u.id_user || u.username)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Edit Nama &amp; Hak</button>
+                          <button onclick="window.openChangeCredModal('${S().esc(u.username)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Sandi / PIN</button>
+                        </div>
+                      </td>
+                    </tr>`;
+                  }).join('') : '<tr><td colspan="7" class="text-center" style="color:var(--ons-text-soft)">Memuat daftar pengguna...</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+      })() : `<div class="ons-card p-5 text-xs">Gunakan tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk memperbarui kredensial akun Anda.</div>`) : ''}
 
       ${settingsTab === 'vault' ? `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
@@ -2505,23 +2595,101 @@
         </div>`;
       })() : ''}
 
-      ${settingsTab === 'audit' ? `<div class="ons-card p-4">
-        <h3 class="font-bold text-sm mb-3">Log Audit Immutable (Dengan Redaksi Secret Otomatis)</h3>
-        <div class="ons-table-wrap">
-          <table class="ons-table">
-            <thead><tr><th>Waktu</th><th>Pelaku &amp; Peran</th><th>Aksi</th><th>Entitas</th><th>Snapshot Sesudah</th></tr></thead>
-            <tbody>
-              ${audit.map((a) => `<tr>
-                <td class="font-mono-num text-xs">${S().formatTgl(a.timestamp)}</td>
-                <td class="text-xs"><b>${S().esc(a.user_id)}</b> (${S().esc(a.role)})</td>
-                <td><span class="badge-bpom bpom-terbatas">${S().esc(a.aksi)}</span></td>
-                <td class="font-mono-num text-xs">${S().esc(a.entitas)} #${S().esc(a.entitas_id)}</td>
-                <td class="font-mono-num text-[11px] max-w-xs truncate">${S().esc(a.diff_sesudah_json)}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>` : ''}
+      ${settingsTab === 'audit' ? (() => {
+        const draft = ensureAuditDraft();
+        const items = draft.items || [];
+        const canEditAuditMeta = isOwner || role === 'APJ' || S().canAccessSubTab('settings', 'audit');
+        const aq = auditLogSearchQ.trim().toLowerCase();
+        const filteredAuditLogs = audit.filter((a) => {
+          if (!aq) return true;
+          return `${a.user_id} ${a.role} ${a.aksi} ${a.entitas} ${a.entitas_id} ${a.diff_sesudah_json} ${a.diff_sebelum_json}`.toLowerCase().includes(aq);
+        });
+        return `<div class="space-y-4 text-xs">
+          <!-- Panel 1: Editor Sistem Audit Kepatuhan, Nama APJ & Kasir -->
+          <div class="ons-card p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-sm">Editor Sistem Audit Kepatuhan BPOM, Nama APJ &amp; Nama Kasir</h3>
+                <p style="color:var(--ons-text-soft)">Bukan hanya dicentang: edit butir pemeriksaan audit, ubah nama APJ &amp; Kasir penanggung jawab, dan sinkronkan ke sistem.</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                ${isOwner ? `<button type="button" onclick="window.setSettingsTab('akun')" class="ons-btn ons-btn-ghost text-xs">Kelola Matriks Hak Akses Staf &rarr;</button>` : ''}
+                ${canEditAuditMeta ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+              <div>
+                <label class="font-semibold block mb-1">Nama APJ Pengaudit *</label>
+                <input id="audSysApjNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.apj_nama || '')}" oninput="window.updateAuditHeaderField('apj_nama', this.value)" placeholder="Nama Apoteker Penanggung Jawab"/>
+              </div>
+              <div>
+                <label class="font-semibold block mb-1">No. SIPA APJ</label>
+                <input id="audSysApjSipa" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input font-mono-num text-xs" value="${S().esc(draft.apj_sipa || '-')}" oninput="window.updateAuditHeaderField('apj_sipa', this.value)" placeholder="No. SIPA APJ"/>
+              </div>
+              <div>
+                <label class="font-semibold block mb-1">Nama Kasir Pelaksana *</label>
+                <input id="audSysKasirNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.kasir_nama || '')}" oninput="window.updateAuditHeaderField('kasir_nama', this.value)" placeholder="Nama Kasir Aktif"/>
+              </div>
+              <div>
+                <label class="font-semibold block mb-1">Catatan Evaluasi Audit</label>
+                <input id="audSysCatatan" class="ons-input text-xs" value="${S().esc(draft.catatan_audit || '')}" oninput="window.updateAuditHeaderField('catatan_audit', this.value)" placeholder="Ringkasan temuan CDOB hari ini"/>
+              </div>
+            </div>
+
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th style="width:48px">Cek</th><th>Butir Pemeriksaan Audit (Dapat Diedit)</th><th style="width:120px">Penanggung Jawab</th><th>Keterangan / Hasil Verifikasi</th><th style="width:60px">Hapus</th></tr></thead>
+                <tbody>
+                  ${items.map((it, idx) => `<tr>
+                    <td><input type="checkbox" ${it.checked ? 'checked' : ''} onchange="window.updateAuditChecklistRow(${idx}, 'checked', this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer"/></td>
+                    <td><input ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(it.label || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'label', this.value)"/></td>
+                    <td>
+                      <select ${canEditAuditMeta ? '' : 'disabled'} class="ons-select text-xs" onchange="window.updateAuditChecklistRow(${idx}, 'pj_role', this.value)">
+                        <option value="APJ" ${(it.pj_role || 'APJ') === 'APJ' ? 'selected' : ''}>APJ</option>
+                        <option value="Kasir" ${it.pj_role === 'Kasir' ? 'selected' : ''}>Kasir</option>
+                        <option value="Pemilik" ${it.pj_role === 'Pemilik' ? 'selected' : ''}>Pemilik</option>
+                      </select>
+                    </td>
+                    <td><input class="ons-input text-xs" value="${S().esc(it.keterangan || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'keterangan', this.value)" placeholder="Catatan pemeriksaan..."/></td>
+                    <td>${canEditAuditMeta && items.length > 1 ? `<button type="button" onclick="window.removeAuditChecklistRow(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button>` : '-'}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
+              ${isOwner ? `<label class="flex items-center gap-2 cursor-pointer font-semibold">
+                <input id="audSysSyncStaff" type="checkbox" checked class="w-4 h-4 accent-blue-600"/>
+                <span>Sekaligus perbarui Nama APJ, No. SIPA &amp; Nama Kasir di akun <code>PENGGUNA_CABANG</code> &amp; Pejabat Surat</span>
+              </label>` : `<span style="color:var(--ons-text-soft)">Terakhir diperbarui: <b>${S().esc(draft.updated_by || '-')}</b></span>`}
+              <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs px-5 py-2 font-bold">Simpan Sistem Audit &amp; Nama APJ/Kasir</button>
+            </div>
+          </div>
+
+          <!-- Panel 2: Log Audit Immutable -->
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-bold text-sm">Log Audit Immutable (Dengan Redaksi Secret Otomatis)</h3>
+              <input class="ons-input text-xs w-64" value="${S().esc(auditLogSearchQ)}" oninput="window.setAuditLogSearch(this.value)" placeholder="Cari aksi, user, nama APJ/kasir, entitas..."/>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>Waktu</th><th>Pelaku &amp; Peran</th><th>Aksi</th><th>Entitas</th><th>Snapshot Perubahan</th></tr></thead>
+                <tbody>
+                  ${filteredAuditLogs.length ? filteredAuditLogs.map((a) => `<tr>
+                    <td class="font-mono-num text-xs">${S().formatTgl(a.timestamp)}</td>
+                    <td class="text-xs"><b>${S().esc(a.user_id)}</b> (${S().esc(a.role)})</td>
+                    <td><span class="badge-bpom bpom-terbatas">${S().esc(a.aksi)}</span></td>
+                    <td class="font-mono-num text-xs">${S().esc(a.entitas)} #${S().esc(a.entitas_id)}</td>
+                    <td class="font-mono-num text-[11px] max-w-md truncate">${S().esc(a.diff_sesudah_json)}</td>
+                  </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6" style="color:var(--ons-text-soft)">Tidak ada log audit yang sesuai pencarian.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+      })() : ''}
     </div>`;
   }
 
@@ -2659,21 +2827,44 @@
   };
 
   let _setLoading = false;
+  let _setLoadPromise = null;
   global.loadSettingsBundle = async (force) => {
-    if (_setLoading || (!force && Object.keys(settingsCache.secrets).length)) return;
+    if (_setLoading) {
+      if (!force) return _setLoadPromise;
+      try { await _setLoadPromise; } catch (e) {}
+    }
+    if (!force && (settingsCache.audit.length || Object.keys(settingsCache.secrets).length)) return;
     _setLoading = true;
-    try {
-      const [sec, aud, usr, profRes] = await Promise.all([
-        API().callApi('settings.getSecretsMasked', {}),
-        API().callApi('audit.list', {}),
-        S().getRole() === 'Pemilik' ? API().callApi('users.list', {}).catch(() => ({ items: [] })) : Promise.resolve({ items: [] }),
-        API().callApi('profil.get', {}).catch(() => null)
-      ]);
-      const rawProf = profRes && ((profRes.profile || profRes.item) || (profRes.nama_usaha ? profRes : null));
-      if (rawProf && S().setStoreProfile) S().setStoreProfile(rawProf);
-      settingsCache = { secrets: sec.secrets || {}, audit: aud.items || [], users: usr.items || [] };
-      if (S().AppState.activeView === 'settings') global.renderActiveView();
-    } catch (e) {} finally { _setLoading = false; }
+    _setLoadPromise = (async () => {
+      try {
+        const [sec, aud, usr, profRes, chkRes] = await Promise.all([
+          API().callApi('settings.getSecretsMasked', {}).catch(() => ({ secrets: {} })),
+          API().callApi('audit.list', {}).catch(() => ({ items: [] })),
+          S().getRole() === 'Pemilik' ? API().callApi('users.list', {}).catch(() => ({ items: [] })) : Promise.resolve({ items: [] }),
+          API().callApi('profil.get', {}).catch(() => null),
+          API().callApi('audit.getChecklist', {}).catch(() => null)
+        ]);
+        const rawProf = profRes && ((profRes.profile || profRes.item) || (profRes.nama_usaha ? profRes : null));
+        if (rawProf && S().setStoreProfile) S().setStoreProfile(rawProf);
+        if (usr && usr.rbac_permissions) S().AppState.rbacPermissions = usr.rbac_permissions;
+        if (chkRes && chkRes.items && S().setAuditSystem) {
+          S().setAuditSystem(chkRes);
+          resetAuditDraftFromStore();
+        } else if (usr && usr.audit_system && S().setAuditSystem) {
+          S().setAuditSystem(usr.audit_system);
+          resetAuditDraftFromStore();
+        }
+        settingsCache = { secrets: sec.secrets || {}, audit: aud.items || [], users: usr.items || [] };
+        if (settingsCache.users.length) {
+          S().AppState.staffDirectory = settingsCache.users.map((u) => Object.assign({}, u));
+        }
+        if (S().AppState.activeView === 'settings') global.renderActiveView();
+      } catch (e) {} finally {
+        _setLoading = false;
+        _setLoadPromise = null;
+      }
+    })();
+    return _setLoadPromise;
   };
 
   global.seedStarterCatalogFromSettings = async () => {
@@ -2684,36 +2875,259 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
-  global.openAddUserModal = () => {
-    S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Tambah / Perbarui Akun Pengguna</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="font-semibold block mb-1">Username *</label><input id="usrName" class="ons-input font-mono-num" placeholder="kasir2"/></div>
-        <div><label class="font-semibold block mb-1">Nama Lengkap *</label><input id="usrFull" class="ons-input" placeholder="Dina Putri, A.Md.Farm"/></div>
-        <div><label class="font-semibold block mb-1">Role</label><select id="usrRole" class="ons-select"><option>Kasir</option><option>APJ</option><option>Pemilik</option></select></div>
-        <div><label class="font-semibold block mb-1">Cabang</label><input id="usrBranch" class="ons-input font-mono-num" value="${S().esc(S().AppState.cabangId || 'ONS-01')}"/></div>
-        <div><label class="font-semibold block mb-1">Kata Sandi Awal (min 6) *</label><input id="usrPass" type="password" class="ons-input" placeholder="Min. 6 karakter"/></div>
-        <div><label class="font-semibold block mb-1">PIN 6 Digit Otorisasi</label><input id="usrPin" type="password" maxlength="6" class="ons-input font-mono-num" value="123456"/></div>
+  global.updateAuditHeaderField = (key, val) => {
+    const d = ensureAuditDraft();
+    d[key] = val;
+  };
+
+  global.updateAuditChecklistRow = (idx, key, val) => {
+    const d = ensureAuditDraft();
+    if (!d.items || !d.items[idx]) return;
+    d.items[idx][key] = val;
+    if (key === 'pj_role') {
+      d.items[idx].pj_nama = val === 'Kasir' ? (d.kasir_nama || '') : (d.apj_nama || '');
+    }
+  };
+
+  global.addAuditChecklistRow = () => {
+    const d = ensureAuditDraft();
+    d.items.push({
+      id: 'AUDC-' + Date.now().toString().slice(-5),
+      label: 'Poin Pemeriksaan Audit Baru',
+      checked: false,
+      pj_role: 'APJ',
+      pj_nama: d.apj_nama || '',
+      keterangan: ''
+    });
+    global.renderActiveView();
+  };
+
+  global.removeAuditChecklistRow = (idx) => {
+    const d = ensureAuditDraft();
+    if ((d.items || []).length <= 1) return;
+    d.items.splice(idx, 1);
+    global.renderActiveView();
+  };
+
+  global.setAuditLogSearch = (q) => {
+    auditLogSearchQ = q || '';
+    global.renderActiveView();
+  };
+
+  global.submitAuditSystemForm = async () => {
+    const d = ensureAuditDraft();
+    const apjEl = document.getElementById('audSysApjNama');
+    const sipaEl = document.getElementById('audSysApjSipa');
+    const kasirEl = document.getElementById('audSysKasirNama');
+    const catEl = document.getElementById('audSysCatatan');
+    const syncEl = document.getElementById('audSysSyncStaff');
+    const payload = {
+      cabang_id: S().AppState.cabangId || 'ONS-01',
+      apj_user_id: d.apj_user_id || 'USR-002',
+      apj_nama: apjEl ? apjEl.value.trim() : d.apj_nama,
+      apj_sipa: sipaEl ? sipaEl.value.trim() : d.apj_sipa,
+      kasir_user_id: d.kasir_user_id || 'USR-003',
+      kasir_nama: kasirEl ? kasirEl.value.trim() : d.kasir_nama,
+      catatan_audit: catEl ? catEl.value.trim() : d.catatan_audit,
+      sync_staff_accounts: syncEl ? !!syncEl.checked : false,
+      items: (d.items || []).map((it) => Object.assign({}, it))
+    };
+    if (!payload.apj_nama || !payload.kasir_nama) {
+      global.toast('Nama APJ Pengaudit dan Nama Kasir wajib diisi.', 'err');
+      return;
+    }
+    try {
+      const res = await API().callApi('audit.saveChecklist', payload, { isWrite: true });
+      if (res && res.audit_system && S().setAuditSystem) {
+        S().setAuditSystem(res.audit_system);
+        resetAuditDraftFromStore();
+      }
+      if (res && Array.isArray(res.staff_directory)) {
+        S().AppState.staffDirectory = res.staff_directory;
+      }
+      if (S().AppState.user) {
+        if (S().AppState.user.role === 'APJ' && payload.sync_staff_accounts) {
+          S().AppState.user.nama_lengkap = payload.apj_nama;
+          if (payload.apj_sipa) S().AppState.user.no_sipa = payload.apj_sipa;
+        }
+      }
+      await global.loadSettingsBundle(true);
+      if (typeof global.renderApp === 'function') global.renderApp();
+      global.toast('Sistem Audit, Nama APJ & Nama Kasir berhasil diperbarui!', 'ok');
+    } catch (e) {
+      global.toast(e.message || 'Gagal menyimpan sistem audit.', 'err');
+    }
+  };
+
+  global.saveQuickStaffCard = async (targetRole) => {
+    const isApj = targetRole === 'APJ';
+    const idUser = (document.getElementById(isApj ? 'quickApjId' : 'quickKasirId') || {}).value || (isApj ? 'USR-002' : 'USR-003');
+    const nama = ((document.getElementById(isApj ? 'quickApjNama' : 'quickKasirNama') || {}).value || '').trim();
+    const username = ((document.getElementById(isApj ? 'quickApjUser' : 'quickKasirUser') || {}).value || '').trim();
+    const sipa = isApj ? (((document.getElementById('quickApjSipa') || {}).value || '-').trim()) : undefined;
+    const statusAktif = isApj ? 'AKTIF' : (((document.getElementById('quickKasirStatus') || {}).value || 'AKTIF'));
+    if (!nama || !username) {
+      global.toast('Username dan Nama ' + targetRole + ' wajib diisi.', 'err');
+      return;
+    }
+    const existing = (settingsCache.users || []).find((u) => u.id_user === idUser || u.role === targetRole) || {};
+    try {
+      const res = await API().callApi('users.save', {
+        id_user: existing.id_user || idUser,
+        username,
+        nama_lengkap: nama,
+        role: targetRole,
+        cabang_id: existing.cabang_id || S().AppState.cabangId || 'ONS-01',
+        no_sipa: sipa !== undefined ? sipa : (existing.no_sipa || '-'),
+        masa_berlaku_sipa: existing.masa_berlaku_sipa || '-',
+        status_aktif: statusAktif
+      }, { isWrite: true });
+      if (res && res.audit_system && S().setAuditSystem) {
+        S().setAuditSystem(res.audit_system);
+        resetAuditDraftFromStore();
+      }
+      await global.loadSettingsBundle(true);
+      if (typeof global.renderApp === 'function') global.renderApp();
+      global.toast('Nama ' + targetRole + ' (' + nama + ') berhasil diperbarui & disinkronkan!', 'ok');
+    } catch (e) {
+      global.toast(e.message || 'Gagal memperbarui nama ' + targetRole, 'err');
+    }
+  };
+
+  global.applyRolePresetPerms = (presetMode) => {
+    const defMap = S().DEFAULT_ROLE_PERMS || {};
+    let keys = [];
+    if (presetMode === 'ALL') {
+      keys = (S().RBAC_MODULE_CATALOG || []).map((m) => m.key);
+    } else if (presetMode === 'KASIR_AUDIT') {
+      keys = (defMap.Kasir || []).concat(['gudang:opname', 'settings:audit']);
+    } else {
+      keys = defMap[presetMode] || defMap.Kasir || [];
+    }
+    document.querySelectorAll('.usr-perm-chk').forEach((chk) => {
+      chk.checked = keys.includes(chk.value);
+    });
+  };
+
+  global.openAddUserModal = (targetIdOrUsername) => {
+    const allUsers = settingsCache.users.length ? settingsCache.users : (S().AppState.staffDirectory || []);
+    const target = targetIdOrUsername
+      ? allUsers.find((u) => u.id_user === targetIdOrUsername || String(u.username).toLowerCase() === String(targetIdOrUsername).toLowerCase())
+      : null;
+    const isEdit = !!target;
+    const initRole = (target && target.role) || 'Kasir';
+    const effPerms = target
+      ? (S().getUserPermissions ? S().getUserPermissions(target) : [])
+      : ((S().DEFAULT_ROLE_PERMS && S().DEFAULT_ROLE_PERMS[initRole]) || []);
+    const catalog = S().RBAC_MODULE_CATALOG || [];
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <div>
+          <h3 class="font-bold text-base">${isEdit ? 'Edit Akun, Nama &amp; Sistem Hak Akses: ' + S().esc(target.nama_lengkap) : 'Tambah Akun Pengguna Baru &amp; Hak Akses'}</h3>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Ubah nama APJ/Kasir/Pemilik, No. SIPA, status aktif, sekaligus centang modul &amp; hak audit yang diizinkan.</p>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="text-xl px-2">&times;</button>
       </div>
-      <div><label class="font-semibold block mb-1">No. SIPA (jika Apoteker/APJ)</label><input id="usrSipa" class="ons-input font-mono-num" placeholder="-"/></div>
-      <button onclick="window.submitAddUserNow()" class="ons-btn ons-btn-emerald w-full">Simpan Akun ke PENGGUNA_CABANG</button>
-    </div>`, '520px');
+
+      <input type="hidden" id="usrEditId" value="${S().esc((target && target.id_user) || '')}"/>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-5 space-y-2.5">
+          <div class="font-bold text-xs uppercase tracking-wide" style="color:var(--ons-primary)">1. Identitas &amp; Peran Staf</div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="font-semibold block mb-1">Username *</label><input id="usrName" class="ons-input font-mono-num" value="${S().esc((target && target.username) || '')}" placeholder="kasir2"/></div>
+            <div><label class="font-semibold block mb-1">Role *</label>
+              <select id="usrRole" class="ons-select" ${isEdit ? '' : 'onchange="window.applyRolePresetPerms(this.value)"'}>
+                <option value="Kasir" ${initRole === 'Kasir' ? 'selected' : ''}>Kasir</option>
+                <option value="APJ" ${initRole === 'APJ' ? 'selected' : ''}>APJ</option>
+                <option value="Pemilik" ${initRole === 'Pemilik' ? 'selected' : ''}>Pemilik</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="font-semibold block mb-1">Nama Lengkap (Pemilik / APJ / Kasir) *</label><input id="usrFull" class="ons-input" value="${S().esc((target && target.nama_lengkap) || '')}" placeholder="Contoh: apt. Dewi Kartika, S.Farm"/></div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="font-semibold block mb-1">Cabang</label><input id="usrBranch" class="ons-input font-mono-num" value="${S().esc((target && target.cabang_id) || S().AppState.cabangId || 'ONS-01')}"/></div>
+            <div><label class="font-semibold block mb-1">Status Aktif</label>
+              <select id="usrStatus" class="ons-select">
+                <option value="AKTIF" ${(!target || String(target.status_aktif || 'AKTIF') === 'AKTIF') ? 'selected' : ''}>AKTIF</option>
+                <option value="NONAKTIF" ${(target && target.status_aktif === 'NONAKTIF') ? 'selected' : ''}>NONAKTIF</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="font-semibold block mb-1">No. SIPA (Apoteker/APJ)</label><input id="usrSipa" class="ons-input font-mono-num" value="${S().esc((target && target.no_sipa) || '-')}" placeholder="-"/></div>
+            <div><label class="font-semibold block mb-1">Berlaku SIPA s/d</label><input id="usrSipaExp" class="ons-input font-mono-num" value="${S().esc((target && target.masa_berlaku_sipa) || '-')}" placeholder="2029-12-31"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="font-semibold block mb-1">${isEdit ? 'Kata Sandi Baru (Opsional)' : 'Kata Sandi Awal (min 6) *'}</label><input id="usrPass" type="password" class="ons-input" placeholder="${isEdit ? 'Kosongkan jika tetap' : 'Min. 6 karakter'}"/></div>
+            <div><label class="font-semibold block mb-1">${isEdit ? 'PIN 6 Digit Baru (Opsional)' : 'PIN 6 Digit Otorisasi'}</label><input id="usrPin" type="password" maxlength="6" class="ons-input font-mono-num" value="${isEdit ? '' : '123456'}" placeholder="${isEdit ? 'Kosongkan jika tetap' : '123456'}"/></div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 space-y-2.5 p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="font-bold text-xs uppercase tracking-wide" style="color:var(--ons-primary)">2. Matriks Hak Akses &amp; Audit Modul</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Centang menu &amp; wewenang audit yang diizinkan untuk akun ini. (Pemilik selalu memiliki akses penuh)</div>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              <button type="button" onclick="window.applyRolePresetPerms('ALL')" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2">Semua</button>
+              <button type="button" onclick="window.applyRolePresetPerms('APJ')" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2">Standar APJ</button>
+              <button type="button" onclick="window.applyRolePresetPerms('KASIR_AUDIT')" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2">Kasir + Audit</button>
+              <button type="button" onclick="window.applyRolePresetPerms('Kasir')" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2">Standar Kasir</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-64 overflow-y-auto pr-1">
+            ${catalog.map((m) => `<label class="flex items-center gap-2 p-1.5 rounded-lg border cursor-pointer" style="background:var(--ons-surface);border-color:var(--ons-border)">
+              <input type="checkbox" value="${S().esc(m.key)}" ${effPerms.includes(m.key) ? 'checked' : ''} class="usr-perm-chk w-3.5 h-3.5 accent-blue-600 shrink-0"/>
+              <span class="leading-tight"><b>${S().esc(m.label)}</b><span class="block text-[10px]" style="color:var(--ons-text-soft)">${S().esc(m.group)}</span></span>
+            </label>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitAddUserNow()" class="ons-btn ons-btn-emerald text-xs px-5 font-bold">Simpan Perubahan Akun &amp; Hak Akses</button>
+      </div>
+    </div>`, '880px');
   };
 
   global.submitAddUserNow = async () => {
     try {
-      await API().callApi('users.save', {
-        username: document.getElementById('usrName').value,
-        nama_lengkap: document.getElementById('usrFull').value,
+      const idUser = (document.getElementById('usrEditId') || {}).value || '';
+      const perms = Array.from(document.querySelectorAll('.usr-perm-chk:checked')).map((c) => c.value);
+      const payload = {
+        id_user: idUser || undefined,
+        username: document.getElementById('usrName').value.trim(),
+        nama_lengkap: document.getElementById('usrFull').value.trim(),
         role: document.getElementById('usrRole').value,
-        cabang_id: document.getElementById('usrBranch').value,
+        cabang_id: document.getElementById('usrBranch').value.trim(),
+        status_aktif: (document.getElementById('usrStatus') || {}).value || 'AKTIF',
+        no_sipa: document.getElementById('usrSipa').value.trim(),
+        masa_berlaku_sipa: ((document.getElementById('usrSipaExp') || {}).value || '-').trim(),
         password_baru: document.getElementById('usrPass').value,
         pin_baru: document.getElementById('usrPin').value,
-        no_sipa: document.getElementById('usrSipa').value
-      }, { isWrite: true });
+        hak_akses: perms
+      };
+      const res = await API().callApi('users.save', payload, { isWrite: true });
+      if (res && res.rbac_permissions) {
+        S().AppState.rbacPermissions = res.rbac_permissions;
+      }
+      if (res && res.audit_system && S().setAuditSystem) {
+        S().setAuditSystem(res.audit_system);
+        resetAuditDraftFromStore();
+      }
+      if (S().AppState.user && ((idUser && S().AppState.user.id_user === idUser) || String(S().AppState.user.username || '').toLowerCase() === payload.username.toLowerCase())) {
+        S().AppState.user.nama_lengkap = payload.nama_lengkap;
+        S().AppState.user.no_sipa = payload.no_sipa;
+        S().AppState.user.role = payload.role;
+        S().AppState.user.hak_akses = perms;
+      }
       S().closeModal();
-      global.toast('Akun pengguna berhasil disimpan!', 'ok');
-      global.loadSettingsBundle(true);
+      global.toast('Akun "' + payload.nama_lengkap + '" & hak akses berhasil disimpan!', 'ok');
+      await global.loadSettingsBundle(true);
+      if (typeof global.renderApp === 'function') global.renderApp();
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -2882,6 +3296,7 @@
       st.carts = [{ id: 'K1', label: 'Pelanggan #1', channel: 'Toko Fisik', id_member: 'UMUM', tier_harga: 'UMUM', items: [], diskon_global: 0, held_note: '', held_at: '' }];
       st.activeCartIdx = 0;
       settingsCache = { secrets: settingsCache.secrets || {}, audit: [], users: settingsCache.users || [] };
+      resetAuditDraftFromStore();
 
       S().closeModal();
       global.toast((res && res.pesan) || 'Reset Data Pabrik selesai! Sistem bersih siap produksi.', 'ok');
