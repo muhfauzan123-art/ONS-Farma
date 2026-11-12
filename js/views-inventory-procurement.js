@@ -2483,7 +2483,6 @@
   function renderGudangView() {
     const st = S().AppState;
     gudangTab = (st.subTabs && st.subTabs.gudang) || gudangTab || 'batch';
-    if (gudangTab === 'coldchain') gudangTab = 'batch';
     const seeCost = S().canSeeFinancialCost();
     const sorted = st.stokBatch.slice().sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
 
@@ -2549,22 +2548,115 @@
       }
     });
 
+    const coldLogs = (st.coldChain || []).slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+    const latestCold = coldLogs[0] || null;
+    const hasColdAlarm = latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL';
+
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Gudang Batch FEFO, Kartu Stok &amp; Stock Opname</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola batch kedaluwarsa terdekat, buku mutasi Kartu Stok BPOM, dan penyesuaian fisik Stock Opname.</p>
+          <h1 class="text-xl font-extrabold">Gudang Batch FEFO, Kartu Stok, Monitor Suhu &amp; Opname</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola batch kedaluwarsa terdekat, buku mutasi Kartu Stok BPOM, log suhu kulkas 2&ndash;8&deg;C, dan penyesuaian fisik Stock Opname.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
             <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Batch &amp; FEFO (${sorted.length})</button>
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok (${(st.mutasiStok || []).length})</button>
+            <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu 2&ndash;8&deg;C (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
             ${(seeCost || S().canAccessSubTab('gudang', 'opname')) ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
             ${((S().isMultiBranchEnabled && S().isMultiBranchEnabled()) && (seeCost || S().canAccessSubTab('gudang', 'transfer'))) ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
           </div>
         </div>
       </div>
 
+      ${gudangTab === 'coldchain' ? (() => {
+        const coldItems = (st.masterObat || []).filter((o) => /2\s*[-–]\s*8|cold|chiller|kulkas/i.test(`${o.suhu_simpan || ''} ${o.rak_lokasi || ''}`));
+        const alarmCount = coldLogs.filter((c) => String(c.status_alarm || 'NORMAL') !== 'NORMAL').length;
+        const unitPresets = Array.from(new Set(['CHILLER-VAKSIN-01', 'CHILLER-INSULIN-01', 'KULKAS-UMUM-01'].concat(coldLogs.map((c) => c.id_kulkas).filter(Boolean))));
+        return `<div class="space-y-4">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Suhu Kulkas Terakhir</div><div class="text-xl font-extrabold font-mono-num ${latestCold ? (hasColdAlarm ? 'text-red-600' : 'text-emerald-600') : 'text-amber-600'}">${latestCold ? (Number(latestCold.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}</div></div>
+            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Status Rentang CDOB (2&ndash;8&deg;C)</div><div class="text-sm font-extrabold mt-1">${latestCold ? `<span class="badge-bpom ${hasColdAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(latestCold.status_alarm || 'NORMAL')}</span>` : '<span class="badge-bpom bpom-prekursor">MENUNGGU CATATAN</span>'}</div></div>
+            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Kelembapan &amp; Total Log</div><div class="text-lg font-bold font-mono-num">${latestCold ? (Number(latestCold.kelembapan || 55) + '%') : '-'} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">(${coldLogs.length} log${alarmCount ? `, ${alarmCount} alarm` : ''})</span></div></div>
+            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Item Obat Cold-Chain</div><div class="text-xl font-extrabold font-mono-num text-blue-600">${coldItems.length} Produk</div></div>
+          </div>
+
+          <div class="ons-card p-4 space-y-3 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-sm">Catat Monitoring Suhu Chiller / Kulkas (Standar CDOB 2&ndash;8&deg;C)</h3>
+                <p style="color:var(--ons-text-soft)">Pencatatan otomatis mengecek rentang aman 2.0&deg;C &ndash; 8.0&deg;C dan menandai alarm bila suhu keluar batas.</p>
+              </div>
+              <button type="button" onclick="window.printColdChainLogCdob()" class="ons-btn ons-btn-ghost text-xs">Cetak Kartu Log Suhu (A4)</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
+              <div class="lg:col-span-3">
+                <label class="font-semibold block mb-1">ID Kulkas / Chiller *</label>
+                <input id="ccKulkasInp" list="ccKulkasPresets" class="ons-input font-mono-num" value="${S().esc((latestCold && latestCold.id_kulkas) || 'CHILLER-VAKSIN-01')}"/>
+                <datalist id="ccKulkasPresets">${unitPresets.map((u) => `<option value="${S().esc(u)}"></option>`).join('')}</datalist>
+              </div>
+              <div class="lg:col-span-2">
+                <label class="font-semibold block mb-1">Suhu Terukur (&deg;C) *</label>
+                <input id="ccSuhuInp" type="number" step="0.1" value="${latestCold ? Number(latestCold.suhu_celcius || 4.8).toFixed(1) : '4.8'}" class="ons-input font-mono-num font-bold"/>
+              </div>
+              <div class="lg:col-span-2">
+                <label class="font-semibold block mb-1">Kelembapan (%)</label>
+                <input id="ccHumInp" type="number" min="0" max="100" step="1" value="${latestCold ? Number(latestCold.kelembapan || 55) : '55'}" class="ons-input font-mono-num"/>
+              </div>
+              <div class="lg:col-span-3">
+                <label class="font-semibold block mb-1">Tindakan Korektif / Catatan</label>
+                <input id="ccTindakanInp" class="ons-input" placeholder="Opsional (cth. Cek segel pintu &amp; kompresor)"/>
+              </div>
+              <div class="lg:col-span-2">
+                <button type="button" onclick="window.submitColdChainLog()" class="ons-btn ons-btn-primary w-full font-bold">+ Simpan Log Suhu</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="ons-card p-4 lg:col-span-8 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-sm">Riwayat Pencatatan Suhu Cold-Chain (${coldLogs.length})</h3>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Rentang aman: <b>2.0&deg;C &ndash; 8.0&deg;C</b></span>
+              </div>
+              <div class="ons-table-wrap">
+                <table class="ons-table">
+                  <thead><tr><th>Waktu Catat</th><th>Unit Kulkas</th><th class="text-right">Suhu (&deg;C)</th><th class="text-right">RH %</th><th>Status</th><th>Petugas</th><th>Catatan / Korektif</th></tr></thead>
+                  <tbody>
+                    ${coldLogs.length ? coldLogs.slice(0, 60).map((c) => {
+                      const isAlarm = String(c.status_alarm || 'NORMAL') !== 'NORMAL';
+                      return `<tr>
+                        <td class="font-mono-num text-xs">${S().formatTgl(c.timestamp, true)}</td>
+                        <td class="font-mono-num text-xs font-semibold">${S().esc(c.id_kulkas || 'CHILLER-VAKSIN-01')}</td>
+                        <td class="text-right font-mono-num font-extrabold ${isAlarm ? 'text-red-600' : 'text-emerald-600'}">${Number(c.suhu_celcius || 0).toFixed(1)}&deg;C</td>
+                        <td class="text-right font-mono-num text-xs">${Number(c.kelembapan || 55)}%</td>
+                        <td><span class="badge-bpom ${isAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(c.status_alarm || 'NORMAL')}</span></td>
+                        <td class="text-xs">${S().esc(c.petugas_id || '-')}</td>
+                        <td class="text-xs">${S().esc(c.tindakan_korektif || '-')}</td>
+                      </tr>`;
+                    }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Belum ada log suhu kulkas/chiller tercatat. Gunakan form di atas untuk mencatat suhu hari ini.</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="ons-card p-4 lg:col-span-4 space-y-3">
+              <h3 class="font-bold text-sm">Obat Penyimpanan 2&ndash;8&deg;C (${coldItems.length})</h3>
+              <div class="ons-table-wrap">
+                <table class="ons-table">
+                  <thead><tr><th>Nama Obat</th><th class="text-right">Stok</th></tr></thead>
+                  <tbody>
+                    ${coldItems.length ? coldItems.map((o) => `<tr>
+                      <td class="text-xs"><div class="font-bold">${S().esc(o.nama_dagang)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(o.rak_lokasi || 'CHILLER')} &bull; ${S().esc(o.suhu_simpan || '2-8°C')}</div></td>
+                      <td class="text-right font-mono-num font-bold text-xs">${S().getSellableStok(o.id_obat)} ${S().esc(o.satuan_dasar || '')}</td>
+                    </tr>`).join('') : '<tr><td colspan="2" class="text-center py-5 text-xs">Belum ada produk bertanda Chiller 2&ndash;8&deg;C di Master Obat.</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      })() : ''}
       ${gudangTab === 'transfer' && (seeCost || S().canAccessSubTab('gudang', 'transfer')) ? (() => {
         const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
         if (!multiOn) {
@@ -2690,7 +2782,7 @@
           </div>
         </div>`;
       })() : ''}
-      ${gudangTab === 'transfer' ? '' : (gudangTab === 'kartu-stok' ? `
+      ${(gudangTab === 'coldchain' || gudangTab === 'transfer') ? '' : (gudangTab === 'kartu-stok' ? `
         <div class="ons-card p-4 space-y-4">
           ${global.ONSProcurementPro ? global.ONSProcurementPro.renderStockFlowSummary(mutasiRows) : ''}
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -2862,10 +2954,76 @@
   }
 
   global.setGudangTab = (t) => {
-    gudangTab = (t && t !== 'coldchain') ? t : 'batch';
+    gudangTab = t || 'batch';
     if (S().AppState.subTabs) S().AppState.subTabs.gudang = gudangTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+  };
+
+  global.submitColdChainLog = async () => {
+    try {
+      const idKulkas = ((document.getElementById('ccKulkasInp') || {}).value || 'CHILLER-VAKSIN-01').trim();
+      const rawSuhu = (document.getElementById('ccSuhuInp') || {}).value;
+      const suhu = Number(rawSuhu);
+      if (rawSuhu === '' || rawSuhu === undefined || Number.isNaN(suhu)) {
+        throw new Error('Masukkan angka suhu terukur (°C) yang valid.');
+      }
+      const hum = Number((document.getElementById('ccHumInp') || {}).value || 55);
+      const tindakan = ((document.getElementById('ccTindakanInp') || {}).value || '').trim();
+      const res = await API().callApi('coldchain.log', {
+        id_kulkas: idKulkas,
+        suhu_celcius: suhu,
+        kelembapan: hum,
+        tindakan_korektif: tindakan
+      }, { isWrite: true });
+      const it = res && res.item;
+      const isAlarm = it && String(it.status_alarm || 'NORMAL') !== 'NORMAL';
+      global.toast(
+        isAlarm
+          ? `PERINGATAN COLD-CHAIN: ${idKulkas} tercatat ${suhu.toFixed(1)}°C (di luar rentang 2–8°C)!`
+          : `Log suhu ${idKulkas} (${suhu.toFixed(1)}°C) tersimpan.`,
+        isAlarm ? 'warn' : 'ok'
+      );
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.printColdChainLogCdob = () => {
+    const st = S().AppState;
+    const logs = (st.coldChain || []).slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || ''))).slice(0, 60);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    S().printHtmlZone(`<div style="max-width:720px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#111;border:1.5px solid #1e293b;padding:18px;">
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:15px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+          <div>${S().esc(prof.alamat || '')} &bull; APJ: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px;font-weight:bold;">KARTU LOG SUHU COLD-CHAIN (2&ndash;8&deg;C)</div>
+          <div>Standar Penyimpanan CDOB / BPOM</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
+        <thead><tr style="background:#f1f5f9;">
+          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Waktu</th>
+          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Unit Kulkas</th>
+          <th style="border:1px solid #cbd5e1;padding:5px;text-align:right;">Suhu</th>
+          <th style="border:1px solid #cbd5e1;padding:5px;text-align:right;">RH%</th>
+          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Status</th>
+          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Petugas &amp; Korektif</th>
+        </tr></thead>
+        <tbody>
+          ${logs.length ? logs.map((c) => `<tr>
+            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().formatTgl(c.timestamp, true)}</td>
+            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().esc(c.id_kulkas || '-')}</td>
+            <td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;font-weight:bold;">${Number(c.suhu_celcius || 0).toFixed(1)}&deg;C</td>
+            <td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;">${Number(c.kelembapan || 55)}%</td>
+            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().esc(c.status_alarm || 'NORMAL')}</td>
+            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().esc(c.petugas_id || '-')}${c.tindakan_korektif && c.tindakan_korektif !== '-' ? ' — ' + S().esc(c.tindakan_korektif) : ''}</td>
+          </tr>`).join('') : '<tr><td colspan="6" style="border:1px solid #cbd5e1;padding:12px;text-align:center;">Belum ada catatan log suhu.</td></tr>'}
+        </tbody>
+      </table>
+    </div>`, 'a4');
   };
 
   global.submitMutasiCabangSend = async () => {

@@ -964,7 +964,10 @@
     const branchSp = seeCost ? (st.suratPesanan || []).filter((sp) => sameCabang_(sp, cabId)) : [];
     const spOpenCount = seeCost ? branchSp.filter((sp) => !['SELESAI_DITERIMA', 'DITERIMA_PENUH', 'BATAL'].includes(String(sp.status_sp || '').toUpperCase())).length : 0;
 
-    const branchCold = (st.coldChain || []).filter((c) => sameCabang_(c, cabId));
+    const branchCold = (st.coldChain || [])
+      .filter((c) => sameCabang_(c, cabId))
+      .slice()
+      .sort((a, b) => String(a.timestamp || '').localeCompare(String(b.timestamp || '')));
     const latestCold = branchCold.length ? branchCold[branchCold.length - 1] : null;
     const activeShift = st.activeShift || null;
     const totalPoinMember = validSales.reduce((a, b) => a + Number(b.poin_didapat || 0), 0);
@@ -1083,12 +1086,12 @@
       {
         title: 'Monitor Suhu (2&ndash;8&deg;C)',
         value: latestCold ? (Number(latestCold.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat',
-        valCls: latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'text-red-600' : 'text-emerald-600',
-        badge: latestCold ? S().esc(latestCold.status_alarm || 'NORMAL') : '-',
-        badgeCls: latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'bpom-keras' : 'bpom-bebas',
+        valCls: latestCold ? (String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'text-red-600' : 'text-emerald-600') : 'text-amber-600',
+        badge: latestCold ? S().esc(latestCold.status_alarm || 'NORMAL') : 'Catat Suhu',
+        badgeCls: latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'bpom-keras' : (latestCold ? 'bpom-bebas' : 'bpom-prekursor'),
         icoBg: latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'bg-red-500/10 text-red-600' : 'bg-sky-500/10 text-sky-600',
         ico: '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0Z"/>',
-        onClick: canGudang ? `navigateView('gudang','batch')` : ''
+        onClick: canGudang ? `navigateView('gudang','coldchain')` : ''
       }
     ];
 

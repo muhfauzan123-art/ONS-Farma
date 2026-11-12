@@ -132,11 +132,12 @@
             },
             {
               viewId: 'gudang', label: 'Persediaan & Stok', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
-              desc: 'Stok batch FEFO, alur obat masuk/keluar, kartu stok BPOM, opname & mutasi cabang.',
-              kw: 'persediaan gudang stok batch fefo alur obat masuk keluar kartu stok opname transfer cabang',
+              desc: 'Stok batch FEFO, alur obat masuk/keluar, kartu stok BPOM, monitor suhu 2–8°C, opname & mutasi.',
+              kw: 'persediaan gudang stok batch fefo alur obat masuk keluar kartu stok monitor suhu cold chain chiller opname transfer cabang',
               tabs: [
                 { subTab: 'batch', label: 'Stok Batch & FEFO', kw: 'batch fefo near ed kadaluarsa karantina recall' },
                 { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'alur obat masuk keluar kartu stok mutasi bpom xlsx' },
+                { subTab: 'coldchain', label: 'Monitor Suhu (2–8°C)', kw: 'monitor suhu cold chain chiller kulkas vaksin insulin cdob' },
                 { subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'transfer', label: 'Mutasi Antar-Cabang', kw: 'mutasi transfer antar cabang stok multi cabang surat jalan', roles: ['Pemilik', 'APJ'] }
               ]
@@ -574,7 +575,6 @@
         if (viewId === 'omnichannel') { viewId = 'pos'; subTab = 'kasir'; }
         if (viewId === 'tutup-shift') { viewId = 'pos'; subTab = 'tutup-shift'; }
         if (viewId === 'pos' && subTab === 'online') subTab = 'kasir';
-        if (viewId === 'gudang' && subTab === 'coldchain') subTab = 'batch';
         if (viewId === 'defecta' && subTab === 'supplier') { viewId = 'obat'; subTab = 'supplier'; }
         if (!ONSStore.canAccessView(viewId)) {
           toast('Akses dibatasi untuk peran ' + ONSStore.getRole(), 'warn');
@@ -825,6 +825,11 @@
         if (lowCount > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'defecta', sub: 'order', tone: 'text-amber-600', title: `${lowCount} Obat di Bawah Stok Minimum`, desc: 'Buat SP BPOM otomatis dari menu Defecta.' });
         const erxPend = (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
         if (erxPend > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'eresep-prb', sub: 'erx', tone: 'text-blue-600', title: `${erxPend} E-Resep Menunggu PIN APJ`, desc: 'Periksa interaksi obat & verifikasi SIPA.' });
+        const coldLogs = (st.coldChain || []).slice().sort((a, b) => String(a.timestamp || '').localeCompare(String(b.timestamp || '')));
+        const latestCold = coldLogs.length ? coldLogs[coldLogs.length - 1] : null;
+        if (latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL') {
+          alerts.push({ view: 'gudang', sub: 'coldchain', tone: 'text-red-600', title: `Alarm Suhu Kulkas ${Number(latestCold.suhu_celcius || 0).toFixed(1)}°C`, desc: 'Suhu di luar rentang CDOB 2–8°C. Segera periksa & catat ulang.' });
+        }
         return alerts;
       }
 
@@ -879,6 +884,7 @@
           { show: seeCost && ONSStore.canAccessView('obat'), title: 'Tambah Produk Obat', sub: 'Buka Studio Wizard 5 Langkah', kbd: '+OBT', tone: 'bg-amber-500/10 text-amber-600', icon: 'pill', run: () => { ONSStore.closeModal(); navigateView('obat', 'obat'); setTimeout(() => window.openObatWizardModal && window.openObatWizardModal(), 40); } },
           { show: seeCost && ONSStore.canAccessView('faktur'), title: 'Surat Pesanan & Faktur', sub: 'Buat SP A4 atau Scan Faktur PBF', kbd: 'PBF', tone: 'bg-blue-500/10 text-blue-600', icon: 'truck', run: () => { ONSStore.closeModal(); navigateView('faktur', 'sp'); } },
           { show: ONSStore.canAccessView('gudang'), title: 'Cek Batch & Kadaluarsa', sub: 'Pantau FEFO & kartu stok gudang', kbd: 'FEFO', tone: 'bg-red-500/10 text-red-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'batch'); } },
+          { show: ONSStore.canAccessView('gudang'), title: 'Monitor Suhu (2–8°C)', sub: 'Catat & pantau suhu chiller/kulkas CDOB', kbd: '2-8°C', tone: 'bg-sky-500/10 text-sky-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'coldchain'); } },
           { show: ONSStore.canAccessView('settings'), title: 'Sistem Audit, APJ & Kasir', sub: 'Edit identitas APJ/Kasir & hak akses', kbd: 'RBAC', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'settings', run: () => { ONSStore.closeModal(); navigateView('settings', 'audit'); } }
         ].filter((q) => q.show);
 
@@ -1434,9 +1440,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_14') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_15') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_14', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_15', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {
