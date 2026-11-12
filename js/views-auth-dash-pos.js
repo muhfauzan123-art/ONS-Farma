@@ -1081,7 +1081,7 @@
         badgeCls: seeCost && spOpenCount ? 'bpom-prekursor' : 'bpom-bebas',
         icoBg: 'bg-amber-500/10 text-amber-600',
         ico: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
-        onClick: seeCost && S().canAccessView('faktur') ? `navigateView('faktur','sp')` : ''
+        onClick: seeCost && S().canAccessView('defecta') ? `navigateView('defecta','sp')` : (!seeCost && canObat ? `navigateView('obat','obat')` : '')
       },
       {
         title: 'Monitor Suhu (2&ndash;8&deg;C)',

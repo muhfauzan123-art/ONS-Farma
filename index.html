@@ -882,7 +882,7 @@
           { show: ONSStore.canAccessView('pos'), title: 'Kasir POS FEFO', sub: 'Transaksi cepat & scan barcode', kbd: 'F2', tone: 'bg-blue-500/10 text-blue-600', icon: 'pos', run: () => { ONSStore.closeModal(); navigateView('pos', 'kasir'); setTimeout(() => document.getElementById('posSearchInput')?.focus(), 40); } },
           { show: ONSStore.canAccessView('pemeriksaan'), title: 'Pemeriksaan Pasien', sub: 'Tensi, Gula, Kolesterol & Asam Urat', kbd: 'POCT', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'activity', run: () => { ONSStore.closeModal(); navigateView('pemeriksaan', 'semua'); } },
           { show: seeCost && ONSStore.canAccessView('obat'), title: 'Tambah Produk Obat', sub: 'Buka Studio Wizard 5 Langkah', kbd: '+OBT', tone: 'bg-amber-500/10 text-amber-600', icon: 'pill', run: () => { ONSStore.closeModal(); navigateView('obat', 'obat'); setTimeout(() => window.openObatWizardModal && window.openObatWizardModal(), 40); } },
-          { show: seeCost && ONSStore.canAccessView('faktur'), title: 'Surat Pesanan & Faktur', sub: 'Buat SP A4 atau Scan Faktur PBF', kbd: 'PBF', tone: 'bg-blue-500/10 text-blue-600', icon: 'truck', run: () => { ONSStore.closeModal(); navigateView('faktur', 'sp'); } },
+          { show: seeCost && ONSStore.canAccessView('defecta'), title: 'Surat Pesanan & Faktur', sub: 'Buat SP A4 atau Scan Faktur PBF', kbd: 'PBF', tone: 'bg-blue-500/10 text-blue-600', icon: 'truck', run: () => { ONSStore.closeModal(); navigateView('defecta', 'sp'); } },
           { show: ONSStore.canAccessView('gudang'), title: 'Cek Batch & Kadaluarsa', sub: 'Pantau FEFO & kartu stok gudang', kbd: 'FEFO', tone: 'bg-red-500/10 text-red-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'batch'); } },
           { show: ONSStore.canAccessView('gudang'), title: 'Monitor Suhu (2–8°C)', sub: 'Catat & pantau suhu chiller/kulkas CDOB', kbd: '2-8°C', tone: 'bg-sky-500/10 text-sky-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'coldchain'); } },
           { show: ONSStore.canAccessView('settings'), title: 'Sistem Audit, APJ & Kasir', sub: 'Edit identitas APJ/Kasir & hak akses', kbd: 'RBAC', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'settings', run: () => { ONSStore.closeModal(); navigateView('settings', 'audit'); } }
@@ -1440,9 +1440,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_15') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_16') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_15', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_16', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {

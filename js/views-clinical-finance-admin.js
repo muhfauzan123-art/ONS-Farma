@@ -1569,7 +1569,7 @@
           <p class="text-xs" style="color:var(--ons-text-soft)">Templat {{...}} Docs/Sheets/Slides, persetujuan PIN APJ/Pemilik, pembekuan TERBIT, Arsip SP &amp; Verifikasi Publik 20-Karakter.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button onclick="global.refreshDocEngineIfNeeded(true)" class="ons-btn ons-btn-ghost text-xs">Sinkron Server</button>
+          <button onclick="window.refreshDocEngineIfNeeded(true)" class="ons-btn ons-btn-ghost text-xs">Sinkron Server</button>
           <button onclick="window.openCreateDocModal()" class="ons-btn ons-btn-primary text-xs">+ Buat Draf Surat Resmi Baru</button>
         </div>
       </div>
