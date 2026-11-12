@@ -3096,6 +3096,20 @@
       </div>`) : ''}
 
       ${settingsTab === 'vault' ? `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-emerald-200">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm" style="color:var(--ons-primary-ink)">Audit, Pembersihan &amp; Sinkronisasi Database Sheets</h3>
+              <p class="mt-0.5" style="color:var(--ons-text-soft)">Berjalan langsung ke Spreadsheet DB utama aplikasi tanpa perlu memasukkan ID Spreadsheet. Menghapus tab tidak penting/kosong (<code>Sheet1</code>, tab legacy, tab multi-cabang kosong), melengkapi kolom skema terbaru, &amp; menyinkronkan ulang Piutang, Hutang PBF, Batch Stok, SP, dan Jurnal Keuangan.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">1. Pindai Kesehatan DB</button>
+              <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs">2. Bersihkan &amp; Sinkronkan DB</button>
+            </div>
+          </div>
+          <div id="dbAuditResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+        </div>
+
         <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
           <h3 class="font-bold text-sm">Brankas Rahasia Script Properties (Read-Back Tersensor)</h3>
           <div class="space-y-2">
@@ -3107,28 +3121,14 @@
         </div>
 
         <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
-          <h3 class="font-bold text-sm">Wizard Migrasi Spreadsheet v9 &rarr; v13 (Aman Tanpa Ubah Sumber)</h3>
-          <p style="color:var(--ons-text-soft)">Membaca spreadsheet lama berbasis header, normalisasi nomor WA <code>628...</code>, &amp; upsert idempoten dengan Dry-Run Preview.</p>
-          <input id="migSourceId" class="ons-input font-mono-num" placeholder="Tempel ID Spreadsheet Sumber v9 (contoh: 1BxiMVs0XRA5nFMd...)"/>
+          <h3 class="font-bold text-sm">Wizard Migrasi Spreadsheet v9 &rarr; v13 (Opsional &mdash; Impor dari File Lama Lain)</h3>
+          <p style="color:var(--ons-text-soft)">Hanya gunakan jika ingin mengimpor data dari file Google Sheets versi lama terpisah (bukan untuk merapikan DB aktif). Membaca berbasis header, normalisasi nomor WA <code>628...</code>, &amp; upsert idempoten dengan Dry-Run Preview.</p>
+          <input id="migSourceId" class="ons-input font-mono-num" placeholder="Tempel ID atau URL Google Sheets Sumber v9 (contoh: 1BxiMVs0XRA5nFMd...)"/>
           <div class="flex gap-2">
-            <button onclick="window.runMigrationPreview()" class="ons-btn ons-btn-ghost flex-1">1. Pindai Dry-Run Preview</button>
-            <button onclick="window.runMigrationExecute()" class="ons-btn ons-btn-primary flex-1">2. Eksekusi Upsert Batch</button>
+            <button type="button" onclick="window.runMigrationPreview()" class="ons-btn ons-btn-ghost flex-1">1. Pindai Dry-Run Preview</button>
+            <button type="button" onclick="window.runMigrationExecute()" class="ons-btn ons-btn-primary flex-1">2. Eksekusi Upsert Batch</button>
           </div>
           <div id="migResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
-        </div>
-
-        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-emerald-200">
-          <div class="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h3 class="font-bold text-sm" style="color:var(--ons-primary-ink)">Audit, Pembersihan &amp; Sinkronisasi Database Sheets</h3>
-              <p class="mt-0.5" style="color:var(--ons-text-soft)">Menghapus tab tidak penting/kosong (<code>Sheet1</code>, tab legacy, tab multi-cabang kosong), melengkapi kolom skema terbaru, &amp; menyinkronkan ulang Piutang, Hutang PBF, Batch Stok, SP, dan Jurnal Keuangan.</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">1. Pindai Kesehatan DB</button>
-              <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs">2. Bersihkan &amp; Sinkronkan DB</button>
-            </div>
-          </div>
-          <div id="dbAuditResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
         </div>
 
         <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-red-200">
@@ -3946,9 +3946,21 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
+  function extractSpreadsheetId_(raw) {
+    const val = String(raw || '').trim();
+    if (!val || val.toUpperCase() === 'SPREADSHEET_LAMA_V9') return '';
+    const match = val.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/);
+    return match ? match[1] : val;
+  }
+
   global.runMigrationPreview = async () => {
     try {
-      const src = document.getElementById('migSourceId').value || 'SPREADSHEET_LAMA_V9';
+      const inputEl = document.getElementById('migSourceId');
+      const src = extractSpreadsheetId_(inputEl ? inputEl.value : '');
+      if (!src) {
+        if (inputEl) inputEl.focus();
+        return global.toast('Tempel ID atau URL Google Sheets lama terlebih dahulu. Untuk merapikan DB aktif saat ini, klik tombol Audit, Pembersihan & Sinkronkan DB di atas.', 'warn');
+      }
       const res = await API().callApi('migrasi.preview', { source_id: src });
       const box = document.getElementById('migResultBox');
       if (box) {
@@ -3961,7 +3973,12 @@
 
   global.runMigrationExecute = async () => {
     try {
-      const src = document.getElementById('migSourceId').value || 'SPREADSHEET_LAMA_V9';
+      const inputEl = document.getElementById('migSourceId');
+      const src = extractSpreadsheetId_(inputEl ? inputEl.value : '');
+      if (!src) {
+        if (inputEl) inputEl.focus();
+        return global.toast('Tempel ID atau URL Google Sheets lama terlebih dahulu. Untuk merapikan DB aktif saat ini, klik tombol Audit, Pembersihan & Sinkronkan DB di atas.', 'warn');
+      }
       const res = await API().callApi('migrasi.run', { source_id: src }, { isWrite: true });
       global.toast('Migrasi Upsert selesai untuk ' + res.results.length + ' sheet!', 'ok');
     } catch (e) { global.toast(e.message, 'err'); }

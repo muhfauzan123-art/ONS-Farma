@@ -1429,7 +1429,16 @@
       };
 
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+        let swReloading = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_12') === '1') return;
+          swReloading = true;
+          sessionStorage.setItem('ons_sw_reloaded_v17_12', '1');
+          location.reload();
+        });
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+          if (reg && typeof reg.update === 'function') reg.update().catch(() => {});
+        }).catch(() => {});
       }
 
       // Kunci Sesi Otomatis saat idle >= 25 menit pada Mode Live GAS (cegah penyalahgunaan PC bersama)
