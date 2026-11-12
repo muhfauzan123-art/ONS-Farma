@@ -466,13 +466,13 @@
           ? `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <span>${ONSStore.esc(item.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeTab.label)}</strong>`
           : `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(item.label)}</strong>`;
 
-        const chipsHtml = tabs.length > 1 ? `
+        const chipsHtml = (item.viewId !== 'obat' && tabs.length > 1) ? `
           <div class="ons-subnav-ribbon mt-2" role="navigation" aria-label="Sub-tab ${ONSStore.esc(item.label)}">
             ${tabs.map((t) => {
               const act = curSub === t.subTab;
               return `<button type="button" onclick="navigateView('${item.viewId}','${t.subTab}')" class="ons-subnav-chip ${act ? 'active' : ''}">${ONSStore.esc(t.label)}</button>`;
             }).join('')}
-          </div>` : (item.desc ? `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ONSStore.esc(item.desc)}</div>` : '');
+          </div>` : (item.viewId !== 'obat' && item.desc ? `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ONSStore.esc(item.desc)}</div>` : '');
 
         return `<div class="flex flex-wrap items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
           <div class="flex items-center flex-wrap gap-1">${trail}</div>
@@ -538,7 +538,7 @@
         const st = ONSStore.AppState;
         const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
         const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
-        const usahaNama = prof.nama_usaha || 'ONS FARMA v13.0';
+        const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
         const dr = document.createElement('div');
         dr.id = 'mobileNavDrawer';
         dr.className = 'ons-drawer-backdrop md:hidden';
@@ -1060,15 +1060,15 @@
             (st.fakturPbf || []).forEach((fk) => txPool.push({ kind: 'FAKTUR PBF', id: fk.no_faktur_pbf, title: fk.no_faktur_pbf, sub: `${fk.id_pbf} • ${fk.status_bayar || ''}`, nominal: fk.netto_hutang, tone: 'bpom-prekursor', viewId: 'faktur', subTab: 'daftar' }));
           }
           if (ONSStore.canAccessView('omnichannel')) {
-            (st.omnichannelOrders || []).forEach((o) => txPool.push({ kind: 'ORDER ONLINE', id: o.no_order, title: `${o.no_order} — ${o.nama_pelanggan}`, sub: `${o.channel} • ${o.status_order}`, nominal: o.total_estimasi, tone: 'bpom-terbatas', viewId: 'omnichannel', subTab: '' }));
+            (st.omnichannelOrders || []).forEach((o) => txPool.push({ kind: 'ORDER ONLINE', id: o.no_order, title: `${o.no_order} — ${o.nama_pelanggan}`, sub: `${o.channel} • ${o.status_order}`, nominal: o.total_estimasi, tone: 'bpom-terbatas', viewId: 'pos', subTab: 'kasir' }));
           }
           const txMatches = q ? txPool.filter((t) => `${t.kind} ${t.title} ${t.sub}`.toLowerCase().includes(q)).slice(0, 6) : [];
 
           const scopeCounts = {
-            SEMUA: navMatches.length + obatMatches.length + pasienMatches.length + txMatches.length,
+            SEMUA: navMatches.length + obatMatches.length + pasienMatches.length + supplierMatches.length + dokterMatches.length + txMatches.length,
             MENU: navMatches.length,
             OBAT: obatMatches.length,
-            PASIEN: pasienMatches.length,
+            PASIEN: pasienMatches.length + dokterMatches.length,
             TRANSAKSI: txMatches.length
           };
           const tabsEl = document.getElementById('cmdkScopeTabs');
@@ -1176,9 +1176,9 @@
             }).join(''));
           }
 
-          if (cmdkScope === 'SEMUA' && (supplierMatches.length || dokterMatches.length)) {
+          if ((cmdkScope === 'SEMUA' || cmdkScope === 'PASIEN') && (supplierMatches.length || dokterMatches.length)) {
             const partnerItems = [
-              ...supplierMatches.map((p) => {
+              ...(cmdkScope === 'SEMUA' ? supplierMatches : []).map((p) => {
                 const idx = addEntry({
                   kindLabel: 'Master Supplier PBF',
                   title: p.nama_pbf,
@@ -1213,7 +1213,9 @@
                 </div>`;
               })
             ];
-            sectionsHtml.push(`<div class="ons-sidebar-group-label">Supplier &amp; Dokter Mitra (${partnerItems.length})</div>` + partnerItems.join(''));
+            if (partnerItems.length) {
+              sectionsHtml.push(`<div class="ons-sidebar-group-label">${cmdkScope === 'PASIEN' ? 'Dokter Mitra' : 'Supplier &amp; Dokter Mitra'} (${partnerItems.length})</div>` + partnerItems.join(''));
+            }
           }
 
           if ((cmdkScope === 'SEMUA' || cmdkScope === 'TRANSAKSI') && txMatches.length) {
@@ -1289,7 +1291,7 @@
             <!-- Sidebar Desktop Menu Terstruktur v17.7 -->
             <aside id="desktopSidebar" class="ons-sidebar ${sidebarCollapsed ? 'collapsed' : ''} shrink-0 p-2.5 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
               <div>
-                <div class="flex items-center justify-between gap-2 px-1 py-1.5 mb-1 border-b ons-nav-divider">
+                <div class="ons-sb-brand-row flex items-center justify-between gap-2 px-1 py-1.5 mb-1 border-b ons-nav-divider">
                   <div class="flex items-center gap-2 min-w-0">
                     <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-8 h-8 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
                     <div class="min-w-0 ons-hide-collapsed">
@@ -1329,7 +1331,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.7 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.8 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>

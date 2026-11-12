@@ -13,11 +13,12 @@
   let masterSortBy = 'NAMA'; // NAMA | STOK_ASC | ED_ASC | HARGA_DESC
   let masterViewMode = 'TABLE'; // TABLE | CARD
   let masterSearchQ = '';
+  let supplierSearchQ = '';
   let supplierStatusFilter = 'SEMUA'; // SEMUA | AKTIF | NONAKTIF
   let pelangganSearchQ = '';
-  let pelangganProgFilter = 'SEMUA'; // SEMUA | PRB_BPJS | UMUM | MITRA_KLINIK
+  let pelangganProgFilter = 'SEMUA'; // SEMUA | PRB_BPJS | UMUM | MITRA_KLINIK | ALERGI
   let dokterSearchQ = '';
-  let dokterStatusFilter = 'SEMUA'; // SEMUA | AKTIF | NONAKTIF
+  let dokterStatusFilter = 'SEMUA'; // SEMUA | AKTIF | NONAKTIF | SPESIALIS
   let wizardFullScrollMode = false;
   let wizardStep = 1;
   let importObatBuffer = [];
@@ -26,6 +27,44 @@
   let mutasiFilterJenis = '';
   let opnameRakFilter = '';
   let opnameViewMode = 'TABLE'; // TABLE | CARD (Mobile HP)
+
+  function _buildWaLink(rawPhone, msg) {
+    const digits = S().normalizeWa62 ? S().normalizeWa62(rawPhone) : String(rawPhone || '').replace(/[^0-9]/g, '');
+    return (digits && S().buildWaUrl) ? S().buildWaUrl(digits, msg || '') : '';
+  }
+
+  function _renderSearchInputWithClear(inpId, clearId, val, placeholder, onInputFn, onClearFn) {
+    const hasVal = Boolean(String(val || '').trim());
+    return `<div class="ons-md-search-wrap">
+      <input id="${inpId}" class="ons-input text-xs" placeholder="${S().esc(placeholder)}" value="${S().esc(val || '')}" oninput="${onInputFn}(this.value)"/>
+      <button id="${clearId}" type="button" onclick="${onClearFn}()" aria-label="Bersihkan pencarian" title="Bersihkan" class="ons-md-search-clear ${hasVal ? '' : 'hidden'}">&times;</button>
+    </div>`;
+  }
+
+  function _patchMasterResults(builderFn, queryVal, clearBtnId) {
+    const clearEl = clearBtnId && typeof document !== 'undefined' ? document.getElementById(clearBtnId) : null;
+    if (clearEl && clearEl.classList) clearEl.classList.toggle('hidden', !String(queryVal || '').trim());
+    const slot = typeof document !== 'undefined' ? document.getElementById('mdResultsSlot') : null;
+    if (slot) {
+      slot.innerHTML = builderFn();
+      return;
+    }
+    global.renderActiveView();
+  }
+
+  function _openDeleteConfirmModal(opts) {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base text-red-600">${S().esc(opts.title)}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p>Anda akan menghapus <b>${S().esc(opts.name)}</b> (<span class="font-mono-num">${S().esc(opts.id)}</span>) dari ${S().esc(opts.entityLabel)}.</p>
+      <div class="flex gap-2 justify-end pt-2">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="${opts.confirmFnName}('${S().esc(opts.id)}')" class="ons-btn ons-btn-danger text-xs">Ya, Hapus</button>
+      </div>
+    </div>`, '420px');
+  }
 
   function buildObatMeta(o) {
     const stok = S().getSellableStok(o.id_obat);
@@ -94,28 +133,21 @@
   /**
    * W-04: Master Data Terpadu (Obat KFA/BPOM, Supplier PBF, Pelanggan PRB & Dokter Mitra)
    */
-  function _renderMasterObatSubTab(seeCost, allMeta, filtered) {
+  function _renderMasterKpiBtn(onClickExpr, toneCls, isActive, title, val, sub, valCls) {
+    return `<button type="button" onclick="${onClickExpr}" class="ons-md-kpi ${toneCls} ${isActive ? 'is-active' : ''}">
+      <div class="text-[10.5px] font-semibold truncate" style="color:var(--ons-text-soft)">${title}</div>
+      <div class="text-lg font-extrabold font-mono-num leading-tight mt-0.5 ${valCls || ''}">${val}</div>
+      <div class="text-[10.5px] truncate mt-0.5" style="color:var(--ons-text-soft)">${sub}</div>
+    </button>`;
+  }
+
+  function _renderMasterObatResultsHtml(seeCost, allMeta, filtered) {
     const totalCount = allMeta.length;
     const safeCount = allMeta.filter((m) => !m.isCritical).length;
     const critCount = allMeta.filter((m) => m.isCritical).length;
     const nearEdCount = allMeta.filter((m) => m.isNearEd).length;
     const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (m.stok * m.hpp), 0) : 0;
-
-    const golOptions = ['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'];
-    const golCounts = {};
-    allMeta.forEach((m) => {
-      const g = String(m.o.golongan_bpom || 'BEBAS').toUpperCase();
-      golCounts[g] = (golCounts[g] || 0) + 1;
-    });
-
-    const kpiCard = (filterVal, toneCls, title, val, sub, valCls) => {
-      const isAct = masterFilterStok === filterVal;
-      return `<button type="button" onclick="window.setMasterStokFilter('${filterVal}')" class="ons-md-kpi ${toneCls} text-left transition-all cursor-pointer ${isAct ? 'ring-2 ring-blue-500' : ''}">
-        <div class="text-[10.5px] font-semibold truncate" style="color:var(--ons-text-soft)">${title}</div>
-        <div class="text-lg font-extrabold font-mono-num leading-tight mt-0.5 ${valCls}">${val}</div>
-        <div class="text-[10.5px] truncate mt-0.5" style="color:var(--ons-text-soft)">${sub}</div>
-      </button>`;
-    };
+    const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA');
 
     const actionButtons = (o) => `<div class="flex flex-wrap gap-1">
       <button onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Detail</button>
@@ -123,17 +155,137 @@
       ${seeCost ? `<button onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>` : ''}
     </div>`;
 
-    return `<div class="space-y-3">
-      <div class="ons-md-kpi-strip">
-        ${kpiCard('SEMUA', '', 'Total Item Obat', totalCount, seeCost ? ('Modal: ' + S().rp(totalValuasiHpp)) : 'Produk aktif apotek', '')}
-        ${kpiCard('AMAN', 'is-emerald', 'Stok Aman', safeCount, 'Di atas stok minimum', 'text-emerald-600')}
-        ${kpiCard('KRITIS', 'is-amber', 'Perlu Restok', critCount, critCount ? 'Klik untuk filter defecta' : 'Semua stok cukup', critCount ? 'text-amber-600' : 'text-emerald-600')}
-        ${kpiCard('NEAR_ED', 'is-red', 'Near ED (&le;90h)', nearEdCount, nearEdCount ? 'Prioritaskan FEFO' : 'Semua ED panjang', nearEdCount ? 'text-red-600' : 'text-emerald-600')}
-      </div>
+    const kpiHtml = `<div class="ons-md-kpi-strip">
+      ${_renderMasterKpiBtn("window.setMasterStokFilter('SEMUA')", '', masterFilterStok === 'SEMUA', 'Total Item Obat', totalCount, seeCost ? ('Modal: ' + S().rp(totalValuasiHpp)) : 'Produk aktif apotek', '')}
+      ${_renderMasterKpiBtn("window.setMasterStokFilter('AMAN')", 'is-emerald', masterFilterStok === 'AMAN', 'Stok Aman', safeCount, 'Di atas stok minimum', 'text-emerald-600')}
+      ${_renderMasterKpiBtn("window.setMasterStokFilter('KRITIS')", 'is-amber', masterFilterStok === 'KRITIS', 'Perlu Restok', critCount, critCount ? 'Klik untuk filter defecta' : 'Semua stok cukup', critCount ? 'text-amber-600' : 'text-emerald-600')}
+      ${_renderMasterKpiBtn("window.setMasterStokFilter('NEAR_ED')", 'is-red', masterFilterStok === 'NEAR_ED', 'Near ED (&le;90h)', nearEdCount, nearEdCount ? 'Prioritaskan FEFO' : 'Semua ED panjang', nearEdCount ? 'text-red-600' : 'text-emerald-600')}
+    </div>`;
 
-      <div class="ons-card p-3 space-y-2.5">
+    const listHtml = filtered.length === 0 ? `<div class="ons-card p-6 text-center space-y-2">
+      ${totalCount === 0 ? `
+        <div class="font-bold text-sm">Katalog Master Obat Masih Kosong</div>
+        <p class="text-xs max-w-md mx-auto" style="color:var(--ons-text-soft)">Tambahkan produk obat pertama melalui Wizard 5 Langkah atau import dari Excel (<code>.xlsx</code> / <code>.csv</code>).</p>
+        ${seeCost ? `<div class="flex flex-wrap justify-center gap-2 pt-1">
+          <button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk Obat</button>
+          <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">Import Excel (.xlsx / .csv)</button>
+        </div>` : ''}
+      ` : `
+        <div class="font-bold text-sm">Tidak ada produk obat yang sesuai filter saat ini.</div>
+        <button onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Filter</button>
+      `}
+    </div>` : (masterViewMode === 'CARD' ? `
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      ${filtered.map((m) => {
+        const o = m.o;
+        return `<div class="ons-product-card flex flex-col justify-between gap-2.5">
+          <div class="space-y-1.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-1.5 mb-0.5">
+                  ${S().bpomBadge(o.golongan_bpom)}
+                  ${m.isCold ? `<span class="badge-bpom bpom-terbatas">CHILLER 2-8&deg;C</span>` : ''}
+                </div>
+                <h3 class="font-bold text-sm leading-snug">${S().esc(o.nama_dagang)}</h3>
+                <div class="text-xs truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
+              </div>
+              <span class="font-mono-num text-[10px] px-1.5 py-0.5 rounded border shrink-0" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
+            </div>
+            <div class="flex flex-wrap gap-2 text-[11px] font-mono-num" style="color:var(--ons-text-soft)">
+              <span>KFA: <b>${S().esc(o.kode_kfa || o.id_obat)}</b></span>
+              <span>&bull; NIE: ${S().esc(o.nie_bpom || '-')}</span>
+            </div>
+            <div class="p-2 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              ${renderObatStockBarHtml(m)}
+              <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">
+                1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}
+              </div>
+            </div>
+          </div>
+          <div class="pt-2 border-t flex flex-wrap items-end justify-between gap-2" style="border-color:var(--ons-border)">
+            <div>
+              <div class="text-[10px] font-semibold uppercase" style="color:var(--ons-text-soft)">Harga / ${S().esc(o.satuan_dasar)}</div>
+              <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(o.harga_umum)}</div>
+              ${seeCost ? `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">HPP ${S().rp(o.hpp_avg)}${m.marginPct !== null ? ` &bull; <b class="text-emerald-600">+${m.marginPct}%</b>` : ''}</div>` : `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Member: ${S().rp(o.harga_member || o.harga_umum)}</div>`}
+            </div>
+            ${actionButtons(o)}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : `
+    <div class="ons-card p-3">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11.5px]" style="color:var(--ons-text-soft)">
+        <span>Menampilkan <b>${filtered.length}</b> dari ${totalCount} produk obat${hasFilter ? ' (terfilter)' : ''}</span>
+        ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="text-blue-600 font-semibold hover:underline">Reset Filter</button>` : '<span>Klik <b>Detail</b> untuk batch FEFO, suhu simpan &amp; substitusi generik</span>'}
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table is-compact">
+          <thead>
+            <tr>
+              <th>Kode KFA / NIE</th>
+              <th>Produk, Zat Aktif &amp; Rak</th>
+              <th>Golongan</th>
+              <th>Multi-Satuan</th>
+              <th>Stok &amp; ED Terdekat</th>
+              ${seeCost ? '<th>HPP &amp; Margin</th>' : ''}
+              <th>Harga Jual</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map((m) => {
+              const o = m.o;
+              return `<tr>
+                <td class="font-mono-num text-xs">
+                  <div class="font-bold">${S().esc(o.kode_kfa || o.id_obat)}</div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.nie_bpom || '-')}</div>
+                </td>
+                <td>
+                  <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="font-bold text-left hover:text-blue-600 transition-colors">${S().esc(o.nama_dagang)}</button>
+                  <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
+                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                    <span class="text-[10px] font-mono-num px-1.5 py-0.2 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
+                    ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-600">Chiller 2-8&deg;C</span>` : ''}
+                  </div>
+                </td>
+                <td>${S().bpomBadge(o.golongan_bpom)}</td>
+                <td class="text-xs font-mono-num">
+                  <div>1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)}</div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}</div>
+                </td>
+                <td>${renderObatStockBarHtml(m)}</td>
+                ${seeCost ? `<td class="font-mono-num text-xs">
+                  <div>${S().rp(o.hpp_avg)}</div>
+                  ${m.marginPct !== null ? `<div class="text-[11px] font-bold text-emerald-600">+${m.marginPct}% Margin</div>` : ''}
+                </td>` : ''}
+                <td class="font-mono-num text-xs">
+                  <div class="font-bold text-blue-600">${S().rp(o.harga_umum)}</div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Mbr: ${S().rp(o.harga_member || o.harga_umum)}</div>
+                </td>
+                <td>${actionButtons(o)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`);
+
+    return `<div class="space-y-3">${kpiHtml}${listHtml}</div>`;
+  }
+
+  function _renderMasterObatSubTab(seeCost, allMeta, filtered) {
+    const totalCount = allMeta.length;
+    const golOptions = ['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'];
+    const golCounts = {};
+    allMeta.forEach((m) => {
+      const g = String(m.o.golongan_bpom || 'BEBAS').toUpperCase();
+      golCounts[g] = (golCounts[g] || 0) + 1;
+    });
+
+    return `<div class="space-y-3">
+      <div class="ons-card p-2.5 space-y-2">
         <div class="flex flex-wrap items-center gap-2">
-          <input class="ons-input flex-1 min-w-[200px] text-xs" placeholder="Cari Nama Dagang, Zat Aktif, Kode KFA, NIE, atau Lokasi Rak..." value="${S().esc(masterSearchQ)}" oninput="window.setMasterSearch(this.value)"/>
+          ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, Kode KFA, NIE, atau Lokasi Rak...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
           <button type="button" onclick="window.scanMasterObatBarcode()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5" title="Cari Obat Lewat Kamera Barcode">Scan Barcode</button>
           <select class="ons-select w-36 text-xs" onchange="window.setMasterStokFilter(this.value)" aria-label="Filter Status Stok">
             <option value="SEMUA" ${masterFilterStok === 'SEMUA' ? 'selected' : ''}>Semua Status</option>
@@ -160,348 +312,369 @@
         </div>
       </div>
 
-      ${filtered.length === 0 ? `<div class="ons-card p-8 text-center space-y-2.5">
-        ${totalCount === 0 ? `
-          <div class="font-bold text-sm">Katalog Master Obat Masih Kosong</div>
-          <p class="text-xs max-w-md mx-auto" style="color:var(--ons-text-soft)">Tambahkan produk obat pertama satu per satu melalui Wizard 5 Langkah atau import dari Excel (<code>.xlsx</code> / <code>.csv</code>).</p>
-          ${seeCost ? `<div class="flex flex-wrap justify-center gap-2 pt-1">
-            <button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk Obat</button>
-            <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs">Import Excel (.xlsx / .csv)</button>
-          </div>` : ''}
-        ` : `
-          <div class="font-bold text-sm">Tidak ada produk obat yang sesuai filter saat ini.</div>
-          <button onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Filter</button>
-        `}
-      </div>` : (masterViewMode === 'CARD' ? `
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        ${filtered.map((m) => {
-          const o = m.o;
-          return `<div class="ons-product-card flex flex-col justify-between gap-2.5">
-            <div class="space-y-1.5">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-1.5 mb-0.5">
-                    ${S().bpomBadge(o.golongan_bpom)}
-                    ${m.isCold ? `<span class="badge-bpom bpom-terbatas">CHILLER 2-8&deg;C</span>` : ''}
-                  </div>
-                  <h3 class="font-bold text-sm leading-snug">${S().esc(o.nama_dagang)}</h3>
-                  <div class="text-xs truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
-                </div>
-                <span class="font-mono-num text-[10px] px-1.5 py-0.5 rounded border shrink-0" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
-              </div>
-              <div class="flex flex-wrap gap-2 text-[11px] font-mono-num" style="color:var(--ons-text-soft)">
-                <span>KFA: <b>${S().esc(o.kode_kfa || o.id_obat)}</b></span>
-                <span>&bull; NIE: ${S().esc(o.nie_bpom || '-')}</span>
-              </div>
-              <div class="p-2 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                ${renderObatStockBarHtml(m)}
-                <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">
-                  1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}
-                </div>
-              </div>
-            </div>
-            <div class="pt-2 border-t flex flex-wrap items-end justify-between gap-2" style="border-color:var(--ons-border)">
-              <div>
-                <div class="text-[10px] font-semibold uppercase" style="color:var(--ons-text-soft)">Harga / ${S().esc(o.satuan_dasar)}</div>
-                <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(o.harga_umum)}</div>
-                ${seeCost ? `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">HPP ${S().rp(o.hpp_avg)}${m.marginPct !== null ? ` &bull; <b class="text-emerald-600">+${m.marginPct}%</b>` : ''}</div>` : `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Member: ${S().rp(o.harga_member || o.harga_umum)}</div>`}
-              </div>
-              ${actionButtons(o)}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>` : `
-      <div class="ons-card p-3.5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 text-xs" style="color:var(--ons-text-soft)">
-          <span>Menampilkan <b>${filtered.length}</b> dari ${totalCount} produk obat</span>
-          <span>Klik <b>Detail</b> untuk batch FEFO, suhu simpan &amp; substitusi generik</span>
-        </div>
-        <div class="ons-table-wrap">
-          <table class="ons-table">
-            <thead>
-              <tr>
-                <th>Kode KFA / NIE</th>
-                <th>Produk, Zat Aktif &amp; Penyimpanan</th>
-                <th>Golongan</th>
-                <th>Multi-Satuan</th>
-                <th>Stok &amp; ED Terdekat</th>
-                ${seeCost ? '<th>HPP &amp; Margin</th>' : ''}
-                <th>Harga Jual</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filtered.map((m) => {
-                const o = m.o;
-                return `<tr>
-                  <td class="font-mono-num text-xs">
-                    <div class="font-bold">${S().esc(o.kode_kfa || o.id_obat)}</div>
-                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.nie_bpom || '-')}</div>
-                  </td>
-                  <td>
-                    <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="font-bold text-left hover:text-blue-600 transition-colors">${S().esc(o.nama_dagang)}</button>
-                    <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
-                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                      <span class="text-[10px] font-mono-num px-1.5 py-0.5 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
-                      ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600">Chiller 2-8&deg;C</span>` : ''}
-                    </div>
-                  </td>
-                  <td>${S().bpomBadge(o.golongan_bpom)}</td>
-                  <td class="text-xs font-mono-num">
-                    <div>1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)}</div>
-                    <div class="text-[11px]" style="color:var(--ons-text-soft)">1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}</div>
-                  </td>
-                  <td>${renderObatStockBarHtml(m)}</td>
-                  ${seeCost ? `<td class="font-mono-num text-xs">
-                    <div>${S().rp(o.hpp_avg)}</div>
-                    ${m.marginPct !== null ? `<div class="text-[11px] font-bold text-emerald-600">+${m.marginPct}% Margin</div>` : ''}
-                  </td>` : ''}
-                  <td class="font-mono-num text-xs">
-                    <div class="font-bold text-blue-600">${S().rp(o.harga_umum)}</div>
-                    <div class="text-[11px]" style="color:var(--ons-text-soft)">Mbr: ${S().rp(o.harga_member || o.harga_umum)}</div>
-                  </td>
-                  <td>${actionButtons(o)}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>`)}
+      <div id="mdResultsSlot">${_renderMasterObatResultsHtml(seeCost, allMeta, filtered)}</div>
     </div>`;
   }
 
-  function _renderMasterSupplierSubTab() {
-    const st = S().AppState;
-    const allPbf = st.supplierPbf || [];
-    const activeCount = allPbf.filter((p) => String(p.status_pbf || 'AKTIF').toUpperCase() === 'AKTIF').length;
-    const avgLead = allPbf.length ? Math.round((allPbf.reduce((s, p) => s + Number(p.lead_time_hari || 0), 0) / allPbf.length) * 10) / 10 : 0;
-    const avgSla = allPbf.length ? Math.round(allPbf.reduce((s, p) => s + Number(p.skor_sla || 0), 0) / allPbf.length) : 0;
-    const sq = defectaSupplierQ.trim().toLowerCase();
+  function _getFilteredMasterSupplier() {
+    const allPbf = S().AppState.supplierPbf || [];
+    const sq = supplierSearchQ.trim().toLowerCase();
     const filtered = allPbf.filter((p) => {
       const status = String(p.status_pbf || 'AKTIF').toUpperCase();
       if (supplierStatusFilter !== 'SEMUA' && status !== supplierStatusFilter) return false;
       if (sq && !`${p.nama_pbf} ${p.kode_cdob} ${p.npwp_pbf} ${p.kontak_wa} ${p.email_pbf} ${p.id_pbf}`.toLowerCase().includes(sq)) return false;
       return true;
-    });
+    }).sort((a, b) => String(a.nama_pbf || '').localeCompare(String(b.nama_pbf || '')));
+    return { allPbf, filtered, isFiltered: Boolean(sq || supplierStatusFilter !== 'SEMUA') };
+  }
 
-    return `<div class="space-y-3">
-      <div class="ons-md-kpi-strip">
-        <div class="ons-md-kpi"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Total Supplier PBF</div><div class="text-lg font-extrabold font-mono-num mt-0.5">${allPbf.length}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Distributor CDOB terdaftar</div></div>
-        <div class="ons-md-kpi is-emerald"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Kemitraan Aktif</div><div class="text-lg font-extrabold font-mono-num text-emerald-600 mt-0.5">${activeCount}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Siap terima Surat Pesanan</div></div>
-        <div class="ons-md-kpi is-sky"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Rata Lead Time</div><div class="text-lg font-extrabold font-mono-num text-sky-600 mt-0.5">${avgLead} Hari</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Estimasi pengantaran faktur</div></div>
-        <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Rata-Rata SLA</div><div class="text-lg font-extrabold font-mono-num text-amber-600 mt-0.5">${avgSla}%</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Ketepatan suplai PBF</div></div>
+  function _renderMasterSupplierResultsHtml() {
+    const { allPbf, filtered, isFiltered } = _getFilteredMasterSupplier();
+    const activeCount = allPbf.filter((p) => String(p.status_pbf || 'AKTIF').toUpperCase() === 'AKTIF').length;
+    const avgLead = allPbf.length ? Math.round((allPbf.reduce((s, p) => s + Number(p.lead_time_hari || 0), 0) / allPbf.length) * 10) / 10 : 0;
+    const avgSla = allPbf.length ? Math.round(allPbf.reduce((s, p) => s + Number(p.skor_sla || 0), 0) / allPbf.length) : 0;
+
+    const kpiHtml = `<div class="ons-md-kpi-strip">
+      ${_renderMasterKpiBtn("window.setMasterSupplierStatus('SEMUA')", '', supplierStatusFilter === 'SEMUA', 'Total Supplier PBF', allPbf.length, 'Distributor CDOB terdaftar', '')}
+      ${_renderMasterKpiBtn("window.setMasterSupplierStatus('AKTIF')", 'is-emerald', supplierStatusFilter === 'AKTIF', 'Kemitraan Aktif', activeCount, 'Siap terima Surat Pesanan', 'text-emerald-600')}
+      <div class="ons-md-kpi is-sky"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Rata Lead Time</div><div class="text-lg font-extrabold font-mono-num text-sky-600 leading-tight mt-0.5">${avgLead} Hari</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Estimasi pengantaran faktur</div></div>
+      <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Rata-Rata SLA</div><div class="text-lg font-extrabold font-mono-num text-amber-600 leading-tight mt-0.5">${avgSla}%</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Ketepatan suplai PBF</div></div>
+    </div>`;
+
+    const actionHtml = (p) => `<div class="flex flex-wrap gap-1">
+      <button type="button" onclick="window.openSupplierPbfModal('${S().esc(p.id_pbf)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>
+      <button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2" title="Buat Surat Pesanan PBF">Buat SP</button>
+      <button type="button" onclick="window.deleteMasterSupplier('${S().esc(p.id_pbf)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+    </div>`;
+
+    const bodyHtml = filtered.length === 0 ? `<div class="ons-card p-6 text-center space-y-2">
+      ${allPbf.length === 0 ? `
+        <div class="font-bold text-sm">Belum Ada Supplier PBF Terdaftar</div>
+        <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan distributor resmi CDOB untuk menerbitkan Surat Pesanan &amp; input faktur.</p>
+        <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-emerald text-xs">+ Tambah Supplier</button>
+      ` : `
+        <div class="font-bold text-sm">Tidak ada Supplier PBF yang sesuai pencarian.</div>
+        <button type="button" onclick="window.resetMasterSupplierFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Filter</button>
+      `}
+    </div>` : `<div class="ons-card p-3 space-y-2">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-[11.5px]" style="color:var(--ons-text-soft)">
+        <span>Menampilkan <b>${filtered.length}</b> dari ${allPbf.length} Supplier PBF${isFiltered ? ' (terfilter)' : ''}</span>
+        ${isFiltered ? `<button type="button" onclick="window.resetMasterSupplierFilter()" class="text-blue-600 font-semibold hover:underline">Reset Filter</button>` : ''}
       </div>
-
-      <div class="ons-card p-3 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
-            <input class="ons-input text-xs flex-1 min-w-[200px]" placeholder="Cari nama PBF, nomor izin CDOB, NPWP, email, atau WA sales..." value="${S().esc(defectaSupplierQ)}" oninput="window.setDefectaSupplierQ(this.value)"/>
-            <div class="flex items-center gap-1">
-              ${['SEMUA', 'AKTIF', 'NONAKTIF'].map((stOpt) => `<button type="button" onclick="window.setMasterSupplierStatus('${stOpt}')" class="ons-subnav-chip ${supplierStatusFilter === stOpt ? 'active' : ''}">${stOpt === 'SEMUA' ? 'Semua' : stOpt}</button>`).join('')}
+      <div class="hidden md:block ons-table-wrap">
+        <table class="ons-table is-compact">
+          <thead><tr><th>Nama Supplier &amp; ID</th><th>Sertifikat CDOB &amp; NPWP</th><th>Kontak WA &amp; Email</th><th>Lead Time &amp; TOP</th><th>SLA</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody>
+            ${filtered.map((p) => {
+              const waHref = _buildWaLink(p.kontak_wa, 'Halo ' + (p.nama_pbf || 'PBF') + ', kami dari apotek ingin konfirmasi stok & pengadaan barang.');
+              const isAktif = String(p.status_pbf || 'AKTIF').toUpperCase() === 'AKTIF';
+              return `<tr>
+                <td><div class="font-bold text-xs">${S().esc(p.nama_pbf)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.id_pbf)}</div></td>
+                <td class="font-mono-num text-xs"><div>${S().esc(p.kode_cdob || '-')}</div><div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.npwp_pbf || '-')}</div></td>
+                <td class="text-xs">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono-num">${S().esc(p.kontak_wa || '-')}</span>
+                    ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">WA</a>` : ''}
+                  </div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.email_pbf || '-')}</div>
+                </td>
+                <td class="text-xs font-mono-num"><b>${Number(p.lead_time_hari || 0)} Hari</b> &bull; TOP ${Number(p.termin_hari || 0)}h</td>
+                <td class="font-mono-num font-bold text-emerald-600">${Number(p.skor_sla || 0)}%</td>
+                <td><span class="badge-bpom ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(p.status_pbf || 'AKTIF')}</span></td>
+                <td>${actionHtml(p)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="md:hidden space-y-2">
+        ${filtered.map((p) => {
+          const waHref = _buildWaLink(p.kontak_wa, 'Halo ' + (p.nama_pbf || 'PBF') + ', kami dari apotek ingin konfirmasi pengadaan barang.');
+          const isAktif = String(p.status_pbf || 'AKTIF').toUpperCase() === 'AKTIF';
+          return `<div class="ons-md-mobile-card text-xs">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-bold truncate">${S().esc(p.nama_pbf)}</div>
+                <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.id_pbf)} &bull; ${S().esc(p.kode_cdob || '-')}</div>
+              </div>
+              <span class="badge-bpom shrink-0 ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(p.status_pbf || 'AKTIF')}</span>
             </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">+ Tambah Supplier</button>
+            <div class="flex flex-wrap gap-3 text-[11px] font-mono-num" style="color:var(--ons-text-soft)">
+              <span>Lead: <b>${Number(p.lead_time_hari || 0)}h</b></span>
+              <span>TOP: <b>${Number(p.termin_hari || 0)}h</b></span>
+              <span class="text-emerald-600 font-bold">SLA ${Number(p.skor_sla || 0)}%</span>
+              ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="font-bold text-emerald-600 underline">Chat WA</a>` : ''}
+            </div>
+            ${actionHtml(p)}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+    return `<div class="space-y-3">${kpiHtml}${bodyHtml}</div>`;
+  }
+
+  function _renderMasterSupplierSubTab() {
+    return `<div class="space-y-3">
+      <div class="ons-card p-2.5">
+        <div class="flex flex-wrap items-center gap-2">
+          ${_renderSearchInputWithClear('mdSupplierSearchInp', 'mdSupplierClearBtn', supplierSearchQ, 'Cari nama PBF, nomor izin CDOB, NPWP, email, atau WA sales...', 'window.setMasterSupplierSearch', 'window.clearMasterSupplierSearch')}
+          <div class="flex flex-wrap items-center gap-1">
+            ${['SEMUA', 'AKTIF', 'NONAKTIF'].map((stOpt) => `<button type="button" onclick="window.setMasterSupplierStatus('${stOpt}')" class="ons-subnav-chip ${supplierStatusFilter === stOpt ? 'active' : ''}">${stOpt === 'SEMUA' ? 'Semua' : stOpt}</button>`).join('')}
           </div>
         </div>
       </div>
 
-      <div class="ons-card p-3.5">
-        <div class="ons-table-wrap">
-          <table class="ons-table">
-            <thead><tr><th>Nama Supplier &amp; ID</th><th>Sertifikat CDOB &amp; NPWP</th><th>Kontak WA &amp; Email</th><th>Lead Time &amp; TOP</th><th>SLA</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody>
-              ${filtered.length ? filtered.map((p) => {
-                const waDigits = S().normalizeWa62 ? S().normalizeWa62(p.kontak_wa) : String(p.kontak_wa || '').replace(/[^0-9]/g, '');
-                const waHref = waDigits && S().buildWaUrl ? S().buildWaUrl(waDigits, 'Halo ' + (p.nama_pbf || 'PBF') + ', kami dari apotek ingin konfirmasi stok & pengadaan barang.') : '';
-                const isAktif = String(p.status_pbf || 'AKTIF').toUpperCase() === 'AKTIF';
-                return `<tr>
-                  <td><div class="font-bold text-xs">${S().esc(p.nama_pbf)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.id_pbf)}</div></td>
-                  <td class="font-mono-num text-xs"><div>${S().esc(p.kode_cdob || '-')}</div><div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.npwp_pbf || '-')}</div></td>
-                  <td class="text-xs">
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-mono-num">${S().esc(p.kontak_wa || '-')}</span>
-                      ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">WA</a>` : ''}
-                    </div>
-                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.email_pbf || '-')}</div>
-                  </td>
-                  <td class="text-xs font-mono-num"><b>${Number(p.lead_time_hari || 0)} Hari</b> &bull; TOP ${Number(p.termin_hari || 0)}h</td>
-                  <td class="font-mono-num font-bold text-emerald-600">${Number(p.skor_sla || 0)}%</td>
-                  <td><span class="badge-bpom ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(p.status_pbf || 'AKTIF')}</span></td>
-                  <td>
-                    <div class="flex flex-wrap gap-1">
-                      <button type="button" onclick="window.openSupplierPbfModal('${S().esc(p.id_pbf)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>
-                      <button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2" title="Buat Surat Pesanan PBF">Buat SP</button>
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada Supplier PBF yang sesuai pencarian.</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div id="mdResultsSlot">${_renderMasterSupplierResultsHtml()}</div>
     </div>`;
   }
 
-  function _renderMasterPelangganSubTab() {
-    const st = S().AppState;
-    const allMbr = st.members || [];
-    const prbCount = allMbr.filter((m) => String(m.program_prb || '').toUpperCase().includes('PRB')).length;
-    const alergiCount = allMbr.filter((m) => {
-      const a = String(m.alergi_list || '').trim().toLowerCase();
-      return a && a !== '-' && a !== 'tidak ada';
-    }).length;
-    const totalPoin = allMbr.reduce((s, m) => s + Number(m.poin_loyalitas || 0), 0);
+  function _getFilteredMasterPelanggan() {
+    const allMbr = S().AppState.members || [];
     const pq = pelangganSearchQ.trim().toLowerCase();
     const filtered = allMbr.filter((m) => {
       const prog = String(m.program_prb || 'UMUM').toUpperCase();
-      if (pelangganProgFilter !== 'SEMUA' && prog !== pelangganProgFilter) return false;
+      const hasAllergy = String(m.alergi_list || '').trim() && !/^(tidak ada|-)$/i.test(String(m.alergi_list).trim());
+      if (pelangganProgFilter === 'ALERGI' && !hasAllergy) return false;
+      else if (pelangganProgFilter !== 'SEMUA' && pelangganProgFilter !== 'ALERGI' && prog !== pelangganProgFilter) return false;
       if (pq && !`${m.id_member} ${m.nama_pasien} ${m.no_hp} ${m.alergi_list} ${m.penyakit_kronis} ${prog}`.toLowerCase().includes(pq)) return false;
       return true;
-    });
+    }).sort((a, b) => String(a.nama_pasien || '').localeCompare(String(b.nama_pasien || '')));
+    return { allMbr, filtered, isFiltered: Boolean(pq || pelangganProgFilter !== 'SEMUA') };
+  }
 
-    return `<div class="space-y-3">
-      <div class="ons-md-kpi-strip">
-        <div class="ons-md-kpi"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Total Pelanggan</div><div class="text-lg font-extrabold font-mono-num mt-0.5">${allMbr.length}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Member &amp; pasien terdaftar</div></div>
-        <div class="ons-md-kpi is-emerald"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Peserta PRB BPJS</div><div class="text-lg font-extrabold font-mono-num text-emerald-600 mt-0.5">${prbCount}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Program Rujuk Balik kronis</div></div>
-        <div class="ons-md-kpi is-red"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Catatan Alergi</div><div class="text-lg font-extrabold font-mono-num text-red-600 mt-0.5">${alergiCount}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Proteksi CDSS saat racik/POS</div></div>
-        <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Akumulasi Poin</div><div class="text-lg font-extrabold font-mono-num text-amber-600 mt-0.5">${totalPoin.toLocaleString('id-ID')}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Loyalitas belanja apotek</div></div>
+  function _renderMasterPelangganResultsHtml() {
+    const { allMbr, filtered, isFiltered } = _getFilteredMasterPelanggan();
+    const prbCount = allMbr.filter((m) => String(m.program_prb || '').toUpperCase().includes('PRB')).length;
+    const alergiCount = allMbr.filter((m) => {
+      const a = String(m.alergi_list || '').trim();
+      return a && !/^(tidak ada|-)$/i.test(a);
+    }).length;
+    const totalPoin = allMbr.reduce((s, m) => s + Number(m.poin_loyalitas || 0), 0);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+
+    const kpiHtml = `<div class="ons-md-kpi-strip">
+      ${_renderMasterKpiBtn("window.setMasterPelangganProg('SEMUA')", '', pelangganProgFilter === 'SEMUA', 'Total Pelanggan', allMbr.length, 'Member &amp; pasien terdaftar', '')}
+      ${_renderMasterKpiBtn("window.setMasterPelangganProg('PRB_BPJS')", 'is-emerald', pelangganProgFilter === 'PRB_BPJS', 'Peserta PRB BPJS', prbCount, 'Program Rujuk Balik kronis', 'text-emerald-600')}
+      ${_renderMasterKpiBtn("window.setMasterPelangganProg('ALERGI')", 'is-red', pelangganProgFilter === 'ALERGI', 'Catatan Alergi', alergiCount, 'Proteksi CDSS saat racik/POS', 'text-red-600')}
+      <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Akumulasi Poin</div><div class="text-lg font-extrabold font-mono-num text-amber-600 leading-tight mt-0.5">${totalPoin.toLocaleString('id-ID')}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Loyalitas belanja apotek</div></div>
+    </div>`;
+
+    const actionHtml = (m) => `<div class="flex flex-wrap gap-1">
+      <button type="button" onclick="window.openMasterPelangganModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>
+      <button type="button" onclick="window.deleteMasterPelanggan('${S().esc(m.id_member)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+    </div>`;
+
+    const bodyHtml = filtered.length === 0 ? `<div class="ons-card p-6 text-center space-y-2">
+      ${allMbr.length === 0 ? `
+        <div class="font-bold text-sm">Data Pelanggan Masih Kosong</div>
+        <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan pasien member, riwayat alergi obat, dan peserta PRB kronis untuk sinkronisasi POS &amp; CDSS.</p>
+        <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-emerald text-xs">+ Tambah Pelanggan</button>
+      ` : `
+        <div class="font-bold text-sm">Tidak ada pelanggan/member yang sesuai filter.</div>
+        <button type="button" onclick="window.resetMasterPelangganFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Filter</button>
+      `}
+    </div>` : `<div class="ons-card p-3 space-y-2">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-[11.5px]" style="color:var(--ons-text-soft)">
+        <span>Menampilkan <b>${filtered.length}</b> dari ${allMbr.length} pelanggan${isFiltered ? ' (terfilter)' : ''}</span>
+        ${isFiltered ? `<button type="button" onclick="window.resetMasterPelangganFilter()" class="text-blue-600 font-semibold hover:underline">Reset Filter</button>` : ''}
       </div>
-
-      <div class="ons-card p-3 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
-            <input class="ons-input text-xs flex-1 min-w-[200px]" placeholder="Cari nama pelanggan, No. WA, riwayat penyakit, atau alergi obat..." value="${S().esc(pelangganSearchQ)}" oninput="window.setMasterPelangganSearch(this.value)"/>
-            <div class="flex flex-wrap items-center gap-1">
-              ${[
-                { k: 'SEMUA', label: 'Semua' },
-                { k: 'PRB_BPJS', label: 'PRB BPJS' },
-                { k: 'UMUM', label: 'Umum' },
-                { k: 'MITRA_KLINIK', label: 'Mitra Klinik' }
-              ].map((opt) => `<button type="button" onclick="window.setMasterPelangganProg('${opt.k}')" class="ons-subnav-chip ${pelangganProgFilter === opt.k ? 'active' : ''}">${opt.label}</button>`).join('')}
+      <div class="hidden md:block ons-table-wrap">
+        <table class="ons-table is-compact">
+          <thead><tr><th>Pelanggan &amp; Tgl Lahir</th><th>Kontak WhatsApp</th><th>Program</th><th>Riwayat Penyakit &amp; Alergi</th><th>Poin</th><th>Aksi</th></tr></thead>
+          <tbody>
+            ${filtered.map((m) => {
+              const prog = String(m.program_prb || 'UMUM').toUpperCase();
+              const hasAllergy = String(m.alergi_list || '').trim() && !/^(tidak ada|-)$/i.test(String(m.alergi_list).trim());
+              const waHref = _buildWaLink(m.no_hp, 'Halo ' + (m.nama_pasien || 'Pelanggan') + ', salam sehat dari ' + (prof.nama_usaha || 'Apotek ONS Farma') + '.');
+              return `<tr>
+                <td>
+                  <div class="font-bold text-xs">${S().esc(m.nama_pasien)}</div>
+                  <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)}${m.tgl_lahir ? (' &bull; Lahir ' + S().esc(String(m.tgl_lahir).slice(0, 10))) : ''}</div>
+                </td>
+                <td class="text-xs">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono-num">${S().esc(m.no_hp || '-')}</span>
+                    ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">WA</a>` : ''}
+                  </div>
+                </td>
+                <td><span class="badge-bpom ${prog.includes('PRB') ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span></td>
+                <td class="text-xs">
+                  <div>${S().esc(m.penyakit_kronis || '-')}</div>
+                  <div class="mt-0.5">${hasAllergy ? `<span class="badge-bpom bpom-keras">Alergi: ${S().esc(m.alergi_list)}</span>` : `<span class="text-[11px]" style="color:var(--ons-text-soft)">Alergi: Tidak Ada</span>`}</div>
+                </td>
+                <td class="font-mono-num font-bold text-xs text-blue-600">${Number(m.poin_loyalitas || 0)}</td>
+                <td>${actionHtml(m)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="md:hidden space-y-2">
+        ${filtered.map((m) => {
+          const prog = String(m.program_prb || 'UMUM').toUpperCase();
+          const hasAllergy = String(m.alergi_list || '').trim() && !/^(tidak ada|-)$/i.test(String(m.alergi_list).trim());
+          const waHref = _buildWaLink(m.no_hp, 'Halo ' + (m.nama_pasien || 'Pelanggan') + ', salam sehat dari ' + (prof.nama_usaha || 'Apotek ONS Farma') + '.');
+          return `<div class="ons-md-mobile-card text-xs">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-bold truncate">${S().esc(m.nama_pasien)}</div>
+                <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)} &bull; <b class="text-blue-600">${Number(m.poin_loyalitas || 0)} poin</b></div>
+              </div>
+              <span class="badge-bpom shrink-0 ${prog.includes('PRB') ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span>
             </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">+ Tambah Pelanggan</button>
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">
+              Penyakit: ${S().esc(m.penyakit_kronis || '-')} ${hasAllergy ? `&bull; <b class="text-red-600">Alergi: ${S().esc(m.alergi_list)}</b>` : ''}
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[11px] font-bold text-emerald-600 underline">Chat WA (${S().esc(m.no_hp)})</a>` : `<span class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${S().esc(m.no_hp || '-')}</span>`}
+              ${actionHtml(m)}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+    return `<div class="space-y-3">${kpiHtml}${bodyHtml}</div>`;
+  }
+
+  function _renderMasterPelangganSubTab() {
+    return `<div class="space-y-3">
+      <div class="ons-card p-2.5">
+        <div class="flex flex-wrap items-center gap-2">
+          ${_renderSearchInputWithClear('mdPelangganSearchInp', 'mdPelangganClearBtn', pelangganSearchQ, 'Cari nama pelanggan, No. WA, riwayat penyakit, atau alergi obat...', 'window.setMasterPelangganSearch', 'window.clearMasterPelangganSearch')}
+          <div class="flex flex-wrap items-center gap-1">
+            ${[
+              { k: 'SEMUA', label: 'Semua' },
+              { k: 'PRB_BPJS', label: 'PRB BPJS' },
+              { k: 'UMUM', label: 'Umum' },
+              { k: 'MITRA_KLINIK', label: 'Mitra Klinik' },
+              { k: 'ALERGI', label: 'Ada Alergi' }
+            ].map((opt) => `<button type="button" onclick="window.setMasterPelangganProg('${opt.k}')" class="ons-subnav-chip ${pelangganProgFilter === opt.k ? 'active' : ''}">${opt.label}</button>`).join('')}
           </div>
         </div>
       </div>
 
-      <div class="ons-card p-3.5">
-        <div class="ons-table-wrap">
-          <table class="ons-table">
-            <thead><tr><th>Pelanggan &amp; Tgl Lahir</th><th>Kontak WhatsApp</th><th>Program</th><th>Riwayat Penyakit &amp; Alergi</th><th>Poin</th><th>Aksi</th></tr></thead>
-            <tbody>
-              ${filtered.length ? filtered.map((m) => {
-                const prog = String(m.program_prb || 'UMUM').toUpperCase();
-                const hasAllergy = String(m.alergi_list || '').trim() && !/^(tidak ada|-)$/i.test(String(m.alergi_list).trim());
-                const waDigits = S().normalizeWa62 ? S().normalizeWa62(m.no_hp) : String(m.no_hp || '').replace(/[^0-9]/g, '');
-                const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-                const waHref = waDigits && S().buildWaUrl ? S().buildWaUrl(waDigits, 'Halo ' + (m.nama_pasien || 'Pelanggan') + ', salam sehat dari ' + (prof.nama_usaha || 'Apotek ONS Farma') + '.') : '';
-                return `<tr>
-                  <td>
-                    <div class="font-bold text-xs">${S().esc(m.nama_pasien)}</div>
-                    <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)}${m.tgl_lahir ? (' &bull; Lahir ' + S().esc(String(m.tgl_lahir).slice(0, 10))) : ''}</div>
-                  </td>
-                  <td class="text-xs">
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-mono-num">${S().esc(m.no_hp || '-')}</span>
-                      ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">WA</a>` : ''}
-                    </div>
-                  </td>
-                  <td><span class="badge-bpom ${prog.includes('PRB') ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span></td>
-                  <td class="text-xs">
-                    <div>${S().esc(m.penyakit_kronis || '-')}</div>
-                    <div class="mt-0.5">${hasAllergy ? `<span class="badge-bpom bpom-keras">Alergi: ${S().esc(m.alergi_list)}</span>` : `<span class="text-[11px]" style="color:var(--ons-text-soft)">Alergi: Tidak Ada</span>`}</div>
-                  </td>
-                  <td class="font-mono-num font-bold text-xs text-blue-600">${Number(m.poin_loyalitas || 0)}</td>
-                  <td>
-                    <div class="flex flex-wrap gap-1">
-                      <button type="button" onclick="window.openMasterPelangganModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>
-                      <button type="button" onclick="window.deleteMasterPelanggan('${S().esc(m.id_member)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada pelanggan/member yang sesuai pencarian.</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div id="mdResultsSlot">${_renderMasterPelangganResultsHtml()}</div>
     </div>`;
   }
 
-  function _renderMasterDokterSubTab() {
-    const st = S().AppState;
-    const allDocs = st.masterDokter || [];
-    const activeCount = allDocs.filter((d) => String(d.status_dokter || 'AKTIF').toUpperCase() === 'AKTIF').length;
-    const specCount = allDocs.filter((d) => /sp\.|spesialis/i.test(`${d.nama_dokter || ''} ${d.spesialisasi || ''}`)).length;
-    const faskesSet = new Set(allDocs.map((d) => String(d.faskes_klinik || '').trim()).filter((f) => f && f !== '-'));
+  function _getFilteredMasterDokter() {
+    const allDocs = S().AppState.masterDokter || [];
     const dq = dokterSearchQ.trim().toLowerCase();
     const filtered = allDocs.filter((d) => {
       const status = String(d.status_dokter || 'AKTIF').toUpperCase();
-      if (dokterStatusFilter !== 'SEMUA' && status !== dokterStatusFilter) return false;
+      const isSpec = /sp\.|spesialis/i.test(`${d.nama_dokter || ''} ${d.spesialisasi || ''}`);
+      if (dokterStatusFilter === 'SPESIALIS' && !isSpec) return false;
+      else if (['AKTIF', 'NONAKTIF'].includes(dokterStatusFilter) && status !== dokterStatusFilter) return false;
       if (dq && !`${d.id_dokter} ${d.nama_dokter} ${d.spesialisasi} ${d.no_sip} ${d.no_str} ${d.faskes_klinik} ${d.no_wa}`.toLowerCase().includes(dq)) return false;
       return true;
-    });
+    }).sort((a, b) => String(a.nama_dokter || '').localeCompare(String(b.nama_dokter || '')));
+    return { allDocs, filtered, isFiltered: Boolean(dq || dokterStatusFilter !== 'SEMUA') };
+  }
 
-    return `<div class="space-y-3">
-      <div class="ons-md-kpi-strip">
-        <div class="ons-md-kpi"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Total Dokter Mitra</div><div class="text-lg font-extrabold font-mono-num mt-0.5">${allDocs.length}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Autofill E-Resep &amp; Salinan</div></div>
-        <div class="ons-md-kpi is-emerald"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Dokter Aktif</div><div class="text-lg font-extrabold font-mono-num text-emerald-600 mt-0.5">${activeCount}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">SIP aktif terverifikasi</div></div>
-        <div class="ons-md-kpi is-sky"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Dokter Spesialis</div><div class="text-lg font-extrabold font-mono-num text-sky-600 mt-0.5">${specCount}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Rujukan PRB &amp; penyakit dalam</div></div>
-        <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Klinik / RS Mitra</div><div class="text-lg font-extrabold font-mono-num text-amber-600 mt-0.5">${faskesSet.size}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Faskes asal penulisan resep</div></div>
+  function _renderMasterDokterResultsHtml() {
+    const { allDocs, filtered, isFiltered } = _getFilteredMasterDokter();
+    const activeCount = allDocs.filter((d) => String(d.status_dokter || 'AKTIF').toUpperCase() === 'AKTIF').length;
+    const specCount = allDocs.filter((d) => /sp\.|spesialis/i.test(`${d.nama_dokter || ''} ${d.spesialisasi || ''}`)).length;
+    const faskesSet = new Set(allDocs.map((d) => String(d.faskes_klinik || '').trim()).filter((f) => f && f !== '-'));
+
+    const kpiHtml = `<div class="ons-md-kpi-strip">
+      ${_renderMasterKpiBtn("window.setMasterDokterStatus('SEMUA')", '', dokterStatusFilter === 'SEMUA', 'Total Dokter Mitra', allDocs.length, 'Autofill E-Resep &amp; Salinan', '')}
+      ${_renderMasterKpiBtn("window.setMasterDokterStatus('AKTIF')", 'is-emerald', dokterStatusFilter === 'AKTIF', 'Dokter Aktif', activeCount, 'SIP aktif terverifikasi', 'text-emerald-600')}
+      ${_renderMasterKpiBtn("window.setMasterDokterStatus('SPESIALIS')", 'is-sky', dokterStatusFilter === 'SPESIALIS', 'Dokter Spesialis', specCount, 'Rujukan PRB &amp; spesialis', 'text-sky-600')}
+      <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Klinik / RS Mitra</div><div class="text-lg font-extrabold font-mono-num text-amber-600 leading-tight mt-0.5">${faskesSet.size}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Faskes asal penulisan resep</div></div>
+    </div>`;
+
+    const actionHtml = (d) => `<div class="flex flex-wrap gap-1">
+      <button type="button" onclick="window.openMasterDokterModal('${S().esc(d.id_dokter)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>
+      <button type="button" onclick="window.deleteMasterDokter('${S().esc(d.id_dokter)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+    </div>`;
+
+    const bodyHtml = filtered.length === 0 ? `<div class="ons-card p-6 text-center space-y-2">
+      ${allDocs.length === 0 ? `
+        <div class="font-bold text-sm">Belum Ada Dokter Mitra Terdaftar</div>
+        <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan data dokter penulis resep beserta nomor SIP/STR agar otomatis muncul pada form E-Resep &amp; Salinan Resep.</p>
+        <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-emerald text-xs">+ Tambah Dokter</button>
+      ` : `
+        <div class="font-bold text-sm">Tidak ada Dokter Mitra yang sesuai pencarian.</div>
+        <button type="button" onclick="window.resetMasterDokterFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Filter</button>
+      `}
+    </div>` : `<div class="ons-card p-3 space-y-2">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-[11.5px]" style="color:var(--ons-text-soft)">
+        <span>Menampilkan <b>${filtered.length}</b> dari ${allDocs.length} Dokter Mitra${isFiltered ? ' (terfilter)' : ''}</span>
+        ${isFiltered ? `<button type="button" onclick="window.resetMasterDokterFilter()" class="text-blue-600 font-semibold hover:underline">Reset Filter</button>` : ''}
       </div>
-
-      <div class="ons-card p-3 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
-            <input class="ons-input text-xs flex-1 min-w-[200px]" placeholder="Cari nama dokter, spesialisasi, No. SIP/STR, atau nama klinik/RS..." value="${S().esc(dokterSearchQ)}" oninput="window.setMasterDokterSearch(this.value)"/>
-            <div class="flex items-center gap-1">
-              ${['SEMUA', 'AKTIF', 'NONAKTIF'].map((stOpt) => `<button type="button" onclick="window.setMasterDokterStatus('${stOpt}')" class="ons-subnav-chip ${dokterStatusFilter === stOpt ? 'active' : ''}">${stOpt === 'SEMUA' ? 'Semua' : stOpt}</button>`).join('')}
+      <div class="hidden md:block ons-table-wrap">
+        <table class="ons-table is-compact">
+          <thead><tr><th>Nama Dokter &amp; Spesialisasi</th><th>No. SIP &amp; STR</th><th>Klinik / RS Mitra</th><th>Kontak WA &amp; Email</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody>
+            ${filtered.map((d) => {
+              const isAktif = String(d.status_dokter || 'AKTIF').toUpperCase() === 'AKTIF';
+              const waHref = _buildWaLink(d.no_wa, 'Halo ' + (d.nama_dokter || 'Dokter') + ', kami dari apotek ingin konfirmasi skrining resep pasien.');
+              return `<tr>
+                <td>
+                  <div class="font-bold text-xs">${S().esc(d.nama_dokter)}</div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(d.spesialisasi || 'Dokter Umum')} &bull; <span class="font-mono-num">${S().esc(d.id_dokter)}</span></div>
+                </td>
+                <td class="font-mono-num text-xs"><div>${S().esc(d.no_sip || '-')}</div><div class="text-[11px]" style="color:var(--ons-text-soft)">${d.no_str ? ('STR ' + S().esc(d.no_str)) : '-'}</div></td>
+                <td class="text-xs"><div><b>${S().esc(d.faskes_klinik || '-')}</b></div><div class="text-[11px] truncate max-w-[200px]" style="color:var(--ons-text-soft)">${S().esc(d.alamat || d.catatan || '-')}</div></td>
+                <td class="text-xs">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono-num">${S().esc(d.no_wa || '-')}</span>
+                    ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">WA</a>` : ''}
+                  </div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(d.email || '-')}</div>
+                </td>
+                <td><span class="badge-bpom ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(d.status_dokter || 'AKTIF')}</span></td>
+                <td>${actionHtml(d)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="md:hidden space-y-2">
+        ${filtered.map((d) => {
+          const isAktif = String(d.status_dokter || 'AKTIF').toUpperCase() === 'AKTIF';
+          const waHref = _buildWaLink(d.no_wa, 'Halo ' + (d.nama_dokter || 'Dokter') + ', kami dari apotek ingin konfirmasi resep pasien.');
+          return `<div class="ons-md-mobile-card text-xs">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-bold truncate">${S().esc(d.nama_dokter)}</div>
+                <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(d.spesialisasi || 'Dokter Umum')} &bull; ${S().esc(d.faskes_klinik || '-')}</div>
+              </div>
+              <span class="badge-bpom shrink-0 ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(d.status_dokter || 'AKTIF')}</span>
             </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">+ Tambah Dokter</button>
+            <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">SIP: ${S().esc(d.no_sip || '-')}</div>
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[11px] font-bold text-emerald-600 underline">Chat WA (${S().esc(d.no_wa)})</a>` : `<span class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${S().esc(d.no_wa || '-')}</span>`}
+              ${actionHtml(d)}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+    return `<div class="space-y-3">${kpiHtml}${bodyHtml}</div>`;
+  }
+
+  function _renderMasterDokterSubTab() {
+    return `<div class="space-y-3">
+      <div class="ons-card p-2.5">
+        <div class="flex flex-wrap items-center gap-2">
+          ${_renderSearchInputWithClear('mdDokterSearchInp', 'mdDokterClearBtn', dokterSearchQ, 'Cari nama dokter, spesialisasi, No. SIP/STR, atau nama klinik/RS...', 'window.setMasterDokterSearch', 'window.clearMasterDokterSearch')}
+          <div class="flex flex-wrap items-center gap-1">
+            ${[
+              { k: 'SEMUA', label: 'Semua' },
+              { k: 'AKTIF', label: 'AKTIF' },
+              { k: 'SPESIALIS', label: 'Spesialis' },
+              { k: 'NONAKTIF', label: 'NONAKTIF' }
+            ].map((stOpt) => `<button type="button" onclick="window.setMasterDokterStatus('${stOpt.k}')" class="ons-subnav-chip ${dokterStatusFilter === stOpt.k ? 'active' : ''}">${stOpt.label}</button>`).join('')}
           </div>
         </div>
       </div>
 
-      <div class="ons-card p-3.5">
-        <div class="ons-table-wrap">
-          <table class="ons-table">
-            <thead><tr><th>Nama Dokter &amp; Spesialisasi</th><th>No. SIP &amp; STR</th><th>Klinik / RS Mitra</th><th>Kontak WA &amp; Email</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody>
-              ${filtered.length ? filtered.map((d) => {
-                const isAktif = String(d.status_dokter || 'AKTIF').toUpperCase() === 'AKTIF';
-                const waDigits = S().normalizeWa62 ? S().normalizeWa62(d.no_wa) : String(d.no_wa || '').replace(/[^0-9]/g, '');
-                const waHref = waDigits && S().buildWaUrl ? S().buildWaUrl(waDigits, 'Halo ' + (d.nama_dokter || 'Dokter') + ', kami dari apotek ingin konfirmasi skrining resep pasien.') : '';
-                return `<tr>
-                  <td>
-                    <div class="font-bold text-xs">${S().esc(d.nama_dokter)}</div>
-                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(d.spesialisasi || 'Dokter Umum')} &bull; <span class="font-mono-num">${S().esc(d.id_dokter)}</span></div>
-                  </td>
-                  <td class="font-mono-num text-xs"><div>${S().esc(d.no_sip || '-')}</div><div class="text-[11px]" style="color:var(--ons-text-soft)">${d.no_str ? ('STR ' + S().esc(d.no_str)) : '-'}</div></td>
-                  <td class="text-xs"><div><b>${S().esc(d.faskes_klinik || '-')}</b></div><div class="text-[11px] truncate max-w-[200px]" style="color:var(--ons-text-soft)">${S().esc(d.alamat || d.catatan || '-')}</div></td>
-                  <td class="text-xs">
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-mono-num">${S().esc(d.no_wa || '-')}</span>
-                      ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">WA</a>` : ''}
-                    </div>
-                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(d.email || '-')}</div>
-                  </td>
-                  <td><span class="badge-bpom ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(d.status_dokter || 'AKTIF')}</span></td>
-                  <td>
-                    <div class="flex flex-wrap gap-1">
-                      <button type="button" onclick="window.openMasterDokterModal('${S().esc(d.id_dokter)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>
-                      <button type="button" onclick="window.deleteMasterDokter('${S().esc(d.id_dokter)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada Dokter Mitra yang sesuai pencarian.</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div id="mdResultsSlot">${_renderMasterDokterResultsHtml()}</div>
     </div>`;
   }
 
@@ -526,39 +699,37 @@
       { id: 'dokter', label: 'Dokter', count: dokCount }
     ];
 
+    const exportBtns = (fnName) => `
+      <button onclick="window.${fnName}('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
+      <button onclick="window.${fnName}('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
+      <button onclick="window.${fnName}('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+    `;
+
     let headerActions = '';
     if (masterTab === 'obat') {
       headerActions = `
-        ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Produk</button>
+        ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Obat</button>
         <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">Import</button>` : ''}
         <button onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Barcode</button>
-        <button onclick="window.exportMasterObat('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-        <button onclick="window.exportMasterObat('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
-        <button onclick="window.exportMasterObat('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+        ${exportBtns('exportMasterObat')}
       `;
     } else if (masterTab === 'supplier') {
       headerActions = `
         <button onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Supplier</button>
         <button onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Buat SP</button>
-        <button onclick="window.exportMasterSupplier('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-        <button onclick="window.exportMasterSupplier('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
-        <button onclick="window.exportMasterSupplier('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+        ${exportBtns('exportMasterSupplier')}
       `;
     } else if (masterTab === 'pelanggan') {
       headerActions = `
         <button onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Pelanggan</button>
         <button onclick="window.navigateView('eresep-prb','prb')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PRB Tracker</button>
-        <button onclick="window.exportMasterPelanggan('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-        <button onclick="window.exportMasterPelanggan('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
-        <button onclick="window.exportMasterPelanggan('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+        ${exportBtns('exportMasterPelanggan')}
       `;
     } else {
       headerActions = `
         <button onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Dokter</button>
         <button onclick="window.navigateView('eresep-prb','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">E-Resep</button>
-        <button onclick="window.exportMasterDokter('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-        <button onclick="window.exportMasterDokter('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
-        <button onclick="window.exportMasterDokter('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+        ${exportBtns('exportMasterDokter')}
       `;
     }
 
@@ -571,7 +742,7 @@
           : _renderMasterObatSubTab(seeCost, allMeta, filtered)));
 
     return `<div class="space-y-3 ons-view-enter">
-      <div class="ons-md-shell space-y-2.5">
+      <div class="ons-md-shell space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="min-w-0">
             <h1 class="text-base sm:text-lg font-extrabold tracking-tight">Master Data Apotek</h1>
@@ -599,11 +770,63 @@
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
+  global.setMasterSupplierSearch = (v) => {
+    supplierSearchQ = v || '';
+    _patchMasterResults(_renderMasterSupplierResultsHtml, supplierSearchQ, 'mdSupplierClearBtn');
+  };
+  global.clearMasterSupplierSearch = () => {
+    supplierSearchQ = '';
+    const inp = typeof document !== 'undefined' ? document.getElementById('mdSupplierSearchInp') : null;
+    if (inp) { inp.value = ''; inp.focus(); }
+    _patchMasterResults(_renderMasterSupplierResultsHtml, '', 'mdSupplierClearBtn');
+  };
   global.setMasterSupplierStatus = (v) => { supplierStatusFilter = v || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterPelangganSearch = (v) => { pelangganSearchQ = v || ''; global.renderActiveView(); };
+  global.resetMasterSupplierFilter = () => { supplierSearchQ = ''; supplierStatusFilter = 'SEMUA'; global.renderActiveView(); };
+  global.deleteMasterSupplier = (idPbf) => {
+    const target = (S().AppState.supplierPbf || []).find((p) => p.id_pbf === idPbf);
+    if (!target) return;
+    _openDeleteConfirmModal({
+      title: 'Hapus Supplier PBF?',
+      name: target.nama_pbf,
+      id: target.id_pbf,
+      entityLabel: 'Master Supplier',
+      confirmFnName: 'window.confirmDeleteMasterSupplier'
+    });
+  };
+  global.confirmDeleteMasterSupplier = async (idPbf) => {
+    try {
+      await API().callApi('pbf.delete', { id_pbf: idPbf }, { isWrite: true });
+      S().closeModal();
+      global.toast('Supplier PBF dihapus dari Master Data.', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.setMasterPelangganSearch = (v) => {
+    pelangganSearchQ = v || '';
+    _patchMasterResults(_renderMasterPelangganResultsHtml, pelangganSearchQ, 'mdPelangganClearBtn');
+  };
+  global.clearMasterPelangganSearch = () => {
+    pelangganSearchQ = '';
+    const inp = typeof document !== 'undefined' ? document.getElementById('mdPelangganSearchInp') : null;
+    if (inp) { inp.value = ''; inp.focus(); }
+    _patchMasterResults(_renderMasterPelangganResultsHtml, '', 'mdPelangganClearBtn');
+  };
   global.setMasterPelangganProg = (v) => { pelangganProgFilter = v || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterDokterSearch = (v) => { dokterSearchQ = v || ''; global.renderActiveView(); };
+  global.resetMasterPelangganFilter = () => { pelangganSearchQ = ''; pelangganProgFilter = 'SEMUA'; global.renderActiveView(); };
+
+  global.setMasterDokterSearch = (v) => {
+    dokterSearchQ = v || '';
+    _patchMasterResults(_renderMasterDokterResultsHtml, dokterSearchQ, 'mdDokterClearBtn');
+  };
+  global.clearMasterDokterSearch = () => {
+    dokterSearchQ = '';
+    const inp = typeof document !== 'undefined' ? document.getElementById('mdDokterSearchInp') : null;
+    if (inp) { inp.value = ''; inp.focus(); }
+    _patchMasterResults(_renderMasterDokterResultsHtml, '', 'mdDokterClearBtn');
+  };
   global.setMasterDokterStatus = (v) => { dokterStatusFilter = v || 'SEMUA'; global.renderActiveView(); };
+  global.resetMasterDokterFilter = () => { dokterSearchQ = ''; dokterStatusFilter = 'SEMUA'; global.renderActiveView(); };
 
   global.openMasterPelangganModal = (idMember) => {
     const existing = idMember ? (S().AppState.members || []).find((m) => m.id_member === idMember) : null;
@@ -652,20 +875,16 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
-  global.deleteMasterPelanggan = async (idMember) => {
+  global.deleteMasterPelanggan = (idMember) => {
     const target = (S().AppState.members || []).find((m) => m.id_member === idMember);
     if (!target) return;
-    S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-red-600">Hapus Data Pelanggan?</h3>
-        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
-      </div>
-      <p>Anda akan menghapus pelanggan <b>${S().esc(target.nama_pasien)}</b> (<span class="font-mono-num">${S().esc(target.id_member)}</span>) dari Master Pelanggan.</p>
-      <div class="flex gap-2 justify-end pt-2">
-        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
-        <button type="button" onclick="window.confirmDeleteMasterPelanggan('${S().esc(target.id_member)}')" class="ons-btn ons-btn-danger text-xs">Ya, Hapus</button>
-      </div>
-    </div>`, '420px');
+    _openDeleteConfirmModal({
+      title: 'Hapus Data Pelanggan?',
+      name: target.nama_pasien,
+      id: target.id_member,
+      entityLabel: 'Master Pelanggan',
+      confirmFnName: 'window.confirmDeleteMasterPelanggan'
+    });
   };
 
   global.confirmDeleteMasterPelanggan = async (idMember) => {
@@ -729,20 +948,16 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
-  global.deleteMasterDokter = async (idDokter) => {
+  global.deleteMasterDokter = (idDokter) => {
     const target = (S().AppState.masterDokter || []).find((d) => d.id_dokter === idDokter);
     if (!target) return;
-    S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-red-600">Hapus Data Dokter?</h3>
-        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
-      </div>
-      <p>Anda akan menghapus <b>${S().esc(target.nama_dokter)}</b> (<span class="font-mono-num">${S().esc(target.id_dokter)}</span>) dari Master Dokter.</p>
-      <div class="flex gap-2 justify-end pt-2">
-        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
-        <button type="button" onclick="window.confirmDeleteMasterDokter('${S().esc(target.id_dokter)}')" class="ons-btn ons-btn-danger text-xs">Ya, Hapus</button>
-      </div>
-    </div>`, '420px');
+    _openDeleteConfirmModal({
+      title: 'Hapus Data Dokter?',
+      name: target.nama_dokter,
+      id: target.id_dokter,
+      entityLabel: 'Master Dokter',
+      confirmFnName: 'window.confirmDeleteMasterDokter'
+    });
   };
 
   global.confirmDeleteMasterDokter = async (idDokter) => {
@@ -755,7 +970,9 @@
   };
 
   global.exportMasterSupplier = (fmt) => {
-    const list = S().AppState.supplierPbf || [];
+    const { allPbf, filtered } = _getFilteredMasterSupplier();
+    const hasFilteredRows = filtered.length > 0 && filtered.length < allPbf.length;
+    const list = hasFilteredRows ? filtered : allPbf;
     if (!list.length) return global.toast('Belum ada data Supplier PBF untuk diexport.', 'warn');
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -784,7 +1001,7 @@
     }));
     return S().exportDataset(
       fmt || 'xlsx',
-      'Direktori Master Supplier PBF CDOB',
+      'Direktori Master Supplier PBF CDOB' + (hasFilteredRows ? ' (Terfilter)' : ''),
       'Master_Supplier_PBF_ONS_' + dateTag,
       headers,
       rows,
@@ -793,7 +1010,9 @@
   };
 
   global.exportMasterPelanggan = (fmt) => {
-    const list = S().AppState.members || [];
+    const { allMbr, filtered } = _getFilteredMasterPelanggan();
+    const hasFilteredRows = filtered.length > 0 && filtered.length < allMbr.length;
+    const list = hasFilteredRows ? filtered : allMbr;
     if (!list.length) return global.toast('Belum ada data Pelanggan / Member untuk diexport.', 'warn');
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -818,7 +1037,7 @@
     }));
     return S().exportDataset(
       fmt || 'xlsx',
-      'Direktori Master Pelanggan & Pasien PRB',
+      'Direktori Master Pelanggan & Pasien PRB' + (hasFilteredRows ? ' (Terfilter)' : ''),
       'Master_Pelanggan_ONS_' + dateTag,
       headers,
       rows,
@@ -827,7 +1046,9 @@
   };
 
   global.exportMasterDokter = (fmt) => {
-    const list = S().AppState.masterDokter || [];
+    const { allDocs, filtered } = _getFilteredMasterDokter();
+    const hasFilteredRows = filtered.length > 0 && filtered.length < allDocs.length;
+    const list = hasFilteredRows ? filtered : allDocs;
     if (!list.length) return global.toast('Belum ada data Dokter Mitra untuk diexport.', 'warn');
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -856,7 +1077,7 @@
     }));
     return S().exportDataset(
       fmt || 'xlsx',
-      'Direktori Master Dokter Mitra & Penulis Resep',
+      'Direktori Master Dokter Mitra & Penulis Resep' + (hasFilteredRows ? ' (Terfilter)' : ''),
       'Master_Dokter_Mitra_ONS_' + dateTag,
       headers,
       rows,
@@ -864,7 +1085,19 @@
     );
   };
 
-  global.setMasterSearch = (v) => { masterSearchQ = v; global.renderActiveView(); };
+  global.setMasterSearch = (v) => {
+    masterSearchQ = v || '';
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.clearMasterObatSearch = () => {
+    masterSearchQ = '';
+    const inp = typeof document !== 'undefined' ? document.getElementById('mdObatSearchInp') : null;
+    if (inp) { inp.value = ''; inp.focus(); }
+    global.setMasterSearch('');
+  };
   global.setMasterGol = (g) => { masterFilterGol = g; global.renderActiveView(); };
   global.setMasterStokFilter = (f) => { masterFilterStok = f || 'SEMUA'; global.renderActiveView(); };
   global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; global.renderActiveView(); };
@@ -2880,7 +3113,6 @@
    */
   let defectaTab = 'order';
   let defectaOrderQty = {};
-  let defectaSupplierQ = '';
 
   function renderDefectaView() {
     const st = S().AppState;
@@ -2935,12 +3167,6 @@
       const s = S().getSellableStok(o.id_obat);
       return Math.max(10, Number(o.stok_max || 100) - s);
     };
-
-    const sq = defectaSupplierQ.trim().toLowerCase();
-    const filteredSuppliers = (st.supplierPbf || []).filter((p) => {
-      if (!sq) return true;
-      return `${p.nama_pbf} ${p.kode_cdob} ${p.kontak_wa} ${p.id_pbf}`.toLowerCase().includes(sq);
-    });
 
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
@@ -3073,7 +3299,7 @@
     defectaOrderQty[idObat] = Math.max(1, Number(val || 1));
     global.renderActiveView();
   };
-  global.setDefectaSupplierQ = (v) => { defectaSupplierQ = v || ''; global.renderActiveView(); };
+  global.setDefectaSupplierQ = (v) => { global.setMasterSupplierSearch(v); };
 
   global.openSupplierPbfModal = (idPbf) => {
     const existing = S().AppState.supplierPbf.find((p) => p.id_pbf === idPbf);

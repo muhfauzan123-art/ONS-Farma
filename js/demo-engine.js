@@ -1157,6 +1157,17 @@
       return { item: row };
     }
 
+    if (action === 'pbf.delete') {
+      const idPbf = String(d.id_pbf || '').trim();
+      const idx = (db.supplier_pbf || []).findIndex((p) => p.id_pbf === idPbf);
+      if (idx < 0) throw new Error('Data Supplier PBF tidak ditemukan.');
+      const removed = db.supplier_pbf.splice(idx, 1)[0];
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'SUPPLIER_PBF_DELETE', entitas: 'SUPPLIER_PBF', entitas_id: idPbf, diff_sebelum_json: JSON.stringify({ nama_pbf: removed.nama_pbf }) });
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, id_pbf: idPbf };
+    }
+
     if (action === 'sp.list') {
       return { items: (db.surat_pesanan || []).slice() };
     }
