@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
   <title>Apotek ONS Farma Enterprise v16.0</title>
   <link rel="manifest" href="./manifest.json"/>
@@ -664,11 +665,32 @@
       };
       const applyBootPayload = window.applyBootPayload;
 
-      window.logoutUser = function () {
-        ONSApi.setSession(null);
-        ONSStore.AppState.user = null;
-        ONSStore.AppState.booted = false;
+      window.logoutUser = function (reasonMsg) {
+        if (ONSApi && typeof ONSApi.logoutSession === 'function') {
+          ONSApi.logoutSession(true);
+        } else {
+          ONSApi.setSession(null);
+        }
+        const st = ONSStore.AppState;
+        st.user = null;
+        st.booted = false;
+        st.needsPasswordUpgrade = false;
+        st.penjualan = [];
+        st.detailPenjualan = [];
+        st.fakturPbf = [];
+        st.jurnalKeuangan = [];
+        st.rekamKlinis = [];
+        st.pemeriksaanPasien = [];
+        st.members = [];
+        st.staffDirectory = [];
+        if (typeof ONSStore.closeModal === 'function') ONSStore.closeModal();
+        if (typeof ONSStore.closeDrawer === 'function') ONSStore.closeDrawer();
         window.renderApp();
+        if (reasonMsg && typeof toast === 'function') toast(reasonMsg, 'info');
+      };
+
+      window.lockScreenNow = function () {
+        window.logoutUser('Layar dikunci & cache sesi dibersihkan. Silakan login kembali.');
       };
 
       window.renderActiveView = function () {
@@ -1183,6 +1205,7 @@
                     <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Radar Notifikasi Apotek">${svgIcon('bell', 'w-4 h-4')} ${alertsCount ? `<span class="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[10px] font-bold">${alertsCount}</span>` : ''}</button>
                   </div>
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden">Install</button>
+                  <button onclick="window.lockScreenNow()" aria-label="Kunci Layar dan Hapus Cache Sesi" title="Kunci Layar Segera" class="ons-btn ons-btn-ghost text-xs px-2.5">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline">Kunci</span></button>
                   <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-2.5">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}<span class="hidden lg:inline">${st.darkMode ? 'Terang' : 'Malam'}</span></button>
                 </div>
               </header>
@@ -1271,6 +1294,21 @@
 
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+
+      // Kunci Sesi Otomatis saat idle >= 25 menit pada Mode Live GAS (cegah penyalahgunaan PC bersama)
+      let lastUserActivityMs = Date.now();
+      const bumpActivity = () => { lastUserActivityMs = Date.now(); };
+      ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach((ev) => {
+        window.addEventListener(ev, bumpActivity, { passive: true });
+      });
+      if (typeof setInterval === 'function') {
+        setInterval(() => {
+          if (!ONSApi.isDemoMode() && ONSApi.getSession() && (Date.now() - lastUserActivityMs > 25 * 60 * 1000)) {
+            lastUserActivityMs = Date.now();
+            window.logoutUser('Sesi dikunci otomatis karena tidak ada aktivitas selama 25 menit.');
+          }
+        }, 60 * 1000);
       }
 
       window.renderApp();

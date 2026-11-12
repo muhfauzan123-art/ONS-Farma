@@ -121,6 +121,7 @@
           if (!json.ok) {
             if (json.code === 401) {
               setSession(null);
+              clearCachedReads();
               if (typeof global.renderApp === 'function') global.renderApp();
             }
             const apiErr = new Error(json.error || 'Terjadi kesalahan pada server GAS.');
@@ -225,11 +226,35 @@
     });
   });
 
+  function clearCachedReads() {
+    try {
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf('ons_swr_') === 0) {
+          toRemove.push(k);
+        }
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }
+
+  function logoutSession(notifyServer) {
+    const ses = getSession();
+    if (notifyServer && !isDemoMode() && ses && ses.token) {
+      try { callApi('auth.logout', {}, { isWrite: true }).catch(() => {}); } catch (e) {}
+    }
+    setSession(null);
+    clearCachedReads();
+  }
+
   global.ONSApi = {
     isDemoMode,
     setModeOverride,
     getSession,
     setSession,
+    clearCachedReads,
+    logoutSession,
     callApi,
     callBatched,
     getCachedRead,

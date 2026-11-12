@@ -1629,6 +1629,21 @@
       return { ok: true, mode: 'CREATED', id_user: newId, username: uname, user: usr, rbac_permissions: db.rbac_permissions, audit_system: db.audit_system };
     }
     if (action === 'users.changeCredentials') return { ok: true, pesan: 'Sandi/PIN diperbarui pada sesi lokal!' };
+    if (action === 'auth.logout') return { ok: true, revoked: true };
+    if (action === 'auth.logoutAll') return { ok: true, session_rev: (db.epoch || 1) + 1 };
+    if (action === 'security.auditStatus') {
+      return {
+        checked_at: nowIso,
+        checked_by: userNama,
+        hash_algorithm: 'SHA-256 x 250 Iterasi + Salt + Pepper (HMAC-SHA256 Token)',
+        active_users_count: (db.users || []).filter((u) => String(u.status_aktif || 'AKTIF') === 'AKTIF').length,
+        all_passwords_hashed: true,
+        secrets_configured: { SESSION_SECRET: true, HMAC_PEPPER: true, QR_SECRET: true, DE_HMAC_SECRET: true, FONNTE_TOKEN: true, DB_ID: true },
+        session_rev_epoch: 1,
+        recent_security_alerts: 0,
+        needs_initial_rotation: false
+      };
+    }
     if (action === 'system.seedStarterCatalog') return { ok: true, pesan: 'Data katalog awal sudah tersedia!' };
     if (action === 'obat.bulkImport') {
       (d.items || []).forEach((it, idx) => db.master_obat.push(Object.assign({ id_obat: 'OBT-IMP-' + Date.now() + idx, status_aktif: 'AKTIF' }, it)));

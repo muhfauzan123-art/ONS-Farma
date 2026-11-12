@@ -1693,7 +1693,7 @@
     S().openModal(`<div class="p-6 space-y-3 text-xs text-center">
       <h3 class="font-bold text-base">Tanda Tangan Elektronik &amp; Pembekuan TERBIT</h3>
       <p>Masukkan PIN 6 Digit APJ/Pemilik untuk menandatangani, menghitung Hash SHA-256 &amp; menerbitkan Kode Verifikasi Publik.</p>
-      <input id="dePinSignInput" type="password" maxlength="6" class="ons-input font-mono-num text-center text-lg" placeholder="6 Digit PIN (Demo: 123456)"/>
+      <input id="dePinSignInput" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num text-center text-lg" placeholder="6 Digit PIN${API().isDemoMode() ? ' (Demo: 123456)' : ''}"/>
       <button onclick="window.executeSignDoc('${idDoc}')" class="ons-btn ons-btn-emerald w-full">Tanda Tangani &amp; Terbitkan Surat</button>
     </div>`, '420px');
   };
@@ -1824,7 +1824,7 @@
             <div><label class="font-semibold block mb-1">Catatan Handover Shift Berikutnya</label><textarea id="shNote" rows="2" class="ons-textarea" placeholder="Serah terima kunci laci, modal laci &amp; catatan selisih..."></textarea></div>
             <div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-2">
               <div class="font-bold text-amber-700 dark:text-amber-300">Otorisasi PIN APJ / Supervisor Penutup Shift</div>
-              <input id="shPin" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN (Demo: 123456)"/>
+              <input id="shPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN${API().isDemoMode() ? ' (Demo: 123456)' : ''}"/>
             </div>
             <button onclick="window.submitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer})" class="ons-btn ons-btn-emerald w-full py-2.5">Rekonsiliasi, Tutup Shift &amp; Kirim ke Pemilik</button>
           </div>
@@ -2535,8 +2535,30 @@
               </table>
             </div>
           </div>
+
+          <!-- Panel Audit Keamanan, Enkripsi & Cabut Sesi Aktif -->
+          <div class="ons-card p-5 space-y-3 border-l-4" style="border-left-color:#10B981">
+            ${S().AppState.needsPasswordUpgrade && !API().isDemoMode() ? `<div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 flex flex-wrap items-center justify-between gap-2 text-amber-800 dark:text-amber-200">
+              <div><b>&#9888;&#65039; Peringatan Keamanan:</b> Akun Anda masih menggunakan kata sandi / PIN bawaan atau lemah. Segera ganti sekarang demi mencegah akses ilegal!</div>
+              <button type="button" onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi &amp; PIN Sekarang</button>
+            </div>` : ''}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 class="font-bold text-sm">&#128737;&#65039; Perisai Keamanan &amp; Kontrol Sesi Perangkat</h3>
+                <p class="text-[11px]" style="color:var(--ons-text-soft)">Enkripsi 250x SHA-256 + Salt + Pepper, Token HMAC-SHA256, Proteksi Lockout 5x/15m, &amp; Pembersihan Cache Otomatis.</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.runSecurityHealthCheck()" class="ons-btn ons-btn-primary text-xs">Audit Kesehatan Keamanan</button>
+                <button type="button" onclick="window.revokeAllActiveSessions()" class="ons-btn ons-btn-danger text-xs">Cabut Semua Sesi Aktif</button>
+              </div>
+            </div>
+            <div id="secAuditResultBox" class="p-3 rounded-xl border hidden text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+          </div>
         </div>`;
-      })() : `<div class="ons-card p-5 text-xs">Gunakan tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk memperbarui kredensial akun Anda.</div>`) : ''}
+      })() : `<div class="ons-card p-5 space-y-2 text-xs">
+        ${S().AppState.needsPasswordUpgrade && !API().isDemoMode() ? `<div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"><b>Peringatan:</b> Anda masih memakai sandi awal. Klik tombol <b>Ganti Sandi / PIN Saya</b> di kanan atas untuk mengamankan akun Anda.</div>` : ''}
+        <div>Gunakan tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk memperbarui kredensial akun Anda (wajib memasukkan kata sandi saat ini untuk keamanan).</div>
+      </div>`) : ''}
 
       ${settingsTab === 'vault' ? `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
@@ -3089,8 +3111,15 @@
             <div><label class="font-semibold block mb-1">Berlaku SIPA s/d</label><input id="usrSipaExp" class="ons-input font-mono-num" value="${S().esc((target && target.masa_berlaku_sipa) || '-')}" placeholder="2029-12-31"/></div>
           </div>
           <div class="grid grid-cols-2 gap-2.5">
-            <div><label class="font-semibold block mb-1">${isEdit ? 'Kata Sandi Baru (Opsional)' : 'Kata Sandi Awal (min 6) *'}</label><input id="usrPass" type="password" class="ons-input" placeholder="${isEdit ? 'Kosongkan jika tetap' : 'Min. 6 karakter'}"/></div>
-            <div><label class="font-semibold block mb-1">${isEdit ? 'PIN 6 Digit Baru (Opsional)' : 'PIN 6 Digit Otorisasi'}</label><input id="usrPin" type="password" maxlength="6" class="ons-input font-mono-num" value="${isEdit ? '' : '123456'}" placeholder="${isEdit ? 'Kosongkan jika tetap' : '123456'}"/></div>
+            <div>
+              <label class="font-semibold block mb-1">${isEdit ? 'Kata Sandi Baru (Opsional)' : 'Kata Sandi Awal (min 8 huruf+angka) *'}</label>
+              <input id="usrPass" type="password" autocomplete="new-password" oninput="window.evaluatePwStrengthHint('usrPass','usrPwHint')" class="ons-input" placeholder="${isEdit ? 'Kosongkan jika tetap' : 'Min. 8 karakter kuat'}"/>
+              <div id="usrPwHint" class="mt-0.5 text-[10px]"></div>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">${isEdit ? 'PIN 6 Digit Baru (Opsional)' : 'PIN 6 Digit Otorisasi'}</label>
+              <input id="usrPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" value="" placeholder="${isEdit ? 'Kosongkan jika tetap' : '6 digit acak (wajib APJ/Pemilik)'}"/>
+            </div>
           </div>
         </div>
 
@@ -3161,26 +3190,84 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
+  global.evaluatePwStrengthHint = (pwInputId, hintElId) => {
+    const pw = String((document.getElementById(pwInputId) || {}).value || '');
+    const hint = document.getElementById(hintElId);
+    if (!hint) return;
+    if (!pw) {
+      hint.innerHTML = '';
+      return;
+    }
+    const hasLen = pw.length >= 8;
+    const hasMix = /[A-Za-z]/.test(pw) && /\d/.test(pw);
+    const hasSym = /[^A-Za-z0-9]/.test(pw) && pw.length >= 10;
+    if (!hasLen || !hasMix) {
+      hint.innerHTML = '<span class="text-red-600 font-semibold">Lemah: wajib min. 8 karakter kombinasi huruf &amp; angka.</span>';
+    } else if (!hasSym) {
+      hint.innerHTML = '<span class="text-amber-600 font-semibold">Cukup kuat (tambah simbol &amp; >=10 karakter agar maksimal).</span>';
+    } else {
+      hint.innerHTML = '<span class="text-emerald-600 font-semibold">Sandi sangat kuat (enkripsi 250x SHA-256).</span>';
+    }
+  };
+
   global.openChangeCredModal = (targetUsername) => {
-    const u = targetUsername || (S().AppState.user && S().AppState.user.username) || 'pemilik';
+    const sesUser = (API().getSession() && API().getSession().user) || {};
+    const curUser = (S().AppState.user && S().AppState.user.username) ? S().AppState.user : sesUser;
+    const u = targetUsername || curUser.username || 'pemilik';
+    const isSelf = String(u).toLowerCase() === String(curUser.username || '').toLowerCase();
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center"><h3 class="font-bold text-base">Ubah Kata Sandi &amp; PIN: <span class="font-mono-num text-blue-600">${S().esc(u)}</span></h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
       <input type="hidden" id="credTargetUser" value="${S().esc(u)}"/>
-      <div><label class="font-semibold block mb-1">Kata Sandi Baru (kosongkan jika tidak mengubah sandi)</label><input id="credNewPass" type="password" class="ons-input" placeholder="Minimal 6 karakter kuat"/></div>
-      <div><label class="font-semibold block mb-1">PIN Otorisasi 6 Digit Baru (kosongkan jika tidak mengubah PIN)</label><input id="credNewPin" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="Contoh: 654321"/></div>
-      <label class="flex items-center gap-2"><input id="credRevokeAll" type="checkbox" class="accent-blue-600"/> Cabut paksa sesi login aktif di perangkat lain</label>
-      <button onclick="window.submitChangeCredNow()" class="ons-btn ons-btn-primary w-full">Simpan Perubahan Kredensial</button>
-    </div>`, '460px');
+      <input type="hidden" id="credIsSelf" value="${isSelf ? '1' : '0'}"/>
+      ${isSelf ? `<div>
+        <label class="font-semibold block mb-1">Kata Sandi Saat Ini (Verifikasi Identitas) *</label>
+        <input id="credOldPass" type="password" autocomplete="current-password" class="ons-input" placeholder="Masukkan kata sandi anda saat ini"/>
+      </div>` : `<div class="p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 space-y-1.5">
+        <label class="font-bold block text-amber-800 dark:text-amber-200">Otorisasi Reset Staf &mdash; PIN Pemilik (6 Digit) *</label>
+        <input id="credOwnerPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 digit PIN Pemilik"/>
+      </div>`}
+      <div>
+        <label class="font-semibold block mb-1">Kata Sandi Baru (min. 8 huruf + angka, kosongkan jika tetap)</label>
+        <input id="credNewPass" type="password" autocomplete="new-password" oninput="window.evaluatePwStrengthHint('credNewPass','credPwHint')" class="ons-input" placeholder="Min. 8 karakter (contoh: Apotek@2026)"/>
+        <div id="credPwHint" class="mt-1 text-[11px]"></div>
+      </div>
+      <div>
+        <label class="font-semibold block mb-1">PIN Otorisasi 6 Digit Baru (kosongkan jika tetap)</label>
+        <input id="credNewPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="6 digit acak (hindari pola berulang/urut)"/>
+      </div>
+      <label class="flex items-center gap-2"><input id="credRevokeAll" type="checkbox" checked class="accent-blue-600"/> Cabut paksa seluruh sesi perangkat lain secara global</label>
+      <button onclick="window.submitChangeCredNow()" class="ons-btn ons-btn-primary w-full py-2.5 font-bold">Simpan Perubahan Kredensial</button>
+    </div>`, '470px');
   };
 
   global.submitChangeCredNow = async () => {
     try {
-      const res = await API().callApi('users.changeCredentials', {
+      const isSelf = (document.getElementById('credIsSelf') || {}).value === '1';
+      const payload = {
         username: document.getElementById('credTargetUser').value,
         password_baru: document.getElementById('credNewPass').value,
         pin_baru: document.getElementById('credNewPin').value,
         revoke_other_sessions: !!document.getElementById('credRevokeAll').checked
-      }, { isWrite: true });
+      };
+      if (isSelf) {
+        payload.password_lama = (document.getElementById('credOldPass') || {}).value || '';
+        if (!payload.password_lama && !API().isDemoMode()) {
+          global.toast('Masukkan kata sandi Anda saat ini untuk konfirmasi.', 'warn');
+          return;
+        }
+      } else {
+        payload.pin_pemilik = (document.getElementById('credOwnerPin') || {}).value || '';
+        if (!payload.pin_pemilik && !API().isDemoMode()) {
+          global.toast('Masukkan PIN Pemilik 6 digit untuk mereset sandi/PIN staf.', 'warn');
+          return;
+        }
+      }
+      const res = await API().callApi('users.changeCredentials', payload, { isWrite: true });
+      if (res && res.new_token) {
+        const curSes = API().getSession() || {};
+        API().setSession(Object.assign({}, curSes, { token: res.new_token }));
+      }
+      S().AppState.needsPasswordUpgrade = false;
       S().closeModal();
       global.toast(res.pesan || 'Kata sandi / PIN berhasil diperbarui!', 'ok');
       global.loadSettingsBundle(true);
@@ -3188,12 +3275,65 @@
   };
 
   global.promptUpdateSecret = (key) => {
-    const val = prompt('Masukkan nilai baru untuk ' + key + ' (tersimpan terenkripsi di ScriptProperties):');
-    if (val === null) return;
-    API().callApi('settings.saveSecret', { key, value: val }, { isWrite: true }).then((r) => {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Perbarui Rahasia: <span class="font-mono-num text-blue-600">${S().esc(key)}</span></h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Nilai disimpan aman di Google Apps Script <code>ScriptProperties</code> dan tidak pernah tampil polos setelah disimpan.</p>
+      <div>
+        <label class="font-semibold block mb-1">Nilai Baru (Tersensor) *</label>
+        <div class="relative flex items-center">
+          <input id="vaultSecretInput" type="password" autocomplete="off" class="ons-input pr-16 font-mono-num" placeholder="Tempel token / rahasia baru"/>
+          <button type="button" onclick="if(window.togglePasswordFieldVis)window.togglePasswordFieldVis('vaultSecretInput', this)" class="absolute right-2 px-2 py-1 text-[11px] font-semibold" style="color:var(--ons-text-soft)">Lihat</button>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost">Batal</button>
+        <button type="button" onclick="window.submitUpdateSecret('${S().esc(key)}')" class="ons-btn ons-btn-primary">Simpan ke ScriptProperties</button>
+      </div>
+    </div>`, '440px');
+  };
+
+  global.submitUpdateSecret = async (key) => {
+    const val = String((document.getElementById('vaultSecretInput') || {}).value || '').trim();
+    if (!val) {
+      global.toast('Nilai rahasia tidak boleh kosong.', 'warn');
+      return;
+    }
+    try {
+      const r = await API().callApi('settings.saveSecret', { key, value: val }, { isWrite: true });
+      S().closeModal();
       global.toast('Secret ' + key + ' diperbarui (' + r.masked + ')', 'ok');
       global.loadSettingsBundle(true);
-    }).catch((e) => global.toast(e.message, 'err'));
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.revokeAllActiveSessions = async () => {
+    try {
+      const r = await API().callApi('auth.logoutAll', {}, { isWrite: true });
+      global.toast('Seluruh sesi aktif global telah dicabut (Epoch Rev #' + r.session_rev + '). Silakan login ulang.', 'ok');
+      setTimeout(() => { if (typeof global.logoutUser === 'function') global.logoutUser('Seluruh sesi dicabut oleh Pemilik.'); }, 700);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.runSecurityHealthCheck = async () => {
+    try {
+      const rep = await API().callApi('security.auditStatus', {});
+      const box = document.getElementById('secAuditResultBox');
+      if (box) {
+        const secs = Object.keys(rep.secrets_configured || {}).map((k) =>
+          `<span class="badge-bpom ${rep.secrets_configured[k] ? 'bpom-bebas' : 'bpom-narkotika'}">${S().esc(k)}: ${rep.secrets_configured[k] ? 'AKTIF' : 'BELUM'}</span>`
+        ).join(' ');
+        box.innerHTML = `<div class="space-y-1.5">
+          <div><b>Algoritma:</b> ${S().esc(rep.hash_algorithm)} &bull; <b>Akun Aktif:</b> ${rep.active_users_count} &bull; <b>Hash Valid:</b> ${rep.all_passwords_hashed ? '100% Terhash' : 'Perlu Cek'}</div>
+          <div><b>Insiden Gagal Login/PIN Terakhir:</b> ${Number(rep.recent_security_alerts || 0)} &bull; <b>Epoch Cabut Sesi:</b> #${Number(rep.session_rev_epoch || 1)}</div>
+          <div class="flex flex-wrap gap-1 pt-1">${secs}</div>
+        </div>`;
+        box.classList.remove('hidden');
+      }
+      global.toast('Pemeriksaan keamanan sistem selesai.', 'ok');
+    } catch (e) { global.toast(e.message, 'err'); }
   };
 
   global.runDriveBackupSnapshot = async () => {
@@ -3400,10 +3540,11 @@
   };
 
   global.approveErxWithPinModal = (idKlinis) => {
+    const isDemo = API().isDemoMode();
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center"><h3 class="font-bold text-base">Otorisasi PIN APJ untuk E-Resep ${S().esc(idKlinis)}</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
-      <p style="color:var(--ons-text-soft)">Sesuai Permenkes 73/2016, verifikasi E-Resep wajib menggunakan PIN Apoteker Penanggung Jawab (Demo PIN: 123456).</p>
-      <div><label class="font-semibold block mb-1">PIN APJ (6 Digit)</label><input id="erxApprovePin" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="123456"/></div>
+      <p style="color:var(--ons-text-soft)">Sesuai Permenkes 73/2016, verifikasi E-Resep wajib menggunakan PIN Apoteker Penanggung Jawab${isDemo ? ' (Demo PIN: 123456)' : ''}.</p>
+      <div><label class="font-semibold block mb-1">PIN APJ (6 Digit)</label><input id="erxApprovePin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="${isDemo ? 'Contoh: 123456' : 'Masukkan 6 digit PIN APJ'}"/></div>
       <div><label class="font-semibold block mb-1">Catatan Telaah / PIO Apoteker (Opsional)</label><input id="erxApproveNote" class="ons-input" placeholder="Dosis sesuai, edukasi aturan pakai disiapkan"/></div>
       <button onclick="window.submitApproveErx('${S().esc(idKlinis)}')" class="ons-btn ons-btn-emerald w-full">Verifikasi Sah &amp; Siapkan Obat</button>
     </div>`, '480px');

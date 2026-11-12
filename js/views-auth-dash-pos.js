@@ -517,20 +517,23 @@
             </div>
           </div>
 
-          <form onsubmit="event.preventDefault();window.handleLoginSubmit();" class="space-y-3">
+          <form onsubmit="event.preventDefault();window.handleLoginSubmit();" class="space-y-3" autocomplete="on">
             <div>
               <label class="text-xs font-semibold block mb-1">Username</label>
-              <input id="loginUser" class="ons-input" placeholder="pemilik / apj / kasir" value="pemilik" required/>
+              <input id="loginUser" name="username" autocomplete="username" class="ons-input" placeholder="${demoMode ? 'pemilik / apj / kasir' : 'Masukkan username staf'}" value="${demoMode ? 'pemilik' : ''}" required/>
             </div>
             <div>
               <label class="text-xs font-semibold block mb-1">Kata Sandi</label>
-              <input id="loginPass" type="password" class="ons-input" placeholder="Masukkan kata sandi" value="OnsFarma#2026" required/>
+              <div class="relative flex items-center">
+                <input id="loginPass" name="password" type="password" autocomplete="current-password" class="ons-input pr-16" placeholder="${demoMode ? 'Bebas di mode Demo Sandbox' : 'Masukkan kata sandi anda'}" value="" ${demoMode ? '' : 'required'}/>
+                <button type="button" onclick="window.togglePasswordFieldVis('loginPass', this)" class="absolute right-2 px-2 py-1 rounded text-[11px] font-semibold opacity-75 hover:opacity-100" style="color:var(--ons-text-soft)">Lihat</button>
+              </div>
             </div>
             <button id="loginSubmitBtn" type="submit" class="ons-btn ons-btn-primary w-full py-2.5 text-sm">Masuk &amp; Muat Sistem (Scale Turbo)</button>
           </form>
 
-          <div class="pt-3 border-t" style="border-color:var(--ons-border)">
-            <div class="text-xs font-semibold mb-2" style="color:var(--ons-text-soft)">Pintasan Masuk Cepat Uji RBAC (PIN Otorisasi Default: <code class="font-mono-num">123456</code>):</div>
+          ${demoMode ? `<div class="pt-3 border-t" style="border-color:var(--ons-border)">
+            <div class="text-xs font-semibold mb-2" style="color:var(--ons-text-soft)">Pintasan Masuk Cepat Mode Demo Sandbox (Uji RBAC Offline):</div>
             <div class="grid grid-cols-3 gap-2">
               <button type="button" onclick="window.quickRoleLogin('pemilik')" class="ons-btn ons-btn-ghost text-xs flex-col py-2 h-auto">
                 <span class="font-bold text-blue-600">Pemilik</span><span class="text-[10px]">Akses Penuh</span>
@@ -542,7 +545,10 @@
                 <span class="font-bold text-amber-600">Kasir POS</span><span class="text-[10px]">HPP Terkunci</span>
               </button>
             </div>
-          </div>
+          </div>` : `<div class="p-3 rounded-xl border text-[11px] space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <div class="font-bold flex items-center gap-1.5 text-emerald-600">&#128737;&#65039; Keamanan Produksi Aktif (Live GAS)</div>
+            <div>Autentikasi HMAC-SHA256, Hashing 250x SHA-256 + Salt + Pepper, serta kunci otomatis 15 menit setelah 5x percobaan gagal.</div>
+          </div>`}
 
           <div class="flex flex-wrap gap-3 text-xs pt-1" style="color:var(--ons-text-soft)">
             <a href="./index.html?erx=DOKTER-MITRA-01" class="underline hover:text-blue-600">Buka Mini-Portal E-Resep Dokter</a>
@@ -553,6 +559,14 @@
       </div>
     </div>`;
   }
+
+  global.togglePasswordFieldVis = (inputId, btnEl) => {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    const isPw = inp.type === 'password';
+    inp.type = isPw ? 'text' : 'password';
+    if (btnEl) btnEl.textContent = isPw ? 'Tutup' : 'Lihat';
+  };
 
   global.switchBackendMode = (mode) => {
     API().setModeOverride(mode);
@@ -571,23 +585,32 @@
   };
 
   global.quickRoleLogin = (username) => {
+    if (!API().isDemoMode()) {
+      global.toast('Pintasan masuk cepat hanya tersedia pada mode Demo Sandbox.', 'warn');
+      return;
+    }
     const u = document.getElementById('loginUser');
-    const p = document.getElementById('loginPass');
     if (u) u.value = username;
-    if (p) p.value = 'OnsFarma#2026';
-    global.handleLoginSubmit();
+    global.handleLoginSubmit({ demoQuick: true });
   };
 
-  global.handleLoginSubmit = async () => {
+  global.handleLoginSubmit = async (opts) => {
     const username = document.getElementById('loginUser').value.trim();
     const password = document.getElementById('loginPass').value;
     const branch = document.getElementById('loginBranch').value;
     const shift = document.getElementById('loginShift').value;
+    if (!username || (!password && !(opts && opts.demoQuick) && !API().isDemoMode())) {
+      global.toast('Masukkan username dan kata sandi.', 'warn');
+      return;
+    }
     try {
-      const res = await API().callApi('auth.login', { username, password, cabang_id: branch, include_boot: true }, { isWrite: true, token: '' });
+      const res = await API().callApi('auth.login', { username, password: password || (API().isDemoMode() ? 'demo-sandbox' : ''), cabang_id: branch, include_boot: true }, { isWrite: true, token: '' });
+      const passEl = document.getElementById('loginPass');
+      if (passEl) passEl.value = '';
       API().setSession({ token: res.token, user: res.user, cabang_id: branch, shift });
       S().AppState.user = res.user;
       S().AppState.cabangId = branch;
+      S().AppState.needsPasswordUpgrade = !!(res.security_notice && res.security_notice.needs_password_upgrade);
       if (shift === 'MALAM') S().toggleDarkMode(true);
       S().AppState.activeView = 'dashboard';
       if (res.boot && typeof global.applyBootPayload === 'function') {
@@ -598,6 +621,9 @@
         await global.bootLoadState(true);
       }
       global.toast('Selamat datang, ' + res.user.nama_lengkap, 'ok');
+      if (S().AppState.needsPasswordUpgrade && !API().isDemoMode()) {
+        setTimeout(() => global.toast('Peringatan Keamanan: Segera ganti sandi & PIN awal Anda di Pengaturan -> Akun.', 'warn'), 1200);
+      }
     } catch (e) {
       global.toast(e.message, 'err');
     }
@@ -2674,7 +2700,7 @@
       <div class="flex justify-between items-center"><h3 class="font-bold text-base text-red-600">&#9888;&#65039; Retur / Void Transaksi ${S().esc(noInvoice)}</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
       <div class="p-3 rounded-lg" style="background:var(--ons-bg-subtle)">Nilai pengembalian: <b>${S().rp(nominal)}</b>. Stok batch akan dipulihkan ke gudang &amp; tercatat di Kartu Stok BPOM.</div>
       <div><label class="font-semibold block mb-1">Alasan Retur / Void *</label><input id="voidAlasanInp" class="ons-input" value="Kesalahan input item / penyesuaian resep dokter"/></div>
-      <div><label class="font-semibold block mb-1">PIN Otorisasi APJ / Pemilik (Demo: 123456) *</label><input id="voidPinInp" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="6 digit PIN"/></div>
+      <div><label class="font-semibold block mb-1">PIN Otorisasi APJ / Pemilik${API().isDemoMode() ? ' (Demo: 123456)' : ''} *</label><input id="voidPinInp" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 digit PIN"/></div>
       <button onclick="window.submitPosVoidReturn('${S().esc(noInvoice)}')" class="ons-btn ons-btn-danger w-full">Otorisasi PIN &amp; Eksekusi Retur</button>
     </div>`, '480px');
   };
@@ -2824,7 +2850,7 @@
 
       ${requiresApjAuth ? `<div class="p-3 rounded-xl border border-red-500/40 bg-red-500/10 space-y-2">
         <div class="text-xs font-bold text-red-600">&#128274; OTORISASI PIN APJ DIPERLUKAN (${isBelowHpp ? 'Guard Anti-Rugi Jual < HPP' : 'Obat Keras / Narkotika / Peringatan CDSS'})</div>
-        <input id="posApjPinInput" type="password" maxlength="6" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN APJ (Demo: 123456)" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
+        <input id="posApjPinInput" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN APJ${API().isDemoMode() ? ' (Demo: 123456)' : ''}" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
       </div>` : ''}
 
       <div>
