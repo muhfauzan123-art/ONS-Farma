@@ -436,9 +436,9 @@
       <div class="ons-card p-4 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="ons-tab-bar">
-            <button onclick="ONSViewsOmniCrm.setCrmTab('kontak')" class="ons-tab-btn ${crmTab === 'kontak' ? 'active' : ''}">Direktori Kontak &amp; Opt-Out</button>
-            <button onclick="ONSViewsOmniCrm.setCrmTab('blast')" class="ons-tab-btn ${crmTab === 'blast' ? 'active' : ''}">Composer Broadcast WA</button>
-            <button onclick="ONSViewsOmniCrm.setCrmTab('antrean')" class="ons-tab-btn ${crmTab === 'antrean' ? 'active' : ''}">Monitor Antrean (${pendingQ.length})</button>
+            <button onclick="ONSViewsOmniCrm.setCrmTab('kontak')" class="ons-tab-btn ${crmTab === 'kontak' ? 'active' : ''}">Kontak &amp; Opt-Out</button>
+            <button onclick="ONSViewsOmniCrm.setCrmTab('blast')" class="ons-tab-btn ${crmTab === 'blast' ? 'active' : ''}">Broadcast WA Massal</button>
+            <button onclick="ONSViewsOmniCrm.setCrmTab('antrean')" class="ons-tab-btn ${crmTab === 'antrean' ? 'active' : ''}">Antrean Notifikasi (${pendingQ.length})</button>
           </div>
           <button onclick="ONSViewsOmniCrm.loadCrmAndQueue()" class="ons-btn ons-btn-ghost text-xs">Muat Data Server</button>
         </div>

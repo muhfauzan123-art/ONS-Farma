@@ -1944,7 +1944,7 @@
                   <td class="font-mono-num">${S().esc(b.tgl_kadaluarsa)}</td>
                   <td><span class="badge-bpom ${badgeCls} font-mono-num">${dayTxt}</span></td>
                   <td class="font-mono-num font-bold">${b.qty_sisa}</td>
-                  <td>${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">${d < 0 ? 'Cek Recall' : 'Prioritaskan Jual'}</button>` : '-'}</td>
+                  <td>${d < 0 ? (canGudang ? `<button onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-danger text-xs py-1 px-2.5">Cek Recall</button>` : '-') : (canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Prioritaskan Jual</button>` : '-')}</td>
                 </tr>`;
               }).join('')}
             </tbody>

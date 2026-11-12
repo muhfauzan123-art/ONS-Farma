@@ -2560,8 +2560,8 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
-            <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Batch &amp; FEFO (${sorted.length})</button>
-            <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok (${(st.mutasiStok || []).length})</button>
+            <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Stok Batch &amp; FEFO (${sorted.length})</button>
+            <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok Digital (${(st.mutasiStok || []).length})</button>
             <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu 2&ndash;8&deg;C (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
             ${(seeCost || S().canAccessSubTab('gudang', 'opname')) ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
             ${((S().isMultiBranchEnabled && S().isMultiBranchEnabled()) && (seeCost || S().canAccessSubTab('gudang', 'transfer'))) ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
@@ -3338,8 +3338,8 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
-            <button onclick="window.setDefectaTab('order')" class="ons-tab-btn ${defectaTab === 'order' ? 'active' : ''}">Defecta Order (${lowStock.length})</button>
-            <button onclick="window.setDefectaTab('sp')" class="ons-tab-btn ${defectaTab === 'sp' ? 'active' : ''}">Surat Pesanan &amp; A4 (${(st.suratPesanan || []).length})</button>
+            <button onclick="window.setDefectaTab('order')" class="ons-tab-btn ${defectaTab === 'order' ? 'active' : ''}">Analisis Defecta (${lowStock.length})</button>
+            <button onclick="window.setDefectaTab('sp')" class="ons-tab-btn ${defectaTab === 'sp' ? 'active' : ''}">Surat Pesanan (A4) (${(st.suratPesanan || []).length})</button>
           </div>
           <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-emerald text-xs">+ Buat SP Manual</button>
           <button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs">Terbitkan SP Otomatis Defecta</button>

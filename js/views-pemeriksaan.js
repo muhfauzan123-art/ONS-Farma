@@ -880,7 +880,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="window.openPemeriksaanModal('','${S().esc(subTab)}')" class="ons-btn ons-btn-primary text-xs min-h-[42px]">+ Catat ${S().esc(focusLabels[subTab] || 'Pemeriksaan Baru')}</button>
-          <button onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs min-h-[42px]">Paket Cek 4-in-1</button>
+          ${subTab !== 'semua' ? `<button onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs min-h-[42px]">Paket Cek 4-in-1</button>` : ''}
           <button onclick="window.printRekapPemeriksaanA4()" class="ons-btn ons-btn-ghost text-xs min-h-[42px]">Rekap A4</button>
           <button onclick="window.exportPemeriksaanXlsx()" class="ons-btn ons-btn-ghost text-xs min-h-[42px]">Export Excel</button>
         </div>
@@ -891,10 +891,10 @@
       <!-- 5 Sub-Menu Pemeriksaan Pasien -->
       <div class="ons-tab-bar" role="tablist" aria-label="Sub-Menu Pemeriksaan Kesehatan">
         <button onclick="window.setPemeriksaanTab('semua')" class="ons-tab-btn ${subTab === 'semua' ? 'active' : ''}">Semua Pemeriksaan (${allRows.length})</button>
-        <button onclick="window.setPemeriksaanTab('tensi')" class="ons-tab-btn ${subTab === 'tensi' ? 'active' : ''}">Pemeriksaan Tensi (${allRows.filter((r) => Number(r.tensi_sistol || 0) > 0).length})</button>
-        <button onclick="window.setPemeriksaanTab('gula')" class="ons-tab-btn ${subTab === 'gula' ? 'active' : ''}">Pemeriksaan Gula Darah (${allRows.filter((r) => Number(r.gula_darah || 0) > 0).length})</button>
-        <button onclick="window.setPemeriksaanTab('kolesterol')" class="ons-tab-btn ${subTab === 'kolesterol' ? 'active' : ''}">Pemeriksaan Kolesterol (${allRows.filter((r) => Number(r.kolesterol_total || 0) > 0).length})</button>
-        <button onclick="window.setPemeriksaanTab('asam_urat')" class="ons-tab-btn ${subTab === 'asam_urat' ? 'active' : ''}">Pemeriksaan Asam Urat (${allRows.filter((r) => Number(r.asam_urat || 0) > 0).length})</button>
+        <button onclick="window.setPemeriksaanTab('tensi')" class="ons-tab-btn ${subTab === 'tensi' ? 'active' : ''}">Cek Tensi Darah (${allRows.filter((r) => Number(r.tensi_sistol || 0) > 0).length})</button>
+        <button onclick="window.setPemeriksaanTab('gula')" class="ons-tab-btn ${subTab === 'gula' ? 'active' : ''}">Cek Gula Darah (${allRows.filter((r) => Number(r.gula_darah || 0) > 0).length})</button>
+        <button onclick="window.setPemeriksaanTab('kolesterol')" class="ons-tab-btn ${subTab === 'kolesterol' ? 'active' : ''}">Cek Kolesterol (${allRows.filter((r) => Number(r.kolesterol_total || 0) > 0).length})</button>
+        <button onclick="window.setPemeriksaanTab('asam_urat')" class="ons-tab-btn ${subTab === 'asam_urat' ? 'active' : ''}">Cek Asam Urat (${allRows.filter((r) => Number(r.asam_urat || 0) > 0).length})</button>
       </div>
 
       ${renderGuidanceBanner(subTab)}

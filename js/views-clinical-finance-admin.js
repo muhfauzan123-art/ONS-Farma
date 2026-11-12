@@ -1335,13 +1335,13 @@
         </div>
       </div>
 
-      <div class="flex gap-2 flex-wrap">
+      <div class="ons-tab-bar">
         ${[
           { id: 'tagihan', label: 'Daftar Tagihan (' + list.length + ')' },
-          { id: 'verifikasi', label: 'Antrean Verifikasi (' + pending.length + ')' },
-          { id: 'potongan', label: 'Potongan / Subsidi (' + potongan.length + ')' },
-          { id: 'reminder', label: 'Reminder WA H-3 / H-0' }
-        ].map((t) => `<button onclick="window.setBillingTab('${t.id}')" class="ons-btn text-xs ${activeBillingTab === t.id ? 'ons-btn-primary' : 'ons-btn-ghost'}">${t.label}</button>`).join('')}
+          { id: 'verifikasi', label: 'Verifikasi Bayar (' + pending.length + ')' },
+          { id: 'potongan', label: 'Potongan & Subsidi (' + potongan.length + ')' },
+          { id: 'reminder', label: 'Pengingat WA' }
+        ].map((t) => `<button onclick="window.setBillingTab('${t.id}')" class="ons-tab-btn ${activeBillingTab === t.id ? 'active' : ''}">${t.label}</button>`).join('')}
       </div>
 
       ${activeBillingTab === 'tagihan' ? `<div class="ons-card p-4">
@@ -1581,9 +1581,9 @@
         <div class="ons-card p-3.5"><div style="color:var(--ons-text-soft)">Arsip Tutup Shift Kasir</div><div class="text-lg font-bold font-mono-num">${shiftAll.length} Shift</div></div>
       </div>
 
-      <div class="flex gap-2">
-        <button onclick="window.setDocTab('surat')" class="ons-btn text-xs ${activeDocTab === 'surat' ? 'ons-btn-primary' : 'ons-btn-ghost'}">Arsip &amp; Persetujuan Surat (${docs.length})</button>
-        <button onclick="window.setDocTab('pindai')" class="ons-btn text-xs ${activeDocTab === 'pindai' ? 'ons-btn-primary' : 'ons-btn-ghost'}">Daftar Templat &amp; Pemindai {{Placeholder}} (${tpls.length})</button>
+      <div class="ons-tab-bar">
+        <button onclick="window.setDocTab('surat')" class="ons-tab-btn ${activeDocTab === 'surat' ? 'active' : ''}">Arsip &amp; Surat QR (${docs.length})</button>
+        <button onclick="window.setDocTab('pindai')" class="ons-tab-btn ${activeDocTab === 'pindai' ? 'active' : ''}">Pemindai Templat (${tpls.length})</button>
       </div>
 
       ${activeDocTab === 'surat' ? `<div class="ons-card p-4">
@@ -2965,7 +2965,6 @@
         <div class="flex flex-wrap gap-2">
           <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi / PIN Saya</button>
           <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-emerald text-xs">Snapshot Backup Drive</button>
-          ${isOwner ? `<button onclick="window.openFactoryResetModal()" class="ons-btn ons-btn-danger text-xs">Reset Data Pabrik</button>` : ''}
         </div>
       </div>
 

@@ -108,7 +108,7 @@
               desc: 'Transaksi kasir FEFO cepat, cetak struk/etiket, riwayat nota, retur PIN & tutup shift laci kas.',
               kw: 'kasir pos fefo penjualan jual barcode f2 riwayat nota void retur tutup shift z-report kas',
               tabs: [
-                { subTab: 'kasir', label: 'Kasir POS FEFO', kw: 'kasir jual scan barcode f2 split poin diskon etiket' },
+                { subTab: 'kasir', label: 'Kasir Aktif (FEFO)', kw: 'kasir jual scan barcode f2 split poin diskon etiket fefo' },
                 { subTab: 'riwayat', label: 'Riwayat Transaksi', kw: 'riwayat transaksi nota penjualan cetak ulang rincian void retur pin' },
                 { subTab: 'tutup-shift', label: 'Tutup Shift & Kas', kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi laci kas' }
               ]
@@ -159,14 +159,14 @@
             },
             {
               viewId: 'faktur', label: 'Pembelian & Faktur', icon: 'receipt',
-              desc: 'Terima barang dari SP, scan foto/PDF faktur PBF, analisa kenaikan HPP & retur.',
-              kw: 'pembelian terima faktur pbf grn sp scan ocr analisa harga margin naik hutang retur bar',
+              desc: 'Daftar faktur & tempo PBF, terima GRN/Scan OCR, analisa margin, retur BAR-PBF & konsinyasi.',
+              kw: 'pembelian terima faktur pbf grn sp scan ocr analisa harga margin naik hutang retur bar konsinyasi',
               tabs: [
-                { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf' },
-                { subTab: 'input', label: 'Terima Faktur (Scan)', kw: 'terima faktur grn sp multi item ocr scan batch masuk' },
-                { subTab: 'harga', label: 'Analisa Harga Jual', kw: 'analisa harga margin hpp naik keputusan harga jual' },
-                { subTab: 'retur', label: 'Retur Barang PBF', kw: 'retur barang pbf near ed kadaluarsa' },
-                { subTab: 'konsinyasi', label: 'Konsinyasi (Titip Jual)', kw: 'konsinyasi titip jual distributor settlement laku bayar' }
+                { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf jatuh tempo' },
+                { subTab: 'input', label: 'Terima Faktur (GRN / Scan)', kw: 'terima faktur grn sp multi item ocr scan batch masuk' },
+                { subTab: 'harga', label: 'Analisa Harga & Margin', kw: 'analisa harga margin hpp naik keputusan harga jual' },
+                { subTab: 'retur', label: 'Retur BAR-PBF', kw: 'retur barang pbf near ed kadaluarsa rusak recall' },
+                { subTab: 'konsinyasi', label: 'Konsinyasi', kw: 'konsinyasi titip jual distributor settlement laku bayar' }
               ]
             }
           ]
@@ -181,7 +181,7 @@
               kw: 'e-resep erx pin apj pasien rutin kronis skrining terapi',
               tabs: [
                 { subTab: 'erx', label: 'Antrean E-Resep', kw: 'e-resep dokter mitra pin apj validasi pos' },
-                { subTab: 'prb', label: 'Pasien Terapi Rutin', kw: 'pasien rutin kronis refill gds sparkline wa' }
+                { subTab: 'prb', label: 'Pasien Rutin & Skrining', kw: 'pasien rutin kronis refill gds sparkline wa skrining' }
               ]
             },
             {
@@ -189,7 +189,7 @@
               desc: 'Pemeriksaan Tensi, Gula Darah, Kolesterol & Asam Urat tersimpan + kirim laporan via WhatsApp.',
               kw: 'pemeriksaan pasien cek kesehatan tensi darah gula darah kolesterol asam urat wa',
               tabs: [
-                { subTab: 'semua', label: 'Ringkasan & Input', kw: 'ringkasan paket cek kesehatan lengkap input riwayat wa' },
+                { subTab: 'semua', label: 'Semua Pemeriksaan', kw: 'ringkasan paket cek kesehatan lengkap input riwayat wa' },
                 { subTab: 'tensi', label: 'Cek Tensi Darah', kw: 'tensi tekanan darah sistol diastol nadi mmhg hipertensi' },
                 { subTab: 'gula', label: 'Cek Gula Darah', kw: 'gula darah glukosa gds gdp 2jpp diabetes' },
                 { subTab: 'kolesterol', label: 'Cek Kolesterol', kw: 'kolesterol total lemak darah mg/dl' },
@@ -208,11 +208,11 @@
               ]
             },
             {
-              viewId: 'crm-wa', label: 'Pelanggan & CRM WA', icon: 'chat',
-              desc: 'Direktori pelanggan WhatsApp, broadcast terjadwal & status antrean Fonnte.',
-              kw: 'pelanggan crm kontak whatsapp broadcast blast fonnte opt out',
+              viewId: 'crm-wa', label: 'CRM & Broadcast WA', icon: 'chat',
+              desc: 'Kontak & Opt-Out WhatsApp pasien, broadcast edukasi terjadwal & monitor antrean Fonnte.',
+              kw: 'crm kontak whatsapp broadcast blast fonnte opt out',
               tabs: [
-                { subTab: 'kontak', label: 'Direktori Kontak', kw: 'kontak crm pasien wa 08 62 opt out' },
+                { subTab: 'kontak', label: 'Kontak & Opt-Out', kw: 'kontak crm pasien wa 08 62 opt out' },
                 { subTab: 'blast', label: 'Broadcast WA Massal', kw: 'broadcast blast wa reminder edukasi' },
                 { subTab: 'antrean', label: 'Antrean Notifikasi', kw: 'antrean log wa fonnte email' }
               ]
@@ -253,7 +253,7 @@
               tabs: [
                 { subTab: 'narkotika', label: 'SIPNAP Kemenkes', kw: 'sipnap narkotika psikotropika oot' },
                 { subTab: 'pareto', label: 'Pareto ABC & WHO', kw: 'pareto abc fast slow moving who' },
-                { subTab: 'deadstock', label: 'Dead Stock & Lost', kw: 'dead stock permintaan tertolak lost sales' }
+                { subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock permintaan tertolak lost sales' }
               ]
             },
             {
@@ -261,7 +261,7 @@
               desc: 'Terbitkan surat resmi apotek ber-QR HMAC & pindai templat {{Tag}}.',
               kw: 'doc engine surat resmi bpom qr verifikasi ttd pin templat',
               tabs: [
-                { subTab: 'surat', label: 'Terbitkan Surat QR', kw: 'buat surat resmi tanda tangan pin qr' },
+                { subTab: 'surat', label: 'Arsip & Surat QR', kw: 'buat surat resmi tanda tangan pin qr' },
                 { subTab: 'pindai', label: 'Pemindai Templat', kw: 'templat google docs placeholder' }
               ]
             }
@@ -279,7 +279,7 @@
                 { subTab: 'profil', label: 'Profil Pemilik & Usaha', kw: 'profil pemilik anissa tempat usaha foto logo sia sipa konfirmasi' },
                 { subTab: 'akun', label: 'Pengguna & Akses', kw: 'akun user kasir apj sipa ganti sandi pin' },
                 { subTab: 'struk', label: 'Desain Struk Thermal', kw: 'desain struk thermal 58mm 80mm escpos qr' },
-                { subTab: 'vault', label: 'Brankas & Reset Pabrik', kw: 'script properties fonnte vault migrasi backup drive reset data pabrik' },
+                { subTab: 'vault', label: 'Audit DB, Brankas & Reset', kw: 'script properties fonnte vault migrasi backup drive reset data pabrik audit db' },
                 { subTab: 'audit', label: 'Log Audit Aktivitas', kw: 'log audit aktivitas keamanan riwayat ubah' }
               ]
             },
@@ -468,21 +468,12 @@
           ? `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <span>${ONSStore.esc(item.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeTab.label)}</strong>`
           : `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(item.label)}</strong>`;
 
-        const hideRibbon = item.viewId === 'obat' || item.viewId === 'settings';
-        const chipsHtml = (!hideRibbon && tabs.length > 1) ? `
-          <div class="ons-subnav-ribbon mt-2" role="navigation" aria-label="Sub-tab ${ONSStore.esc(item.label)}">
-            ${tabs.map((t) => {
-              const act = curSub === t.subTab;
-              return `<button type="button" onclick="navigateView('${item.viewId}','${t.subTab}')" class="ons-subnav-chip ${act ? 'active' : ''}">${ONSStore.esc(t.label)}</button>`;
-            }).join('')}
-          </div>` : (!hideRibbon && item.desc ? `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ONSStore.esc(item.desc)}</div>` : '');
-
         return `<div class="flex flex-wrap items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
           <div class="flex items-center flex-wrap gap-1">${trail}</div>
           <div class="hidden sm:flex items-center gap-2 text-[11px]">
             <span>Pintasan: <kbd class="px-1 py-0.5 rounded border font-mono-num">F2</kbd> Kasir &bull; <kbd class="px-1 py-0.5 rounded border font-mono-num">Ctrl+K</kbd> Cari Cepat</span>
           </div>
-        </div>${chipsHtml}`;
+        </div>`;
       }
 
       window.syncNavHighlight = function (forceRebuild) {
@@ -1342,7 +1333,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.10 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.19 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
@@ -1440,9 +1431,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_18') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_19') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_18', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_19', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {
