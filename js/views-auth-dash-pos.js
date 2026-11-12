@@ -1720,7 +1720,7 @@
     const branchCold = (st.coldChain || [])
       .filter((c) => sameCabang_(c, cabId))
       .slice()
-      .sort((a, b) => String(a.timestamp || '').localeCompare(String(b.timestamp || '')));
+      .sort((a, b) => (new Date(a.timestamp || 0).getTime() || 0) - (new Date(b.timestamp || 0).getTime() || 0));
     const latestCold = branchCold.length ? branchCold[branchCold.length - 1] : null;
     const activeShift = st.activeShift || null;
     const totalPoinMember = validSales.reduce((a, b) => a + Number(b.poin_didapat || 0), 0);
@@ -3041,9 +3041,74 @@
   let posHistFilter = 'SEMUA';
   let posHistMethod = 'SEMUA';
   let posHistPeriod = 'ALL';
+  let posHistStart = '';
+  let posHistEnd = '';
+  let posReturQ = '';
+  let posReturPeriod = 'ALL';
+  let posReturStart = '';
+  let posReturEnd = '';
+  let posTertolakQ = '';
+  let posRekapExpanded = true;
+  let posCatalogExpanded = true;
   let posStockFilter = 'ALL'; // ALL | READY | LOW | NEAR_ED
   let posCatalogView = (typeof localStorage !== 'undefined' && localStorage.getItem('ons_pos_view')) || 'GRID';
   let posBeepEnabled = typeof localStorage !== 'undefined' ? (localStorage.getItem('ons_pos_beep') !== '0') : true;
+
+  function computePosCartTotals(cart) {
+    if (!cart) {
+      return { subtotal: 0, itemDiscTotal: 0, subAfterItemDisc: 0, diskonGlobal: 0, biayaServis: 0, biayaEmbalase: 0, ongkosKirim: 0, biayaLainnya: 0, totalBiayaTambahan: 0, grandTotal: 0 };
+    }
+    const subtotal = (cart.items || []).reduce((s, it) => s + Number(it.harga_jual || 0) * Number(it.qty || 0), 0);
+    const itemDiscTotal = (cart.items || []).reduce((s, it) => s + Number(it.diskon_item || 0), 0);
+    const subAfterItemDisc = Math.max(0, subtotal - itemDiscTotal);
+    if (cart.diskon_mode === 'PCT') {
+      const pct = Math.min(100, Math.max(0, Number(cart.diskon_input || 0)));
+      cart.diskon_global = Math.round(subAfterItemDisc * (pct / 100));
+    } else {
+      cart.diskon_global = Math.min(subAfterItemDisc, Math.max(0, Number(cart.diskon_input || 0)));
+    }
+    const biayaServis = Math.max(0, Number(cart.biaya_servis || 0));
+    const biayaEmbalase = Math.max(0, Number(cart.biaya_embalase || 0));
+    const ongkosKirim = Math.max(0, Number(cart.ongkos_kirim || 0));
+    const biayaLainnya = Math.max(0, Number(cart.biaya_lainnya || 0));
+    const totalBiayaTambahan = biayaServis + biayaEmbalase + ongkosKirim + biayaLainnya;
+    const grandTotal = Math.max(0, subAfterItemDisc - Number(cart.diskon_global || 0) + totalBiayaTambahan);
+    return {
+      subtotal,
+      itemDiscTotal,
+      subAfterItemDisc,
+      diskonGlobal: Number(cart.diskon_global || 0),
+      biayaServis,
+      biayaEmbalase,
+      ongkosKirim,
+      biayaLainnya,
+      totalBiayaTambahan,
+      grandTotal
+    };
+  }
+
+  function renderPosSearchDropdownHtml(catalog) {
+    const q = String(S().AppState.posSearchQ || '').trim();
+    if (!q) return '';
+    const hits = (catalog || []).slice(0, 8);
+    if (!hits.length) {
+      return `<div class="p-3 text-xs text-center" style="color:var(--ons-text-soft)">Produk "${S().esc(q)}" tidak ditemukan &bull; <button type="button" onclick="window.setPosSubTab('tertolak')" class="text-blue-600 font-bold hover:underline">Catat ke Penjualan Tertolak &rarr;</button></div>`;
+    }
+    return hits.map((o) => {
+      const stok = S().getSellableStok(o.id_obat);
+      const nearest = S().getNearestSellableBatch(o.id_obat);
+      return `<button type="button" onclick="window.posAddToCart('${S().esc(o.id_obat)}');ONSStore.AppState.posSearchQ='';renderActiveView();" class="w-full text-left px-3 py-2 flex items-center justify-between gap-2 border-b last:border-b-0 hover:bg-blue-500/10 transition" style="border-color:var(--ons-border)">
+        <div class="min-w-0 flex-1">
+          <div class="font-bold text-xs truncate">${S().esc(o.nama_dagang)} ${S().bpomBadge(o.golongan_bpom)}</div>
+          <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif || '-')} &bull; Rak ${S().esc(o.rak_lokasi || '-')} ${nearest ? `&bull; Batch ${S().esc(nearest.no_batch)} (ED ${nearest.tgl_kadaluarsa})` : ''}</div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="font-mono-num font-extrabold text-xs text-blue-600">${S().rp(o.harga_umum)}/${S().esc(o.satuan_dasar)}</div>
+          <div class="font-mono-num text-[10px] ${stok > 0 ? 'text-emerald-600' : 'text-red-600 font-bold'}">Stok: ${stok}</div>
+        </div>
+      </button>`;
+    }).join('');
+  }
 
   function playPosBeep(kind) {
     if (!posBeepEnabled) return;
@@ -3205,20 +3270,26 @@
 
   function syncPosCatalogDomOnly() {
     const grid = document.getElementById('posCatalogGrid');
-    if (!grid) {
-      global.renderActiveView();
-      return;
-    }
+    const ddEl = document.getElementById('posSearchDropdown');
     const cart = getPosActiveCart();
     const catalog = getFilteredPosCatalog();
+    if (ddEl) {
+      const hasQ = Boolean(String(S().AppState.posSearchQ || '').trim());
+      ddEl.innerHTML = hasQ ? renderPosSearchDropdownHtml(catalog) : '';
+      ddEl.classList.toggle('hidden', !hasQ);
+    }
+    const clrBtn = document.getElementById('posSearchClearBtn');
+    if (clrBtn) clrBtn.classList.toggle('hidden', !String(S().AppState.posSearchQ || '').trim());
+    if (!grid) {
+      if (!ddEl) global.renderActiveView();
+      return;
+    }
     grid.className = posCatalogView === 'LIST'
-      ? 'space-y-2 max-h-[66vh] overflow-y-auto pr-1'
-      : 'grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[66vh] overflow-y-auto pr-1';
+      ? 'space-y-2 max-h-[42vh] overflow-y-auto pr-1'
+      : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[42vh] overflow-y-auto pr-1';
     grid.innerHTML = renderPosCatalogCardsHtml(catalog, cart);
     const metaEl = document.getElementById('posCatalogMeta');
     if (metaEl) metaEl.textContent = `${catalog.length} dari ${(S().AppState.masterObat || []).length} item`;
-    const clrBtn = document.getElementById('posSearchClearBtn');
-    if (clrBtn) clrBtn.classList.toggle('hidden', !String(S().AppState.posSearchQ || '').trim());
   }
 
   function pickSmartCrossSellCandidate(cart, masterObat) {
@@ -3301,11 +3372,15 @@
   }
 
   function _filterPosSalesByPeriod(salesList) {
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayIso = toLocalYmd_(new Date());
     const sevenDaysMs = Date.now() - 7 * 86400000;
     const thirtyDaysMs = Date.now() - 30 * 86400000;
     return (salesList || []).filter((p) => {
-      if (posHistPeriod === 'TODAY') return String(p.tanggal || '').slice(0, 10) === todayIso;
+      const ymd = toLocalYmd_(p.tanggal);
+      if (posHistStart && posHistEnd) {
+        return ymd >= posHistStart && ymd <= posHistEnd;
+      }
+      if (posHistPeriod === 'TODAY') return ymd === todayIso;
       if (posHistPeriod === '7D') return new Date(p.tanggal || 0).getTime() >= sevenDaysMs;
       if (posHistPeriod === '30D') return new Date(p.tanggal || 0).getTime() >= thirtyDaysMs;
       return true;
@@ -3325,12 +3400,29 @@
       if (hq) {
         const mem = (st.members || []).find((m) => m.id_member === p.id_member);
         const itemNames = _getPosItemsForTrx(st, p).map((it) => it.nama_dagang || it.id_obat || '').join(' ');
-        const hay = `${p.no_invoice || ''} ${p.channel || ''} ${p.metode_bayar || ''} ${p.kasir_id || ''} ${p.id_member || ''} ${mem ? mem.nama_pasien : ''} ${p.detail_split || ''} ${p.apj_override_id || ''} ${p.retur_alasan || ''} ${itemNames}`.toLowerCase();
+        const hay = `${p.no_invoice || ''} ${p.kode_eksternal || ''} ${p.channel || ''} ${p.metode_bayar || ''} ${p.kasir_id || ''} ${p.id_member || ''} ${p.pelanggan_nama || ''} ${mem ? mem.nama_pasien : ''} ${p.detail_split || ''} ${p.apj_override_id || ''} ${p.retur_alasan || ''} ${itemNames}`.toLowerCase();
         if (!hay.includes(hq)) return false;
       }
       return true;
     });
     return { periodRows, filtered };
+  }
+
+  function _formatIndoRangeCaption(rows, customStart, customEnd, periodCode) {
+    const fmt = (ymd) => {
+      if (!ymd) return '';
+      const dt = new Date(ymd + 'T00:00:00');
+      if (isNaN(dt.getTime())) return ymd;
+      return dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+    const todayYmd = toLocalYmd_(new Date());
+    if (customStart && customEnd) return `${fmt(customStart)} s.d. ${fmt(customEnd)}`;
+    if (periodCode === 'TODAY') return `${fmt(todayYmd)} s.d. ${fmt(todayYmd)}`;
+    if (periodCode === '7D') return `${fmt(_shiftLocalYmd(new Date(), -6))} s.d. ${fmt(todayYmd)}`;
+    if (periodCode === '30D') return `${fmt(_shiftLocalYmd(new Date(), -29))} s.d. ${fmt(todayYmd)}`;
+    const dates = (rows || []).map((r) => toLocalYmd_(r.tanggal || r.tgl_retur)).filter(Boolean).sort();
+    if (!dates.length) return `${fmt(todayYmd)} s.d. ${fmt(todayYmd)}`;
+    return `${fmt(dates[0])} s.d. ${fmt(dates[dates.length - 1])}`;
   }
 
   function _renderPosHistorySummaryAndRowsHtml(st, filteredSales) {
@@ -3349,7 +3441,7 @@
       </div>
     </div>`;
 
-    const rowsHtml = filteredSales.slice(0, 80).map((p) => {
+    const rowsHtml = filteredSales.slice(0, 80).map((p, idx) => {
       const mem = (st.members || []).find((m) => m.id_member === p.id_member);
       const ret = _extractPosReturInfo(p, st.mutasiStok);
       const items = _getPosItemsForTrx(st, p);
@@ -3358,34 +3450,41 @@
             const qtyRet = Number(it.qty_retur || 0);
             const qtySisa = Math.max(0, Number(it.qty || 0) - qtyRet);
             return `${S().esc(it.nama_dagang || it.id_obat)} &times;${qtyRet > 0 ? `${qtySisa}<span class="text-amber-600">(ret:${qtyRet})</span>` : Number(it.qty || 1)}`;
-          }).join(', ') + (items.length > 2 ? ` <span class="font-semibold">(+${items.length - 2} obat)</span>` : '')
-        : '';
+          }).join(', ') + (items.length > 2 ? ` <span class="font-semibold">(+${items.length - 2} produk)</span>` : '')
+        : 'Klik Rincian untuk lihat produk';
       const statusUp = String(p.status_trx || 'LUNAS').toUpperCase();
       const statusCls = ret.isFullRetur ? 'bpom-keras' : (ret.isPartialRetur ? 'bpom-prekursor' : (statusUp === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas'));
-      const statusLabel = ret.isFullRetur ? '&#8617; DIRETUR / VOID' : (ret.isPartialRetur ? '&#8617; RETUR SEBAGIAN' : (statusUp === 'BELUM_LUNAS' ? 'TEMPO / BELUM LUNAS' : 'LUNAS'));
+      const statusLabel = ret.isFullRetur ? '&#8617; DIRETUR / VOID' : (ret.isPartialRetur ? '&#8617; RETUR SEBAGIAN' : (statusUp === 'BELUM_LUNAS' ? 'TEMPO' : 'LUNAS'));
       const metodeCls = _getPosMethodBadgeTone(p.metode_bayar);
+      const customerLabel = mem ? mem.nama_pasien : (p.pelanggan_nama || (p.id_member && p.id_member !== 'UMUM' ? p.id_member : 'Pasien Umum'));
 
       return `<tr class="${ret.isFullRetur ? 'ons-trx-row-retur' : ''}">
+        <td class="text-xs align-top font-mono-num">${idx + 1}</td>
+        <td class="text-xs align-top font-mono-num whitespace-nowrap">
+          <div>${S().formatTgl(p.tanggal, true)}</div>
+          <div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(p.channel || 'Offline')}</div>
+        </td>
         <td class="text-xs align-top">
           <div class="flex flex-wrap items-center gap-1.5">
             <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="font-mono-num font-bold hover:underline text-left ${ret.isFullRetur ? 'text-red-700 dark:text-red-300' : 'text-blue-600 dark:text-blue-400'}">${S().esc(p.no_invoice)}</button>
             ${ret.isFullRetur ? '<span class="ons-retur-stamp">&#8617; RETUR / VOID</span>' : (ret.isPartialRetur ? '<span class="badge-bpom bpom-prekursor text-[10px]">&#8617; SEBAGIAN</span>' : '')}
           </div>
-          <div class="font-mono-num text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${S().formatTgl(p.tanggal, true)}</div>
-          <div class="text-[10px]" style="color:var(--ons-text-soft)">Kasir: <b>${S().esc(p.kasir_id || '-')}</b> &bull; ${S().esc(p.channel || 'Toko Fisik')}</div>
+          <div class="text-[10px]" style="color:var(--ons-text-soft)">Kasir: <b>${S().esc(p.kasir_id || '-')}</b>${p.kode_eksternal ? ` &bull; Ext: ${S().esc(p.kode_eksternal)}` : ''}</div>
         </td>
-        <td class="text-xs align-top max-w-[300px]">
-          <div class="font-bold">${S().esc(mem ? mem.nama_pasien : (p.id_member && p.id_member !== 'UMUM' ? p.id_member : 'Pasien Umum'))}</div>
-          ${itemPreview ? `<div class="text-[11px] mt-0.5 truncate" style="color:var(--ons-text-soft)">${itemPreview}</div>` : `<div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Klik Rincian untuk lihat daftar obat</div>`}
+        <td class="text-xs align-top">
+          <div class="font-bold">${S().esc(customerLabel)}</div>
+          ${p.dokter_nama ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">Dr. ${S().esc(p.dokter_nama)}</div>` : ''}
+        </td>
+        <td class="text-xs align-top max-w-[260px]">
+          <div class="text-[11px] truncate" style="color:var(--ons-text-main)">${itemPreview}</div>
           ${ret.hasReturHistory ? `<div class="ons-retur-trace-pill">
             <div class="font-bold ${ret.isFullRetur ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'}">&#8617; Otorisasi ${ret.isPartialRetur ? 'Retur Sebagian' : 'Retur'}: ${S().esc(ret.authorizer)}</div>
             <div class="text-[10px]" style="color:var(--ons-text-soft)">Alasan: <i>${S().esc(ret.alasan)}</i> &bull; <b class="text-emerald-700 dark:text-emerald-300">${ret.restoredQty > 0 ? '+' + ret.restoredQty + ' qty ' : ''}Stok FEFO dipulihkan</b></div>
           </div>` : ''}
         </td>
         <td class="text-xs align-top">
-          <div class="flex flex-wrap items-center gap-1.5">
+          <div class="flex flex-wrap items-center gap-1">
             <span class="inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold ${metodeCls}">${S().esc(p.metode_bayar || 'TUNAI')}</span>
-            ${p.detail_split ? `<span class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(p.detail_split)}</span>` : ''}
           </div>
           ${ret.isFullRetur ? `<div class="mt-1 font-mono-num">
             <span class="text-[11px] line-through opacity-65">${S().rp(p.grand_total)}</span>
@@ -3406,12 +3505,12 @@
           </div>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="5" class="text-center py-8 text-xs">
-      <div class="font-semibold mb-1">Tidak ada riwayat transaksi yang cocok dengan filter ini.</div>
+    }).join('') || `<tr><td colspan="8" class="text-center py-8 text-xs">
+      <div class="font-semibold mb-1">Data tidak ditemukan pada filter saat ini.</div>
       <button type="button" onclick="window.resetPosHistFilters()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-3 mt-1">Reset Filter Pencarian</button>
     </td></tr>`;
 
-    return { summaryHtml, rowsHtml };
+    return { summaryHtml, rowsHtml, activeNominal, activeCount: activeSubset.length };
   }
 
   function _syncPosHistoryDomOnly() {
@@ -3422,10 +3521,14 @@
     }
     const st = S().AppState;
     const { filtered } = _getFilteredPosHistoryRows(st);
-    const { summaryHtml, rowsHtml } = _renderPosHistorySummaryAndRowsHtml(st, filtered);
+    const { summaryHtml, rowsHtml, activeNominal, activeCount } = _renderPosHistorySummaryAndRowsHtml(st, filtered);
     tbody.innerHTML = rowsHtml;
     const sumEl = document.getElementById('posHistorySummaryLine');
     if (sumEl) sumEl.innerHTML = summaryHtml;
+    const totEl = document.getElementById('posRekapTotalSales');
+    if (totEl) totEl.textContent = S().rp(activeNominal);
+    const cntEl = document.getElementById('posRekapCountSales');
+    if (cntEl) cntEl.textContent = `${activeCount} transaksi`;
     const clrBtn = document.getElementById('posHistClearBtn');
     if (clrBtn) clrBtn.classList.toggle('hidden', !posHistQ.trim());
   }
@@ -3433,18 +3536,28 @@
   function renderPosHistoryView(st, subTabHeader) {
     const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
     const { periodRows, filtered: filteredSales } = _getFilteredPosHistoryRows(st);
-    const { summaryHtml, rowsHtml } = _renderPosHistorySummaryAndRowsHtml(st, filteredSales);
+    const { summaryHtml, rowsHtml, activeNominal, activeCount } = _renderPosHistorySummaryAndRowsHtml(st, filteredSales);
     const ds = buildPosDailySummaryStats(st.penjualan, seeCost);
     const marginPct = ds.omzetToday > 0 ? Math.round((ds.labaToday / ds.omzetToday) * 1000) / 10 : 0;
 
     const allReturRows = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR');
     const allReturNominal = allReturRows.reduce((s, p) => s + Number(p.grand_total || 0), 0);
-    const periodLunasCount = periodRows.filter((p) => String(p.status_trx || 'LUNAS').toUpperCase() === 'LUNAS').length;
-    const periodTempoCount = periodRows.filter((p) => String(p.status_trx || '').toUpperCase() === 'BELUM_LUNAS').length;
-    const periodReturCount = periodRows.filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR').length;
+    const draftCount = (st.carts || []).filter((c) => (c.items && c.items.length > 0) || c.held_at).length;
+    const rekapRangeTxt = _formatIndoRangeCaption(filteredSales, posHistStart, posHistEnd, posHistPeriod);
 
-    return `<div class="space-y-4 ons-view-enter">
+    return `<div class="space-y-3.5 ons-view-enter">
       ${subTabHeader}
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-xl font-extrabold" style="color:var(--ons-primary)">Daftar Penjualan</h2>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Riwayat struk penjualan, faktur tempo, draft tertunda, cetak ulang struk &amp; audit retur.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="window.openPosDraftModal()" class="ons-btn ons-btn-emerald text-xs px-3.5 font-bold">Draft (${draftCount})</button>
+          <button type="button" onclick="window.setPosSubTab('kasir')" class="ons-btn ons-btn-primary text-xs px-3.5 font-bold">+ Faktur Penjualan</button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="ons-card p-3.5" style="border-top:3px solid #0066FE">
           <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Transaksi Hari Ini</div>
@@ -3487,56 +3600,65 @@
 
       <div class="ons-card p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 class="font-bold text-base">Riwayat Transaksi Kasir</h2>
-            <p class="text-xs" style="color:var(--ons-text-soft)">Pantau nota penjualan, filter status lunas atau retur, cetak ulang struk thermal, &amp; proses retur/void ber-PIN APJ/Pemilik.</p>
+          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+            <div>
+              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</label>
+              <select aria-label="Pilihan Data Penjualan" class="ons-select text-xs h-9 py-1 w-44" onchange="window.setPosHistFilter(this.value)">
+                ${[
+                  { id: 'SEMUA', lbl: `Semua Transaksi (${periodRows.length})` },
+                  { id: 'LUNAS', lbl: 'Struk Penjualan (Lunas)' },
+                  { id: 'BELUM_LUNAS', lbl: 'Faktur Tempo / Belum Lunas' },
+                  { id: 'RETUR', lbl: 'Retur / Void' }
+                ].map((opt) => `<option value="${opt.id}" ${posHistFilter === opt.id ? 'selected' : ''}>${opt.lbl}</option>`).join('')}
+              </select>
+            </div>
+            <div class="flex-1 min-w-[180px] max-w-xs">
+              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Cari data</label>
+              <div class="relative">
+                <input id="posHistSearchInp" class="ons-input text-xs h-9 py-1 pr-7" placeholder="Cari No. Struk, Pelanggan, Kasir, Obat..." value="${S().esc(posHistQ)}" oninput="window.setPosHistQ(this.value)"/>
+                <button id="posHistClearBtn" type="button" onclick="window.setPosHistQ('')" aria-label="Bersihkan pencarian" class="${posHistQ.trim() ? '' : 'hidden '}absolute right-2 top-1/2 -translate-y-1/2 text-sm px-1 font-bold" style="color:var(--ons-text-soft)">&times;</button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Metode</label>
+              <select aria-label="Filter metode pembayaran" class="ons-select text-xs h-9 py-1 w-36" onchange="window.setPosHistMethod(this.value)">
+                ${[
+                  { id: 'SEMUA', lbl: 'Semua Metode' },
+                  { id: 'TUNAI', lbl: 'Tunai' },
+                  { id: 'QRIS', lbl: 'QRIS' },
+                  { id: 'TRANSFER', lbl: 'Transfer / EDC' },
+                  { id: 'SPLIT', lbl: 'Split Payment' },
+                  { id: 'PIUTANG', lbl: 'Piutang / Tempo' }
+                ].map((m) => `<option value="${m.id}" ${posHistMethod === m.id ? 'selected' : ''}>${m.lbl}</option>`).join('')}
+              </select>
+            </div>
           </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            ${[
-              { id: 'ALL', lbl: 'Semua Waktu' },
-              { id: 'TODAY', lbl: 'Hari Ini' },
-              { id: '7D', lbl: '7 Hari' },
-              { id: '30D', lbl: '30 Hari' }
-            ].map((pr) => `<button type="button" onclick="window.setPosHistPeriod('${pr.id}')" class="ons-pos-chip ${posHistPeriod === pr.id ? 'is-active' : ''}">${pr.lbl}</button>`).join('')}
-            <button type="button" onclick="window.exportPosHistoryExcel('xlsx')" class="ons-btn ons-btn-emerald text-xs ml-1">Export Excel</button>
-            <button type="button" onclick="window.exportPosHistoryExcel('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
-            <button type="button" onclick="window.exportPosHistoryExcel('pdf')" class="ons-btn ons-btn-ghost text-xs">Cetak PDF</button>
-            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs">Segarkan</button>
+
+          <div class="flex flex-wrap items-end gap-1.5">
+            <div>
+              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl</label>
+              <div class="flex items-center gap-1">
+                <input id="posHistDateStart" type="date" value="${S().esc(posHistStart)}" onchange="window.setPosHistDateRange(this.value, document.getElementById('posHistDateEnd')?.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num"/>
+                <span class="text-xs">-</span>
+                <input id="posHistDateEnd" type="date" value="${S().esc(posHistEnd)}" onchange="window.setPosHistDateRange(document.getElementById('posHistDateStart')?.value, this.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num"/>
+              </div>
+            </div>
+            <button type="button" onclick="window.exportPosHistoryExcel('xlsx')" class="ons-btn ons-btn-emerald text-xs h-9">Export Excel</button>
+            <button type="button" onclick="window.exportPosHistoryExcel('csv')" class="ons-btn ons-btn-ghost text-xs h-9">CSV</button>
+            <button type="button" onclick="window.exportPosHistoryExcel('pdf')" class="ons-btn ons-btn-ghost text-xs h-9">PDF</button>
+            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs h-9">Segarkan</button>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-1.5">
             ${[
-              { id: 'SEMUA', lbl: 'Semua Status', cnt: periodRows.length, tone: '' },
-              { id: 'LUNAS', lbl: 'Lunas', cnt: periodLunasCount, tone: '' },
-              { id: 'BELUM_LUNAS', lbl: 'Tempo', cnt: periodTempoCount, tone: '' },
-              { id: 'RETUR', lbl: 'Retur / Void', cnt: periodReturCount, tone: 'retur' }
-            ].map((sf) => {
-              const active = posHistFilter === sf.id;
-              const returCls = sf.tone === 'retur' && sf.cnt > 0
-                ? (active ? 'border-red-600 bg-red-600 text-white' : 'border-red-500/45 text-red-700 dark:text-red-300 bg-red-500/10')
-                : '';
-              return `<button type="button" onclick="window.setPosHistFilter('${sf.id}')" class="ons-pos-chip ${active && !returCls ? 'is-active' : ''} ${returCls}">
-                ${sf.tone === 'retur' && sf.cnt > 0 ? '&#8617; ' : ''}${sf.lbl} (<span class="font-mono-num">${sf.cnt}</span>)
-              </button>`;
-            }).join('')}
-          </div>
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px] justify-end">
-            <div class="relative flex-1 min-w-[190px] max-w-sm">
-              <input id="posHistSearchInp" class="ons-input text-xs pr-7" placeholder="Cari No. Invoice, Pasien, Kasir, atau Obat..." value="${S().esc(posHistQ)}" oninput="window.setPosHistQ(this.value)"/>
-              <button id="posHistClearBtn" type="button" onclick="window.setPosHistQ('')" aria-label="Bersihkan pencarian" class="${posHistQ.trim() ? '' : 'hidden '}absolute right-2 top-1/2 -translate-y-1/2 text-sm px-1 font-bold" style="color:var(--ons-text-soft)">&times;</button>
-            </div>
-            <select aria-label="Filter metode pembayaran" class="ons-select text-xs w-40" onchange="window.setPosHistMethod(this.value)">
-              ${[
-                { id: 'SEMUA', lbl: 'Semua Metode' },
-                { id: 'TUNAI', lbl: 'Tunai' },
-                { id: 'QRIS', lbl: 'QRIS' },
-                { id: 'TRANSFER', lbl: 'Transfer / EDC' },
-                { id: 'SPLIT', lbl: 'Split Payment' },
-                { id: 'PIUTANG', lbl: 'Piutang / Tempo' }
-              ].map((m) => `<option value="${m.id}" ${posHistMethod === m.id ? 'selected' : ''}>${m.lbl}</option>`).join('')}
-            </select>
+              { id: 'ALL', lbl: 'Semua Waktu' },
+              { id: 'TODAY', lbl: 'Hari Ini' },
+              { id: '7D', lbl: '7 Hari' },
+              { id: '30D', lbl: '30 Hari' }
+            ].map((pr) => `<button type="button" onclick="window.setPosHistPeriod('${pr.id}')" class="ons-pos-chip ${!posHistStart && !posHistEnd && posHistPeriod === pr.id ? 'is-active' : ''}">${pr.lbl}</button>`).join('')}
+            ${(posHistStart || posHistEnd || posHistFilter !== 'SEMUA' || posHistMethod !== 'SEMUA' || posHistQ) ? `<button type="button" onclick="window.resetPosHistFilters()" class="ons-pos-chip text-red-600 border-red-400">Reset Filter</button>` : ''}
           </div>
         </div>
 
@@ -3544,201 +3666,380 @@
 
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>No. Invoice &amp; Waktu</th><th>Pasien, Obat &amp; Penanda</th><th>Metode &amp; Total</th><th>Status</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Struk</th><th>Pelanggan</th><th>Produk</th><th>Total Penjualan</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="posHistoryTableBody">${rowsHtml}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ons-pos-rekap-foot text-xs">
+        <button type="button" onclick="window.togglePosRekapFoot()" class="w-full flex items-center justify-between text-left font-extrabold text-sm" style="color:var(--ons-primary)">
+          <span>Rekap dari ${S().esc(rekapRangeTxt)}</span>
+          <span aria-hidden="true">${posRekapExpanded ? '&#9650;' : '&#9660;'}</span>
+        </button>
+        ${posRekapExpanded ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 mt-2 border-t" style="border-color:var(--ons-border)">
+          <div class="flex items-center justify-between gap-2">
+            <span style="color:var(--ons-text-soft)">Total Penjualan</span>
+            <span id="posRekapTotalSales" class="font-mono-num font-extrabold text-sm text-emerald-600">: ${S().rp(activeNominal)}</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div style="color:var(--ons-text-soft)">Jumlah Transaksi Penjualan</div>
+              <div class="text-[10px] italic" style="color:var(--ons-text-soft)">*Tidak termasuk data retur penuh</div>
+            </div>
+            <span id="posRekapCountSales" class="font-mono-num font-extrabold text-sm">: ${activeCount} transaksi</span>
+          </div>
+        </div>
+        <div class="text-[10px] italic mt-2 pt-2 border-t" style="color:var(--ons-text-soft);border-color:var(--ons-border)">*Rekap dihitung berdasarkan filter tanggal, filter data yang aktif, dan kata kunci pencarian.</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function renderPosReturView(st, subTabHeader) {
+    const q = posReturQ.trim().toLowerCase();
+    const todayIso = toLocalYmd_(new Date());
+    const returRowsAll = (st.penjualan || []).filter((p) => {
+      const ret = _extractPosReturInfo(p, st.mutasiStok);
+      return ret.hasReturHistory;
+    });
+    const filtered = returRowsAll.filter((p) => {
+      const ret = _extractPosReturInfo(p, st.mutasiStok);
+      const ymd = toLocalYmd_(ret.tglRetur || p.tanggal);
+      if (posReturStart && posReturEnd) {
+        if (ymd < posReturStart || ymd > posReturEnd) return false;
+      } else if (posReturPeriod === 'TODAY' && ymd !== todayIso) {
+        return false;
+      } else if (posReturPeriod === '7D' && new Date(ret.tglRetur || p.tanggal || 0).getTime() < (Date.now() - 7 * 86400000)) {
+        return false;
+      } else if (posReturPeriod === '30D' && new Date(ret.tglRetur || p.tanggal || 0).getTime() < (Date.now() - 30 * 86400000)) {
+        return false;
+      }
+      if (q) {
+        const mem = (st.members || []).find((m) => m.id_member === p.id_member);
+        const items = _getPosItemsForTrx(st, p).map((it) => it.nama_dagang || it.id_obat || '').join(' ');
+        const hay = `${p.no_invoice || ''} RET-${p.no_invoice || ''} ${mem ? mem.nama_pasien : ''} ${p.pelanggan_nama || ''} ${ret.authorizer} ${ret.alasan} ${items}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const totalReturNominal = filtered.reduce((s, p) => {
+      const ret = _extractPosReturInfo(p, st.mutasiStok);
+      if (ret.isFullRetur) return s + Number(p.grand_total || 0);
+      const items = _getPosItemsForTrx(st, p);
+      const partVal = items.reduce((acc, it) => acc + (Number(it.qty_retur || 0) * Number(it.harga_jual || 0)), 0);
+      return s + (partVal > 0 ? partVal : Number(p.grand_total || 0));
+    }, 0);
+    const rekapRangeTxt = _formatIndoRangeCaption(filtered, posReturStart, posReturEnd, posReturPeriod);
+
+    return `<div class="space-y-3.5 ons-view-enter">
+      ${subTabHeader}
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-xl font-extrabold" style="color:var(--ons-primary)">Retur Penjualan</h2>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Daftar transaksi retur penuh &amp; retur sebagian yang diotorisasi PIN APJ/Pemilik serta pemulihan stok batch FEFO.</p>
+        </div>
+        <button type="button" onclick="window.openPosPickInvoiceForReturnModal()" class="ons-btn ons-btn-danger text-xs px-3.5 font-bold">+ Proses Retur Nota</button>
+      </div>
+
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-end justify-between gap-2">
+          <div class="flex-1 min-w-[220px] max-w-sm">
+            <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Cari data</label>
+            <input id="posReturSearchInp" class="ons-input text-xs h-9" placeholder="Cari No. Retur, No. Faktur Asal, Pelanggan, Obat..." value="${S().esc(posReturQ)}" oninput="window.setPosReturQ(this.value)"/>
+          </div>
+          <div class="flex flex-wrap items-end gap-1.5">
+            <div>
+              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl</label>
+              <div class="flex items-center gap-1">
+                <input id="posReturDateStart" type="date" value="${S().esc(posReturStart)}" onchange="window.setPosReturDateRange(this.value, document.getElementById('posReturDateEnd')?.value)" class="ons-input text-xs h-9 w-32 font-mono-num"/>
+                <span class="text-xs">-</span>
+                <input id="posReturDateEnd" type="date" value="${S().esc(posReturEnd)}" onchange="window.setPosReturDateRange(document.getElementById('posReturDateStart')?.value, this.value)" class="ons-input text-xs h-9 w-32 font-mono-num"/>
+              </div>
+            </div>
+            ${['ALL', 'TODAY', '7D', '30D'].map((pr) => `<button type="button" onclick="window.setPosReturPeriod('${pr}')" class="ons-pos-chip ${!posReturStart && !posReturEnd && posReturPeriod === pr ? 'is-active' : ''}">${pr === 'ALL' ? 'Semua' : (pr === 'TODAY' ? 'Hari Ini' : pr)}</button>`).join('')}
+            <button type="button" onclick="window.setPosHistFilter('RETUR');window.exportPosHistoryExcel('xlsx');" class="ons-btn ons-btn-emerald text-xs h-9">Export Excel</button>
+            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs h-9">Segarkan</button>
+          </div>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>No.</th><th>Tanggal Retur</th><th>No. Retur</th><th>No. Faktur Asal</th><th>Pelanggan</th><th>Produk</th><th>Nilai Retur</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${filtered.length ? filtered.map((p, idx) => {
+                const ret = _extractPosReturInfo(p, st.mutasiStok);
+                const mem = (st.members || []).find((m) => m.id_member === p.id_member);
+                const items = _getPosItemsForTrx(st, p);
+                const prodText = items.length ? items.map((it) => `${S().esc(it.nama_dagang || it.id_obat)} (${Number(it.qty_retur || it.qty || 1)} ${S().esc(it.satuan || '')})`).join(', ') : 'Lihat Bukti Retur';
+                const retVal = ret.isFullRetur ? Number(p.grand_total || 0) : (items.reduce((acc, it) => acc + Number(it.qty_retur || 0) * Number(it.harga_jual || 0), 0) || Number(p.grand_total || 0));
+                return `<tr class="ons-trx-row-retur">
+                  <td class="text-xs font-mono-num">${idx + 1}</td>
+                  <td class="text-xs font-mono-num whitespace-nowrap">${S().formatTgl(ret.tglRetur || p.tanggal, true)}</td>
+                  <td class="text-xs font-mono-num font-bold text-red-700 dark:text-red-300">RET-${S().esc(p.no_invoice)}</td>
+                  <td class="text-xs"><button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="font-mono-num font-bold text-blue-600 hover:underline">${S().esc(p.no_invoice)}</button></td>
+                  <td class="text-xs font-semibold">${S().esc(mem ? mem.nama_pasien : (p.pelanggan_nama || 'Pasien Umum'))}</td>
+                  <td class="text-xs max-w-[260px]">
+                    <div class="truncate">${prodText}</div>
+                    <div class="text-[10px]" style="color:var(--ons-text-soft)">PIN: <b>${S().esc(ret.authorizer)}</b> &bull; <i>${S().esc(ret.alasan)}</i></div>
+                  </td>
+                  <td class="text-xs font-mono-num font-extrabold text-red-600">-${S().rp(retVal)}</td>
+                  <td class="text-xs">
+                    <div class="flex flex-wrap gap-1">
+                      <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Bukti Retur</button>
+                      <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Nota Void</button>
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('') : `<tr><td colspan="8" class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Data retur tidak ditemukan pada rentang ini. Klik <b>+ Proses Retur Nota</b> untuk meretur transaksi yang salah/batal.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ons-pos-rekap-foot text-xs">
+        <div class="font-extrabold text-sm mb-2" style="color:var(--ons-primary)">Rekap dari ${S().esc(rekapRangeTxt)}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t" style="border-color:var(--ons-border)">
+          <div class="flex items-center justify-between gap-2">
+            <span style="color:var(--ons-text-soft)">Total Retur Penjualan</span>
+            <span class="font-mono-num font-extrabold text-sm text-red-600">: ${S().rp(totalReturNominal)}</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span style="color:var(--ons-text-soft)">Jumlah Transaksi Retur</span>
+            <span class="font-mono-num font-extrabold text-sm">: ${filtered.length}x</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderPosTertolakView(st, subTabHeader) {
+    const allLost = _getDashLostSales();
+    const q = posTertolakQ.trim().toLowerCase();
+    const filtered = allLost.filter((ls) => {
+      if (!q) return true;
+      return `${ls.nama_obat || ''} ${ls.alasan || ''} ${ls.tanggal || ''}`.toLowerCase().includes(q);
+    });
+    const totalEstNilai = filtered.reduce((s, ls) => s + (Number(ls.qty || 1) * Number(ls.est_harga || 0)), 0);
+
+    return `<div class="space-y-3.5 ons-view-enter">
+      ${subTabHeader}
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-xl font-extrabold" style="color:var(--ons-primary)">Penjualan Tertolak (Lost Sales)</h2>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Catat permintaan pelanggan yang gagal dilayani karena stok habis / item belum tersedia untuk perencanaan pengadaan (Defecta).</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="px-3 py-1.5 rounded-xl border font-mono-num font-bold bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300">${filtered.length} kejadian${totalEstNilai > 0 ? ` &bull; Est. Peluang ${S().rp(totalEstNilai)}` : ''}</span>
+          ${S().canAccessView('defecta') ? `<button type="button" onclick="navigateView('defecta','')" class="ons-btn ons-btn-primary text-xs">Buka Defecta &rarr;</button>` : ''}
+        </div>
+      </div>
+
+      <div class="ons-card p-4 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end p-3 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="sm:col-span-4">
+            <label class="text-[10px] font-bold block mb-1">Nama Obat / Produk yg Dicari *</label>
+            <input id="posTertolakNama" class="ons-input text-xs h-9" placeholder="Cth: Salbutamol Nebules 2.5mg"/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[10px] font-bold block mb-1">Qty Diminta</label>
+            <input id="posTertolakQty" type="number" min="1" value="1" class="ons-input text-xs h-9 font-mono-num"/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[10px] font-bold block mb-1">Est. Harga (Rp)</label>
+            <input id="posTertolakHarga" type="number" min="0" value="0" class="ons-input text-xs h-9 font-mono-num" placeholder="Opsional"/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[10px] font-bold block mb-1">Alasan Tertolak</label>
+            <select id="posTertolakAlasan" class="ons-select text-xs h-9">
+              <option value="Stok habis sementara">Stok habis sementara</option>
+              <option value="Produk belum ada di katalog">Belum ada di katalog</option>
+              <option value="Harga tidak sesuai">Harga tidak sesuai</option>
+              <option value="Resep kadaluarsa / butuh konfirmasi">Konfirmasi resep</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <button type="button" onclick="window.submitPosLostSaleInline()" class="ons-btn ons-btn-primary w-full h-9 text-xs font-bold">+ Catat Tertolak</button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <input id="posTertolakSearch" class="ons-input text-xs h-9 max-w-xs" placeholder="Cari produk tertolak atau alasan..." value="${S().esc(posTertolakQ)}" oninput="window.setPosTertolakQ(this.value)"/>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Terhubung langsung dengan metrik Penjualan Tertolak di Dashboard.</span>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>No.</th><th>Tanggal</th><th>Nama Produk</th><th>Qty</th><th>Est. Nilai Hilang</th><th>Alasan</th><th>Aksi</th></tr></thead>
+            <tbody>
+              ${filtered.length ? filtered.slice().reverse().map((ls, rIdx) => {
+                const origIdx = allLost.indexOf(ls);
+                const estVal = Number(ls.qty || 1) * Number(ls.est_harga || 0);
+                return `<tr>
+                  <td class="text-xs font-mono-num">${rIdx + 1}</td>
+                  <td class="text-xs font-mono-num whitespace-nowrap">${S().esc(ls.tanggal || '-')}</td>
+                  <td class="text-xs font-bold">${S().esc(ls.nama_obat || '-')}</td>
+                  <td class="text-xs font-mono-num font-bold">${Number(ls.qty || 1)}</td>
+                  <td class="text-xs font-mono-num">${estVal > 0 ? S().rp(estVal) : '-'}</td>
+                  <td class="text-xs"><span class="badge-bpom bpom-prekursor">${S().esc(ls.alasan || 'Stok habis')}</span></td>
+                  <td class="text-xs">
+                    <div class="flex gap-1.5">
+                      ${S().canAccessView('defecta') ? `<button type="button" onclick="navigateView('defecta','')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Ajukan Defecta</button>` : ''}
+                      <button type="button" onclick="window.deletePosLostSale(${origIdx})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('') : `<tr><td colspan="7" class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Belum ada catatan penjualan tertolak.</td></tr>`}
+            </tbody>
           </table>
         </div>
       </div>
     </div>`;
   }
 
-  function renderPosCartPanelHtml(st, cart, member, cdss, grandTotal, subtotal, itemDiscTotal, subAfterItemDisc, estHppCart, isBelowHppCart, seeCost) {
-    const totalQtyUnits = cart.items.reduce((s, it) => s + Number(it.qty || 0), 0);
-    const crossSell = pickSmartCrossSellCandidate(cart, st.masterObat);
+  function renderPosCartPanelHtml(st, cart, member, totals, isBelowHppCart, estHppCart, seeCost) {
+    const staffOpts = Array.from(new Set(
+      [(st.user && st.user.nama_lengkap) || 'Kasir']
+        .concat((st.daftarUser || st.pegawai || []).map((u) => u.nama_lengkap || u.nama || '').filter(Boolean))
+    ));
+    const dokterList = st.masterDokter || [];
 
-    return `<div class="ons-pos-ticket space-y-3">
-      <!-- Header Tiket Antrean -->
-      <div class="flex items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="ons-pos-live-dot"></span>
-            <h3 class="font-extrabold text-sm truncate">${S().esc(cart.label || 'Keranjang Aktif')}</h3>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono-num" style="background:var(--ons-bg-subtle);color:var(--ons-text-soft)">${cart.items.length} item &bull; ${totalQtyUnits} qty</span>
-          </div>
-          ${cart.held_note ? `<div class="text-[11px] text-amber-600 font-semibold truncate mt-0.5">Catatan: ${S().esc(cart.held_note)}</div>` : ''}
+    return `<div class="space-y-3">
+      <!-- Panel Kanan 1: Rincian Sub-total, Diskon, Biaya & Tombol Bayar/Tunda -->
+      <div class="ons-pos-fee-panel ons-pos-ticket space-y-2.5 text-xs">
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold" style="color:var(--ons-text-soft)">Sub-total</span>
+          <input id="posRightSubTotalInp" readonly class="ons-input font-mono-num text-right text-xs h-8 py-1 font-bold" style="background:var(--ons-bg-subtle)" value="${totals.subtotal}"/>
         </div>
-        ${cart.items.length ? `<button type="button" onclick="window.openClearPosCartModal()" class="ons-btn ons-btn-ghost text-[11px] text-red-600 py-1 px-2 min-h-0 h-7 shrink-0">Kosongkan</button>` : ''}
-      </div>
 
-      <!-- Channel, Member & Tier Harga -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <div>
-          <label class="text-[11px] font-semibold block mb-1">Channel Penjualan</label>
-          <select onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs py-1.5 min-h-0 h-8">
-            ${['Toko Fisik', 'Resep WA', 'Pasien Rutin'].map((ch) => `<option ${cart.channel === ch ? 'selected' : ''}>${ch}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <label class="text-[11px] font-semibold block mb-1">Pasien / Member Apotek</label>
-          <select onchange="window.onPosMemberChange(this.value)" class="ons-select text-xs py-1.5 min-h-0 h-8">
-            <option value="UMUM" ${cart.id_member === 'UMUM' ? 'selected' : ''}>Pasien Umum</option>
-            ${st.members.map((m) => `<option value="${m.id_member}" ${cart.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(S().formatMemberProgram ? S().formatMemberProgram(m.program_prb) : m.program_prb)})</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <label class="text-[11px] font-semibold block mb-1">Tier Harga</label>
-          <select onchange="window.setPosPriceTier(this.value)" class="ons-select text-xs py-1.5 min-h-0 h-8">
-            ${[
-              { id: 'UMUM', lbl: 'Eceran Umum' },
-              { id: 'MEMBER', lbl: 'Member Apotek' },
-              { id: 'GROSIR', lbl: 'Grosir (B2B)' },
-              { id: 'FASKES', lbl: 'Faskes / Klinik' }
-            ].map((t) => `<option value="${t.id}" ${(cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM')) === t.id ? 'selected' : ''}>${t.lbl}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-
-      ${member ? `<div class="p-2.5 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-primary-tint);border-color:var(--ons-primary);">
-        <div class="min-w-0 flex-1"><b>Alergi:</b> <span class="text-red-600 font-bold">${S().esc(member.alergi_list || 'Tidak Ada')}</span> &bull; <b>Kondisi:</b> ${S().esc(member.penyakit_kronis || '-')}</div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <span class="font-mono-num font-bold text-blue-700">${member.poin_loyalitas} Poin</span>
-          ${typeof global.openMemberProfileDrawer === 'function' ? `<button type="button" onclick="window.openMemberProfileDrawer('${S().esc(member.id_member)}')" class="ons-btn ons-btn-ghost text-[10px] py-0.5 px-2 min-h-0 h-6">Profil</button>` : ''}
-        </div>
-      </div>` : ''}
-
-      ${cdss.alerts.length ? `<div class="space-y-1.5">
-        ${cdss.alerts.map((al) => `<div class="p-2.5 rounded-xl text-xs font-semibold border ${al.level === 'DANGER' ? 'bg-red-500/15 border-red-500 text-red-700 dark:text-red-300' : 'bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300'}">${S().esc(al.msg)}</div>`).join('')}
-      </div>` : ''}
-
-      ${isBelowHppCart ? `<div class="p-2.5 rounded-xl text-xs font-bold border bg-red-500/15 border-red-500 text-red-700 dark:text-red-300">
-        &#9888;&#65039; PERINGATAN ANTI-RUGI: Total jual (${S().rp(grandTotal)})${seeCost ? ` di bawah modal HPP (${S().rp(estHppCart)})` : ' di bawah batas modal minimum'}. Checkout mewajibkan PIN APJ!
-      </div>` : ''}
-
-      <!-- Daftar Item Keranjang -->
-      <div class="space-y-2 ons-pos-cart-scroll border-y py-2" style="border-color:var(--ons-border)">
-        ${cart.items.length ? cart.items.map((it, idx) => {
-          const ob = st.masterObat.find((o) => o.id_obat === it.id_obat);
-          const nearIt = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(it.id_obat, 90) : { hasNearEd: false };
-          const grossLine = Number(it.harga_jual || 0) * Number(it.qty || 1);
-          const netLine = Math.max(0, grossLine - Number(it.diskon_item || 0));
-          const hppLine = Number((ob && ob.hpp_avg) || 0) * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1));
-          const itemBelowHpp = hppLine > 0 && netLine < hppLine;
-          return `<div class="ons-pos-cart-item text-xs space-y-1.5">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <div class="font-bold leading-snug truncate">${S().esc(it.nama_dagang)} ${it.tier_applied === 'GROSIR_AUTO' ? '<span class="badge-bpom bpom-bebas text-[9px]">GROSIR OTOMATIS</span>' : ''}</div>
-                <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(it.harga_jual)} / ${S().esc(it.satuan)} &times; ${it.faktor_konversi} dasar ${Number(it.diskon_item || 0) > 0 ? `<span class="text-emerald-600 font-bold">(-${S().rp(it.diskon_item)})</span>` : ''} ${itemBelowHpp ? `<span class="text-red-600 font-bold">${seeCost ? '[RUGI &lt; HPP]' : '[Perlu PIN APJ]'}</span>` : ''}</div>
-              </div>
-              <div class="text-right shrink-0">
-                <div class="font-extrabold font-mono-num text-sm text-blue-600">${S().rp(netLine)}</div>
-                ${Number(it.diskon_item || 0) > 0 ? `<div class="text-[10px] font-mono-num line-through" style="color:var(--ons-text-soft)">${S().rp(grossLine)}</div>` : ''}
-              </div>
-            </div>
-            <div class="flex flex-wrap items-center justify-between gap-1.5">
-              <div class="flex items-center gap-1.5">
-                <div class="ons-pos-stepper">
-                  <button type="button" onclick="window.posStepQty(${idx}, -1)" title="Kurangi qty">&minus;</button>
-                  <input type="number" min="1" value="${it.qty}" onchange="window.posUpdateQty(${idx}, this.value)"/>
-                  <button type="button" onclick="window.posStepQty(${idx}, 1)" title="Tambah qty">+</button>
-                </div>
-                <select onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-20">
-                  ${it.unitOptions.map((u) => `<option value="${u.label}" ${u.label === it.satuan ? 'selected' : ''}>${u.label}</option>`).join('')}
-                </select>
-              </div>
-              <div class="flex items-center gap-1">
-                <button type="button" onclick="window.openCartEtiketModal(${idx})" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2 min-h-0 h-8" title="Cetak Etiket Obat Putih/Biru">Etiket</button>
-                <button type="button" onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-8" title="Hapus item">&times;</button>
-              </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
-              <span class="text-[10px] font-semibold shrink-0" style="color:var(--ons-text-soft)">Signa:</span>
-              <select onchange="window.posSetAturanPakai(${idx}, this.value);renderActiveView();" class="ons-select text-[11px] py-0.5 px-1.5 min-h-0 h-7 flex-1">
-                ${['', '3 x 1 Sesudah Makan', '3 x 1 Sebelum Makan', '2 x 1 Sesudah Makan', '1 x 1 Malam Hari', '1 x 1 Pagi Hari', 'Oles Tipis 2x Sehari (Obat Luar)'].map((opt) => `<option value="${S().esc(opt)}" ${(it.aturan_pakai || '') === opt ? 'selected' : ''}>${opt || 'Standar / Sesuai Etiket'}</option>`).join('')}
-              </select>
-              ${['3 x 1 Sesudah Makan', '2 x 1 Sesudah Makan', '1 x 1 Malam Hari'].map((p) => `<button type="button" onclick="window.posSetAturanPakai(${idx}, '${p}');renderActiveView();" class="ons-pos-signa-chip">${p.slice(0, 5)}</button>`).join('')}
-              ${nearIt.hasNearEd ? `<button type="button" onclick="window.applyNearEdDiscountToItem(${idx})" class="ons-btn ons-btn-amber text-[10px] py-0.5 px-2 min-h-0 h-7">Promo ED -${nearIt.suggestedDiscPct}%</button>` : ''}
-            </div>
-          </div>`;
-        }).join('') : `<div class="text-center py-8 px-4 space-y-1.5">
-          <div class="text-sm font-bold" style="color:var(--ons-text-main)">Keranjang Siap Melayani</div>
-          <div class="text-xs" style="color:var(--ons-text-soft)">Klik kartu obat di panel kiri, tekan <span class="ons-shortcut-kbd">F2</span> lalu scan barcode, atau gunakan pencarian cepat.</div>
-        </div>`}
-      </div>
-
-      ${crossSell ? `<div class="p-2.5 rounded-xl border text-[11px] flex items-center justify-between gap-2" style="border-color:var(--ons-border);background:rgba(16,185,129,0.06)">
-        <div class="min-w-0">
-          <div class="font-bold text-emerald-700 dark:text-emerald-300">Saran Pendamping Apoteker</div>
-          <div class="truncate" style="color:var(--ons-text-soft)"><b>${S().esc(crossSell.nama_dagang)}</b> &bull; <span class="font-mono-num">${S().rp(crossSell.harga_umum)}/${S().esc(crossSell.satuan_dasar)}</span></div>
-        </div>
-        <button type="button" onclick="window.posAddToCart('${S().esc(crossSell.id_obat)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 min-h-0 h-7 shrink-0">+ Tambah</button>
-      </div>` : ''}
-
-      <!-- Ringkasan Nominal & Diskon -->
-      <div class="ons-pos-ledger space-y-2 text-xs">
-        <div class="flex justify-between items-center">
-          <span style="color:var(--ons-text-soft)">Subtotal (${cart.items.length} item &bull; ${totalQtyUnits} qty)</span>
-          <span class="font-mono-num font-bold text-sm">${S().rp(subtotal)}</span>
-        </div>
-        ${itemDiscTotal > 0 ? `<div class="flex justify-between text-emerald-600 font-semibold">
-          <span>Diskon Promo Item (Near-ED)</span>
-          <span class="font-mono-num">-${S().rp(itemDiscTotal)}</span>
-        </div>` : ''}
-        <div class="flex flex-wrap justify-between items-center gap-1.5">
+        <div class="ons-pos-fee-row">
           <div class="flex items-center gap-1.5">
-            <span class="font-semibold">Diskon</span>
-            <button type="button" onclick="window.toggleCartDiscMode()" class="ons-quick-denom py-0.5 px-2 text-[10px]">${cart.diskon_mode === 'PCT' ? '% Persen' : 'Rp Nominal'}</button>
+            <span class="font-semibold">Diskon Faktur</span>
+            <div class="ons-pos-disc-toggle">
+              <button type="button" onclick="window.setCartDiscMode('PCT')" class="${cart.diskon_mode === 'PCT' ? 'is-active' : ''}">%</button>
+              <button type="button" onclick="window.setCartDiscMode('RP')" class="${cart.diskon_mode !== 'PCT' ? 'is-active' : ''}">Rp</button>
+            </div>
           </div>
-          <div class="flex items-center gap-1.5">
-            <input type="number" min="0" max="${cart.diskon_mode === 'PCT' ? 100 : subAfterItemDisc}" value="${cart.diskon_input || 0}" onchange="window.applyCartDiscInput(this.value)" class="ons-input font-mono-num text-right text-xs w-24 py-1 min-h-0 h-7"/>
-            ${cart.diskon_mode === 'PCT' && cart.diskon_global > 0 ? `<span class="text-[11px] font-mono-num text-emerald-600 font-bold">-${S().rp(cart.diskon_global)}</span>` : ''}
+          <div class="flex items-center gap-1">
+            <input id="posRightDiscInp" type="number" min="0" max="${cart.diskon_mode === 'PCT' ? 100 : totals.subAfterItemDisc}" value="${cart.diskon_input || 0}" oninput="window.onPosFeeChange('diskon_input', this.value)" onchange="window.applyCartDiscInput(this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+            <span class="text-[11px] font-bold shrink-0">${cart.diskon_mode === 'PCT' ? '%' : 'Rp'}</span>
           </div>
         </div>
-        ${cart.items.length ? `<div class="flex flex-wrap gap-1 pt-0.5">
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 0)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">Reset 0</button>
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 5)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">Disc 5%</button>
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 10)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">Disc 10%</button>
-          <button type="button" onclick="window.applyPosDiscPreset('RP', 5000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">-Rp 5rb</button>
-          <button type="button" onclick="window.applyPosDiscPreset('RP', 10000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">-Rp 10rb</button>
+
+        ${cart.items.length ? `<div class="flex flex-wrap gap-1 justify-end">
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 0)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">Reset</button>
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 5)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">5%</button>
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 10)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">10%</button>
+          <button type="button" onclick="window.applyPosDiscPreset('RP', 5000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">-5rb</button>
         </div>` : ''}
-        <div class="flex justify-between items-baseline border-t pt-2" style="border-color:var(--ons-border)">
-          <span class="text-sm font-extrabold tracking-wide">TOTAL BAYAR</span>
-          <span class="text-xl font-extrabold font-mono-num text-blue-600">${S().rp(grandTotal)}</span>
+
+        ${totals.itemDiscTotal > 0 ? `<div class="flex justify-between text-[11px] text-emerald-600 font-semibold">
+          <span>Promo Near-ED Item</span>
+          <span class="font-mono-num">-${S().rp(totals.itemDiscTotal)}</span>
+        </div>` : ''}
+
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold" style="color:var(--ons-text-soft)">Biaya Servis</span>
+          <input id="posBiayaServisInp" type="number" min="0" value="${Number(cart.biaya_servis || 0)}" oninput="window.onPosFeeChange('biaya_servis', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
         </div>
-        ${seeCost && cart.items.length ? `<div class="flex justify-between text-[11px] font-mono-num" style="color:var(--ons-text-soft)">
-          <span>Est. Laba Kotor (vs HPP ${S().rp(estHppCart)})</span>
-          <span class="${(grandTotal - estHppCart) >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}">${S().rp(grandTotal - estHppCart)}</span>
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold" style="color:var(--ons-text-soft)">Biaya Embalase</span>
+          <input id="posBiayaEmbalaseInp" type="number" min="0" value="${Number(cart.biaya_embalase || 0)}" oninput="window.onPosFeeChange('biaya_embalase', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+        </div>
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold" style="color:var(--ons-text-soft)">Ongkos Kirim</span>
+          <input id="posOngkosKirimInp" type="number" min="0" value="${Number(cart.ongkos_kirim || 0)}" oninput="window.onPosFeeChange('ongkos_kirim', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+        </div>
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold" style="color:var(--ons-text-soft)">Biaya Lainnya</span>
+          <input id="posBiayaLainnyaInp" type="number" min="0" value="${Number(cart.biaya_lainnya || 0)}" oninput="window.onPosFeeChange('biaya_lainnya', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+        </div>
+
+        ${seeCost && cart.items.length ? `<div class="flex justify-between text-[11px] font-mono-num pt-1 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+          <span>Est. Laba Kotor (HPP ${S().rp(estHppCart)})</span>
+          <span id="posRightLabaSpan" class="${(totals.grandTotal - estHppCart) >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}">${S().rp(totals.grandTotal - estHppCart)}</span>
         </div>` : ''}
+
+        <!-- CTA Utama: Bayar & Tunda -->
+        <div class="grid grid-cols-2 gap-2 pt-1.5">
+          <button id="posBayarPrimaryBtn" type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-btn ons-btn-emerald py-2.5 text-xs font-extrabold shadow-sm justify-center">
+            <span>Bayar</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F4</span>
+          </button>
+          <button id="posTundaPrimaryBtn" type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-primary py-2.5 text-xs font-extrabold shadow-sm justify-center">
+            <span>Tunda</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F9</span>
+          </button>
+        </div>
+
+        <!-- Pilihan Metode Bayar Cepat -->
+        <div class="grid grid-cols-5 gap-1 pt-0.5">
+          <button type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-pos-chip text-[10px] justify-center py-1">Tunai</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('QRIS')" class="ons-pos-chip text-[10px] justify-center py-1" title="Shortcut [F8]">QRIS BI</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('TRANSFER')" class="ons-pos-chip text-[10px] justify-center py-1">Transfer</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('SPLIT')" class="ons-pos-chip text-[10px] justify-center py-1">Split Pay</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('PIUTANG')" class="ons-pos-chip text-[10px] justify-center py-1 text-amber-700 dark:text-amber-300">Piutang/Tempo</button>
+        </div>
       </div>
 
-      <!-- Tombol Pembayaran -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-xs">
-        <button onclick="window.openPosCheckoutModal('TUNAI', ${grandTotal})" class="ons-pos-paybtn bg-emerald-600 text-white shadow-sm">
-          <span class="text-[10px] opacity-85">[F4]</span><span>Tunai</span>
-        </button>
-        <button onclick="window.openPosCheckoutModal('QRIS', ${grandTotal})" class="ons-pos-paybtn bg-blue-600 text-white shadow-sm">
-          <span class="text-[10px] opacity-85">[F8]</span><span>QRIS BI</span>
-        </button>
-        <button onclick="window.openPosCheckoutModal('TRANSFER', ${grandTotal})" class="ons-pos-paybtn border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">
-          <span class="text-[10px] opacity-75">EDC</span><span>Transfer</span>
-        </button>
-        <button onclick="window.openPosCheckoutModal('SPLIT', ${grandTotal})" class="ons-pos-paybtn border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">
-          <span class="text-[10px] opacity-75">2 Cara</span><span>Split Pay</span>
-        </button>
-        <button onclick="window.openPosCheckoutModal('PIUTANG', ${grandTotal})" class="ons-pos-paybtn bg-amber-500 text-white col-span-2 sm:col-span-1 shadow-sm" title="Tempo / Piutang Pelanggan & Mitra Dokter">
-          <span class="text-[10px] opacity-85">Tempo</span><span>Piutang/Tempo</span>
-        </button>
+      <!-- Panel Kanan 2: Pelanggan [+] & Dokter [+] -->
+      <div class="ons-pos-fee-panel ons-pos-ticket space-y-2.5 text-xs">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="font-bold">Pelanggan</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono-num bg-blue-600 text-white font-bold">F7</span>
+          </div>
+          <div class="flex items-center gap-1 flex-1 min-w-[140px]">
+            <select aria-label="Pilih Pelanggan" onchange="window.onPosMemberChange(this.value)" class="ons-select text-xs h-8 py-1 flex-1">
+              <option value="UMUM" ${cart.id_member === 'UMUM' ? 'selected' : ''}>Pasien Umum</option>
+              ${st.members.map((m) => `<option value="${m.id_member}" ${cart.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)}</option>`).join('')}
+            </select>
+            <button type="button" onclick="window.openPosQuickAddCustomerModal()" class="ons-btn ons-btn-ghost px-2 h-8 min-h-0 text-sm font-extrabold" title="Tambah Pelanggan Baru">+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="font-bold">Dokter</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono-num bg-blue-600 text-white font-bold">F6</span>
+          </div>
+          <div class="flex items-center gap-1 flex-1 min-w-[140px]">
+            <select aria-label="Pilih Dokter" onchange="window.onPosDoctorChange(this.value)" class="ons-select text-xs h-8 py-1 flex-1">
+              <option value="" ${!cart.dokter_nama ? 'selected' : ''}>Tanpa Dokter / OTC</option>
+              ${dokterList.map((d) => {
+                const nm = d.nama_dokter || d.nama || '';
+                return `<option value="${S().esc(nm)}" ${cart.dokter_nama === nm ? 'selected' : ''}>${S().esc(nm)}${d.spesialisasi ? ` (${S().esc(d.spesialisasi)})` : ''}</option>`;
+              }).join('')}
+              ${cart.dokter_nama && !dokterList.some((d) => (d.nama_dokter || d.nama) === cart.dokter_nama) ? `<option value="${S().esc(cart.dokter_nama)}" selected>${S().esc(cart.dokter_nama)}</option>` : ''}
+            </select>
+            <button type="button" onclick="window.openPosQuickAddDoctorModal()" class="ons-btn ons-btn-ghost px-2 h-8 min-h-0 text-sm font-extrabold" title="Input / Tambah Dokter Resep">+</button>
+          </div>
+        </div>
       </div>
-      <div class="flex flex-wrap gap-1.5 text-[10px] items-center justify-center pt-0.5" style="color:var(--ons-text-soft)">
-        <span class="ons-shortcut-kbd">F2</span> Scan
-        <span class="ons-shortcut-kbd">F4</span> Tunai
-        <span class="ons-shortcut-kbd">F8</span> QRIS
-        <span class="ons-shortcut-kbd">F9</span> Hold Antrean
-        <span class="ons-shortcut-kbd">Esc</span> Tutup
+
+      <!-- Panel Kanan 3: Sales, Kanal Penjualan, Kode Eksternal, Catatan -->
+      <div class="ons-pos-fee-panel space-y-2 text-xs">
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold">Sales/Pelayan</span>
+          <select aria-label="Sales atau Pelayan" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].sales_nama=this.value" class="ons-select text-xs h-8 py-1">
+            <option value="">Pilih Sales</option>
+            ${staffOpts.map((nm) => `<option value="${S().esc(nm)}" ${(cart.sales_nama || '') === nm ? 'selected' : ''}>${S().esc(nm)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold">Kanal Penjualan</span>
+          <select aria-label="Kanal Penjualan" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs h-8 py-1">
+            ${['Offline', 'Toko Fisik', 'Resep WA', 'Pasien Rutin', 'Online / Ojol'].map((ch) => `<option value="${ch}" ${(cart.channel || 'Offline') === ch ? 'selected' : ''}>${ch}</option>`).join('')}
+          </select>
+        </div>
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold">Kode Invoice Eksternal</span>
+          <input class="ons-input text-xs h-8 py-1 font-mono-num" placeholder="No. Resep / Ojol" value="${S().esc(cart.kode_eksternal || '')}" oninput="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].kode_eksternal=this.value"/>
+        </div>
+        <div class="ons-pos-fee-row">
+          <span class="font-semibold">Catatan</span>
+          <input class="ons-input text-xs h-8 py-1" placeholder="Catatan kasir..." value="${S().esc(cart.catatan || '')}" oninput="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].catatan=this.value"/>
+        </div>
       </div>
-      ${cart.items.length ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <button onclick="window.openCartEtiketModal(0)" class="ons-btn ons-btn-ghost w-full text-xs">Cetak Etiket (${cart.items.length} Item)</button>
-        <button onclick="window.openCopyResepFromPosModal()" class="ons-btn ons-btn-ghost w-full text-xs">Tebus Sebagian &amp; Copy Resep (p.c.c)</button>
-      </div>` : ''}
     </div>`;
   }
 
@@ -3749,38 +4050,40 @@
     const cart = getPosActiveCart();
     if (!cart.diskon_mode) cart.diskon_mode = 'RP';
     if (cart.diskon_input === undefined) cart.diskon_input = Number(cart.diskon_global || 0);
+    if (!cart.channel) cart.channel = 'Offline';
     const member = st.members.find((m) => m.id_member === cart.id_member);
     const cdss = S().checkCartCdss(cart);
     const fGol = st.posFilterGol || '';
 
-    const returCountPos = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR').length;
+    const returCountPos = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase().includes('RETUR')).length;
+    const lostCountPos = _getDashLostSales().length;
     const subTabHeader = `
       <div class="flex flex-wrap items-center justify-between gap-2 ons-view-enter">
-        <div class="ons-tab-bar">
-          <button onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir Aktif (FEFO) (${cart.items.length})</button>
-          <button onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Riwayat Transaksi (${st.penjualan.length})${returCountPos > 0 ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-600 dark:text-red-300">${returCountPos} Retur</span>` : ''}</button>
-          ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button onclick="window.setPosSubTab('tutup-shift')" class="ons-tab-btn ${posSubTab === 'tutup-shift' ? 'active' : ''}">Tutup Shift &amp; Kas${st.activeShift ? ' <span class="ml-1 inline-block w-2 h-2 rounded-full bg-emerald-500"></span>' : ''}</button>` : ''}
+        <div class="ons-tab-bar" role="tablist" aria-label="Sub-Menu Penjualan">
+          <button type="button" onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir${cart.items.length ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-600/15 text-blue-600">${cart.items.length}</span>` : ''}</button>
+          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Daftar Penjualan <span class="ml-1 text-[10px] opacity-75 font-mono-num">(${st.penjualan.length})</span></button>
+          <button type="button" onclick="window.setPosSubTab('retur')" class="ons-tab-btn ${posSubTab === 'retur' ? 'active' : ''}">Retur Penjualan${returCountPos > 0 ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-600 dark:text-red-300">${returCountPos}</span>` : ''}</button>
+          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-tab-btn ${posSubTab === 'tertolak' ? 'active' : ''}">Penjualan Tertolak${lostCountPos > 0 ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300">${lostCountPos}</span>` : ''}</button>
+          ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="window.setPosSubTab('tutup-shift')" class="ons-tab-btn ${posSubTab === 'tutup-shift' ? 'active' : ''}">Tutup Shift &amp; Kas${st.activeShift ? ' <span class="ml-1 inline-block w-2 h-2 rounded-full bg-emerald-500"></span>' : ''}</button>` : ''}
         </div>
       </div>`;
 
     if (posSubTab === 'riwayat') {
       return renderPosHistoryView(st, subTabHeader);
     }
+    if (posSubTab === 'retur') {
+      return renderPosReturView(st, subTabHeader);
+    }
+    if (posSubTab === 'tertolak') {
+      return renderPosTertolakView(st, subTabHeader);
+    }
     if (posSubTab === 'tutup-shift' && global.ONSViewsClinicalFinanceAdmin && typeof global.ONSViewsClinicalFinanceAdmin.renderTutupShiftView === 'function') {
       return global.ONSViewsClinicalFinanceAdmin.renderTutupShiftView({ embeddedInPos: true, subTabHeader });
     }
 
     const catalog = getFilteredPosCatalog();
-    const subtotal = cart.items.reduce((s, it) => s + Number(it.harga_jual) * Number(it.qty), 0);
-    const itemDiscTotal = cart.items.reduce((s, it) => s + Number(it.diskon_item || 0), 0);
-    const subAfterItemDisc = Math.max(0, subtotal - itemDiscTotal);
-    if (cart.diskon_mode === 'PCT') {
-      const pct = Math.min(100, Math.max(0, Number(cart.diskon_input || 0)));
-      cart.diskon_global = Math.round(subAfterItemDisc * (pct / 100));
-    } else {
-      cart.diskon_global = Math.min(subAfterItemDisc, Math.max(0, Number(cart.diskon_input || 0)));
-    }
-    const grandTotal = Math.max(0, subAfterItemDisc - Number(cart.diskon_global || 0));
+    const totals = computePosCartTotals(cart);
+    const grandTotal = totals.grandTotal;
     const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
     const estHppCart = cart.items.reduce((s, it) => {
       const ob = st.masterObat.find((o) => o.id_obat === it.id_obat);
@@ -3791,94 +4094,241 @@
     const isBelowHppCart = estHppCart > 0 && grandTotal < estHppCart;
     const offQueue = API().getOfflineQueue();
     const dailyStats = buildPosDailySummaryStats(st.penjualan, seeCost);
+    const crossSell = pickSmartCrossSellCandidate(cart, st.masterObat);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const branchLabel = (S().getBranchLabel && S().getBranchLabel(st.cabangId || 'ONS-01')) || (st.cabangId || 'Gudang Utama');
+    const todayYmd = toLocalYmd_(new Date());
 
-    return `<div class="space-y-3.5 ons-view-enter">
+    return `<div class="space-y-3 ons-view-enter">
       ${subTabHeader}
-      <!-- Workstation Shift & Terminal Bar -->
-      <div class="ons-pos-bar px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-        ${st.activeShift ? `
-          <div class="flex flex-wrap items-center gap-2.5">
+
+      <!-- Shift & Multi-Cart Antrean Bar -->
+      <div class="ons-pos-bar px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-1.5">
+          ${st.activeShift ? `
             <span class="ons-pos-live-dot"></span>
             <span class="badge-bpom bpom-bebas">SHIFT AKTIF</span>
-            <span class="font-mono-num font-extrabold">${S().esc(st.activeShift.id_shift)}</span>
-            <span style="color:var(--ons-text-soft)">Kasir: <b>${S().esc(st.activeShift.kasir_id || '-')}</b> &bull; Modal Laci: <b class="font-mono-num text-emerald-600">${S().rp(st.activeShift.modal_awal || 0)}</b></span>
-            <span class="px-2 py-0.5 rounded-full font-mono-num font-bold text-[11px]" style="background:var(--ons-bg-subtle);color:var(--ons-text-main)">Shift Ini/Hari Ini: ${dailyStats.countToday} trx &bull; ${S().rp(dailyStats.omzetToday)}</span>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" onclick="window.togglePosBeepSetting()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5" title="Suara bip saat scan/tambah item">Suara: ${posBeepEnabled ? 'ON' : 'OFF'}</button>
-            <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Printer BT</button>
-            <button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-primary text-xs py-1 px-3 font-semibold">Rekonsiliasi &amp; Tutup Shift &rarr;</button>
-          </div>
-        ` : `
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="badge-bpom bpom-terbatas">BELUM BUKA SHIFT</span>
-            <span style="color:var(--ons-text-soft)">Catat modal awal uang receh laci kasir sebelum memulai shift penjualan hari ini.</span>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" onclick="window.togglePosBeepSetting()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Suara: ${posBeepEnabled ? 'ON' : 'OFF'}</button>
-            <button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">+ Buka Shift Kasir (Modal Laci)</button>
-          </div>
-        `}
+            <span class="font-mono-num font-bold">${S().esc(st.activeShift.id_shift)}</span>
+            <span class="hidden sm:inline" style="color:var(--ons-text-soft)">&bull; ${dailyStats.countToday} trx (${S().rp(dailyStats.omzetToday)})</span>
+          ` : `
+            <button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">+ Buka Shift Kasir</button>
+          `}
+          <span class="mx-1 opacity-30">|</span>
+          ${st.carts.map((c, idx) => {
+            const tabTot = (c.items || []).reduce((s, it) => s + Math.max(0, Number(it.harga_jual || 0) * Number(it.qty || 0) - Number(it.diskon_item || 0)), 0);
+            return `<div class="inline-flex items-center rounded-lg overflow-hidden border" style="border-color:${idx === st.activeCartIdx ? '#0066FE' : 'var(--ons-border)'}">
+              <button type="button" onclick="window.switchPosCart(${idx})" class="ons-btn rounded-none border-0 text-[11px] py-1 px-2.5 min-h-0 h-7 ${idx === st.activeCartIdx ? 'ons-btn-primary' : 'ons-btn-ghost'}">
+                <span>${S().esc(c.label)}</span>
+                <span class="font-mono-num opacity-90">(${c.items.length})${tabTot > 0 ? ` &bull; ${S().rp(tabTot)}` : ''}</span>
+              </button>
+              ${st.carts.length > 1 ? `<button type="button" onclick="window.closePosCartTab(${idx})" title="Tutup antrean" class="px-1.5 py-1 text-xs hover:bg-red-500/20 text-red-500 font-bold">&times;</button>` : ''}
+            </div>`;
+          }).join('')}
+          <button type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">+ Hold Antrean</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
+          <button type="button" onclick="window.togglePosBeepSetting()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">Suara: ${posBeepEnabled ? 'ON' : 'OFF'}</button>
+          <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">Printer BT</button>
+          ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold">Tutup Shift &rarr;</button>` : ''}
+        </div>
       </div>
 
-      <!-- Multi-Cart Queue Tabs (Hold Antrean Bernama) -->
-      <div class="flex flex-wrap items-center gap-2">
-        ${st.carts.map((c, idx) => {
-          const tabTot = (c.items || []).reduce((s, it) => s + Math.max(0, Number(it.harga_jual || 0) * Number(it.qty || 0) - Number(it.diskon_item || 0)), 0);
-          return `<div class="inline-flex items-center rounded-xl overflow-hidden border shadow-sm" style="border-color:${idx === st.activeCartIdx ? '#0066FE' : 'var(--ons-border)'}">
-            <button onclick="window.switchPosCart(${idx})" class="ons-btn rounded-none border-0 text-xs ${idx === st.activeCartIdx ? 'ons-btn-primary' : 'ons-btn-ghost'}">
-              <span>${S().esc(c.label)}</span>
-              <span class="font-mono-num text-[11px] opacity-90">(${c.items.length})${tabTot > 0 ? ` &bull; ${S().rp(tabTot)}` : ''}</span>
-              ${c.held_at ? ` <span class="text-[10px] opacity-80">[${S().esc(c.held_at)}]</span>` : ''}
-            </button>
-            ${st.carts.length > 1 ? `<button onclick="window.closePosCartTab(${idx})" title="Tutup tab antrean ini" class="px-2 py-1 text-xs hover:bg-red-500/20 text-red-500 font-bold">&times;</button>` : ''}
-          </div>`;
-        }).join('')}
-        <button onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-xs">+ Tahan / Hold Antrean</button>
-        ${offQueue.length ? `<button onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-xs ml-auto">Sinkron ${offQueue.length} Antrean Offline</button>` : ''}
+      <!-- Hero Search & Total Bar (Apotek Digital Style) -->
+      <div class="ons-pos-hero-strip">
+        <div class="ons-pos-dropdown flex-1 min-w-[260px]">
+          <div class="ons-pos-search-pill">
+            <span class="text-slate-400 text-sm" aria-hidden="true">&#128269;</span>
+            <input id="posSearchInput" placeholder="[F2] Tulis nama, kode, zat aktif, atau kategori produk..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
+            <button id="posSearchClearBtn" type="button" onclick="window.clearPosSearchInput()" class="${String(st.posSearchQ || '').trim() ? '' : 'hidden'} px-2 py-0.5 rounded text-sm font-bold text-red-500 hover:bg-red-500/10" title="Bersihkan pencarian">&times;</button>
+            <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 min-h-0 h-8 rounded-full" title="Scan Barcode Kamera">Scan</button>
+            <button type="button" onclick="window.startPosVoiceCashier()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-8 rounded-full" title="Kasir Suara">Suara</button>
+          </div>
+          <div id="posSearchDropdown" class="ons-pos-search-menu ${String(st.posSearchQ || '').trim() ? '' : 'hidden'}">${String(st.posSearchQ || '').trim() ? renderPosSearchDropdownHtml(catalog) : ''}</div>
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+          <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
+          <div class="text-right">
+            <div class="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Total Tagihan</div>
+            <div id="posHeroTotalDisplay" class="ons-pos-total-hero">${S().rp(grandTotal)}</div>
+          </div>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        <!-- Panel Kiri: Pencarian Cepat, Filter & Katalog FEFO -->
-        <div class="lg:col-span-7 space-y-3">
+      <!-- Area Kerja Kasir 12 Kolom -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+        <!-- Kiri (8 Kolom): Tabel Item Keranjang + Katalog Cepat FEFO -->
+        <div class="lg:col-span-8 space-y-3">
+          ${member ? `<div class="p-2.5 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-primary-tint);border-color:var(--ons-primary);">
+            <div class="min-w-0 flex-1"><b>Pasien:</b> ${S().esc(member.nama_pasien)} &bull; <b>Alergi:</b> <span class="text-red-600 font-bold">${S().esc(member.alergi_list || 'Tidak Ada')}</span> &bull; <b>Kondisi:</b> ${S().esc(member.penyakit_kronis || '-')}</div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="font-mono-num font-bold text-blue-700">${member.poin_loyalitas} Poin</span>
+              ${typeof global.openMemberProfileDrawer === 'function' ? `<button type="button" onclick="window.openMemberProfileDrawer('${S().esc(member.id_member)}')" class="ons-btn ons-btn-ghost text-[10px] py-0.5 px-2 min-h-0 h-6">Profil</button>` : ''}
+            </div>
+          </div>` : ''}
+
+          ${cdss.alerts.length ? `<div class="space-y-1.5">
+            ${cdss.alerts.map((al) => `<div class="p-2.5 rounded-xl text-xs font-semibold border ${al.level === 'DANGER' ? 'bg-red-500/15 border-red-500 text-red-700 dark:text-red-300' : 'bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300'}">${S().esc(al.msg)}</div>`).join('')}
+          </div>` : ''}
+
+          ${isBelowHppCart ? `<div class="p-2.5 rounded-xl text-xs font-bold border bg-red-500/15 border-red-500 text-red-700 dark:text-red-300">
+            &#9888;&#65039; PERINGATAN ANTI-RUGI: Total jual (${S().rp(grandTotal)})${seeCost ? ` di bawah modal HPP (${S().rp(estHppCart)})` : ' di bawah batas modal minimum'}. Checkout mewajibkan PIN APJ!
+          </div>` : ''}
+
+          <!-- Tabel Item Keranjang -->
+          <div class="ons-card p-3 space-y-2">
+            <div class="ons-table-wrap min-h-[210px]">
+              <table class="ons-table">
+                <thead>
+                  <tr>
+                    <th class="w-10">No.</th>
+                    <th>Produk</th>
+                    <th>Kuantitas</th>
+                    <th>Satuan</th>
+                    <th>Opsi Harga</th>
+                    <th class="text-right">Harga Jual</th>
+                    <th class="text-right">Sub Total</th>
+                    <th class="w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${cart.items.length ? cart.items.map((it, idx) => {
+                    const ob = st.masterObat.find((o) => o.id_obat === it.id_obat);
+                    const nearIt = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(it.id_obat, 90) : { hasNearEd: false };
+                    const grossLine = Number(it.harga_jual || 0) * Number(it.qty || 1);
+                    const netLine = Math.max(0, grossLine - Number(it.diskon_item || 0));
+                    const hppLine = Number((ob && ob.hpp_avg) || 0) * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1));
+                    const itemBelowHpp = hppLine > 0 && netLine < hppLine;
+                    const itemTier = String(it.tier_applied || cart.tier_harga || 'UMUM').replace('_AUTO', '');
+                    return `<tr>
+                      <td class="text-xs font-mono-num align-top">${idx + 1}</td>
+                      <td class="text-xs align-top min-w-[180px]">
+                        <div class="font-bold leading-snug">${S().esc(it.nama_dagang)} ${it.tier_applied === 'GROSIR_AUTO' ? '<span class="badge-bpom bpom-bebas text-[9px]">GROSIR AUTO</span>' : ''}</div>
+                        <div class="flex flex-wrap items-center gap-1 mt-1">
+                          <select aria-label="Aturan Pakai" onchange="window.posSetAturanPakai(${idx}, this.value);renderActiveView();" class="ons-select text-[10px] py-0.5 px-1.5 min-h-0 h-6 max-w-[175px]">
+                            ${['', '3 x 1 Sesudah Makan', '3 x 1 Sebelum Makan', '2 x 1 Sesudah Makan', '1 x 1 Malam Hari', '1 x 1 Pagi Hari', 'Oles Tipis 2x Sehari (Obat Luar)'].map((opt) => `<option value="${S().esc(opt)}" ${(it.aturan_pakai || '') === opt ? 'selected' : ''}>${opt || 'Signa / Etiket...'}</option>`).join('')}
+                          </select>
+                          <button type="button" onclick="window.openCartEtiketModal(${idx})" class="ons-pos-signa-chip">Etiket</button>
+                          ${nearIt.hasNearEd ? `<button type="button" onclick="window.applyNearEdDiscountToItem(${idx})" class="ons-pos-signa-chip text-amber-700 border-amber-400">Promo ED -${nearIt.suggestedDiscPct}%</button>` : ''}
+                          ${itemBelowHpp ? `<span class="text-[10px] text-red-600 font-bold">${seeCost ? '[&lt; HPP]' : '[PIN APJ]'}</span>` : ''}
+                        </div>
+                      </td>
+                      <td class="align-top">
+                        <div class="ons-pos-stepper">
+                          <button type="button" onclick="window.posStepQty(${idx}, -1)" title="Kurangi qty">&minus;</button>
+                          <input type="number" min="1" value="${it.qty}" onchange="window.posUpdateQty(${idx}, this.value)"/>
+                          <button type="button" onclick="window.posStepQty(${idx}, 1)" title="Tambah qty">+</button>
+                        </div>
+                      </td>
+                      <td class="align-top">
+                        <select aria-label="Satuan" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-24">
+                          ${it.unitOptions.map((u) => `<option value="${u.label}" ${u.label === it.satuan ? 'selected' : ''}>${u.label}</option>`).join('')}
+                        </select>
+                      </td>
+                      <td class="align-top">
+                        <select aria-label="Opsi Harga" onchange="window.posChangeItemTier(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-28">
+                          ${[
+                            { id: 'UMUM', lbl: 'Reguler' },
+                            { id: 'MEMBER', lbl: 'Member' },
+                            { id: 'GROSIR', lbl: 'Grosir' },
+                            { id: 'FASKES', lbl: 'Faskes' }
+                          ].map((t) => `<option value="${t.id}" ${itemTier === t.id ? 'selected' : ''}>${t.lbl}</option>`).join('')}
+                        </select>
+                      </td>
+                      <td class="text-right font-mono-num text-xs align-top">
+                        <div>${S().rp(it.harga_jual)}</div>
+                        ${Number(it.diskon_item || 0) > 0 ? `<div class="text-[10px] text-emerald-600 font-bold">-${S().rp(it.diskon_item)}</div>` : ''}
+                      </td>
+                      <td class="text-right font-mono-num font-extrabold text-xs text-blue-600 align-top">${S().rp(netLine)}</td>
+                      <td class="align-top">
+                        <button type="button" onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-7" title="Hapus item">&times;</button>
+                      </td>
+                    </tr>`;
+                  }).join('') : `<tr>
+                    <td colspan="8" class="text-center py-14 text-sm" style="color:var(--ons-text-soft)">
+                      <div class="font-bold text-base mb-1" style="color:var(--ons-text-main)">Silahkan Pilih Produk</div>
+                      <div class="text-xs">Cari nama/kode/zat aktif di kolom atas (<span class="ons-shortcut-kbd">F2</span>) atau klik produk pada katalog cepat di bawah.</div>
+                    </td>
+                  </tr>`}
+                </tbody>
+              </table>
+            </div>
+
+            ${crossSell ? `<div class="p-2.5 rounded-xl border text-[11px] flex items-center justify-between gap-2" style="border-color:var(--ons-border);background:rgba(16,185,129,0.06)">
+              <div class="min-w-0">
+                <span class="font-bold text-emerald-700 dark:text-emerald-300">Saran Pendamping Apoteker:</span>
+                <b>${S().esc(crossSell.nama_dagang)}</b> &bull; <span class="font-mono-num">${S().rp(crossSell.harga_umum)}/${S().esc(crossSell.satuan_dasar)}</span>
+              </div>
+              <button type="button" onclick="window.posAddToCart('${S().esc(crossSell.id_obat)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 min-h-0 h-7 shrink-0">+ Tambah</button>
+            </div>` : ''}
+          </div>
+
+          <!-- Katalog Produk Cepat FEFO (Dapat Diciutkan) -->
           <div class="ons-card p-3 space-y-2.5">
-            <div class="flex flex-wrap items-center gap-2">
-              <div class="flex-1 min-w-[220px] relative">
-                <input id="posSearchInput" class="ons-input pr-16" placeholder="[F2] Scan Barcode KFA/Batch / Ketik Nama Obat atau Zat Aktif..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
-                <button id="posSearchClearBtn" type="button" onclick="window.clearPosSearchInput()" class="${String(st.posSearchQ || '').trim() ? '' : 'hidden'} absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-xs font-bold hover:bg-red-500/15 text-red-500" title="Bersihkan pencarian">&times;</button>
-              </div>
-              <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-xs" title="Scan Barcode Kamera HP/Webcam (Gratis)">Scan Barcode</button>
-              <button type="button" onclick="window.startPosVoiceCashier()" class="ons-btn ons-btn-ghost text-xs" title="Kasir Suara Bahasa Indonesia">Suara Kasir</button>
-            </div>
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex gap-1.5 flex-wrap items-center">
-                ${['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR'].map((g) => `
-                  <button type="button" onclick="ONSStore.AppState.posFilterGol='${g}';window.refreshPosCatalogView();" class="ons-pos-chip ${fGol === g ? 'is-active' : ''}">${g || 'Semua BPOM'}</button>
-                `).join('')}
-              </div>
-              <div class="flex items-center gap-1.5">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <button type="button" onclick="window.togglePosCatalogPanel()" class="font-extrabold text-xs flex items-center gap-1.5" style="color:var(--ons-primary)">
+                  <span>${posCatalogExpanded ? '&#9660;' : '&#9654;'} Katalog Produk FEFO</span>
+                </button>
                 <span id="posCatalogMeta" class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${catalog.length} dari ${st.masterObat.length} item</span>
-                <button type="button" onclick="window.togglePosCatalogViewMode()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7" title="Ubah tampilan Kartu / Daftar Cepat">${posCatalogView === 'LIST' ? 'Tampilan Kartu' : 'Daftar Cepat'}</button>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <label class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Tier Harga:</label>
+                <select aria-label="Tier Harga Global" onchange="window.setPosPriceTier(this.value)" class="ons-select text-[11px] py-0.5 px-2 min-h-0 h-7">
+                  ${[
+                    { id: 'UMUM', lbl: 'Opsi: Reguler' },
+                    { id: 'MEMBER', lbl: 'Opsi: Member' },
+                    { id: 'GROSIR', lbl: 'Opsi: Grosir' },
+                    { id: 'FASKES', lbl: 'Opsi: Faskes' }
+                  ].map((t) => `<option value="${t.id}" ${(cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM')) === t.id ? 'selected' : ''}>${t.lbl}</option>`).join('')}
+                </select>
+                <button type="button" onclick="window.togglePosCatalogViewMode()" class="ons-btn ons-btn-ghost text-[11px] py-0.5 px-2.5 min-h-0 h-7">${posCatalogView === 'LIST' ? 'Tampilan Kartu' : 'Daftar Cepat'}</button>
               </div>
             </div>
-            <div class="flex gap-1.5 flex-wrap items-center pt-0.5">
-              ${[
-                { id: 'ALL', lbl: 'Semua Stok' },
-                { id: 'READY', lbl: 'Siap Jual' },
-                { id: 'LOW', lbl: 'Stok Menipis' },
-                { id: 'NEAR_ED', lbl: 'Hampir ED (<90h)' }
-              ].map((sf) => `<button type="button" onclick="window.setPosStockFilter('${sf.id}')" class="ons-pos-chip ${posStockFilter === sf.id ? 'is-active' : ''}">${sf.lbl}</button>`).join('')}
-            </div>
-          </div>
-
-          <div id="posCatalogGrid" class="${posCatalogView === 'LIST' ? 'space-y-2' : 'grid grid-cols-1 sm:grid-cols-2 gap-3'} max-h-[66vh] overflow-y-auto pr-1">
-            ${renderPosCatalogCardsHtml(catalog, cart)}
+            ${posCatalogExpanded ? `
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex gap-1.5 flex-wrap items-center">
+                  ${['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR'].map((g) => `
+                    <button type="button" onclick="ONSStore.AppState.posFilterGol='${g}';window.refreshPosCatalogView();" class="ons-pos-chip ${fGol === g ? 'is-active' : ''}">${g || 'Semua BPOM'}</button>
+                  `).join('')}
+                </div>
+                <div class="flex gap-1.5 flex-wrap items-center">
+                  ${[
+                    { id: 'ALL', lbl: 'Semua Stok' },
+                    { id: 'READY', lbl: 'Siap Jual' },
+                    { id: 'LOW', lbl: 'Menipis' },
+                    { id: 'NEAR_ED', lbl: 'Hampir ED' }
+                  ].map((sf) => `<button type="button" onclick="window.setPosStockFilter('${sf.id}')" class="ons-pos-chip ${posStockFilter === sf.id ? 'is-active' : ''}">${sf.lbl}</button>`).join('')}
+                </div>
+              </div>
+              <div id="posCatalogGrid" class="${posCatalogView === 'LIST' ? 'space-y-2' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5'} max-h-[42vh] overflow-y-auto pr-1">
+                ${renderPosCatalogCardsHtml(catalog, cart)}
+              </div>
+            ` : ''}
           </div>
         </div>
 
-        <!-- Panel Kanan: Keranjang Aktif, Pasien, Tier Harga, CDSS & Checkout -->
-        <div class="lg:col-span-5">
-          ${renderPosCartPanelHtml(st, cart, member, cdss, grandTotal, subtotal, itemDiscTotal, subAfterItemDisc, estHppCart, isBelowHppCart, seeCost)}
+        <!-- Kanan (4 Kolom): Panel Biaya, Bayar/Tunda, Pelanggan/Dokter, Kanal -->
+        <div class="lg:col-span-4">
+          ${renderPosCartPanelHtml(st, cart, member, totals, isBelowHppCart, estHppCart, seeCost)}
+        </div>
+      </div>
+
+      <!-- Bottom Action & Status Strip (Apotek Digital Style) -->
+      <div class="ons-pos-bottom-bar">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.openCartEtiketModal(0)" class="ons-pos-bar-tool" title="Cetak Etiket Obat Putih/Biru">&#127991; Etiket</button>
+          <button type="button" onclick="window.openCopyResepFromPosModal()" class="ons-pos-bar-tool" title="Salinan Resep p.c.c">&#128221; Copy Resep</button>
+          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-pos-bar-tool" title="Daftar Penjualan &amp; Draft">&#128203; Daftar Penjualan</button>
+          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-pos-bar-tool" title="Catat Penjualan Tertolak">&#9888; Penjualan Tertolak</button>
+          <span class="px-2.5 py-1 rounded-md font-extrabold text-[11px] bg-amber-400 text-slate-900">${S().esc(prof.status_pajak || 'Non-PKP')}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
+          <label class="flex items-center gap-1.5 text-[11px] font-semibold">
+            <span>Tgl. Transaksi:</span>
+            <input type="date" value="${S().esc(cart.tgl_transaksi || todayYmd)}" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].tgl_transaksi=this.value" class="px-2 py-1 rounded text-xs font-mono-num bg-white text-slate-900 border-0"/>
+          </label>
+          <span class="px-2.5 py-1 rounded bg-white/15 font-bold text-xs">${S().esc(branchLabel)}</span>
         </div>
       </div>
     </div>`;
@@ -3915,12 +4365,228 @@
     global.renderActiveView();
   };
   global.setPosHistMethod = (m) => { posHistMethod = m || 'SEMUA'; global.renderActiveView(); };
-  global.setPosHistPeriod = (p) => { posHistPeriod = p || 'ALL'; global.renderActiveView(); };
+  global.setPosHistPeriod = (p) => { posHistPeriod = p || 'ALL'; posHistStart = ''; posHistEnd = ''; global.renderActiveView(); };
+  global.setPosHistDateRange = (s, e) => {
+    posHistStart = s || '';
+    posHistEnd = e || s || '';
+    if (posHistStart && posHistEnd && posHistStart > posHistEnd) {
+      const tmp = posHistStart;
+      posHistStart = posHistEnd;
+      posHistEnd = tmp;
+    }
+    global.renderActiveView();
+  };
   global.resetPosHistFilters = () => {
     posHistQ = '';
     posHistFilter = 'SEMUA';
     posHistMethod = 'SEMUA';
     posHistPeriod = 'ALL';
+    posHistStart = '';
+    posHistEnd = '';
+    global.renderActiveView();
+  };
+  global.togglePosRekapFoot = () => { posRekapExpanded = !posRekapExpanded; global.renderActiveView(); };
+  global.togglePosCatalogPanel = () => { posCatalogExpanded = !posCatalogExpanded; global.renderActiveView(); };
+  global.setPosReturQ = (v) => { posReturQ = v || ''; global.renderActiveView(); };
+  global.setPosReturPeriod = (p) => { posReturPeriod = p || 'ALL'; posReturStart = ''; posReturEnd = ''; global.renderActiveView(); };
+  global.setPosReturDateRange = (s, e) => {
+    posReturStart = s || '';
+    posReturEnd = e || s || '';
+    if (posReturStart && posReturEnd && posReturStart > posReturEnd) {
+      const tmp = posReturStart;
+      posReturStart = posReturEnd;
+      posReturEnd = tmp;
+    }
+    global.renderActiveView();
+  };
+  global.setPosTertolakQ = (v) => { posTertolakQ = v || ''; global.renderActiveView(); };
+
+  global.submitPosLostSaleInline = () => {
+    const nama = ((document.getElementById('posTertolakNama') || {}).value || '').trim();
+    const qty = Math.max(1, Number((document.getElementById('posTertolakQty') || {}).value || 1));
+    const estHarga = Math.max(0, Number((document.getElementById('posTertolakHarga') || {}).value || 0));
+    const alasan = ((document.getElementById('posTertolakAlasan') || {}).value || 'Stok habis sementara').trim();
+    if (!nama) return global.toast('Tulis nama produk yang ditanyakan pasien.', 'warn');
+    const arr = _getDashLostSales();
+    arr.push({ tanggal: toLocalYmd_(new Date()), nama_obat: nama, qty, est_harga: estHarga, alasan });
+    try { localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr.slice(-100))); } catch (e) {}
+    global.toast('Penjualan tertolak berhasil dicatat!', 'ok');
+    global.renderActiveView();
+  };
+
+  global.deletePosLostSale = (idx) => {
+    const arr = _getDashLostSales();
+    if (idx < 0 || idx >= arr.length) return;
+    arr.splice(idx, 1);
+    try { localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr)); } catch (e) {}
+    global.toast('Catatan penjualan tertolak dihapus.', 'info');
+    global.renderActiveView();
+  };
+
+  global.openPosDraftModal = () => {
+    const st = S().AppState;
+    const drafts = (st.carts || []).map((c, idx) => ({ c, idx })).filter((x) => (x.c.items && x.c.items.length > 0) || x.c.held_at);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Daftar Draft / Antrean Tertunda (${drafts.length})</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Pilih draft keranjang yang ditunda untuk melanjutkan transaksi di Kasir.</p>
+      <div class="space-y-2 max-h-72 overflow-y-auto">
+        ${drafts.length ? drafts.map(({ c, idx }) => {
+          const tots = computePosCartTotals(c);
+          return `<div class="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <div>
+              <div class="font-bold text-sm">${S().esc(c.label || ('Antrean #' + (idx + 1)))} ${c.held_at ? `<span class="text-[10px] font-mono-num text-amber-600">[${S().esc(c.held_at)}]</span>` : ''}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">${c.items.length} item &bull; Total: <b class="font-mono-num text-blue-600">${S().rp(tots.grandTotal)}</b>${c.held_note ? ` &bull; ${S().esc(c.held_note)}` : ''}</div>
+            </div>
+            <div class="flex gap-1.5">
+              <button type="button" onclick="window.switchPosCart(${idx});window.setPosSubTab('kasir');ONSStore.closeModal();" class="ons-btn ons-btn-primary text-[11px] py-1 px-3">Lanjutkan di Kasir</button>
+              ${st.carts.length > 1 ? `<button type="button" onclick="window.closePosCartTab(${idx});window.openPosDraftModal();" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>` : ''}
+            </div>
+          </div>`;
+        }).join('') : '<div class="text-center py-6" style="color:var(--ons-text-soft)">Belum ada draft antrean yang ditunda.</div>'}
+      </div>
+    </div>`, '520px');
+  };
+
+  global.openPosPickInvoiceForReturnModal = () => {
+    const st = S().AppState;
+    const candidates = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() !== 'RETUR').slice(0, 25);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Pilih Nota Penjualan untuk Diretur</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-2 max-h-72 overflow-y-auto">
+        ${candidates.length ? candidates.map((p) => {
+          const mem = (st.members || []).find((m) => m.id_member === p.id_member);
+          return `<div class="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <div>
+              <div class="font-mono-num font-bold text-blue-600">${S().esc(p.no_invoice)}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().formatTgl(p.tanggal, true)} &bull; ${S().esc(mem ? mem.nama_pasien : (p.pelanggan_nama || 'Pasien Umum'))} &bull; <b class="font-mono-num">${S().rp(p.grand_total)}</b></div>
+            </div>
+            <button type="button" onclick="window.openPosVoidReturnModal('${S().esc(p.no_invoice)}', ${Number(p.grand_total || 0)})" class="ons-btn ons-btn-danger text-[11px] py-1 px-3">Proses Retur &rarr;</button>
+          </div>`;
+        }).join('') : '<div class="text-center py-6" style="color:var(--ons-text-soft)">Tidak ada nota aktif yang tersedia untuk diretur.</div>'}
+      </div>
+    </div>`, '540px');
+  };
+
+  global.setCartDiscMode = (mode) => {
+    const cart = getPosActiveCart();
+    if (!cart) return;
+    cart.diskon_mode = mode === 'PCT' ? 'PCT' : 'RP';
+    cart.diskon_input = 0;
+    cart.diskon_global = 0;
+    global.renderActiveView();
+  };
+
+  global.onPosFeeChange = (field, rawVal) => {
+    const cart = getPosActiveCart();
+    if (!cart) return;
+    cart[field] = Math.max(0, Number(rawVal || 0));
+    const tots = computePosCartTotals(cart);
+    const hero = document.getElementById('posHeroTotalDisplay');
+    if (hero) hero.textContent = S().rp(tots.grandTotal);
+    const subInp = document.getElementById('posRightSubTotalInp');
+    if (subInp) subInp.value = tots.subtotal;
+    const labaEl = document.getElementById('posRightLabaSpan');
+    if (labaEl) {
+      const estHppCart = (cart.items || []).reduce((s, it) => {
+        const ob = (S().AppState.masterObat || []).find((o) => o.id_obat === it.id_obat);
+        const nb = S().getNearestSellableBatch(it.id_obat);
+        const hppBase = Number((nb && nb.hpp_beli) || (ob && ob.hpp_avg) || 0);
+        return s + (hppBase * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1)));
+      }, 0);
+      labaEl.textContent = S().rp(tots.grandTotal - estHppCart);
+      labaEl.className = (tots.grandTotal - estHppCart) >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold';
+    }
+  };
+
+  global.posChangeItemTier = (idx, tierMode) => {
+    const cart = getPosActiveCart();
+    const it = cart && cart.items[idx];
+    if (!it) return;
+    const ob = (S().AppState.masterObat || []).find((o) => o.id_obat === it.id_obat);
+    _repriceCartItem(ob, it, String(tierMode || 'UMUM').toUpperCase());
+    global.renderActiveView();
+  };
+
+  global.onPosDoctorChange = (nama) => {
+    const cart = getPosActiveCart();
+    if (!cart) return;
+    cart.dokter_nama = String(nama || '').trim();
+  };
+
+  global.openPosQuickAddCustomerModal = () => {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Tambah Pelanggan Cepat (POS)</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div><label class="font-semibold block mb-1">Nama Pasien / Pelanggan *</label><input id="posQuickCustNama" class="ons-input" placeholder="Cth: Ibu Siti Aminah"/></div>
+      <div><label class="font-semibold block mb-1">No. HP / WhatsApp</label><input id="posQuickCustWa" type="tel" class="ons-input font-mono-num" placeholder="0812xxxx"/></div>
+      <div><label class="font-semibold block mb-1">Riwayat Alergi Obat</label><input id="posQuickCustAlergi" class="ons-input" placeholder="Opsional: Amoksisilin / Tidak Ada"/></div>
+      <button type="button" onclick="window.submitPosQuickAddCustomer()" class="ons-btn ons-btn-primary w-full py-2.5 text-xs font-bold">Simpan &amp; Pilih Pelanggan Ini</button>
+    </div>`, '440px');
+  };
+
+  global.submitPosQuickAddCustomer = async () => {
+    const nama = ((document.getElementById('posQuickCustNama') || {}).value || '').trim();
+    const wa = ((document.getElementById('posQuickCustWa') || {}).value || '').trim();
+    const alergi = ((document.getElementById('posQuickCustAlergi') || {}).value || 'Tidak Ada').trim();
+    if (!nama) return global.toast('Nama pelanggan wajib diisi.', 'warn');
+    try {
+      const res = await API().callApi('member.save', {
+        nama_pasien: nama,
+        no_hp: wa,
+        alergi_list: alergi,
+        program_prb: 'Reguler'
+      }, { isWrite: true });
+      const newId = (res && res.member && res.member.id_member) || (res && res.id_member) || '';
+      S().closeModal();
+      await global.bootLoadState(true);
+      const cart = getPosActiveCart();
+      if (cart) {
+        if (newId) cart.id_member = newId;
+        cart.pelanggan_nama = nama;
+        cart.no_wa = wa;
+      }
+      global.toast('Pelanggan baru ditambahkan & aktif di kasir!', 'ok');
+      global.renderActiveView();
+    } catch (e) {
+      global.toast(e.message || 'Gagal menyimpan pelanggan.', 'err');
+    }
+  };
+
+  global.openPosQuickAddDoctorModal = () => {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Tambah / Pilih Dokter Penulis Resep</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div><label class="font-semibold block mb-1">Nama Dokter *</label><input id="posQuickDokNama" class="ons-input" placeholder="dr. Budi Santoso, Sp.PD"/></div>
+      <div><label class="font-semibold block mb-1">SIP / Faskes / Spesialisasi</label><input id="posQuickDokSpec" class="ons-input" placeholder="Penyakit Dalam / Klinik Pratama"/></div>
+      <button type="button" onclick="window.submitPosQuickAddDoctor()" class="ons-btn ons-btn-primary w-full py-2.5 text-xs font-bold">Simpan &amp; Terapkan ke Kasir</button>
+    </div>`, '440px');
+  };
+
+  global.submitPosQuickAddDoctor = async () => {
+    const nama = ((document.getElementById('posQuickDokNama') || {}).value || '').trim();
+    const spec = ((document.getElementById('posQuickDokSpec') || {}).value || '').trim();
+    if (!nama) return global.toast('Nama dokter wajib diisi.', 'warn');
+    try {
+      await API().callApi('dokter.save', { nama_dokter: nama, spesialisasi: spec }, { isWrite: true });
+    } catch (e) {}
+    const st = S().AppState;
+    if (Array.isArray(st.masterDokter) && !st.masterDokter.some((d) => (d.nama_dokter || d.nama) === nama)) {
+      st.masterDokter.push({ id_dokter: 'DR-' + Date.now().toString().slice(-4), nama_dokter: nama, spesialisasi: spec });
+    }
+    const cart = getPosActiveCart();
+    if (cart) cart.dokter_nama = nama;
+    S().closeModal();
+    global.toast('Dokter diterapkan pada transaksi kasir.', 'ok');
     global.renderActiveView();
   };
 
@@ -4281,10 +4947,8 @@
       global.toast('Keranjang POS masih kosong.', 'warn');
       return;
     }
-    const sub = cart.items.reduce((s, it) => s + Number(it.harga_jual) * Number(it.qty), 0);
-    const itDisc = cart.items.reduce((s, it) => s + Number(it.diskon_item || 0), 0);
-    const grand = Math.max(0, sub - itDisc - Number(cart.diskon_global || 0));
-    global.openPosCheckoutModal(metode || 'TUNAI', grand);
+    const tots = computePosCartTotals(cart);
+    global.openPosCheckoutModal(metode || 'TUNAI', tots.grandTotal);
   };
 
   global.openBranchCompareDrawer = (idObat) => {
@@ -4403,6 +5067,14 @@
       cart.items = [];
       cart.diskon_global = 0;
       cart.diskon_input = 0;
+      cart.biaya_servis = 0;
+      cart.biaya_embalase = 0;
+      cart.ongkos_kirim = 0;
+      cart.biaya_lainnya = 0;
+      cart.dokter_nama = '';
+      cart.sales_nama = '';
+      cart.kode_eksternal = '';
+      cart.catatan = '';
     }
     S().closeModal();
     global.toast('Keranjang antrean dikosongkan.', 'info');
@@ -4482,11 +5154,20 @@
     st.carts.push({
       id: 'K' + Date.now().toString().slice(-4),
       label: customLabel || ('Pelanggan #' + (st.carts.length + 1)),
-      channel: 'Toko Fisik',
+      channel: 'Offline',
       id_member: 'UMUM',
       tier_harga: 'UMUM',
       items: [],
       diskon_global: 0,
+      diskon_input: 0,
+      biaya_servis: 0,
+      biaya_embalase: 0,
+      ongkos_kirim: 0,
+      biaya_lainnya: 0,
+      dokter_nama: '',
+      sales_nama: '',
+      kode_eksternal: '',
+      catatan: '',
       held_note: heldNote || '',
       held_at: customLabel ? nowTime : ''
     });
@@ -4958,6 +5639,16 @@
       <div class="p-4 rounded-xl text-center border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
         <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Tagihan Akhir</div>
         <div id="posModalTotalDisplay" class="text-3xl font-extrabold font-mono-num text-blue-600 mt-0.5">${S().rp(total)}</div>
+        ${(() => {
+          const tots = computePosCartTotals(cart);
+          if (tots.totalBiayaTambahan <= 0) return '';
+          const parts = [];
+          if (tots.biayaServis > 0) parts.push('Servis ' + S().rp(tots.biayaServis));
+          if (tots.biayaEmbalase > 0) parts.push('Embalase ' + S().rp(tots.biayaEmbalase));
+          if (tots.ongkosKirim > 0) parts.push('Ongkir ' + S().rp(tots.ongkosKirim));
+          if (tots.biayaLainnya > 0) parts.push('Lainnya ' + S().rp(tots.biayaLainnya));
+          return `<div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Termasuk ${S().esc(parts.join(' • '))}</div>`;
+        })()}
       </div>
 
       ${isBelowHpp ? `<div class="p-3 rounded-xl border border-red-500 bg-red-500/15 text-xs space-y-1 text-red-700 dark:text-red-300">
@@ -5210,6 +5901,18 @@
     }
 
     const itemDiscTotal = cart.items.reduce((s, it) => s + Number(it.diskon_item || 0), 0);
+    const tots = computePosCartTotals(cart);
+    const feeParts = [];
+    if (tots.biayaServis > 0) feeParts.push('Servis ' + S().rp(tots.biayaServis));
+    if (tots.biayaEmbalase > 0) feeParts.push('Embalase ' + S().rp(tots.biayaEmbalase));
+    if (tots.ongkosKirim > 0) feeParts.push('Ongkir ' + S().rp(tots.ongkosKirim));
+    if (tots.biayaLainnya > 0) feeParts.push('Lainnya ' + S().rp(tots.biayaLainnya));
+    const catatanGabung = [
+      cart.dokter_nama ? ('Dr. ' + cart.dokter_nama) : '',
+      feeParts.length ? ('Biaya: ' + feeParts.join(', ')) : '',
+      cart.catatan || ''
+    ].filter(Boolean).join(' • ');
+
     const payload = {
       cabang_id: st.cabangId,
       shift_id: (st.activeShift && st.activeShift.id_shift) || 'SHF-AKTIF',
@@ -5217,6 +5920,14 @@
       id_member: cart.id_member,
       tier_harga: cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM'),
       pelanggan_nama: piutangNama || cart.pelanggan_nama || (member && member.nama_pasien) || 'Pasien Umum',
+      dokter_nama: cart.dokter_nama || '',
+      sales_nama: cart.sales_nama || '',
+      kode_eksternal: cart.kode_eksternal || '',
+      catatan: catatanGabung,
+      biaya_servis: tots.biayaServis,
+      biaya_embalase: tots.biayaEmbalase,
+      ongkos_kirim: tots.ongkosKirim,
+      biaya_lainnya: tots.biayaLainnya,
       id_order: cart.id_order || '',
       metode_bayar: metode,
       detail_split: detailSplit,
@@ -5276,13 +5987,21 @@
         DIBAYAR: metode === 'PIUTANG' ? piutangDp : tunaiBayar,
         KEMBALI: kembaliRp,
         POIN: Math.floor(grandTotal / 10000),
-        CATATAN: apjOverride ? ('Diverifikasi APJ: ' + apjOverride) : 'Konsultasi obat GRATIS bersama Apoteker kami.',
+        CATATAN: [apjOverride ? ('Diverifikasi APJ: ' + apjOverride) : '', catatanGabung || 'Konsultasi obat GRATIS bersama Apoteker kami.'].filter(Boolean).join(' • '),
         QR_URL: global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(notaNo) + '&tot=' + encodeURIComponent(String(grandTotal || 0))
       }, 58, waTarget, itemsCopy);
 
       cart.items = [];
       cart.diskon_global = 0;
       cart.diskon_input = 0;
+      cart.biaya_servis = 0;
+      cart.biaya_embalase = 0;
+      cart.ongkos_kirim = 0;
+      cart.biaya_lainnya = 0;
+      cart.dokter_nama = '';
+      cart.sales_nama = '';
+      cart.kode_eksternal = '';
+      cart.catatan = '';
       cart.id_order = '';
       cart.pelanggan_nama = '';
       cart.no_wa = '';

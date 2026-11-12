@@ -2788,6 +2788,143 @@ html.dark .ons-dash-sec-title {
   cursor: pointer;
 }
 
+/* ==========================================================================
+   v17.24 PENJUALAN WORKSTATION (APOTEK DIGITAL ADAPTATION)
+   ========================================================================== */
+.ons-pos-hero-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.72rem 1rem;
+  border-radius: 0.95rem;
+  background: linear-gradient(90deg, #0050CA 0%, #0066FE 100%);
+  color: #FFFFFF;
+  box-shadow: var(--ons-shadow-sm);
+}
+.ons-pos-search-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 240px;
+  padding: 0.25rem 0.5rem 0.25rem 0.95rem;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+html.dark .ons-pos-search-pill {
+  background: #0F172A;
+  color: #F8FAFC;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+.ons-pos-search-pill input {
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: inherit;
+  min-height: 36px;
+}
+.ons-pos-total-hero {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(1.5rem, 2.6vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
+.ons-pos-dropdown {
+  position: relative;
+}
+.ons-pos-search-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  z-index: 45;
+  border-radius: 0.9rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.22);
+  max-height: 340px;
+  overflow-y: auto;
+}
+.ons-pos-fee-panel {
+  border-radius: 0.95rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  padding: 0.9rem 1rem;
+  box-shadow: var(--ons-shadow-xs);
+}
+.ons-pos-fee-row {
+  display: grid;
+  grid-template-columns: minmax(105px, 1fr) minmax(110px, 145px);
+  align-items: center;
+  gap: 0.5rem;
+}
+.ons-pos-disc-toggle {
+  display: inline-flex;
+  border-radius: 0.45rem;
+  border: 1px solid #0066FE;
+  overflow: hidden;
+}
+.ons-pos-disc-toggle button {
+  padding: 0.2rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  min-height: 28px;
+  cursor: pointer;
+  background: transparent;
+  color: #0066FE;
+}
+.ons-pos-disc-toggle button.is-active {
+  background: #0066FE;
+  color: #FFFFFF;
+}
+.ons-pos-bottom-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.85rem;
+  background: linear-gradient(90deg, #0050CA 0%, #0066FE 100%);
+  color: #FFFFFF;
+  font-size: 0.74rem;
+}
+.ons-pos-bar-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 34px;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.ons-pos-bar-tool:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.ons-pos-rekap-foot {
+  border-radius: 0.9rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  padding: 0.9rem 1.15rem;
+  box-shadow: var(--ons-shadow-xs);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill, .ons-md-tab, .ons-md-kpi, .ons-modal-backdrop, .ons-modal-box {
     transition: none !important;

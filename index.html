@@ -110,12 +110,14 @@
               ]
             },
             {
-              viewId: 'pos', label: 'Penjualan (POS)', icon: 'pos',
-              desc: 'Transaksi kasir FEFO cepat, cetak struk/etiket, riwayat nota, retur PIN & tutup shift laci kas.',
-              kw: 'kasir pos fefo penjualan jual barcode f2 riwayat nota void retur tutup shift z-report kas',
+              viewId: 'pos', label: 'Penjualan', icon: 'pos',
+              desc: 'Workstation kasir FEFO, daftar penjualan, retur penjualan, penjualan tertolak & tutup shift kas.',
+              kw: 'kasir pos fefo penjualan jual barcode f2 f4 f9 daftar penjualan retur tertolak tutup shift z-report kas',
               tabs: [
-                { subTab: 'kasir', label: 'Kasir Aktif (FEFO)', kw: 'kasir jual scan barcode f2 split poin diskon etiket fefo' },
-                { subTab: 'riwayat', label: 'Riwayat Transaksi', kw: 'riwayat transaksi nota penjualan cetak ulang rincian void retur pin' },
+                { subTab: 'kasir', label: 'Kasir', kw: 'kasir jual scan barcode f2 f4 f9 split poin diskon etiket fefo biaya servis embalase' },
+                { subTab: 'riwayat', label: 'Daftar Penjualan', kw: 'daftar penjualan riwayat transaksi nota cetak ulang rincian faktur draft' },
+                { subTab: 'retur', label: 'Retur Penjualan', kw: 'retur penjualan void pin nota pengembalian barang' },
+                { subTab: 'tertolak', label: 'Penjualan Tertolak', kw: 'penjualan tertolak lost sale barang kosong defecta' },
                 { subTab: 'tutup-shift', label: 'Tutup Shift & Kas', kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi laci kas' }
               ]
             }
@@ -1331,7 +1333,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.23 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.24 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
@@ -1429,9 +1431,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_23') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_24') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_23', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_24', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {
