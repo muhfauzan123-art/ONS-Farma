@@ -1440,9 +1440,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_17') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_18') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_17', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_18', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {

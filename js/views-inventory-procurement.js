@@ -3551,7 +3551,10 @@
   let fakturTab = 'daftar';
   let fakturListQ = '';
   let fakturListFilter = 'SEMUA';
+  let fakturListPbfFilter = '';
   let fakturKonsinyasiPbfFilter = '';
+  let returFilterMode = 'NEAR_ED';
+  let returSearchQ = '';
   let grnHeader = {
     id_sp: '',
     no_faktur_pbf: '',
@@ -3566,17 +3569,27 @@
   };
   let grnItems = [];
 
+  function _getPbfTerminDays(pbfNameOrId) {
+    const st = S().AppState;
+    const p = (st.supplierPbf || []).find((x) => x.nama_pbf === pbfNameOrId || x.id_pbf === pbfNameOrId);
+    const termin = Number((p && p.termin_hari) || 30);
+    return Number.isFinite(termin) && termin > 0 ? termin : 30;
+  }
+
+  function _dueDateFromTermin(days) {
+    return new Date(Date.now() + (Number(days || 30) * 86400000)).toISOString().slice(0, 10);
+  }
+
   global.loadSpIntoGrn = (idSp) => {
     const st = S().AppState;
     const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
     if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
-    const pbfObj = (st.supplierPbf || []).find((p) => p.id_pbf === sp.id_pbf || p.nama_pbf === sp.nama_pbf);
-    const termin = Number((pbfObj && pbfObj.termin_hari) || 30);
+    const termin = _getPbfTerminDays(sp.nama_pbf || sp.id_pbf);
     grnHeader.id_sp = sp.id_sp;
     grnHeader.no_sp = sp.no_sp;
     grnHeader.id_pbf = sp.nama_pbf || sp.id_pbf || grnHeader.id_pbf;
     grnHeader.sp_status = 'SELESAI_DITERIMA';
-    grnHeader.tgl_jatuh_tempo = new Date(Date.now() + termin * 86400000).toISOString().slice(0, 10);
+    grnHeader.tgl_jatuh_tempo = _dueDateFromTermin(termin);
     if (!grnHeader.no_faktur_pbf) grnHeader.no_faktur_pbf = 'FK-PBF-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-01';
     let spItems = [];
     try { spItems = JSON.parse(sp.items_json || '[]'); } catch (e) {}
@@ -3599,6 +3612,7 @@
   };
 
   let grnScanState = {
+    panelOpen: false,
     previewDataUrl: '',
     processedDataUrl: '',
     fileName: '',
@@ -3616,8 +3630,10 @@
   function ensureGrnInitialized() {
     const st = S().AppState;
     if (!grnHeader.no_faktur_pbf) grnHeader.no_faktur_pbf = 'FK-PBF-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-01';
-    if (!grnHeader.no_sp) grnHeader.no_sp = 'SP-' + new Date().toISOString().slice(0, 7).replace('-', '') + '-001';
-    if (!grnHeader.id_pbf && st.supplierPbf.length) grnHeader.id_pbf = st.supplierPbf[0].nama_pbf;
+    if (!grnHeader.id_pbf && st.supplierPbf.length) {
+      grnHeader.id_pbf = st.supplierPbf[0].nama_pbf;
+      grnHeader.tgl_jatuh_tempo = _dueDateFromTermin(st.supplierPbf[0].termin_hari || 30);
+    }
     if (!grnItems.length && st.masterObat.length) {
       const o0 = st.masterObat[0];
       grnItems.push({
@@ -3634,12 +3650,38 @@
     const st = S().AppState;
     fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'daftar';
     ensureGrnInitialized();
-    const returCandidates = st.stokBatch.filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && S().daysUntil(b.tgl_kadaluarsa) <= 180);
+
+    const allFaktur = st.fakturPbf || [];
+    const nearEdBatches = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) <= 180);
+    const allActiveBatches = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && Number(b.qty_sisa || 0) > 0);
+    const rSearch = returSearchQ.trim().toLowerCase();
+    const returPool = returFilterMode === 'ALL' ? allActiveBatches : nearEdBatches;
+    const returCandidates = returPool.filter((b) => {
+      if (!rSearch) return true;
+      const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat);
+      const hay = `${ob ? ob.nama_dagang : ''} ${b.no_batch} ${b.id_pbf || ''} ${b.id_obat}`.toLowerCase();
+      return hay.includes(rSearch);
+    });
+
+    const isKonsFaktur = (f) => String(f.status_bayar || '').toUpperCase() === 'KONSINYASI' || String(f.jenis_penerimaan || '').toUpperCase() === 'KONSINYASI';
+    const isDueSoonFaktur = (f) => !isKonsFaktur(f) && String(f.status_bayar || '') !== 'LUNAS' && Number(f.sisa_hutang || 0) > 0 && S().daysUntil(f.tgl_jatuh_tempo) <= 7;
+
+    const totalPembelianNetto = allFaktur.reduce((s, f) => s + Number(f.netto_hutang || 0), 0);
+    const totalSisaHutang = allFaktur.reduce((s, f) => s + (isKonsFaktur(f) ? 0 : Number(f.sisa_hutang || 0)), 0);
+    const dueSoonCount = allFaktur.filter(isDueSoonFaktur).length;
+    const dueSoonNominal = allFaktur.filter(isDueSoonFaktur).reduce((s, f) => s + Number(f.sisa_hutang || 0), 0);
+    const konsSummary = st.konsinyasiSummary || { totals: { tagihan_belum_bayar: 0, qty_terjual: 0 } };
+    const konsPendingNominal = Number((konsSummary.totals && konsSummary.totals.tagihan_belum_bayar) || 0);
+    const fakturSuppliers = Array.from(new Set(allFaktur.map((f) => f.id_pbf).filter(Boolean)));
 
     const fq = fakturListQ.trim().toLowerCase();
-    const filteredFaktur = (st.fakturPbf || []).filter((f) => {
-      if (fakturListFilter === 'BELUM_LUNAS' && f.status_bayar === 'LUNAS') return false;
+    const filteredFaktur = allFaktur.filter((f) => {
+      const kons = isKonsFaktur(f);
+      if (fakturListFilter === 'BELUM_LUNAS' && (f.status_bayar === 'LUNAS' || kons)) return false;
       if (fakturListFilter === 'LUNAS' && f.status_bayar !== 'LUNAS') return false;
+      if (fakturListFilter === 'JATUH_TEMPO' && !isDueSoonFaktur(f)) return false;
+      if (fakturListFilter === 'KONSINYASI' && !kons) return false;
+      if (fakturListPbfFilter && String(f.id_pbf || '') !== fakturListPbfFilter) return false;
       if (fq) {
         const hay = `${f.no_faktur_pbf} ${f.no_sp} ${f.id_pbf}`.toLowerCase();
         if (!hay.includes(fq)) return false;
@@ -3649,19 +3691,21 @@
 
     const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
     const nettoGrn = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
+    const isScanExpanded = Boolean(grnScanState.panelOpen || grnScanState.scanning || grnScanState.previewDataUrl || grnScanState.summary || grnScanState.error);
+    const currentPbfTermin = _getPbfTerminDays(grnHeader.id_pbf);
 
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Terima Faktur (Scan / SP), Analisa Harga &amp; Retur PBF</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Sinkronkan barang datang dari Surat Pesanan (SP), scan foto/PDF faktur (OCR Multi-Item), analisa kenaikan harga &amp; margin, serta kelola hutang/retur PBF.</p>
+          <h1 class="text-xl font-extrabold">Pembelian &amp; Faktur PBF</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Monitoring faktur &amp; jatuh tempo hutang PBF, terima barang (GRN via SP / Scan OCR), analisa kenaikan HPP, konsinyasi, dan retur BAR-PBF.</p>
         </div>
         <div class="ons-tab-bar">
-          <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">Daftar Faktur (${st.fakturPbf.length})</button>
-          <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Terima Faktur (Scan OCR / SP)</button>
+          <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">Daftar Faktur (${allFaktur.length})</button>
+          <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Terima Faktur (GRN / Scan)</button>
           <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active' : ''}">Analisa Harga &amp; Margin</button>
-          <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active' : ''}">Retur BAR-PBF (${returCandidates.length})</button>
-          <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active' : ''}">Konsinyasi (Titip Jual)</button>
+          <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active' : ''}">Retur BAR-PBF (${nearEdBatches.length})</button>
+          <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active' : ''}">Konsinyasi</button>
         </div>
       </div>
 
@@ -3673,137 +3717,144 @@
             return `<div class="ons-card p-4 space-y-2.5">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div class="font-extrabold text-sm">1. Sinkronisasi Barang Tiba dari Surat Pesanan (SP &rarr; Terima Faktur)</div>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Pilih SP aktif di bawah agar daftar item terisi otomatis &amp; status SP sinkron otomatis setelah faktur disimpan. Anda tetap bisa scan faktur di panel berikutnya.</p>
+                  <div class="font-extrabold text-sm">1. Tautkan Surat Pesanan (Opsional) &amp; Scan Faktur</div>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Pilih SP aktif jika barang datang dari Surat Pesanan, atau langsung isi faktur / gunakan Smart Scanner.</p>
                 </div>
-                <button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs">Buka Daftar SP &amp; Preview A4 &rarr;</button>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ${isScanExpanded ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs">${isScanExpanded ? 'Tutup Scan OCR / PDF' : 'Scan Foto / PDF Faktur'}</button>
+                  <button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs">Daftar SP &amp; A4 &rarr;</button>
+                  <button type="button" onclick="window.resetGrnForm()" class="ons-btn ons-btn-ghost text-xs text-red-600">Reset Form</button>
+                </div>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <select aria-label="Pilih Surat Pesanan Aktif" class="ons-select text-xs flex-1 min-w-[240px]" onchange="if(this.value) window.loadSpIntoGrn(this.value); else { window.setGrnField('id_sp','',true); window.setGrnField('no_sp','',true); }">
+                  <option value="">-- Terima Langsung Tanpa SP (${openSps.length} SP terbuka tersedia) --</option>
+                  ${openSps.map((sp) => `<option value="${S().esc(sp.id_sp)}" ${grnHeader.id_sp === sp.id_sp ? 'selected' : ''}>${S().esc(sp.no_sp)} &bull; ${S().esc(sp.nama_pbf)} (${S().esc(sp.status_sp)})</option>`).join('')}
+                </select>
               </div>
               ${activeSp ? `
                 <div class="p-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-xs" style="background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.35)">
-                  <div><b class="text-emerald-700">&#10003; Terhubung ke SP:</b> <span class="font-mono-num font-bold">${S().esc(activeSp.no_sp)}</span> (${S().esc(activeSp.nama_pbf)}) &mdash; Scan faktur tidak akan melepas tautan SP ini.</div>
+                  <div><b class="text-emerald-700">&#10003; Terhubung ke SP:</b> <span class="font-mono-num font-bold">${S().esc(activeSp.no_sp)}</span> (${S().esc(activeSp.nama_pbf)}) &mdash; Scan faktur tetap mempertahankan tautan SP ini.</div>
                   <div class="flex gap-1.5">
                     <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(activeSp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Lihat SP A4</button>
-                    <button type="button" onclick="window.setGrnField('id_sp','',true);window.setGrnField('no_sp','',true);" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-red-600">Lepas Tautan SP</button>
+                    <button type="button" onclick="window.setGrnField('id_sp','',false);window.setGrnField('no_sp','',true);" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-red-600">Lepas Tautan</button>
                   </div>
                 </div>
               ` : ''}
-              ${openSps.length ? `
-                <div class="flex flex-wrap gap-2">
-                  ${openSps.map((sp) => `<button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ${grnHeader.id_sp === sp.id_sp ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3">
-                    Tarik SP: <span class="font-mono-num ml-1">${S().esc(sp.no_sp)}</span> (${S().esc(sp.nama_pbf)})
-                  </button>`).join('')}
-                </div>
-              ` : `<div class="text-xs" style="color:var(--ons-text-soft)">Semua SP sudah selesai diterima. Gunakan Smart Invoice Scanner di bawah untuk terima faktur langsung, atau buat SP baru di menu Defecta &amp; Surat Pesanan.</div>`}
             </div>`;
           })()}
-          <div class="ons-card p-4 sm:p-5 space-y-3.5">
-            <div class="flex flex-wrap justify-between items-start gap-3">
-              <div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="font-extrabold text-sm">Smart Invoice Scanner Faktur PBF</span>
-                  <span class="badge-bpom bpom-bebas">100% GRATIS &bull; OCR + PDF + AUTO-PARSE</span>
-                </div>
-                <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Foto lewat kamera HP, unggah gambar JPG/PNG atau file PDF faktur PBF, lalu ekstrak banyak item obat, nomor batch, ED &amp; harga sekaligus ke Form GRN.</p>
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-extrabold text-sm">Smart Invoice Scanner Faktur PBF</span>
+                <span class="badge-bpom bpom-bebas">OCR + PDF + AUTO-PARSE</span>
+                ${grnScanState.summary ? `<span class="text-[11px] font-semibold text-emerald-700">&#10003; ${grnScanState.summary.itemCount} item diekstrak</span>` : ''}
               </div>
               <div class="flex flex-wrap gap-1.5">
-                <button type="button" onclick="window.loadGrnSampleInvoice()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Contoh Teks Faktur</button>
-                ${(grnScanState.previewDataUrl || grnScanState.rawText || grnScanState.summary) ? `<button type="button" onclick="window.clearGrnScanner()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 text-red-600">Reset Scanner</button>` : ''}
+                <button type="button" onclick="window.loadGrnSampleInvoice()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Contoh Teks Faktur</button>
+                ${(grnScanState.previewDataUrl || grnScanState.rawText || grnScanState.summary) ? `<button type="button" onclick="window.clearGrnScanner()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 text-red-600">Reset Scanner</button>` : ''}
+                <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">${isScanExpanded ? 'Sembunyikan &uarr;' : 'Buka Panel Scan &darr;'}</button>
               </div>
             </div>
 
-            <div id="grnScanDropzone"
-              ondragover="event.preventDefault();this.classList.add('is-dragover');"
-              ondragleave="this.classList.remove('is-dragover');"
-              ondrop="event.preventDefault();this.classList.remove('is-dragover');if(event.dataTransfer&&event.dataTransfer.files&&event.dataTransfer.files[0])window.handleGrnScannerFile(event.dataTransfer.files[0]);"
-              class="ons-scan-zone">
-              <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div class="space-y-1 text-xs">
-                  <div class="font-bold">Seret &amp; lepas Foto / PDF Faktur di sini, atau pilih sumber scan:</div>
-                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Tips akurasi maksimal: pastikan pencahayaan merata; untuk faktur kertas rangkap/dot-matrix gunakan mode <b>Hitam-Putih Dot Matrix</b> di bawah.</div>
+            <div id="grnScanPanelBody" class="${isScanExpanded ? '' : 'hidden'} space-y-3.5 pt-2 border-t" style="border-color:var(--ons-border)">
+              <div id="grnScanDropzone"
+                ondragover="event.preventDefault();this.classList.add('is-dragover');"
+                ondragleave="this.classList.remove('is-dragover');"
+                ondrop="event.preventDefault();this.classList.remove('is-dragover');if(event.dataTransfer&&event.dataTransfer.files&&event.dataTransfer.files[0])window.handleGrnScannerFile(event.dataTransfer.files[0]);"
+                class="ons-scan-zone">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div class="space-y-1 text-xs">
+                    <div class="font-bold">Seret &amp; lepas Foto / PDF Faktur di sini, atau pilih sumber scan:</div>
+                    <div class="text-[11px]" style="color:var(--ons-text-soft)">Faktur kertas rangkap/dot-matrix dapat memakai mode <b>Hitam-Putih Dot Matrix</b> setelah foto diunggah.</div>
+                  </div>
+                  <div class="flex flex-wrap gap-2 shrink-0">
+                    <button type="button" onclick="window.openGrnLiveCamera()" class="ons-btn ons-btn-primary text-xs min-h-[44px]">&#128247; Kamera Live</button>
+                    <label class="ons-btn ons-btn-emerald text-xs min-h-[44px] cursor-pointer mb-0">
+                      &#128193; Pilih Foto / PDF Faktur
+                      <input id="grnScannerFileInp" type="file" accept="image/*,.pdf,application/pdf" capture="environment" class="hidden" onchange="if(this.files&&this.files[0])window.handleGrnScannerFile(this.files[0]);this.value='';"/>
+                    </label>
+                  </div>
                 </div>
-                <div class="flex flex-wrap gap-2 shrink-0">
-                  <button type="button" onclick="window.openGrnLiveCamera()" class="ons-btn ons-btn-primary text-xs min-h-[44px]">&#128247; Kamera Live</button>
-                  <label class="ons-btn ons-btn-emerald text-xs min-h-[44px] cursor-pointer mb-0">
-                    &#128193; Pilih Foto / PDF Faktur
-                    <input id="grnScannerFileInp" type="file" accept="image/*,.pdf,application/pdf" capture="environment" class="hidden" onchange="if(this.files&&this.files[0])window.handleGrnScannerFile(this.files[0]);this.value='';"/>
-                  </label>
+
+                <div id="grnScanProgressWrap" class="${grnScanState.scanning || grnScanState.statusText ? '' : 'hidden'} mt-3 pt-3 border-t space-y-1.5" style="border-color:var(--ons-border)">
+                  <div class="flex items-center justify-between text-[11px] font-semibold">
+                    <span id="grnScanStatusLabel">${S().esc(grnScanState.statusText || 'Memproses faktur...')}</span>
+                    <span id="grnScanPctLabel" class="font-mono-num">${Math.round(Number(grnScanState.progress || 0))}%</span>
+                  </div>
+                  <div class="ons-scan-progress-track">
+                    <div id="grnScanProgressBar" class="ons-scan-progress-fill" style="width:${Math.min(100, Math.max(0, Number(grnScanState.progress || 0)))}%"></div>
+                  </div>
                 </div>
+                ${grnScanState.error ? `<div class="mt-2 p-2.5 rounded-lg text-xs border text-red-600 bg-red-500/10" style="border-color:rgba(220,38,38,.3)">${S().esc(grnScanState.error)}</div>` : ''}
               </div>
 
-              <div id="grnScanProgressWrap" class="${grnScanState.scanning || grnScanState.statusText ? '' : 'hidden'} mt-3 pt-3 border-t space-y-1.5" style="border-color:var(--ons-border)">
-                <div class="flex items-center justify-between text-[11px] font-semibold">
-                  <span id="grnScanStatusLabel">${S().esc(grnScanState.statusText || 'Memproses faktur...')}</span>
-                  <span id="grnScanPctLabel" class="font-mono-num">${Math.round(Number(grnScanState.progress || 0))}%</span>
-                </div>
-                <div class="ons-scan-progress-track">
-                  <div id="grnScanProgressBar" class="ons-scan-progress-fill" style="width:${Math.min(100, Math.max(0, Number(grnScanState.progress || 0)))}%"></div>
-                </div>
-              </div>
-              ${grnScanState.error ? `<div class="mt-2 p-2.5 rounded-lg text-xs border text-red-600 bg-red-500/10" style="border-color:rgba(220,38,38,.3)">${S().esc(grnScanState.error)}</div>` : ''}
-            </div>
-
-            <div class="grid grid-cols-1 ${grnScanState.previewDataUrl ? 'lg:grid-cols-12' : ''} gap-3">
-              ${grnScanState.previewDataUrl ? `
-                <div class="lg:col-span-5 p-3 rounded-xl border space-y-2.5 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                  <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span class="font-bold truncate">Pratinjau Pra-OCR (${S().esc(grnScanState.fileName || 'Foto Faktur')})</span>
-                    <button type="button" onclick="window.setGrnScanOption('rotate', 90)" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0">&#8635; Putar 90&deg;</button>
-                  </div>
-                  <div class="rounded-lg overflow-hidden border bg-white max-h-56 flex items-center justify-center" style="border-color:var(--ons-border)">
-                    <img src="${S().esc(grnScanState.processedDataUrl || grnScanState.previewDataUrl)}" alt="Preview Faktur" class="max-h-56 w-auto object-contain"/>
-                  </div>
-                  <div class="flex flex-wrap items-center justify-between gap-1.5">
-                    <select class="ons-select text-[11px] flex-1 min-w-[150px] py-1 min-h-[34px]" onchange="window.setGrnScanOption('enhanceMode', this.value)" aria-label="Mode Peningkat Gambar OCR">
-                      <option value="contrast" ${grnScanState.enhanceMode === 'contrast' ? 'selected' : ''}>Mode: Kontras Cerah (Foto HP)</option>
-                      <option value="sharp_bw" ${grnScanState.enhanceMode === 'sharp_bw' ? 'selected' : ''}>Mode: Hitam-Putih Dot Matrix</option>
-                      <option value="original" ${grnScanState.enhanceMode === 'original' ? 'selected' : ''}>Mode: Warna Asli</option>
-                    </select>
-                    <button type="button" onclick="window.runGrnImageScan()" class="ons-btn ons-btn-primary text-[11px] py-1 px-3 min-h-[34px]">Scan Ulang Foto</button>
-                  </div>
-                </div>
-              ` : ''}
-              <div class="${grnScanState.previewDataUrl ? 'lg:col-span-7' : ''} space-y-2">
-                <div class="flex flex-wrap justify-between items-center gap-2">
-                  <label for="grnOcrRaw" class="font-bold text-xs">Teks Hasil Scan OCR / PDF atau Paste Teks Faktur (Dapat Diedit Sebelum Ekstrak)</label>
-                  <button type="button" onclick="window.parseGrnOcrToForm()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">Ekstrak ke Form GRN &darr;</button>
-                </div>
-                <textarea id="grnOcrRaw" rows="${grnScanState.previewDataUrl ? 6 : 3}" oninput="window.setGrnRawText(this.value)" class="ons-textarea text-xs font-mono-num" placeholder="Tempel teks faktur PDF/WA atau scan foto di atas... Contoh:&#10;FK-BSP-2026-8821 PT Bina San Prima TOP 30 Hari&#10;Amoxicillin 500mg Batch B-2026-X9 ED 30/09/2028 Qty 10 Box Total Rp 1.450.000">${S().esc(grnScanState.rawText || '')}</textarea>
-                ${grnScanState.summary ? `
-                  <div class="p-2.5 rounded-xl border text-[11px] flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-emerald-tint);border-color:rgba(16,185,129,.35)">
-                    <div>
-                      <b class="text-emerald-700">&#10003; Hasil Ekstraksi Otomatis:</b>
-                      <span>${grnScanState.summary.headerFields} kolom header &bull; <b>${grnScanState.summary.itemCount} baris obat</b> masuk ke tabel GRN di bawah.</span>
-                      ${grnScanState.summary.unitConversions && grnScanState.summary.unitConversions.length ? `<div class="mt-0.5 text-emerald-800">Konversi Satuan: ${S().esc(grnScanState.summary.unitConversions.join('; '))}</div>` : ''}
-                      ${grnScanState.summary.unmatchedLines && grnScanState.summary.unmatchedLines.length ? `<div class="mt-0.5 text-amber-700">Catatan: ${grnScanState.summary.unmatchedLines.length} baris batch belum cocok otomatis ke Master Obat — pilih nama obat manual di tabel bawah.</div>` : ''}
+              <div class="grid grid-cols-1 ${grnScanState.previewDataUrl ? 'lg:grid-cols-12' : ''} gap-3">
+                ${grnScanState.previewDataUrl ? `
+                  <div class="lg:col-span-5 p-3 rounded-xl border space-y-2.5 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span class="font-bold truncate">Pratinjau Pra-OCR (${S().esc(grnScanState.fileName || 'Foto Faktur')})</span>
+                      <button type="button" onclick="window.setGrnScanOption('rotate', 90)" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0">&#8635; Putar 90&deg;</button>
+                    </div>
+                    <div class="rounded-lg overflow-hidden border bg-white max-h-56 flex items-center justify-center" style="border-color:var(--ons-border)">
+                      <img src="${S().esc(grnScanState.processedDataUrl || grnScanState.previewDataUrl)}" alt="Preview Faktur" class="max-h-56 w-auto object-contain"/>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-1.5">
+                      <select class="ons-select text-[11px] flex-1 min-w-[150px] py-1 min-h-[34px]" onchange="window.setGrnScanOption('enhanceMode', this.value)" aria-label="Mode Peningkat Gambar OCR">
+                        <option value="contrast" ${grnScanState.enhanceMode === 'contrast' ? 'selected' : ''}>Mode: Kontras Cerah (Foto HP)</option>
+                        <option value="sharp_bw" ${grnScanState.enhanceMode === 'sharp_bw' ? 'selected' : ''}>Mode: Hitam-Putih Dot Matrix</option>
+                        <option value="original" ${grnScanState.enhanceMode === 'original' ? 'selected' : ''}>Mode: Warna Asli</option>
+                      </select>
+                      <button type="button" onclick="window.runGrnImageScan()" class="ons-btn ons-btn-primary text-[11px] py-1 px-3 min-h-[34px]">Scan Ulang Foto</button>
                     </div>
                   </div>
                 ` : ''}
+                <div class="${grnScanState.previewDataUrl ? 'lg:col-span-7' : ''} space-y-2">
+                  <div class="flex flex-wrap justify-between items-center gap-2">
+                    <label for="grnOcrRaw" class="font-bold text-xs">Teks Hasil Scan OCR / PDF atau Paste Teks Faktur</label>
+                    <button type="button" onclick="window.parseGrnOcrToForm()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">Ekstrak ke Form GRN &darr;</button>
+                  </div>
+                  <textarea id="grnOcrRaw" rows="${grnScanState.previewDataUrl ? 6 : 3}" oninput="window.setGrnRawText(this.value)" class="ons-textarea text-xs font-mono-num" placeholder="Tempel teks faktur PDF/WA atau scan foto di atas...">${S().esc(grnScanState.rawText || '')}</textarea>
+                  ${grnScanState.summary ? `
+                    <div class="p-2.5 rounded-xl border text-[11px] flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-emerald-tint);border-color:rgba(16,185,129,.35)">
+                      <div>
+                        <b class="text-emerald-700">&#10003; Hasil Ekstraksi Otomatis:</b>
+                        <span>${grnScanState.summary.headerFields} kolom header &bull; <b>${grnScanState.summary.itemCount} baris obat</b> masuk ke tabel GRN di bawah.</span>
+                        ${grnScanState.summary.unitConversions && grnScanState.summary.unitConversions.length ? `<div class="mt-0.5 text-emerald-800">Konversi Satuan: ${S().esc(grnScanState.summary.unitConversions.join('; '))}</div>` : ''}
+                        ${grnScanState.summary.unmatchedLines && grnScanState.summary.unmatchedLines.length ? `<div class="mt-0.5 text-amber-700">Catatan: ${grnScanState.summary.unmatchedLines.length} baris batch belum cocok otomatis ke Master Obat — pilih nama obat manual di tabel bawah.</div>` : ''}
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
               </div>
             </div>
           </div>
 
           <div class="ons-card p-5 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
-              <h3 class="font-bold text-sm">Header Penerimaan Barang (Goods Received Note — CDOB)</h3>
-              <div class="flex items-center gap-2 text-xs">
-                <span class="font-semibold" style="color:var(--ons-text-soft)">Tarik dari SP Aktif:</span>
-                <select class="ons-select text-xs w-64" onchange="if(this.value) window.loadSpIntoGrn(this.value);">
-                  <option value="">-- Pilih Surat Pesanan (Opsional) --</option>
-                  ${(st.suratPesanan || []).filter((sp) => String(sp.status_sp || '') !== 'SELESAI_DITERIMA').map((sp) => `<option value="${S().esc(sp.id_sp)}" ${grnHeader.id_sp === sp.id_sp ? 'selected' : ''}>${S().esc(sp.no_sp)} (${S().esc(sp.nama_pbf)})</option>`).join('')}
-                </select>
-              </div>
+              <h3 class="font-bold text-sm">2. Header Penerimaan Barang (GRN &mdash; CDOB)</h3>
+              <span class="text-[11px]" style="color:var(--ons-text-soft)">Termin default supplier: <b class="font-mono-num">${currentPbfTermin} hari</b></span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div><label class="font-semibold block mb-1">No. Faktur PBF *</label><input class="ons-input font-mono-num" value="${S().esc(grnHeader.no_faktur_pbf)}" oninput="window.setGrnField('no_faktur_pbf', this.value)"/></div>
-              <div><label class="font-semibold block mb-1">No. Surat Pesanan (SP)</label><input class="ons-input font-mono-num" value="${S().esc(grnHeader.no_sp)}" oninput="window.setGrnField('no_sp', this.value)"/></div>
+              <div><label class="font-semibold block mb-1">No. Surat Pesanan (Opsional)</label><input class="ons-input font-mono-num" placeholder="Kosongkan jika beli langsung" value="${S().esc(grnHeader.no_sp)}" oninput="window.setGrnField('no_sp', this.value)"/></div>
               <div><label class="font-semibold block mb-1">Supplier PBF Resmi *</label>
-                <select class="ons-select" onchange="window.setGrnField('id_pbf', this.value)">
-                  ${st.supplierPbf.map((p) => `<option value="${S().esc(p.nama_pbf)}" ${grnHeader.id_pbf === p.nama_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)}</option>`).join('')}
+                <select class="ons-select" onchange="window.setGrnField('id_pbf', this.value, true)">
+                  ${st.supplierPbf.map((p) => `<option value="${S().esc(p.nama_pbf)}" ${grnHeader.id_pbf === p.nama_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)} (${Number(p.termin_hari || 30)}h)</option>`).join('')}
                 </select>
               </div>
               <div><label class="font-semibold block mb-1">Jatuh Tempo Pembayaran</label><input type="date" class="ons-input" value="${S().esc(grnHeader.tgl_jatuh_tempo)}" onchange="window.setGrnField('tgl_jatuh_tempo', this.value)"/></div>
               <div><label class="font-semibold block mb-1">Diskon Faktur PBF (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.diskon_pbf}" oninput="window.setGrnField('diskon_pbf', Number(this.value||0), true)"/></div>
-              <div><label class="font-semibold block mb-1">PPN Masukan 11% (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.ppn_masukan}" oninput="window.setGrnField('ppn_masukan', Number(this.value||0), true)"/></div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="font-semibold">PPN Masukan (Rp)</label>
+                  <span class="flex gap-1">
+                    <button type="button" onclick="window.applyGrnPpn11(true)" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 hover:bg-blue-500/25">Hitung 11%</button>
+                    ${Number(grnHeader.ppn_masukan || 0) > 0 ? `<button type="button" onclick="window.applyGrnPpn11(false)" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-500/15" style="color:var(--ons-text-soft)">0</button>` : ''}
+                  </span>
+                </div>
+                <input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.ppn_masukan}" oninput="window.setGrnField('ppn_masukan', Number(this.value||0), true)"/>
+              </div>
               <div><label class="font-semibold block mb-1">Jenis Penerimaan</label>
                 <select class="ons-select" onchange="window.setGrnJenisPenerimaan(this.value)">
                   <option value="BELI_PUTUS" ${grnHeader.jenis_penerimaan !== 'KONSINYASI' ? 'selected' : ''}>BELI PUTUS (Reguler PBF)</option>
@@ -3811,12 +3862,12 @@
                 </select>
               </div>
               ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? `
-              <div><label class="font-semibold block mb-1">Status Hutang Konsinyasi</label>
+              <div class="sm:col-span-2"><label class="font-semibold block mb-1">Status Hutang Konsinyasi</label>
                 <div class="ons-input text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 border-blue-500/30">Rp 0 Hutang Awal (Settlement saat Laku)</div>
               </div>` : `
-              <div><label class="font-semibold block mb-1">Status Pembayaran Awal</label>
+              <div class="sm:col-span-2"><label class="font-semibold block mb-1">Status Pembayaran Awal</label>
                 <select class="ons-select" onchange="window.setGrnField('status_bayar', this.value)">
-                  <option value="BELUM_LUNAS" ${grnHeader.status_bayar !== 'LUNAS' ? 'selected' : ''}>BELUM LUNAS (Hutang Dagang PBF)</option>
+                  <option value="BELUM_LUNAS" ${grnHeader.status_bayar !== 'LUNAS' ? 'selected' : ''}>BELUM LUNAS (Catat ke Hutang Dagang PBF)</option>
                   <option value="LUNAS" ${grnHeader.status_bayar === 'LUNAS' ? 'selected' : ''}>LUNAS (Bayar Langsung Kas/Transfer)</option>
                 </select>
               </div>`}
@@ -3860,8 +3911,8 @@
 
             <div class="flex flex-wrap items-center justify-between gap-4 pt-3 border-t" style="border-color:var(--ons-border)">
               <div class="text-xs space-y-1">
-                <div>Total Bruto Item: <b class="font-mono-num">${S().rp(totalBruto)}</b></div>
-                <div class="text-base font-extrabold text-blue-600">Netto Hutang Faktur: <span class="font-mono-num">${S().rp(nettoGrn)}</span></div>
+                <div>Total Bruto Item: <b class="font-mono-num">${S().rp(totalBruto)}</b> &bull; Diskon: <b class="font-mono-num">${S().rp(grnHeader.diskon_pbf || 0)}</b> &bull; PPN: <b class="font-mono-num">${S().rp(grnHeader.ppn_masukan || 0)}</b></div>
+                <div class="text-base font-extrabold text-blue-600">Netto Faktur: <span class="font-mono-num">${S().rp(nettoGrn)}</span></div>
                 ${grnHeader.id_sp ? `<label class="inline-flex items-center gap-2 text-[11px] font-semibold mt-1">
                   <span>Status SP (${S().esc(grnHeader.no_sp)}):</span>
                   <select class="ons-select text-[11px] py-1 min-h-0 w-56" onchange="window.setGrnField('sp_status', this.value)">
@@ -3876,55 +3927,99 @@
         </div>
       ` : fakturTab === 'harga' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : fakturTab === 'retur' ? `
         <div class="ons-card p-4 space-y-3">
-          <h3 class="font-bold text-sm">Radar Retur PBF (Batch &le; 180 Hari Sebelum Kadaluarsa)</h3>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm">Radar &amp; Pembuatan BAR-PBF (Retur ke Distributor)</h3>
+              <p class="text-[11px]" style="color:var(--ons-text-soft)">Retur batch mendekati kadaluarsa (&le;180 hari), kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO &amp; hutang PBF otomatis disesuaikan.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="ons-tab-bar">
+                <button type="button" onclick="window.setReturFilterMode('NEAR_ED')" class="ons-tab-btn ${returFilterMode === 'NEAR_ED' ? 'active' : ''}">Near-ED &le;180h (${nearEdBatches.length})</button>
+                <button type="button" onclick="window.setReturFilterMode('ALL')" class="ons-tab-btn ${returFilterMode === 'ALL' ? 'active' : ''}">Semua Batch Aktif (${allActiveBatches.length})</button>
+              </div>
+              <input class="ons-input text-xs w-52" placeholder="Cari Obat / Batch / PBF..." value="${S().esc(returSearchQ)}" oninput="window.setReturSearchQ(this.value)"/>
+            </div>
+          </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
-              <thead><tr><th>Nama Obat</th><th>No. Batch</th><th>Tgl ED</th><th>Qty Sisa</th><th>Qty Retur</th><th>Aksi BAR-PBF</th></tr></thead>
+              <thead><tr><th>Nama Obat</th><th>Supplier PBF</th><th>No. Batch &amp; ED</th><th class="text-right">Qty Sisa</th><th class="text-right">HPP / Est. Potong Hutang</th><th>Aksi BAR-PBF</th></tr></thead>
               <tbody>
                 ${returCandidates.length ? returCandidates.map((b) => {
                   const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                  const dLeft = S().daysUntil(b.tgl_kadaluarsa);
+                  const hpp = Number(b.hpp_beli || (o && (o.hpp_terakhir || o.hpp_avg)) || 0);
+                  const estCut = Number(b.qty_sisa || 0) * hpp;
                   return `<tr>
-                    <td class="font-semibold">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
-                    <td class="font-mono-num">${S().esc(b.no_batch)}</td>
-                    <td class="font-mono-num text-amber-600 font-bold">${S().esc(b.tgl_kadaluarsa)} (${S().daysUntil(b.tgl_kadaluarsa)}h)</td>
-                    <td class="font-mono-num">${b.qty_sisa}</td>
-                    <td><input id="returQty_${b.id_batch}" type="number" min="1" max="${b.qty_sisa}" value="${b.qty_sisa}" class="ons-input font-mono-num text-xs w-20 text-right py-1"/></td>
-                    <td><button onclick="window.prosesReturBar('${b.id_batch}', Number((document.getElementById('returQty_${b.id_batch}')||{}).value || ${b.qty_sisa}))" class="ons-btn ons-btn-amber text-xs py-1 px-2.5">Buat BAR-PBF &amp; Potong Stok</button></td>
+                    <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
+                    <td class="text-xs">${S().esc(b.id_pbf || '-')}</td>
+                    <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="${dLeft <= 90 ? 'text-red-600 font-bold' : (dLeft <= 180 ? 'text-amber-600 font-bold' : '')}">${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))} (${dLeft}h)</div></td>
+                    <td class="text-right font-mono-num text-xs font-bold">${b.qty_sisa}</td>
+                    <td class="text-right font-mono-num text-xs"><div>${S().rp(hpp)}/unit</div><div style="color:var(--ons-text-soft)">Max ${S().rp(estCut)}</div></td>
+                    <td><button type="button" onclick="window.openReturBarModal('${S().esc(b.id_batch)}')" class="ons-btn ons-btn-amber text-xs py-1 px-2.5">Proses Retur BAR-PBF</button></td>
                   </tr>`;
-                }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada batch mendekati kadaluarsa (&le;180 hari) yang perlu diretur.</td></tr>'}
+                }).join('') : `<tr><td colspan="6" class="text-center py-6 text-xs">${returFilterMode === 'NEAR_ED' ? 'Tidak ada batch mendekati kadaluarsa (&le;180 hari). Pilih mode "Semua Batch Aktif" untuk retur barang rusak/recall.' : 'Tidak ada batch aktif yang cocok dengan pencarian.'}</td></tr>`}
               </tbody>
             </table>
           </div>
         </div>
       ` : fakturTab === 'konsinyasi' ? renderKonsinyasiTabHtml(st) : `
-        <div class="ons-card p-4 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap gap-2">
-              <input class="ons-input text-xs w-56" placeholder="Cari No. Faktur, SP, PBF..." value="${S().esc(fakturListQ)}" oninput="window.setFakturListQ(this.value)"/>
-              <div class="ons-tab-bar">
-                ${['SEMUA', 'BELUM_LUNAS', 'LUNAS'].map((f) => `<button onclick="window.setFakturListFilter('${f}')" class="ons-tab-btn ${fakturListFilter === f ? 'active' : ''}">${f.replace('_', ' ')}</button>`).join('')}
-              </div>
-            </div>
-            <button onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs">+ Input GRN Multi-Item Baru</button>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="ons-card p-3.5"><div class="text-[11px]" style="color:var(--ons-text-soft)">Total Nilai Pembelian</div><div class="text-lg font-extrabold font-mono-num">${S().rp(totalPembelianNetto)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">${allFaktur.length} Faktur tercatat</div></div>
+            <div class="ons-card p-3.5"><div class="text-[11px]" style="color:var(--ons-text-soft)">Sisa Hutang Dagang PBF</div><div class="text-lg font-extrabold font-mono-num ${totalSisaHutang > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(totalSisaHutang)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">Faktur beli putus aktif</div></div>
+            <div class="ons-card p-3.5 cursor-pointer hover:opacity-90" onclick="window.setFakturListFilter('JATUH_TEMPO')"><div class="text-[11px]" style="color:var(--ons-text-soft)">Jatuh Tempo &le;7 Hari</div><div class="text-lg font-extrabold font-mono-num ${dueSoonCount > 0 ? 'text-amber-600' : 'text-emerald-600'}">${dueSoonCount} Faktur</div><div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(dueSoonNominal)}</div></div>
+            <div class="ons-card p-3.5 cursor-pointer hover:opacity-90" onclick="window.setFakturTab('konsinyasi')"><div class="text-[11px]" style="color:var(--ons-text-soft)">Konsinyasi Belum Settle</div><div class="text-lg font-extrabold font-mono-num text-blue-600">${S().rp(konsPendingNominal)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">Klik untuk settle titip jual</div></div>
           </div>
-          <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>No. Faktur &amp; SP</th><th>Supplier PBF</th><th>Jatuh Tempo</th><th>Netto Hutang</th><th>Sisa Hutang</th><th>Status</th><th>Aksi</th></tr></thead>
-              <tbody>
-                ${filteredFaktur.length ? filteredFaktur.map((f) => {
-                  const isKons = String(f.status_bayar || '').toUpperCase() === 'KONSINYASI' || String(f.jenis_penerimaan || '').toUpperCase() === 'KONSINYASI';
-                  return `<tr>
-                  <td class="font-mono-num text-xs"><b>${S().esc(f.no_faktur_pbf)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(f.no_sp)}</span></td>
-                  <td class="font-semibold">${S().esc(f.id_pbf)}</td>
-                  <td class="font-mono-num">${S().esc(f.tgl_jatuh_tempo)}</td>
-                  <td class="font-mono-num">${isKons ? '<span class="text-[11px] text-blue-600 font-semibold">Titip Jual</span>' : S().rp(f.netto_hutang)}</td>
-                  <td class="font-mono-num font-bold ${isKons ? 'text-blue-600' : (Number(f.sisa_hutang || 0) > 0 ? 'text-red-600' : 'text-emerald-600')}">${S().rp(f.sisa_hutang)}</td>
-                  <td><span class="badge-bpom ${isKons ? 'bpom-terbatas' : (f.status_bayar === 'LUNAS' ? 'bpom-bebas' : 'bpom-prekursor')}">${S().esc(f.status_bayar)}</span></td>
-                  <td>${isKons ? `<button onclick="window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Kelola Konsinyasi</button>` : (Number(f.sisa_hutang || 0) > 0 ? `<button onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Bayar / Cicil</button>` : '<span class="text-xs text-emerald-600 font-semibold">Selesai</span>')}</td>
-                </tr>`;
-                }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Tidak ada faktur PBF yang sesuai filter.</td></tr>'}
-              </tbody>
-            </table>
+
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <input class="ons-input text-xs w-52" placeholder="Cari No. Faktur, SP, PBF..." value="${S().esc(fakturListQ)}" oninput="window.setFakturListQ(this.value)"/>
+                <select aria-label="Filter Supplier Faktur" class="ons-select text-xs w-48" onchange="window.setFakturListPbfFilter(this.value)">
+                  <option value="">Semua Supplier (${fakturSuppliers.length})</option>
+                  ${fakturSuppliers.map((sup) => `<option value="${S().esc(sup)}" ${fakturListPbfFilter === sup ? 'selected' : ''}>${S().esc(sup)}</option>`).join('')}
+                </select>
+                <div class="ons-tab-bar">
+                  ${[
+                    { id: 'SEMUA', label: 'Semua' },
+                    { id: 'BELUM_LUNAS', label: 'Belum Lunas' },
+                    { id: 'JATUH_TEMPO', label: `Tempo <=7h (${dueSoonCount})` },
+                    { id: 'LUNAS', label: 'Lunas' },
+                    { id: 'KONSINYASI', label: 'Konsinyasi' }
+                  ].map((f) => `<button onclick="window.setFakturListFilter('${f.id}')" class="ons-tab-btn ${fakturListFilter === f.id ? 'active' : ''}">${f.label}</button>`).join('')}
+                </div>
+              </div>
+              <button onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs">+ Input GRN Multi-Item Baru</button>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>No. Faktur &amp; SP</th><th>Supplier PBF</th><th>Jatuh Tempo</th><th class="text-right">Netto Hutang</th><th class="text-right">Sisa Hutang</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                  ${filteredFaktur.length ? filteredFaktur.map((f) => {
+                    const isKons = isKonsFaktur(f);
+                    const dTempo = f.tgl_jatuh_tempo ? S().daysUntil(f.tgl_jatuh_tempo) : 999;
+                    const unpaid = !isKons && f.status_bayar !== 'LUNAS' && Number(f.sisa_hutang || 0) > 0;
+                    const tempoBadge = unpaid
+                      ? (dTempo < 0 ? `<span class="text-[10px] font-bold text-red-600 ml-1">(Terlambat ${Math.abs(dTempo)}h)</span>` : (dTempo <= 7 ? `<span class="text-[10px] font-bold text-amber-600 ml-1">(H-${dTempo})</span>` : ''))
+                      : '';
+                    return `<tr>
+                    <td class="font-mono-num text-xs"><b>${S().esc(f.no_faktur_pbf)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(f.no_sp || 'Tanpa SP')}</span></td>
+                    <td class="font-semibold text-xs">${S().esc(f.id_pbf)}</td>
+                    <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo || '-')}${tempoBadge}</td>
+                    <td class="text-right font-mono-num text-xs">${isKons ? '<span class="text-[11px] text-blue-600 font-semibold">Titip Jual</span>' : S().rp(f.netto_hutang)}</td>
+                    <td class="text-right font-mono-num font-bold text-xs ${isKons ? 'text-blue-600' : (Number(f.sisa_hutang || 0) > 0 ? 'text-red-600' : 'text-emerald-600')}">${S().rp(f.sisa_hutang)}</td>
+                    <td><span class="badge-bpom ${isKons ? 'bpom-terbatas' : (f.status_bayar === 'LUNAS' ? 'bpom-bebas' : 'bpom-prekursor')}">${S().esc(f.status_bayar)}</span></td>
+                    <td>
+                      <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="window.openFakturDetailModal('${S().esc(f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Detail</button>
+                        ${isKons ? `<button type="button" onclick="window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-primary text-xs py-1 px-2">Settle</button>` : (Number(f.sisa_hutang || 0) > 0 ? `<button type="button" onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs py-1 px-2">Bayar</button>` : '')}
+                      </div>
+                    </td>
+                  </tr>`;
+                  }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Tidak ada faktur PBF yang sesuai filter.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       `}
@@ -3939,7 +4034,47 @@
   };
   global.setFakturListQ = (v) => { fakturListQ = v || ''; global.renderActiveView(); };
   global.setFakturListFilter = (v) => { fakturListFilter = v || 'SEMUA'; global.renderActiveView(); };
-  global.setGrnField = (k, v, rerender) => { grnHeader[k] = v; if (rerender) global.renderActiveView(); };
+  global.setFakturListPbfFilter = (v) => { fakturListPbfFilter = v || ''; global.renderActiveView(); };
+  global.setReturFilterMode = (m) => { returFilterMode = m === 'ALL' ? 'ALL' : 'NEAR_ED'; global.renderActiveView(); };
+  global.setReturSearchQ = (v) => { returSearchQ = v || ''; global.renderActiveView(); };
+  global.toggleGrnScannerPanel = () => {
+    grnScanState.panelOpen = !Boolean(grnScanState.panelOpen);
+    global.renderActiveView();
+  };
+  global.setGrnField = (k, v, rerender) => {
+    grnHeader[k] = v;
+    if (k === 'id_pbf') {
+      grnHeader.tgl_jatuh_tempo = _dueDateFromTermin(_getPbfTerminDays(v));
+      global.renderActiveView();
+      return;
+    }
+    if (rerender) global.renderActiveView();
+  };
+  global.applyGrnPpn11 = (enable) => {
+    const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
+    const dpp = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0));
+    grnHeader.ppn_masukan = enable ? Math.round(dpp * 0.11) : 0;
+    global.renderActiveView();
+  };
+  global.resetGrnForm = () => {
+    const st = S().AppState;
+    const defaultPbf = st.supplierPbf && st.supplierPbf.length ? st.supplierPbf[0].nama_pbf : '';
+    grnHeader = {
+      id_sp: '',
+      no_faktur_pbf: '',
+      no_sp: '',
+      id_pbf: defaultPbf,
+      tgl_jatuh_tempo: _dueDateFromTermin(_getPbfTerminDays(defaultPbf)),
+      diskon_pbf: 0,
+      ppn_masukan: 0,
+      jenis_penerimaan: 'BELI_PUTUS',
+      status_bayar: 'BELUM_LUNAS',
+      catatan: ''
+    };
+    grnItems = [];
+    ensureGrnInitialized();
+    global.clearGrnScanner();
+  };
   global.addGrnItemRow = () => {
     const o = S().AppState.masterObat[0] || { id_obat: 'OBT-001', hpp_avg: 5000 };
     grnItems.push({
@@ -3995,6 +4130,7 @@
   };
 
   global.clearGrnScanner = () => {
+    grnScanState.panelOpen = false;
     grnScanState.previewDataUrl = '';
     grnScanState.processedDataUrl = '';
     grnScanState.fileName = '';
@@ -4014,6 +4150,7 @@
   global.loadGrnSampleInvoice = () => {
     const scanner = global.ONSInvoiceScanner;
     const sample = scanner ? scanner.getSamplePbfInvoiceText(S().AppState) : '';
+    grnScanState.panelOpen = true;
     grnScanState.rawText = sample;
     grnScanState.error = '';
     const inp = document.getElementById('grnOcrRaw');
@@ -4024,7 +4161,9 @@
   global.openGrnLiveCamera = () => {
     const scanner = global.ONSInvoiceScanner;
     if (!scanner) return;
+    grnScanState.panelOpen = true;
     scanner.openLiveCameraCaptureModal((dataUrl, fileName) => {
+      grnScanState.panelOpen = true;
       grnScanState.previewDataUrl = dataUrl;
       grnScanState.processedDataUrl = dataUrl;
       grnScanState.fileName = fileName || 'Kamera_Faktur.jpg';
@@ -4038,6 +4177,7 @@
   global.runGrnImageScan = async () => {
     const scanner = global.ONSInvoiceScanner;
     if (!scanner || !grnScanState.previewDataUrl) return;
+    grnScanState.panelOpen = true;
     grnScanState.scanning = true;
     grnScanState.error = '';
     global.renderActiveView();
@@ -4073,6 +4213,7 @@
     grnScanState.fileName = fname;
     grnScanState.error = '';
     grnScanState.rotateDeg = 0;
+    grnScanState.panelOpen = true;
 
     if (isPdf) {
       grnScanState.sourceType = 'PDF';
@@ -4129,6 +4270,7 @@
     if (!String(raw).trim()) return global.toast('Tempel teks faktur atau scan foto/PDF faktur terlebih dahulu.', 'warn');
 
     grnScanState.rawText = String(raw);
+    grnScanState.panelOpen = true;
     ensureGrnInitialized();
 
     const st = S().AppState;
@@ -4263,6 +4405,14 @@
     try {
       ensureGrnInitialized();
       if (!grnHeader.no_faktur_pbf.trim()) throw new Error('No. Faktur PBF wajib diisi.');
+      if (!grnItems.length) throw new Error('Minimal harus ada 1 baris item obat.');
+      for (let i = 0; i < grnItems.length; i++) {
+        const it = grnItems[i];
+        if (!String(it.no_batch || '').trim()) throw new Error('No. Batch pada baris #' + (i + 1) + ' wajib diisi (aturan CDOB).');
+        if (!String(it.tgl_kadaluarsa || '').trim()) throw new Error('Tanggal Kadaluarsa (ED) pada baris #' + (i + 1) + ' wajib diisi.');
+        if (Number(it.qty_dasar || 0) <= 0) throw new Error('Qty Dasar pada baris #' + (i + 1) + ' harus lebih dari 0.');
+        if (Number(it.hpp_unit || 0) < 0) throw new Error('HPP / Unit pada baris #' + (i + 1) + ' tidak valid.');
+      }
       const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
       const netto = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
       const jenisPenerimaan = grnHeader.jenis_penerimaan || 'BELI_PUTUS';
@@ -4281,7 +4431,7 @@
         status_bayar: jenisPenerimaan === 'KONSINYASI' ? 'KONSINYASI' : (grnHeader.status_bayar || 'BELUM_LUNAS'),
         items: grnItems.map((it) => ({
           id_obat: it.id_obat,
-          no_batch: it.no_batch,
+          no_batch: String(it.no_batch || '').trim(),
           tgl_kadaluarsa: it.tgl_kadaluarsa,
           qty_dasar: Number(it.qty_dasar || 1),
           hpp_unit: Number(it.hpp_unit || 0)
@@ -4290,9 +4440,13 @@
       grnHeader.id_sp = '';
       grnHeader.no_faktur_pbf = '';
       grnHeader.no_sp = '';
+      grnHeader.sp_status = '';
+      grnHeader.diskon_pbf = 0;
+      grnHeader.ppn_masukan = 0;
       grnHeader.jenis_penerimaan = 'BELI_PUTUS';
       grnHeader.status_bayar = 'BELUM_LUNAS';
       grnItems = [];
+      grnScanState.panelOpen = false;
       grnScanState.rawText = '';
       grnScanState.summary = null;
       grnScanState.previewDataUrl = '';
@@ -4324,9 +4478,136 @@
     }
   };
 
-  global.prosesReturBar = async (idBatch, qtyMax) => {
+  global.openFakturDetailModal = (idOrNo) => {
+    const st = S().AppState;
+    const f = (st.fakturPbf || []).find((x) => x.id_faktur === idOrNo || x.no_faktur_pbf === idOrNo);
+    if (!f) return global.toast('Data faktur tidak ditemukan.', 'warn');
+    const isKons = String(f.status_bayar || '').toUpperCase() === 'KONSINYASI' || String(f.jenis_penerimaan || '').toUpperCase() === 'KONSINYASI';
+    const dTempo = f.tgl_jatuh_tempo ? S().daysUntil(f.tgl_jatuh_tempo) : 999;
+    const linkedSp = f.no_sp ? (st.suratPesanan || []).find((sp) => sp.no_sp === f.no_sp || sp.id_sp === f.id_sp) : null;
+    const linkedBatches = (st.stokBatch || []).filter((b) => (f.id_faktur && b.id_faktur === f.id_faktur) || (b.no_faktur_pbf && b.no_faktur_pbf === f.no_faktur_pbf));
+    const bruto = Number(f.total_bruto || f.netto_hutang || 0);
+    const diskon = Number(f.diskon_pbf || 0);
+    const ppn = Number(f.ppn_masukan || 0);
+    const netto = Number(f.netto_hutang || 0);
+    const sisa = Number(f.sisa_hutang || 0);
+    const terbayar = isKons ? 0 : Math.max(0, netto - sisa);
+
+    S().openModal(`
+      <div class="p-5 sm:p-6 space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-blue-600">Detail Faktur Pembelian PBF</div>
+            <h3 class="text-lg font-extrabold font-mono-num mt-0.5">${S().esc(f.no_faktur_pbf)}</h3>
+            <div class="text-xs mt-0.5" style="color:var(--ons-text-soft)">${S().esc(f.id_pbf)} &bull; SP: <span class="font-mono-num font-semibold">${S().esc(f.no_sp || 'Pembelian Langsung (Tanpa SP)')}</span></div>
+          </div>
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-sm px-2.5 py-1">&times;</button>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Jenis &amp; Status</div><div class="font-bold mt-0.5">${isKons ? 'KONSINYASI' : S().esc(f.status_bayar || 'BELUM_LUNAS')}</div></div>
+          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Tanggal Faktur</div><div class="font-bold font-mono-num mt-0.5">${S().esc(String(f.tgl_faktur || f.created_at || '-').slice(0, 10))}</div></div>
+          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Jatuh Tempo</div><div class="font-bold font-mono-num mt-0.5 ${!isKons && sisa > 0 && dTempo <= 7 ? 'text-amber-600' : ''}">${S().esc(f.tgl_jatuh_tempo || '-')}${!isKons && sisa > 0 && dTempo <= 7 ? (dTempo < 0 ? ` (Lewat ${Math.abs(dTempo)}h)` : ` (H-${dTempo})`) : ''}</div></div>
+        </div>
+
+        <div class="p-3.5 rounded-xl border space-y-1.5 text-xs" style="border-color:var(--ons-border)">
+          <div class="flex justify-between"><span>Total Bruto</span><span class="font-mono-num font-semibold">${S().rp(bruto)}</span></div>
+          <div class="flex justify-between"><span>Diskon Faktur PBF</span><span class="font-mono-num text-emerald-600">- ${S().rp(diskon)}</span></div>
+          <div class="flex justify-between"><span>PPN Masukan</span><span class="font-mono-num">+ ${S().rp(ppn)}</span></div>
+          <div class="flex justify-between pt-1.5 border-t font-bold" style="border-color:var(--ons-border)"><span>Netto Tagihan Faktur</span><span class="font-mono-num">${isKons ? 'Titip Jual (Rp 0 Hutang Awal)' : S().rp(netto)}</span></div>
+          ${!isKons ? `
+            <div class="flex justify-between"><span>Sudah Dibayar / Retur</span><span class="font-mono-num text-emerald-600">${S().rp(terbayar)}</span></div>
+            <div class="flex justify-between text-sm font-extrabold pt-1 border-t" style="border-color:var(--ons-border)"><span>Sisa Hutang</span><span class="font-mono-num ${sisa > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(sisa)}</span></div>
+          ` : ''}
+        </div>
+
+        ${linkedBatches.length ? `
+          <div class="space-y-1.5">
+            <div class="text-xs font-bold">Batch Stok Terkait Faktur (${linkedBatches.length})</div>
+            <div class="max-h-40 overflow-y-auto border rounded-xl divide-y text-xs" style="border-color:var(--ons-border)">
+              ${linkedBatches.map((b) => {
+                const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat);
+                return `<div class="p-2 flex items-center justify-between gap-2"><div><b>${S().esc(ob ? ob.nama_dagang : b.id_obat)}</b> <span class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(b.no_batch)} &bull; ED ${S().esc(b.tgl_kadaluarsa)}</span></div><span class="font-mono-num font-bold">Sisa ${b.qty_sisa}/${b.qty_awal}</span></div>`;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="flex flex-wrap justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          ${linkedSp ? `<button type="button" onclick="window.ONSStore.closeModal();window.openSpA4PreviewModal('${S().esc(linkedSp.id_sp)}')" class="ons-btn ons-btn-ghost text-xs">Lihat SP A4</button>` : ''}
+          ${isKons ? `<button type="button" onclick="window.ONSStore.closeModal();window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-primary text-xs">Kelola Settlement Konsinyasi</button>` : (sisa > 0 ? `<button type="button" onclick="window.ONSStore.closeModal();window.navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs">Bayar / Cicil di Hutang PBF</button>` : '')}
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+        </div>
+      </div>
+    `, { mode: 'spotlight', maxWidth: '600px' });
+  };
+
+  global.openReturBarModal = (idBatch) => {
+    const st = S().AppState;
+    const b = (st.stokBatch || []).find((x) => x.id_batch === idBatch);
+    if (!b) return global.toast('Batch tidak ditemukan.', 'warn');
+    const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat);
+    const hpp = Number(b.hpp_beli || (ob && (ob.hpp_terakhir || ob.hpp_avg)) || 0);
+    const dLeft = S().daysUntil(b.tgl_kadaluarsa);
+    const defaultReason = dLeft <= 180 ? 'Retur Batch ED Dekat' : 'Kemasan Rusak / Pecah';
+
+    S().openModal(`
+      <div class="p-5 sm:p-6 space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-amber-600">Konfirmasi Retur Distributor (BAR-PBF)</div>
+            <h3 class="text-base font-extrabold mt-0.5">${S().esc(ob ? ob.nama_dagang : b.id_obat)}</h3>
+            <div class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Batch ${S().esc(b.no_batch)} &bull; ED ${S().esc(b.tgl_kadaluarsa)} (${dLeft}h) &bull; ${S().esc(b.id_pbf || '-')}</div>
+          </div>
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-sm px-2.5 py-1">&times;</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="font-semibold block mb-1">Jumlah Retur (Maks ${b.qty_sisa})</label>
+            <input id="returModalQtyInp" type="number" min="1" max="${b.qty_sisa}" value="${b.qty_sisa}" oninput="const v=Math.min(${b.qty_sisa},Math.max(1,Number(this.value||1)));document.getElementById('returModalEstCut').textContent=window.ONSStore.rp(v*${hpp});" class="ons-input font-mono-num"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Alasan Retur CDOB</label>
+            <select id="returModalReasonSel" class="ons-select">
+              <option value="Retur Batch ED Dekat" ${defaultReason === 'Retur Batch ED Dekat' ? 'selected' : ''}>Near-ED (&le;180 Hari) / Kadaluarsa</option>
+              <option value="Kemasan Rusak / Pecah" ${defaultReason === 'Kemasan Rusak / Pecah' ? 'selected' : ''}>Kemasan Rusak / Pecah / Segel Cacat</option>
+              <option value="Salah Kirim PBF">Salah Kirim Item / Varian PBF</option>
+              <option value="Recall BPOM / Prinsipal">Recall BPOM / Penarikan Prinsipal</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl border text-xs flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <span>Estimasi Potong Hutang PBF (HPP ${S().rp(hpp)}/unit):</span>
+          <b id="returModalEstCut" class="font-mono-num text-sm text-emerald-600">${S().rp(Number(b.qty_sisa || 0) * hpp)}</b>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.submitReturBarModal('${S().esc(b.id_batch)}')" class="ons-btn ons-btn-amber text-xs font-bold">Konfirmasi Buat BAR-PBF &amp; Potong Stok</button>
+        </div>
+      </div>
+    `, { mode: 'spotlight', maxWidth: '520px' });
+  };
+
+  global.submitReturBarModal = async (idBatch) => {
+    const qtyEl = document.getElementById('returModalQtyInp');
+    const reasonEl = document.getElementById('returModalReasonSel');
+    const qty = Number(qtyEl ? qtyEl.value : 0);
+    const alasan = reasonEl ? reasonEl.value : 'Retur Batch ED Dekat';
+    if (!qty || qty <= 0) return global.toast('Qty retur harus lebih dari 0.', 'warn');
+    S().closeModal();
+    await window.prosesReturBar(idBatch, qty, alasan);
+  };
+
+  global.prosesReturBar = async (idBatch, qtyMax, alasan) => {
     try {
-      const res = await API().callApi('pengadaan.returBar', { id_batch: idBatch, qty_retur: qtyMax, alasan: 'Retur Batch ED Dekat' }, { isWrite: true });
+      const res = await API().callApi('pengadaan.returBar', {
+        id_batch: idBatch,
+        qty_retur: qtyMax,
+        alasan: alasan || 'Retur Batch ED Dekat'
+      }, { isWrite: true });
       global.toast('Retur BAR-PBF dicatat (' + res.qty_retur + ' unit). Potongan hutang: ' + S().rp(res.nilai_potong_hutang), 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
