@@ -1837,8 +1837,222 @@ html.dark .ons-scan-zone {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* === v16.9 KASIR POS WORKSTATION PRO === */
+.ons-pos-bar {
+  position: relative;
+  border-radius: 1.15rem;
+  border: 1px solid var(--ons-border);
+  border-top: 3px solid var(--ons-primary-bright);
+  background: radial-gradient(circle at 96% 20%, rgba(16, 185, 129, 0.12), transparent 40%),
+              linear-gradient(135deg, rgba(239, 246, 255, 0.7) 0%, var(--ons-bg-card) 58%);
+  box-shadow: 0 8px 24px -14px rgba(0, 80, 202, 0.18), var(--ons-shadow-card);
+}
+html.dark .ons-pos-bar {
+  background: radial-gradient(circle at 96% 20%, rgba(16, 185, 129, 0.18), transparent 44%),
+              linear-gradient(135deg, rgba(30, 58, 138, 0.22) 0%, var(--ons-bg-card) 60%);
+}
+.ons-pos-live-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.ons-pos-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.72rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.14s ease;
+}
+.ons-pos-chip:hover {
+  border-color: var(--ons-primary-bright);
+  color: var(--ons-primary-bright);
+}
+.ons-pos-chip.is-active {
+  background: var(--ons-primary-bright);
+  border-color: var(--ons-primary-bright);
+  color: #FFFFFF;
+  box-shadow: 0 6px 14px -6px rgba(0, 102, 254, 0.55);
+}
+.ons-pos-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 1rem;
+  padding: 0.85rem;
+  box-shadow: var(--ons-shadow-card);
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.16s ease, border-color 0.14s ease, background-color 0.14s ease;
+}
+.ons-pos-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ons-primary-bright);
+  box-shadow: 0 12px 26px -10px rgba(0, 80, 202, 0.22);
+}
+.ons-pos-card:active {
+  transform: translateY(0);
+}
+.ons-pos-card.is-incart {
+  border-color: #0066FE;
+  box-shadow: 0 0 0 2px rgba(0, 102, 254, 0.14), var(--ons-shadow-card);
+  background: linear-gradient(180deg, rgba(0, 102, 254, 0.05) 0%, var(--ons-bg-card) 48%);
+}
+html.dark .ons-pos-card.is-incart {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, var(--ons-bg-card) 52%);
+}
+.ons-pos-card.is-empty {
+  opacity: 0.72;
+  border-style: dashed;
+}
+.ons-pos-listrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
+}
+.ons-pos-listrow:hover {
+  border-color: var(--ons-primary-bright);
+  background: rgba(0, 102, 254, 0.04);
+}
+.ons-pos-listrow.is-incart {
+  border-color: #0066FE;
+  box-shadow: 0 0 0 1px rgba(0, 102, 254, 0.22);
+}
+.ons-pos-ticket {
+  border-radius: 1.15rem;
+  border: 1px solid var(--ons-border);
+  border-top: 3px solid #10B981;
+  background: var(--ons-bg-card);
+  box-shadow: 0 14px 32px -16px rgba(15, 23, 42, 0.24), var(--ons-shadow-card);
+  padding: 1rem;
+}
+@media (min-width: 1280px) {
+  .ons-pos-ticket {
+    position: sticky;
+    top: 0.75rem;
+  }
+  .ons-pos-cart-scroll {
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 0.18rem;
+  }
+}
+.ons-pos-cart-item {
+  border-radius: 0.9rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  padding: 0.65rem 0.72rem;
+  transition: border-color 0.14s ease;
+}
+.ons-pos-cart-item:hover {
+  border-color: rgba(0, 102, 254, 0.45);
+}
+.ons-pos-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--ons-border);
+  border-radius: 0.6rem;
+  background: var(--ons-bg-card);
+  overflow: hidden;
+  height: 1.95rem;
+}
+.ons-pos-stepper button {
+  width: 1.65rem;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--ons-text-main);
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.ons-pos-stepper button:hover {
+  background: rgba(0, 102, 254, 0.1);
+  color: var(--ons-primary-bright);
+}
+.ons-pos-stepper input {
+  width: 2.35rem;
+  height: 100%;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-left: 1px solid var(--ons-border);
+  border-right: 1px solid var(--ons-border);
+  background: transparent;
+  color: var(--ons-text-main);
+  outline: none;
+}
+.ons-pos-signa-chip {
+  padding: 0.16rem 0.44rem;
+  border-radius: 0.4rem;
+  font-size: 0.63rem;
+  font-weight: 700;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  color: var(--ons-text-soft);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.ons-pos-signa-chip:hover {
+  border-color: var(--ons-primary-bright);
+  color: var(--ons-primary-bright);
+}
+.ons-pos-ledger {
+  border-radius: 0.95rem;
+  border: 1px solid var(--ons-border);
+  background: linear-gradient(180deg, var(--ons-bg-subtle) 0%, rgba(239, 246, 255, 0.45) 100%);
+  padding: 0.85rem 0.95rem;
+}
+html.dark .ons-pos-ledger {
+  background: linear-gradient(180deg, var(--ons-bg-subtle) 0%, rgba(30, 58, 138, 0.16) 100%);
+}
+.ons-pos-paybtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.52rem 0.35rem;
+  border-radius: 0.78rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.14s ease, filter 0.14s ease;
+}
+.ons-pos-paybtn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+.ons-pos-paybtn:active {
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill {
+  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip {
     transition: none !important;
     animation: none !important;
   }
