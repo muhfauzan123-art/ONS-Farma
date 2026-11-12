@@ -51,6 +51,22 @@
   let lapKeuInterval = 'none'; // none | mingguan | harian
   let lapKeuShowPct = false;
   let lapRekapCollapsed = {};
+  let anlTab = 'pareto'; // pareto | pembelian | harga
+  let anlParetoMode = 'penjualan'; // penjualan | keuntungan | kuantitas
+  let anlParetoSearchQ = '';
+  let anlParetoDateFrom = '';
+  let anlParetoDateTo = '';
+  let anlBeliRefPeriod = '3m'; // 1m | 3m | 6m | 12m
+  let anlBeliSearchQ = '';
+  let anlBeliStatusFilter = 'SEMUA'; // SEMUA | UNDERSTOCK | POTENSIAL_LOSS | DEADSTOCK | OVERSTOCK | AMAN
+  let anlPoLeadTime = 3;
+  let anlPoReviewPeriod = 14;
+  let anlPoBufferPct = 20;
+  let anlHargaHppBasis = 'ref'; // ref | last | avg
+  let anlHargaSearchQ = '';
+  let anlHargaStatusFilter = 'SEMUA'; // SEMUA | NAIK | PERLU | AMAN
+  let anlHargaSelected = new Set();
+  let anlHargaTargetMarkup = 25;
   let shiftDenomCounts = { 100000: 0, 50000: 0, 20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0 };
   let shiftBlindRevealed = false;
   let shiftAktualCustom = null;
@@ -3471,7 +3487,7 @@
         <span class="font-extrabold text-sm text-blue-600 dark:text-blue-400">${titleText}</span>
         <button type="button" onclick="window.toggleLapRekapPanel('${S().esc(keyId)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2" aria-label="Toggle Rekap">${isCollapsed ? '&#9660;' : '&#9650;'}</button>
       </div>
-      ${isCollapsed ? '' : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-1">${colsHtml}</div>`}
+      ${isCollapsed ? '' : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-1">${colsHtml}</div>`}
     </div>`;
   }
 
@@ -4643,6 +4659,854 @@
       subtitle: `Pelaporan Sediaan Narkotika & Psikotropika • Dicetak ${S().formatTgl(new Date().toISOString(), true)}`,
       emptyMessage: 'Belum ada item golongan Narkotika/Psikotropika/OOT di Master Obat.'
     });
+  };
+
+  /**
+   * =========================================================================
+   * W-12B: MODUL ANALISIS APOTEK DIGITAL (PARETO, PEMBELIAN, HARGA)
+   * =========================================================================
+   */
+  function _renderAnlParetoSubTab() {
+    const st = S().AppState;
+    const today = new Date().toISOString().slice(0, 10);
+    const mStart = today.slice(0, 8) + '01';
+    if (!anlParetoDateFrom) anlParetoDateFrom = mStart;
+    if (!anlParetoDateTo) anlParetoDateTo = today;
+
+    const inRange = (dStr) => {
+      const d = String(dStr || '').slice(0, 10);
+      if (anlParetoDateFrom && d < anlParetoDateFrom) return false;
+      if (anlParetoDateTo && d > anlParetoDateTo) return false;
+      return true;
+    };
+    const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || 'LUNAS').toUpperCase() !== 'RETUR' && inRange(p.tanggal || p.created_at));
+    const validSaleIds = new Set(validSales.map((p) => p.id_penjualan || p.kode_penjualan || p.id_transaksi));
+
+    const salesMap = {};
+    (st.detailPenjualan || []).forEach((d) => {
+      if (d.id_penjualan && validSaleIds.size && !validSaleIds.has(d.id_penjualan)) return;
+      const id = d.id_obat;
+      if (!id) return;
+      if (!salesMap[id]) salesMap[id] = { qty: 0, omzet: 0, hpp: 0 };
+      const q = Number(d.qty || 0);
+      const sub = Number(d.subtotal_item || (q * Number(d.harga_jual || 0)));
+      const hpp = Number(d.hpp_unit || 0) * q;
+      salesMap[id].qty += q;
+      salesMap[id].omzet += sub;
+      salesMap[id].hpp += hpp;
+    });
+
+    const rows = (st.masterObat || []).map((o) => {
+      const s = salesMap[o.id_obat] || { qty: 0, omzet: 0, hpp: 0 };
+      const stokSaatIni = S().getTotalStok(o.id_obat);
+      const hppUnit = Number(o.hpp_terakhir || o.hpp_avg || 0);
+      const nilaiStok = stokSaatIni * hppUnit;
+      const keuntungan = s.omzet - s.hpp;
+      return {
+        id_obat: o.id_obat,
+        nama: o.nama_dagang || o.id_obat,
+        satuan: o.satuan_dasar || 'Unit',
+        terjual: s.qty,
+        omzet: s.omzet,
+        keuntungan: keuntungan,
+        stokSaatIni: stokSaatIni,
+        nilaiStok: nilaiStok,
+        golongan: o.golongan_bpom || 'BEBAS'
+      };
+    });
+
+    if (anlParetoMode === 'keuntungan') {
+      rows.sort((a, b) => b.keuntungan - a.keuntungan || b.omzet - a.omzet);
+    } else if (anlParetoMode === 'kuantitas') {
+      rows.sort((a, b) => b.terjual - a.terjual || b.stokSaatIni - a.stokSaatIni);
+    } else {
+      rows.sort((a, b) => b.omzet - a.omzet || b.nilaiStok - a.nilaiStok);
+    }
+
+    const totalMetric = Math.max(1, rows.reduce((acc, r) => acc + (anlParetoMode === 'keuntungan' ? Math.max(0, r.keuntungan) : (anlParetoMode === 'kuantitas' ? r.terjual : r.omzet)), 0));
+    let cum = 0;
+    let countA = 0, sumA = 0;
+    let countB = 0, sumB = 0;
+    let countC = 0, sumC = 0;
+
+    rows.forEach((r, idx) => {
+      const m = anlParetoMode === 'keuntungan' ? Math.max(0, r.keuntungan) : (anlParetoMode === 'kuantitas' ? r.terjual : r.omzet);
+      const pct = (m / totalMetric) * 100;
+      cum += pct;
+      r.pct = Math.round(pct * 10) / 10;
+      r.cumPct = Math.min(100, Math.round(cum * 10) / 10);
+      if (r.cumPct <= 70 || (idx === 0 && m > 0)) {
+        r.klasifikasi = 'A';
+        r.badgeCls = 'badge-bpom bpom-bebas font-bold';
+        countA++;
+        sumA += r.omzet;
+      } else if (r.cumPct <= 90 || countB === 0) {
+        r.klasifikasi = 'B';
+        r.badgeCls = 'badge-bpom bpom-terbatas font-bold';
+        countB++;
+        sumB += r.omzet;
+      } else {
+        r.klasifikasi = 'C';
+        r.badgeCls = 'badge-bpom bpom-prekursor font-bold';
+        countC++;
+        sumC += r.omzet;
+      }
+    });
+
+    const sq = anlParetoSearchQ.trim().toLowerCase();
+    const filtered = rows.filter((r) => {
+      if (!sq) return true;
+      return `${r.nama} ${r.id_obat} ${r.klasifikasi} ${r.golongan}`.toLowerCase().includes(sq);
+    });
+
+    const tableHtml = `
+      <div class="ons-table-wrap">
+        <table class="ons-table is-compact">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Nama Produk</th>
+              <th>Terjual</th>
+              <th class="text-right">Nilai Penjualan</th>
+              <th class="text-right">Keuntungan</th>
+              <th>Persentase</th>
+              <th>Klasifikasi</th>
+              <th>Stok Saat Ini</th>
+              <th class="text-right">Nilai Stok</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((r, idx) => `
+              <tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="text-xs">
+                  <div class="font-bold">${S().esc(r.nama)}</div>
+                  <div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(r.id_obat)} &bull; ${S().esc(r.satuan)}</div>
+                </td>
+                <td class="font-mono-num text-xs font-semibold">${r.terjual} ${S().esc(r.satuan)}</td>
+                <td class="text-right font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${S().rp(r.omzet)}</td>
+                <td class="text-right font-mono-num text-xs font-bold text-emerald-600 dark:text-emerald-400">${S().rp(r.keuntungan)}</td>
+                <td class="font-mono-num text-xs">${r.pct}% <span class="text-[10px]" style="color:var(--ons-text-soft)">(Kum. ${r.cumPct}%)</span></td>
+                <td><span class="${r.badgeCls}">Pareto ${r.klasifikasi}</span></td>
+                <td class="font-mono-num text-xs font-bold">${r.stokSaatIni}</td>
+                <td class="text-right font-mono-num text-xs">${S().rp(r.nilaiStok)}</td>
+                <td>
+                  <button type="button" onclick="navigateView('defecta','order')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Order via Defecta">Defecta</button>
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="10" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const rekapFooter = _renderLapRekapFooter('anlPareto', `Akumulasi Hasil Analisis dari ${_fmtDateId(anlParetoDateFrom)} s.d. ${_fmtDateId(anlParetoDateTo)}`, [
+      { label: 'Pareto A', valHtml: `${countA} produk (${S().rp(sumA)})`, cls: 'text-blue-600 dark:text-blue-400' },
+      { label: 'Pareto B', valHtml: `${countB} produk (${S().rp(sumB)})`, cls: 'text-emerald-600 dark:text-emerald-400' },
+      { label: 'Pareto C', valHtml: `${countC} produk (${S().rp(sumC)})`, cls: 'text-slate-500' },
+      { label: 'Total Produk', valHtml: `${rows.length} produk` }
+    ]);
+
+    return `
+      <div class="ons-card p-3 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
+              <select id="anlParetoMode" class="ons-select text-xs h-8 py-1" onchange="window.setAnlParetoMode(this.value)">
+                <option value="penjualan" ${anlParetoMode === 'penjualan' ? 'selected' : ''}>Nilai Penjualan</option>
+                <option value="keuntungan" ${anlParetoMode === 'keuntungan' ? 'selected' : ''}>Keuntungan</option>
+                <option value="kuantitas" ${anlParetoMode === 'kuantitas' ? 'selected' : ''}>Kuantitas Terjual</option>
+              </select>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+              <input id="anlParetoSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlParetoSearchQ)}" oninput="window.setAnlParetoSearch(this.value)"/>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
+              <div class="flex items-center gap-1">
+                <input id="anlParetoDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateFrom)}" onchange="window.setAnlParetoDateRange(this.value, document.getElementById('anlParetoDateTo').value)"/>
+                <span class="text-xs">&ndash;</span>
+                <input id="anlParetoDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateTo)}" onchange="window.setAnlParetoDateRange(document.getElementById('anlParetoDateFrom').value, this.value)"/>
+              </div>
+            </div>
+            <div class="self-end">
+              <button type="button" onclick="window.resetAnlParetoFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            </div>
+          </div>
+        </div>
+        ${tableHtml}
+        ${rekapFooter}
+      </div>
+    `;
+  }
+
+  function _renderAnlPembelianSubTab() {
+    const st = S().AppState;
+    const days = anlBeliRefPeriod === '1m' ? 30 : (anlBeliRefPeriod === '6m' ? 180 : (anlBeliRefPeriod === '12m' ? 365 : 90));
+    const now = new Date();
+    const startDate = new Date(now.getTime() - days * 86400000);
+    const startIso = startDate.toISOString().slice(0, 10);
+    const todayIso = now.toISOString().slice(0, 10);
+
+    const scopedSales = (st.penjualan || []).filter((p) => {
+      const d = String(p.tanggal || p.created_at || '').slice(0, 10);
+      return d >= startIso && String(p.status_trx || 'LUNAS').toUpperCase() !== 'RETUR';
+    });
+    const saleIds = new Set(scopedSales.map((p) => p.id_penjualan || p.kode_penjualan || p.id_transaksi));
+
+    const soldPeriodMap = {};
+    const lastSoldMap = {};
+    (st.detailPenjualan || []).forEach((d) => {
+      if (d.id_penjualan && saleIds.size && !saleIds.has(d.id_penjualan)) return;
+      const id = d.id_obat;
+      if (!id) return;
+      soldPeriodMap[id] = (soldPeriodMap[id] || 0) + Number(d.qty || 0);
+    });
+
+    (st.penjualan || []).forEach((p) => {
+      const dStr = String(p.tanggal || p.created_at || '').slice(0, 10);
+      const idTrx = p.id_penjualan || p.kode_penjualan || p.id_transaksi;
+      (st.detailPenjualan || []).filter((d) => (d.id_penjualan === idTrx || d.id_transaksi === idTrx)).forEach((d) => {
+        if (d.id_obat && (!lastSoldMap[d.id_obat] || dStr > lastSoldMap[d.id_obat])) {
+          lastSoldMap[d.id_obat] = dStr;
+        }
+      });
+    });
+
+    const pbfLeadMap = {};
+    (st.supplierPbf || []).forEach((p) => {
+      if (p.nama_pbf) pbfLeadMap[String(p.nama_pbf).toUpperCase()] = Number(p.lead_time_hari || 3);
+      if (p.id_pbf) pbfLeadMap[String(p.id_pbf).toUpperCase()] = Number(p.lead_time_hari || 3);
+    });
+
+    const lostList = (typeof _getLostSales === 'function') ? _getLostSales() : [];
+    const lostNames = new Set(lostList.map((l) => String(l.nama_obat || '').toLowerCase()));
+
+    let countLoss = 0, countUnder = 0, countDead = 0, countOver = 0;
+    const items = (st.masterObat || []).map((o) => {
+      const terjual = Number(soldPeriodMap[o.id_obat] || 0);
+      const lastSold = lastSoldMap[o.id_obat] ? _fmtDateId(lastSoldMap[o.id_obat]) : '-';
+      const stokTerkini = S().getTotalStok(o.id_obat);
+      const stokMin = Number(o.stok_min || 10);
+      const stokMax = Number(o.stok_max || Math.max(stokMin * 4, 40));
+      const leadHari = Number(pbfLeadMap[String(o.pbf_utama || '').toUpperCase()] || anlPoLeadTime || 3);
+      const avgHarian = terjual / days;
+      const avgBln = Math.round((terjual / (days / 30)) * 10) / 10;
+      const bufferStock = Math.ceil(avgHarian * leadHari * (1 + anlPoBufferPct / 100));
+      const targetStok = Math.max(stokMin, Math.ceil(avgHarian * anlPoReviewPeriod) + bufferStock);
+      const pemenuhanStok = Math.max(0, targetStok - stokTerkini);
+
+      const isLost = lostNames.has(String(o.nama_dagang || '').toLowerCase());
+      let status = 'AMAN';
+      let statusLabel = 'Aman';
+      let statusBadge = 'badge-bpom bpom-bebas';
+
+      if (stokTerkini <= 0 && (terjual > 0 || isLost)) {
+        status = 'POTENSIAL_LOSS';
+        statusLabel = 'Potensial Loss';
+        statusBadge = 'badge-bpom bpom-narkotika';
+        countLoss++;
+      } else if (stokTerkini <= stokMin || stokTerkini < bufferStock) {
+        status = 'UNDERSTOCK';
+        statusLabel = 'Understock';
+        statusBadge = 'badge-bpom bpom-keras';
+        countUnder++;
+      } else if (stokTerkini > stokMax * 1.5 && terjual > 0) {
+        status = 'OVERSTOCK';
+        statusLabel = 'Overstock';
+        statusBadge = 'badge-bpom bpom-prekursor';
+        countOver++;
+      } else if (stokTerkini >= 20 && terjual <= 0) {
+        status = 'DEADSTOCK';
+        statusLabel = 'Deadstock';
+        statusBadge = 'badge-bpom bpom-terbatas';
+        countDead++;
+      }
+
+      return {
+        id_obat: o.id_obat,
+        nama: o.nama_dagang || o.id_obat,
+        satuan: o.satuan_dasar || 'Unit',
+        terjual,
+        lastSold,
+        periodeBeli: `${anlPoReviewPeriod} Hari`,
+        rataRataPenjualan: `${avgBln} /bln`,
+        stokMin,
+        stokMax,
+        targetStok,
+        stokTerkini,
+        pemenuhanStok,
+        status,
+        statusLabel,
+        statusBadge,
+        pareto: (o.golongan_bpom === 'KERAS' || o.golongan_bpom === 'NARKOTIKA' || o.golongan_bpom === 'PSIKOTROPIKA') ? 'A' : 'B',
+        jenisSp: o.golongan_bpom || 'REGULER'
+      };
+    });
+
+    const sq = anlBeliSearchQ.trim().toLowerCase();
+    const filtered = items.filter((r) => {
+      if (anlBeliStatusFilter !== 'SEMUA' && r.status !== anlBeliStatusFilter) return false;
+      if (sq) {
+        return `${r.nama} ${r.id_obat} ${r.satuan} ${r.jenisSp} ${r.statusLabel}`.toLowerCase().includes(sq);
+      }
+      return true;
+    });
+
+    const tableHtml = `
+      <div class="ons-table-wrap">
+        <table class="ons-table is-compact">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Nama Produk</th>
+              <th>Satuan</th>
+              <th>Terjual</th>
+              <th>Penjualan Terakhir</th>
+              <th>Periode Pembelian</th>
+              <th>Rata-rata Penjualan</th>
+              <th>Stok Minimal</th>
+              <th>Stok Maksimal</th>
+              <th>Target Stok</th>
+              <th>Stok Terkini</th>
+              <th class="text-right">Pemenuhan Stok</th>
+              <th>Status</th>
+              <th>Pareto</th>
+              <th>Jenis SP</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((r, idx) => `
+              <tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-bold text-xs">${S().esc(r.nama)}</td>
+                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(r.satuan)}</td>
+                <td class="font-mono-num text-xs">${r.terjual}</td>
+                <td class="font-mono-num text-xs">${r.lastSold}</td>
+                <td class="text-xs">${r.periodeBeli}</td>
+                <td class="font-mono-num text-xs">${r.rataRataPenjualan}</td>
+                <td class="font-mono-num text-xs">${r.stokMin}</td>
+                <td class="font-mono-num text-xs">${r.stokMax}</td>
+                <td class="font-mono-num text-xs font-semibold">${r.targetStok}</td>
+                <td class="font-mono-num text-xs font-bold ${r.stokTerkini <= r.stokMin ? 'text-red-600' : ''}">${r.stokTerkini}</td>
+                <td class="text-right font-mono-num text-xs font-bold ${r.pemenuhanStok > 0 ? 'text-emerald-600 dark:text-emerald-400' : ''}">${r.pemenuhanStok}</td>
+                <td><span class="${r.statusBadge}">${r.statusLabel}</span></td>
+                <td><span class="badge-bpom ${r.pareto === 'A' ? 'bpom-bebas' : 'bpom-terbatas'}">${r.pareto}</span></td>
+                <td><span class="badge-bpom bpom-bebas">${S().esc(r.jenisSp)}</span></td>
+              </tr>
+            `).join('') : '<tr><td colspan="15" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const rekapFooter = _renderLapRekapFooter('anlBeli', `Rekap dari ${_fmtDateId(startIso)} s.d. ${_fmtDateId(todayIso)}`, [
+      { label: 'Potensial Loss', valHtml: `${countLoss} produk`, cls: 'text-red-600 dark:text-red-400' },
+      { label: 'Understock', valHtml: `${countUnder} produk`, cls: 'text-amber-600 dark:text-amber-400' },
+      { label: 'Deadstock', valHtml: `${countDead} produk`, cls: 'text-slate-500' },
+      { label: 'Overstock', valHtml: `${countOver} produk`, cls: 'text-blue-600 dark:text-blue-400' }
+    ]);
+
+    return `
+      <div class="ons-card p-3 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Referensi Data</span>
+              <select id="anlBeliRefPeriod" class="ons-select text-xs h-8 py-1" onchange="window.setAnlBeliRefPeriod(this.value)">
+                <option value="1m" ${anlBeliRefPeriod === '1m' ? 'selected' : ''}>1 Bulan Terakhir</option>
+                <option value="3m" ${anlBeliRefPeriod === '3m' ? 'selected' : ''}>3 Bulan Terakhir</option>
+                <option value="6m" ${anlBeliRefPeriod === '6m' ? 'selected' : ''}>6 Bulan Terakhir</option>
+                <option value="12m" ${anlBeliRefPeriod === '12m' ? 'selected' : ''}>1 Tahun Terakhir</option>
+              </select>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+              <input id="anlBeliSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlBeliSearchQ)}" oninput="window.setAnlBeliSearch(this.value)"/>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Status</span>
+              <select id="anlBeliStatusFilter" class="ons-select text-xs h-8 py-1" onchange="window.setAnlBeliStatusFilter(this.value)">
+                <option value="SEMUA" ${anlBeliStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Status</option>
+                <option value="UNDERSTOCK" ${anlBeliStatusFilter === 'UNDERSTOCK' ? 'selected' : ''}>Understock</option>
+                <option value="POTENSIAL_LOSS" ${anlBeliStatusFilter === 'POTENSIAL_LOSS' ? 'selected' : ''}>Potensial Loss</option>
+                <option value="DEADSTOCK" ${anlBeliStatusFilter === 'DEADSTOCK' ? 'selected' : ''}>Deadstock</option>
+                <option value="OVERSTOCK" ${anlBeliStatusFilter === 'OVERSTOCK' ? 'selected' : ''}>Overstock</option>
+                <option value="AMAN" ${anlBeliStatusFilter === 'AMAN' ? 'selected' : ''}>Stok Aman</option>
+              </select>
+            </div>
+          </div>
+          <div class="self-end">
+            <button type="button" onclick="window.resetAnlBeliFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+          </div>
+        </div>
+        ${tableHtml}
+        ${rekapFooter}
+      </div>
+    `;
+  }
+
+  function _renderAnlHargaSubTab() {
+    const st = S().AppState;
+    let countNaik = 0, countTurun = 0, countPerlu = 0, countAman = 0;
+
+    const items = (st.masterObat || []).map((o) => {
+      const hppLast = Number(o.hpp_terakhir || 0);
+      const hppAvg = Number(o.hpp_avg || hppLast || 0);
+      const hppRef = anlHargaHppBasis === 'last' ? (hppLast || hppAvg) : (anlHargaHppBasis === 'avg' ? (hppAvg || hppLast) : (hppAvg || hppLast));
+
+      const deltaHpp = hppLast - hppAvg;
+      const deltaPct = hppAvg > 0 ? Math.round((deltaHpp / hppAvg) * 1000) / 10 : 0;
+      const hargaJual = Number(o.harga_umum || 0);
+      const targetRatio = Math.min(0.85, Math.max(0.05, anlHargaTargetMarkup / 100));
+      const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : hargaJual;
+      const rekomendasiHarga = hppRef > 0 ? Math.ceil(rawTarget / 100) * 100 : hargaJual;
+
+      let status = 'AMAN';
+      if (deltaPct > 0) {
+        status = 'NAIK';
+        countNaik++;
+      } else if (deltaPct < 0) {
+        countTurun++;
+      }
+
+      if (hargaJual < rekomendasiHarga || (hppRef > 0 && hargaJual <= hppRef)) {
+        status = 'PERLU';
+        countPerlu++;
+      } else if (status !== 'NAIK') {
+        countAman++;
+      }
+
+      return {
+        id_obat: o.id_obat,
+        nama: o.nama_dagang || o.id_obat,
+        satuan: o.satuan_dasar || 'Unit',
+        hppRef,
+        hppLast,
+        deltaHpp,
+        deltaPct,
+        markup: anlHargaTargetMarkup,
+        hargaJual,
+        rekomendasiHarga,
+        status
+      };
+    });
+
+    const sq = anlHargaSearchQ.trim().toLowerCase();
+    const filtered = items.filter((r) => {
+      if (anlHargaStatusFilter === 'NAIK' && r.status !== 'NAIK') return false;
+      if (anlHargaStatusFilter === 'PERLU' && r.status !== 'PERLU') return false;
+      if (anlHargaStatusFilter === 'AMAN' && r.status !== 'AMAN') return false;
+      if (sq) {
+        return `${r.nama} ${r.id_obat} ${r.satuan}`.toLowerCase().includes(sq);
+      }
+      return true;
+    });
+
+    const allChecked = filtered.length > 0 && filtered.every((r) => anlHargaSelected.has(r.id_obat));
+
+    const tableHtml = `
+      <div class="ons-table-wrap">
+        <table class="ons-table is-compact">
+          <thead>
+            <tr>
+              <th class="w-8"><input type="checkbox" ${allChecked ? 'checked' : ''} onchange="window.toggleAnlHargaSelectAll(this.checked)" aria-label="Pilih Semua"/></th>
+              <th>No.</th>
+              <th>Nama Produk</th>
+              <th>Satuan</th>
+              <th class="text-right">Referensi Harga Pokok <span title="HPP Modal Rata-rata/Master" style="color:var(--ons-text-soft)">(i)</span></th>
+              <th class="text-right">Harga Pokok Terakhir <span title="HPP Faktur Terbaru" style="color:var(--ons-text-soft)">(i)</span></th>
+              <th>Perubahan <span title="Selisih Kenaikan HPP" style="color:var(--ons-text-soft)">(i)</span></th>
+              <th>Markup</th>
+              <th class="text-right">Harga Jual</th>
+              <th class="text-right">Rekomendasi Harga Jual</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((r, idx) => {
+              const isChecked = anlHargaSelected.has(r.id_obat);
+              const chgHtml = r.deltaPct > 0
+                ? `<span class="badge-bpom bpom-narkotika font-bold">+${r.deltaPct}% (+${S().rp(r.deltaHpp)})</span>`
+                : (r.deltaPct < 0
+                  ? `<span class="badge-bpom bpom-bebas font-bold">${r.deltaPct}% (${S().rp(r.deltaHpp)})</span>`
+                  : '<span style="color:var(--ons-text-soft)">0%</span>');
+              return `<tr>
+                <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="window.toggleAnlHargaItemSelect('${r.id_obat}', this.checked)" aria-label="Pilih ${S().esc(r.nama)}"/></td>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-bold text-xs">${S().esc(r.nama)}</td>
+                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(r.satuan)}</td>
+                <td class="text-right font-mono-num text-xs">${S().rp(r.hppRef)}</td>
+                <td class="text-right font-mono-num text-xs font-semibold">${S().rp(r.hppLast)}</td>
+                <td>${chgHtml}</td>
+                <td class="font-mono-num text-xs font-semibold">${r.markup}%</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.hargaJual)}</td>
+                <td class="text-right font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${S().rp(r.rekomendasiHarga)}</td>
+                <td>
+                  <button type="button" onclick="window.applySinglePriceFromAnalysis('${r.id_obat}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Terapkan Rekomendasi">Update</button>
+                </td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="11" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const rekapFooter = _renderLapRekapFooter('anlHarga', 'Ringkasan Analisis', [
+      { label: 'Harga Naik', valHtml: `${countNaik} produk`, cls: 'text-red-600 dark:text-red-400' },
+      { label: 'Harga Turun', valHtml: `${countTurun} produk`, cls: 'text-emerald-600 dark:text-emerald-400' },
+      { label: 'Perlu Penyesuaian', valHtml: `${countPerlu} produk`, cls: 'text-amber-600 dark:text-amber-400' },
+      { label: 'Telah Disesuaikan/Diabaikan', valHtml: `${countAman} produk`, cls: 'text-slate-500' }
+    ]);
+
+    return `
+      <div class="ons-card p-3 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Harga Pembanding</span>
+              <select id="anlHargaHppBasis" class="ons-select text-xs h-8 py-1" onchange="window.setAnlHargaHppBasis(this.value)">
+                <option value="ref" ${anlHargaHppBasis === 'ref' ? 'selected' : ''}>Referensi Harga Pokok</option>
+                <option value="last" ${anlHargaHppBasis === 'last' ? 'selected' : ''}>Harga Pokok Terakhir</option>
+                <option value="avg" ${anlHargaHppBasis === 'avg' ? 'selected' : ''}>Harga Pokok Rata-Rata</option>
+              </select>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+              <input id="anlHargaSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlHargaSearchQ)}" oninput="window.setAnlHargaSearch(this.value)"/>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Status</span>
+              <select id="anlHargaStatusFilter" class="ons-select text-xs h-8 py-1" onchange="window.setAnlHargaStatusFilter(this.value)">
+                <option value="SEMUA" ${anlHargaStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Produk</option>
+                <option value="NAIK" ${anlHargaStatusFilter === 'NAIK' ? 'selected' : ''}>Harga Naik</option>
+                <option value="PERLU" ${anlHargaStatusFilter === 'PERLU' ? 'selected' : ''}>Perlu Penyesuaian</option>
+                <option value="AMAN" ${anlHargaStatusFilter === 'AMAN' ? 'selected' : ''}>Telah Disesuaikan / Aman</option>
+              </select>
+            </div>
+          </div>
+          <div class="self-end">
+            <button type="button" onclick="window.resetAnlHargaFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+          </div>
+        </div>
+        ${tableHtml}
+        ${rekapFooter}
+      </div>
+    `;
+  }
+
+  function renderAnalisisView() {
+    const st = S().AppState;
+    anlTab = (st.subTabs && st.subTabs.analisis) || anlTab || 'pareto';
+    if (!['pareto', 'pembelian', 'harga'].includes(anlTab)) anlTab = 'pareto';
+
+    const pageTitle = anlTab === 'pareto' ? 'Analisis Pareto A-B-C'
+      : (anlTab === 'pembelian' ? 'Analisis Pembelian' : 'Analisis Harga Produk');
+    const pageDesc = anlTab === 'pareto' ? 'Klasifikasi kontribusi produk Kelas A (70% omzet), B (20%), dan C (10%) untuk prioritas modal.'
+      : (anlTab === 'pembelian' ? 'Perhitungan buffer stock, lead time PBF, estimasi kebutuhan pemenuhan stok &amp; pesanan otomatis.'
+        : 'Evaluasi kenaikan HPP faktur distributor, target markup apotek &amp; rekomendasi pembaruan harga jual.');
+
+    const actionBtns = anlTab === 'pareto' ? `
+      <button onclick="window.exportAnlPareto('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+      <button onclick="window.exportAnlPareto('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
+      <button onclick="window.exportAnlPareto('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
+    ` : (anlTab === 'pembelian' ? `
+      <button onclick="window.openAnlPoConfigModal()" class="ons-btn ons-btn-ghost text-xs">&#9881; Konfigurasi PO</button>
+      <button onclick="window.generateAutoPoFromAnalysis()" class="ons-btn ons-btn-primary text-xs">&#10024; Pesanan Otomatis</button>
+      <button onclick="window.exportAnlBeli('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+      <button onclick="window.exportAnlBeli('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
+    ` : `
+      <button onclick="window.applyBulkPriceFromAnalysis()" class="ons-btn ons-btn-emerald text-xs font-bold">&#10003; Update Sekaligus</button>
+      <button onclick="window.exportAnlHarga('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+      <button onclick="window.exportAnlHarga('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
+    `);
+
+    return `<div class="space-y-4 ons-view-enter">
+      <div class="ons-page-header">
+        <div>
+          <h1 class="text-xl font-extrabold">${pageTitle}</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">${pageDesc}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          ${actionBtns}
+        </div>
+      </div>
+
+      <div class="ons-tab-bar">
+        <button onclick="window.setAnlTab('pareto')" class="ons-tab-btn ${anlTab === 'pareto' ? 'active' : ''}">Analisis Pareto</button>
+        <button onclick="window.setAnlTab('pembelian')" class="ons-tab-btn ${anlTab === 'pembelian' ? 'active' : ''}">Analisis Pembelian</button>
+        <button onclick="window.setAnlTab('harga')" class="ons-tab-btn ${anlTab === 'harga' ? 'active' : ''}">Analisis Harga</button>
+      </div>
+
+      ${anlTab === 'pareto' ? _renderAnlParetoSubTab()
+        : (anlTab === 'pembelian' ? _renderAnlPembelianSubTab() : _renderAnlHargaSubTab())}
+    </div>`;
+  }
+
+  global.setAnlTab = (t) => {
+    const req = String(t || 'pareto');
+    anlTab = ['pareto', 'pembelian', 'harga'].includes(req) ? req : 'pareto';
+    if (S().AppState.subTabs) S().AppState.subTabs.analisis = anlTab;
+    S().AppState.activeSubTab = anlTab;
+    global.renderActiveView();
+    if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+  };
+
+  global.setAnlParetoMode = (m) => { anlParetoMode = m || 'penjualan'; global.renderActiveView(); };
+  global.setAnlParetoSearch = (q) => { anlParetoSearchQ = q || ''; global.renderActiveView(); };
+  global.setAnlParetoDateRange = (f, t) => { anlParetoDateFrom = f || ''; anlParetoDateTo = t || ''; global.renderActiveView(); };
+  global.resetAnlParetoFilter = () => { anlParetoSearchQ = ''; anlParetoDateFrom = ''; anlParetoDateTo = ''; global.renderActiveView(); };
+
+  global.setAnlBeliRefPeriod = (p) => { anlBeliRefPeriod = p || '3m'; global.renderActiveView(); };
+  global.setAnlBeliSearch = (q) => { anlBeliSearchQ = q || ''; global.renderActiveView(); };
+  global.setAnlBeliStatusFilter = (s) => { anlBeliStatusFilter = s || 'SEMUA'; global.renderActiveView(); };
+  global.resetAnlBeliFilter = () => { anlBeliSearchQ = ''; anlBeliStatusFilter = 'SEMUA'; global.renderActiveView(); };
+
+  global.openAnlPoConfigModal = () => {
+    S().openModal(`
+      <div class="p-5 space-y-4 text-xs">
+        <div class="flex items-center justify-between border-b pb-2" style="border-color:var(--ons-border)">
+          <h3 class="font-bold text-sm">Konfigurasi Pengadaan &amp; PO Otomatis</h3>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-lg leading-none">&times;</button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block font-semibold mb-1" style="color:var(--ons-text-soft)">Lead Time Standar PBF (Hari)</label>
+            <input id="cfgPoLeadTime" type="number" min="1" max="60" class="ons-input font-mono-num w-full text-xs py-1.5" value="${anlPoLeadTime}"/>
+            <span class="text-[10px]" style="color:var(--ons-text-soft)">Estimasi waktu pengiriman sejak Surat Pesanan dikirim hingga barang tiba di apotek.</span>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1" style="color:var(--ons-text-soft)">Periode Review Pembelian (Hari)</label>
+            <input id="cfgPoReviewPeriod" type="number" min="1" max="90" class="ons-input font-mono-num w-full text-xs py-1.5" value="${anlPoReviewPeriod}"/>
+            <span class="text-[10px]" style="color:var(--ons-text-soft)">Siklus rutin apotek membuat Surat Pesanan (misal setiap 14 hari).</span>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1" style="color:var(--ons-text-soft)">Buffer Stock / Safety Stock Tambahan (%)</label>
+            <input id="cfgPoBufferPct" type="number" min="0" max="100" class="ons-input font-mono-num w-full text-xs py-1.5" value="${anlPoBufferPct}"/>
+            <span class="text-[10px]" style="color:var(--ons-text-soft)">Persentase cadangan stok ekstra untuk mengantisipasi lonjakan permintaan pasien.</span>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.saveAnlPoConfig(document.getElementById('cfgPoLeadTime').value, document.getElementById('cfgPoReviewPeriod').value, document.getElementById('cfgPoBufferPct').value)" class="ons-btn ons-btn-primary text-xs">Simpan Konfigurasi</button>
+        </div>
+      </div>
+    `, '480px');
+  };
+
+  global.saveAnlPoConfig = (lead, review, buf) => {
+    anlPoLeadTime = Math.max(1, Number(lead || 3));
+    anlPoReviewPeriod = Math.max(1, Number(review || 14));
+    anlPoBufferPct = Math.max(0, Number(buf || 20));
+    try {
+      localStorage.setItem('ons_anl_po_cfg', JSON.stringify({ lead: anlPoLeadTime, review: anlPoReviewPeriod, buf: anlPoBufferPct }));
+    } catch (e) {}
+    S().closeModal();
+    global.toast('Konfigurasi PO berhasil disimpan!', 'ok');
+    global.renderActiveView();
+  };
+
+  global.generateAutoPoFromAnalysis = () => {
+    const st = S().AppState;
+    const underItems = (st.masterObat || []).filter((o) => {
+      const stok = S().getTotalStok(o.id_obat);
+      const min = Number(o.stok_min || 10);
+      return stok <= min;
+    });
+    if (!underItems.length) {
+      return global.toast('Seluruh stok apotek masih dalam kondisi aman. Belum memerlukan pesanan otomatis.', 'info');
+    }
+    global.toast('Memproses ' + underItems.length + ' produk understock ke Surat Pesanan otomatis...', 'ok');
+    if (typeof global.navigateView === 'function') {
+      global.navigateView('defecta', 'order');
+      if (typeof global.generateSpFromDefecta === 'function') {
+        global.generateSpFromDefecta();
+      }
+    }
+  };
+
+  global.setAnlHargaHppBasis = (b) => { anlHargaHppBasis = b || 'ref'; global.renderActiveView(); };
+  global.setAnlHargaSearch = (q) => { anlHargaSearchQ = q || ''; global.renderActiveView(); };
+  global.setAnlHargaStatusFilter = (s) => { anlHargaStatusFilter = s || 'SEMUA'; global.renderActiveView(); };
+  global.resetAnlHargaFilter = () => { anlHargaSearchQ = ''; anlHargaStatusFilter = 'SEMUA'; global.renderActiveView(); };
+
+  global.toggleAnlHargaSelectAll = (chk) => {
+    const st = S().AppState;
+    if (chk) {
+      (st.masterObat || []).forEach((o) => anlHargaSelected.add(o.id_obat));
+    } else {
+      anlHargaSelected.clear();
+    }
+    global.renderActiveView();
+  };
+
+  global.toggleAnlHargaItemSelect = (id, chk) => {
+    if (chk) anlHargaSelected.add(id);
+    else anlHargaSelected.delete(id);
+    global.renderActiveView();
+  };
+
+  global.applySinglePriceFromAnalysis = async (idObat) => {
+    const st = S().AppState;
+    const o = (st.masterObat || []).find((m) => m.id_obat === idObat);
+    if (!o) return global.toast('Produk tidak ditemukan.', 'err');
+    const hppLast = Number(o.hpp_terakhir || 0);
+    const hppAvg = Number(o.hpp_avg || hppLast || 0);
+    const hppRef = anlHargaHppBasis === 'last' ? (hppLast || hppAvg) : (anlHargaHppBasis === 'avg' ? (hppAvg || hppLast) : (hppAvg || hppLast));
+    const targetRatio = Math.min(0.85, Math.max(0.05, anlHargaTargetMarkup / 100));
+    const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : Number(o.harga_umum || 0);
+    const newPrice = Math.ceil(rawTarget / 100) * 100;
+    try {
+      await API().callApi('obat.updatePrices', {
+        items: [{
+          id_obat: o.id_obat,
+          harga_umum: newPrice,
+          harga_member: Math.max(hppRef, Math.ceil(newPrice * 0.95 / 100) * 100),
+          harga_grosir: Math.max(hppRef, Math.ceil(newPrice * 0.90 / 100) * 100),
+          harga_faskes: Math.max(hppRef, Math.ceil(newPrice * 0.88 / 100) * 100)
+        }],
+        catatan: 'Penyesuaian Harga dari Analisis Harga Produk'
+      }, { isWrite: true });
+      global.toast('Harga jual ' + o.nama_dagang + ' diperbarui ke ' + S().rp(newPrice) + '!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) {
+      global.toast(e.message || 'Gagal memperbarui harga.', 'err');
+    }
+  };
+
+  global.applyBulkPriceFromAnalysis = async () => {
+    const st = S().AppState;
+    const targetList = (st.masterObat || []).filter((o) => {
+      if (anlHargaSelected.size > 0) return anlHargaSelected.has(o.id_obat);
+      const hppLast = Number(o.hpp_terakhir || 0);
+      const hppAvg = Number(o.hpp_avg || hppLast || 0);
+      const hppRef = anlHargaHppBasis === 'last' ? (hppLast || hppAvg) : (anlHargaHppBasis === 'avg' ? (hppAvg || hppLast) : (hppAvg || hppLast));
+      const targetRatio = Math.min(0.85, Math.max(0.05, anlHargaTargetMarkup / 100));
+      const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : Number(o.harga_umum || 0);
+      const newPrice = Math.ceil(rawTarget / 100) * 100;
+      return newPrice > Number(o.harga_umum || 0);
+    });
+
+    if (!targetList.length) {
+      return global.toast('Tidak ada produk yang perlu dinaikkan harganya saat ini.', 'info');
+    }
+
+    const items = targetList.map((o) => {
+      const hppLast = Number(o.hpp_terakhir || 0);
+      const hppAvg = Number(o.hpp_avg || hppLast || 0);
+      const hppRef = anlHargaHppBasis === 'last' ? (hppLast || hppAvg) : (anlHargaHppBasis === 'avg' ? (hppAvg || hppLast) : (hppAvg || hppLast));
+      const targetRatio = Math.min(0.85, Math.max(0.05, anlHargaTargetMarkup / 100));
+      const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : Number(o.harga_umum || 0);
+      const newPrice = Math.ceil(rawTarget / 100) * 100;
+      return {
+        id_obat: o.id_obat,
+        harga_umum: newPrice,
+        harga_member: Math.max(hppRef, Math.ceil(newPrice * 0.95 / 100) * 100),
+        harga_grosir: Math.max(hppRef, Math.ceil(newPrice * 0.90 / 100) * 100),
+        harga_faskes: Math.max(hppRef, Math.ceil(newPrice * 0.88 / 100) * 100)
+      };
+    });
+
+    try {
+      await API().callApi('obat.updatePrices', { items, catatan: 'Update Sekaligus Target Margin ' + anlHargaTargetMarkup + '%' }, { isWrite: true });
+      anlHargaSelected.clear();
+      global.toast(items.length + ' produk berhasil diperbarui harga jualnya!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) {
+      global.toast(e.message || 'Gagal update harga massal.', 'err');
+    }
+  };
+
+  global.exportAnlPareto = (fmt) => {
+    const st = S().AppState;
+    const dTag = new Date().toISOString().slice(0, 10);
+    const rows = (st.masterObat || []).map((o, idx) => {
+      const stok = S().getTotalStok(o.id_obat);
+      const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
+      return {
+        no: idx + 1,
+        nama: o.nama_dagang || o.id_obat,
+        terjual: 0,
+        omzet: Number(o.harga_umum || 0) * stok,
+        keuntungan: (Number(o.harga_umum || 0) - hpp) * stok,
+        stok,
+        nilai_stok: stok * hpp
+      };
+    });
+    return S().exportDataset(fmt || 'xlsx', 'Analisis Pareto ABC Apotek', `Analisis_Pareto_${dTag}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Produk', width: 28 },
+      { key: 'terjual', label: 'Terjual', type: 'int', width: 12 },
+      { key: 'omzet', label: 'Nilai Penjualan', type: 'currency', sum: true, width: 18 },
+      { key: 'keuntungan', label: 'Keuntungan', type: 'currency', sum: true, width: 18 },
+      { key: 'stok', label: 'Stok Saat Ini', type: 'int', width: 14 },
+      { key: 'nilai_stok', label: 'Nilai Stok', type: 'currency', sum: true, width: 18 }
+    ], rows, { sheetName: 'Pareto' });
+  };
+
+  global.exportAnlBeli = (fmt) => {
+    const st = S().AppState;
+    const dTag = new Date().toISOString().slice(0, 10);
+    const rows = (st.masterObat || []).map((o, idx) => {
+      const stok = S().getTotalStok(o.id_obat);
+      const min = Number(o.stok_min || 10);
+      const target = Math.max(min, min * 2);
+      return {
+        no: idx + 1,
+        nama: o.nama_dagang || o.id_obat,
+        satuan: o.satuan_dasar || 'Unit',
+        stok_min: min,
+        target,
+        stok_kini: stok,
+        pemenuhan: Math.max(0, target - stok),
+        status: stok <= min ? 'UNDERSTOCK' : 'AMAN',
+        jenis_sp: o.golongan_bpom || 'REGULER'
+      };
+    });
+    return S().exportDataset(fmt || 'xlsx', 'Analisis Pembelian Apotek', `Analisis_Pembelian_${dTag}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Produk', width: 28 },
+      { key: 'satuan', label: 'Satuan', width: 12 },
+      { key: 'stok_min', label: 'Stok Minimal', type: 'int', width: 14 },
+      { key: 'target', label: 'Target Stok', type: 'int', width: 14 },
+      { key: 'stok_kini', label: 'Stok Terkini', type: 'int', width: 14 },
+      { key: 'pemenuhan', label: 'Pemenuhan Stok', type: 'int', sum: true, width: 16 },
+      { key: 'status', label: 'Status', width: 14 },
+      { key: 'jenis_sp', label: 'Jenis SP', width: 14 }
+    ], rows, { sheetName: 'Pembelian' });
+  };
+
+  global.exportAnlHarga = (fmt) => {
+    const st = S().AppState;
+    const dTag = new Date().toISOString().slice(0, 10);
+    const rows = (st.masterObat || []).map((o, idx) => {
+      const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
+      const hj = Number(o.harga_umum || 0);
+      const saran = Math.ceil(hpp / 0.75 / 100) * 100;
+      return {
+        no: idx + 1,
+        nama: o.nama_dagang || o.id_obat,
+        satuan: o.satuan_dasar || 'Unit',
+        hpp_ref: hpp,
+        harga_jual: hj,
+        saran_harga: saran,
+        status: hj < saran ? 'PERLU_PENYESUAIAN' : 'AMAN'
+      };
+    });
+    return S().exportDataset(fmt || 'xlsx', 'Analisis Harga Produk Apotek', `Analisis_Harga_${dTag}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Produk', width: 28 },
+      { key: 'satuan', label: 'Satuan', width: 12 },
+      { key: 'hpp_ref', label: 'Referensi HPP', type: 'currency', width: 16 },
+      { key: 'harga_jual', label: 'Harga Jual', type: 'currency', width: 16 },
+      { key: 'saran_harga', label: 'Rekomendasi Harga', type: 'currency', width: 18 },
+      { key: 'status', label: 'Status', width: 18 }
+    ], rows, { sheetName: 'Harga' });
   };
 
   /**
@@ -6407,6 +7271,7 @@
     renderDocEngineView,
     renderTutupShiftView,
     renderSipnapParetoView,
+    renderAnalisisView,
     renderSettingsView,
     renderMobilePreviewView
   };
