@@ -1405,6 +1405,9 @@
         existing.id_pbf = (pbf && pbf.id_pbf) || d.id_pbf || existing.id_pbf || '';
         existing.nama_pbf = namaPbf;
         existing.golongan_sp = golSp;
+        existing.metode_pembayaran = d.metode_pembayaran || existing.metode_pembayaran || 'KREDIT';
+        existing.tgl_jatuh_tempo = d.tgl_jatuh_tempo !== undefined ? String(d.tgl_jatuh_tempo || '') : (existing.tgl_jatuh_tempo || '');
+        if (d.pemesan) existing.dibuat_oleh = String(d.pemesan);
         existing.items_json = JSON.stringify(spItems);
         existing.estimasi_total = Math.round(estTotal);
         if (d.catatan !== undefined) existing.catatan = String(d.catatan || '');
@@ -1422,13 +1425,15 @@
         id_pbf: (pbf && pbf.id_pbf) || d.id_pbf || '',
         nama_pbf: namaPbf,
         golongan_sp: golSp,
+        metode_pembayaran: d.metode_pembayaran || 'KREDIT',
+        tgl_jatuh_tempo: d.tgl_jatuh_tempo || '',
         items_json: JSON.stringify(spItems),
         estimasi_total: Math.round(estTotal),
         status_sp: d.status_sp || 'MENUNGGU_BARANG',
         id_dokumen: docObj ? docObj.ID : '',
         no_faktur_pbf: '',
         tgl_diterima: '',
-        dibuat_oleh: userNama,
+        dibuat_oleh: d.pemesan || userNama,
         catatan: d.catatan || ''
       };
       db.surat_pesanan.unshift(row);

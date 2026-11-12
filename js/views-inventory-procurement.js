@@ -4295,6 +4295,7 @@
                   const fc = forecastMap[o.id_obat] || { avg_harian: 0.5, lead_time_hari: 3, reorder_point: Number(o.stok_min || 10), rekomendasi_order: 20, dos: 0 };
                   const qtyOrder = getOrderQty(o);
                   const sedangDipesan = Number(pendingOrderMap[o.id_obat] || 0);
+                  const inPlan = (_readLocalList(PLANS_KEY) || []).find((p) => p.id_obat === o.id_obat);
                   const jenisSp = resolveJenisSp(o.golongan_bpom);
                   return `<tr>
                     <td class="font-mono-num text-xs">${idx + 1}.</td>
@@ -4316,10 +4317,13 @@
                         <input type="number" min="1" value="${qtyOrder}" onchange="window.setDefectaOrderQty('${o.id_obat}', this.value)" class="ons-input font-mono-num text-right text-xs w-16 py-1 min-h-0 h-8"/>
                         <span class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(o.satuan_dasar)}</span>
                       </div>
-                      <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}</div>
+                      <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}${inPlan ? ` &bull; <span class="text-emerald-600 font-bold">Di Rencana (${inPlan.kuantitas})</span>` : ''}</div>
                     </td>
                     <td>
-                      <button type="button" onclick="window.generateSpFromDefecta('${S().esc(o.pbf_utama || '')}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">+ Buat SP</button>
+                      <div class="flex flex-wrap gap-1">
+                        <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', ${qtyOrder}, 'Dari Defecta Stok Tipis')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">+ Rencana</button>
+                        <button type="button" onclick="window.generateSpFromDefecta('${S().esc(o.pbf_utama || '')}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">+ Buat SP</button>
+                      </div>
                     </td>
                   </tr>`;
                 }).join('') : '<tr><td colspan="10" class="text-center py-6 text-xs">Data tidak ditemukan. Seluruh stok produk masih aman!</td></tr>'}
@@ -4497,28 +4501,71 @@
   };
 
   /**
-   * W-07: Terima Faktur PBF Multi-Item GRN, Konsinyasi & Retur BAR-PBF (daftar | input | harga | retur | konsinyasi)
+   * W-07: Rencana Pembelian, Faktur PBF Multi-Item GRN, Konsinyasi & Retur BAR-PBF (rencana | daftar | input | harga | retur | konsinyasi)
    */
+  const PLANS_KEY = 'ONS_PURCHASE_PLANS_V1';
+  const FAKTUR_DRAFTS_KEY = 'ONS_FAKTUR_DRAFTS_V1';
+  const RETUR_DRAFTS_KEY = 'ONS_RETUR_DRAFTS_V1';
+
   let fakturTab = 'daftar';
   let fakturListQ = '';
   let fakturListFilter = 'SEMUA';
   let fakturListPbfFilter = '';
+  let fakturDateFrom = '';
+  let fakturDateTo = '';
   let fakturKonsinyasiPbfFilter = '';
+  let planSearchQ = '';
+  let planSupplierFilter = '';
+  let planJenisSpFilter = '';
+  let planBannerDismissed = false;
   let returFilterMode = 'NEAR_ED';
   let returSearchQ = '';
+  let returDateFrom = '';
+  let returDateTo = '';
+  let grnActiveDraftId = '';
   let grnHeader = {
     id_sp: '',
     no_faktur_pbf: '',
     no_sp: '',
     id_pbf: '',
+    tgl_faktur: new Date().toISOString().slice(0, 10),
+    tgl_terima: new Date().toISOString().slice(0, 10),
     tgl_jatuh_tempo: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    tempo_hari: 30,
+    jenis_faktur: 'BELUM_PAJAK',
+    gudang: 'Gudang Utama',
+    metode_pembayaran: 'KREDIT',
+    diskon_mode: 'RP',
+    diskon_pct: 0,
     diskon_pbf: 0,
     ppn_masukan: 0,
+    cashback: 0,
+    biaya_lainnya: 0,
     jenis_penerimaan: 'BELI_PUTUS',
     status_bayar: 'BELUM_LUNAS',
     catatan: ''
   };
   let grnItems = [];
+
+  function _readLocalList(key) {
+    try {
+      const raw = global.localStorage ? global.localStorage.getItem(key) : '[]';
+      const arr = JSON.parse(raw || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function _writeLocalList(key, arr) {
+    try {
+      if (global.localStorage) global.localStorage.setItem(key, JSON.stringify(Array.isArray(arr) ? arr : []));
+    } catch (e) {}
+  }
+
+  function _resolvePlanJenisSp(gol) {
+    const g = String(gol || 'REGULER').toUpperCase();
+    if (['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g)) return g;
+    return 'REGULER';
+  }
 
   function _getPbfTerminDays(pbfNameOrId) {
     const st = S().AppState;
@@ -4527,8 +4574,10 @@
     return Number.isFinite(termin) && termin > 0 ? termin : 30;
   }
 
-  function _dueDateFromTermin(days) {
-    return new Date(Date.now() + (Number(days || 30) * 86400000)).toISOString().slice(0, 10);
+  function _dueDateFromTermin(days, baseDateStr) {
+    const baseMs = baseDateStr ? new Date(baseDateStr).getTime() : Date.now();
+    const validMs = Number.isFinite(baseMs) ? baseMs : Date.now();
+    return new Date(validMs + (Number(days || 30) * 86400000)).toISOString().slice(0, 10);
   }
 
   global.loadSpIntoGrn = (idSp) => {
@@ -4599,9 +4648,12 @@
 
   function renderFakturView() {
     const st = S().AppState;
-    fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'daftar';
+    fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'rencana';
     ensureGrnInitialized();
 
+    const allPlans = _readLocalList(PLANS_KEY);
+    const fakturDrafts = _readLocalList(FAKTUR_DRAFTS_KEY);
+    const returDrafts = _readLocalList(RETUR_DRAFTS_KEY);
     const allFaktur = st.fakturPbf || [];
     const nearEdBatches = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) <= 180);
     const allActiveBatches = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && Number(b.qty_sisa || 0) > 0);
@@ -4633,25 +4685,94 @@
       if (fakturListFilter === 'JATUH_TEMPO' && !isDueSoonFaktur(f)) return false;
       if (fakturListFilter === 'KONSINYASI' && !kons) return false;
       if (fakturListPbfFilter && String(f.id_pbf || '') !== fakturListPbfFilter) return false;
+      const tTerima = String(f.tgl_faktur || f.created_at || '').slice(0, 10);
+      if (fakturDateFrom && tTerima && tTerima < fakturDateFrom) return false;
+      if (fakturDateTo && tTerima && tTerima > fakturDateTo) return false;
       if (fq) {
-        const hay = `${f.no_faktur_pbf} ${f.no_sp} ${f.id_pbf}`.toLowerCase();
+        const linkedProd = (st.stokBatch || []).filter((b) => b.no_faktur_pbf === f.no_faktur_pbf).map((b) => {
+          const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat);
+          return ob ? ob.nama_dagang : b.id_obat;
+        }).join(' ');
+        const hay = `${f.no_faktur_pbf} ${f.no_sp} ${f.id_pbf} ${f.petugas || ''} ${linkedProd}`.toLowerCase();
         if (!hay.includes(fq)) return false;
       }
       return true;
     });
 
-    const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
-    const nettoGrn = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
+    const totalBruto = grnItems.reduce((s, it) => {
+      const rowGross = Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0);
+      return s + Math.max(0, rowGross - Number(it.diskon_item || 0));
+    }, 0);
+    const headerDiskonRp = grnHeader.diskon_mode === 'PCT'
+      ? Math.round(totalBruto * Math.min(100, Math.max(0, Number(grnHeader.diskon_pct || 0))) / 100)
+      : Math.max(0, Number(grnHeader.diskon_pbf || 0));
+    const nettoGrn = Math.max(
+      0,
+      totalBruto - headerDiskonRp + Number(grnHeader.ppn_masukan || 0) - Number(grnHeader.cashback || 0) + Number(grnHeader.biaya_lainnya || 0)
+    );
     const isScanExpanded = Boolean(grnScanState.panelOpen || grnScanState.scanning || grnScanState.previewDataUrl || grnScanState.summary || grnScanState.error);
     const currentPbfTermin = _getPbfTerminDays(grnHeader.id_pbf);
+
+    const pSearch = planSearchQ.trim().toLowerCase();
+    const filteredPlans = allPlans.filter((p) => {
+      if (planSupplierFilter && String(p.nama_supplier || '') !== planSupplierFilter) return false;
+      if (planJenisSpFilter && String(p.jenis_sp || '') !== planJenisSpFilter) return false;
+      if (pSearch) {
+        const hay = `${p.nama_produk || ''} ${p.nama_supplier || ''} ${p.jenis_sp || ''} ${p.keterangan || ''}`.toLowerCase();
+        if (!hay.includes(pSearch)) return false;
+      }
+      return true;
+    });
+    const planSuppliers = Array.from(new Set(allPlans.map((p) => p.nama_supplier).filter(Boolean)));
+    const selectedPlans = allPlans.filter((p) => p.selected);
+    const totalPlansRp = allPlans.reduce((s, p) => s + (Number(p.kuantitas || 0) * Number(p.harga_beli || 0)), 0);
+    const selectedPlansRp = selectedPlans.reduce((s, p) => s + (Number(p.kuantitas || 0) * Number(p.harga_beli || 0)), 0);
+    const allFilteredPlansChecked = filteredPlans.length > 0 && filteredPlans.every((p) => p.selected);
+
+    const returHistory = [];
+    const returByNoBar = {};
+    (st.mutasiStok || []).forEach((m) => {
+      if (String(m.jenis_mutasi || '').toUpperCase() !== 'RETUR_PBF') return;
+      const bRef = (st.stokBatch || []).find((b) => b.id_batch === m.id_batch) || {};
+      const key = String(m.referensi_id || m.id_mutasi || 'BAR');
+      const qtyAbs = Math.abs(Number(m.qty_ubah || 0));
+      const obRef = (st.masterObat || []).find((o) => o.id_obat === m.id_obat) || {};
+      const hpp = Number(bRef.hpp_beli || obRef.hpp_terakhir || obRef.hpp_avg || 0);
+      if (!returByNoBar[key]) {
+        returByNoBar[key] = {
+          no_bar: key,
+          tanggal: String(m.timestamp || '').slice(0, 10),
+          no_faktur_asal: bRef.no_faktur_pbf || '-',
+          supplier: bRef.id_pbf || obRef.pbf_utama || '-',
+          catatan: m.catatan || '',
+          items: [],
+          total_qty: 0,
+          total_retur: 0
+        };
+        returHistory.push(returByNoBar[key]);
+      }
+      returByNoBar[key].items.push({ nama: m.nama_dagang || obRef.nama_dagang || m.id_obat, qty: qtyAbs, batch: m.no_batch || bRef.no_batch || '-', hpp });
+      returByNoBar[key].total_qty += qtyAbs;
+      returByNoBar[key].total_retur += qtyAbs * hpp;
+    });
+    const filteredReturHistory = returHistory.filter((r) => {
+      if (returDateFrom && r.tanggal && r.tanggal < returDateFrom) return false;
+      if (returDateTo && r.tanggal && r.tanggal > returDateTo) return false;
+      if (rSearch) {
+        const hay = `${r.no_bar} ${r.no_faktur_asal} ${r.supplier} ${r.catatan} ${r.items.map((x) => x.nama).join(' ')}`.toLowerCase();
+        if (!hay.includes(rSearch)) return false;
+      }
+      return true;
+    });
 
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Pembelian &amp; Faktur PBF</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Monitoring faktur &amp; jatuh tempo hutang PBF, terima barang (GRN via SP / Scan OCR), analisa kenaikan HPP, konsinyasi, dan retur BAR-PBF.</p>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Rencana pembelian, pesanan PBF, daftar faktur &amp; tempo hutang, terima barang (GRN / Scan OCR), analisa harga, konsinyasi &amp; retur BAR-PBF.</p>
         </div>
         <div class="ons-tab-bar">
+          <button onclick="window.setFakturTab('rencana')" class="ons-tab-btn ${fakturTab === 'rencana' ? 'active' : ''}">Rencana Pembelian (${allPlans.length})</button>
           <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">Daftar Faktur PBF (${allFaktur.length})</button>
           <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Terima Faktur (GRN / Scan)</button>
           <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active' : ''}">Analisa Harga &amp; Margin</button>
@@ -4660,7 +4781,109 @@
         </div>
       </div>
 
-      ${fakturTab === 'input' ? `
+      ${fakturTab === 'rencana' ? `
+        <div class="space-y-4">
+          ${!planBannerDismissed ? `
+            <div class="p-3.5 rounded-xl border bg-emerald-500/10 border-emerald-500/30 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div class="space-y-1.5">
+                <div class="font-semibold text-emerald-800 dark:text-emerald-200">&#10004; Bingung merencanakan pembelian? Yuk cek rekomendasi di halaman <b>Analisis Pembelian</b> atau <b>Defecta</b>.</div>
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" onclick="window.navigateView('defecta','order')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold">Defecta</button>
+                  <button type="button" onclick="window.setFakturTab('harga')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold">Analisis Pembelian &amp; Margin</button>
+                  <button type="button" onclick="window.pullLowStockToPlans()" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 font-bold">+ Tarik Item Defecta ke Rencana</button>
+                </div>
+              </div>
+              <button type="button" onclick="window.dismissPlanBanner()" class="text-emerald-700 dark:text-emerald-300 font-bold text-base px-2">&times;</button>
+            </div>
+          ` : ''}
+
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2 flex-1">
+                <input class="ons-input text-xs w-56" placeholder="Cari data (produk, supplier, keterangan)..." value="${S().esc(planSearchQ)}" oninput="window.setPlanFilter('q', this.value)"/>
+                <select aria-label="Filter Supplier Rencana" class="ons-select text-xs w-44" onchange="window.setPlanFilter('supplier', this.value)">
+                  <option value="">Semua Supplier (${planSuppliers.length})</option>
+                  ${planSuppliers.map((sup) => `<option value="${S().esc(sup)}" ${planSupplierFilter === sup ? 'selected' : ''}>${S().esc(sup)}</option>`).join('')}
+                </select>
+                <select aria-label="Filter Jenis SP Rencana" class="ons-select text-xs w-36" onchange="window.setPlanFilter('jenis', this.value)">
+                  <option value="">Semua Jenis SP</option>
+                  ${['REGULER', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].map((g) => `<option value="${g}" ${planJenisSpFilter === g ? 'selected' : ''}>${g}</option>`).join('')}
+                </select>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.exportPurchasePlans('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+                <button type="button" onclick="window.openPenawaranSalesModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Penawaran Sales</button>
+                ${selectedPlans.length ? `<button type="button" onclick="window.convertSelectedPlansToSp()" class="ons-btn ons-btn-primary text-xs font-bold">Buat Pesanan SP (${selectedPlans.length}) &rarr;</button>` : `<button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-primary text-xs">Lihat Pesanan (SP) &rarr;</button>`}
+              </div>
+            </div>
+
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead>
+                  <tr>
+                    <th class="w-8"><input type="checkbox" aria-label="Pilih semua rencana" ${allFilteredPlansChecked ? 'checked' : ''} onchange="window.toggleAllPlansSelected(this.checked)"/></th>
+                    <th>Nama Produk</th>
+                    <th>Jenis SP</th>
+                    <th>Nama Supplier</th>
+                    <th>Kuantitas</th>
+                    <th class="text-right">Sisa Stok</th>
+                    <th>Harga Beli Satuan</th>
+                    <th>Keterangan</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filteredPlans.length ? filteredPlans.map((p) => {
+                    const sisaStok = p.id_obat ? S().getSellableStok(p.id_obat) : 0;
+                    const pbfs = st.supplierPbf || [];
+                    return `<tr>
+                      <td><input type="checkbox" aria-label="Pilih ${S().esc(p.nama_produk)}" ${p.selected ? 'checked' : ''} onchange="window.togglePlanSelected('${S().esc(p.id_plan)}', this.checked)"/></td>
+                      <td>
+                        <div class="font-bold text-xs">${S().esc(p.nama_produk)}</div>
+                        <div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(p.satuan || 'Unit')} &bull; Subtotal: <b class="font-mono-num">${S().rp(Number(p.kuantitas || 0) * Number(p.harga_beli || 0))}</b></div>
+                      </td>
+                      <td>
+                        <select class="ons-select text-[11px] py-1 min-h-0 w-28" onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'jenis_sp', this.value)">
+                          ${['REGULER', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].map((g) => `<option value="${g}" ${p.jenis_sp === g ? 'selected' : ''}>${g}</option>`).join('')}
+                        </select>
+                      </td>
+                      <td>
+                        <select class="ons-select text-[11px] py-1 min-h-0 w-44" onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'nama_supplier', this.value)">
+                          ${pbfs.map((sup) => `<option value="${S().esc(sup.nama_pbf)}" ${p.nama_supplier === sup.nama_pbf ? 'selected' : ''}>${S().esc(sup.nama_pbf)}</option>`).join('')}
+                          ${p.nama_supplier && !pbfs.some((sup) => sup.nama_pbf === p.nama_supplier) ? `<option value="${S().esc(p.nama_supplier)}" selected>${S().esc(p.nama_supplier)}</option>` : ''}
+                        </select>
+                      </td>
+                      <td><input type="number" min="1" class="ons-input text-xs font-mono-num text-right w-20 py-1 min-h-0" value="${Number(p.kuantitas || 1)}" onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'kuantitas', Number(this.value||1))"/></td>
+                      <td class="text-right font-mono-num text-xs font-bold ${sisaStok <= 0 ? 'text-red-600' : ''}">${sisaStok}</td>
+                      <td><input type="number" min="0" class="ons-input text-xs font-mono-num text-right w-28 py-1 min-h-0" value="${Number(p.harga_beli || 0)}" onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'harga_beli', Number(this.value||0))"/></td>
+                      <td><input class="ons-input text-xs w-36 py-1 min-h-0" value="${S().esc(p.keterangan || '')}" placeholder="Catatan..." onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'keterangan', this.value)"/></td>
+                      <td>
+                        <div class="flex gap-1.5">
+                          <button type="button" onclick="window.convertSinglePlanToSp('${S().esc(p.id_plan)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Buat SP</button>
+                          <button type="button" onclick="window.removePurchasePlan('${S().esc(p.id_plan)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">&times;</button>
+                        </div>
+                      </td>
+                    </tr>`;
+                  }).join('') : '<tr><td colspan="9" class="text-center py-8 text-xs">Data tidak ditemukan. Klik <b>+ Penawaran Sales</b> atau <b>+ Tarik Item Defecta ke Rencana</b> di atas.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ons-card p-4 space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="text-xs font-extrabold text-blue-600">Rekap Data Rencana Pembelian</div>
+              ${selectedPlans.length ? `<button type="button" onclick="window.convertSelectedPlansToSp()" class="ons-btn ons-btn-emerald text-xs font-bold">Konversi ${selectedPlans.length} Produk Dipilih &rarr; Pesanan Pembelian (SP)</button>` : ''}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Jumlah Produk</span><b class="font-mono-num">${allPlans.length} produk</b></div>
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Produk Dipilih</span><b class="font-mono-num text-blue-600">${selectedPlans.length} produk</b></div>
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Total Harga</span><b class="font-mono-num">${S().rp(totalPlansRp)}</b></div>
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Harga Produk Dipilih</span><b class="font-mono-num text-emerald-600">${S().rp(selectedPlansRp)}</b></div>
+            </div>
+          </div>
+        </div>
+      ` : fakturTab === 'input' ? `
         <div class="space-y-4">
           ${(() => {
             const openSps = (st.suratPesanan || []).filter((sp) => String(sp.status_sp || '').toUpperCase() !== 'SELESAI_DITERIMA');
@@ -4783,10 +5006,16 @@
 
           <div class="ons-card p-5 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
-              <h3 class="font-bold text-sm">2. Header Penerimaan Barang (GRN &mdash; CDOB)</h3>
-              <span class="text-[11px]" style="color:var(--ons-text-soft)">Termin default supplier: <b class="font-mono-num">${currentPbfTermin} hari</b></span>
+              <div>
+                <h3 class="font-bold text-sm">2. Header Penerimaan Barang (GRN &mdash; CDOB)</h3>
+                <div class="text-[11px]" style="color:var(--ons-text-soft)">Status PKP: <b>${S().esc((S().getStoreProfile().status_pkp || 'NON_PKP'))}</b> &bull; Termin default supplier: <b class="font-mono-num">${currentPbfTermin} hari</b></div>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.saveGrnDraftToLocal()" class="ons-btn ons-btn-ghost text-xs">Simpan Draft</button>
+                <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-primary text-xs">Upload &amp; Baca Faktur</button>
+              </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
               <div><label class="font-semibold block mb-1">No. Faktur PBF *</label><input class="ons-input font-mono-num" value="${S().esc(grnHeader.no_faktur_pbf)}" oninput="window.setGrnField('no_faktur_pbf', this.value)"/></div>
               <div><label class="font-semibold block mb-1">No. Surat Pesanan (Opsional)</label><input class="ons-input font-mono-num" placeholder="Kosongkan jika beli langsung" value="${S().esc(grnHeader.no_sp)}" oninput="window.setGrnField('no_sp', this.value)"/></div>
               <div><label class="font-semibold block mb-1">Supplier PBF Resmi *</label>
@@ -4794,8 +5023,36 @@
                   ${st.supplierPbf.map((p) => `<option value="${S().esc(p.nama_pbf)}" ${grnHeader.id_pbf === p.nama_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)} (${Number(p.termin_hari || 30)}h)</option>`).join('')}
                 </select>
               </div>
+              <div><label class="font-semibold block mb-1">Gudang Penerima *</label>
+                <select class="ons-select" onchange="window.setGrnField('gudang', this.value)">
+                  ${['Gudang Utama', 'Etalase Depan', 'Gudang Karantina'].map((g) => `<option value="${g}" ${grnHeader.gudang === g ? 'selected' : ''}>${g}</option>`).join('')}
+                </select>
+              </div>
+              <div><label class="font-semibold block mb-1">Tanggal Faktur</label><input type="date" class="ons-input" value="${S().esc(grnHeader.tgl_faktur || new Date().toISOString().slice(0, 10))}" onchange="window.setGrnField('tgl_faktur', this.value, true)"/></div>
+              <div><label class="font-semibold block mb-1">Tanggal Penerimaan</label><input type="date" class="ons-input" value="${S().esc(grnHeader.tgl_terima || new Date().toISOString().slice(0, 10))}" onchange="window.setGrnField('tgl_terima', this.value)"/></div>
+              <div><label class="font-semibold block mb-1">Tempo Pembayaran (Hari)</label><input type="number" min="0" class="ons-input font-mono-num" value="${Number(grnHeader.tempo_hari !== undefined ? grnHeader.tempo_hari : currentPbfTermin)}" onchange="window.setGrnTempoDays(Number(this.value||0))"/></div>
               <div><label class="font-semibold block mb-1">Jatuh Tempo Pembayaran</label><input type="date" class="ons-input" value="${S().esc(grnHeader.tgl_jatuh_tempo)}" onchange="window.setGrnField('tgl_jatuh_tempo', this.value)"/></div>
-              <div><label class="font-semibold block mb-1">Diskon Faktur PBF (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.diskon_pbf}" oninput="window.setGrnField('diskon_pbf', Number(this.value||0), true)"/></div>
+              <div><label class="font-semibold block mb-1">Jenis Faktur Pajak</label>
+                <select class="ons-select" onchange="window.setGrnField('jenis_faktur', this.value, true)">
+                  <option value="BELUM_PAJAK" ${grnHeader.jenis_faktur !== 'SUDAH_PAJAK' ? 'selected' : ''}>Harga Belum Termasuk Pajak</option>
+                  <option value="SUDAH_PAJAK" ${grnHeader.jenis_faktur === 'SUDAH_PAJAK' ? 'selected' : ''}>Harga Sudah Termasuk Pajak</option>
+                </select>
+              </div>
+              <div><label class="font-semibold block mb-1">Jenis Penerimaan</label>
+                <select class="ons-select" onchange="window.setGrnJenisPenerimaan(this.value)">
+                  <option value="BELI_PUTUS" ${grnHeader.jenis_penerimaan !== 'KONSINYASI' ? 'selected' : ''}>BELI PUTUS (Reguler PBF)</option>
+                  <option value="KONSINYASI" ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? 'selected' : ''}>KONSINYASI (Titip Jual Distributor)</option>
+                </select>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="font-semibold">Diskon Faktur PBF (${grnHeader.diskon_mode === 'PCT' ? '%' : 'Rp'})</label>
+                  <button type="button" onclick="window.toggleGrnDiskonMode()" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600">${grnHeader.diskon_mode === 'PCT' ? 'Ubah ke Rp' : 'Ubah ke %'}</button>
+                </div>
+                ${grnHeader.diskon_mode === 'PCT'
+                  ? `<input type="number" min="0" max="100" step="0.5" class="ons-input font-mono-num" value="${Number(grnHeader.diskon_pct || 0)}" oninput="window.setGrnField('diskon_pct', Number(this.value||0), true)"/>`
+                  : `<input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.diskon_pbf}" oninput="window.setGrnField('diskon_pbf', Number(this.value||0), true)"/>`}
+              </div>
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <label class="font-semibold">PPN Masukan (Rp)</label>
@@ -4806,20 +5063,16 @@
                 </div>
                 <input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.ppn_masukan}" oninput="window.setGrnField('ppn_masukan', Number(this.value||0), true)"/>
               </div>
-              <div><label class="font-semibold block mb-1">Jenis Penerimaan</label>
-                <select class="ons-select" onchange="window.setGrnJenisPenerimaan(this.value)">
-                  <option value="BELI_PUTUS" ${grnHeader.jenis_penerimaan !== 'KONSINYASI' ? 'selected' : ''}>BELI PUTUS (Reguler PBF)</option>
-                  <option value="KONSINYASI" ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? 'selected' : ''}>KONSINYASI (Titip Jual Distributor)</option>
-                </select>
-              </div>
+              <div><label class="font-semibold block mb-1">Cashback / Potongan (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${Number(grnHeader.cashback || 0)}" oninput="window.setGrnField('cashback', Number(this.value||0), true)"/></div>
+              <div><label class="font-semibold block mb-1">Biaya Lainnya / Ongkir (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${Number(grnHeader.biaya_lainnya || 0)}" oninput="window.setGrnField('biaya_lainnya', Number(this.value||0), true)"/></div>
               ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? `
               <div class="sm:col-span-2"><label class="font-semibold block mb-1">Status Hutang Konsinyasi</label>
                 <div class="ons-input text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 border-blue-500/30">Rp 0 Hutang Awal (Settlement saat Laku)</div>
               </div>` : `
-              <div class="sm:col-span-2"><label class="font-semibold block mb-1">Status Pembayaran Awal</label>
-                <select class="ons-select" onchange="window.setGrnField('status_bayar', this.value)">
-                  <option value="BELUM_LUNAS" ${grnHeader.status_bayar !== 'LUNAS' ? 'selected' : ''}>BELUM LUNAS (Catat ke Hutang Dagang PBF)</option>
-                  <option value="LUNAS" ${grnHeader.status_bayar === 'LUNAS' ? 'selected' : ''}>LUNAS (Bayar Langsung Kas/Transfer)</option>
+              <div class="sm:col-span-2"><label class="font-semibold block mb-1">Jenis &amp; Status Pembayaran Awal</label>
+                <select class="ons-select" onchange="window.setGrnField('status_bayar', this.value, true)">
+                  <option value="BELUM_LUNAS" ${grnHeader.status_bayar !== 'LUNAS' ? 'selected' : ''}>KREDIT / BELUM LUNAS (Catat ke Hutang Dagang PBF)</option>
+                  <option value="LUNAS" ${grnHeader.status_bayar === 'LUNAS' ? 'selected' : ''}>TUNAI / LUNAS (Bayar Langsung Kas/Transfer)</option>
                 </select>
               </div>`}
             </div>
@@ -4830,14 +5083,21 @@
             </div>
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>Produk Obat</th><th>No. Batch</th><th>Tanggal ED</th><th>Qty Dasar</th><th>HPP / Unit (Rp)</th><th>Subtotal</th><th>Hapus</th></tr></thead>
+                <thead><tr><th>Produk Obat</th><th>No. Batch</th><th>Tanggal ED</th><th>Qty Dasar</th><th>Harga Beli (Rp)</th><th>Diskon Item</th><th>Harga Pokok/Unit</th><th>Subtotal</th><th>Hapus</th></tr></thead>
                 <tbody>
                   ${grnItems.map((it, idx) => {
                     const obRef = st.masterObat.find((m) => m.id_obat === it.id_obat);
                     const oldHpp = obRef ? Number(obRef.hpp_terakhir || obRef.hpp_avg || 0) : 0;
                     const newHpp = Number(it.hpp_unit || 0);
-                    const hppDiffPct = (oldHpp > 0 && newHpp > oldHpp) ? Math.round(((newHpp - oldHpp) / oldHpp) * 100) : 0;
-                    const hppBelowJual = obRef && newHpp > 0 && Number(obRef.harga_umum || 0) > 0 && newHpp >= Number(obRef.harga_umum || 0);
+                    const qtyD = Math.max(1, Number(it.qty_dasar || 1));
+                    const dItem = Math.max(0, Number(it.diskon_item || 0));
+                    const rowNet = Math.max(0, (qtyD * newHpp) - dItem);
+                    const taxFactor = grnHeader.jenis_faktur === 'BELUM_PAJAK' && Number(grnHeader.ppn_masukan || 0) > 0 && totalBruto > 0
+                      ? (1 + (Number(grnHeader.ppn_masukan || 0) / totalBruto))
+                      : 1;
+                    const hargaPokokPreview = Math.round((rowNet / qtyD) * taxFactor);
+                    const hppDiffPct = (oldHpp > 0 && hargaPokokPreview > oldHpp) ? Math.round(((hargaPokokPreview - oldHpp) / oldHpp) * 100) : 0;
+                    const hppBelowJual = obRef && hargaPokokPreview > 0 && Number(obRef.harga_umum || 0) > 0 && hargaPokokPreview >= Number(obRef.harga_umum || 0);
                     return `<tr>
                     <td>
                       <select class="ons-select text-xs min-w-[180px]" onchange="window.updateGrnItem(${idx}, 'id_obat', this.value)">
@@ -4845,14 +5105,16 @@
                       </select>
                       ${oldHpp > 0 ? `<div class="text-[10px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">HPP Lama: ${S().rp(oldHpp)}${hppDiffPct > 0 ? ` &bull; <span class="text-red-600 font-bold">Naik +${hppDiffPct}%</span>` : ''}${hppBelowJual ? ` &bull; <span class="text-red-600 font-bold">RUGI (&ge; Harga Umum!)</span>` : ''}</div>` : ''}
                     </td>
-                    <td><input class="ons-input font-mono-num text-xs w-32" value="${S().esc(it.no_batch)}" onchange="window.updateGrnItem(${idx}, 'no_batch', this.value)"/></td>
-                    <td><input type="date" class="ons-input text-xs w-36" value="${S().esc(it.tgl_kadaluarsa)}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
+                    <td><input class="ons-input font-mono-num text-xs w-28" value="${S().esc(it.no_batch)}" onchange="window.updateGrnItem(${idx}, 'no_batch', this.value)"/></td>
+                    <td><input type="date" class="ons-input text-xs w-32" value="${S().esc(it.tgl_kadaluarsa)}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
                     <td>
-                      <input type="number" min="1" class="ons-input font-mono-num text-xs w-20 text-right" value="${it.qty_dasar}" onchange="window.updateGrnItem(${idx}, 'qty_dasar', Number(this.value||1))"/>
+                      <input type="number" min="1" class="ons-input font-mono-num text-xs w-18 text-right" value="${it.qty_dasar}" onchange="window.updateGrnItem(${idx}, 'qty_dasar', Number(this.value||1))"/>
                       ${Number(it.qty_sp || 0) > 0 ? `<div class="text-[10px] font-mono-num mt-0.5 ${Number(it.qty_dasar) === Number(it.qty_sp) ? 'text-emerald-600' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'text-amber-600 font-bold' : 'text-blue-600 font-bold')}">SP: ${it.qty_sp} (${Number(it.qty_dasar) === Number(it.qty_sp) ? 'Cocok' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'Kurang' : '+' + (Number(it.qty_dasar) - Number(it.qty_sp)))})</div>` : ''}
                     </td>
-                    <td><input type="number" min="0" class="ons-input font-mono-num text-xs w-28 text-right" value="${it.hpp_unit}" onchange="window.updateGrnItem(${idx}, 'hpp_unit', Number(this.value||0))"/></td>
-                    <td class="font-mono-num font-bold text-xs">${S().rp(Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0))}</td>
+                    <td><input type="number" min="0" class="ons-input font-mono-num text-xs w-24 text-right" value="${it.hpp_unit}" onchange="window.updateGrnItem(${idx}, 'hpp_unit', Number(this.value||0))"/></td>
+                    <td><input type="number" min="0" class="ons-input font-mono-num text-xs w-20 text-right" value="${dItem}" onchange="window.updateGrnItem(${idx}, 'diskon_item', Number(this.value||0))"/></td>
+                    <td class="font-mono-num text-xs font-semibold">${S().rp(hargaPokokPreview)}</td>
+                    <td class="font-mono-num font-bold text-xs">${S().rp(rowNet)}</td>
                     <td><button type="button" onclick="window.removeGrnItemRow(${idx})" ${grnItems.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button></td>
                   </tr>`;
                   }).join('')}
@@ -4860,57 +5122,103 @@
               </table>
             </div>
 
-            <div class="flex flex-wrap items-center justify-between gap-4 pt-3 border-t" style="border-color:var(--ons-border)">
-              <div class="text-xs space-y-1">
-                <div>Total Bruto Item: <b class="font-mono-num">${S().rp(totalBruto)}</b> &bull; Diskon: <b class="font-mono-num">${S().rp(grnHeader.diskon_pbf || 0)}</b> &bull; PPN: <b class="font-mono-num">${S().rp(grnHeader.ppn_masukan || 0)}</b></div>
-                <div class="text-base font-extrabold text-blue-600">Netto Faktur: <span class="font-mono-num">${S().rp(nettoGrn)}</span></div>
-                ${grnHeader.id_sp ? `<label class="inline-flex items-center gap-2 text-[11px] font-semibold mt-1">
-                  <span>Status SP (${S().esc(grnHeader.no_sp)}):</span>
-                  <select class="ons-select text-[11px] py-1 min-h-0 w-56" onchange="window.setGrnField('sp_status', this.value)">
-                    <option value="SELESAI_DITERIMA" ${grnHeader.sp_status !== 'DITERIMA_SEBAGIAN' ? 'selected' : ''}>Tutup SP (Selesai Diterima Penuh)</option>
-                    <option value="DITERIMA_SEBAGIAN" ${grnHeader.sp_status === 'DITERIMA_SEBAGIAN' ? 'selected' : ''}>Diterima Sebagian (Sisa Menyusul)</option>
-                  </select>
-                </label>` : ''}
+            <div class="flex flex-wrap items-end justify-between gap-4 pt-3 border-t" style="border-color:var(--ons-border)">
+              <div class="text-xs space-y-1.5 flex-1 min-w-[260px]">
+                <div>Total Bruto Item: <b class="font-mono-num">${S().rp(totalBruto)}</b> &bull; Diskon: <b class="font-mono-num">${S().rp(headerDiskonRp)}</b> &bull; PPN: <b class="font-mono-num">${S().rp(grnHeader.ppn_masukan || 0)}</b>${Number(grnHeader.cashback || 0) > 0 ? ` &bull; Cashback: <b class="font-mono-num text-emerald-600">-${S().rp(grnHeader.cashback)}</b>` : ''}${Number(grnHeader.biaya_lainnya || 0) > 0 ? ` &bull; Biaya Lain: <b class="font-mono-num">+${S().rp(grnHeader.biaya_lainnya)}</b>` : ''}</div>
+                <div class="text-base font-extrabold text-blue-600">TOTAL / Netto Faktur: <span class="font-mono-num">${S().rp(nettoGrn)}</span></div>
+                <div class="flex flex-wrap gap-2 items-center">
+                  <input class="ons-input text-xs py-1 min-h-0 max-w-xs" placeholder="Catatan penerimaan faktur..." value="${S().esc(grnHeader.catatan || '')}" oninput="window.setGrnField('catatan', this.value)"/>
+                  ${grnHeader.id_sp ? `<label class="inline-flex items-center gap-2 text-[11px] font-semibold">
+                    <span>Status SP (${S().esc(grnHeader.no_sp)}):</span>
+                    <select class="ons-select text-[11px] py-1 min-h-0 w-56" onchange="window.setGrnField('sp_status', this.value)">
+                      <option value="SELESAI_DITERIMA" ${grnHeader.sp_status !== 'DITERIMA_SEBAGIAN' ? 'selected' : ''}>Tutup SP (Selesai Diterima Penuh)</option>
+                      <option value="DITERIMA_SEBAGIAN" ${grnHeader.sp_status === 'DITERIMA_SEBAGIAN' ? 'selected' : ''}>Diterima Sebagian (Sisa Menyusul)</option>
+                    </select>
+                  </label>` : ''}
+                </div>
               </div>
-              <button type="button" onclick="window.submitGrnFaktur()" class="ons-btn ons-btn-emerald text-xs px-5 py-2.5">Simpan Faktur Multi-Item &amp; Masukkan ke Stok FEFO</button>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.saveGrnDraftToLocal()" class="ons-btn ons-btn-ghost text-xs">Simpan Draft</button>
+                <button type="button" onclick="window.submitGrnFaktur()" class="ons-btn ons-btn-emerald text-xs px-5 py-2.5 font-bold">Simpan Faktur Multi-Item &amp; Masukkan ke Stok FEFO</button>
+              </div>
             </div>
           </div>
         </div>
       ` : fakturTab === 'harga' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : fakturTab === 'retur' ? `
-        <div class="ons-card p-4 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 class="font-bold text-sm">Radar &amp; Pembuatan BAR-PBF (Retur ke Distributor)</h3>
-              <p class="text-[11px]" style="color:var(--ons-text-soft)">Retur batch mendekati kadaluarsa (&le;180 hari), kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO &amp; hutang PBF otomatis disesuaikan.</p>
+        <div class="space-y-4">
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-sm">Radar &amp; Pembuatan BAR-PBF (Retur Pembelian)</h3>
+                <p class="text-[11px]" style="color:var(--ons-text-soft)">Retur batch mendekati kadaluarsa (&le;180 hari), kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, Kartu Stok &amp; hutang PBF otomatis disesuaikan.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.openReturDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${returDrafts.length})</button>
+                <button type="button" onclick="window.exportReturHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+                <button type="button" onclick="window.openCreateReturPembelianModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Retur Pembelian</button>
+              </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="ons-tab-bar">
                 <button type="button" onclick="window.setReturFilterMode('NEAR_ED')" class="ons-tab-btn ${returFilterMode === 'NEAR_ED' ? 'active' : ''}">Near-ED &le;180h (${nearEdBatches.length})</button>
                 <button type="button" onclick="window.setReturFilterMode('ALL')" class="ons-tab-btn ${returFilterMode === 'ALL' ? 'active' : ''}">Semua Batch Aktif (${allActiveBatches.length})</button>
               </div>
-              <input class="ons-input text-xs w-52" placeholder="Cari Obat / Batch / PBF..." value="${S().esc(returSearchQ)}" oninput="window.setReturSearchQ(this.value)"/>
+              <div class="flex flex-wrap items-center gap-2">
+                <input class="ons-input text-xs w-52" placeholder="Cari data (Obat, Batch, Faktur, PBF)..." value="${S().esc(returSearchQ)}" oninput="window.setReturSearchQ(this.value)"/>
+                <input type="date" aria-label="Filter Retur Dari Tanggal" class="ons-input text-xs py-1 min-h-0 w-32" value="${S().esc(returDateFrom)}" onchange="window.setReturDateRange('from', this.value)"/>
+                <input type="date" aria-label="Filter Retur Sampai Tanggal" class="ons-input text-xs py-1 min-h-0 w-32" value="${S().esc(returDateTo)}" onchange="window.setReturDateRange('to', this.value)"/>
+              </div>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>Nama Obat</th><th>Supplier PBF</th><th>No. Batch &amp; ED</th><th class="text-right">Qty Sisa</th><th class="text-right">HPP / Est. Potong Hutang</th><th>Aksi BAR-PBF</th></tr></thead>
+                <tbody>
+                  ${returCandidates.length ? returCandidates.map((b) => {
+                    const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                    const dLeft = S().daysUntil(b.tgl_kadaluarsa);
+                    const hpp = Number(b.hpp_beli || (o && (o.hpp_terakhir || o.hpp_avg)) || 0);
+                    const estCut = Number(b.qty_sisa || 0) * hpp;
+                    return `<tr>
+                      <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
+                      <td class="text-xs">${S().esc(b.id_pbf || '-')}</td>
+                      <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="${dLeft <= 90 ? 'text-red-600 font-bold' : (dLeft <= 180 ? 'text-amber-600 font-bold' : '')}">${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))} (${dLeft}h)</div></td>
+                      <td class="text-right font-mono-num text-xs font-bold">${b.qty_sisa}</td>
+                      <td class="text-right font-mono-num text-xs"><div>${S().rp(hpp)}/unit</div><div style="color:var(--ons-text-soft)">Max ${S().rp(estCut)}</div></td>
+                      <td><button type="button" onclick="window.openReturBarModal('${S().esc(b.id_batch)}')" class="ons-btn ons-btn-amber text-xs py-1 px-2.5">Proses Retur BAR-PBF</button></td>
+                    </tr>`;
+                  }).join('') : `<tr><td colspan="6" class="text-center py-6 text-xs">${returFilterMode === 'NEAR_ED' ? 'Tidak ada batch mendekati kadaluarsa (&le;180 hari). Pilih mode "Semua Batch Aktif" untuk retur barang rusak/recall.' : 'Tidak ada batch aktif yang cocok dengan pencarian.'}</td></tr>`}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>Nama Obat</th><th>Supplier PBF</th><th>No. Batch &amp; ED</th><th class="text-right">Qty Sisa</th><th class="text-right">HPP / Est. Potong Hutang</th><th>Aksi BAR-PBF</th></tr></thead>
-              <tbody>
-                ${returCandidates.length ? returCandidates.map((b) => {
-                  const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
-                  const dLeft = S().daysUntil(b.tgl_kadaluarsa);
-                  const hpp = Number(b.hpp_beli || (o && (o.hpp_terakhir || o.hpp_avg)) || 0);
-                  const estCut = Number(b.qty_sisa || 0) * hpp;
-                  return `<tr>
-                    <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
-                    <td class="text-xs">${S().esc(b.id_pbf || '-')}</td>
-                    <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="${dLeft <= 90 ? 'text-red-600 font-bold' : (dLeft <= 180 ? 'text-amber-600 font-bold' : '')}">${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))} (${dLeft}h)</div></td>
-                    <td class="text-right font-mono-num text-xs font-bold">${b.qty_sisa}</td>
-                    <td class="text-right font-mono-num text-xs"><div>${S().rp(hpp)}/unit</div><div style="color:var(--ons-text-soft)">Max ${S().rp(estCut)}</div></td>
-                    <td><button type="button" onclick="window.openReturBarModal('${S().esc(b.id_batch)}')" class="ons-btn ons-btn-amber text-xs py-1 px-2.5">Proses Retur BAR-PBF</button></td>
-                  </tr>`;
-                }).join('') : `<tr><td colspan="6" class="text-center py-6 text-xs">${returFilterMode === 'NEAR_ED' ? 'Tidak ada batch mendekati kadaluarsa (&le;180 hari). Pilih mode "Semua Batch Aktif" untuk retur barang rusak/recall.' : 'Tidak ada batch aktif yang cocok dengan pencarian.'}</td></tr>`}
-              </tbody>
-            </table>
+
+          <div class="ons-card p-4 space-y-3">
+            <h3 class="font-bold text-sm">Riwayat Retur Pembelian (${filteredReturHistory.length})</h3>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur (BAR)</th><th>No. Faktur Asal</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Retur</th><th>Actions</th></tr></thead>
+                <tbody>
+                  ${filteredReturHistory.length ? filteredReturHistory.map((r, i) => `<tr>
+                    <td class="font-mono-num text-xs">${i + 1}.</td>
+                    <td class="font-mono-num text-xs">${S().formatTgl(r.tanggal)}</td>
+                    <td class="font-mono-num text-xs font-bold">${S().esc(r.no_bar)}</td>
+                    <td class="font-mono-num text-xs">${S().esc(r.no_faktur_asal)}</td>
+                    <td class="text-xs font-semibold">${S().esc(r.supplier)}</td>
+                    <td class="text-xs">${S().esc(r.items.slice(0, 2).map((x) => `${x.nama} (${x.qty})`).join(', '))}${r.items.length > 2 ? ` +${r.items.length - 2} lagi` : ''}</td>
+                    <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(r.total_retur)}</td>
+                    <td><button type="button" onclick="window.printBarPbfDocument('${S().esc(r.no_bar)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Cetak BAR-PBF</button></td>
+                  </tr>`).join('') : '<tr><td colspan="8" class="text-center py-6 text-xs">Data tidak ditemukan. Klik <b>+ Retur Pembelian</b> atau <b>Proses Retur BAR-PBF</b> untuk mencatat retur distributor.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ons-card p-4">
+            <div class="text-xs font-extrabold text-blue-600 mb-2">Rekap Retur Pembelian</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Total Keseluruhan</span><b class="font-mono-num text-sm text-amber-600">${S().rp(filteredReturHistory.reduce((s, r) => s + r.total_retur, 0))}</b></div>
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Jumlah Transaksi</span><b class="font-mono-num text-sm">${filteredReturHistory.length} &times;</b></div>
+            </div>
           </div>
         </div>
       ` : fakturTab === 'konsinyasi' ? renderKonsinyasiTabHtml(st) : `
@@ -4925,11 +5233,17 @@
           <div class="ons-card p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
-                <input class="ons-input text-xs w-52" placeholder="Cari No. Faktur, SP, PBF..." value="${S().esc(fakturListQ)}" oninput="window.setFakturListQ(this.value)"/>
-                <select aria-label="Filter Supplier Faktur" class="ons-select text-xs w-48" onchange="window.setFakturListPbfFilter(this.value)">
+                <input class="ons-input text-xs w-52" placeholder="Cari No. Faktur, SP, PBF, produk..." value="${S().esc(fakturListQ)}" oninput="window.setFakturListQ(this.value)"/>
+                <select aria-label="Filter Supplier Faktur" class="ons-select text-xs w-44" onchange="window.setFakturListPbfFilter(this.value)">
                   <option value="">Semua Supplier (${fakturSuppliers.length})</option>
                   ${fakturSuppliers.map((sup) => `<option value="${S().esc(sup)}" ${fakturListPbfFilter === sup ? 'selected' : ''}>${S().esc(sup)}</option>`).join('')}
                 </select>
+                <div class="flex items-center gap-1 text-xs">
+                  <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Tgl. Terima:</span>
+                  <input type="date" aria-label="Tgl Terima Dari" class="ons-input text-xs py-1 min-h-0 w-32" value="${S().esc(fakturDateFrom)}" onchange="window.setFakturDateRange('from', this.value)"/>
+                  <span>&ndash;</span>
+                  <input type="date" aria-label="Tgl Terima Sampai" class="ons-input text-xs py-1 min-h-0 w-32" value="${S().esc(fakturDateTo)}" onchange="window.setFakturDateRange('to', this.value)"/>
+                </div>
                 <div class="ons-tab-bar">
                   ${[
                     { id: 'SEMUA', label: 'Semua' },
@@ -4940,25 +5254,40 @@
                   ].map((f) => `<button onclick="window.setFakturListFilter('${f.id}')" class="ons-tab-btn ${fakturListFilter === f.id ? 'active' : ''}">${f.label}</button>`).join('')}
                 </div>
               </div>
-              <button onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs">+ Input GRN Multi-Item Baru</button>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.openFakturDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${fakturDrafts.length})</button>
+                <button type="button" onclick="window.exportFakturList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+                <button type="button" onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs font-bold">+ Faktur Pembelian</button>
+              </div>
             </div>
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>No. Faktur &amp; SP</th><th>Supplier PBF</th><th>Jatuh Tempo</th><th class="text-right">Netto Hutang</th><th class="text-right">Sisa Hutang</th><th>Status</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>No.</th><th>Tanggal Terima</th><th>Petugas</th><th>No. Faktur &amp; SP</th><th>Supplier</th><th>Produk</th><th>Jatuh Tempo</th><th class="text-right">Total / Sisa Hutang</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
-                  ${filteredFaktur.length ? filteredFaktur.map((f) => {
+                  ${filteredFaktur.length ? filteredFaktur.map((f, idx) => {
                     const isKons = isKonsFaktur(f);
                     const dTempo = f.tgl_jatuh_tempo ? S().daysUntil(f.tgl_jatuh_tempo) : 999;
                     const unpaid = !isKons && f.status_bayar !== 'LUNAS' && Number(f.sisa_hutang || 0) > 0;
                     const tempoBadge = unpaid
                       ? (dTempo < 0 ? `<span class="text-[10px] font-bold text-red-600 ml-1">(Terlambat ${Math.abs(dTempo)}h)</span>` : (dTempo <= 7 ? `<span class="text-[10px] font-bold text-amber-600 ml-1">(H-${dTempo})</span>` : ''))
                       : '';
+                    const linkedBatches = (st.stokBatch || []).filter((b) => b.no_faktur_pbf === f.no_faktur_pbf);
+                    const prodNames = linkedBatches.slice(0, 2).map((b) => {
+                      const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat);
+                      return ob ? ob.nama_dagang : b.id_obat;
+                    }).join(', ');
                     return `<tr>
+                    <td class="font-mono-num text-xs">${idx + 1}.</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap">${S().formatTgl(f.tgl_terima || f.tgl_faktur || f.created_at || '-')}</td>
+                    <td class="text-xs">${S().esc(f.petugas || (st.user && st.user.nama) || 'APJ / Pemilik')}</td>
                     <td class="font-mono-num text-xs"><b>${S().esc(f.no_faktur_pbf)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(f.no_sp || 'Tanpa SP')}</span></td>
                     <td class="font-semibold text-xs">${S().esc(f.id_pbf)}</td>
-                    <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo || '-')}${tempoBadge}</td>
-                    <td class="text-right font-mono-num text-xs">${isKons ? '<span class="text-[11px] text-blue-600 font-semibold">Titip Jual</span>' : S().rp(f.netto_hutang)}</td>
-                    <td class="text-right font-mono-num font-bold text-xs ${isKons ? 'text-blue-600' : (Number(f.sisa_hutang || 0) > 0 ? 'text-red-600' : 'text-emerald-600')}">${S().rp(f.sisa_hutang)}</td>
+                    <td class="text-xs">${linkedBatches.length ? `<b>${linkedBatches.length} batch</b><div class="text-[10px] truncate max-w-[160px]" style="color:var(--ons-text-soft)">${S().esc(prodNames)}</div>` : '<span style="color:var(--ons-text-soft)">-</span>'}</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap">${S().esc(f.tgl_jatuh_tempo || '-')}${tempoBadge}</td>
+                    <td class="text-right font-mono-num text-xs">
+                      <div class="font-bold">${isKons ? 'Titip Jual' : S().rp(f.netto_hutang)}</div>
+                      <div class="text-[11px] font-bold ${isKons ? 'text-blue-600' : (Number(f.sisa_hutang || 0) > 0 ? 'text-red-600' : 'text-emerald-600')}">Sisa: ${S().rp(f.sisa_hutang)}</div>
+                    </td>
                     <td><span class="badge-bpom ${isKons ? 'bpom-terbatas' : (f.status_bayar === 'LUNAS' ? 'bpom-bebas' : 'bpom-prekursor')}">${S().esc(f.status_bayar)}</span></td>
                     <td>
                       <div class="flex flex-wrap gap-1.5">
@@ -4967,9 +5296,17 @@
                       </div>
                     </td>
                   </tr>`;
-                  }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Tidak ada faktur PBF yang sesuai filter.</td></tr>'}
+                  }).join('') : '<tr><td colspan="10" class="text-center py-6 text-xs">Tidak ada faktur PBF yang sesuai filter.</td></tr>'}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <div class="ons-card p-4">
+            <div class="text-xs font-extrabold text-blue-600 mb-2">Rekap Faktur Pembelian${(fakturDateFrom || fakturDateTo) ? ` (${S().esc(fakturDateFrom || '...')} s.d. ${S().esc(fakturDateTo || '...')})` : ''}</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Total Keseluruhan</span><b class="font-mono-num text-sm text-blue-600">${S().rp(filteredFaktur.reduce((s, f) => s + Number(f.netto_hutang || 0), 0))}</b></div>
+              <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><span style="color:var(--ons-text-soft)">Jumlah Transaksi</span><b class="font-mono-num text-sm">${filteredFaktur.length} &times;</b></div>
             </div>
           </div>
         </div>
@@ -4978,7 +5315,7 @@
   }
 
   global.setFakturTab = (t) => {
-    fakturTab = t || 'daftar';
+    fakturTab = t || 'rencana';
     if (S().AppState.subTabs) S().AppState.subTabs.faktur = fakturTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
@@ -4986,38 +5323,392 @@
   global.setFakturListQ = (v) => { fakturListQ = v || ''; global.renderActiveView(); };
   global.setFakturListFilter = (v) => { fakturListFilter = v || 'SEMUA'; global.renderActiveView(); };
   global.setFakturListPbfFilter = (v) => { fakturListPbfFilter = v || ''; global.renderActiveView(); };
+  global.setFakturDateRange = (which, val) => {
+    if (which === 'from') fakturDateFrom = val || '';
+    else if (which === 'to') fakturDateTo = val || '';
+    global.renderActiveView();
+  };
+  global.setPlanFilter = (k, val) => {
+    if (k === 'q') planSearchQ = val || '';
+    else if (k === 'supplier') planSupplierFilter = val || '';
+    else if (k === 'jenis') planJenisSpFilter = val || '';
+    global.renderActiveView();
+  };
+  global.dismissPlanBanner = () => { planBannerDismissed = true; global.renderActiveView(); };
+
+  global.addObatToPurchasePlan = (idObat, qtyCustom, keterangan, goToPlan) => {
+    const st = S().AppState;
+    const o = (st.masterObat || []).find((m) => m.id_obat === idObat);
+    if (!o) return global.toast('Produk tidak ditemukan di katalog.', 'warn');
+    const plans = _readLocalList(PLANS_KEY);
+    const s = S().getSellableStok(o.id_obat);
+    const defaultQty = qtyCustom !== undefined ? Math.max(1, Number(qtyCustom)) : Math.max(10, Number(o.stok_max || 100) - s);
+    const exist = plans.find((p) => p.id_obat === o.id_obat);
+    if (exist) {
+      exist.kuantitas = Number(exist.kuantitas || 0) + defaultQty;
+      exist.selected = true;
+      if (keterangan) exist.keterangan = keterangan;
+    } else {
+      plans.unshift({
+        id_plan: 'PLN-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5).toUpperCase(),
+        id_obat: o.id_obat,
+        nama_produk: o.nama_dagang,
+        jenis_sp: _resolvePlanJenisSp(o.golongan_bpom),
+        nama_supplier: o.pbf_utama || ((st.supplierPbf && st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PBF Reguler'),
+        kuantitas: defaultQty,
+        satuan: o.satuan_dasar || 'Unit',
+        harga_beli: Number(o.hpp_terakhir || o.hpp_avg || 0),
+        keterangan: keterangan || 'Rencana dari Defecta',
+        selected: true
+      });
+    }
+    _writeLocalList(PLANS_KEY, plans);
+    global.toast(o.nama_dagang + ' dimasukkan ke Rencana Pembelian.', 'ok');
+    if (goToPlan) global.navigateView('faktur', 'rencana');
+    else global.renderActiveView();
+  };
+
+  global.pullLowStockToPlans = () => {
+    const st = S().AppState;
+    const plans = _readLocalList(PLANS_KEY);
+    const lowAll = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
+    const candidates = lowAll.length ? lowAll : (st.masterObat || []).slice(0, 3);
+    let added = 0;
+    candidates.forEach((o) => {
+      if (!plans.some((p) => p.id_obat === o.id_obat)) {
+        const s = S().getSellableStok(o.id_obat);
+        plans.push({
+          id_plan: 'PLN-' + Date.now() + '-' + added + '-' + Math.random().toString(36).slice(2, 5).toUpperCase(),
+          id_obat: o.id_obat,
+          nama_produk: o.nama_dagang,
+          jenis_sp: _resolvePlanJenisSp(o.golongan_bpom),
+          nama_supplier: o.pbf_utama || ((st.supplierPbf && st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PBF Reguler'),
+          kuantitas: Math.max(10, Number(o.stok_max || 100) - s),
+          satuan: o.satuan_dasar || 'Unit',
+          harga_beli: Number(o.hpp_terakhir || o.hpp_avg || 0),
+          keterangan: 'Rekomendasi Defecta',
+          selected: true
+        });
+        added++;
+      }
+    });
+    _writeLocalList(PLANS_KEY, plans);
+    global.toast(added ? `${added} item rekomendasi Defecta ditambahkan ke Rencana Pembelian.` : 'Semua item Defecta sudah ada di Rencana Pembelian.', added ? 'ok' : 'info');
+    global.renderActiveView();
+  };
+
+  global.togglePlanSelected = (idPlan, checked) => {
+    const plans = _readLocalList(PLANS_KEY);
+    const target = plans.find((p) => p.id_plan === idPlan);
+    if (target) target.selected = Boolean(checked);
+    _writeLocalList(PLANS_KEY, plans);
+    global.renderActiveView();
+  };
+
+  global.toggleAllPlansSelected = (checked) => {
+    const plans = _readLocalList(PLANS_KEY);
+    plans.forEach((p) => { p.selected = Boolean(checked); });
+    _writeLocalList(PLANS_KEY, plans);
+    global.renderActiveView();
+  };
+
+  global.updatePurchasePlanField = (idPlan, field, val) => {
+    const plans = _readLocalList(PLANS_KEY);
+    const target = plans.find((p) => p.id_plan === idPlan);
+    if (!target) return;
+    target[field] = val;
+    _writeLocalList(PLANS_KEY, plans);
+    global.renderActiveView();
+  };
+
+  global.removePurchasePlan = (idPlan) => {
+    _writeLocalList(PLANS_KEY, _readLocalList(PLANS_KEY).filter((p) => p.id_plan !== idPlan));
+    global.renderActiveView();
+  };
+
+  global.openPenawaranSalesModal = () => {
+    const st = S().AppState;
+    const pbfs = st.supplierPbf || [];
+    const obats = st.masterObat || [];
+    S().openModal(`<div class="p-5 sm:p-6 space-y-3.5 text-xs">
+      <div class="flex items-center justify-between gap-2 bg-emerald-600 text-white -m-5 sm:-m-6 mb-4 px-5 py-3.5 rounded-t-2xl">
+        <h3 class="font-extrabold text-base">Tambah dari Penawaran Sales PBF</h3>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="text-white/90 text-lg px-2">&times;</button>
+      </div>
+      <div>
+        <label class="font-semibold block mb-1">Pilih Produk Katalog (atau kosongkan untuk input bebas)</label>
+        <select id="psObatSel" class="ons-select text-xs" onchange="const opt=this.options[this.selectedIndex];if(opt&&opt.dataset.nama){document.getElementById('psNamaInp').value=opt.dataset.nama;document.getElementById('psHargaInp').value=opt.dataset.hpp||'0';document.getElementById('psSatuanInp').value=opt.dataset.satuan||'Unit';if(opt.dataset.pbf)document.getElementById('psPbfSel').value=opt.dataset.pbf;}">
+          <option value="">-- Pilih Obat Katalog --</option>
+          ${obats.map((o) => `<option value="${S().esc(o.id_obat)}" data-nama="${S().esc(o.nama_dagang)}" data-hpp="${Number(o.hpp_terakhir || o.hpp_avg || 0)}" data-satuan="${S().esc(o.satuan_dasar || 'Unit')}" data-pbf="${S().esc(o.pbf_utama || '')}">${S().esc(o.nama_dagang)} (Stok ${S().getSellableStok(o.id_obat)})</option>`).join('')}
+        </select>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Nama Produk *</label><input id="psNamaInp" class="ons-input text-xs" placeholder="Nama obat / produk penawaran"/></div>
+        <div><label class="font-semibold block mb-1">Nama Supplier PBF *</label>
+          <select id="psPbfSel" class="ons-select text-xs">
+            ${pbfs.map((p) => `<option value="${S().esc(p.nama_pbf)}">${S().esc(p.nama_pbf)}</option>`).join('')}
+          </select>
+        </div>
+        <div><label class="font-semibold block mb-1">Jenis SP</label>
+          <select id="psJenisSel" class="ons-select text-xs">
+            ${['REGULER', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].map((g) => `<option value="${g}">${g}</option>`).join('')}
+          </select>
+        </div>
+        <div><label class="font-semibold block mb-1">Satuan</label><input id="psSatuanInp" class="ons-input text-xs" value="Box"/></div>
+        <div><label class="font-semibold block mb-1">Kuantitas *</label><input id="psQtyInp" type="number" min="1" class="ons-input font-mono-num text-xs" value="20"/></div>
+        <div><label class="font-semibold block mb-1">Harga Beli Satuan (Rp)</label><input id="psHargaInp" type="number" min="0" class="ons-input font-mono-num text-xs" value="0"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Keterangan Penawaran Sales</label><input id="psKetInp" class="ons-input text-xs" value="Penawaran Sales PBF (Harga Promo)"/></div>
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitPenawaranSales()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Masukkan ke Rencana Pembelian</button>
+      </div>
+    </div>`, { mode: 'spotlight', maxWidth: '580px' });
+  };
+
+  global.submitPenawaranSales = () => {
+    const idObat = (document.getElementById('psObatSel') || {}).value || '';
+    const nama = String((document.getElementById('psNamaInp') || {}).value || '').trim();
+    const pbf = (document.getElementById('psPbfSel') || {}).value || 'PBF Reguler';
+    const jenis = (document.getElementById('psJenisSel') || {}).value || 'REGULER';
+    const satuan = (document.getElementById('psSatuanInp') || {}).value || 'Unit';
+    const qty = Math.max(1, Number((document.getElementById('psQtyInp') || {}).value || 1));
+    const harga = Math.max(0, Number((document.getElementById('psHargaInp') || {}).value || 0));
+    const ket = (document.getElementById('psKetInp') || {}).value || 'Penawaran Sales';
+    if (!nama) return global.toast('Nama produk penawaran sales wajib diisi.', 'warn');
+    const plans = _readLocalList(PLANS_KEY);
+    plans.unshift({
+      id_plan: 'PLN-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5).toUpperCase(),
+      id_obat: idObat || ('CUSTOM-' + Date.now().toString().slice(-4)),
+      nama_produk: nama,
+      jenis_sp: jenis,
+      nama_supplier: pbf,
+      kuantitas: qty,
+      satuan,
+      harga_beli: harga,
+      keterangan: ket,
+      selected: true
+    });
+    _writeLocalList(PLANS_KEY, plans);
+    S().closeModal();
+    global.toast(`${nama} masuk ke Rencana Pembelian.`, 'ok');
+    global.renderActiveView();
+  };
+
+  global.convertSinglePlanToSp = (idPlan) => {
+    const plans = _readLocalList(PLANS_KEY);
+    const p = plans.find((x) => x.id_plan === idPlan);
+    if (!p) return global.toast('Item rencana tidak ditemukan.', 'warn');
+    if (typeof global.openSpModalFromPlans === 'function') {
+      _writeLocalList(PLANS_KEY, plans.filter((x) => x.id_plan !== idPlan));
+      global.openSpModalFromPlans(p.nama_supplier, p.jenis_sp, [p], 'Dari Rencana Pembelian: ' + (p.keterangan || ''));
+    }
+  };
+
+  global.convertSelectedPlansToSp = () => {
+    const plans = _readLocalList(PLANS_KEY);
+    const picked = plans.filter((p) => p.selected);
+    if (!picked.length) return global.toast('Centang minimal 1 produk pada Rencana Pembelian.', 'warn');
+    const firstSup = picked[0].nama_supplier;
+    const golList = picked.map((x) => String(x.jenis_sp || 'REGULER').toUpperCase());
+    const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
+    _writeLocalList(PLANS_KEY, plans.filter((p) => !p.selected));
+    if (typeof global.openSpModalFromPlans === 'function') {
+      global.openSpModalFromPlans(firstSup, golSp, picked, 'Konversi ' + picked.length + ' item Rencana Pembelian');
+    }
+  };
+
+  global.exportPurchasePlans = (fmt) => {
+    const plans = _readLocalList(PLANS_KEY);
+    const rows = plans.map((p, i) => ({
+      no: i + 1,
+      nama: p.nama_produk,
+      jenis_sp: p.jenis_sp,
+      supplier: p.nama_supplier,
+      qty: Number(p.kuantitas || 0),
+      satuan: p.satuan || 'Unit',
+      harga_beli: Number(p.harga_beli || 0),
+      subtotal: Number(p.kuantitas || 0) * Number(p.harga_beli || 0),
+      keterangan: p.keterangan || ''
+    }));
+    S().exportDataset(fmt || 'xlsx', 'Rencana Pembelian Obat Apotek', `rencana-pembelian-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Produk', type: 'wrap', width: 28 },
+      { key: 'jenis_sp', label: 'Jenis SP', type: 'str', width: 13 },
+      { key: 'supplier', label: 'Supplier', type: 'wrap', width: 24 },
+      { key: 'qty', label: 'Kuantitas', type: 'int', sum: true, width: 12 },
+      { key: 'satuan', label: 'Satuan', type: 'str', width: 10 },
+      { key: 'harga_beli', label: 'Harga Beli Satuan', type: 'currency', width: 16 },
+      { key: 'subtotal', label: 'Total Harga', type: 'currency', sum: true, width: 18 },
+      { key: 'keterangan', label: 'Keterangan', type: 'wrap', width: 24 }
+    ], rows, { sheetName: 'RencanaPembelian' });
+  };
+
+  global.exportFakturList = (fmt) => {
+    const allFaktur = S().AppState.fakturPbf || [];
+    const rows = allFaktur.map((f, i) => ({
+      no: i + 1,
+      tgl_terima: String(f.tgl_terima || f.tgl_faktur || f.created_at || '').slice(0, 10),
+      no_faktur: f.no_faktur_pbf || '',
+      no_sp: f.no_sp || '-',
+      supplier: f.id_pbf || '',
+      tempo: f.tgl_jatuh_tempo || '',
+      netto: Number(f.netto_hutang || 0),
+      sisa_hutang: Number(f.sisa_hutang || 0),
+      status: f.status_bayar || ''
+    }));
+    S().exportDataset(fmt || 'xlsx', 'Daftar Faktur Pembelian PBF', `faktur-pembelian-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'tgl_terima', label: 'Tgl Terima', type: 'str', width: 13 },
+      { key: 'no_faktur', label: 'No. Faktur', type: 'str', width: 20 },
+      { key: 'no_sp', label: 'No. SP', type: 'str', width: 20 },
+      { key: 'supplier', label: 'Supplier', type: 'wrap', width: 24 },
+      { key: 'tempo', label: 'Jatuh Tempo', type: 'str', width: 13 },
+      { key: 'netto', label: 'Total Pembelian', type: 'currency', sum: true, width: 18 },
+      { key: 'sisa_hutang', label: 'Sisa Hutang', type: 'currency', sum: true, width: 18 },
+      { key: 'status', label: 'Status', type: 'str', width: 14 }
+    ], rows, { sheetName: 'FakturPembelian' });
+  };
+
+  global.openFakturDraftModal = () => {
+    const drafts = _readLocalList(FAKTUR_DRAFTS_KEY);
+    S().openModal(`<div class="p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between gap-2 bg-blue-600 text-white -m-5 sm:-m-6 mb-4 px-5 py-3.5 rounded-t-2xl">
+        <h3 class="font-extrabold text-base">Draft Faktur Pembelian (${drafts.length})</h3>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="text-white/90 text-lg px-2">&times;</button>
+      </div>
+      <div class="ons-table-wrap max-h-80">
+        <table class="ons-table">
+          <thead><tr><th>No.</th><th>Terakhir Disimpan</th><th>Supplier</th><th>No. Faktur</th><th>Produk</th><th class="text-right">Total</th><th>Action</th></tr></thead>
+          <tbody>
+            ${drafts.length ? drafts.map((d, idx) => {
+              const tot = (d.items || []).reduce((s, it) => s + Math.max(0, Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0) - Number(it.diskon_item || 0)), 0);
+              return `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}.</td>
+                <td class="font-mono-num text-xs">${S().formatTgl(d.saved_at || '', true)}</td>
+                <td class="text-xs font-bold">${S().esc((d.header && d.header.id_pbf) || '-')}</td>
+                <td class="font-mono-num text-xs">${S().esc((d.header && d.header.no_faktur_pbf) || '-')}</td>
+                <td class="text-xs">${(d.items || []).length} baris</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
+                <td>
+                  <div class="flex gap-1.5">
+                    <button type="button" onclick="window.loadGrnDraftFromLocal('${S().esc(d.id_draft)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Lanjutkan</button>
+                    <button type="button" onclick="window.deleteGrnDraftFromLocal('${S().esc(d.id_draft)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs">Data tidak ditemukan.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t text-xs" style="border-color:var(--ons-border)">
+        <div class="p-2.5 rounded-xl border bg-amber-500/10 border-amber-500/30 flex-1">Draft ini hanya tersimpan di perangkat &amp; browser ini. Klik <b>Lanjutkan</b> untuk menyimpan faktur ke sistem.</div>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Kembali</button>
+      </div>
+    </div>`, { mode: 'spotlight', maxWidth: '820px' });
+  };
+
+  global.saveGrnDraftToLocal = () => {
+    ensureGrnInitialized();
+    const drafts = _readLocalList(FAKTUR_DRAFTS_KEY);
+    const idDraft = grnActiveDraftId || ('FKD-' + Date.now());
+    const entry = {
+      id_draft: idDraft,
+      saved_at: new Date().toISOString(),
+      header: Object.assign({}, grnHeader),
+      items: grnItems.map((it) => Object.assign({}, it))
+    };
+    const idx = drafts.findIndex((x) => x.id_draft === idDraft);
+    if (idx >= 0) drafts[idx] = entry; else drafts.unshift(entry);
+    _writeLocalList(FAKTUR_DRAFTS_KEY, drafts);
+    grnActiveDraftId = '';
+    global.toast('Draft Faktur Pembelian tersimpan di browser.', 'ok');
+    global.renderActiveView();
+  };
+
+  global.loadGrnDraftFromLocal = (idDraft) => {
+    const d = _readLocalList(FAKTUR_DRAFTS_KEY).find((x) => x.id_draft === idDraft);
+    if (!d) return global.toast('Draft faktur tidak ditemukan.', 'warn');
+    grnActiveDraftId = d.id_draft;
+    grnHeader = Object.assign({}, grnHeader, d.header || {});
+    grnItems = Array.isArray(d.items) && d.items.length ? d.items.slice() : [];
+    S().closeModal();
+    global.setFakturTab('input');
+  };
+
+  global.deleteGrnDraftFromLocal = (idDraft) => {
+    _writeLocalList(FAKTUR_DRAFTS_KEY, _readLocalList(FAKTUR_DRAFTS_KEY).filter((x) => x.id_draft !== idDraft));
+    global.openFakturDraftModal();
+  };
+
   global.setReturFilterMode = (m) => { returFilterMode = m === 'ALL' ? 'ALL' : 'NEAR_ED'; global.renderActiveView(); };
   global.setReturSearchQ = (v) => { returSearchQ = v || ''; global.renderActiveView(); };
+  global.setReturDateRange = (which, val) => {
+    if (which === 'from') returDateFrom = val || '';
+    else if (which === 'to') returDateTo = val || '';
+    global.renderActiveView();
+  };
   global.toggleGrnScannerPanel = () => {
     grnScanState.panelOpen = !Boolean(grnScanState.panelOpen);
+    global.renderActiveView();
+  };
+  global.toggleGrnDiskonMode = () => {
+    grnHeader.diskon_mode = grnHeader.diskon_mode === 'PCT' ? 'RP' : 'PCT';
+    global.renderActiveView();
+  };
+  global.setGrnTempoDays = (days) => {
+    const d = Math.max(0, Number(days || 0));
+    grnHeader.tempo_hari = d;
+    grnHeader.tgl_jatuh_tempo = _dueDateFromTermin(d, grnHeader.tgl_faktur);
     global.renderActiveView();
   };
   global.setGrnField = (k, v, rerender) => {
     grnHeader[k] = v;
     if (k === 'id_pbf') {
-      grnHeader.tgl_jatuh_tempo = _dueDateFromTermin(_getPbfTerminDays(v));
+      const term = _getPbfTerminDays(v);
+      grnHeader.tempo_hari = term;
+      grnHeader.tgl_jatuh_tempo = _dueDateFromTermin(term, grnHeader.tgl_faktur);
       global.renderActiveView();
       return;
+    }
+    if (k === 'tgl_faktur' && grnHeader.tempo_hari !== undefined) {
+      grnHeader.tgl_jatuh_tempo = _dueDateFromTermin(grnHeader.tempo_hari, v);
     }
     if (rerender) global.renderActiveView();
   };
   global.applyGrnPpn11 = (enable) => {
-    const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
-    const dpp = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0));
+    const totalBruto = grnItems.reduce((s, it) => s + Math.max(0, (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)) - Number(it.diskon_item || 0)), 0);
+    const hdrDisc = grnHeader.diskon_mode === 'PCT'
+      ? Math.round(totalBruto * Math.min(100, Math.max(0, Number(grnHeader.diskon_pct || 0))) / 100)
+      : Math.max(0, Number(grnHeader.diskon_pbf || 0));
+    const dpp = Math.max(0, totalBruto - hdrDisc);
     grnHeader.ppn_masukan = enable ? Math.round(dpp * 0.11) : 0;
     global.renderActiveView();
   };
   global.resetGrnForm = () => {
     const st = S().AppState;
     const defaultPbf = st.supplierPbf && st.supplierPbf.length ? st.supplierPbf[0].nama_pbf : '';
+    const term = _getPbfTerminDays(defaultPbf);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    grnActiveDraftId = '';
     grnHeader = {
       id_sp: '',
       no_faktur_pbf: '',
       no_sp: '',
       id_pbf: defaultPbf,
-      tgl_jatuh_tempo: _dueDateFromTermin(_getPbfTerminDays(defaultPbf)),
+      tgl_faktur: todayStr,
+      tgl_terima: todayStr,
+      tgl_jatuh_tempo: _dueDateFromTermin(term, todayStr),
+      tempo_hari: term,
+      jenis_faktur: 'BELUM_PAJAK',
+      gudang: 'Gudang Utama',
+      metode_pembayaran: 'KREDIT',
+      diskon_mode: 'RP',
+      diskon_pct: 0,
       diskon_pbf: 0,
       ppn_masukan: 0,
+      cashback: 0,
+      biaya_lainnya: 0,
       jenis_penerimaan: 'BELI_PUTUS',
       status_bayar: 'BELUM_LUNAS',
       catatan: ''
@@ -5364,38 +6055,65 @@
         if (Number(it.qty_dasar || 0) <= 0) throw new Error('Qty Dasar pada baris #' + (i + 1) + ' harus lebih dari 0.');
         if (Number(it.hpp_unit || 0) < 0) throw new Error('HPP / Unit pada baris #' + (i + 1) + ' tidak valid.');
       }
-      const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
-      const netto = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
+      const totalBruto = grnItems.reduce((s, it) => s + Math.max(0, (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)) - Number(it.diskon_item || 0)), 0);
+      const diskonTotal = grnHeader.diskon_mode === 'PCT'
+        ? Math.round(totalBruto * Math.min(100, Math.max(0, Number(grnHeader.diskon_pct || 0))) / 100)
+        : Math.max(0, Number(grnHeader.diskon_pbf || 0));
+      const netto = Math.max(
+        0,
+        totalBruto - diskonTotal + Number(grnHeader.ppn_masukan || 0) - Number(grnHeader.cashback || 0) + Number(grnHeader.biaya_lainnya || 0)
+      );
       const jenisPenerimaan = grnHeader.jenis_penerimaan || 'BELI_PUTUS';
+      const stUser = (S().AppState && S().AppState.user && S().AppState.user.nama) || 'APJ / Pemilik';
       const res = await API().callApi('pengadaan.fakturSave', {
         id_sp: grnHeader.id_sp || '',
         sp_status: grnHeader.id_sp ? (grnHeader.sp_status || 'SELESAI_DITERIMA') : '',
         no_faktur_pbf: grnHeader.no_faktur_pbf.trim(),
         no_sp: grnHeader.no_sp,
         id_pbf: grnHeader.id_pbf,
+        tgl_faktur: grnHeader.tgl_faktur || new Date().toISOString().slice(0, 10),
+        tgl_terima: grnHeader.tgl_terima || new Date().toISOString().slice(0, 10),
         tgl_jatuh_tempo: grnHeader.tgl_jatuh_tempo,
+        gudang: grnHeader.gudang || 'Gudang Utama',
+        petugas: stUser,
         total_bruto: totalBruto,
-        diskon_pbf: Number(grnHeader.diskon_pbf || 0),
+        diskon_pbf: diskonTotal,
         ppn_masukan: Number(grnHeader.ppn_masukan || 0),
+        cashback: Number(grnHeader.cashback || 0),
+        biaya_lainnya: Number(grnHeader.biaya_lainnya || 0),
         netto_hutang: jenisPenerimaan === 'KONSINYASI' ? 0 : netto,
         jenis_penerimaan: jenisPenerimaan,
         status_bayar: jenisPenerimaan === 'KONSINYASI' ? 'KONSINYASI' : (grnHeader.status_bayar || 'BELUM_LUNAS'),
-        items: grnItems.map((it) => ({
-          id_obat: it.id_obat,
-          no_batch: String(it.no_batch || '').trim(),
-          tgl_kadaluarsa: it.tgl_kadaluarsa,
-          qty_dasar: Number(it.qty_dasar || 1),
-          hpp_unit: Number(it.hpp_unit || 0)
-        }))
+        catatan: grnHeader.catatan || '',
+        items: grnItems.map((it) => {
+          const q = Math.max(1, Number(it.qty_dasar || 1));
+          const netRowUnit = Math.max(0, Number(it.hpp_unit || 0) - (Number(it.diskon_item || 0) / q));
+          return {
+            id_obat: it.id_obat,
+            no_batch: String(it.no_batch || '').trim(),
+            tgl_kadaluarsa: it.tgl_kadaluarsa,
+            qty_dasar: q,
+            hpp_unit: Math.round(netRowUnit)
+          };
+        })
       }, { isWrite: true });
+      if (grnActiveDraftId) {
+        _writeLocalList(FAKTUR_DRAFTS_KEY, _readLocalList(FAKTUR_DRAFTS_KEY).filter((x) => x.id_draft !== grnActiveDraftId));
+        grnActiveDraftId = '';
+      }
       grnHeader.id_sp = '';
       grnHeader.no_faktur_pbf = '';
       grnHeader.no_sp = '';
       grnHeader.sp_status = '';
+      grnHeader.diskon_mode = 'RP';
+      grnHeader.diskon_pct = 0;
       grnHeader.diskon_pbf = 0;
       grnHeader.ppn_masukan = 0;
+      grnHeader.cashback = 0;
+      grnHeader.biaya_lainnya = 0;
       grnHeader.jenis_penerimaan = 'BELI_PUTUS';
       grnHeader.status_bayar = 'BELUM_LUNAS';
+      grnHeader.catatan = '';
       grnItems = [];
       grnScanState.panelOpen = false;
       grnScanState.rawText = '';
@@ -5562,6 +6280,365 @@
       global.toast('Retur BAR-PBF dicatat (' + res.qty_retur + ' unit). Potongan hutang: ' + S().rp(res.nilai_potong_hutang), 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  let returFormState = {
+    id_draft: '',
+    supplier: '',
+    gudang: 'Gudang Utama',
+    tanggal: new Date().toISOString().slice(0, 10),
+    no_bar: '',
+    metode: 'POTONG_HUTANG',
+    alasan: 'Retur Batch ED Dekat',
+    catatan: '',
+    items: []
+  };
+
+  function _renderCreateReturModalHtml() {
+    const st = S().AppState;
+    const prof = S().getStoreProfile();
+    const pbfs = st.supplierPbf || [];
+    if (!returFormState.supplier && pbfs[0]) returFormState.supplier = pbfs[0].nama_pbf;
+    const activeBatches = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && Number(b.qty_sisa || 0) > 0);
+    const matchingBatches = activeBatches.filter((b) => !returFormState.supplier || !b.id_pbf || b.id_pbf === returFormState.supplier);
+    const poolBatches = matchingBatches.length ? matchingBatches : activeBatches;
+    const totalReturRp = (returFormState.items || []).reduce((s, it) => s + (Number(it.qty_retur || 0) * Number(it.harga_retur || 0)), 0);
+
+    return `<div class="ons-ws-modal" data-ws-custom="1">
+      <div class="ons-ws-header">
+        <div>
+          <h2 class="text-base sm:text-lg font-extrabold tracking-tight">Retur Pembelian (BAR-PBF)</h2>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Status PKP: <b>${S().esc(prof.status_pkp || 'NON_PKP')}</b> &bull; Otomatis potong stok batch FEFO, catat Kartu Stok &amp; sesuaikan Hutang PBF.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.saveReturDraftToLocal()" class="ons-btn ons-btn-ghost text-xs">Simpan Draft</button>
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup (Esc)</button>
+        </div>
+      </div>
+      <div class="ons-ws-body space-y-4">
+        <div class="ons-card p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs">
+          <div class="lg:col-span-2">
+            <label class="text-[11px] font-bold block mb-1">Supplier *</label>
+            <select class="ons-select text-xs" onchange="window.setReturFormField('supplier', this.value)">
+              ${pbfs.map((p) => `<option value="${S().esc(p.nama_pbf)}" ${returFormState.supplier === p.nama_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold block mb-1">Gudang Asal *</label>
+            <select class="ons-select text-xs" onchange="window.setReturFormField('gudang', this.value)">
+              ${['Gudang Utama', 'Etalase Depan', 'Gudang Karantina'].map((g) => `<option value="${g}" ${returFormState.gudang === g ? 'selected' : ''}>${g}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold block mb-1">Tanggal Retur</label>
+            <input type="date" class="ons-input text-xs" value="${S().esc(returFormState.tanggal)}" onchange="window.setReturFormField('tanggal', this.value)"/>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold block mb-1">Kode Transaksi (No. BAR) *</label>
+            <input id="returNoBarInp" class="ons-input font-mono-num text-xs" value="${S().esc(returFormState.no_bar)}" placeholder="Otomatis jika dikosongkan" oninput="window.setReturFormField('no_bar', this.value)"/>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold block mb-1">Metode Pengembalian *</label>
+            <select class="ons-select text-xs" onchange="window.setReturFormField('metode', this.value)">
+              <option value="POTONG_HUTANG" ${returFormState.metode === 'POTONG_HUTANG' ? 'selected' : ''}>Potong Hutang PBF</option>
+              <option value="AKUN_KAS" ${returFormState.metode === 'AKUN_KAS' ? 'selected' : ''}>Akun Kas / Tunai</option>
+              <option value="TUKAR_BARANG" ${returFormState.metode === 'TUKAR_BARANG' ? 'selected' : ''}>Tukar Barang</option>
+            </select>
+          </div>
+          <div class="lg:col-span-3">
+            <label class="text-[11px] font-bold block mb-1">Alasan Retur CDOB *</label>
+            <select class="ons-select text-xs" onchange="window.setReturFormField('alasan', this.value)">
+              ${['Retur Batch ED Dekat', 'Kemasan Rusak / Pecah', 'Salah Kirim PBF', 'Recall BPOM / Prinsipal'].map((al) => `<option value="${al}" ${returFormState.alasan === al ? 'selected' : ''}>${al}</option>`).join('')}
+            </select>
+          </div>
+          <div class="lg:col-span-3">
+            <label class="text-[11px] font-bold block mb-1">Catatan *</label>
+            <input id="returCatatanInp" class="ons-input text-xs" value="${S().esc(returFormState.catatan)}" placeholder="Tuliskan keterangan/faktur asal retur..." oninput="window.setReturFormField('catatan', this.value)"/>
+          </div>
+        </div>
+
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="font-bold text-xs">Pilih Batch Stok Aktif untuk Diretur (${poolBatches.length} batch tersedia)</div>
+            <div class="flex items-center gap-2">
+              <select id="returAddBatchSel" class="ons-select text-xs w-72">
+                ${poolBatches.map((b) => {
+                  const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat) || {};
+                  return `<option value="${S().esc(b.id_batch)}">${S().esc(ob.nama_dagang || b.id_obat)} | ${S().esc(b.no_batch)} | ED ${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))} (Sisa ${b.qty_sisa})</option>`;
+                }).join('')}
+              </select>
+              <button type="button" onclick="window.addBatchToReturForm()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk</button>
+            </div>
+          </div>
+
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead><tr><th>No.</th><th>Produk</th><th>Expired Date</th><th>No. Batch</th><th>Kuantitas</th><th>Satuan</th><th class="text-right">Harga Pokok</th><th>Harga Retur</th><th class="text-right">Stok Gudang</th><th class="text-right">Sub Total</th><th></th></tr></thead>
+              <tbody>
+                ${returFormState.items.length ? returFormState.items.map((it, idx) => `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}.</td>
+                  <td class="text-xs font-bold">${S().esc(it.nama_dagang)}<div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Faktur Asal: ${S().esc(it.no_faktur_pbf || '-')}</div></td>
+                  <td class="font-mono-num text-xs">${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</td>
+                  <td class="font-mono-num text-xs">${S().esc(it.no_batch)}</td>
+                  <td><input type="number" min="1" max="${it.stok_gudang}" class="ons-input text-xs font-mono-num text-right w-20 py-1 min-h-0" value="${it.qty_retur}" onchange="window.updateReturFormItem(${idx}, 'qty_retur', Number(this.value||1))"/></td>
+                  <td class="text-xs">${S().esc(it.satuan || 'Unit')}</td>
+                  <td class="text-right font-mono-num text-xs">${S().rp(it.hpp)}</td>
+                  <td><input type="number" min="0" class="ons-input text-xs font-mono-num text-right w-24 py-1 min-h-0" value="${it.harga_retur}" onchange="window.updateReturFormItem(${idx}, 'harga_retur', Number(this.value||0))"/></td>
+                  <td class="text-right font-mono-num text-xs font-bold">${it.stok_gudang}</td>
+                  <td class="text-right font-mono-num text-xs font-bold">${S().rp(Number(it.qty_retur || 0) * Number(it.harga_retur || 0))}</td>
+                  <td><button type="button" onclick="window.removeReturFormItem(${idx})" class="text-xs text-red-600 font-bold px-1.5">&times;</button></td>
+                </tr>`).join('') : '<tr><td colspan="11" class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Pilih batch stok di atas lalu klik <b>+ Tambah Produk</b>.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="ons-ws-footer flex flex-wrap items-center justify-between gap-2">
+        <div class="text-xs font-extrabold text-blue-600 font-mono-num">TOTAL RETUR: ${S().rp(totalReturRp)}</div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.saveReturDraftToLocal()" class="ons-btn ons-btn-ghost text-xs">Simpan Draft</button>
+          <button type="button" onclick="window.submitCreateReturPembelian()" class="ons-btn ons-btn-primary text-xs font-bold">Simpan Retur BAR-PBF &rarr;</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  global.openCreateReturPembelianModal = (preBatchId) => {
+    const st = S().AppState;
+    const pbfs = st.supplierPbf || [];
+    returFormState = {
+      id_draft: '',
+      supplier: (pbfs[0] && pbfs[0].nama_pbf) || '',
+      gudang: 'Gudang Utama',
+      tanggal: new Date().toISOString().slice(0, 10),
+      no_bar: '',
+      metode: 'POTONG_HUTANG',
+      alasan: 'Retur Batch ED Dekat',
+      catatan: 'Retur barang distributor PBF',
+      items: []
+    };
+    if (preBatchId) {
+      const b = (st.stokBatch || []).find((x) => x.id_batch === preBatchId);
+      if (b) {
+        const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat) || {};
+        if (b.id_pbf) returFormState.supplier = b.id_pbf;
+        const hpp = Number(b.hpp_beli || ob.hpp_terakhir || ob.hpp_avg || 0);
+        returFormState.items.push({
+          id_batch: b.id_batch,
+          nama_dagang: ob.nama_dagang || b.id_obat,
+          tgl_kadaluarsa: b.tgl_kadaluarsa || '',
+          no_batch: b.no_batch || '',
+          no_faktur_pbf: b.no_faktur_pbf || '-',
+          qty_retur: Math.max(1, Number(b.qty_sisa || 1)),
+          satuan: ob.satuan_dasar || 'Unit',
+          hpp,
+          harga_retur: hpp,
+          stok_gudang: Number(b.qty_sisa || 1)
+        });
+      }
+    }
+    S().openModal(_renderCreateReturModalHtml(), 'full');
+  };
+
+  global.setReturFormField = (k, v) => {
+    returFormState[k] = v;
+    if (!['no_bar', 'catatan'].includes(k)) S().openModal(_renderCreateReturModalHtml(), 'full');
+  };
+
+  global.addBatchToReturForm = () => {
+    const sel = document.getElementById('returAddBatchSel');
+    const idB = sel ? sel.value : '';
+    const st = S().AppState;
+    const b = (st.stokBatch || []).find((x) => x.id_batch === idB);
+    if (!b) return global.toast('Pilih batch terlebih dahulu.', 'warn');
+    if (returFormState.items.some((x) => x.id_batch === b.id_batch)) {
+      return global.toast('Batch tersebut sudah ada dalam daftar retur.', 'info');
+    }
+    const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat) || {};
+    const hpp = Number(b.hpp_beli || ob.hpp_terakhir || ob.hpp_avg || 0);
+    returFormState.items.push({
+      id_batch: b.id_batch,
+      nama_dagang: ob.nama_dagang || b.id_obat,
+      tgl_kadaluarsa: b.tgl_kadaluarsa || '',
+      no_batch: b.no_batch || '',
+      no_faktur_pbf: b.no_faktur_pbf || '-',
+      qty_retur: Math.max(1, Number(b.qty_sisa || 1)),
+      satuan: ob.satuan_dasar || 'Unit',
+      hpp,
+      harga_retur: hpp,
+      stok_gudang: Number(b.qty_sisa || 1)
+    });
+    S().openModal(_renderCreateReturModalHtml(), 'full');
+  };
+
+  global.updateReturFormItem = (idx, field, val) => {
+    const it = returFormState.items[idx];
+    if (!it) return;
+    if (field === 'qty_retur') it.qty_retur = Math.min(it.stok_gudang, Math.max(1, Number(val || 1)));
+    else if (field === 'harga_retur') it.harga_retur = Math.max(0, Number(val || 0));
+    S().openModal(_renderCreateReturModalHtml(), 'full');
+  };
+
+  global.removeReturFormItem = (idx) => {
+    returFormState.items.splice(idx, 1);
+    S().openModal(_renderCreateReturModalHtml(), 'full');
+  };
+
+  global.openReturDraftModal = () => {
+    const drafts = _readLocalList(RETUR_DRAFTS_KEY);
+    S().openModal(`<div class="p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between gap-2 bg-blue-600 text-white -m-5 sm:-m-6 mb-4 px-5 py-3.5 rounded-t-2xl">
+        <h3 class="font-extrabold text-base">Draft Retur Pembelian (${drafts.length})</h3>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="text-white/90 text-lg px-2">&times;</button>
+      </div>
+      <div class="ons-table-wrap max-h-80">
+        <table class="ons-table">
+          <thead><tr><th>No.</th><th>Terakhir Disimpan</th><th>Supplier</th><th>Kode Retur</th><th>Produk</th><th class="text-right">Total</th><th>Action</th></tr></thead>
+          <tbody>
+            ${drafts.length ? drafts.map((d, idx) => {
+              const tot = (d.items || []).reduce((s, it) => s + Number(it.qty_retur || 0) * Number(it.harga_retur || 0), 0);
+              return `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}.</td>
+                <td class="font-mono-num text-xs">${S().formatTgl(d.saved_at || '', true)}</td>
+                <td class="text-xs font-bold">${S().esc(d.supplier || '-')}</td>
+                <td class="font-mono-num text-xs">${S().esc(d.no_bar || '(Otomatis)')}</td>
+                <td class="text-xs">${(d.items || []).length} batch</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
+                <td>
+                  <div class="flex gap-1.5">
+                    <button type="button" onclick="window.loadReturDraftFromLocal('${S().esc(d.id_draft)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Lanjutkan</button>
+                    <button type="button" onclick="window.deleteReturDraftFromLocal('${S().esc(d.id_draft)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs">Data tidak ditemukan.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t text-xs" style="border-color:var(--ons-border)">
+        <div class="p-2.5 rounded-xl border bg-amber-500/10 border-amber-500/30 flex-1">Draft ini hanya tersimpan di perangkat &amp; browser ini. Klik <b>Lanjutkan</b> untuk memproses BAR-PBF.</div>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Kembali</button>
+      </div>
+    </div>`, { mode: 'spotlight', maxWidth: '820px' });
+  };
+
+  global.saveReturDraftToLocal = () => {
+    const drafts = _readLocalList(RETUR_DRAFTS_KEY);
+    const noEl = document.getElementById('returNoBarInp');
+    const catEl = document.getElementById('returCatatanInp');
+    if (noEl) returFormState.no_bar = String(noEl.value || '').trim();
+    if (catEl) returFormState.catatan = String(catEl.value || '').trim();
+    const idDraft = returFormState.id_draft || ('RTD-' + Date.now());
+    const entry = Object.assign({}, returFormState, { id_draft: idDraft, saved_at: new Date().toISOString(), items: returFormState.items.slice() });
+    const idx = drafts.findIndex((x) => x.id_draft === idDraft);
+    if (idx >= 0) drafts[idx] = entry; else drafts.unshift(entry);
+    _writeLocalList(RETUR_DRAFTS_KEY, drafts);
+    S().closeModal();
+    global.toast('Draft Retur Pembelian tersimpan di browser.', 'ok');
+    global.renderActiveView();
+  };
+
+  global.loadReturDraftFromLocal = (idDraft) => {
+    const d = _readLocalList(RETUR_DRAFTS_KEY).find((x) => x.id_draft === idDraft);
+    if (!d) return global.toast('Draft retur tidak ditemukan.', 'warn');
+    returFormState = Object.assign({}, d, { items: Array.isArray(d.items) ? d.items.slice() : [] });
+    S().openModal(_renderCreateReturModalHtml(), 'full');
+  };
+
+  global.deleteReturDraftFromLocal = (idDraft) => {
+    _writeLocalList(RETUR_DRAFTS_KEY, _readLocalList(RETUR_DRAFTS_KEY).filter((x) => x.id_draft !== idDraft));
+    global.openReturDraftModal();
+  };
+
+  global.submitCreateReturPembelian = async () => {
+    try {
+      const noEl = document.getElementById('returNoBarInp');
+      const catEl = document.getElementById('returCatatanInp');
+      if (noEl) returFormState.no_bar = String(noEl.value || '').trim();
+      if (catEl) returFormState.catatan = String(catEl.value || '').trim();
+      if (!returFormState.items.length) throw new Error('Tambahkan minimal 1 batch produk untuk diretur.');
+      const noBar = returFormState.no_bar || ('BAR-' + (returFormState.tanggal || new Date().toISOString().slice(0, 10)).replace(/-/g, '') + '-' + String(Date.now()).slice(-3));
+      const fullAlasan = `${returFormState.alasan} [${returFormState.metode}] ${returFormState.catatan || ''}`.trim();
+      let totalCut = 0;
+      for (let i = 0; i < returFormState.items.length; i++) {
+        const it = returFormState.items[i];
+        const res = await API().callApi('pengadaan.returBar', {
+          id_batch: it.id_batch,
+          qty_retur: Number(it.qty_retur || 1),
+          no_bar: noBar,
+          alasan: fullAlasan
+        }, { isWrite: true });
+        totalCut += Number(res.nilai_potong_hutang || 0);
+      }
+      if (returFormState.id_draft) {
+        _writeLocalList(RETUR_DRAFTS_KEY, _readLocalList(RETUR_DRAFTS_KEY).filter((x) => x.id_draft !== returFormState.id_draft));
+      }
+      S().closeModal();
+      global.toast(`Retur BAR-PBF ${noBar} tercatat! Penyesuaian nilai: ${S().rp(totalCut)}`, 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.printBarPbfDocument = (noBar) => {
+    const st = S().AppState;
+    const prof = S().getStoreProfile();
+    const logs = (st.mutasiStok || []).filter((m) => String(m.jenis_mutasi || '').toUpperCase() === 'RETUR_PBF' && String(m.referensi_id || m.id_mutasi) === noBar);
+    if (!logs.length) return global.toast('Data BAR-PBF tidak ditemukan.', 'warn');
+    const firstB = (st.stokBatch || []).find((b) => b.id_batch === logs[0].id_batch) || {};
+    let totalVal = 0;
+    const rowsHtml = logs.map((m, idx) => {
+      const b = (st.stokBatch || []).find((x) => x.id_batch === m.id_batch) || {};
+      const qty = Math.abs(Number(m.qty_ubah || 0));
+      const hpp = Number(b.hpp_beli || 0);
+      totalVal += qty * hpp;
+      return `<tr><td style="border:1px solid #94a3b8;padding:5px">${idx + 1}</td><td style="border:1px solid #94a3b8;padding:5px"><b>${S().esc(m.nama_dagang || m.id_obat)}</b></td><td style="border:1px solid #94a3b8;padding:5px">${S().esc(m.no_batch || b.no_batch || '-')}</td><td style="border:1px solid #94a3b8;padding:5px">${S().esc(String(m.tgl_kadaluarsa || b.tgl_kadaluarsa || '-').slice(0, 10))}</td><td style="border:1px solid #94a3b8;padding:5px;text-align:right">${qty}</td><td style="border:1px solid #94a3b8;padding:5px;text-align:right">${S().rp(qty * hpp)}</td></tr>`;
+    }).join('');
+    const html = `<style>@page{size:A4 portrait;margin:12mm;}</style>
+      <div style="font-family:Arial,sans-serif;color:#0f172a;font-size:12px">
+        <div style="border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:14px">
+          <div style="font-size:16px;font-weight:800">${S().esc(prof.nama_usaha || prof.nama_apotek || 'APOTEK ONS FARMA')}</div>
+          <div>SIA: ${S().esc(prof.no_sia || '-')} &bull; Telp: ${S().esc(prof.wa_usaha || prof.telepon_usaha || '-')}</div>
+        </div>
+        <h2 style="text-align:center;font-size:15px;font-weight:800;margin:0 0 10px">BERITA ACARA RETUR BARANG KE PBF (BAR-PBF)</h2>
+        <div style="margin-bottom:12px">No. BAR: <b>${S().esc(noBar)}</b> &bull; Tanggal: <b>${S().formatTgl(logs[0].timestamp)}</b> &bull; Supplier PBF: <b>${S().esc(firstB.id_pbf || '-')}</b> &bull; Faktur Asal: <b>${S().esc(firstB.no_faktur_pbf || '-')}</b></div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px">
+          <thead><tr style="background:#e2e8f0"><th style="border:1px solid #64748b;padding:5px">No</th><th style="border:1px solid #64748b;padding:5px">Nama Obat</th><th style="border:1px solid #64748b;padding:5px">No. Batch</th><th style="border:1px solid #64748b;padding:5px">Expired</th><th style="border:1px solid #64748b;padding:5px">Qty Retur</th><th style="border:1px solid #64748b;padding:5px">Nilai HPP</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+          <tfoot><tr style="background:#f8fafc"><td colspan="5" style="border:1px solid #64748b;padding:6px;text-align:right;font-weight:800">TOTAL NILAI RETUR</td><td style="border:1px solid #64748b;padding:6px;text-align:right;font-weight:800">${S().rp(totalVal)}</td></tr></tfoot>
+        </table>
+        <div><b>Catatan/Alasan:</b> ${S().esc(logs[0].catatan || '-')}</div>
+      </div>`;
+    S().printHtmlZone(html);
+  };
+
+  global.exportReturHistory = (fmt) => {
+    const st = S().AppState;
+    const rows = (st.mutasiStok || []).filter((m) => String(m.jenis_mutasi || '').toUpperCase() === 'RETUR_PBF').map((m, i) => {
+      const b = (st.stokBatch || []).find((x) => x.id_batch === m.id_batch) || {};
+      const qty = Math.abs(Number(m.qty_ubah || 0));
+      const hpp = Number(b.hpp_beli || 0);
+      return {
+        no: i + 1,
+        tanggal: String(m.timestamp || '').slice(0, 10),
+        no_bar: m.referensi_id || m.id_mutasi,
+        no_faktur_asal: b.no_faktur_pbf || '-',
+        supplier: b.id_pbf || '-',
+        produk: m.nama_dagang || m.id_obat,
+        qty,
+        total_retur: qty * hpp
+      };
+    });
+    S().exportDataset(fmt || 'xlsx', 'Riwayat Retur Pembelian BAR-PBF', `retur-pembelian-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'tanggal', label: 'Tanggal', type: 'str', width: 13 },
+      { key: 'no_bar', label: 'No. Faktur Retur', type: 'str', width: 18 },
+      { key: 'no_faktur_asal', label: 'No. Faktur Asal', type: 'str', width: 18 },
+      { key: 'supplier', label: 'Supplier', type: 'wrap', width: 22 },
+      { key: 'produk', label: 'Produk', type: 'wrap', width: 26 },
+      { key: 'qty', label: 'Qty', type: 'int', sum: true, width: 10 },
+      { key: 'total_retur', label: 'Total Retur', type: 'currency', sum: true, width: 18 }
+    ], rows, { sheetName: 'ReturPembelian' });
   };
 
   /**
