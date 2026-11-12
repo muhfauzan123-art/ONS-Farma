@@ -687,6 +687,18 @@
       db.stok_batch.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0).forEach((b) => {
         stockMap[b.id_obat] = (stockMap[b.id_obat] || 0) + Number(b.qty_sisa || 0);
       });
+      const classifyKat = (o) => {
+        const raw = String((o && (o.kategori || o.sub_kategori)) || '').trim();
+        if (raw) return raw;
+        const text = [o && o.nama_dagang, o && o.zat_aktif].join(' ').toLowerCase();
+        if (/paracetamol|ibuprofen|asam mefenamat|ketoprofen|diklofenak|nyeri|demam|panadol|sanmol/.test(text)) return 'Demam & Nyeri';
+        if (/ambroxol|bromhexine|guaifenesin|pseudoefedrin|batuk|flu|chlorpheniramine|ctm|cetirizine|loratadine|pilek/.test(text)) return 'Batuk, Flu & Alergi';
+        if (/omeprazole|lansoprazole|antasida|ranitidine|domperidone|loperamide|maag|lambung|oralit/.test(text)) return 'Pencernaan & Maag';
+        if (/vitamin|vit\s|zinc|suplemen|imun|neurobion|enervon|curcuma|calc|zat besi/.test(text)) return 'Vitamin & Imun';
+        if (/amlodipine|captopril|metformin|glimepiride|simvastatin|atorvastatin|valsartan|insulin|bisoprolol/.test(text)) return 'Terapi Rutin & Kronis';
+        if (/amoxicillin|cefixime|azithromycin|ciprofloxacin|antibiotik|prednison|dexamethasone/.test(text)) return 'Resep & Infeksi';
+        return 'Kesehatan Umum';
+      };
       return {
         apotek: {
           nama: prof.nama_usaha || 'Apotek ONS Farma',
@@ -700,39 +712,124 @@
           sipa_pemilik: prof.sipa_pemilik || '',
           logo_usaha_url: prof.logo_usaha_url || './icons/ons-farma-app-icon.png'
         },
-        items: db.master_obat.filter((o) => o.status_aktif !== 'NONAKTIF').map((o) => ({
-          id_obat: o.id_obat, nama_dagang: o.nama_dagang, zat_aktif: o.zat_aktif, kekuatan: o.kekuatan,
-          golongan_bpom: o.golongan_bpom, bentuk_sediaan: o.bentuk_sediaan, satuan_dasar: o.satuan_dasar,
-          harga_umum: Number(o.harga_umum || 0), stok_tersedia: stockMap[o.id_obat] || 0
-        }))
+        items: db.master_obat.filter((o) => o.status_aktif !== 'NONAKTIF').map((o) => {
+          const qty = stockMap[o.id_obat] || 0;
+          const gol = String(o.golongan_bpom || 'BEBAS').toUpperCase();
+          return {
+            id_obat: o.id_obat, nama_dagang: o.nama_dagang, zat_aktif: o.zat_aktif, kekuatan: o.kekuatan,
+            golongan_bpom: gol, kategori: classifyKat(o),
+            indikasi_singkat: String(o.indikasi || o.catatan_klinis || o.zat_aktif || '').trim(),
+            bentuk_sediaan: o.bentuk_sediaan, satuan_dasar: o.satuan_dasar,
+            harga_umum: Number(o.harga_umum || 0),
+            isi_per_strip: Number(o.isi_per_strip || 0),
+            harga_strip: Number(o.harga_strip || 0),
+            foto_url: String(o.foto_url || o.gambar_url || '').trim(),
+            stok_tersedia: qty,
+            tersedia: qty > 0,
+            status_stok: qty > 20 ? 'TERSEDIA' : (qty > 0 ? 'STOK_TERBATAS' : 'KONSULTASI_RESTOK'),
+            butuh_resep: ['KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].includes(gol)
+          };
+        })
       };
     }
 
     if (action === 'public.submitOrder') {
       if (!d.nama_pelanggan || !d.no_wa) throw new Error('Nama & nomor WhatsApp wajib diisi.');
+      let rawItems = [];
+      try {
+        rawItems = Array.isArray(d.items) ? d.items : (typeof d.items_json === 'string' && d.items_json.trim() ? JSON.parse(d.items_json) : []);
+      } catch (e) { rawItems = []; }
+      const stockMap = {};
+      db.stok_batch.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0).forEach((b) => {
+        stockMap[b.id_obat] = (stockMap[b.id_obat] || 0) + Number(b.qty_sisa || 0);
+      });
+      let hasResep = false;
+      const cleanItems = (Array.isArray(rawItems) ? rawItems : []).map((it) => {
+        const qty = Math.max(1, Math.floor(Number(it.qty || 1)));
+        const ob = it.id_obat ? db.master_obat.find((x) => x.id_obat === it.id_obat) : null;
+        if (ob) {
+          const avail = stockMap[ob.id_obat] || 0;
+          if (avail < qty) throw new Error('Stok ' + ob.nama_dagang + ' tidak mencukupi (tersedia ' + avail + ' ' + (ob.satuan_dasar || 'unit') + ').');
+          const gol = String(ob.golongan_bpom || 'BEBAS').toUpperCase();
+          if (['KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].includes(gol)) hasResep = true;
+          return { id_obat: ob.id_obat, nama: ob.nama_dagang, satuan: ob.satuan_dasar || it.satuan || 'Unit', golongan_bpom: gol, harga: Number(ob.harga_umum || it.harga || 0), qty };
+        }
+        return { id_obat: it.id_obat || '', nama: String(it.nama || it.nama_dagang || 'Obat'), satuan: String(it.satuan || 'Unit'), harga: Math.max(0, Number(it.harga_jual || it.harga || 0)), qty };
+      });
+      const ongkir = Math.max(0, Number(d.ongkir || d.biaya_kirim || 0));
+      const itemSum = cleanItems.reduce((s, it) => s + Number(it.harga || 0) * Number(it.qty || 1), 0);
+      const totalEst = itemSum > 0 ? (itemSum + ongkir) : (Math.max(0, Number(d.total_estimasi || 0)) + ongkir);
       const noOrder = 'ONL-' + isoToday.replace(/-/g, '') + '-' + String(db.omnichannel_orders.length + 1).padStart(2, '0');
       const ord = {
         id_order: 'ORD-' + Date.now().toString().slice(-5),
         no_order: noOrder,
         tanggal: nowIso,
+        updated_at: nowIso,
         cabang_id: d.cabang_id || 'ONS-01',
         channel: 'E-Apotek Web',
         nama_pelanggan: d.nama_pelanggan,
         no_wa: String(d.no_wa).replace(/[^0-9]/g, ''),
         alamat: d.alamat || '',
-        items_json: typeof d.items_json === 'string' ? d.items_json : JSON.stringify(d.items || []),
+        kurir: String(d.alamat || '').toLowerCase().includes('ambil') ? 'Ambil di Apotek' : 'Kurir Lokal',
+        items_json: JSON.stringify(cleanItems),
         catatan: d.catatan || '',
-        total_estimasi: Number(d.total_estimasi || 0),
-        ongkir: Number(d.ongkir || 0),
+        total_estimasi: totalEst,
+        ongkir: ongkir,
         status_order: 'BARU',
-        kurir: '',
         no_invoice_pos: '',
         petugas_id: 'Public Storefront'
       };
       db.omnichannel_orders.unshift(ord);
       db.epoch++;
       saveDb(db);
-      return { ok: true, id_order: ord.id_order, no_order: ord.no_order, status_order: 'BARU', item: ord };
+      return { ok: true, id_order: ord.id_order, no_order: ord.no_order, status_order: 'BARU', has_resep: hasResep, item: ord };
+    }
+
+    if (action === 'public.trackOrder') {
+      const qOrder = String((d && d.no_order) || '').trim().toUpperCase();
+      const qWaRaw = String((d && d.no_wa) || '').replace(/[^0-9]/g, '');
+      if (!qOrder || qWaRaw.length < 4) throw new Error('Masukkan Nomor Order dan minimal 4 digit terakhir nomor WhatsApp.');
+      const norm62 = (r) => {
+        const s = String(r || '').replace(/[^0-9]/g, '');
+        if (!s) return '';
+        if (s.startsWith('0')) return '62' + s.slice(1);
+        if (s.startsWith('8')) return '62' + s;
+        return s;
+      };
+      const qWaNorm = norm62(qWaRaw);
+      const qLast4 = qWaRaw.slice(-4);
+      const match = (db.omnichannel_orders || []).find((r) => {
+        if (String(r.no_order || '').trim().toUpperCase() !== qOrder) return false;
+        const rWa = norm62(r.no_wa || '');
+        return (rWa && qWaNorm && rWa === qWaNorm) || (rWa && rWa.slice(-4) === qLast4);
+      });
+      if (!match) throw new Error('Pesanan tidak ditemukan atau nomor WhatsApp tidak cocok.');
+      let items = [];
+      try { items = JSON.parse(match.items_json || '[]') || []; } catch (e) { items = []; }
+      const maskName = (nm) => String(nm || 'Pelanggan').trim().split(/\s+/).map((w) => (w.length <= 2 ? w[0] + '*' : w.slice(0, 2) + '***')).join(' ');
+      const hasResep = items.some((it) => {
+        const ob = db.master_obat.find((x) => x.id_obat === it.id_obat);
+        const gol = String((ob && ob.golongan_bpom) || it.golongan_bpom || '').toUpperCase();
+        return ['KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].includes(gol);
+      });
+      return {
+        ok: true,
+        order: {
+          no_order: match.no_order,
+          tanggal: match.tanggal,
+          updated_at: match.updated_at || match.tanggal,
+          status_order: match.status_order || 'BARU',
+          channel: match.channel || 'E-Apotek Web',
+          kurir: match.kurir || (String(match.alamat || '').toLowerCase().includes('ambil') ? 'Ambil di Apotek' : 'Kurir Lokal'),
+          biaya_kirim: Number(match.ongkir || 0),
+          total_estimasi: Number(match.total_estimasi || 0),
+          no_invoice_pos: match.no_invoice_pos || '',
+          nama_masked: maskName(match.nama_pelanggan),
+          has_resep: hasResep,
+          item_count: items.reduce((s, it) => s + Number(it.qty || 1), 0),
+          items_preview: items.map((it) => ({ nama: it.nama || it.nama_dagang || 'Obat', qty: Number(it.qty || 1), satuan: it.satuan || 'Unit' }))
+        }
+      };
     }
 
     if (action === 'auth.login') {

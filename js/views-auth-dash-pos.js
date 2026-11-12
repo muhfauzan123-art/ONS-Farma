@@ -162,8 +162,46 @@
 
     if (search.get('katalog')) {
       const shortUsaha = String(usahaNama || 'ONS Farma').replace(/^Apotek\s+/i, '');
-      const waConsultInit = S().buildWaUrl ? S().buildWaUrl(prof.wa_usaha || '628110000990', `Halo Apoteker ${usahaNama}, saya ingin konsultasi keluhan & ketersediaan obat.`) : 'https://wa.me/';
-      root.innerHTML = `<div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      const waInitNum = String(prof.wa_usaha || '628110000990').replace(/[^0-9]/g, '');
+      const waConsultInit = S().buildWaUrl ? S().buildWaUrl(waInitNum, `Halo Apoteker ${usahaNama}, saya ingin konsultasi keluhan & ketersediaan obat.`) : 'https://wa.me/';
+      const waResepInit = S().buildWaUrl ? S().buildWaUrl(waInitNum, `Halo Apoteker ${usahaNama}, saya ingin menebus resep dokter. Berikut saya lampirkan foto resepnya:`) : 'https://wa.me/';
+
+      const safeGetLs = (k, fallback) => {
+        try {
+          const raw = global.localStorage ? global.localStorage.getItem(k) : null;
+          return raw ? JSON.parse(raw) : fallback;
+        } catch (e) { return fallback; }
+      };
+      const safeSetLs = (k, v) => {
+        try { if (global.localStorage) global.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+      };
+      const classifyKat = (o) => {
+        const raw = String((o && (o.kategori || o.sub_kategori)) || '').trim();
+        if (raw) return raw;
+        const text = [o && o.nama_dagang, o && o.zat_aktif].join(' ').toLowerCase();
+        if (/paracetamol|ibuprofen|asam mefenamat|ketoprofen|diklofenak|nyeri|demam|panadol|sanmol/.test(text)) return 'Demam & Nyeri';
+        if (/ambroxol|bromhexine|guaifenesin|pseudoefedrin|batuk|flu|chlorpheniramine|ctm|cetirizine|loratadine|pilek/.test(text)) return 'Batuk, Flu & Alergi';
+        if (/omeprazole|lansoprazole|antasida|ranitidine|domperidone|loperamide|maag|lambung|oralit/.test(text)) return 'Pencernaan & Maag';
+        if (/vitamin|vit\s|zinc|suplemen|imun|neurobion|enervon|curcuma|calc|zat besi/.test(text)) return 'Vitamin & Imun';
+        if (/amlodipine|captopril|metformin|glimepiride|simvastatin|atorvastatin|valsartan|insulin|bisoprolol/.test(text)) return 'Terapi Rutin & Kronis';
+        if (/amoxicillin|cefixime|azithromycin|ciprofloxacin|antibiotik|prednison|dexamethasone/.test(text)) return 'Resep & Infeksi';
+        return 'Kesehatan Umum';
+      };
+      const isApotekOpenNow = (hoursStr) => {
+        const m = String(hoursStr || '').match(/(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/);
+        if (!m) return true;
+        const now = new Date();
+        const curMin = now.getHours() * 60 + now.getMinutes();
+        const openMin = Number(m[1]) * 60 + Number(m[2]);
+        const closeMin = Number(m[3]) * 60 + Number(m[4]);
+        if (closeMin <= openMin) return curMin >= openMin || curMin <= closeMin;
+        return curMin >= openMin && curMin <= closeMin;
+      };
+      const openNow = isApotekOpenNow(prof.jam_operasional || '07.00 - 22.00');
+      const savedCustomer = safeGetLs('ons_pub_customer_v1', { nama: '', wa: '' });
+      const savedRecent = safeGetLs('ons_pub_recent_orders_v1', []);
+
+      root.innerHTML = `<div class="min-h-screen pb-20 lg:pb-8 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
         <header class="sticky top-0 z-30 border-b backdrop-blur bg-white/95 dark:bg-slate-900/95 px-4 py-3" style="border-color:var(--ons-border)">
           <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -171,53 +209,92 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <h1 id="pubKatTitle" class="font-extrabold text-base leading-tight truncate">E-Apotek Publik ${S().esc(shortUsaha)}</h1>
-                  <span id="pubKatOpenBadge" class="badge-bpom bpom-bebas">ONLINE OPEN</span>
+                  <span id="pubKatOpenBadge" class="badge-bpom ${openNow ? 'bpom-bebas' : 'bpom-terbatas'}">${openNow ? 'BUKA &bull; ONLINE OPEN' : 'PRE-ORDER WA'}</span>
                 </div>
                 <div id="pubKatSub" class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(prof.alamat_usaha || 'Pesan Obat Asli BPOM')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
               </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <input id="pubKatSearch" oninput="window.filterPublicCatalog(this.value)" class="ons-input w-48 sm:w-56 text-xs" placeholder="Cari obat / vitamin / zat aktif..."/>
+              <div class="relative flex items-center">
+                <input id="pubKatSearch" oninput="window.filterPublicCatalog(this.value)" class="ons-input w-44 sm:w-56 text-xs pr-7" placeholder="Cari obat / vitamin / zat aktif..."/>
+                <button type="button" onclick="window.clearPublicSearch()" title="Bersihkan Pencarian" aria-label="Bersihkan Pencarian" class="absolute right-1.5 text-xs px-1 opacity-60 hover:opacity-100">&times;</button>
+              </div>
+              <button type="button" onclick="window.openPublicTrackModal()" class="ons-btn ons-btn-ghost text-xs py-2">Lacak Pesanan${savedRecent.length ? ` <span class="ml-1 px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[10px] font-bold">${savedRecent.length}</span>` : ''}</button>
               <a id="pubKatConsultWa" target="_blank" rel="noopener" href="${S().esc(waConsultInit)}" class="ons-btn ons-btn-emerald text-xs py-2">Tanya Apoteker (WA)</a>
+              <button type="button" id="pubDarkBtn" onclick="window.togglePublicDarkMode()" class="ons-btn ons-btn-ghost text-xs py-2 px-2.5" title="Ganti Tema Terang / Malam">${S().AppState.darkMode ? 'Terang' : 'Malam'}</button>
               <a href="./index.html" class="ons-btn ons-btn-ghost text-xs py-2">Login Staf</a>
             </div>
           </div>
         </header>
+
         <main class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div class="lg:col-span-8 space-y-3">
-            <div class="ons-card p-4 space-y-2.5" style="background:linear-gradient(125deg,rgba(0,102,254,0.08),rgba(16,185,129,0.08));">
-              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div>
-                  <div id="pubKatApjLine" class="font-extrabold text-sm">Layanan Farmasi Digital &bull; ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
-                  <div id="pubKatHoursLine" class="text-[11px]" style="color:var(--ons-text-soft)">SIPA: ${S().esc(prof.sipa_pemilik || '-')} &bull; Jam Operasional: ${S().esc(prof.jam_operasional || 'Senin - Minggu 07.00 - 22.00 WITA')}</div>
+            <!-- Hero Showcase & Layanan Apotek Digital -->
+            <div class="ons-card p-4 space-y-3" style="background:linear-gradient(125deg,rgba(0,102,254,0.09),rgba(16,185,129,0.09));">
+              <div class="flex flex-wrap items-start justify-between gap-2 text-xs">
+                <div class="min-w-0">
+                  <div id="pubKatApjLine" class="font-extrabold text-sm sm:text-base">Layanan Farmasi Digital &bull; ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+                  <div id="pubKatHoursLine" class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">SIPA: ${S().esc(prof.sipa_pemilik || '-')} &bull; Jam Operasional: ${S().esc(prof.jam_operasional || 'Senin - Minggu 07.00 - 22.00 WITA')}</div>
                 </div>
-                <span class="badge-bpom bpom-bebas">100% OBAT ASLI BPOM</span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="badge-bpom bpom-bebas">100% OBAT ASLI BPOM</span>
+                  <button type="button" onclick="window.copyPublicStoreUrl()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Salin Link</button>
+                </div>
               </div>
-              <div class="grid grid-cols-3 gap-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border)">
-                <div><b>1. Pilih Obat</b> &amp; cek stok</div>
-                <div><b>2. Isi Data</b> Ambil / Kurir</div>
-                <div><b>3. Lanjut WA</b> Apotek Gratis</div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border)">
+                <div class="p-2 rounded-lg border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                  <div class="font-bold text-blue-600">1. Obat Bebas &amp; Vitamin</div>
+                  <div style="color:var(--ons-text-soft)">Cek stok real-time &amp; pesan langsung tanpa antre.</div>
+                </div>
+                <a id="pubKatResepWaCta" target="_blank" rel="noopener" href="${S().esc(waResepInit)}" class="p-2 rounded-lg border block hover:border-emerald-500 transition-colors" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                  <div class="font-bold text-emerald-600">2. Tebus Resep Dokter &rarr;</div>
+                  <div style="color:var(--ons-text-soft)">Kirim foto resep ke WhatsApp Apoteker (APJ).</div>
+                </a>
+                <button type="button" onclick="window.openPublicTrackModal()" class="p-2 rounded-lg border text-left hover:border-blue-500 transition-colors" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                  <div class="font-bold text-amber-600">3. Lacak Status Pesanan &rarr;</div>
+                  <div style="color:var(--ons-text-soft)">Pantau penyiapan, kurir, hingga nota digital.</div>
+                </button>
               </div>
             </div>
-            <div id="pubKatFilters" class="flex flex-wrap items-center justify-between gap-2">
-              <div class="ons-tab-bar">
-                <button type="button" onclick="window.setPublicCatalogFilter('SEMUA')" data-pcat="SEMUA" class="ons-tab-btn active">Semua Produk</button>
-                <button type="button" onclick="window.setPublicCatalogFilter('BEBAS')" data-pcat="BEBAS" class="ons-tab-btn">Obat Bebas (OTC)</button>
-                <button type="button" onclick="window.setPublicCatalogFilter('TERBATAS')" data-pcat="TERBATAS" class="ons-tab-btn">Bebas Terbatas</button>
-                <button type="button" onclick="window.setPublicCatalogFilter('KERAS')" data-pcat="KERAS" class="ons-tab-btn">Obat Resep (Keras)</button>
-                <button type="button" onclick="window.setPublicCatalogFilter('TERSEDIA')" data-pcat="TERSEDIA" class="ons-tab-btn">Stok Tersedia</button>
+
+            <!-- Filter Golongan BPOM, Kategori Kebutuhan & Urutkan -->
+            <div class="ons-card p-3 space-y-2.5">
+              <div id="pubKatFilters" class="flex flex-wrap items-center justify-between gap-2">
+                <div class="ons-tab-bar">
+                  <button type="button" onclick="window.setPublicCatalogFilter('SEMUA')" data-pcat="SEMUA" class="ons-tab-btn active">Semua Produk</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('TERSEDIA')" data-pcat="TERSEDIA" class="ons-tab-btn">Stok Tersedia</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('BEBAS')" data-pcat="BEBAS" class="ons-tab-btn">Obat Bebas (OTC)</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('TERBATAS')" data-pcat="TERBATAS" class="ons-tab-btn">Bebas Terbatas</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('KERAS')" data-pcat="KERAS" class="ons-tab-btn">Obat Resep (Keras)</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <select id="pubKatSort" onchange="window.setPublicSortMode(this.value)" aria-label="Urutkan Katalog" class="ons-select text-xs py-1">
+                    <option value="REKOMENDASI">Urut: Stok Ready Dulu</option>
+                    <option value="TERMURAH">Harga Termurah</option>
+                    <option value="TERMAHAL">Harga Termahal</option>
+                    <option value="STOK_TERBANYAK">Stok Terbanyak</option>
+                    <option value="NAMA_AZ">Nama Obat (A–Z)</option>
+                  </select>
+                  <span id="pubKatCountLabel" class="text-xs font-mono-num shrink-0" style="color:var(--ons-text-soft)">Memuat...</span>
+                </div>
               </div>
-              <span id="pubKatCountLabel" class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Memuat...</span>
+              <div id="pubKatCategoryBar" class="flex flex-wrap items-center gap-1.5 text-[11px]"></div>
             </div>
+
             <div id="pubKatGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">Memuat katalog obat Apotek ONS Farma...</div>
           </div>
-          <div class="lg:col-span-4">
+
+          <div class="lg:col-span-4 space-y-3" id="pubCartSection">
             <div class="ons-card p-4 space-y-3 sticky top-20">
-              <div class="flex items-center justify-between">
-                <h2 class="font-extrabold text-sm">Keranjang E-Apotek</h2>
-                <span id="pubCartCountBadge" class="badge-bpom bpom-terbatas">0 Item</span>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <h2 class="font-extrabold text-sm">Keranjang E-Apotek</h2>
+                  <span id="pubCartCountBadge" class="badge-bpom bpom-terbatas">0 Item</span>
+                </div>
+                <button type="button" id="pubCartClearBtn" onclick="window.clearPublicCart()" class="text-[11px] font-semibold text-red-600 hover:underline hidden">Kosongkan</button>
               </div>
-              <div id="pubCartList" class="space-y-1.5 text-xs max-h-48 overflow-y-auto border-y py-2" style="border-color:var(--ons-border)">Keranjang masih kosong.</div>
+              <div id="pubCartResepWarning" class="hidden p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] text-amber-800 dark:text-amber-300 space-y-0.5"></div>
+              <div id="pubCartList" class="space-y-1.5 text-xs max-h-52 overflow-y-auto border-y py-2" style="border-color:var(--ons-border)">Keranjang masih kosong.</div>
               <div class="space-y-1 text-xs">
                 <label class="font-semibold block">Metode Penerimaan</label>
                 <div class="grid grid-cols-2 gap-1.5">
@@ -231,66 +308,133 @@
                 <div class="flex justify-between font-extrabold text-sm"><span>Total Estimasi</span><span id="pubCartTotal" class="font-mono-num text-blue-600">Rp 0</span></div>
               </div>
               <div class="space-y-2 text-xs">
-                <input id="pubNama" class="ons-input" placeholder="Nama Penerima / Pasien *"/>
-                <input id="pubWa" type="tel" class="ons-input font-mono-num" placeholder="No. WhatsApp Aktif (08xx) *"/>
+                <input id="pubNama" class="ons-input" value="${S().esc(savedCustomer.nama || '')}" placeholder="Nama Penerima / Pasien *"/>
+                <input id="pubWa" type="tel" class="ons-input font-mono-num" value="${S().esc(savedCustomer.wa || '')}" placeholder="No. WhatsApp Aktif (08xx) *"/>
                 <textarea id="pubAlamat" rows="2" class="ons-textarea" placeholder="Alamat Pengantaran Lengkap / Keterangan Pengambilan">Ambil Langsung di Apotek</textarea>
-                <input id="pubCatatan" class="ons-input" placeholder="Catatan / Keluhan / Keterangan Resep untuk Apoteker"/>
-                <button onclick="window.submitPublicStoreOrder()" class="ons-btn ons-btn-emerald w-full py-2.5 font-bold">Kirim Pesanan &amp; Lanjut WA Apoteker</button>
+                <input id="pubCatatan" class="ons-input" placeholder="Catatan / Keluhan / No. Resep untuk Apoteker"/>
+                <button type="button" onclick="window.submitPublicStoreOrder()" class="ons-btn ons-btn-emerald w-full py-2.5 font-bold">Kirim Pesanan &amp; Lanjut WA Apoteker</button>
               </div>
               <div id="pubOrderSuccessBox" class="hidden p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-xs space-y-2"></div>
+              <div id="pubRecentOrdersBox" class="pt-2 border-t space-y-1.5 text-xs ${savedRecent.length ? '' : 'hidden'}" style="border-color:var(--ons-border)"></div>
             </div>
           </div>
         </main>
+
+        <!-- Sticky Bottom Cart Bar untuk Layar HP (<lg) -->
+        <div id="pubMobileCartBar" class="hidden lg:hidden fixed bottom-3 inset-x-3 z-40">
+          <div class="rounded-2xl shadow-xl border px-3.5 py-2.5 flex items-center justify-between gap-2 text-white" style="background:linear-gradient(135deg,#0066FE,#059669);border-color:rgba(255,255,255,0.2)">
+            <div class="min-w-0">
+              <div id="pubMobileCartMeta" class="text-[11px] font-semibold opacity-90">0 Item di Keranjang</div>
+              <div id="pubMobileCartTotal" class="font-mono-num font-extrabold text-sm">Rp 0</div>
+            </div>
+            <button type="button" onclick="window.scrollToPublicCart()" class="px-3 py-1.5 rounded-xl bg-white text-slate-900 font-extrabold text-xs shrink-0">Lihat Keranjang &rarr;</button>
+          </div>
+        </div>
       </div>`;
 
       global._pubCatalogItems = [];
-      global._pubCart = [];
+      const restoredCart = safeGetLs('ons_pub_cart_v1', []);
+      global._pubCart = Array.isArray(restoredCart) ? restoredCart.filter((x) => x && x.id_obat && Number(x.qty) > 0) : [];
       global._pubKatFilter = 'SEMUA';
+      global._pubKatCategory = 'SEMUA';
+      global._pubKatSort = 'REKOMENDASI';
       global._pubDeliveryMode = 'AMBIL';
       global._pubApotekMeta = {
         nama: usahaNama,
         alamat: prof.alamat_usaha || '',
-        wa_admin: (prof.wa_usaha || '628110000990').replace(/[^0-9]/g, ''),
+        wa_admin: waInitNum || '628110000990',
         nama_pemilik: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
         sipa_pemilik: prof.sipa_pemilik || '',
         no_sia: prof.no_sia || '',
         jam_operasional: prof.jam_operasional || ''
       };
 
-      API().callApi('public.catalog', { cabang_id: 'ONS-01' }, { token: '' }).then((res) => {
-        global._pubCatalogItems = (res && res.items) || [];
-        if (res && res.apotek) {
-          const ap = res.apotek;
-          global._pubApotekMeta = Object.assign({}, global._pubApotekMeta, ap);
-          const logoEl = document.getElementById('pubKatLogo');
-          const titleEl = document.getElementById('pubKatTitle');
-          const subEl = document.getElementById('pubKatSub');
-          const apjEl = document.getElementById('pubKatApjLine');
-          const hrsEl = document.getElementById('pubKatHoursLine');
-          const waTopEl = document.getElementById('pubKatConsultWa');
-          if (logoEl && ap.logo_usaha_url) logoEl.src = ap.logo_usaha_url;
-          if (titleEl && ap.nama) titleEl.textContent = 'E-Apotek Publik ' + String(ap.nama).replace(/^Apotek\s+/i, '');
-          if (subEl && ap.alamat) subEl.textContent = ap.alamat + (ap.no_sia ? ' • SIA: ' + ap.no_sia : '');
-          if (apjEl && ap.nama_pemilik) apjEl.textContent = 'Layanan Farmasi Digital • ' + ap.nama_pemilik;
-          if (hrsEl) hrsEl.textContent = (ap.sipa_pemilik ? ('SIPA: ' + ap.sipa_pemilik + ' • ') : '') + (ap.jam_operasional || 'Buka Setiap Hari');
-          if (waTopEl && S().buildWaUrl) {
-            waTopEl.href = S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya ingin konsultasi keluhan & ketersediaan obat.`);
-          }
+      const renderRecentOrdersBox = () => {
+        const box = document.getElementById('pubRecentOrdersBox');
+        if (!box) return;
+        const recs = safeGetLs('ons_pub_recent_orders_v1', []);
+        if (!recs.length) {
+          box.classList.add('hidden');
+          box.innerHTML = '';
+          return;
         }
-        window.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
-      }).catch((err) => {
-        const g = document.getElementById('pubKatGrid');
-        if (g) g.innerHTML = `<div class="ons-card p-4 text-red-600">${S().esc(err.message)}</div>`;
-      });
+        box.classList.remove('hidden');
+        box.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold text-[11px]" style="color:var(--ons-text-soft)">Riwayat Pesanan Terakhir</span><button type="button" onclick="window.openPublicTrackModal()" class="text-[11px] font-semibold text-blue-600 hover:underline">Cek Nomor Lain</button></div>` +
+          recs.slice(0, 3).map((r) => `<div class="flex items-center justify-between gap-2 p-2 rounded-lg border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="min-w-0">
+              <div class="font-mono-num font-bold truncate">${S().esc(r.no_order)}</div>
+              <div style="color:var(--ons-text-soft)">${S().rp(r.total || 0)}</div>
+            </div>
+            <button type="button" onclick="window.openPublicTrackModal('${S().esc(r.no_order)}','${S().esc(r.no_wa || '')}')" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2 shrink-0">Lacak</button>
+          </div>`).join('');
+      };
 
-      window.setPublicCatalogFilter = (cat) => {
+      const renderCategoryPills = () => {
+        const bar = document.getElementById('pubKatCategoryBar');
+        if (!bar) return;
+        const counts = {};
+        global._pubCatalogItems.forEach((o) => {
+          const kat = classifyKat(o);
+          o.kategori = kat;
+          counts[kat] = (counts[kat] || 0) + 1;
+        });
+        const cats = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+        const curKat = global._pubKatCategory || 'SEMUA';
+        bar.innerHTML = `<button type="button" onclick="window.setPublicCategoryPill('SEMUA')" class="px-2.5 py-1 rounded-full border font-semibold transition-colors ${curKat === 'SEMUA' ? 'bg-blue-600 text-white border-blue-600' : ''}" style="${curKat === 'SEMUA' ? '' : 'border-color:var(--ons-border);background:var(--ons-bg-subtle)'}">Semua Kebutuhan</button>` +
+          cats.map((k) => `<button type="button" onclick="window.setPublicCategoryPill('${S().esc(k)}')" class="px-2.5 py-1 rounded-full border font-semibold transition-colors ${curKat === k ? 'bg-blue-600 text-white border-blue-600' : ''}" style="${curKat === k ? '' : 'border-color:var(--ons-border);background:var(--ons-bg-subtle)'}">${S().esc(k)} <span class="opacity-70">(${counts[k]})</span></button>`).join('');
+      };
+
+      global.togglePublicDarkMode = () => {
+        const darkNow = S().toggleDarkMode();
+        const btn = document.getElementById('pubDarkBtn');
+        if (btn) btn.textContent = darkNow ? 'Terang' : 'Malam';
+      };
+
+      global.copyPublicStoreUrl = async () => {
+        const url = global.location.origin + global.location.pathname + '?katalog=1';
+        try {
+          if (global.navigator && global.navigator.clipboard && global.navigator.clipboard.writeText) {
+            await global.navigator.clipboard.writeText(url);
+          }
+          global.toast('Link Etalase Publik disalin! Siap dibagikan ke pasien.', 'ok');
+        } catch (e) {
+          global.toast('Link etalase: ' + url, 'info');
+        }
+      };
+
+      global.clearPublicSearch = () => {
+        const inp = document.getElementById('pubKatSearch');
+        if (inp) { inp.value = ''; inp.focus && inp.focus(); }
+        global.renderPublicCatalogGrid('');
+      };
+
+      global.scrollToPublicCart = () => {
+        const sec = document.getElementById('pubCartSection');
+        if (sec && typeof sec.scrollIntoView === 'function') {
+          try { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+        }
+      };
+
+      global.setPublicCatalogFilter = (cat) => {
         global._pubKatFilter = cat || 'SEMUA';
         document.querySelectorAll('#pubKatFilters [data-pcat]').forEach((btn) => {
           btn.classList.toggle('active', btn.getAttribute('data-pcat') === global._pubKatFilter);
         });
-        window.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
+        global.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
       };
-      window.setPublicDeliveryMode = (mode) => {
+
+      global.setPublicCategoryPill = (kat) => {
+        global._pubKatCategory = kat || 'SEMUA';
+        renderCategoryPills();
+        global.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
+      };
+
+      global.setPublicSortMode = (sortVal) => {
+        global._pubKatSort = sortVal || 'REKOMENDASI';
+        global.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
+      };
+
+      global.setPublicDeliveryMode = (mode) => {
         global._pubDeliveryMode = mode === 'KURIR' ? 'KURIR' : 'AMBIL';
         const btnAmbil = document.getElementById('pubDelivAmbilBtn');
         const btnKurir = document.getElementById('pubDelivKurirBtn');
@@ -301,93 +445,341 @@
           if (global._pubDeliveryMode === 'AMBIL' && !almEl.value.toLowerCase().includes('ambil')) almEl.value = 'Ambil Langsung di Apotek';
           if (global._pubDeliveryMode === 'KURIR' && almEl.value.toLowerCase().includes('ambil')) almEl.value = '';
         }
-        window.renderPublicCartUi();
+        global.renderPublicCartUi();
       };
-      window.filterPublicCatalog = (q) => window.renderPublicCatalogGrid(q);
-      window.renderPublicCatalogGrid = (qRaw) => {
-        const q = String(qRaw || '').toLowerCase();
+
+      global.filterPublicCatalog = (q) => global.renderPublicCatalogGrid(q);
+
+      global.renderPublicCatalogGrid = (qRaw) => {
+        const q = String(qRaw || '').trim().toLowerCase();
         const cat = global._pubKatFilter || 'SEMUA';
+        const katNeed = global._pubKatCategory || 'SEMUA';
+        const sortMode = global._pubKatSort || 'REKOMENDASI';
+
         const items = global._pubCatalogItems.filter((o) => {
-          if (q && !`${o.nama_dagang} ${o.zat_aktif} ${o.bentuk_sediaan || ''}`.toLowerCase().includes(q)) return false;
+          const itemKat = o.kategori || classifyKat(o);
+          if (q && !`${o.nama_dagang} ${o.zat_aktif} ${o.bentuk_sediaan || ''} ${itemKat}`.toLowerCase().includes(q)) return false;
           const gol = String(o.golongan_bpom || '').toUpperCase();
           if (cat === 'TERSEDIA' && Number(o.stok_tersedia || 0) <= 0) return false;
           if ((cat === 'BEBAS' || cat === 'TERBATAS' || cat === 'KERAS') && !gol.includes(cat)) return false;
+          if (katNeed !== 'SEMUA' && itemKat !== katNeed) return false;
           return true;
+        }).slice();
+
+        items.sort((a, b) => {
+          if (sortMode === 'TERMURAH') return Number(a.harga_umum || 0) - Number(b.harga_umum || 0);
+          if (sortMode === 'TERMAHAL') return Number(b.harga_umum || 0) - Number(a.harga_umum || 0);
+          if (sortMode === 'STOK_TERBANYAK') return Number(b.stok_tersedia || 0) - Number(a.stok_tersedia || 0);
+          if (sortMode === 'NAMA_AZ') return String(a.nama_dagang || '').localeCompare(String(b.nama_dagang || ''));
+          const avA = Number(a.stok_tersedia || 0) > 0 ? 1 : 0;
+          const avB = Number(b.stok_tersedia || 0) > 0 ? 1 : 0;
+          if (avA !== avB) return avB - avA;
+          return String(a.nama_dagang || '').localeCompare(String(b.nama_dagang || ''));
         });
+
         const cntEl = document.getElementById('pubKatCountLabel');
         if (cntEl) cntEl.textContent = items.length + ' produk ditemukan';
         const g = document.getElementById('pubKatGrid');
         if (!g) return;
         const ap = global._pubApotekMeta || {};
+        const cartMap = {};
+        global._pubCart.forEach((c, idx) => { cartMap[c.id_obat] = { qty: c.qty, idx }; });
+
         g.innerHTML = items.length ? items.map((o) => {
           const askWa = S().buildWaUrl ? S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya mau tanya ketersediaan / dosis obat: ${o.nama_dagang} (${o.zat_aktif}).`) : 'https://wa.me/';
+          const stok = Number(o.stok_tersedia || 0);
+          const gol = String(o.golongan_bpom || 'BEBAS').toUpperCase();
+          const butuhResep = Boolean(o.butuh_resep || ['KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].includes(gol));
+          const katLbl = o.kategori || classifyKat(o);
+          const inCart = cartMap[o.id_obat];
+          const stokCls = stok > 10 ? 'text-emerald-600' : (stok > 0 ? 'text-amber-600' : 'text-red-600');
+          const stokTxt = stok > 10 ? `Stok Tersedia (${stok})` : (stok > 0 ? `Sisa Terbatas (${stok})` : 'Stok Kosong — Tanya Restok');
           return `
           <div class="ons-product-card flex flex-col justify-between gap-2.5">
             <div>
               <div class="flex justify-between gap-2 items-start">
-                <span class="font-bold text-sm leading-snug">${S().esc(o.nama_dagang)}</span>
+                <button type="button" onclick="window.openPublicProductModal('${S().esc(o.id_obat)}')" class="font-bold text-sm leading-snug text-left hover:text-blue-600 transition-colors">${S().esc(o.nama_dagang)}</button>
                 ${S().bpomBadge(o.golongan_bpom)}
               </div>
               <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; ${S().esc(o.bentuk_sediaan)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
-              ${String(o.golongan_bpom).toUpperCase() === 'KERAS' ? '<div class="text-[10px] text-amber-600 font-semibold mt-1">Obat Keras — Wajib verifikasi resep dokter oleh APJ</div>' : ''}
+              <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold" style="background:var(--ons-bg-subtle);color:var(--ons-text-soft)">${S().esc(katLbl)}</span>
+                ${butuhResep ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300">Wajib Resep Dokter (APJ)</span>' : ''}
+              </div>
             </div>
             <div class="flex items-center justify-between pt-2 border-t gap-2" style="border-color:var(--ons-border)">
               <div>
                 <div class="font-mono-num font-extrabold text-sm text-blue-600">${S().rp(o.harga_umum)} <span class="text-[10px] font-normal">/ ${S().esc(o.satuan_dasar)}</span></div>
-                <div class="text-[10px] font-semibold ${o.stok_tersedia > 0 ? 'text-emerald-600' : 'text-red-600'}">${o.stok_tersedia > 0 ? 'Stok Tersedia (' + o.stok_tersedia + ')' : 'Stok Kosong'}</div>
+                <div class="text-[10px] font-semibold ${stokCls}">${stokTxt}</div>
               </div>
-              <div class="flex items-center gap-1">
-                <a target="_blank" rel="noopener" href="${S().esc(askWa)}" class="ons-btn ons-btn-ghost text-[11px] py-1.5 px-2" title="Tanya Apoteker via WhatsApp">Tanya</a>
-                <button onclick="window.addToPublicCart('${S().esc(o.id_obat)}')" ${o.stok_tersedia <= 0 ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs py-1.5 px-3">+ Keranjang</button>
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="window.openPublicProductModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1.5 px-2" title="Lihat Detail Obat &amp; Aturan Aman">Detail</button>
+                ${stok <= 0
+                  ? `<a target="_blank" rel="noopener" href="${S().esc(askWa)}" class="ons-btn ons-btn-emerald text-[11px] py-1.5 px-2.5">Tanya Restok</a>`
+                  : (inCart
+                    ? `<div class="flex items-center gap-1 rounded-lg border px-1 py-0.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                        <button type="button" onclick="window.stepPublicCartQty(${inCart.idx}, -1)" class="ons-btn ons-btn-ghost text-xs px-2 py-0.5 min-h-0 h-7">-</button>
+                        <span class="font-mono-num font-bold text-xs px-1">${inCart.qty}</span>
+                        <button type="button" onclick="window.stepPublicCartQty(${inCart.idx}, 1)" class="ons-btn ons-btn-primary text-xs px-2 py-0.5 min-h-0 h-7">+</button>
+                      </div>`
+                    : `<button type="button" onclick="window.addToPublicCart('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">+ Keranjang</button>`)}
               </div>
             </div>
           </div>`;
-        }).join('') : '<div class="col-span-2 text-center py-8 opacity-70">Produk tidak ditemukan.</div>';
+        }).join('') : `<div class="col-span-2 ons-card p-8 text-center space-y-2">
+          <div class="font-bold text-sm">Produk tidak ditemukan pada filter ini</div>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Coba kata kunci lain atau tanyakan ketersediaan langsung ke Apoteker kami via WhatsApp.</p>
+          <div class="flex justify-center gap-2 pt-1">
+            <button type="button" onclick="window.setPublicCatalogFilter('SEMUA');window.setPublicCategoryPill('SEMUA');window.clearPublicSearch();" class="ons-btn ons-btn-ghost text-xs">Reset Filter</button>
+            <a target="_blank" rel="noopener" href="${S().esc(waConsultInit)}" class="ons-btn ons-btn-emerald text-xs">Tanya Apoteker (WA)</a>
+          </div>
+        </div>`;
       };
 
-      window.addToPublicCart = (idObat) => {
+      global.openPublicProductModal = (idObat) => {
         const ob = global._pubCatalogItems.find((x) => x.id_obat === idObat);
         if (!ob) return;
-        const ex = global._pubCart.find((c) => c.id_obat === idObat);
-        if (ex) ex.qty++;
-        else global._pubCart.push({ id_obat: ob.id_obat, nama: ob.nama_dagang, satuan: ob.satuan_dasar, harga: Number(ob.harga_umum || 0), qty: 1 });
-        window.renderPublicCartUi();
+        const ap = global._pubApotekMeta || {};
+        const askWa = S().buildWaUrl ? S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya ingin tanya dosis/aturan pakai obat: ${ob.nama_dagang} (${ob.zat_aktif}).`) : 'https://wa.me/';
+        const gol = String(ob.golongan_bpom || 'BEBAS').toUpperCase();
+        const butuhResep = Boolean(ob.butuh_resep || ['KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].includes(gol));
+        const bpomExplain = gol.includes('BEBAS') && !gol.includes('TERBATAS')
+          ? 'Lingkaran Hijau (Obat Bebas) — Dapat dibeli bebas sesuai aturan pakai pada kemasan.'
+          : (gol.includes('TERBATAS')
+            ? 'Lingkaran Biru (Bebas Terbatas) — Perhatikan tanda peringatan pada kemasan dan dosis maksimal.'
+            : 'Lingkaran Merah (Obat Keras/Resep) — Penyerahan WAJIB disertai resep dokter dan verifikasi Apoteker (APJ).');
+        const stok = Number(ob.stok_tersedia || 0);
+        const existing = global._pubCart.find((c) => c.id_obat === ob.id_obat);
+        S().openModal(`
+          <div class="p-5 sm:p-6 space-y-3 text-xs">
+            <div class="flex items-start justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="font-extrabold text-base">${S().esc(ob.nama_dagang)}</h3>
+                  ${S().bpomBadge(ob.golongan_bpom)}
+                </div>
+                <div class="mt-0.5" style="color:var(--ons-text-soft)">${S().esc(ob.zat_aktif || '-')} &bull; ${S().esc(ob.bentuk_sediaan || 'Unit')} ${ob.kekuatan ? ('(' + S().esc(ob.kekuatan) + ')') : ''}</div>
+              </div>
+              <button type="button" onclick="window.ONSStore.closeModal()" aria-label="Tutup Detail Obat" class="text-xl leading-none px-1.5 opacity-70 hover:opacity-100">&times;</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <div style="color:var(--ons-text-soft)">Harga Publik</div>
+                <div class="font-mono-num font-extrabold text-base text-blue-600">${S().rp(ob.harga_umum)} <span class="text-[11px] font-normal">/ ${S().esc(ob.satuan_dasar)}</span></div>
+                ${ob.harga_strip > 0 ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">Per Strip${ob.isi_per_strip ? (' (' + ob.isi_per_strip + ' ' + S().esc(ob.satuan_dasar) + ')') : ''}: ${S().rp(ob.harga_strip)}</div>` : ''}
+              </div>
+              <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <div style="color:var(--ons-text-soft)">Ketersediaan Stok</div>
+                <div class="font-mono-num font-extrabold text-base ${stok > 0 ? 'text-emerald-600' : 'text-red-600'}">${stok > 0 ? (stok + ' ' + S().esc(ob.satuan_dasar)) : 'Kosong'}</div>
+                <div class="text-[10px]" style="color:var(--ons-text-soft)">Kategori: ${S().esc(ob.kategori || classifyKat(ob))}</div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl border space-y-1 ${butuhResep ? 'border-amber-500/40 bg-amber-500/10' : ''}" style="${butuhResep ? '' : 'background:var(--ons-bg-subtle);border-color:var(--ons-border)'}">
+              <div class="font-bold">Klasifikasi Keamanan BPOM</div>
+              <p>${S().esc(bpomExplain)}</p>
+            </div>
+            <div class="p-3 rounded-xl border space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="font-bold">Cara Penyimpanan &amp; Keamanan</div>
+              <p style="color:var(--ons-text-soft)">Simpan di tempat sejuk &amp; kering (&lt;25&deg;C), jauh dari sinar matahari langsung dan jangkauan anak-anak. Jaminan 100% asli berizin BPOM.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              ${stok > 0
+                ? `<button type="button" onclick="window.addToPublicCart('${S().esc(ob.id_obat)}');window.ONSStore.closeModal();" class="ons-btn ons-btn-primary flex-1 py-2.5 font-bold">${existing ? ('Tambah Lagi (' + existing.qty + ' di keranjang)') : '+ Tambah ke Keranjang'}</button>`
+                : `<a target="_blank" rel="noopener" href="${S().esc(askWa)}" class="ons-btn ons-btn-emerald flex-1 py-2.5 font-bold text-center">Tanya Jadwal Restok via WA</a>`}
+              <a target="_blank" rel="noopener" href="${S().esc(askWa)}" class="ons-btn ons-btn-ghost py-2.5 font-semibold">Tanya Apoteker</a>
+            </div>
+          </div>`, { mode: 'spotlight', maxWidth: '540px' });
       };
-      window.stepPublicCartQty = (idx, delta) => {
+
+      global.addToPublicCart = (idObat) => {
+        const ob = global._pubCatalogItems.find((x) => x.id_obat === idObat);
+        if (!ob) return;
+        const maxStok = Number(ob.stok_tersedia || 0);
+        if (maxStok <= 0) {
+          global.toast('Stok ' + ob.nama_dagang + ' sedang habis. Hubungi Apoteker via WA untuk cek restok.', 'warn');
+          return;
+        }
+        const ex = global._pubCart.find((c) => c.id_obat === idObat);
+        if (ex) {
+          if (ex.qty >= maxStok) {
+            global.toast(`Maksimal stok tersedia saat ini: ${maxStok} ${ob.satuan_dasar}.`, 'warn');
+            return;
+          }
+          ex.qty++;
+        } else {
+          global._pubCart.push({
+            id_obat: ob.id_obat,
+            nama: ob.nama_dagang,
+            satuan: ob.satuan_dasar,
+            golongan_bpom: String(ob.golongan_bpom || 'BEBAS').toUpperCase(),
+            butuh_resep: Boolean(ob.butuh_resep),
+            harga: Number(ob.harga_umum || 0),
+            qty: 1
+          });
+        }
+        global.renderPublicCartUi();
+      };
+
+      global.stepPublicCartQty = (idx, delta) => {
         const c = global._pubCart[idx];
         if (!c) return;
-        c.qty += delta;
+        const ob = global._pubCatalogItems.find((x) => x.id_obat === c.id_obat);
+        const maxStok = ob ? Number(ob.stok_tersedia || 0) : 9999;
+        const nextQty = c.qty + delta;
+        if (delta > 0 && ob && nextQty > maxStok) {
+          global.toast(`Stok tersedia untuk ${c.nama} maksimal ${maxStok} ${c.satuan}.`, 'warn');
+          return;
+        }
+        c.qty = nextQty;
         if (c.qty <= 0) global._pubCart.splice(idx, 1);
-        window.renderPublicCartUi();
+        global.renderPublicCartUi();
       };
-      window.renderPublicCartUi = () => {
+
+      global.clearPublicCart = () => {
+        global._pubCart = [];
+        global.renderPublicCartUi();
+      };
+
+      global.renderPublicCartUi = () => {
+        safeSetLs('ons_pub_cart_v1', global._pubCart);
         const list = document.getElementById('pubCartList');
         const subEl = document.getElementById('pubCartSub');
         const ongEl = document.getElementById('pubCartOngkir');
         const totEl = document.getElementById('pubCartTotal');
         const cntEl = document.getElementById('pubCartCountBadge');
-        if (!list || !totEl) return;
-        const subTotal = global._pubCart.reduce((s, c) => s + c.harga * c.qty, 0);
+        const clearBtn = document.getElementById('pubCartClearBtn');
+        const rxWarn = document.getElementById('pubCartResepWarning');
+        const mobBar = document.getElementById('pubMobileCartBar');
+        const mobMeta = document.getElementById('pubMobileCartMeta');
+        const mobTot = document.getElementById('pubMobileCartTotal');
+
+        const subTotal = global._pubCart.reduce((s, c) => s + Number(c.harga || 0) * Number(c.qty || 0), 0);
         const ongkir = global._pubCart.length && global._pubDeliveryMode === 'KURIR' ? 10000 : 0;
+        const estTotal = subTotal + ongkir;
         const itemCount = global._pubCart.reduce((s, c) => s + Number(c.qty || 0), 0);
+
         if (cntEl) cntEl.textContent = itemCount + ' Item';
-        list.innerHTML = global._pubCart.length ? global._pubCart.map((c, idx) => `
-          <div class="flex justify-between items-center gap-1.5 p-1.5 rounded bg-slate-500/5">
-            <div class="min-w-0 flex-1">
-              <div class="truncate font-semibold">${S().esc(c.nama)}</div>
-              <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(c.harga)} &times; ${c.qty} = ${S().rp(c.harga * c.qty)}</div>
-            </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <button type="button" onclick="window.stepPublicCartQty(${idx}, -1)" class="ons-btn ons-btn-ghost text-xs px-2 py-0.5 min-h-0 h-7">-</button>
-              <span class="font-mono-num font-bold w-5 text-center">${c.qty}</span>
-              <button type="button" onclick="window.stepPublicCartQty(${idx}, 1)" class="ons-btn ons-btn-ghost text-xs px-2 py-0.5 min-h-0 h-7">+</button>
-            </div>
-          </div>`).join('') : 'Keranjang masih kosong. Klik "+ Keranjang" pada produk obat.';
+        if (clearBtn) clearBtn.classList.toggle('hidden', global._pubCart.length === 0);
+
+        const rxItems = global._pubCart.filter((c) => c.butuh_resep || ['KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].includes(String(c.golongan_bpom || '').toUpperCase()));
+        if (rxWarn) {
+          if (rxItems.length) {
+            rxWarn.classList.remove('hidden');
+            rxWarn.innerHTML = `<div class="font-bold">&#9888; Keranjang Memuat Obat Resep (${rxItems.length} item)</div>
+              <div>Siapkan foto resep dokter (${rxItems.map((x) => S().esc(x.nama)).join(', ')}) untuk dikirim saat konfirmasi WhatsApp ke Apoteker (APJ).</div>`;
+          } else {
+            rxWarn.classList.add('hidden');
+            rxWarn.innerHTML = '';
+          }
+        }
+
+        if (list) {
+          list.innerHTML = global._pubCart.length ? global._pubCart.map((c, idx) => `
+            <div class="flex justify-between items-center gap-1.5 p-1.5 rounded bg-slate-500/5">
+              <div class="min-w-0 flex-1">
+                <div class="truncate font-semibold">${S().esc(c.nama)}</div>
+                <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(c.harga)} &times; ${c.qty} = ${S().rp(c.harga * c.qty)}</div>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="window.stepPublicCartQty(${idx}, -1)" class="ons-btn ons-btn-ghost text-xs px-2 py-0.5 min-h-0 h-7">-</button>
+                <span class="font-mono-num font-bold w-5 text-center">${c.qty}</span>
+                <button type="button" onclick="window.stepPublicCartQty(${idx}, 1)" class="ons-btn ons-btn-ghost text-xs px-2 py-0.5 min-h-0 h-7">+</button>
+                <button type="button" onclick="window.stepPublicCartQty(${idx}, -9999)" title="Hapus Item" class="text-xs px-1.5 text-red-500 font-bold">&times;</button>
+              </div>
+            </div>`).join('') : 'Keranjang masih kosong. Klik "+ Keranjang" pada produk obat.';
+        }
         if (subEl) subEl.textContent = S().rp(subTotal);
         if (ongEl) ongEl.textContent = S().rp(ongkir);
-        totEl.textContent = S().rp(subTotal + ongkir);
+        if (totEl) totEl.textContent = S().rp(estTotal);
+
+        if (mobBar) mobBar.classList.toggle('hidden', global._pubCart.length === 0);
+        if (mobMeta) mobMeta.textContent = `${itemCount} Item di Keranjang (${global._pubDeliveryMode === 'KURIR' ? 'Kurir' : 'Ambil'})`;
+        if (mobTot) mobTot.textContent = S().rp(estTotal);
+
+        // Sinkronkan stepper inline di kartu grid bila sudah dirender
+        if (global._pubCatalogItems && global._pubCatalogItems.length && document.getElementById('pubKatGrid')) {
+          global.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
+        }
       };
-      window.submitPublicStoreOrder = async () => {
+
+      global.openPublicTrackModal = (prefillOrder, prefillWa) => {
+        const recs = safeGetLs('ons_pub_recent_orders_v1', []);
+        const cust = safeGetLs('ons_pub_customer_v1', { wa: '' });
+        const defOrd = prefillOrder || (recs[0] && recs[0].no_order) || '';
+        const defWa = prefillWa || (recs[0] && recs[0].no_wa) || cust.wa || '';
+        S().openModal(`
+          <div class="p-5 sm:p-6 space-y-3 text-xs">
+            <div class="flex items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+              <h3 class="font-extrabold text-base">Lacak Status Pesanan E-Apotek</h3>
+              <button type="button" onclick="window.ONSStore.closeModal()" aria-label="Tutup Lacak Pesanan" class="text-xl leading-none px-1.5 opacity-70 hover:opacity-100">&times;</button>
+            </div>
+            <p style="color:var(--ons-text-soft)">Masukkan <b>Nomor Order</b> dan <b>Nomor WhatsApp</b> (atau 4 digit terakhir) untuk melihat progres penyiapan obat oleh Apoteker.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input id="pubTrkNoInp" class="ons-input font-mono-num uppercase" value="${S().esc(defOrd)}" placeholder="Contoh: WEB-20261112-A1B2"/>
+              <input id="pubTrkWaInp" type="tel" class="ons-input font-mono-num" value="${S().esc(defWa)}" placeholder="No. WA / 4 digit akhir"/>
+            </div>
+            <button type="button" onclick="window.runPublicTrackOrder()" class="ons-btn ons-btn-primary w-full py-2 font-bold">Cek Status Pesanan</button>
+            <div id="pubTrackResultBox" class="space-y-2"></div>
+          </div>`, { mode: 'spotlight', maxWidth: '540px' });
+        if (defOrd && defWa) global.runPublicTrackOrder();
+      };
+
+      global.runPublicTrackOrder = async () => {
+        const noOrd = (document.getElementById('pubTrkNoInp')?.value || '').trim();
+        const wa = (document.getElementById('pubTrkWaInp')?.value || '').trim();
+        const box = document.getElementById('pubTrackResultBox');
+        if (!box) return;
+        if (!noOrd || wa.replace(/[^0-9]/g, '').length < 4) {
+          box.innerHTML = `<div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300">Mohon isi Nomor Order dan minimal 4 digit akhir No. WhatsApp pemesan.</div>`;
+          return;
+        }
+        box.innerHTML = `<div class="p-3 rounded-xl border text-center" style="border-color:var(--ons-border)">Memeriksa status pesanan <b>${S().esc(noOrd)}</b>...</div>`;
+        const ap = global._pubApotekMeta || {};
+        try {
+          const res = await API().callApi('public.trackOrder', { no_order: noOrd, no_wa: wa, cabang_id: ap.cabang || 'ONS-01' }, { token: '' });
+          const o = res && res.order;
+          if (!o) throw new Error('Data pesanan tidak tersedia.');
+          const stOrder = String(o.status_order || 'BARU').toUpperCase();
+          const steps = ['BARU', 'DIPROSES', stOrder === 'DIKIRIM' ? 'DIKIRIM' : 'SIAP_AMBIL', 'SELESAI'];
+          const curIdx = stOrder === 'DIBATALKAN' ? -1 : Math.max(0, steps.indexOf(stOrder === 'DIKIRIM' || stOrder === 'SIAP_AMBIL' ? steps[2] : stOrder));
+          const labelMap = { BARU: 'Diterima', DIPROSES: 'Disiapkan APJ', SIAP_AMBIL: 'Siap Diambil', DIKIRIM: 'Dalam Pengantaran', SELESAI: 'Selesai', DIBATALKAN: 'Dibatalkan' };
+          const askStatusWa = S().buildWaUrl ? S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya ingin menanyakan progres pesanan *${o.no_order}*.`) : 'https://wa.me/';
+          box.innerHTML = `
+            <div class="p-3.5 rounded-xl border space-y-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <div class="font-mono-num font-extrabold text-sm">${S().esc(o.no_order)}</div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Pemesan: ${S().esc(o.nama_masked || '-')} &bull; ${S().esc(o.kurir || '-')}</div>
+                </div>
+                <span class="badge-bpom ${stOrder === 'DIBATALKAN' ? 'bpom-keras' : (stOrder === 'SELESAI' ? 'bpom-bebas' : 'bpom-terbatas')}">${S().esc(labelMap[stOrder] || stOrder)}</span>
+              </div>
+              ${stOrder === 'DIBATALKAN' ? `<div class="p-2 rounded-lg bg-red-500/10 text-red-600 font-semibold">Pesanan ini berstatus dibatalkan. Silakan hubungi apoteker via WA untuk informasi lanjut.</div>` : `
+              <div class="grid grid-cols-4 gap-1 text-center text-[10px]">
+                ${steps.map((sp, i) => `<div class="p-1.5 rounded-lg border ${i <= curIdx ? 'border-emerald-500 bg-emerald-500/15 font-bold text-emerald-700 dark:text-emerald-300' : 'opacity-50'}" style="${i <= curIdx ? '' : 'border-color:var(--ons-border)'}">${S().esc(labelMap[sp] || sp)}</div>`).join('')}
+              </div>`}
+              ${Array.isArray(o.items_preview) && o.items_preview.length ? `<div class="space-y-0.5 text-[11px] border-t pt-2" style="border-color:var(--ons-border)">
+                <div class="font-bold">Ringkasan Item (${o.item_count} qty):</div>
+                ${o.items_preview.map((it) => `<div>&bull; ${S().esc(it.nama)} (${it.qty} ${S().esc(it.satuan || '')})</div>`).join('')}
+              </div>` : ''}
+              <div class="flex items-center justify-between pt-2 border-t font-bold" style="border-color:var(--ons-border)">
+                <span>Total Estimasi</span>
+                <span class="font-mono-num text-blue-600">${S().rp(o.total_estimasi || 0)}</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                ${o.no_invoice_pos ? `<a href="./index.html?nota=${encodeURIComponent(o.no_invoice_pos)}&tot=${Number(o.total_estimasi || 0)}" class="ons-btn ons-btn-primary flex-1 text-center py-2 font-bold">Lihat Nota Digital</a>` : ''}
+                <a target="_blank" rel="noopener" href="${S().esc(askStatusWa)}" class="ons-btn ons-btn-emerald flex-1 text-center py-2 font-bold">Tanya Status via WA</a>
+              </div>
+            </div>`;
+        } catch (err) {
+          const askStatusWa = S().buildWaUrl ? S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya ingin cek status pesanan *${noOrd}*.`) : 'https://wa.me/';
+          box.innerHTML = `<div class="p-3 rounded-xl border border-red-500/40 bg-red-500/10 space-y-2">
+            <div class="font-semibold text-red-600">${S().esc(err.message)}</div>
+            <a target="_blank" rel="noopener" href="${S().esc(askStatusWa)}" class="ons-btn ons-btn-emerald w-full text-center py-2 font-bold">Cek Manual ke WhatsApp Apoteker</a>
+          </div>`;
+        }
+      };
+
+      global.submitPublicStoreOrder = async () => {
         const nama = (document.getElementById('pubNama').value || '').trim();
         const wa = (document.getElementById('pubWa').value || '').trim();
         const alamatRaw = (document.getElementById('pubAlamat').value || '').trim();
@@ -395,18 +787,26 @@
         if (!nama || !wa) { global.toast('Nama & nomor WhatsApp wajib diisi.', 'warn'); return; }
         if (!global._pubCart.length) { global.toast('Pilih minimal 1 obat ke keranjang terlebih dahulu.', 'warn'); return; }
         const cartSnapshot = global._pubCart.slice();
-        const totalEst = cartSnapshot.reduce((s, c) => s + c.harga * c.qty, 0);
+        const totalEst = cartSnapshot.reduce((s, c) => s + Number(c.harga || 0) * Number(c.qty || 0), 0);
         const ongkir = global._pubDeliveryMode === 'KURIR' && !alamatRaw.toLowerCase().includes('ambil') ? 10000 : 0;
+        const ap = global._pubApotekMeta || {};
         try {
           const res = await API().callApi('public.submitOrder', {
-            nama_pelanggan: nama, no_wa: wa,
+            cabang_id: ap.cabang || 'ONS-01',
+            nama_pelanggan: nama,
+            no_wa: wa,
             alamat: alamatRaw || (global._pubDeliveryMode === 'AMBIL' ? 'Ambil di Apotek' : '-'),
             catatan: catatanRaw,
             total_estimasi: totalEst,
             ongkir: ongkir,
             items_json: JSON.stringify(cartSnapshot)
           }, { isWrite: true, token: '' });
-          const ap = global._pubApotekMeta || {};
+          safeSetLs('ons_pub_customer_v1', { nama, wa });
+          const recs = safeGetLs('ons_pub_recent_orders_v1', []).filter((r) => r.no_order !== res.no_order);
+          recs.unshift({ no_order: res.no_order, no_wa: wa, tanggal: new Date().toISOString(), total: (res.item && res.item.total_estimasi) || (totalEst + ongkir) });
+          safeSetLs('ons_pub_recent_orders_v1', recs.slice(0, 5));
+
+          const hasRx = Boolean(res.has_resep || cartSnapshot.some((c) => c.butuh_resep || ['KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].includes(String(c.golongan_bpom || '').toUpperCase())));
           const waSummary = [
             `*PESANAN E-APOTEK ${(ap.nama || usahaNama).toUpperCase()}*`,
             `No. Order : *${res.no_order}*`,
@@ -420,6 +820,7 @@
             `Subtotal Obat : ${S().rp(totalEst)}`,
             `Ongkir        : ${S().rp(ongkir)}`,
             `*Estimasi Total : ${S().rp(totalEst + ongkir)}*`,
+            hasRx ? '_*Pesanan memuat Obat Keras — mohon verifikasi foto resep dokter bersama Apoteker._' : '',
             catatanRaw ? `Catatan: ${catatanRaw}` : ''
           ].filter(Boolean).join('\n');
           const waOrderUrl = S().buildWaUrl ? S().buildWaUrl(ap.wa_admin || prof.wa_usaha || '628110000990', waSummary) : 'https://wa.me/';
@@ -428,12 +829,58 @@
             box.classList.remove('hidden');
             box.innerHTML = `<div class="font-bold text-emerald-700 dark:text-emerald-300">&#9989; Order ${S().esc(res.no_order)} Diterima!</div>
               <div>Tim Farmasi ${S().esc(ap.nama || usahaNama)} siap memproses. Estimasi Total: <b>${S().rp(totalEst + ongkir)}</b></div>
-              <a target="_blank" rel="noopener" href="${S().esc(waOrderUrl)}" class="ons-btn ons-btn-emerald w-full py-2 font-bold text-center">Kirim Rincian ke WhatsApp Apotek (Gratis)</a>`;
+              ${hasRx ? '<div class="text-[11px] text-amber-700 dark:text-amber-300 font-semibold">Mohon lampirkan foto resep dokter di chat WhatsApp untuk verifikasi APJ.</div>' : ''}
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                <a target="_blank" rel="noopener" href="${S().esc(waOrderUrl)}" class="ons-btn ons-btn-emerald py-2 font-bold text-center">Kirim Rincian ke WhatsApp Apotek (Gratis)</a>
+                <button type="button" onclick="window.openPublicTrackModal('${S().esc(res.no_order)}','${S().esc(wa)}')" class="ons-btn ons-btn-ghost py-2 font-bold">Lacak Status Pesanan</button>
+              </div>`;
           }
           global._pubCart = [];
-          window.renderPublicCartUi();
+          global.renderPublicCartUi();
+          renderRecentOrdersBox();
         } catch (e) { global.toast(e.message, 'err'); }
       };
+
+      renderRecentOrdersBox();
+      global.renderPublicCartUi();
+
+      API().callApi('public.catalog', { cabang_id: 'ONS-01' }, { token: '' }).then((res) => {
+        global._pubCatalogItems = (res && res.items) || [];
+        if (res && res.apotek) {
+          const ap = res.apotek;
+          global._pubApotekMeta = Object.assign({}, global._pubApotekMeta, ap);
+          const logoEl = document.getElementById('pubKatLogo');
+          const titleEl = document.getElementById('pubKatTitle');
+          const subEl = document.getElementById('pubKatSub');
+          const apjEl = document.getElementById('pubKatApjLine');
+          const hrsEl = document.getElementById('pubKatHoursLine');
+          const openEl = document.getElementById('pubKatOpenBadge');
+          const waTopEl = document.getElementById('pubKatConsultWa');
+          const waRxEl = document.getElementById('pubKatResepWaCta');
+          if (logoEl && ap.logo_usaha_url) logoEl.src = ap.logo_usaha_url;
+          if (titleEl && ap.nama) titleEl.textContent = 'E-Apotek Publik ' + String(ap.nama).replace(/^Apotek\s+/i, '');
+          if (subEl && ap.alamat) subEl.textContent = ap.alamat + (ap.no_sia ? ' • SIA: ' + ap.no_sia : '');
+          if (apjEl && ap.nama_pemilik) apjEl.textContent = 'Layanan Farmasi Digital • ' + ap.nama_pemilik;
+          if (hrsEl) hrsEl.textContent = (ap.sipa_pemilik ? ('SIPA: ' + ap.sipa_pemilik + ' • ') : '') + (ap.jam_operasional || 'Buka Setiap Hari');
+          if (openEl) {
+            const liveOpen = isApotekOpenNow(ap.jam_operasional || '07.00 - 22.00');
+            openEl.className = 'badge-bpom ' + (liveOpen ? 'bpom-bebas' : 'bpom-terbatas');
+            openEl.innerHTML = liveOpen ? 'BUKA &bull; ONLINE OPEN' : 'PRE-ORDER WA';
+          }
+          if (waTopEl && S().buildWaUrl) {
+            waTopEl.href = S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya ingin konsultasi keluhan & ketersediaan obat.`);
+          }
+          if (waRxEl && S().buildWaUrl) {
+            waRxEl.href = S().buildWaUrl(ap.wa_admin || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya ingin menebus resep dokter. Berikut saya lampirkan foto resepnya:`);
+          }
+        }
+        renderCategoryPills();
+        global.renderPublicCatalogGrid((document.getElementById('pubKatSearch') || {}).value || '');
+      }).catch((err) => {
+        const g = document.getElementById('pubKatGrid');
+        if (g) g.innerHTML = `<div class="ons-card p-4 text-red-600">${S().esc(err.message)}</div>`;
+      });
+
       return true;
     }
     return false;
