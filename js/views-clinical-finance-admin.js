@@ -31,7 +31,26 @@
   let piutangSearchQ = '';
   let piutangDueFilter = '';
   let piutangStatusFilter = 'SEMUA';
-  let sipnapTab = 'narkotika'; // narkotika | pareto | deadstock
+  let sipnapTab = 'penjualan'; // penjualan | pembelian | persediaan | keuangan | narkotika | pareto | deadstock
+  let lapJualMode = 'hari'; // hari | produk | faktur | pelanggan | sales
+  let lapJualSearchQ = '';
+  let lapJualDateFrom = '';
+  let lapJualDateTo = '';
+  let lapBeliMode = 'produk'; // produk | faktur | supplier
+  let lapBeliSearchQ = '';
+  let lapBeliDateFrom = '';
+  let lapBeliDateTo = '';
+  let lapStokMode = 'kuantitas'; // kuantitas | nilai
+  let lapStokSearchQ = '';
+  let lapStokDateFrom = '';
+  let lapStokDateTo = '';
+  let lapKeuJenis = 'labarugi'; // labarugi | neraca | aruskas
+  let lapKeuPeriode = 'bulanan'; // bulanan | tahunan
+  let lapKeuBulan = String(new Date().getMonth() + 1);
+  let lapKeuTahun = String(new Date().getFullYear());
+  let lapKeuInterval = 'none'; // none | mingguan | harian
+  let lapKeuShowPct = false;
+  let lapRekapCollapsed = {};
   let shiftDenomCounts = { 100000: 0, 50000: 0, 20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0 };
   let shiftBlindRevealed = false;
   let shiftAktualCustom = null;
@@ -3430,6 +3449,769 @@
   /**
    * W-12: Laporan SIPNAP Kemenkes 8 Kolom, Analisis Pareto ABC & Dead Stock (3 Sub-Menu)
    */
+  function _fmtDateId(isoStr) {
+    if (!isoStr) return '-';
+    try {
+      const d = new Date(String(isoStr).slice(0, 10) + 'T00:00:00');
+      if (isNaN(d.getTime())) return String(isoStr);
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) { return String(isoStr); }
+  }
+
+  function _renderLapRekapFooter(keyId, titleText, items) {
+    const isCollapsed = Boolean(lapRekapCollapsed[keyId]);
+    const colsHtml = (items || []).map((it) => `
+      <div class="flex items-center justify-between gap-2 text-xs py-1">
+        <span style="color:var(--ons-text-soft)">${S().esc(it.label)}</span>
+        <span class="font-bold font-mono-num ${it.cls || ''}">: ${it.valHtml}</span>
+      </div>
+    `).join('');
+    return `<div class="ons-pos-rekap-foot">
+      <div class="flex items-center justify-between gap-2 ${isCollapsed ? '' : 'mb-2'}">
+        <span class="font-extrabold text-sm text-blue-600 dark:text-blue-400">${titleText}</span>
+        <button type="button" onclick="window.toggleLapRekapPanel('${S().esc(keyId)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2" aria-label="Toggle Rekap">${isCollapsed ? '&#9660;' : '&#9650;'}</button>
+      </div>
+      ${isCollapsed ? '' : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-1">${colsHtml}</div>`}
+    </div>`;
+  }
+
+  const _MONTH_NAMES_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+  function _renderLapPenjualanSubTab() {
+    const st = S().AppState;
+    const today = new Date().toISOString().slice(0, 10);
+    const mStart = today.slice(0, 8) + '01';
+    if (!lapJualDateFrom) lapJualDateFrom = mStart;
+    if (!lapJualDateTo) lapJualDateTo = today;
+
+    const allPenjualan = (st.penjualan || []).filter((p) => String(p.status_trx || 'LUNAS').toUpperCase() !== 'RETUR');
+    const inRange = (dStr) => {
+      const d = String(dStr || '').slice(0, 10);
+      if (lapJualDateFrom && d < lapJualDateFrom) return false;
+      if (lapJualDateTo && d > lapJualDateTo) return false;
+      return true;
+    };
+    const scopedSales = allPenjualan.filter((p) => inRange(p.tanggal || p.created_at));
+    const sq = lapJualSearchQ.trim().toLowerCase();
+
+    let tableHtml = '';
+    let totalOmzet = 0;
+    let totalHpp = 0;
+    let totalTrx = 0;
+
+    if (lapJualMode === 'hari') {
+      const dateMap = {};
+      const cur = new Date(lapJualDateFrom + 'T00:00:00');
+      const end = new Date(lapJualDateTo + 'T00:00:00');
+      if (!isNaN(cur.getTime()) && !isNaN(end.getTime())) {
+        while (cur <= end) {
+          const ds = cur.toISOString().slice(0, 10);
+          dateMap[ds] = { frek: 0, omzet: 0, hpp: 0 };
+          cur.setDate(cur.getDate() + 1);
+        }
+      }
+      scopedSales.forEach((p) => {
+        const ds = String(p.tanggal || p.created_at || '').slice(0, 10);
+        if (!dateMap[ds]) dateMap[ds] = { frek: 0, omzet: 0, hpp: 0 };
+        dateMap[ds].frek += 1;
+        dateMap[ds].omzet += Number(p.grand_total || 0);
+        dateMap[ds].hpp += Number(p.total_hpp || 0);
+      });
+
+      const dayKeys = Object.keys(dateMap).sort().reverse();
+      const filteredDays = dayKeys.filter((d) => {
+        if (!sq) return true;
+        const fmtD = _fmtDateId(d).toLowerCase();
+        return d.includes(sq) || fmtD.includes(sq);
+      });
+
+      filteredDays.forEach((d) => {
+        const row = dateMap[d];
+        totalOmzet += row.omzet;
+        totalHpp += row.hpp;
+        totalTrx += row.frek;
+      });
+
+      tableHtml = `
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr><th>No.</th><th>Tanggal</th><th>Frek. Penjualan</th><th class="text-right">Total Penjualan</th><th class="text-right">Keuntungan</th></tr>
+            </thead>
+            <tbody>
+              ${filteredDays.length ? filteredDays.map((d, idx) => {
+                const r = dateMap[d];
+                const untung = r.omzet - r.hpp;
+                return `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="text-xs font-semibold">${_fmtDateId(d)}</td>
+                  <td class="font-mono-num text-xs">${r.frek}x</td>
+                  <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.omzet)}</td>
+                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(untung)}</td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="5" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan untuk periode tanggal ini.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else if (lapJualMode === 'produk') {
+      const salesIdSet = new Set(scopedSales.map((p) => p.id_penjualan || p.kode_penjualan));
+      const details = (st.detailPenjualan || []).filter((d) => salesIdSet.has(d.id_penjualan || d.kode_penjualan));
+      const prodMap = {};
+      details.forEach((d) => {
+        const id = d.id_obat;
+        if (!prodMap[id]) {
+          const ob = (st.masterObat || []).find((m) => m.id_obat === id) || {};
+          prodMap[id] = {
+            id_obat: id,
+            nama: d.nama_dagang || ob.nama_dagang || id,
+            kategori: ob.golongan_bpom || 'BEBAS',
+            satuan: ob.satuan_dasar || 'Unit',
+            qty: 0,
+            omzet: 0,
+            hpp: 0
+          };
+        }
+        const q = Number(d.qty || 0);
+        const sub = Number(d.subtotal_item || (q * Number(d.harga_jual || 0)));
+        const hppItem = Number(d.hpp_unit || 0) * q;
+        prodMap[id].qty += q;
+        prodMap[id].omzet += sub;
+        prodMap[id].hpp += hppItem;
+      });
+
+      const prodList = Object.values(prodMap).filter((p) => {
+        if (!sq) return true;
+        return `${p.nama} ${p.kategori} ${p.id_obat}`.toLowerCase().includes(sq);
+      }).sort((a, b) => b.omzet - a.omzet);
+
+      prodList.forEach((p) => {
+        totalOmzet += p.omzet;
+        totalHpp += p.hpp;
+        totalTrx += p.qty;
+      });
+
+      tableHtml = `
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr><th>No.</th><th>Nama Produk</th><th>Kategori</th><th>Kuantitas Terjual</th><th>Satuan</th><th class="text-right">Total Penjualan</th><th class="text-right">Keuntungan</th></tr>
+            </thead>
+            <tbody>
+              ${prodList.length ? prodList.map((p, idx) => {
+                const untung = p.omzet - p.hpp;
+                return `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="font-bold text-xs">${S().esc(p.nama)}</td>
+                  <td>${S().bpomBadge ? S().bpomBadge(p.kategori) : p.kategori}</td>
+                  <td class="font-mono-num text-xs font-bold">${p.qty}</td>
+                  <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(p.satuan)}</td>
+                  <td class="text-right font-mono-num text-xs font-bold">${S().rp(p.omzet)}</td>
+                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(untung)}</td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else {
+      const filteredFaktur = scopedSales.filter((p) => {
+        if (!sq) return true;
+        return `${p.kode_penjualan || ''} ${p.nama_pasien || ''} ${p.sales_nama || ''} ${p.metode_bayar || ''}`.toLowerCase().includes(sq);
+      }).sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')));
+
+      filteredFaktur.forEach((p) => {
+        totalOmzet += Number(p.grand_total || 0);
+        totalHpp += Number(p.total_hpp || 0);
+        totalTrx += 1;
+      });
+
+      tableHtml = `
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr><th>No.</th><th>No. Faktur</th><th>Tanggal &amp; Waktu</th><th>Pelanggan</th><th>Sales / Kasir</th><th class="text-right">Total</th><th class="text-right">Keuntungan</th><th>Metode Bayar</th><th>Aksi</th></tr>
+            </thead>
+            <tbody>
+              ${filteredFaktur.length ? filteredFaktur.map((p, idx) => {
+                const tot = Number(p.grand_total || 0);
+                const hpp = Number(p.total_hpp || 0);
+                return `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="font-mono-num text-xs font-bold">${S().esc(p.kode_penjualan || p.id_penjualan || '-')}</td>
+                  <td class="font-mono-num text-xs">${S().esc(String(p.tanggal || '').slice(0, 16))}</td>
+                  <td class="text-xs font-semibold">${S().esc(p.nama_pasien || 'Pasien Umum')}</td>
+                  <td class="text-xs">${S().esc(p.sales_nama || p.user_nama || '-')}</td>
+                  <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
+                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(tot - hpp)}</td>
+                  <td><span class="badge-bpom bpom-bebas">${S().esc(p.metode_bayar || 'TUNAI')}</span></td>
+                  <td><button type="button" onclick="window.viewPosTransactionReceipt('${S().esc(p.id_penjualan || p.kode_penjualan)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Struk</button></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="9" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    const rekapFooter = _renderLapRekapFooter('lapJual', `Rekap dari ${_fmtDateId(lapJualDateFrom)} s.d. ${_fmtDateId(lapJualDateTo)}`, [
+      { label: 'Total Penjualan', valHtml: S().rp(totalOmzet), cls: 'text-blue-600 dark:text-blue-400' },
+      { label: 'Total Keuntungan', valHtml: S().rp(totalOmzet - totalHpp), cls: 'text-emerald-600 dark:text-emerald-400' },
+      { label: 'Frekuensi / Qty', valHtml: `${totalTrx.toLocaleString('id-ID')} unit/kali` }
+    ]);
+
+    return `
+      <div class="ons-card p-3 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
+              <select id="lapJualMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapJualMode(this.value)">
+                <option value="hari" ${lapJualMode === 'hari' ? 'selected' : ''}>Hari &amp; Tanggal</option>
+                <option value="produk" ${lapJualMode === 'produk' ? 'selected' : ''}>Per Produk</option>
+                <option value="faktur" ${lapJualMode === 'faktur' ? 'selected' : ''}>Per Faktur / Transaksi</option>
+              </select>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+              <input id="lapJualSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapJualSearchQ)}" oninput="window.setLapJualSearch(this.value)"/>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
+              <div class="flex items-center gap-1">
+                <input id="lapJualDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateFrom)}" onchange="window.setLapJualDateRange(this.value, document.getElementById('lapJualDateTo').value)"/>
+                <span class="text-xs">&ndash;</span>
+                <input id="lapJualDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateTo)}" onchange="window.setLapJualDateRange(document.getElementById('lapJualDateFrom').value, this.value)"/>
+              </div>
+            </div>
+            <div class="self-end">
+              <button type="button" onclick="window.resetLapJualFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            </div>
+          </div>
+        </div>
+        ${tableHtml}
+        ${rekapFooter}
+      </div>
+    `;
+  }
+
+  function _renderLapPembelianSubTab() {
+    const st = S().AppState;
+    const today = new Date().toISOString().slice(0, 10);
+    const mStart = today.slice(0, 8) + '01';
+    if (!lapBeliDateFrom) lapBeliDateFrom = mStart;
+    if (!lapBeliDateTo) lapBeliDateTo = today;
+
+    const inRange = (dStr) => {
+      const d = String(dStr || '').slice(0, 10);
+      if (lapBeliDateFrom && d < lapBeliDateFrom) return false;
+      if (lapBeliDateTo && d > lapBeliDateTo) return false;
+      return true;
+    };
+
+    const allFaktur = (st.fakturPbf || []).filter((f) => inRange(f.tgl_terima || f.tgl_faktur || f.created_at));
+    const sq = lapBeliSearchQ.trim().toLowerCase();
+
+    let tableHtml = '';
+    let totalBeli = 0;
+    let varianCount = 0;
+    let fakturCount = allFaktur.length;
+
+    if (lapBeliMode === 'produk') {
+      const mutasiBeli = (st.mutasiStok || []).filter((m) => {
+        const jm = String(m.jenis_mutasi || '').toUpperCase();
+        return jm.includes('PEMBELIAN') && inRange(m.tanggal || m.created_at);
+      });
+      const prodMap = {};
+      mutasiBeli.forEach((m) => {
+        const id = m.id_obat;
+        if (!prodMap[id]) {
+          const ob = (st.masterObat || []).find((o) => o.id_obat === id) || {};
+          prodMap[id] = {
+            id_obat: id,
+            nama: ob.nama_dagang || m.nama_dagang || id,
+            kategori: ob.golongan_bpom || 'BEBAS',
+            satuan: ob.satuan_dasar || 'Unit',
+            qty: 0,
+            nilai: 0
+          };
+        }
+        const q = Math.max(0, Number(m.qty_ubah || 0));
+        const unitCost = Number(m.hpp_saat_itu || m.hpp_terakhir || 0);
+        prodMap[id].qty += q;
+        prodMap[id].nilai += (q * unitCost);
+      });
+
+      if (Object.keys(prodMap).length === 0 && (st.masterObat || []).length > 0) {
+        (st.masterObat || []).slice(0, 8).forEach((ob) => {
+          const id = ob.id_obat;
+          prodMap[id] = {
+            id_obat: id,
+            nama: ob.nama_dagang || id,
+            kategori: ob.golongan_bpom || 'BEBAS',
+            satuan: ob.satuan_dasar || 'Unit',
+            qty: 0,
+            nilai: 0
+          };
+        });
+      }
+
+      const prodList = Object.values(prodMap).filter((p) => {
+        if (!sq) return true;
+        return `${p.nama} ${p.kategori} ${p.id_obat}`.toLowerCase().includes(sq);
+      }).sort((a, b) => b.nilai - a.nilai);
+
+      varianCount = prodList.length;
+      prodList.forEach((p) => { totalBeli += p.nilai; });
+
+      tableHtml = `
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr><th>No.</th><th>Nama Produk</th><th>Kategori</th><th>Kuantitas Beli</th><th>Satuan</th><th class="text-right">Nilai Pembelian</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              ${prodList.length ? prodList.map((p, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-bold text-xs">${S().esc(p.nama)}</td>
+                <td>${S().bpomBadge ? S().bpomBadge(p.kategori) : p.kategori}</td>
+                <td class="font-mono-num text-xs font-bold">${p.qty}</td>
+                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(p.satuan)}</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(p.nilai)}</td>
+                <td><button type="button" onclick="window.navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Lihat Faktur</button></td>
+              </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data pembelian tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else if (lapBeliMode === 'supplier') {
+      const supMap = {};
+      allFaktur.forEach((f) => {
+        const idSup = f.id_pbf || 'PBF';
+        if (!supMap[idSup]) supMap[idSup] = { id: idSup, count: 0, total: 0, sisa: 0 };
+        supMap[idSup].count += 1;
+        supMap[idSup].total += Number(f.total_bruto || f.netto_hutang || f.sisa_hutang || 0);
+        supMap[idSup].sisa += Number(f.sisa_hutang || 0);
+      });
+      const supList = Object.values(supMap).filter((s) => {
+        if (!sq) return true;
+        return s.id.toLowerCase().includes(sq);
+      });
+      totalBeli = supList.reduce((acc, s) => acc + s.total, 0);
+      varianCount = supList.length;
+
+      tableHtml = `
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr><th>No.</th><th>Nama Supplier</th><th>Jumlah Faktur</th><th class="text-right">Total Pembelian</th><th class="text-right">Sisa Hutang</th><th>Aksi</th></tr>
+            </thead>
+            <tbody>
+              ${supList.length ? supList.map((s, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-bold text-xs">${S().esc(s.id)}</td>
+                <td class="font-mono-num text-xs">${s.count} faktur</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(s.total)}</td>
+                <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(s.sisa)}</td>
+                <td><button type="button" onclick="window.navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Buka Faktur</button></td>
+              </tr>`).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data supplier tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else {
+      const filteredFaktur = allFaktur.filter((f) => {
+        if (!sq) return true;
+        return `${f.no_faktur_pbf || ''} ${f.id_pbf || ''} ${f.id_beli || ''}`.toLowerCase().includes(sq);
+      }).sort((a, b) => String(b.tgl_terima || b.tgl_faktur || '').localeCompare(String(a.tgl_terima || a.tgl_faktur || '')));
+
+      totalBeli = filteredFaktur.reduce((acc, f) => acc + Number(f.total_bruto || f.netto_hutang || f.sisa_hutang || 0), 0);
+      varianCount = filteredFaktur.length;
+
+      tableHtml = `
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr><th>No.</th><th>No. Faktur PBF</th><th>Tanggal</th><th>Supplier PBF</th><th>Jatuh Tempo</th><th class="text-right">Nilai Pembelian</th><th>Status Bayar</th></tr>
+            </thead>
+            <tbody>
+              ${filteredFaktur.length ? filteredFaktur.map((f, idx) => {
+                const tot = Number(f.total_bruto || f.netto_hutang || f.sisa_hutang || 0);
+                const sisa = Number(f.sisa_hutang || 0);
+                const status = sisa <= 0 ? 'LUNAS' : 'TEMPO';
+                return `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="font-mono-num text-xs font-bold">${S().esc(f.no_faktur_pbf || f.id_beli || '-')}</td>
+                  <td class="font-mono-num text-xs">${S().esc(String(f.tgl_terima || f.tgl_faktur || '').slice(0, 10))}</td>
+                  <td class="text-xs font-semibold">${S().esc(f.id_pbf || '-')}</td>
+                  <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo || '-')}</td>
+                  <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
+                  <td><span class="badge-bpom ${status === 'LUNAS' ? 'bpom-bebas' : 'bpom-keras'}">${status}</span></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    const rekapFooter = _renderLapRekapFooter('lapBeli', `Rekap dari ${_fmtDateId(lapBeliDateFrom)} s.d. ${_fmtDateId(lapBeliDateTo)}`, [
+      { label: 'Total Pembelian', valHtml: S().rp(totalBeli), cls: 'text-blue-600 dark:text-blue-400' },
+      { label: 'Varian Produk', valHtml: `${varianCount} produk` },
+      { label: 'Faktur Pembelian', valHtml: `${fakturCount} faktur` }
+    ]);
+
+    return `
+      <div class="ons-card p-3 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
+              <select id="lapBeliMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapBeliMode(this.value)">
+                <option value="produk" ${lapBeliMode === 'produk' ? 'selected' : ''}>Produk</option>
+                <option value="faktur" ${lapBeliMode === 'faktur' ? 'selected' : ''}>Faktur</option>
+                <option value="supplier" ${lapBeliMode === 'supplier' ? 'selected' : ''}>Supplier</option>
+              </select>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+              <input id="lapBeliSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapBeliSearchQ)}" oninput="window.setLapBeliSearch(this.value)"/>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
+              <div class="flex items-center gap-1">
+                <input id="lapBeliDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapBeliDateFrom)}" onchange="window.setLapBeliDateRange(this.value, document.getElementById('lapBeliDateTo').value)"/>
+                <span class="text-xs">&ndash;</span>
+                <input id="lapBeliDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapBeliDateTo)}" onchange="window.setLapBeliDateRange(document.getElementById('lapBeliDateFrom').value, this.value)"/>
+              </div>
+            </div>
+            <div class="self-end">
+              <button type="button" onclick="window.resetLapBeliFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            </div>
+          </div>
+        </div>
+        ${tableHtml}
+        ${rekapFooter}
+      </div>
+    `;
+  }
+
+  function _renderLapPersediaanSubTab() {
+    const st = S().AppState;
+    const today = new Date().toISOString().slice(0, 10);
+    const mStart = today.slice(0, 8) + '01';
+    if (!lapStokDateFrom) lapStokDateFrom = mStart;
+    if (!lapStokDateTo) lapStokDateTo = today;
+
+    const inRange = (dStr) => {
+      const d = String(dStr || '').slice(0, 10);
+      if (lapStokDateFrom && d < lapStokDateFrom) return false;
+      if (lapStokDateTo && d > lapStokDateTo) return false;
+      return true;
+    };
+
+    const muts = (st.mutasiStok || []).filter((m) => inRange(m.tanggal || m.created_at));
+    const sq = lapStokSearchQ.trim().toLowerCase();
+
+    let totalSaldoAkhir = 0;
+    const rows = (st.masterObat || []).filter((o) => {
+      if (!sq) return true;
+      return `${o.nama_dagang || ''} ${o.satuan_dasar || ''} ${o.id_obat || ''}`.toLowerCase().includes(sq);
+    }).map((o) => {
+      const sAkhir = S().getTotalStok(o.id_obat);
+      const itemMuts = muts.filter((m) => String(m.id_obat) === String(o.id_obat));
+      let pembelian = 0;
+      let retur_pembelian = 0;
+      let penjualan = 0;
+      let retur_penjualan = 0;
+      let pindah_masuk = 0;
+      let pindah_keluar = 0;
+      let opname_pos = 0;
+      let opname_neg = 0;
+
+      itemMuts.forEach((m) => {
+        const jm = String(m.jenis_mutasi || '').toUpperCase();
+        const q = Number(m.qty_ubah || 0);
+        if (jm.includes('PEMBELIAN')) pembelian += Math.max(0, q);
+        else if (jm.includes('RETUR_PBF') || jm.includes('RECALL')) retur_pembelian += Math.abs(q);
+        else if (jm.includes('PENJUALAN') && !jm.includes('RETUR')) penjualan += Math.abs(q);
+        else if (jm.includes('RETUR_PENJUALAN')) retur_penjualan += Math.max(0, q);
+        else if (jm.includes('TRANSFER') && q > 0) pindah_masuk += q;
+        else if (jm.includes('TRANSFER') && q < 0) pindah_keluar += Math.abs(q);
+        else if (jm.includes('OPNAME') && q > 0) opname_pos += q;
+        else if (jm.includes('OPNAME') && q < 0) opname_neg += Math.abs(q);
+      });
+
+      const sAwal = Math.max(0, sAkhir - pembelian + retur_pembelian + penjualan - retur_penjualan - pindah_masuk + pindah_keluar - opname_pos + opname_neg);
+      const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
+      const saldoAkhir = Math.max(0, sAkhir * hpp);
+      totalSaldoAkhir += saldoAkhir;
+
+      return {
+        id_obat: o.id_obat,
+        nama: o.nama_dagang,
+        satuan: o.satuan_dasar || 'Unit',
+        awal: sAwal,
+        pembelian,
+        retur_pembelian,
+        penjualan,
+        retur_penjualan,
+        pindah_masuk,
+        pindah_keluar,
+        opname_pos,
+        opname_neg,
+        akhir: sAkhir,
+        saldo: saldoAkhir
+      };
+    });
+
+    const rekapFooter = _renderLapRekapFooter('lapStok', `Rekap dari ${_fmtDateId(lapStokDateFrom)} s.d. ${_fmtDateId(lapStokDateTo)}`, [
+      { label: 'Total Saldo Akhir', valHtml: S().rp(totalSaldoAkhir), cls: 'text-blue-600 dark:text-blue-400 font-extrabold' },
+      { label: 'Varian Produk', valHtml: `${rows.length} produk` }
+    ]);
+
+    return `
+      <div class="ons-card p-3 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
+              <select id="lapStokMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapStokMode(this.value)">
+                <option value="kuantitas" ${lapStokMode === 'kuantitas' ? 'selected' : ''}>Kuantitas</option>
+                <option value="nilai" ${lapStokMode === 'nilai' ? 'selected' : ''}>Nilai Valuasi (Rp)</option>
+              </select>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+              <input id="lapStokSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapStokSearchQ)}" oninput="window.setLapStokSearch(this.value)"/>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
+              <div class="flex items-center gap-1">
+                <input id="lapStokDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapStokDateFrom)}" onchange="window.setLapStokDateRange(this.value, document.getElementById('lapStokDateTo').value)"/>
+                <span class="text-xs">&ndash;</span>
+                <input id="lapStokDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapStokDateTo)}" onchange="window.setLapStokDateRange(document.getElementById('lapStokDateFrom').value, this.value)"/>
+              </div>
+            </div>
+            <div class="self-end">
+              <button type="button" onclick="window.resetLapStokFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr>
+                <th>No.</th><th>Nama Produk</th><th>Satuan</th><th>Stok Awal</th><th>Pembelian</th><th>Retur Pembelian</th><th>Penjualan</th><th>Retur Penjualan</th><th>Pindah Masuk</th><th>Pindah Keluar</th><th>Opname Positif</th><th>Opname Negatif</th><th>Stok Akhir</th><th class="text-right">Saldo Akhir</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.length ? rows.map((r, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-bold text-xs">${S().esc(r.nama)}</td>
+                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(r.satuan)}</td>
+                <td class="font-mono-num text-xs">${r.awal}</td>
+                <td class="font-mono-num text-xs text-emerald-600">${r.pembelian ? ('+' + r.pembelian) : 0}</td>
+                <td class="font-mono-num text-xs text-red-600">${r.retur_pembelian ? ('-' + r.retur_pembelian) : 0}</td>
+                <td class="font-mono-num text-xs text-red-600">${r.penjualan ? ('-' + r.penjualan) : 0}</td>
+                <td class="font-mono-num text-xs text-emerald-600">${r.retur_penjualan ? ('+' + r.retur_penjualan) : 0}</td>
+                <td class="font-mono-num text-xs">${r.pindah_masuk ? ('+' + r.pindah_masuk) : 0}</td>
+                <td class="font-mono-num text-xs">${r.pindah_keluar ? ('-' + r.pindah_keluar) : 0}</td>
+                <td class="font-mono-num text-xs">${r.opname_pos ? ('+' + r.opname_pos) : 0}</td>
+                <td class="font-mono-num text-xs">${r.opname_neg ? ('-' + r.opname_neg) : 0}</td>
+                <td class="font-mono-num text-xs font-bold text-blue-600">${r.akhir}</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.saldo)}</td>
+              </tr>`).join('') : '<tr><td colspan="14" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        ${rekapFooter}
+      </div>
+    `;
+  }
+
+  function _renderLapKeuanganSubTab() {
+    const st = S().AppState;
+    const curYear = Number(lapKeuTahun) || new Date().getFullYear();
+    const curMonth = Number(lapKeuBulan) || (new Date().getMonth() + 1);
+    const mStr = String(curMonth).padStart(2, '0');
+    const yStr = String(curYear);
+
+    const inPeriod = (dStr) => {
+      const d = String(dStr || '').slice(0, 10);
+      if (!d) return false;
+      if (lapKeuPeriode === 'tahunan') return d.startsWith(yStr);
+      return d.startsWith(`${yStr}-${mStr}`);
+    };
+
+    const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || 'LUNAS').toUpperCase() !== 'RETUR' && inPeriod(p.tanggal || p.created_at));
+    const omzet = validSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const totalHpp = validSales.reduce((s, p) => s + Number(p.total_hpp || 0), 0);
+    const labaKotor = omzet - totalHpp;
+
+    const jurnalPeriod = (st.jurnalKeuangan || []).filter((j) => inPeriod(j.tanggal || j.created_at));
+    const bebanOps = jurnalPeriod.filter((j) => String(j.jenis_trx || '') === 'KELUAR_OPERASIONAL').reduce((s, j) => s + Number(j.nominal || 0), 0);
+    const pendapatanLain = jurnalPeriod.filter((j) => String(j.jenis_trx || '') === 'MASUK_LAINNYA').reduce((s, j) => s + Number(j.nominal || 0), 0);
+    const bebanLain = jurnalPeriod.filter((j) => String(j.jenis_trx || '') === 'KELUAR_LAINNYA').reduce((s, j) => s + Number(j.nominal || 0), 0);
+
+    const ebit = labaKotor - bebanOps + pendapatanLain - bebanLain;
+    const pajak = Math.round(omzet * 0.005);
+    const eat = ebit - pajak;
+
+    const showPct = Boolean(lapKeuShowPct);
+    const pctTag = (nom) => {
+      if (!showPct) return '';
+      const p = omzet > 0 ? ((Number(nom || 0) / omzet) * 100).toFixed(1) : '0.0';
+      return `<span class="text-[11px] font-mono-num font-semibold text-slate-500 ml-2">(${p}%)</span>`;
+    };
+
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const reportTitle = lapKeuJenis === 'neraca' ? 'Laporan Neraca Saldo' : (lapKeuJenis === 'aruskas' ? 'Laporan Arus Kas' : 'Laporan Laba-Rugi');
+    const periodLabel = lapKeuPeriode === 'tahunan' ? `Tahun ${curYear}` : `Bulan ${_MONTH_NAMES_ID[curMonth - 1]}, Tahun ${curYear}`;
+
+    return `
+      <div class="space-y-4">
+        <div class="ons-card p-3">
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Laporan</span>
+                <select id="lapKeuJenis" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuJenis(this.value)">
+                  <option value="labarugi" ${lapKeuJenis === 'labarugi' ? 'selected' : ''}>Laporan Laba-Rugi</option>
+                  <option value="neraca" ${lapKeuJenis === 'neraca' ? 'selected' : ''}>Neraca Saldo</option>
+                  <option value="aruskas" ${lapKeuJenis === 'aruskas' ? 'selected' : ''}>Arus Kas</option>
+                </select>
+              </div>
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Periode</span>
+                <select id="lapKeuPeriode" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuPeriode(this.value)">
+                  <option value="bulanan" ${lapKeuPeriode === 'bulanan' ? 'selected' : ''}>Bulanan</option>
+                  <option value="tahunan" ${lapKeuPeriode === 'tahunan' ? 'selected' : ''}>Tahunan</option>
+                </select>
+              </div>
+              ${lapKeuPeriode === 'bulanan' ? `
+                <div>
+                  <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Bulan</span>
+                  <select id="lapKeuBulan" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuBulan(this.value)">
+                    ${_MONTH_NAMES_ID.map((nm, idx) => `<option value="${idx + 1}" ${curMonth === idx + 1 ? 'selected' : ''}>${nm}</option>`).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Tahun</span>
+                <select id="lapKeuTahun" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuTahun(this.value)">
+                  ${[curYear - 1, curYear, curYear + 1].map((yr) => `<option value="${yr}" ${curYear === yr ? 'selected' : ''}>${yr}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Interval Data</span>
+                <select id="lapKeuInterval" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuInterval(this.value)">
+                  <option value="none" ${lapKeuInterval === 'none' ? 'selected' : ''}>Tidak Ada</option>
+                  <option value="mingguan" ${lapKeuInterval === 'mingguan' ? 'selected' : ''}>Per Minggu</option>
+                  <option value="harian" ${lapKeuInterval === 'harian' ? 'selected' : ''}>Per Hari</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 self-end">
+              <label class="flex items-center gap-1.5 cursor-pointer font-semibold text-xs">
+                <input type="checkbox" id="lapKeuShowPct" ${showPct ? 'checked' : ''} onchange="window.toggleLapKeuPct(this.checked)" class="w-4 h-4"/>
+                <span>Tampilkan Persentase</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div id="lapKeuDocCard" class="ons-card p-6 md:p-8 space-y-5 max-w-4xl mx-auto shadow-sm">
+          <div class="text-center pb-4 border-b space-y-1" style="border-color:var(--ons-border)">
+            <h2 class="text-xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight">${reportTitle}</h2>
+            <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Periode: ${periodLabel}</div>
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Terakhir Update: ${new Date().toLocaleDateString('id-ID')} &bull; ${prof.nama_usaha || 'Apotek ONS Farma'}</div>
+          </div>
+
+          <div class="space-y-4 text-xs divide-y" style="border-color:var(--ons-border)">
+            <div class="pt-2">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pendapatan Penjualan</h4>
+              <div class="flex justify-between items-center py-1">
+                <span style="color:var(--ons-text-soft)">Pendapatan Penjualan</span>
+                <span class="font-mono-num font-bold text-sm">${S().rp(omzet)}${pctTag(omzet)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Harga Pokok Penjualan</h4>
+              <div class="flex justify-between items-center py-1">
+                <span style="color:var(--ons-text-soft)">Harga Pokok Penjualan</span>
+                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(totalHpp)}${pctTag(totalHpp)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Laba Kotor</h4>
+              <div class="flex justify-between items-center py-1 font-bold">
+                <span>Laba Kotor</span>
+                <span class="font-mono-num text-sm text-emerald-600">${S().rp(labaKotor)}${pctTag(labaKotor)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pengeluaran Operasional</h4>
+              <div class="flex justify-between items-center py-1">
+                <span style="color:var(--ons-text-soft)">Pengeluaran Operasional</span>
+                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(bebanOps)}${pctTag(bebanOps)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pendapatan Lainnya</h4>
+              <div class="flex justify-between items-center py-1">
+                <span style="color:var(--ons-text-soft)">Pendapatan Lainnya</span>
+                <span class="font-mono-num font-bold text-sm text-emerald-600">${S().rp(pendapatanLain)}${pctTag(pendapatanLain)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pengeluaran Lainnya</h4>
+              <div class="flex justify-between items-center py-1">
+                <span style="color:var(--ons-text-soft)">Pengeluaran Lainnya</span>
+                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(bebanLain)}${pctTag(bebanLain)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Laba bersih sebelum pajak</h4>
+              <div class="flex justify-between items-center py-1 font-bold">
+                <span>Laba bersih sebelum pajak</span>
+                <span class="font-mono-num text-sm ${ebit >= 0 ? 'text-blue-600' : 'text-red-600'}">${S().rp(ebit)}${pctTag(ebit)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pengeluaran Pajak</h4>
+              <div class="flex justify-between items-center py-1">
+                <span style="color:var(--ons-text-soft)">Pengeluaran Pajak</span>
+                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(pajak)}${pctTag(pajak)}</span>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t-2" style="border-color:var(--ons-border)">
+              <div class="flex justify-between items-center py-2">
+                <h4 class="font-extrabold text-base text-blue-600 dark:text-blue-400">Laba bersih setelah pajak</h4>
+                <span class="font-mono-num font-extrabold text-base ${eat >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(eat)}${pctTag(eat)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function _getLostSales() {
     try {
       const arr = JSON.parse(localStorage.getItem(LOST_SALES_KEY) || 'null');
@@ -3476,7 +4258,10 @@
 
   function renderSipnapParetoView() {
     const st = S().AppState;
-    sipnapTab = (st.subTabs && st.subTabs.sipnap) || sipnapTab || 'narkotika';
+    sipnapTab = (st.subTabs && st.subTabs.sipnap) || sipnapTab || 'penjualan';
+    if (!['penjualan', 'pembelian', 'persediaan', 'keuangan', 'narkotika', 'pareto', 'deadstock'].includes(sipnapTab)) {
+      sipnapTab = 'penjualan';
+    }
     const sipnapRows = _buildSipnapRows(st);
 
     const salesByObat = {};
@@ -3509,23 +4294,62 @@
     });
     const lostSales = _getLostSales();
 
-    return `<div class="space-y-5 ons-view-enter">
+    const pageTitle = sipnapTab === 'penjualan' ? 'Laporan Penjualan'
+      : (sipnapTab === 'pembelian' ? 'Laporan Pembelian'
+        : (sipnapTab === 'persediaan' ? 'Laporan Persediaan'
+          : (sipnapTab === 'keuangan' ? 'Laporan Keuangan'
+            : 'Pelaporan SIPNAP Kemenkes, Pareto ABC &amp; Dead Stock')));
+    const pageDesc = sipnapTab === 'penjualan' ? 'Ringkasan performa penjualan apotek harian, per produk, transaksi faktur &amp; keuntungan.'
+      : (sipnapTab === 'pembelian' ? 'Rekapitulasi pengadaan barang PBF, faktur masuk, harga beli &amp; jatuh tempo supplier.'
+        : (sipnapTab === 'persediaan' ? 'Kartu pergerakan stok mutasi lengkap: awal, masuk, keluar, opname hingga saldo akhir.'
+          : (sipnapTab === 'keuangan' ? 'Laporan keuangan terstruktur: Laba-Rugi, Pendapatan, HPP, Operasional &amp; Laba Bersih.'
+            : 'Format SIPNAP 8 kolom terintegrasi Kartu Stok mutasi nyata, Pareto ABC omzet &amp; valuasi, indikator WHO, &amp; lost sales.')));
+
+    const actionBtnsHtml = sipnapTab === 'penjualan' ? `
+        <button onclick="window.exportLapJual('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+        <button onclick="window.exportLapJual('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
+        <button onclick="window.exportLapJual('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
+      ` : (sipnapTab === 'pembelian' ? `
+        <button onclick="window.exportLapBeli('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+        <button onclick="window.exportLapBeli('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
+        <button onclick="window.exportLapBeli('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
+      ` : (sipnapTab === 'persediaan' ? `
+        <button onclick="window.exportLapPersediaan('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+        <button onclick="window.exportLapPersediaan('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
+        <button onclick="window.exportLapPersediaan('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
+      ` : (sipnapTab === 'keuangan' ? `
+        <button onclick="window.exportLaporanKeuanganExcel()" class="ons-btn ons-btn-emerald text-xs">Export XLSX</button>
+        <button onclick="window.printLaporanKeuangan()" class="ons-btn ons-btn-primary text-xs">Cetak Laporan</button>
+      ` : `
+        <button onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-primary text-xs">Export SIPNAP (.xlsx)</button>
+      `)));
+
+    return `<div class="space-y-4 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Pelaporan SIPNAP Kemenkes, Pareto ABC &amp; Dead Stock</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Format SIPNAP 8 kolom terintegrasi Kartu Stok mutasi nyata, Pareto ABC omzet &amp; valuasi, indikator WHO, &amp; lost sales.</p>
+          <h1 class="text-xl font-extrabold">${pageTitle}</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">${pageDesc}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <div class="ons-tab-bar">
-            <button onclick="window.setSipnapTab('narkotika')" class="ons-tab-btn ${sipnapTab === 'narkotika' ? 'active' : ''}">SIPNAP Kemenkes (${sipnapRows.length})</button>
-            <button onclick="window.setSipnapTab('pareto')" class="ons-tab-btn ${sipnapTab === 'pareto' ? 'active' : ''}">Pareto ABC &amp; WHO</button>
-            <button onclick="window.setSipnapTab('deadstock')" class="ons-tab-btn ${sipnapTab === 'deadstock' ? 'active' : ''}">Dead Stock &amp; Lost Sales (${deadBatches.length})</button>
-          </div>
-          <button onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-primary text-xs">Export SIPNAP (.xlsx)</button>
+          ${actionBtnsHtml}
         </div>
       </div>
 
-      ${sipnapTab === 'pareto' ? `
+      <div class="ons-tab-bar">
+        <button onclick="window.setSipnapTab('penjualan')" class="ons-tab-btn ${sipnapTab === 'penjualan' ? 'active' : ''}">Laporan Penjualan</button>
+        <button onclick="window.setSipnapTab('pembelian')" class="ons-tab-btn ${sipnapTab === 'pembelian' ? 'active' : ''}">Laporan Pembelian</button>
+        <button onclick="window.setSipnapTab('persediaan')" class="ons-tab-btn ${sipnapTab === 'persediaan' ? 'active' : ''}">Laporan Persediaan</button>
+        <button onclick="window.setSipnapTab('keuangan')" class="ons-tab-btn ${sipnapTab === 'keuangan' ? 'active' : ''}">Laporan Keuangan</button>
+        <button onclick="window.setSipnapTab('narkotika')" class="ons-tab-btn ${sipnapTab === 'narkotika' ? 'active' : ''}">SIPNAP Kemenkes (${sipnapRows.length})</button>
+        <button onclick="window.setSipnapTab('pareto')" class="ons-tab-btn ${sipnapTab === 'pareto' ? 'active' : ''}">Pareto ABC &amp; WHO</button>
+        <button onclick="window.setSipnapTab('deadstock')" class="ons-tab-btn ${sipnapTab === 'deadstock' ? 'active' : ''}">Dead Stock &amp; Lost Sales (${deadBatches.length})</button>
+      </div>
+
+      ${sipnapTab === 'penjualan' ? _renderLapPenjualanSubTab()
+        : sipnapTab === 'pembelian' ? _renderLapPembelianSubTab()
+        : sipnapTab === 'persediaan' ? _renderLapPersediaanSubTab()
+        : sipnapTab === 'keuangan' ? _renderLapKeuanganSubTab()
+        : sipnapTab === 'pareto' ? `
         <div class="ons-card p-5 space-y-4">
           <div class="flex flex-wrap justify-between items-center gap-2">
             <div>
@@ -3616,11 +4440,176 @@
     </div>`;
   }
 
+  global.viewPosTransactionReceipt = (inv) => {
+    if (typeof global.openPosReprintModal === 'function') global.openPosReprintModal(inv);
+  };
+
   global.setSipnapTab = (t) => {
-    sipnapTab = t || 'narkotika';
+    const req = String(t || 'penjualan');
+    sipnapTab = ['penjualan', 'pembelian', 'persediaan', 'keuangan', 'narkotika', 'pareto', 'deadstock'].includes(req) ? req : 'penjualan';
     if (S().AppState.subTabs) S().AppState.subTabs.sipnap = sipnapTab;
+    S().AppState.activeSubTab = sipnapTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+  };
+
+  global.setLapJualMode = (m) => { lapJualMode = m || 'hari'; global.renderActiveView(); };
+  global.setLapJualSearch = (q) => { lapJualSearchQ = q || ''; global.renderActiveView(); };
+  global.setLapJualDateRange = (f, t) => { lapJualDateFrom = f || ''; lapJualDateTo = t || ''; global.renderActiveView(); };
+  global.resetLapJualFilter = () => { lapJualSearchQ = ''; lapJualDateFrom = ''; lapJualDateTo = ''; global.renderActiveView(); };
+
+  global.setLapBeliMode = (m) => { lapBeliMode = m || 'produk'; global.renderActiveView(); };
+  global.setLapBeliSearch = (q) => { lapBeliSearchQ = q || ''; global.renderActiveView(); };
+  global.setLapBeliDateRange = (f, t) => { lapBeliDateFrom = f || ''; lapBeliDateTo = t || ''; global.renderActiveView(); };
+  global.resetLapBeliFilter = () => { lapBeliSearchQ = ''; lapBeliDateFrom = ''; lapBeliDateTo = ''; global.renderActiveView(); };
+
+  global.setLapStokMode = (m) => { lapStokMode = m || 'kuantitas'; global.renderActiveView(); };
+  global.setLapStokSearch = (q) => { lapStokSearchQ = q || ''; global.renderActiveView(); };
+  global.setLapStokDateRange = (f, t) => { lapStokDateFrom = f || ''; lapStokDateTo = t || ''; global.renderActiveView(); };
+  global.resetLapStokFilter = () => { lapStokSearchQ = ''; lapStokDateFrom = ''; lapStokDateTo = ''; global.renderActiveView(); };
+
+  global.setLapKeuJenis = (j) => { lapKeuJenis = j || 'labarugi'; global.renderActiveView(); };
+  global.setLapKeuPeriode = (p) => { lapKeuPeriode = p || 'bulanan'; global.renderActiveView(); };
+  global.setLapKeuBulan = (b) => { lapKeuBulan = b || '11'; global.renderActiveView(); };
+  global.setLapKeuTahun = (y) => { lapKeuTahun = y || '2026'; global.renderActiveView(); };
+  global.setLapKeuInterval = (i) => { lapKeuInterval = i || 'none'; global.renderActiveView(); };
+  global.toggleLapKeuPct = (c) => { lapKeuShowPct = Boolean(c); global.renderActiveView(); };
+  global.toggleLapRekapPanel = (k) => { lapRekapCollapsed[k] = !lapRekapCollapsed[k]; global.renderActiveView(); };
+
+  global.exportLapJual = (fmt) => {
+    const st = S().AppState;
+    const allPenjualan = (st.penjualan || []).filter((p) => String(p.status_trx || 'LUNAS').toUpperCase() !== 'RETUR');
+    const dTag = new Date().toISOString().slice(0, 10);
+    const rows = allPenjualan.map((p, idx) => ({
+      no: idx + 1,
+      no_faktur: p.kode_penjualan || p.id_penjualan || '-',
+      tanggal: String(p.tanggal || '').slice(0, 16),
+      pelanggan: p.nama_pasien || 'Pasien Umum',
+      sales: p.sales_nama || '-',
+      total: Number(p.grand_total || 0),
+      keuntungan: Number(p.grand_total || 0) - Number(p.total_hpp || 0),
+      metode: p.metode_bayar || 'TUNAI'
+    }));
+    return S().exportDataset(fmt || 'xlsx', 'Laporan Penjualan Apotek', `Laporan_Penjualan_${dTag}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'no_faktur', label: 'No. Faktur', width: 18 },
+      { key: 'tanggal', label: 'Tanggal', width: 16 },
+      { key: 'pelanggan', label: 'Pelanggan', width: 22 },
+      { key: 'sales', label: 'Sales / Kasir', width: 18 },
+      { key: 'total', label: 'Total Penjualan', type: 'currency', sum: true, width: 18 },
+      { key: 'keuntungan', label: 'Keuntungan', type: 'currency', sum: true, width: 18 },
+      { key: 'metode', label: 'Metode Bayar', width: 14 }
+    ], rows, { sheetName: 'Penjualan' });
+  };
+
+  global.exportLapBeli = (fmt) => {
+    const st = S().AppState;
+    const dTag = new Date().toISOString().slice(0, 10);
+    const rows = (st.fakturPbf || []).map((f, idx) => ({
+      no: idx + 1,
+      no_faktur: f.no_faktur_pbf || f.id_beli || '-',
+      tanggal: String(f.tgl_terima || f.tgl_faktur || '').slice(0, 10),
+      supplier: f.id_pbf || '-',
+      jatuh_tempo: f.tgl_jatuh_tempo || '-',
+      total: Number(f.total_bruto || f.netto_hutang || f.sisa_hutang || 0),
+      sisa: Number(f.sisa_hutang || 0)
+    }));
+    return S().exportDataset(fmt || 'xlsx', 'Laporan Pembelian PBF', `Laporan_Pembelian_${dTag}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'no_faktur', label: 'No. Faktur PBF', width: 18 },
+      { key: 'tanggal', label: 'Tanggal', width: 14 },
+      { key: 'supplier', label: 'Supplier PBF', width: 24 },
+      { key: 'jatuh_tempo', label: 'Jatuh Tempo', width: 14 },
+      { key: 'total', label: 'Nilai Pembelian', type: 'currency', sum: true, width: 18 },
+      { key: 'sisa', label: 'Sisa Hutang', type: 'currency', sum: true, width: 16 }
+    ], rows, { sheetName: 'Pembelian' });
+  };
+
+  global.exportLapPersediaan = (fmt) => {
+    const st = S().AppState;
+    const dTag = new Date().toISOString().slice(0, 10);
+    const rows = (st.masterObat || []).map((o, idx) => {
+      const akhir = S().getTotalStok(o.id_obat);
+      const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
+      return {
+        no: idx + 1,
+        nama: o.nama_dagang || '-',
+        satuan: o.satuan_dasar || 'Unit',
+        stok_akhir: akhir,
+        hpp,
+        saldo_akhir: akhir * hpp
+      };
+    });
+    return S().exportDataset(fmt || 'xlsx', 'Laporan Persediaan Apotek', `Laporan_Persediaan_${dTag}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Produk', width: 28 },
+      { key: 'satuan', label: 'Satuan', width: 12 },
+      { key: 'stok_akhir', label: 'Stok Akhir', type: 'int', width: 12 },
+      { key: 'hpp', label: 'HPP Unit', type: 'currency', width: 14 },
+      { key: 'saldo_akhir', label: 'Saldo Akhir', type: 'currency', sum: true, width: 18 }
+    ], rows, { sheetName: 'Persediaan' });
+  };
+
+  global.exportLaporanKeuanganExcel = () => {
+    const st = S().AppState;
+    const curYear = Number(lapKeuTahun) || new Date().getFullYear();
+    const curMonth = Number(lapKeuBulan) || (new Date().getMonth() + 1);
+    const mStr = String(curMonth).padStart(2, '0');
+    const yStr = String(curYear);
+    const inPeriod = (dStr) => {
+      const d = String(dStr || '').slice(0, 10);
+      if (lapKeuPeriode === 'tahunan') return d.startsWith(yStr);
+      return d.startsWith(`${yStr}-${mStr}`);
+    };
+    const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || 'LUNAS').toUpperCase() !== 'RETUR' && inPeriod(p.tanggal || p.created_at));
+    const omzet = validSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const totalHpp = validSales.reduce((s, p) => s + Number(p.total_hpp || 0), 0);
+    const labaKotor = omzet - totalHpp;
+    const jurnalPeriod = (st.jurnalKeuangan || []).filter((j) => inPeriod(j.tanggal || j.created_at));
+    const bebanOps = jurnalPeriod.filter((j) => String(j.jenis_trx || '') === 'KELUAR_OPERASIONAL').reduce((s, j) => s + Number(j.nominal || 0), 0);
+    const pendapatanLain = jurnalPeriod.filter((j) => String(j.jenis_trx || '') === 'MASUK_LAINNYA').reduce((s, j) => s + Number(j.nominal || 0), 0);
+    const bebanLain = jurnalPeriod.filter((j) => String(j.jenis_trx || '') === 'KELUAR_LAINNYA').reduce((s, j) => s + Number(j.nominal || 0), 0);
+    const ebit = labaKotor - bebanOps + pendapatanLain - bebanLain;
+    const pajak = Math.round(omzet * 0.005);
+    const eat = ebit - pajak;
+
+    const rows = [
+      { pos: 'Pendapatan Penjualan', keterangan: 'Penjualan Obat & Alkes', nominal: omzet },
+      { pos: 'Harga Pokok Penjualan', keterangan: 'Total HPP Produk Terjual', nominal: totalHpp },
+      { pos: 'Laba Kotor', keterangan: 'Penjualan dikurangi HPP', nominal: labaKotor },
+      { pos: 'Pengeluaran Operasional', keterangan: 'Beban Operasional & Toko', nominal: bebanOps },
+      { pos: 'Pendapatan Lainnya', keterangan: 'Layanan POCT & Konseling', nominal: pendapatanLain },
+      { pos: 'Pengeluaran Lainnya', keterangan: 'Biaya Bank & Lainnya', nominal: bebanLain },
+      { pos: 'Laba Bersih Sebelum Pajak', keterangan: 'EBIT', nominal: ebit },
+      { pos: 'Pengeluaran Pajak', keterangan: 'PPh Final 0.5%', nominal: pajak },
+      { pos: 'Laba Bersih Setelah Pajak', keterangan: 'Net Profit', nominal: eat }
+    ];
+
+    const dTag = new Date().toISOString().slice(0, 10);
+    return S().exportDataset('xlsx', `Laporan Keuangan Laba-Rugi - ${curYear}-${mStr}`, `Laporan_Keuangan_${dTag}`, [
+      { key: 'pos', label: 'Pos Keuangan', width: 28 },
+      { key: 'keterangan', label: 'Keterangan', width: 30 },
+      { key: 'nominal', label: 'Nominal (Rp)', type: 'currency', width: 20 }
+    ], rows, { sheetName: 'LabaRugi' });
+  };
+
+  global.printLaporanKeuangan = () => {
+    const el = document.getElementById('lapKeuDocCard');
+    if (!el) {
+      if (typeof window.print === 'function') window.print();
+      return;
+    }
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base">Cetak Laporan Keuangan</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div>${el.outerHTML}</div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+        <button type="button" onclick="window.print()" class="ons-btn ons-btn-primary text-xs">Cetak / Simpan PDF</button>
+      </div>
+    </div>`, '760px');
   };
 
   global.addLostSaleNow = () => {

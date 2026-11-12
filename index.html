@@ -259,10 +259,14 @@
               ]
             },
             {
-              viewId: 'sipnap', label: 'Laporan & SIPNAP', icon: 'report',
-              desc: 'Pelaporan 8 kolom Narkotika/Psikotropika Kemenkes, Pareto ABC & Dead Stock.',
-              kw: 'laporan sipnap kemenkes narkotika psikotropika pareto abc dead stock',
+              viewId: 'sipnap', label: 'Laporan', icon: 'report',
+              desc: 'Laporan Penjualan, Pembelian, Persediaan, Keuangan Terstruktur, SIPNAP Kemenkes & Analisis Pareto.',
+              kw: 'laporan penjualan pembelian persediaan keuangan laba rugi sipnap kemenkes pareto dead stock',
               tabs: [
+                { subTab: 'penjualan', label: 'Laporan Penjualan', kw: 'laporan penjualan harian per produk transaksi pelanggan sales omzet keuntungan' },
+                { subTab: 'pembelian', label: 'Laporan Pembelian', kw: 'laporan pembelian produk faktur pbf kuantitas nilai beli' },
+                { subTab: 'persediaan', label: 'Laporan Persediaan', kw: 'laporan persediaan mutasi stok awal beli retur jual pindah opname akhir saldo' },
+                { subTab: 'keuangan', label: 'Laporan Keuangan', kw: 'laporan keuangan laba rugi neraca arus kas bulanan tahunan persentase' },
                 { subTab: 'narkotika', label: 'SIPNAP Kemenkes', kw: 'sipnap narkotika psikotropika oot' },
                 { subTab: 'pareto', label: 'Pareto ABC & WHO', kw: 'pareto abc fast slow moving who' },
                 { subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock permintaan tertolak lost sales' }
