@@ -767,21 +767,125 @@
     const canErx = S().canAccessView('eresep-prb');
     const canOnline = S().canAccessView('omnichannel');
 
+    const vsAvgPct = avg7Hari > 0 && omzetHariIni > 0 ? Math.round(((omzetHariIni - avg7Hari) / avg7Hari) * 100) : null;
+    const topMaxQty = topObatList.length ? Math.max(1, Number(topObatList[0].qty || 1)) : 1;
+
+    const opsTiles = [
+      canOnline ? {
+        title: 'Pesanan E-Apotek / WA',
+        value: onlinePendingCount + ' Perlu Proses',
+        valCls: onlinePendingCount ? 'text-blue-600' : '',
+        badge: branchOnline.length + ' total',
+        badgeCls: 'bpom-terbatas',
+        icoBg: 'bg-blue-500/10 text-blue-600',
+        ico: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+        onClick: `navigateView('omnichannel','')`
+      } : {
+        title: 'Pelayanan Kasir POS',
+        value: todaySales.length + ' Nota Hari Ini',
+        valCls: 'text-blue-600',
+        badge: validSales.length + ' total',
+        badgeCls: 'bpom-terbatas',
+        icoBg: 'bg-blue-500/10 text-blue-600',
+        ico: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/>',
+        onClick: canPos ? `navigateView('pos','kasir')` : ''
+      },
+      {
+        title: 'Pemeriksaan Kesehatan',
+        value: poctTodayCount + ' Hari Ini',
+        valCls: 'text-emerald-600',
+        badge: branchPoct.length + ' riwayat',
+        badgeCls: 'bpom-bebas',
+        icoBg: 'bg-emerald-500/10 text-emerald-600',
+        ico: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+        onClick: canPoct ? `navigateView('pemeriksaan','semua')` : ''
+      },
+      {
+        title: seeCost ? 'Surat Pesanan PBF' : 'Katalog Produk Aktif',
+        value: seeCost ? (spOpenCount + ' SP Terbuka') : (st.masterObat.length + ' Produk'),
+        valCls: '',
+        badge: seeCost ? (branchSp.length + ' SP') : (activeBatches.length + ' batch'),
+        badgeCls: seeCost && spOpenCount ? 'bpom-prekursor' : 'bpom-bebas',
+        icoBg: 'bg-amber-500/10 text-amber-600',
+        ico: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+        onClick: seeCost && S().canAccessView('faktur') ? `navigateView('faktur','sp')` : ''
+      },
+      {
+        title: 'Monitor Suhu (2&ndash;8&deg;C)',
+        value: latestCold ? (Number(latestCold.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat',
+        valCls: latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'text-red-600' : 'text-emerald-600',
+        badge: latestCold ? S().esc(latestCold.status_alarm || 'NORMAL') : '-',
+        badgeCls: latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'bpom-keras' : 'bpom-bebas',
+        icoBg: latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'bg-red-500/10 text-red-600' : 'bg-sky-500/10 text-sky-600',
+        ico: '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0Z"/>',
+        onClick: canGudang ? `navigateView('gudang','batch')` : ''
+      }
+    ];
+
+    const priorityItems = [
+      {
+        label: 'Batch Kadaluarsa &amp; Near ED (&le;90h)',
+        count: warningEdCount,
+        dotCls: warningEdCount ? 'bg-red-500' : 'bg-emerald-500',
+        pillCls: warningEdCount ? 'bg-red-500/15 text-red-600' : 'bg-slate-500/10 text-slate-500',
+        onClick: canGudang ? `navigateView('gudang','batch')` : ''
+      },
+      {
+        label: 'Item Defecta / Stok Menipis',
+        count: defectaCount,
+        dotCls: defectaCount ? 'bg-amber-500' : 'bg-emerald-500',
+        pillCls: defectaCount ? 'bg-amber-500/15 text-amber-600' : 'bg-slate-500/10 text-slate-500',
+        onClick: seeCost && S().canAccessView('defecta') ? `navigateView('defecta','order')` : (canGudang ? `navigateView('gudang','batch')` : '')
+      },
+      {
+        label: 'Antrean Validasi E-Resep APJ',
+        count: erxAntre,
+        dotCls: 'bg-blue-500',
+        pillCls: 'bg-blue-500/15 text-blue-600',
+        onClick: canErx ? `navigateView('eresep-prb','erx')` : ''
+      },
+      {
+        label: 'Pasien PRB Refill (&le;5 hari)',
+        count: prbUrgentCount,
+        dotCls: prbUrgentCount ? 'bg-blue-500' : 'bg-slate-400',
+        pillCls: 'bg-blue-500/15 text-blue-600',
+        onClick: canErx ? `navigateView('eresep-prb','prb')` : ''
+      }
+    ];
+    if (canOnline) {
+      priorityItems.push({
+        label: 'Pesanan E-Apotek / WA Perlu Proses',
+        count: onlinePendingCount,
+        dotCls: onlinePendingCount ? 'bg-emerald-500' : 'bg-slate-400',
+        pillCls: 'bg-emerald-500/15 text-emerald-600',
+        onClick: `navigateView('omnichannel','')`
+      });
+    }
+    if (seeCost && canFin) {
+      priorityItems.push({
+        label: 'Tagihan PBF Tempo (&le;7h) &amp; Piutang',
+        count: apNearDueCount + openPiutang.length,
+        dotCls: (apNearDueCount + openPiutang.length) ? 'bg-amber-500' : 'bg-emerald-500',
+        pillCls: 'bg-amber-500/15 text-amber-600',
+        onClick: `navigateView('finance','${openPiutang.length && !apNearDueCount ? 'piutang' : 'hutang'}')`
+      });
+    }
+
     return `<div class="space-y-4 ons-view-enter">
       <!-- Fluid Hero Greeting Cockpit -->
-      <div class="ons-hero-welcome p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div class="ons-hero-welcome p-5 sm:p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
           <div class="relative shrink-0">
-            <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/80 dark:border-slate-700 shadow-md object-cover bg-white"/>
+            <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/90 dark:border-slate-700 shadow-md object-cover bg-white"/>
             <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${activeShift ? 'bg-emerald-500' : 'bg-amber-500'} border-2 border-white dark:border-slate-800" title="${activeShift ? 'Shift Kasir Terbuka' : 'Shift Belum Dibuka'}"></span>
           </div>
-          <div class="min-w-0 space-y-1">
-            <div class="flex flex-wrap items-center gap-2">
+          <div class="min-w-0 space-y-1.5">
+            <div class="flex flex-wrap items-center gap-1.5">
               <span class="badge-bpom bpom-bebas">${S().esc(fullDateLabel)}</span>
               <span class="badge-bpom bpom-terbatas">Cabang ${S().esc(cabId)} &bull; ${S().esc(S().getRole())}</span>
               ${canShift ? `<button type="button" onclick="navigateView('tutup-shift','')" class="badge-bpom ${activeShift ? 'bpom-bebas' : 'bpom-prekursor'} cursor-pointer">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
             </div>
-            <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight truncate">${greetText}, ${S().esc(activeUserDisplay)}</h1>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">${greetText}, ${S().esc(activeUserDisplay)}</h1>
             <p class="text-xs sm:text-sm truncate" style="color:var(--ons-text-soft)">${S().esc(usahaNama)} &bull; SIA: ${S().esc(prof.no_sia || '-')} &bull; ${S().esc(prof.jam_operasional || 'Siap Melayani')}</p>
           </div>
         </div>
@@ -789,6 +893,7 @@
           ${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm">Buka Kasir POS (F2)</button>` : ''}
           ${canPoct ? `<button onclick="navigateView('pemeriksaan','semua')" class="ons-btn ons-btn-ghost text-xs">Pemeriksaan Pasien</button>` : ''}
           ${canObat ? `<button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>` : ''}
+          <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs" title="Pusat Pencarian & Navigasi Cepat">Cari Cepat <span class="ons-shortcut-kbd ml-1">Ctrl+K</span></button>
           ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs" title="Kirim Ringkasan Harian ke WA Pemilik">Rekap WA Pemilik</button>` : ''}
           <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
         </div>
@@ -802,13 +907,16 @@
         ${canObat ? `<button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-primary text-xs shrink-0">Buka Master Katalog Obat &rarr;</button>` : ''}
       </div>` : ''}
 
-      <!-- 4 Kartu KPI Utama yang Jelas, Akurat & Berlogo Rp -->
+      <!-- 4 Kartu KPI Utama Executive dengan Aksen Semantik & Emblim Rp -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-        <div class="ons-kpi-card" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
+        <div class="ons-kpi-card is-blue" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div>
-              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Omzet Penjualan Hari Ini</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-blue-600">${S().rp(omzetHariIni)}</div>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold flex flex-wrap items-center gap-1.5" style="color:var(--ons-text-soft)">
+                <span>Omzet Penjualan Hari Ini</span>
+                ${vsAvgPct !== null ? `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold font-mono-num ${vsAvgPct >= 0 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'}">${vsAvgPct >= 0 ? '+' : ''}${vsAvgPct}% vs avg</span>` : ''}
+              </div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-blue-600 tracking-tight truncate">${S().rp(omzetHariIni)}</div>
             </div>
             <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 font-extrabold text-[15px] tracking-tight" aria-hidden="true">Rp</span>
           </div>
@@ -818,11 +926,11 @@
           </div>
         </div>
 
-        ${seeCost ? `<div class="ons-kpi-card" ${canFin ? `onclick="navigateView('finance','pnl')"` : ''}>
+        ${seeCost ? `<div class="ons-kpi-card is-emerald" ${canFin ? `onclick="navigateView('finance','pnl')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div>
+            <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Estimasi Laba Kotor</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600">${S().rp(omzetHariIni > 0 ? marginHariIni : marginTotal)}</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight truncate">${S().rp(omzetHariIni > 0 ? marginHariIni : marginTotal)}</div>
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 font-extrabold text-[13px] tracking-tight" aria-hidden="true">${marginPct}%</span>
           </div>
@@ -830,11 +938,11 @@
             <span class="truncate" style="color:var(--ons-text-soft)">${omzetHariIni > 0 ? 'Hari ini &bull; Akumulasi ' + S().rp(marginTotal) : 'Akumulasi tercatat (' + validSales.length + ' nota)'}</span>
             ${canFin ? `<span class="font-semibold text-emerald-600 shrink-0">Buka P&amp;L &rarr;</span>` : ''}
           </div>
-        </div>` : `<div class="ons-kpi-card" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
+        </div>` : `<div class="ons-kpi-card is-emerald" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div>
+            <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pemeriksaan Pasien (POCT)</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600">${poctTodayCount} Pasien</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight truncate">${poctTodayCount} Pasien</div>
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
           </div>
@@ -844,25 +952,25 @@
           </div>
         </div>`}
 
-        <div class="ons-kpi-card" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
+        <div class="ons-kpi-card ${warningEdCount ? 'is-red' : 'is-emerald'}" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div>
+            <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Kesehatan Stok &amp; FEFO</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 ${warningEdCount ? 'text-red-600' : 'text-emerald-600'}">${warningEdCount} Batch ED</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 tracking-tight ${warningEdCount ? 'text-red-600' : 'text-emerald-600'}">${warningEdCount} Batch ED</div>
             </div>
             <span class="ons-kpi-ico ${warningEdCount ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
             <span class="${defectaCount ? 'text-amber-600 font-bold' : 'text-emerald-600 font-semibold'} truncate">${expiredBatches.length ? expiredBatches.length + ' kadaluarsa &bull; ' : ''}${defectaCount} item menipis</span>
-            ${canGudang ? `<span class="shrink-0" style="color:var(--ons-text-soft)">Cek Gudang &rarr;</span>` : ''}
+            ${canGudang ? `<span class="shrink-0 font-semibold" style="color:var(--ons-text-soft)">Cek Gudang &rarr;</span>` : ''}
           </div>
         </div>
 
-        ${seeCost ? `<div class="ons-kpi-card" ${canFin ? `onclick="navigateView('finance','hutang')"` : ''}>
+        ${seeCost ? `<div class="ons-kpi-card is-amber" ${canFin ? `onclick="navigateView('finance','hutang')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div>
+            <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Hutang PBF &amp; Piutang</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-amber-600">${S().rp(apTotal)}</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-amber-600 tracking-tight truncate">${S().rp(apTotal)}</div>
             </div>
             <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
           </div>
@@ -870,11 +978,11 @@
             <span class="truncate" style="color:var(--ons-text-soft)">${openFaktur.length} faktur (${apNearDueCount} tempo &le;7h)${piutangTotal > 0 ? ' &bull; Piutang ' + S().rp(piutangTotal) : ''}</span>
             ${canFin ? `<span class="font-semibold text-amber-600 shrink-0">Kelola AP &rarr;</span>` : ''}
           </div>
-        </div>` : `<div class="ons-kpi-card" ${canShift ? `onclick="navigateView('tutup-shift','')"` : ''}>
+        </div>` : `<div class="ons-kpi-card is-amber" ${canShift ? `onclick="navigateView('tutup-shift','')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div>
+            <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Status Shift &amp; Laci Kas</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 ${activeShift ? 'text-emerald-600' : 'text-amber-600'}">${activeShift ? 'Shift Buka' : 'Belum Buka'}</div>
+              <div class="text-2xl font-extrabold font-mono-num mt-1.5 tracking-tight ${activeShift ? 'text-emerald-600' : 'text-amber-600'}">${activeShift ? 'Shift Buka' : 'Belum Buka'}</div>
             </div>
             <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
           </div>
@@ -885,61 +993,52 @@
         </div>`}
       </div>
 
-      <!-- Strip Ringkas Operasional & Klinis Tersinkron -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        ${canOnline ? `<div class="ons-card p-3.5 flex items-center justify-between gap-2 cursor-pointer hover:border-blue-500" onclick="navigateView('omnichannel','')">
-          <div class="min-w-0">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Pesanan E-Apotek / WA</div>
-            <div class="font-extrabold text-sm mt-0.5 font-mono-num ${onlinePendingCount ? 'text-blue-600' : ''}">${onlinePendingCount} Perlu Proses</div>
+      <!-- Strip Ringkas Operasional & Klinis Berikon -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        ${opsTiles.map((tl) => `
+          <div class="ons-ops-tile ${tl.onClick ? 'is-clickable' : ''}" ${tl.onClick ? `onclick="${tl.onClick}"` : ''}>
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${tl.icoBg}">
+                <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${tl.ico}</svg>
+              </span>
+              <div class="min-w-0">
+                <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${tl.title}</div>
+                <div class="font-extrabold text-sm mt-0.5 font-mono-num truncate ${tl.valCls}">${tl.value}</div>
+              </div>
+            </div>
+            <span class="badge-bpom ${tl.badgeCls} shrink-0">${tl.badge}</span>
           </div>
-          <span class="badge-bpom bpom-terbatas shrink-0">${branchOnline.length} total</span>
-        </div>` : `<div class="ons-card p-3.5 flex items-center justify-between gap-2 ${canPos ? 'cursor-pointer hover:border-blue-500' : ''}" ${canPos ? `onclick="navigateView('pos','kasir')"` : ''}>
-          <div class="min-w-0">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Pelayanan Kasir POS</div>
-            <div class="font-extrabold text-sm mt-0.5 font-mono-num text-blue-600">${todaySales.length} Nota Hari Ini</div>
-          </div>
-          <span class="badge-bpom bpom-terbatas shrink-0">${validSales.length} total</span>
-        </div>`}
-
-        <div class="ons-card p-3.5 flex items-center justify-between gap-2 ${canPoct ? 'cursor-pointer hover:border-emerald-500' : ''}" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
-          <div class="min-w-0">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Pemeriksaan Kesehatan</div>
-            <div class="font-extrabold text-sm mt-0.5 font-mono-num text-emerald-600">${poctTodayCount} Hari Ini</div>
-          </div>
-          <span class="badge-bpom bpom-bebas shrink-0">${branchPoct.length} riwayat</span>
-        </div>
-
-        <div class="ons-card p-3.5 flex items-center justify-between gap-2 ${seeCost && S().canAccessView('faktur') ? 'cursor-pointer hover:border-amber-500' : ''}" ${seeCost && S().canAccessView('faktur') ? `onclick="navigateView('faktur','sp')"` : ''}>
-          <div class="min-w-0">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">${seeCost ? 'Surat Pesanan PBF' : 'Katalog Produk Aktif'}</div>
-            <div class="font-extrabold text-sm mt-0.5 font-mono-num">${seeCost ? (spOpenCount + ' SP Terbuka') : (st.masterObat.length + ' Produk')}</div>
-          </div>
-          <span class="badge-bpom ${seeCost && spOpenCount ? 'bpom-prekursor' : 'bpom-bebas'} shrink-0">${seeCost ? (branchSp.length + ' SP') : (activeBatches.length + ' batch')}</span>
-        </div>
-
-        <div class="ons-card p-3.5 flex items-center justify-between gap-2 ${canGudang ? 'cursor-pointer hover:border-blue-500' : ''}" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
-          <div class="min-w-0">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Monitor Suhu (2&ndash;8&deg;C)</div>
-            <div class="font-extrabold text-sm mt-0.5 font-mono-num ${latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'text-red-600' : 'text-emerald-600'}">${latestCold ? (Number(latestCold.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}</div>
-          </div>
-          <span class="badge-bpom ${latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'bpom-keras' : 'bpom-bebas'} shrink-0">${latestCold ? S().esc(latestCold.status_alarm || 'NORMAL') : '-'}</span>
-        </div>
+        `).join('')}
       </div>
 
-      <!-- Baris Tengah: Tren 7 Hari + Antrean Prioritas + Kesiapan BPOM -->
+      <!-- Baris Tengah: Tren 7 Hari + Agenda Prioritas + Kepatuhan BPOM -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="ons-card p-5 lg:col-span-5 flex flex-col justify-between gap-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 class="font-bold text-sm">Tren ${seeCost ? 'Omzet vs Laba Kotor' : 'Penjualan'} 7 Hari</h3>
-              <div class="text-[11px]" style="color:var(--ons-text-soft)">Total 7 hari: <b>${S().rp(total7Hari)}</b> &bull; Rata-rata: <b>${S().rp(avg7Hari)}/hr</b></div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Performa penjualan harian cabang ${S().esc(cabId)}</div>
             </div>
-            <div class="flex items-center gap-2 text-[10px]">
+            <div class="flex items-center gap-2.5 text-[10px]">
               <span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#0066FE"></span> Omzet</span>
               ${seeCost ? `<span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#10B981"></span> Laba</span>` : ''}
             </div>
           </div>
-          <svg viewBox="0 0 300 50" class="w-full h-11 overflow-visible">
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="p-2 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-[10px]" style="color:var(--ons-text-soft)">Hari Ini</div>
+              <div class="font-mono-num font-extrabold text-xs text-blue-600 truncate">${S().rp(omzetHariIni)}</div>
+            </div>
+            <div class="p-2 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-[10px]" style="color:var(--ons-text-soft)">Total 7 Hari</div>
+              <div class="font-mono-num font-extrabold text-xs truncate">${S().rp(total7Hari)}</div>
+            </div>
+            <div class="p-2 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-[10px]" style="color:var(--ons-text-soft)">Rata-rata/Hr</div>
+              <div class="font-mono-num font-extrabold text-xs text-emerald-600 truncate">${S().rp(avg7Hari)}</div>
+            </div>
+          </div>
+          <svg viewBox="0 0 300 50" class="w-full h-10 overflow-visible">
             <defs>
               <linearGradient id="onsDashSparkGrad" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stop-color="#0284C7"/>
@@ -948,7 +1047,7 @@
             </defs>
             <polyline fill="none" stroke="url(#onsDashSparkGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${trendCoords}"/>
           </svg>
-          <div class="flex items-end gap-2 h-36 pt-1">
+          <div class="ons-dash-chart-grid flex items-end gap-2 h-36 pt-2 px-1 rounded-xl border-b" style="border-color:var(--ons-border)">
             ${days.map((d, i) => {
               const vOmz = Number(omzSeries[i] || 0);
               const hOmz = vOmz > 0 ? Math.max(14, Math.round((vOmz / maxVal) * 100)) : 5;
@@ -956,58 +1055,52 @@
               const hLaba = seeCost && vLaba > 0 ? Math.max(10, Math.round((vLaba / maxVal) * 100)) : 0;
               const isToday = i === days.length - 1;
               return `<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end" title="${d}: Omzet ${S().rp(vOmz)}${seeCost ? ' | Laba ' + S().rp(vLaba) : ''}">
-                <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${vOmz >= 1000000 ? (vOmz / 1000000).toFixed(1) + 'jt' : (vOmz >= 1000 ? Math.round(vOmz / 1000) + 'rb' : '0')}</div>
-                <div class="w-full h-full flex items-end justify-center gap-1">
-                  <div class="flex-1 rounded-lg transition-all" style="height:${hOmz}%;background:${isToday ? 'linear-gradient(180deg,#3B82F6,#0050CA)' : '#38BDF8'};opacity:${vOmz > 0 ? (isToday ? '1' : '0.78') : '0.22'};"></div>
-                  ${seeCost ? `<div class="w-2/5 rounded-lg transition-all" style="height:${Math.max(4, hLaba)}%;background:#10B981;opacity:${vLaba > 0 ? (isToday ? '1' : '0.82') : '0.22'};"></div>` : ''}
+                <div class="text-[10px] font-mono-num font-semibold" style="color:${isToday ? '#0066FE' : 'var(--ons-text-soft)'}">${vOmz >= 1000000 ? (vOmz / 1000000).toFixed(1) + 'jt' : (vOmz >= 1000 ? Math.round(vOmz / 1000) + 'rb' : '0')}</div>
+                <div class="w-full max-w-[36px] h-full flex items-end justify-center gap-1">
+                  <div class="flex-1 rounded-t-md transition-all" style="height:${hOmz}%;background:${isToday ? 'linear-gradient(180deg,#3B82F6,#0050CA)' : '#38BDF8'};opacity:${vOmz > 0 ? (isToday ? '1' : '0.82') : '0.22'};"></div>
+                  ${seeCost ? `<div class="w-2/5 rounded-t-md transition-all" style="height:${Math.max(4, hLaba)}%;background:#10B981;opacity:${vLaba > 0 ? (isToday ? '1' : '0.85') : '0.22'};"></div>` : ''}
                 </div>
-                <div class="text-[11px] font-semibold ${isToday ? 'text-blue-600' : ''}">${d}</div>
+                <div class="text-[10px] font-bold ${isToday ? 'text-blue-600 px-1.5 py-0.5 rounded bg-blue-500/10' : ''}">${d}</div>
               </div>`;
             }).join('')}
           </div>
         </div>
 
         <div class="ons-card p-5 lg:col-span-4 flex flex-col justify-between space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-sm">Agenda Prioritas Hari Ini</h3>
-            <span class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${todayIso}</span>
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm">Agenda Prioritas Hari Ini</h3>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Klik item untuk menindaklanjuti antrean aktif</div>
+            </div>
+            <span class="text-[11px] font-mono-num px-2 py-0.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${todayIso}</span>
           </div>
           <div class="space-y-2 text-xs">
-            <div class="ons-priority-pill" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
-              <span class="font-medium">Batch Kadaluarsa &amp; Near ED (&le;90h)</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-red-500/15 text-red-600">${warningEdCount}</span>
-            </div>
-            <div class="ons-priority-pill" ${seeCost && S().canAccessView('defecta') ? `onclick="navigateView('defecta','order')"` : (canGudang ? `onclick="navigateView('gudang','batch')"` : '')}>
-              <span class="font-medium">Item Defecta / Stok Menipis</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">${defectaCount}</span>
-            </div>
-            <div class="ons-priority-pill" ${canErx ? `onclick="navigateView('eresep-prb','erx')"` : ''}>
-              <span class="font-medium">Antrean Validasi E-Resep APJ</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600">${erxAntre}</span>
-            </div>
-            <div class="ons-priority-pill" ${canErx ? `onclick="navigateView('eresep-prb','prb')"` : ''}>
-              <span class="font-medium">Pasien PRB Refill (&le;5 hari)</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600">${prbUrgentCount}</span>
-            </div>
-            ${canOnline ? `<div class="ons-priority-pill" onclick="navigateView('omnichannel','')">
-              <span class="font-medium">Pesanan E-Apotek / WA Perlu Proses</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600">${onlinePendingCount}</span>
-            </div>` : ''}
-            ${seeCost && canFin ? `<div class="ons-priority-pill" onclick="navigateView('finance','${openPiutang.length && !apNearDueCount ? 'piutang' : 'hutang'}')">
-              <span class="font-medium">Tagihan PBF Tempo (&le;7h) &amp; Piutang</span>
-              <span class="font-bold font-mono-num px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">${apNearDueCount + openPiutang.length}</span>
-            </div>` : ''}
+            ${priorityItems.map((it) => `
+              <div class="ons-priority-pill" ${it.onClick ? `onclick="${it.onClick}"` : ''}>
+                <span class="flex items-center gap-2 min-w-0 font-medium">
+                  <span class="w-2 h-2 rounded-full shrink-0 ${it.dotCls}"></span>
+                  <span class="truncate">${it.label}</span>
+                </span>
+                <span class="font-bold font-mono-num px-2.5 py-0.5 rounded-full shrink-0 ${it.pillCls}">${it.count}</span>
+              </div>
+            `).join('')}
           </div>
         </div>
 
-        <div class="ons-card p-5 lg:col-span-3 flex flex-col items-center justify-between gap-2">
+        <div class="ons-card p-5 lg:col-span-3 flex flex-col items-center justify-between gap-2.5">
           <div class="w-full flex items-center justify-between gap-1">
             <h3 class="font-bold text-sm">Kepatuhan BPOM</h3>
             <span class="badge-bpom bpom-bebas">SIAP AUDIT</span>
           </div>
           <svg viewBox="0 0 120 120" class="w-28 h-28 my-0.5">
+            <defs>
+              <linearGradient id="onsAuditRingGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#10B981"/>
+                <stop offset="100%" stop-color="#0284C7"/>
+              </linearGradient>
+            </defs>
             <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ons-border)" stroke-width="11"/>
-            <circle cx="60" cy="60" r="40" fill="none" stroke="#10B981" stroke-width="11" stroke-linecap="round"
+            <circle cx="60" cy="60" r="40" fill="none" stroke="url(#onsAuditRingGrad)" stroke-width="11" stroke-linecap="round"
               stroke-dasharray="${dashArray} 251.2" transform="rotate(-90 60 60)"/>
             <text x="60" y="57" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor">${readiness}%</text>
             <text x="60" y="74" text-anchor="middle" font-size="9" fill="#64748B">Skor ${auditChecked}/${auditItems.length || 3} Audit</text>
@@ -1023,7 +1116,7 @@
               </label>
             `).join('')}
           </div>
-          <div class="w-full pt-2 border-t text-[11px] space-y-1.5" style="border-color:var(--ons-border)">
+          <div class="w-full p-2.5 rounded-xl border text-[11px] space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
             <div class="truncate" style="color:var(--ons-text-soft)">APJ: <b style="color:var(--ons-text)">${S().esc(auditSys.apj_nama || '-')}</b></div>
             <div class="truncate" style="color:var(--ons-text-soft)">Kasir: <b style="color:var(--ons-text)">${S().esc(auditSys.kasir_nama || '-')}</b></div>
             ${S().canAccessView('settings') ? `<button type="button" onclick="navigateView('settings','audit')" class="ons-btn ons-btn-ghost w-full text-[11px] py-1 mt-1">Edit Sistem Audit, APJ &amp; Kasir &rarr;</button>` : ''}
@@ -1034,17 +1127,27 @@
       <!-- Baris Bawah: Komposisi Pembayaran + Top Obat Terlaris -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="ons-card p-5 lg:col-span-6 space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-sm">Komposisi Metode Pembayaran Kasir</h3>
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm">Komposisi Metode Pembayaran Kasir</h3>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">${validSales.length} transaksi tercatat &bull; Total ${S().rp(omzetTotal)}</div>
+            </div>
             ${canPos ? `<button onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Riwayat Nota &rarr;</button>` : ''}
           </div>
-          <div class="space-y-3 text-xs">
+          ${payRows.length ? `<div class="ons-pay-mix-strip">
+            ${payRows.map((ch) => {
+              const pctRaw = Math.max(3, Math.round((ch.total / payDenom) * 100));
+              const barColor = payColors[ch.name] || '#0066FE';
+              return `<div style="width:${pctRaw}%;background:${barColor}" title="${S().esc(ch.name)}: ${pctRaw}%"></div>`;
+            }).join('')}
+          </div>` : ''}
+          <div class="space-y-3 text-xs pt-1">
             ${payRows.length ? payRows.map((ch) => {
               const pct = Math.min(100, Math.max(4, Math.round((ch.total / payDenom) * 100)));
               const barColor = payColors[ch.name] || '#0066FE';
               return `<div>
                 <div class="flex justify-between font-semibold mb-1">
-                  <span>${S().esc(ch.name)}</span>
+                  <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full inline-block" style="background:${barColor}"></span>${S().esc(ch.name)}</span>
                   <span class="font-mono-num">${S().rp(ch.total)} (${pct}%)</span>
                 </div>
                 <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${pct}%;background:${barColor};"></div></div>
@@ -1053,21 +1156,32 @@
           </div>
         </div>
         <div class="ons-card p-5 lg:col-span-6 space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-sm">Top Obat Terlaris (Fast Moving)</h3>
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm">Top Obat Terlaris (Fast Moving)</h3>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Produk paling sering terjual dari kasir POS</div>
+            </div>
             ${canObat ? `<button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Buka Master Obat &rarr;</button>` : ''}
           </div>
           <div class="space-y-2 text-xs">
-            ${topObatList.length ? topObatList.map((item, idx) => `
-              <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl border transition hover:border-blue-500" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">${idx + 1}</span>
-                  <span class="font-semibold truncate">${S().esc(item.nama)}</span>
+            ${topObatList.length ? topObatList.map((item, idx) => {
+              const sharePct = Math.max(10, Math.round((Number(item.qty || 0) / topMaxQty) * 100));
+              const rankBadgeCls = idx === 0 ? 'bg-amber-500 text-white' : (idx < 3 ? 'bg-blue-600 text-white' : 'bg-slate-500/20 text-slate-600 dark:text-slate-300');
+              return `<div class="p-2.5 rounded-xl border transition hover:border-blue-500 space-y-1.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-6 h-6 rounded-full ${rankBadgeCls} font-extrabold text-[11px] flex items-center justify-center shrink-0">${idx + 1}</span>
+                    <span class="font-semibold truncate">${S().esc(item.nama)}</span>
+                  </div>
+                  <div class="font-mono-num shrink-0 text-right">
+                    <b>${item.qty}</b> unit &bull; <span class="text-blue-600 font-bold">${S().rp(item.omz)}</span>
+                  </div>
                 </div>
-                <div class="font-mono-num shrink-0 text-right">
-                  <b>${item.qty}</b> unit &bull; <span class="text-blue-600 font-bold">${S().rp(item.omz)}</span>
+                <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--ons-border)">
+                  <div class="h-full rounded-full ${idx === 0 ? 'bg-amber-500' : 'bg-blue-500'}" style="width:${sharePct}%"></div>
                 </div>
-              </div>`).join('') : '<div class="py-6 text-center rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Top produk otomatis terhitung setelah transaksi kasir berlangsung.</div>'}
+              </div>`;
+            }).join('') : '<div class="py-6 text-center rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Top produk otomatis terhitung setelah transaksi kasir berlangsung.</div>'}
           </div>
         </div>
       </div>
@@ -1079,7 +1193,11 @@
             <h3 class="font-bold text-sm">Radar Batch Mendekati Kadaluarsa (FEFO Terdekat)</h3>
             <p class="text-[11px]" style="color:var(--ons-text-soft)">Prioritaskan penjualan batch aktif cabang ${S().esc(cabId)} yang paling cepat mendekati tanggal kedaluwarsa.</p>
           </div>
-          ${canGudang ? `<button onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs">Kelola Gudang &amp; Recall &rarr;</button>` : ''}
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="badge-bpom ${expiredBatches.length ? 'bpom-keras' : 'bpom-bebas'} font-mono-num">${expiredBatches.length} Expired</span>
+            <span class="badge-bpom ${nearEdBatches.length ? 'bpom-prekursor' : 'bpom-bebas'} font-mono-num">${nearEdBatches.length} Near ED (&le;90h)</span>
+            ${canGudang ? `<button onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs ml-1">Kelola Gudang &amp; Recall &rarr;</button>` : ''}
+          </div>
         </div>
         ${activeBatches.length ? `<div class="ons-table-wrap">
           <table class="ons-table">

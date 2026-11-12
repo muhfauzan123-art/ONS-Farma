@@ -1617,54 +1617,88 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   box-shadow: 0 12px 28px rgba(0, 80, 202, 0.12);
 }
 
-/* === v14.0 BERANDA FLUID COCKPIT & GLOBAL POLISH === */
+/* === v16.7 BERANDA FLUID COCKPIT & KPI EXECUTIVE POLISH === */
 .ons-hero-welcome {
   position: relative;
   overflow: hidden;
-  border-radius: 1.15rem;
+  border-radius: 1.25rem;
   border: 1px solid var(--ons-border);
-  background: radial-gradient(circle at 92% 18%, rgba(16, 185, 129, 0.13), transparent 44%),
-              radial-gradient(circle at 10% 85%, rgba(0, 102, 254, 0.12), transparent 48%),
-              var(--ons-bg-card);
-  box-shadow: var(--ons-shadow-card);
+  border-top: 3px solid #0050CA;
+  background: radial-gradient(circle at 94% 14%, rgba(16, 185, 129, 0.16), transparent 42%),
+              radial-gradient(circle at 8% 88%, rgba(0, 102, 254, 0.15), transparent 48%),
+              linear-gradient(135deg, rgba(239, 246, 255, 0.65) 0%, var(--ons-bg-card) 56%);
+  box-shadow: 0 10px 30px -14px rgba(0, 80, 202, 0.2), var(--ons-shadow-card);
 }
 html.dark .ons-hero-welcome {
-  background: radial-gradient(circle at 92% 18%, rgba(16, 185, 129, 0.18), transparent 45%),
-              radial-gradient(circle at 10% 85%, rgba(59, 130, 246, 0.2), transparent 50%),
-              var(--ons-bg-card);
+  border-top-color: #3B82F6;
+  background: radial-gradient(circle at 94% 14%, rgba(16, 185, 129, 0.2), transparent 45%),
+              radial-gradient(circle at 8% 88%, rgba(59, 130, 246, 0.24), transparent 50%),
+              linear-gradient(135deg, rgba(30, 58, 138, 0.22) 0%, var(--ons-bg-card) 60%);
 }
 .ons-kpi-card {
   position: relative;
+  overflow: hidden;
   background: var(--ons-bg-card);
   border: 1px solid var(--ons-border);
-  border-radius: 1rem;
-  padding: 1.05rem 1.1rem;
+  border-radius: 1.05rem;
+  padding: 1.1rem 1.15rem;
   box-shadow: var(--ons-shadow-card);
   cursor: pointer;
   transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease, border-color 0.16s ease;
 }
+.ons-kpi-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--kpi-accent, #0066FE);
+  opacity: 0.92;
+}
+.ons-kpi-card.is-blue { --kpi-accent: linear-gradient(90deg, #0050CA, #38BDF8); }
+.ons-kpi-card.is-emerald { --kpi-accent: linear-gradient(90deg, #059669, #34D399); }
+.ons-kpi-card.is-amber { --kpi-accent: linear-gradient(90deg, #D97706, #FBBF24); }
+.ons-kpi-card.is-red { --kpi-accent: linear-gradient(90deg, #DC2626, #F87171); }
 .ons-kpi-card:hover {
   transform: translateY(-3px);
   border-color: var(--ons-primary-bright);
-  box-shadow: 0 14px 28px -10px rgba(0, 80, 202, 0.18);
+  box-shadow: 0 16px 32px -12px rgba(0, 80, 202, 0.22);
 }
 .ons-kpi-ico {
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 0.75rem;
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 0.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 .ons-kpi-ico svg {
-  width: 1.18rem;
-  height: 1.18rem;
+  width: 1.2rem;
+  height: 1.2rem;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.1;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.ons-ops-tile {
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 0.95rem;
+  padding: 0.82rem 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  box-shadow: var(--ons-shadow-card);
+  transition: transform 0.14s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ons-ops-tile.is-clickable { cursor: pointer; }
+.ons-ops-tile.is-clickable:hover {
+  transform: translateY(-2px);
+  border-color: var(--ons-primary-bright);
+  box-shadow: 0 10px 22px -10px rgba(0, 80, 202, 0.16);
 }
 .ons-priority-pill {
   display: flex;
@@ -1672,16 +1706,29 @@ html.dark .ons-hero-welcome {
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0.62rem 0.85rem;
-  border-radius: 0.82rem;
+  border-radius: 0.85rem;
   border: 1px solid var(--ons-border);
   background: var(--ons-bg-subtle);
   cursor: pointer;
   transition: transform 0.12s ease, border-color 0.14s ease, background-color 0.14s ease;
 }
 .ons-priority-pill:hover {
-  transform: translateX(2px);
+  transform: translateX(3px);
   border-color: var(--ons-primary-bright);
   background: var(--ons-primary-tint);
+}
+.ons-dash-chart-grid {
+  background-image: linear-gradient(to top, rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+  background-size: 100% 25%;
+}
+.ons-pay-mix-strip {
+  display: flex;
+  width: 100%;
+  height: 0.58rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--ons-bg-subtle);
+  gap: 2px;
 }
 .ons-table tbody tr:nth-child(even) {
   background-color: rgba(148, 163, 184, 0.045);
@@ -1791,7 +1838,7 @@ html.dark .ons-scan-zone {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-priority-pill, .ons-scan-progress-fill {
+  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill {
     transition: none !important;
     animation: none !important;
   }
