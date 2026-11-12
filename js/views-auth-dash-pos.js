@@ -2678,7 +2678,7 @@
     const subTabHeader = `
       <div class="flex flex-wrap items-center justify-between gap-2 ons-view-enter">
         <div class="ons-tab-bar">
-          <button onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir Aktif (${cart.items.length})</button>
+          <button onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir Aktif (FEFO) (${cart.items.length})</button>
           <button onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Riwayat Transaksi (${st.penjualan.length})${returCountPos > 0 ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-600 dark:text-red-300">${returCountPos} Retur</span>` : ''}</button>
           ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button onclick="window.setPosSubTab('tutup-shift')" class="ons-tab-btn ${posSubTab === 'tutup-shift' ? 'active' : ''}">Tutup Shift &amp; Kas${st.activeShift ? ' <span class="ml-1 inline-block w-2 h-2 rounded-full bg-emerald-500"></span>' : ''}</button>` : ''}
         </div>

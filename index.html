@@ -117,7 +117,7 @@
         },
         {
           id: 'sect-inv',
-          label: 'Persediaan & Produk',
+          label: 'Produk & Gudang',
           items: [
             {
               viewId: 'obat', label: 'Master Data', icon: 'pill',
@@ -146,7 +146,7 @@
         },
         {
           id: 'sect-buy',
-          label: 'Pembelian & PBF',
+          label: 'Pengadaan & PBF',
           items: [
             {
               viewId: 'defecta', label: 'Defecta & SP', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
@@ -327,7 +327,7 @@
       }
 
       let sidebarCollapsed = localStorage.getItem(SIDEBAR_MINI_KEY) === '1';
-      let openSubmenus = new Set([ONSStore.AppState.activeView || 'dashboard', 'obat']);
+      let openSubmenus = new Set([ONSStore.AppState.activeView || 'dashboard']);
       try {
         const savedSubs = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) || 'null');
         if (Array.isArray(savedSubs)) openSubmenus = new Set(savedSubs);
@@ -573,7 +573,7 @@
         }
         const st = ONSStore.AppState;
         st.activeView = viewId;
-        openSubmenus.add(viewId);
+        openSubmenus = new Set([viewId]);
         persistOpenSubmenus();
         if (subTab !== undefined && subTab !== '') {
           if (!st.subTabs) st.subTabs = {};
@@ -1333,7 +1333,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.19 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.20 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
@@ -1431,9 +1431,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_19') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_20') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_19', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_20', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {

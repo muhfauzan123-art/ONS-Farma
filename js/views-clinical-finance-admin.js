@@ -143,9 +143,9 @@
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
             <button onclick="window.setKlinisTab('soap')" class="ons-tab-btn ${klinisTab === 'soap' ? 'active' : ''}">Skrining &amp; SOAP (${(st.rekamKlinis || []).length})</button>
-            <button onclick="window.setKlinisTab('racikan')" class="ons-tab-btn ${klinisTab === 'racikan' ? 'active' : ''}">Kalkulator Racikan &amp; Etiket</button>
-            <button onclick="window.setKlinisTab('pio')" class="ons-tab-btn ${klinisTab === 'pio' ? 'active' : ''}">Kartu PIO &amp; Jadwal WA</button>
-            <button onclick="window.setKlinisTab('meso')" class="ons-tab-btn ${klinisTab === 'meso' ? 'active' : ''}">MESO Naranjo (${mesoList.length})</button>
+            <button onclick="window.setKlinisTab('racikan')" class="ons-tab-btn ${klinisTab === 'racikan' ? 'active' : ''}">Racikan &amp; Etiket</button>
+            <button onclick="window.setKlinisTab('pio')" class="ons-tab-btn ${klinisTab === 'pio' ? 'active' : ''}">Kartu PIO &amp; Jadwal</button>
+            <button onclick="window.setKlinisTab('meso')" class="ons-tab-btn ${klinisTab === 'meso' ? 'active' : ''}">MESO (Naranjo) (${mesoList.length})</button>
           </div>
           <button onclick="window.openCopyResepArchiveModal()" class="ons-btn ons-btn-ghost text-xs">Arsip Copy Resep (${(st.copyResep || []).length})</button>
           <button onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs">+ Input SOAP Klinis</button>
@@ -948,7 +948,7 @@
           <button onclick="window.setFinanceTab('pnl')" class="ons-tab-btn ${financeTab === 'pnl' ? 'active' : ''}">Laba-Rugi (P&amp;L)</button>
           <button onclick="window.setFinanceTab('jurnal')" class="ons-tab-btn ${financeTab === 'jurnal' ? 'active' : ''}">Buku Kas &amp; Lock (${jurnalScoped.length})</button>
           <button onclick="window.setFinanceTab('piutang')" class="ons-tab-btn ${financeTab === 'piutang' ? 'active' : ''}">Piutang Pelanggan (${openPiutang.length})</button>
-          <button onclick="window.setFinanceTab('hutang')" class="ons-tab-btn ${financeTab === 'hutang' ? 'active' : ''}">Hutang PBF (${openFaktur.length})</button>
+          <button onclick="window.setFinanceTab('hutang')" class="ons-tab-btn ${financeTab === 'hutang' ? 'active' : ''}">Hutang Faktur PBF (${openFaktur.length})</button>
           <button onclick="window.setFinanceTab('pajak')" class="ons-tab-btn ${financeTab === 'pajak' ? 'active' : ''}">Pajak &amp; Slip Gaji</button>
         </div>
       </div>
@@ -2528,7 +2528,7 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
-            <button onclick="window.setSipnapTab('narkotika')" class="ons-tab-btn ${sipnapTab === 'narkotika' ? 'active' : ''}">SIPNAP 8 Kolom (${sipnapRows.length})</button>
+            <button onclick="window.setSipnapTab('narkotika')" class="ons-tab-btn ${sipnapTab === 'narkotika' ? 'active' : ''}">SIPNAP Kemenkes (${sipnapRows.length})</button>
             <button onclick="window.setSipnapTab('pareto')" class="ons-tab-btn ${sipnapTab === 'pareto' ? 'active' : ''}">Pareto ABC &amp; WHO</button>
             <button onclick="window.setSipnapTab('deadstock')" class="ons-tab-btn ${sipnapTab === 'deadstock' ? 'active' : ''}">Dead Stock &amp; Lost Sales (${deadBatches.length})</button>
           </div>
@@ -2969,11 +2969,11 @@
       </div>
 
       <div class="ons-tab-bar">
-        <button onclick="window.setSettingsTab('profil')" class="ons-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">Identitas Pemilik &amp; Usaha</button>
-        <button onclick="window.setSettingsTab('akun')" class="ons-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">Akun, Sandi &amp; PIN (${users.length})</button>
+        <button onclick="window.setSettingsTab('profil')" class="ons-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">Profil Pemilik &amp; Usaha</button>
+        <button onclick="window.setSettingsTab('akun')" class="ons-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">Pengguna &amp; Akses (${users.length})</button>
         <button onclick="window.setSettingsTab('struk')" class="ons-tab-btn ${settingsTab === 'struk' ? 'active' : ''}">Desain Struk Thermal</button>
         <button onclick="window.setSettingsTab('vault')" class="ons-tab-btn ${settingsTab === 'vault' ? 'active' : ''}">Audit DB, Brankas &amp; Reset</button>
-        <button onclick="window.setSettingsTab('audit')" class="ons-tab-btn ${settingsTab === 'audit' ? 'active' : ''}">Log Audit (${audit.length})</button>
+        <button onclick="window.setSettingsTab('audit')" class="ons-tab-btn ${settingsTab === 'audit' ? 'active' : ''}">Log Audit Aktivitas (${audit.length})</button>
       </div>
 
       ${settingsTab === 'profil' ? renderProfileTabHtml(prof, canEditProfile) : ''}

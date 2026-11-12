@@ -2562,7 +2562,7 @@
           <div class="ons-tab-bar">
             <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Stok Batch &amp; FEFO (${sorted.length})</button>
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok Digital (${(st.mutasiStok || []).length})</button>
-            <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu 2&ndash;8&deg;C (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
+            <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu (2&ndash;8&deg;C) (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
             ${(seeCost || S().canAccessSubTab('gudang', 'opname')) ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
             ${((S().isMultiBranchEnabled && S().isMultiBranchEnabled()) && (seeCost || S().canAccessSubTab('gudang', 'transfer'))) ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
           </div>
@@ -3701,7 +3701,7 @@
           <p class="text-xs" style="color:var(--ons-text-soft)">Monitoring faktur &amp; jatuh tempo hutang PBF, terima barang (GRN via SP / Scan OCR), analisa kenaikan HPP, konsinyasi, dan retur BAR-PBF.</p>
         </div>
         <div class="ons-tab-bar">
-          <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">Daftar Faktur (${allFaktur.length})</button>
+          <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">Daftar Faktur PBF (${allFaktur.length})</button>
           <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Terima Faktur (GRN / Scan)</button>
           <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active' : ''}">Analisa Harga &amp; Margin</button>
           <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active' : ''}">Retur BAR-PBF (${nearEdBatches.length})</button>
