@@ -120,9 +120,15 @@
           label: 'Persediaan & Produk',
           items: [
             {
-              viewId: 'obat', label: 'Master Data Obat', icon: 'pill',
-              desc: 'Database produk KFA, NIE BPOM, multi-satuan, harga jual & label barcode Code128.',
-              kw: 'master data obat kfa nie bpom harga jual beli margin code128'
+              viewId: 'obat', label: 'Master Data', icon: 'pill',
+              desc: 'Database terpadu Obat KFA, Supplier PBF, Pelanggan PRB & Dokter Mitra.',
+              kw: 'master data obat kfa nie bpom supplier pbf cdob pelanggan member prb dokter sip str',
+              tabs: [
+                { subTab: 'obat', label: 'Obat', kw: 'master data obat kfa nie bpom harga jual beli margin code128' },
+                { subTab: 'supplier', label: 'Supplier', kw: 'supplier pbf cdob termin sla kontak vendor', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'pelanggan', label: 'Pelanggan', kw: 'pelanggan member pasien prb kronis alergi poin loyalitas' },
+                { subTab: 'dokter', label: 'Dokter', kw: 'dokter mitra penulis resep sip str klinik faskes' }
+              ]
             },
             {
               viewId: 'gudang', label: 'Persediaan & Stok', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
@@ -143,12 +149,11 @@
           items: [
             {
               viewId: 'defecta', label: 'Defecta & SP', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
-              desc: 'Analisis stok minimum, buat Surat Pesanan (SP A4) & kelola Supplier PBF CDOB.',
-              kw: 'defecta surat pesanan sp print preview a4 supplier pbf cdob sla',
+              desc: 'Analisis stok minimum, ROP & buat Surat Pesanan (SP A4) ke PBF CDOB.',
+              kw: 'defecta surat pesanan sp print preview a4 pbf cdob sla',
               tabs: [
                 { subTab: 'order', label: 'Analisis Defecta', kw: 'defecta stok minimum rekomendasi order pbf' },
-                { subTab: 'sp', label: 'Surat Pesanan (A4)', kw: 'surat pesanan sp a4 print preview pbf kirim wa' },
-                { subTab: 'supplier', label: 'Supplier PBF CDOB', kw: 'supplier pbf cdob termin kontak tambah edit' }
+                { subTab: 'sp', label: 'Surat Pesanan (A4)', kw: 'surat pesanan sp a4 print preview pbf kirim wa' }
               ]
             },
             {
@@ -320,7 +325,7 @@
       }
 
       let sidebarCollapsed = localStorage.getItem(SIDEBAR_MINI_KEY) === '1';
-      let openSubmenus = new Set([ONSStore.AppState.activeView || 'dashboard']);
+      let openSubmenus = new Set([ONSStore.AppState.activeView || 'dashboard', 'obat']);
       try {
         const savedSubs = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) || 'null');
         if (Array.isArray(savedSubs)) openSubmenus = new Set(savedSubs);
@@ -568,6 +573,7 @@
         if (viewId === 'tutup-shift') { viewId = 'pos'; subTab = 'tutup-shift'; }
         if (viewId === 'pos' && subTab === 'online') subTab = 'kasir';
         if (viewId === 'gudang' && subTab === 'coldchain') subTab = 'batch';
+        if (viewId === 'defecta' && subTab === 'supplier') { viewId = 'obat'; subTab = 'supplier'; }
         if (!ONSStore.canAccessView(viewId)) {
           toast('Akses dibatasi untuk peran ' + ONSStore.getRole(), 'warn');
           return;
@@ -582,6 +588,7 @@
           st.activeSubTab = subTab;
           const setterMap = {
             pos: window.setPosSubTab,
+            obat: window.setMasterTab,
             gudang: window.setGudangTab,
             defecta: window.setDefectaTab,
             faktur: window.setFakturTab,
@@ -618,6 +625,8 @@
           (data.master_obat || []).length,
           (data.stok_batch || []).length,
           (data.members || []).length,
+          (data.supplier_pbf || []).length,
+          (data.master_dokter || []).length,
           (data.penjualan || []).length,
           (data.faktur_pbf || []).length,
           (data.jurnal_keuangan || []).length,
@@ -703,6 +712,12 @@
 
       window.applyBootPayload = function (data) {
         const st = ONSStore.AppState;
+        const sesNow = (ONSApi && typeof ONSApi.getSession === 'function') ? ONSApi.getSession() : null;
+        if (data.user && data.user.role) {
+          st.user = Object.assign({}, (sesNow && sesNow.user) || {}, data.user);
+        } else if (sesNow && sesNow.user) {
+          st.user = sesNow.user;
+        }
         if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
         if (data.store_profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(data.store_profile);
         syncOwnerIdentityFromProfile(data.store_profile);
@@ -710,6 +725,7 @@
         st.stokBatch = data.stok_batch || [];
         st.members = data.members || [];
         st.supplierPbf = data.supplier_pbf || [];
+        st.masterDokter = data.master_dokter || [];
         st.coldChain = data.cold_chain || [];
         st.rekamKlinis = data.rekam_klinis || [];
         st.penjualan = data.penjualan || [];
@@ -751,6 +767,8 @@
         st.rekamKlinis = [];
         st.pemeriksaanPasien = [];
         st.members = [];
+        st.supplierPbf = [];
+        st.masterDokter = [];
         st.staffDirectory = [];
         if (typeof ONSStore.closeModal === 'function') ONSStore.closeModal();
         if (typeof ONSStore.closeDrawer === 'function') ONSStore.closeDrawer();
@@ -854,7 +872,7 @@
         const quickShortcuts = [
           { show: ONSStore.canAccessView('pos'), title: 'Kasir POS FEFO', sub: 'Transaksi cepat & scan barcode', kbd: 'F2', tone: 'bg-blue-500/10 text-blue-600', icon: 'pos', run: () => { ONSStore.closeModal(); navigateView('pos', 'kasir'); setTimeout(() => document.getElementById('posSearchInput')?.focus(), 40); } },
           { show: ONSStore.canAccessView('pemeriksaan'), title: 'Pemeriksaan Pasien', sub: 'Tensi, Gula, Kolesterol & Asam Urat', kbd: 'POCT', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'activity', run: () => { ONSStore.closeModal(); navigateView('pemeriksaan', 'semua'); } },
-          { show: seeCost && ONSStore.canAccessView('obat'), title: 'Tambah Produk Obat', sub: 'Buka Studio Wizard 5 Langkah', kbd: '+OBT', tone: 'bg-amber-500/10 text-amber-600', icon: 'pill', run: () => { ONSStore.closeModal(); navigateView('obat', ''); setTimeout(() => window.openObatWizardModal && window.openObatWizardModal(), 40); } },
+          { show: seeCost && ONSStore.canAccessView('obat'), title: 'Tambah Produk Obat', sub: 'Buka Studio Wizard 5 Langkah', kbd: '+OBT', tone: 'bg-amber-500/10 text-amber-600', icon: 'pill', run: () => { ONSStore.closeModal(); navigateView('obat', 'obat'); setTimeout(() => window.openObatWizardModal && window.openObatWizardModal(), 40); } },
           { show: seeCost && ONSStore.canAccessView('faktur'), title: 'Surat Pesanan & Faktur', sub: 'Buat SP A4 atau Scan Faktur PBF', kbd: 'PBF', tone: 'bg-blue-500/10 text-blue-600', icon: 'truck', run: () => { ONSStore.closeModal(); navigateView('faktur', 'sp'); } },
           { show: ONSStore.canAccessView('gudang'), title: 'Cek Batch & Kadaluarsa', sub: 'Pantau FEFO & kartu stok gudang', kbd: 'FEFO', tone: 'bg-red-500/10 text-red-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'batch'); } },
           { show: ONSStore.canAccessView('settings'), title: 'Sistem Audit, APJ & Kasir', sub: 'Edit identitas APJ/Kasir & hak akses', kbd: 'RBAC', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'settings', run: () => { ONSStore.closeModal(); navigateView('settings', 'audit'); } }
@@ -1027,8 +1045,11 @@
           const navMatches = flatNav.filter((n) => !q || `${n.label} ${n.grp} ${n.sect} ${n.kw}`.toLowerCase().includes(q)).slice(0, q ? 14 : 10);
           const canSeeObat = ONSStore.canAccessView('pos') || ONSStore.canAccessView('obat');
           const obatMatches = canSeeObat ? (st.masterObat || []).filter((o) => !q || `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi}`.toLowerCase().includes(q)).slice(0, q ? 10 : 6) : [];
-          const canSeePasien = ONSStore.canAccessView('eresep-prb') || ONSStore.canAccessView('pemeriksaan') || ONSStore.canAccessView('crm-wa');
+          const canSeePasien = ONSStore.canAccessView('eresep-prb') || ONSStore.canAccessView('pemeriksaan') || ONSStore.canAccessView('crm-wa') || ONSStore.canAccessView('obat');
           const pasienMatches = (canSeePasien && q) ? (st.members || []).filter((m) => `${m.nama_pasien} ${m.no_hp} ${m.penyakit_kronis} ${m.program_prb}`.toLowerCase().includes(q)).slice(0, 6) : [];
+          const canSeeMaster = ONSStore.canAccessView('obat');
+          const supplierMatches = (canSeeMaster && seeCost && q) ? (st.supplierPbf || []).filter((p) => `${p.nama_pbf} ${p.kode_cdob} ${p.kontak_wa} ${p.email_pbf}`.toLowerCase().includes(q)).slice(0, 4) : [];
+          const dokterMatches = (canSeeMaster && q) ? (st.masterDokter || []).filter((dk) => `${dk.nama_dokter} ${dk.spesialisasi} ${dk.faskes_klinik} ${dk.no_sip}`.toLowerCase().includes(q)).slice(0, 4) : [];
           const canPos = ONSStore.canAccessView('pos');
           const txPool = [];
           if (canPos) {
@@ -1112,7 +1133,7 @@
                     navigateView('pos', 'kasir');
                     setTimeout(() => window.addPosItemById && window.addPosItemById(o.id_obat), 30);
                   } else {
-                    navigateView('obat', '');
+                    navigateView('obat', 'obat');
                   }
                 }
               });
@@ -1153,6 +1174,46 @@
                 <span class="badge-bpom bpom-bebas font-mono-num shrink-0">${Number(m.poin_loyalitas || 0)} poin</span>
               </div>`;
             }).join(''));
+          }
+
+          if (cmdkScope === 'SEMUA' && (supplierMatches.length || dokterMatches.length)) {
+            const partnerItems = [
+              ...supplierMatches.map((p) => {
+                const idx = addEntry({
+                  kindLabel: 'Master Supplier PBF',
+                  title: p.nama_pbf,
+                  sub: `${p.kode_cdob || '-'} • TOP ${p.termin_hari}h`,
+                  desc: `Lead time ${p.lead_time_hari} hari • SLA ${p.skor_sla}% • WA ${p.kontak_wa || '-'}`,
+                  badgeHtml: `<span class="badge-bpom bpom-terbatas">SUPPLIER</span>`,
+                  run: () => { ONSStore.closeModal(); navigateView('obat', 'supplier'); }
+                });
+                return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs truncate">${ONSStore.esc(p.nama_pbf)}</div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(p.kode_cdob || '-')} &bull; TOP ${Number(p.termin_hari || 0)} Hari</div>
+                  </div>
+                  <span class="badge-bpom bpom-terbatas shrink-0">Supplier</span>
+                </div>`;
+              }),
+              ...dokterMatches.map((dk) => {
+                const idx = addEntry({
+                  kindLabel: 'Master Dokter Mitra',
+                  title: dk.nama_dokter,
+                  sub: `${dk.spesialisasi || 'Dokter'} • ${dk.faskes_klinik || '-'}`,
+                  desc: `No. SIP: ${dk.no_sip || '-'} • WA ${dk.no_wa || '-'}`,
+                  badgeHtml: `<span class="badge-bpom bpom-bebas">DOKTER</span>`,
+                  run: () => { ONSStore.closeModal(); navigateView('obat', 'dokter'); }
+                });
+                return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs truncate">${ONSStore.esc(dk.nama_dokter)}</div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(dk.spesialisasi || '-')} &bull; ${ONSStore.esc(dk.faskes_klinik || '-')}</div>
+                  </div>
+                  <span class="badge-bpom bpom-bebas shrink-0">Dokter</span>
+                </div>`;
+              })
+            ];
+            sectionsHtml.push(`<div class="ons-sidebar-group-label">Supplier &amp; Dokter Mitra (${partnerItems.length})</div>` + partnerItems.join(''));
           }
 
           if ((cmdkScope === 'SEMUA' || cmdkScope === 'TRANSAKSI') && txMatches.length) {
@@ -1225,36 +1286,36 @@
 
         root.innerHTML = `
           <div class="min-h-screen flex flex-col md:flex-row">
-            <!-- Sidebar Desktop Menu Terstruktur v13.0 -->
-            <aside id="desktopSidebar" class="ons-sidebar ${sidebarCollapsed ? 'collapsed' : ''} shrink-0 p-3 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
+            <!-- Sidebar Desktop Menu Terstruktur v17.7 -->
+            <aside id="desktopSidebar" class="ons-sidebar ${sidebarCollapsed ? 'collapsed' : ''} shrink-0 p-2.5 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
               <div>
-                <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-1.5 border-b ons-nav-divider">
-                  <div class="flex items-center gap-2.5 min-w-0">
-                    <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
+                <div class="flex items-center justify-between gap-2 px-1 py-1.5 mb-1 border-b ons-nav-divider">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-8 h-8 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
                     <div class="min-w-0 ons-hide-collapsed">
-                      <div class="font-bold text-sm ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
-                      <div class="text-[11px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc((ONSStore.isMultiBranchEnabled && ONSStore.isMultiBranchEnabled()) ? st.cabangId : 'Outlet Utama')} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                      <div class="font-bold text-[13px] ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
+                      <div class="text-[10.5px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc((ONSStore.isMultiBranchEnabled && ONSStore.isMultiBranchEnabled()) ? st.cabangId : 'Outlet Utama')} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
                     </div>
                   </div>
-                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1.5 rounded-lg ons-nav-icon-btn shrink-0">
+                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1 rounded-lg ons-nav-icon-btn shrink-0">
                     ${svgIcon('collapse', 'ons-collapse-ico')}
                   </button>
                 </div>
-                <nav id="sidebarMenuMount" aria-label="Menu Utama Apotek" class="space-y-1">
+                <nav id="sidebarMenuMount" aria-label="Menu Utama Apotek" class="space-y-0.5">
                   ${renderMenuTreeHtml()}
                 </nav>
               </div>
-              <div class="pt-3 mt-3 border-t ons-nav-divider space-y-2 text-xs">
-                <button type="button" onclick="navigateView('settings','profil')" class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg ons-nav-profile-btn text-left ons-hide-collapsed" title="Lihat & Konfirmasi Profil Pemilik">
+              <div class="pt-2 mt-2 border-t ons-nav-divider space-y-1.5 text-xs">
+                <button type="button" onclick="navigateView('settings','profil')" class="w-full flex items-center gap-2 px-1.5 py-1 rounded-lg ons-nav-profile-btn text-left ons-hide-collapsed" title="Lihat & Konfirmasi Profil Pemilik">
                   ${(fotoPem && ONSStore.getRole() === 'Pemilik')
-                    ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-8 h-8 rounded-full object-cover border border-blue-500 shrink-0"/>`
-                    : `<span class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">${ONSStore.esc(initials)}</span>`}
+                    ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-7 h-7 rounded-full object-cover border border-blue-500 shrink-0"/>`
+                    : `<span class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">${ONSStore.esc(initials)}</span>`}
                   <div class="min-w-0">
-                    <div class="ons-nav-profile-name font-semibold truncate">${ONSStore.esc(st.user.nama_lengkap)}</div>
+                    <div class="ons-nav-profile-name font-semibold text-xs truncate">${ONSStore.esc(st.user.nama_lengkap)}</div>
                     <div class="text-[10px] ons-nav-profile-status font-medium truncate">${prof.terkonfirmasi === 'YA' ? 'Profil Terkonfirmasi' : 'Lengkapi Profil Usaha'}</div>
                   </div>
                 </button>
-                <button onclick="logoutUser()" title="Keluar Sesi" class="ons-nav-btn ons-nav-logout-btn">
+                <button onclick="logoutUser()" title="Keluar Sesi" class="ons-nav-btn ons-nav-logout-btn py-1.5 min-h-[32px]">
                   ${svgIcon('logout')}
                   <span class="ons-hide-collapsed">Keluar Sesi</span>
                 </button>
@@ -1268,7 +1329,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v16.0 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.7 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>

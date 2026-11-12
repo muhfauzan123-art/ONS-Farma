@@ -145,7 +145,8 @@
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="text-xs font-semibold">Nama Dokter Pengirim</label><input id="erxDokter" class="ons-input" placeholder="dr. Andi Pratama, Sp.PD"/></div>
+            <div><label class="text-xs font-semibold">Nama Dokter Pengirim</label><input id="erxDokter" list="onsDokterDatalist" class="ons-input" placeholder="dr. Andi Pratama, Sp.PD"/></div>
+            ${S().renderDokterDatalistHtml ? S().renderDokterDatalistHtml('onsDokterDatalist') : ''}
             <div><label class="text-xs font-semibold">No. SIP Dokter</label><input id="erxSip" class="ons-input" placeholder="446/123/SIP-DOK"/></div>
             <div><label class="text-xs font-semibold">Nama Pasien</label><input id="erxPasien" class="ons-input" placeholder="Nama lengkap pasien"/></div>
             <div><label class="text-xs font-semibold">No. WhatsApp Pasien</label><input id="erxWa" class="ons-input" placeholder="62812xxxx"/></div>
@@ -3699,7 +3700,8 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div><label class="font-semibold block mb-1">Nama Pasien *</label><input id="crPasien" class="ons-input" value="${S().esc(pasienDef)}" placeholder="Nama lengkap pasien"/></div>
         <div><label class="font-semibold block mb-1">Umur / BB</label><input id="crUmur" class="ons-input" value="-" placeholder="Cth: 45 th"/></div>
-        <div><label class="font-semibold block mb-1">Nama Dokter Penulis *</label><input id="crDokter" class="ons-input" value="dr. Hendri Saputra, Sp.PD"/></div>
+        <div><label class="font-semibold block mb-1">Nama Dokter Penulis *</label><input id="crDokter" list="onsDokterDatalist" class="ons-input" value="dr. Hendri Saputra"/></div>
+        ${S().renderDokterDatalistHtml ? S().renderDokterDatalistHtml('onsDokterDatalist') : ''}
         <div><label class="font-semibold block mb-1">No. Resep Asal &amp; Tgl</label><input id="crNoResep" class="ons-input font-mono-num" value="R/${todayIso.replace(/-/g, '')}/01"/></div>
       </div>
       <div class="space-y-2 max-h-60 overflow-y-auto">

@@ -1006,7 +1006,7 @@ html.dark .ons-cmdk-shell {
 
 /* === ONS FARMA v11.1 MODERN PHARMACY MENU, SUB-MENU, BREADCRUMB & DRAWER === */
 .ons-sidebar {
-  width: 286px;
+  width: 248px;
   transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
@@ -1015,7 +1015,7 @@ html.dark .ons-cmdk-shell {
 .ons-sidebar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.28); border-radius: 999px; }
 
 .ons-sidebar.collapsed {
-  width: 78px;
+  width: 70px;
 }
 .ons-sidebar.collapsed .ons-hide-collapsed {
   display: none !important;
@@ -1039,8 +1039,8 @@ html.dark .ons-cmdk-shell {
 }
 
 .ons-nav-svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   stroke: currentColor;
   fill: none;
@@ -1149,22 +1149,22 @@ html.dark .ons-nav-badge.info {
 
 .ons-submenu-list {
   border-left: 1.5px solid var(--ons-nav-subline);
-  padding-left: 0.52rem;
+  padding-left: 0.44rem;
   display: flex;
   flex-direction: column;
-  gap: 0.14rem;
+  gap: 0.08rem;
 }
 
 .ons-submenu-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.42rem;
   width: 100%;
-  min-height: 35px;
-  padding: 0.4rem 0.65rem;
-  border-radius: 0.55rem;
-  font-size: 0.775rem;
+  min-height: 28px;
+  padding: 0.26rem 0.54rem;
+  border-radius: 0.46rem;
+  font-size: 0.73rem;
   font-weight: 500;
   color: var(--ons-nav-text);
   background: transparent;
@@ -1181,12 +1181,12 @@ html.dark .ons-nav-badge.info {
   background: linear-gradient(90deg, #0066FE 0%, #0050CA 100%);
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 3px 10px rgba(0, 80, 202, 0.24);
+  box-shadow: 0 2px 8px rgba(0, 80, 202, 0.22);
 }
 
 .ons-submenu-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 999px;
   background: currentColor;
   opacity: 0.45;
@@ -1202,16 +1202,19 @@ html.dark .ons-nav-badge.info {
 .ons-subnav-bar {
   background: var(--ons-bg-card);
   border-bottom: 1px solid var(--ons-border);
-  padding: 0.55rem 1.25rem;
+  padding: 0.38rem 1.05rem;
 }
 @media (max-width: 767px) {
-  .ons-subnav-bar { padding: 0.5rem 0.9rem; }
+  .ons-subnav-bar { padding: 0.45rem 0.85rem; }
+  .ons-submenu-btn { min-height: 35px; padding: 0.38rem 0.62rem; font-size: 0.77rem; }
+  .ons-nav-row { min-height: 38px; }
+  .ons-subnav-chip { min-height: 31px; padding: 0.32rem 0.68rem; }
 }
 
 .ons-subnav-ribbon {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.34rem;
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: 1px;
@@ -1221,12 +1224,12 @@ html.dark .ons-nav-badge.info {
 .ons-subnav-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   white-space: nowrap;
-  padding: 0.34rem 0.72rem;
-  min-height: 32px;
+  padding: 0.22rem 0.62rem;
+  min-height: 27px;
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: 0.715rem;
   font-weight: 600;
   border: 1px solid var(--ons-border);
   background: var(--ons-bg-subtle);
@@ -1288,6 +1291,92 @@ html.dark .ons-nav-badge.info {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   height: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
+/* ==========================================================================
+   v17.7 MASTER DATA HUB (OBAT, SUPPLIER, PELANGGAN, DOKTER) - COMPACT UI
+   ========================================================================== */
+.ons-md-shell {
+  border-radius: 0.9rem;
+  border: 1px solid var(--ons-border);
+  border-left: 3.5px solid var(--ons-primary-bright);
+  background: radial-gradient(circle at 96% 12%, rgba(16, 185, 129, 0.07), transparent 40%), var(--ons-bg-card);
+  box-shadow: var(--ons-shadow-card);
+  padding: 0.72rem 0.92rem;
+}
+html.dark .ons-md-shell {
+  background: radial-gradient(circle at 96% 12%, rgba(16, 185, 129, 0.13), transparent 40%), var(--ons-bg-card);
+}
+.ons-md-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.24rem;
+  border-radius: 0.72rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+}
+.ons-md-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 30px;
+  padding: 0.28rem 0.68rem;
+  border-radius: 0.54rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ons-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.ons-md-tab:hover {
+  color: var(--ons-text-main);
+  background: var(--ons-bg-card);
+}
+.ons-md-tab.active {
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #0066FE 0%, #0050CA 100%);
+  border-color: #0050CA;
+  font-weight: 700;
+  box-shadow: 0 3px 10px -3px rgba(0, 80, 202, 0.42);
+}
+.ons-md-tab-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0.08rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.14);
+  color: inherit;
+}
+.ons-md-tab.active .ons-md-tab-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+}
+.ons-md-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 768px) {
+  .ons-md-kpi-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.ons-md-kpi {
+  border-radius: 0.72rem;
+  border: 1px solid var(--ons-border);
+  border-left: 3px solid var(--md-accent, #0066FE);
+  background: var(--ons-bg-card);
+  padding: 0.5rem 0.72rem;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+.ons-md-kpi.is-emerald { --md-accent: #059669; }
+.ons-md-kpi.is-amber { --md-accent: #D97706; }
+.ons-md-kpi.is-red { --md-accent: #DC2626; }
+.ons-md-kpi.is-sky { --md-accent: #0284C7; }
+
 @media (prefers-reduced-motion: reduce) {
   .ons-sidebar, .ons-chevron, .ons-menu-parent, .ons-submenu-btn, .ons-subnav-chip, .ons-view-enter {
     transition: none !important;
@@ -1339,12 +1428,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
    v13.0 VISUAL POLISH: SECTIONED NAV, AIRY CARDS & PROFILE UI
    ========================================================= */
 .ons-nav-section-title {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   color: var(--ons-nav-muted);
-  padding: 0.72rem 0.7rem 0.28rem;
+  padding: 0.48rem 0.6rem 0.16rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1468,18 +1557,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
    v13.1 COLLAPSIBLE SUB-MENU ACCORDION & MASTER OBAT CARDS
    ========================================================= */
 .ons-nav-group {
-  margin-bottom: 0.16rem;
+  margin-bottom: 0.08rem;
 }
 .ons-nav-row {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.25rem;
+  gap: 0.2rem;
   width: 100%;
-  min-height: 39px;
-  padding: 0.15rem 0.35rem 0.15rem 0.65rem;
-  border-radius: 0.65rem;
+  min-height: 33px;
+  padding: 0.1rem 0.28rem 0.1rem 0.55rem;
+  border-radius: 0.52rem;
   color: var(--ons-nav-text);
   background: transparent;
   border: 1px solid transparent;
@@ -1530,26 +1619,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .ons-nav-row-btn {
   flex: 1;
   min-width: 0;
-  min-height: 35px;
+  min-height: 30px;
   display: flex;
   align-items: center;
-  gap: 0.56rem;
-  font-size: 0.785rem;
+  gap: 0.48rem;
+  font-size: 0.76rem;
   font-weight: 600;
   text-align: left;
   background: transparent;
   border: 0;
   color: inherit;
   cursor: pointer;
-  padding: 0.28rem 0;
+  padding: 0.18rem 0;
 }
 .ons-nav-row.active .ons-nav-row-btn {
   font-weight: 700;
 }
 .ons-nav-caret {
-  width: 28px;
-  height: 28px;
-  border-radius: 0.48rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 0.4rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1565,8 +1654,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   color: var(--ons-nav-hover-text);
 }
 .ons-chevron-sub {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .ons-nav-caret[aria-expanded="true"] {
@@ -1586,12 +1675,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .ons-nav-subwrap.is-open {
   grid-template-rows: 1fr;
   opacity: 1;
-  margin-top: 0.18rem;
-  margin-bottom: 0.28rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.16rem;
 }
 .ons-nav-subinner {
   overflow: hidden;
-  padding-left: 0.88rem;
+  padding-left: 0.72rem;
 }
 .ons-stock-track {
   width: 100%;
@@ -2333,6 +2422,92 @@ html.dark .ons-retur-trace-pill {
   background: rgba(15, 23, 42, 0.55);
   border-color: rgba(248, 113, 113, 0.38);
 }
+
+/* ==========================================================================
+   v17.7 MASTER DATA HUB (OBAT, SUPPLIER, PELANGGAN, DOKTER) - COMPACT UI
+   ========================================================================== */
+.ons-md-shell {
+  border-radius: 0.9rem;
+  border: 1px solid var(--ons-border);
+  border-left: 3.5px solid var(--ons-primary-bright);
+  background: radial-gradient(circle at 96% 12%, rgba(16, 185, 129, 0.07), transparent 40%), var(--ons-bg-card);
+  box-shadow: var(--ons-shadow-card);
+  padding: 0.72rem 0.92rem;
+}
+html.dark .ons-md-shell {
+  background: radial-gradient(circle at 96% 12%, rgba(16, 185, 129, 0.13), transparent 40%), var(--ons-bg-card);
+}
+.ons-md-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.24rem;
+  border-radius: 0.72rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+}
+.ons-md-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 30px;
+  padding: 0.28rem 0.68rem;
+  border-radius: 0.54rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ons-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.ons-md-tab:hover {
+  color: var(--ons-text-main);
+  background: var(--ons-bg-card);
+}
+.ons-md-tab.active {
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #0066FE 0%, #0050CA 100%);
+  border-color: #0050CA;
+  font-weight: 700;
+  box-shadow: 0 3px 10px -3px rgba(0, 80, 202, 0.42);
+}
+.ons-md-tab-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0.08rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.14);
+  color: inherit;
+}
+.ons-md-tab.active .ons-md-tab-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+}
+.ons-md-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 768px) {
+  .ons-md-kpi-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.ons-md-kpi {
+  border-radius: 0.72rem;
+  border: 1px solid var(--ons-border);
+  border-left: 3px solid var(--md-accent, #0066FE);
+  background: var(--ons-bg-card);
+  padding: 0.5rem 0.72rem;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+.ons-md-kpi.is-emerald { --md-accent: #059669; }
+.ons-md-kpi.is-amber { --md-accent: #D97706; }
+.ons-md-kpi.is-red { --md-accent: #DC2626; }
+.ons-md-kpi.is-sky { --md-accent: #0284C7; }
 
 @media (prefers-reduced-motion: reduce) {
   .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill {

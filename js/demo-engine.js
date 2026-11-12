@@ -99,6 +99,11 @@
         { id_pbf: 'PBF-03', nama_pbf: 'PT Kimia Farma Trading & Dist', kode_cdob: 'CDOB-0001-KFTD', npwp_pbf: '01.001.662.1-093.000', kontak_wa: '628113400333', email_pbf: 'order@kftd.co.id', lead_time_hari: 2, termin_hari: 30, skor_sla: 98, status_pbf: 'AKTIF' },
         { id_pbf: 'PBF-04', nama_pbf: 'PT Anugrah Argon Medika (Cold Chain)', kode_cdob: 'CDOB-3578-049', npwp_pbf: '01.451.882.4-055.000', kontak_wa: '628113400444', email_pbf: 'coldchain@aam.co.id', lead_time_hari: 1, termin_hari: 30, skor_sla: 97, status_pbf: 'AKTIF' }
       ],
+      master_dokter: [
+        { id_dokter: 'DOK-001', nama_dokter: 'dr. Andi Pratama, Sp.PD', spesialisasi: 'Penyakit Dalam (PRB)', no_sip: '446/109/SIP-DOK/2024', no_str: '3111100220145120', faskes_klinik: 'Klinik Pratama Sehat Sentosa', no_wa: '628119900101', email: 'andi.pratama@kliniksehat.id', alamat: 'Jl. Diponegoro No. 45', catatan: 'Dokter mitra utama pasien PRB hipertensi & dislipidemia', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
+        { id_dokter: 'DOK-002', nama_dokter: 'dr. Rina Wijaya, Sp.PD-KEMD', spesialisasi: 'Endokrin & Diabetes', no_sip: '446/218/SIP-DOK/2025', no_str: '3121100320168891', faskes_klinik: 'RSU Harapan Medika', no_wa: '628119900102', email: 'rina.wijaya@harapanmedika.id', alamat: 'Jl. Ahmad Yani No. 88', catatan: 'Peresep utama insulin cold-chain & DM Tipe 2', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
+        { id_dokter: 'DOK-003', nama_dokter: 'dr. Hendri Saputra', spesialisasi: 'Dokter Umum', no_sip: '446/312/SIP-DOK/2025', no_str: '3111100119077312', faskes_klinik: 'Praktek Mandiri dr. Hendri', no_wa: '628119900103', email: 'hendri.saputra@dokter.id', alamat: 'Jl. Sudirman No. 12', catatan: 'Layanan resep umum & anak', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' }
+      ],
       faktur_pbf: [
         { id_beli: 'BLI-901', no_sp: 'SP/0012/ONS/11/2026', jenis_sp: 'REGULER', no_faktur_pbf: 'FK-BSP-9104', tgl_faktur: addDays(-18), tgl_jatuh_tempo: addDays(12), id_pbf: 'PT Bina San Prima', cabang_id: 'ONS-01', total_bruto: 4850000, diskon_pbf: 242500, ppn_masukan: 506825, netto_hutang: 5114325, sisa_hutang: 5114325, status_bayar: 'BELUM_LUNAS', status_bar: 'AKTIF' },
         { id_beli: 'BLI-902', no_sp: 'SP/0015/ONS/11/2026', jenis_sp: 'PREKURSOR', no_faktur_pbf: 'FK-AAM-7710', tgl_faktur: addDays(-25), tgl_jatuh_tempo: addDays(5), id_pbf: 'PT Anugrah Argon Medika', cabang_id: 'ONS-01', total_bruto: 3150000, diskon_pbf: 0, ppn_masukan: 346500, netto_hutang: 3496500, sisa_hutang: 3496500, status_bayar: 'JATUH_TEMPO_DEKAT', status_bar: 'AKTIF' }
@@ -456,6 +461,14 @@
       };
       changed = true;
     }
+    if (!Array.isArray(db.master_dokter)) {
+      db.master_dokter = [
+        { id_dokter: 'DOK-001', nama_dokter: 'dr. Andi Pratama, Sp.PD', spesialisasi: 'Penyakit Dalam (PRB)', no_sip: '446/109/SIP-DOK/2024', no_str: '3111100220145120', faskes_klinik: 'Klinik Pratama Sehat Sentosa', no_wa: '628119900101', email: 'andi.pratama@kliniksehat.id', alamat: 'Jl. Diponegoro No. 45', catatan: 'Dokter mitra utama pasien PRB hipertensi & dislipidemia', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
+        { id_dokter: 'DOK-002', nama_dokter: 'dr. Rina Wijaya, Sp.PD-KEMD', spesialisasi: 'Endokrin & Diabetes', no_sip: '446/218/SIP-DOK/2025', no_str: '3121100320168891', faskes_klinik: 'RSU Harapan Medika', no_wa: '628119900102', email: 'rina.wijaya@harapanmedika.id', alamat: 'Jl. Ahmad Yani No. 88', catatan: 'Peresep utama insulin cold-chain & DM Tipe 2', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
+        { id_dokter: 'DOK-003', nama_dokter: 'dr. Hendri Saputra', spesialisasi: 'Dokter Umum', no_sip: '446/312/SIP-DOK/2025', no_str: '3111100119077312', faskes_klinik: 'Praktek Mandiri dr. Hendri', no_wa: '628119900103', email: 'hendri.saputra@dokter.id', alamat: 'Jl. Sudirman No. 12', catatan: 'Layanan resep umum & anak', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' }
+      ];
+      changed = true;
+    }
     if (changed) saveDb(db);
     return db;
   }
@@ -735,6 +748,7 @@
         stok_batch: db.stok_batch.filter((b) => !b.cabang_id || b.cabang_id === activeBr).map((b) => maskRow(b, role)),
         members: db.members,
         supplier_pbf: db.supplier_pbf,
+        master_dokter: db.master_dokter || [],
         cold_chain: db.cold_chain,
         rekam_klinis: db.rekam_klinis.map((r) => maskRow(r, role)),
         penjualan: db.penjualan.map((p) => maskRow(p, role)),
@@ -1344,12 +1358,78 @@
     }
 
     if (action === 'member.save') {
-      const item = Object.assign({ id_member: d.id_member || ('MBR-' + Date.now().toString().slice(-4)), poin_loyalitas: 0, riwayat_skrining_json: '[]' }, d);
-      const idx = db.members.findIndex((m) => m.id_member === item.id_member);
-      if (idx >= 0) db.members[idx] = Object.assign(db.members[idx], item);
+      const idMbr = String(d.id_member || '').trim() || ('MBR-' + Date.now().toString().slice(-5));
+      const idx = db.members.findIndex((m) => m.id_member === idMbr);
+      const prev = idx >= 0 ? db.members[idx] : {};
+      const item = Object.assign({
+        id_member: idMbr,
+        poin_loyalitas: 0,
+        riwayat_skrining_json: '[]',
+        alergi_list: 'Tidak Ada',
+        penyakit_kronis: '-',
+        program_prb: 'UMUM'
+      }, prev, d, { id_member: idMbr });
+      if (!String(item.nama_pasien || '').trim()) throw new Error('Nama pelanggan / pasien wajib diisi.');
+      if (idx >= 0) db.members[idx] = item;
       else db.members.push(item);
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: idx >= 0 ? 'MEMBER_PRB_UPDATE' : 'MEMBER_PRB_CREATE', entitas: 'MEMBER_PRB_KRONIS', entitas_id: idMbr, diff_sesudah_json: JSON.stringify(item) });
+      db.epoch++;
       saveDb(db);
       return { item };
+    }
+
+    if (action === 'member.delete') {
+      const idMbr = String((d && d.id_member) || '').trim();
+      const idx = (db.members || []).findIndex((m) => String(m.id_member) === idMbr);
+      if (idx < 0) throw new Error('Data pelanggan tidak ditemukan.');
+      const removed = db.members.splice(idx, 1)[0];
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'MEMBER_PRB_DELETE', entitas: 'MEMBER_PRB_KRONIS', entitas_id: idMbr, diff_sebelum_json: JSON.stringify({ nama_pasien: removed.nama_pasien }) });
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, id_member: idMbr };
+    }
+
+    if (action === 'dokter.list') {
+      return { items: (db.master_dokter || []).slice() };
+    }
+
+    if (action === 'dokter.save') {
+      if (!String((d && d.nama_dokter) || '').trim()) throw new Error('Nama dokter wajib diisi.');
+      if (!Array.isArray(db.master_dokter)) db.master_dokter = [];
+      const idDok = String(d.id_dokter || '').trim() || ('DOK-' + Date.now().toString().slice(-5));
+      const row = {
+        id_dokter: idDok,
+        nama_dokter: String(d.nama_dokter).trim(),
+        spesialisasi: String(d.spesialisasi || 'Dokter Umum').trim() || 'Dokter Umum',
+        no_sip: String(d.no_sip || '-').trim() || '-',
+        no_str: String(d.no_str || '').trim(),
+        faskes_klinik: String(d.faskes_klinik || '-').trim() || '-',
+        no_wa: String(d.no_wa || '').trim(),
+        email: String(d.email || '').trim(),
+        alamat: String(d.alamat || '').trim(),
+        catatan: String(d.catatan || '').trim(),
+        status_dokter: String(d.status_dokter || 'AKTIF').toUpperCase(),
+        updated_at: nowIso
+      };
+      const idx = db.master_dokter.findIndex((dk) => dk.id_dokter === idDok);
+      if (idx >= 0) db.master_dokter[idx] = Object.assign({}, db.master_dokter[idx], row);
+      else db.master_dokter.push(row);
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: idx >= 0 ? 'MASTER_DOKTER_UPDATE' : 'MASTER_DOKTER_CREATE', entitas: 'MASTER_DOKTER', entitas_id: idDok, diff_sesudah_json: JSON.stringify(row) });
+      db.epoch++;
+      saveDb(db);
+      return { item: row };
+    }
+
+    if (action === 'dokter.delete') {
+      const idDok = String((d && d.id_dokter) || '').trim();
+      if (!Array.isArray(db.master_dokter)) db.master_dokter = [];
+      const idx = db.master_dokter.findIndex((dk) => String(dk.id_dokter) === idDok);
+      if (idx < 0) throw new Error('Data dokter tidak ditemukan.');
+      const removed = db.master_dokter.splice(idx, 1)[0];
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'MASTER_DOKTER_DELETE', entitas: 'MASTER_DOKTER', entitas_id: idDok, diff_sebelum_json: JSON.stringify({ nama_dokter: removed.nama_dokter }) });
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, id_dokter: idDok };
     }
 
     if (action === 'finance.saveJurnal') {

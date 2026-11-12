@@ -22,7 +22,7 @@
     { key: 'dashboard', label: 'Beranda & Audit BPOM', group: 'Operasional' },
     { key: 'pos', label: 'Kasir POS FEFO & Riwayat', group: 'Operasional' },
     { key: 'tutup-shift', label: 'Tutup Shift & Laci Kas', group: 'Operasional' },
-    { key: 'obat', label: 'Master Data Obat & Harga', group: 'Persediaan' },
+    { key: 'obat', label: 'Master Data (Obat, Supplier, Pelanggan, Dokter)', group: 'Persediaan' },
     { key: 'gudang', label: 'Persediaan & Kartu Stok', group: 'Persediaan' },
     { key: 'gudang:opname', label: 'Stock Opname Fisik', group: 'Persediaan' },
     { key: 'gudang:transfer', label: 'Mutasi Antar-Cabang', group: 'Persediaan' },
@@ -140,6 +140,7 @@
     activeSubTab: '',
     subTabs: {
       pos: 'kasir',
+      obat: 'obat',
       omnichannel: 'SEMUA',
       gudang: 'batch',
       defecta: 'order',
@@ -167,6 +168,7 @@
     stokBatch: [],
     members: [],
     supplierPbf: [],
+    masterDokter: [],
     coldChain: [],
     rekamKlinis: [],
     penjualan: [],
@@ -287,6 +289,9 @@
     }
     if (compound === 'gudang:opname' || compound === 'gudang:transfer' || compound === 'settings:audit') {
       return perms.includes(compound);
+    }
+    if (compound === 'obat:supplier') {
+      return canSeeFinancialCost() && perms.includes('obat');
     }
     return perms.includes(viewId);
   }
@@ -1332,6 +1337,12 @@
     return lines.join('\n');
   }
 
+  function renderDokterDatalistHtml(listId) {
+    const id = String(listId || 'onsDokterDatalist');
+    const docs = (AppState.masterDokter || []).filter((d) => String(d.status_dokter || 'AKTIF').toUpperCase() !== 'NONAKTIF');
+    return `<datalist id="${esc(id)}">${docs.map((d) => `<option value="${esc(d.nama_dokter)}">${esc([d.spesialisasi, d.faskes_klinik, d.no_sip].filter(Boolean).join(' • '))}</option>`).join('')}</datalist>`;
+  }
+
   global.ONSStore = {
     AppState,
     defaultStoreProfile,
@@ -1373,6 +1384,7 @@
     getEffectiveObatPrice,
     getNearEdBatchInfo,
     buildPioScheduleWaText,
+    renderDokterDatalistHtml,
     openModal,
     closeModal,
     onModalClose,
