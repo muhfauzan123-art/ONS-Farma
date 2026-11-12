@@ -3117,6 +3117,20 @@
           <div id="migResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
         </div>
 
+        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-emerald-200">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm" style="color:var(--ons-primary-ink)">Audit, Pembersihan &amp; Sinkronisasi Database Sheets</h3>
+              <p class="mt-0.5" style="color:var(--ons-text-soft)">Menghapus tab tidak penting/kosong (<code>Sheet1</code>, tab legacy, tab multi-cabang kosong), melengkapi kolom skema terbaru, &amp; menyinkronkan ulang Piutang, Hutang PBF, Batch Stok, SP, dan Jurnal Keuangan.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">1. Pindai Kesehatan DB</button>
+              <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs">2. Bersihkan &amp; Sinkronkan DB</button>
+            </div>
+          </div>
+          <div id="dbAuditResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+        </div>
+
         <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-red-200">
           ${renderFactoryResetPanelHtml(isOwner, 'vault')}
         </div>
@@ -3951,6 +3965,29 @@
       const res = await API().callApi('migrasi.run', { source_id: src }, { isWrite: true });
       global.toast('Migrasi Upsert selesai untuk ' + res.results.length + ' sheet!', 'ok');
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.runDbAuditAndRepair = async (dryRun) => {
+    try {
+      const res = await API().callApi('db.auditAndRepair', { dry_run: !!dryRun, hapus_tab_sampah: true }, { isWrite: !dryRun });
+      const box = document.getElementById('dbAuditResultBox');
+      if (box) {
+        box.classList.remove('hidden');
+        const iss = Array.isArray(res.issues) ? res.issues : [];
+        box.innerHTML = `<div class="font-bold mb-1.5">${S().esc(res.pesan || 'Audit selesai.')}</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-2">
+            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Tab Dihapus: <b>${(res.sheets_deleted || []).length}</b></div>
+            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Batch Disinkron: <b>${Number(res.stok_batch_synced || 0)}</b></div>
+            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Piutang/Hutang: <b>${Number(res.piutang_synced || 0) + Number(res.hutang_pbf_synced || 0)}</b></div>
+            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Jurnal/SP/Tagihan: <b>${Number(res.jurnal_backfilled || 0) + Number(res.sp_synced || 0) + Number(res.tagihan_synced || 0)}</b></div>
+          </div>` +
+          (iss.length
+            ? `<div class="text-[11px] space-y-0.5"><div class="font-semibold">Rincian Temuan (${iss.length}):</div>${iss.slice(0, 15).map((x) => `<div>&bull; ${S().esc(x)}</div>`).join('')}${iss.length > 15 ? `<div>... dan ${iss.length - 15} lainnya</div>` : ''}</div>`
+            : '<div class="text-[11px] text-emerald-700 font-semibold">&#10003; Seluruh skema, sheet &amp; transaksi sudah 100% bersih dan sinkron!</div>');
+      }
+      global.toast(res.pesan || 'Audit & Sinkronisasi DB selesai!', 'ok');
+      if (!dryRun) await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message || 'Gagal audit database.', 'err'); }
   };
 
   function renderFactoryResetPanelHtml(isOwner, scope) {

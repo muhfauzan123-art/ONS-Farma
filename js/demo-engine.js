@@ -932,11 +932,17 @@
       const pajakPpn = Number(d.pajak_ppn || 0);
       const grandTotal = d.grand_total !== undefined ? Math.max(0, Number(d.grand_total)) : Math.max(0, subCalc - diskonTotal + pajakPpn);
       const detailSplit = typeof d.detail_split === 'object' && d.detail_split !== null ? JSON.stringify(d.detail_split) : (d.detail_split || '');
+      let activeShiftId = String(d.shift_id || '').trim();
+      if (!activeShiftId || activeShiftId === 'SHF-AKTIF') {
+        const openSh = (db.shift_history || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
+        activeShiftId = openSh ? openSh.id_shift : 'SHF-AKTIF';
+      }
       const trx = {
         id_transaksi: trxId,
         no_invoice: noInv,
         tanggal: nowIso,
         cabang_id: d.cabang_id || 'ONS-01',
+        shift_id: activeShiftId,
         kasir_id: userId,
         channel: d.channel || 'Toko Fisik',
         id_member: d.id_member || 'UMUM',
@@ -1352,6 +1358,8 @@
         const fTarget = db.faktur_pbf.find((f) => (d.id_beli && f.id_beli === d.id_beli) || (!d.id_beli && b.no_faktur_pbf && f.no_faktur_pbf === b.no_faktur_pbf));
         if (fTarget) {
           fTarget.sisa_hutang = Math.max(0, Number(fTarget.sisa_hutang || 0) - val);
+          if (fTarget.sisa_hutang === 0) fTarget.status_bayar = 'LUNAS';
+          else if (fTarget.sisa_hutang < Number(fTarget.netto_hutang || fTarget.total_bruto || 0)) fTarget.status_bayar = 'SEBAGIAN';
           fTarget.status_bar = 'RETUR_DIBUAT';
         }
       }
@@ -1488,20 +1496,44 @@
 
     if (action === 'shift.close') {
       if (String(d.supervisor_pin) !== '123456') throw new Error('PIN Supervisor salah (Demo: 123456).');
-      const modal = Number(d.modal_awal || 0);
-      const sisTunai = Number(d.sistem_tunai || 0);
-      const aktTunai = Number(d.aktual_tunai || 0);
-      const selisih = aktTunai - (modal + sisTunai);
       if (!Array.isArray(db.shift_history)) db.shift_history = [];
       let row = db.shift_history.find((s) => (d.id_shift && s.id_shift === d.id_shift) || String(s.status_shift || '').toUpperCase() === 'TERBUKA');
+      if (row && String(row.status_shift || '').toUpperCase() === 'DITUTUP') {
+        throw new Error('Shift ' + row.id_shift + ' sudah ditutup sebelumnya.');
+      }
+      let calcTunai = 0;
+      let calcQris = 0;
+      let calcTransfer = 0;
+      if (d.sistem_tunai === undefined || d.sistem_qris === undefined || d.sistem_transfer === undefined) {
+        const startTs = String((row && row.tgl_buka) || d.tgl_buka || isoToday);
+        (db.penjualan || []).forEach((t) => {
+          if (String(t.status_trx || '').toUpperCase() === 'RETUR') return;
+          if (row && t.shift_id && String(t.shift_id) !== 'SHF-AKTIF') {
+            if (String(t.shift_id) !== String(row.id_shift)) return;
+          } else if (String(t.tanggal || '') < startTs) {
+            return;
+          }
+          const m = String(t.metode_bayar || '').toUpperCase();
+          const g = Number(t.grand_total || 0);
+          if (m === 'TUNAI') calcTunai += g;
+          else if (m === 'QRIS') calcQris += g;
+          else if (m === 'TRANSFER' || m === 'EDC' || m === 'TRANSFER_BANK') calcTransfer += g;
+        });
+      }
+      const modal = d.modal_awal !== undefined ? Number(d.modal_awal || 0) : Number((row && row.modal_awal) || 0);
+      const sisTunai = d.sistem_tunai !== undefined ? Number(d.sistem_tunai || 0) : calcTunai;
+      const sisQris = d.sistem_qris !== undefined ? Number(d.sistem_qris || 0) : calcQris;
+      const sisTransfer = d.sistem_transfer !== undefined ? Number(d.sistem_transfer || 0) : calcTransfer;
+      const aktTunai = Number(d.aktual_tunai || 0);
+      const selisih = aktTunai - (modal + sisTunai);
       if (row) {
         Object.assign(row, {
           tgl_tutup: nowIso,
           supervisor_id: 'apt. Siti Rahma, S.Farm',
           modal_awal: modal,
           sistem_tunai: sisTunai,
-          sistem_qris: Number(d.sistem_qris || 0),
-          sistem_transfer: Number(d.sistem_transfer || 0),
+          sistem_qris: sisQris,
+          sistem_transfer: sisTransfer,
           aktual_tunai: aktTunai,
           selisih_kas: selisih,
           catatan_handover: d.catatan_handover || row.catatan_handover || '',
@@ -1517,8 +1549,8 @@
           supervisor_id: 'apt. Siti Rahma, S.Farm',
           modal_awal: modal,
           sistem_tunai: sisTunai,
-          sistem_qris: Number(d.sistem_qris || 0),
-          sistem_transfer: Number(d.sistem_transfer || 0),
+          sistem_qris: sisQris,
+          sistem_transfer: sisTransfer,
           aktual_tunai: aktTunai,
           selisih_kas: selisih,
           catatan_handover: d.catatan_handover || '',
@@ -1783,10 +1815,14 @@
     if (action === 'finance.payHutangPbf') {
       const f = db.faktur_pbf.find((x) => x.id_beli === d.id_beli);
       if (!f) throw new Error('Faktur tidak ditemukan.');
-      const pay = Number(d.nominal_bayar || f.sisa_hutang || 0);
-      f.sisa_hutang = Math.max(0, Number(f.sisa_hutang || 0) - pay);
+      const oldSisa = Math.max(0, Number(f.sisa_hutang || 0));
+      if (oldSisa <= 0 || String(f.status_bayar || '').toUpperCase() === 'LUNAS') throw new Error('Faktur PBF ini sudah berstatus LUNAS.');
+      const pay = Number(d.nominal_bayar || oldSisa || 0);
+      if (pay <= 0) throw new Error('Nominal pembayaran harus lebih dari 0.');
+      if (pay > oldSisa) throw new Error('Nominal bayar melebihi sisa hutang (' + oldSisa + ').');
+      f.sisa_hutang = Math.max(0, oldSisa - pay);
       f.status_bayar = f.sisa_hutang === 0 ? 'LUNAS' : 'SEBAGIAN';
-      db.jurnal_keuangan.push({ id_jurnal: 'JRN-' + Date.now(), tanggal: nowIso, cabang_id: 'ONS-01', jenis_trx: 'KELUAR_PEMBAYARAN_PBF', kategori: 'Bayar Faktur ' + f.no_faktur_pbf, nominal: pay, metode: 'TRANSFER', referensi_id: f.no_faktur_pbf, periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId });
+      db.jurnal_keuangan.push({ id_jurnal: 'JRN-' + Date.now(), tanggal: nowIso, cabang_id: 'ONS-01', jenis_trx: 'KELUAR_PEMBAYARAN_PBF', kategori: 'Bayar Faktur ' + f.no_faktur_pbf, nominal: pay, metode: d.metode || 'TRANSFER_BANK', referensi_id: f.no_faktur_pbf, periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId });
       saveDb(db);
       return { faktur: f };
     }
@@ -1822,7 +1858,7 @@
         const sisa = Math.max(0, b.Netto - b.Terbayar);
         const alloc = idx === bills.length - 1 ? rem : Math.min(rem, sisa);
         rem -= alloc;
-        db.pembayaran.unshift({ ID: 'PAY-' + Math.random().toString(36).slice(2, 7).toUpperCase(), GrupBayar: grup, ID_Tagihan: b.ID, NominalBayar: alloc, Metode: d.metode || 'TRANSFER_BANK', BuktiURL: d.bukti_url || 'demo://bukti-transfer', NoKwitansi: '', TglBayar: nowIso, Status: d.langsung_verif ? 'TERVERIFIKASI' : 'MENUNGGU_VERIFIKASI', Verifikator: d.langsung_verif ? userNama : '' });
+        db.pembayaran.unshift({ ID: 'PAY-' + Math.random().toString(36).slice(2, 7).toUpperCase(), GrupBayar: grup, ID_Tagihan: b.ID, NominalBayar: alloc, Metode: d.metode || 'TRANSFER_BANK', BuktiURL: d.bukti_url || 'demo://bukti-transfer', NoKwitansi: '', TglBayar: nowIso, Status: 'MENUNGGU_VERIFIKASI', Verifikator: '' });
         if (!d.langsung_verif) b.Status = 'MENUNGGU_VERIFIKASI';
       });
       saveDb(db);
@@ -1832,26 +1868,44 @@
     if (action === 'billing.verifyPayment') {
       const pays = db.pembayaran.filter((p) => p.GrupBayar === d.grup_bayar);
       if (!pays.length) throw new Error('GrupBayar tidak ditemukan.');
+      if (pays.every((p) => p.Status === 'TERVERIFIKASI' || p.Status === 'DITOLAK')) {
+        throw new Error('GrupBayar ' + d.grup_bayar + ' sudah diproses (' + pays[0].Status + ').');
+      }
       if (d.keputusan === 'TOLAK') {
-        pays.forEach((p) => { p.Status = 'DITOLAK'; p.Verifikator = userNama; });
+        const tIdsTolak = pays.map((p) => p.ID_Tagihan);
+        pays.forEach((p) => { p.Status = 'DITOLAK'; p.Verifikator = userNama; p.TglVerifikasi = nowIso; });
+        db.tagihan.forEach((t) => {
+          if (tIdsTolak.includes(t.ID)) t.Status = Number(t.Terbayar || 0) > 0 ? 'SEBAGIAN' : 'BELUM_BAYAR';
+        });
         saveDb(db);
         return { keputusan: 'TOLAK' };
       }
       db.kw_counter++;
       const kw = 'KW-' + today.getFullYear() + '-' + String(db.kw_counter).padStart(6, '0');
+      let totalGrup = 0;
       pays.forEach((p) => {
         p.Status = 'TERVERIFIKASI';
         p.NoKwitansi = kw;
         p.Verifikator = userNama;
         p.TglVerifikasi = nowIso;
+        const nomPay = Number(p.NominalBayar || 0);
+        totalGrup += nomPay;
         const b = db.tagihan.find((t) => t.ID === p.ID_Tagihan);
         if (b) {
-          b.Terbayar += Number(p.NominalBayar || 0);
+          b.Terbayar += nomPay;
           b.Status = b.Terbayar >= b.Netto ? 'LUNAS' : 'SEBAGIAN';
         }
       });
+      if (totalGrup > 0) {
+        db.jurnal_keuangan.push({
+          id_jurnal: 'JRN-' + Date.now(), tanggal: nowIso, cabang_id: 'ONS-01',
+          jenis_trx: 'MASUK_PIUTANG_TAGIHAN', kategori: 'Pembayaran Tagihan (' + kw + ')',
+          nominal: totalGrup, metode: pays[0].Metode || 'TRANSFER', referensi_id: kw,
+          periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId
+        });
+      }
       saveDb(db);
-      return { no_kwitansi: kw, sig: btoa(kw).slice(0, 12).toUpperCase(), keputusan: 'TERIMA' };
+      return { no_kwitansi: kw, sig: btoa(kw).slice(0, 12).toUpperCase(), keputusan: 'TERIMA', total_bayar: totalGrup };
     }
     if (action === 'kwitansi.verify') {
       const pays = db.pembayaran.filter((p) => p.NoKwitansi === d.id && p.Status === 'TERVERIFIKASI');
@@ -2028,15 +2082,38 @@
         const mem = db.members.find((m) => m.id_member === trx.id_member);
         if (mem) mem.poin_loyalitas = Math.max(0, Number(mem.poin_loyalitas || 0) - Number(trx.poin_didapat || 0));
       }
-      db.jurnal_keuangan.push({
-        id_jurnal: 'JRN-RTR-' + Date.now(), tanggal: nowIso, cabang_id: 'ONS-01', jenis_trx: 'KELUAR_OPERASIONAL',
-        kategori: 'Retur / Void POS (' + trx.no_invoice + ')', nominal: Number(trx.grand_total || 0),
-        metode: trx.metode_bayar || 'TUNAI', referensi_id: trx.no_invoice, periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId
-      });
-      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'POS_VOID_RETURN', entitas: 'PENJUALAN', entitas_id: trx.no_invoice, diff_sesudah_json: JSON.stringify({ alasan: d.alasan || '-', restored_items: dets.length }) });
+      let piutangPaidCash = 0;
+      const isPiutangTrx = String(trx.metode_bayar || '').toUpperCase() === 'PIUTANG';
+      if (isPiutangTrx && trx.no_invoice && Array.isArray(db.piutang_pelanggan)) {
+        db.piutang_pelanggan.forEach((p) => {
+          if (String(p.no_invoice || '') === String(trx.no_invoice)) {
+            piutangPaidCash += Math.max(0, Number(p.total_dibayar || 0));
+            p.sisa_piutang = 0;
+            p.status_piutang = 'BATAL_RETUR';
+            p.catatan = (p.catatan ? p.catatan + ' | ' : '') + 'Dibatalkan Retur (' + (d.alasan || 'PIN') + ')';
+            p.updated_at = nowIso;
+          }
+        });
+      }
+      if (trx.no_invoice && Array.isArray(db.omnichannel_orders)) {
+        db.omnichannel_orders.forEach((o) => {
+          if (String(o.no_invoice_pos || '') === String(trx.no_invoice)) {
+            o.status_order = 'DIBATALKAN';
+          }
+        });
+      }
+      const nominalReversal = isPiutangTrx ? piutangPaidCash : Number(trx.grand_total || 0);
+      if (nominalReversal > 0) {
+        db.jurnal_keuangan.push({
+          id_jurnal: 'JRN-RTR-' + Date.now(), tanggal: nowIso, cabang_id: 'ONS-01', jenis_trx: 'KELUAR_OPERASIONAL',
+          kategori: 'Retur / Void POS (' + trx.no_invoice + ')', nominal: nominalReversal,
+          metode: isPiutangTrx ? 'TUNAI' : (trx.metode_bayar || 'TUNAI'), referensi_id: trx.no_invoice, periode_bulan: nowIso.slice(0, 7), status_lock: 'TERBUKA', user_id: userId
+        });
+      }
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'POS_VOID_RETURN', entitas: 'PENJUALAN', entitas_id: trx.no_invoice, diff_sesudah_json: JSON.stringify({ alasan: d.alasan || '-', restored_items: dets.length, nominal_kas_dikembalikan: nominalReversal }) });
       db.epoch++;
       saveDb(db);
-      return { ok: true, no_invoice: trx.no_invoice, status_trx: 'RETUR', restored_items: dets.length, authorized_by: 'apt. Siti Rahma, S.Farm' };
+      return { ok: true, no_invoice: trx.no_invoice, status_trx: 'RETUR', restored_items: dets.length, authorized_by: 'apt. Siti Rahma, S.Farm', nominal_kas_dikembalikan: nominalReversal };
     }
     if (action === 'stok.mutasiList') {
       return { items: (db.mutasi_stok || []).filter((m) => (!d.id_obat || m.id_obat === d.id_obat) && (!d.jenis_mutasi || m.jenis_mutasi === d.jenis_mutasi)) };
@@ -2570,9 +2647,106 @@
       const idx = (db.pemeriksaan_pasien || []).findIndex((x) => x.id_periksa === id);
       if (idx < 0) throw new Error('Data pemeriksaan tidak ditemukan.');
       db.pemeriksaan_pasien.splice(idx, 1);
+      if (Array.isArray(db.jurnal_keuangan)) {
+        db.jurnal_keuangan = db.jurnal_keuangan.filter((j) => !(j.referensi_id === id && j.jenis_trx === 'MASUK_LAYANAN_KLINIS' && j.status_lock !== 'TERKUNCI'));
+      }
       db.epoch++;
       saveDb(db);
       return { ok: true, id_periksa: id };
+    }
+
+    if (action === 'db.auditAndRepair') {
+      const dryRun = !!(d && d.dry_run === true);
+      const issues = [];
+      let stokSynced = 0; let piutangSynced = 0; let hutangSynced = 0; let spSynced = 0; let jurnalBackfilled = 0; let legacyNorm = 0;
+      (db.members || []).forEach((m) => {
+        const p = String(m.program_prb || '').toUpperCase();
+        if (p === 'PRB_BPJS' || p === 'PRB' || p === 'PRB_KRONIS') {
+          issues.push('Member ' + m.id_member + ' berlabel legacy ' + p);
+          if (!dryRun) { m.program_prb = p === 'PRB_KRONIS' ? 'TERAPI_RUTIN' : 'MEMBER_RUTIN'; legacyNorm++; }
+        }
+      });
+      (db.stok_batch || []).forEach((b) => {
+        const q = Number(b.qty_sisa || 0); const st = String(b.status_batch || 'AKTIF').toUpperCase();
+        if ((q <= 0 && st === 'AKTIF') || (q > 0 && st === 'HABIS')) {
+          issues.push('Batch ' + b.no_batch + ' status tidak sinkron dengan qty_sisa');
+          if (!dryRun) { b.status_batch = q <= 0 ? 'HABIS' : 'AKTIF'; stokSynced++; }
+        }
+      });
+      const trxByNo = {};
+      (db.penjualan || []).forEach((t) => { if (t.no_invoice) trxByNo[t.no_invoice] = t; });
+      (db.piutang_pelanggan || []).forEach((p) => {
+        const trx = trxByNo[p.no_invoice];
+        if (trx && String(trx.status_trx || '').toUpperCase() === 'RETUR') {
+          if (String(p.status_piutang || '').toUpperCase() !== 'BATAL_RETUR' || Number(p.sisa_piutang || 0) > 0) {
+            issues.push('Piutang ' + p.id_piutang + ' nota RETUR masih aktif');
+            if (!dryRun) { p.sisa_piutang = 0; p.status_piutang = 'BATAL_RETUR'; piutangSynced++; }
+          }
+        } else {
+          const calcSisa = Math.max(0, Number(p.total_tagihan || 0) - Number(p.total_dibayar || 0));
+          const expSt = calcSisa <= 0 ? 'LUNAS' : (Number(p.total_dibayar || 0) > 0 ? 'SEBAGIAN' : 'BELUM_LUNAS');
+          if (Math.abs(calcSisa - Number(p.sisa_piutang || 0)) > 0 || p.status_piutang !== expSt) {
+            issues.push('Piutang ' + p.id_piutang + ' sisa/status tidak sinkron');
+            if (!dryRun) { p.sisa_piutang = calcSisa; p.status_piutang = expSt; piutangSynced++; }
+          }
+          if (expSt === 'LUNAS' && trx && trx.status_trx !== 'LUNAS' && trx.status_trx !== 'RETUR' && !dryRun) trx.status_trx = 'LUNAS';
+        }
+      });
+      const fakturBySp = {};
+      (db.faktur_pbf || []).forEach((f) => {
+        if (f.no_sp && f.no_sp !== '-') fakturBySp[f.no_sp] = f;
+        const net = Math.max(0, Number(f.netto_hutang || f.total_bruto || 0));
+        const sisa = Math.min(net, Math.max(0, Number(f.sisa_hutang || 0)));
+        const expSt = sisa <= 0 ? 'LUNAS' : (sisa < net ? 'SEBAGIAN' : 'BELUM_LUNAS');
+        if (f.status_bayar !== expSt || sisa !== Number(f.sisa_hutang || 0)) {
+          issues.push('Faktur PBF ' + f.no_faktur_pbf + ' status/sisa tidak konsisten');
+          if (!dryRun) { f.sisa_hutang = sisa; f.status_bayar = expSt; hutangSynced++; }
+        }
+      });
+      (db.surat_pesanan || []).forEach((sp) => {
+        if (sp.no_sp && fakturBySp[sp.no_sp] && sp.status_sp === 'DIKIRIM_PBF') {
+          issues.push('SP ' + sp.no_sp + ' sudah punya faktur tetapi status masih DIKIRIM_PBF');
+          if (!dryRun) { sp.status_sp = 'SELESAI_DITERIMA'; spSynced++; }
+        }
+      });
+      const jSet = new Set((db.jurnal_keuangan || []).map((j) => String(j.jenis_trx || '') + '|' + String(j.referensi_id || '')));
+      (db.penjualan || []).forEach((t) => {
+        if (t.status_trx !== 'RETUR' && String(t.metode_bayar || '').toUpperCase() !== 'PIUTANG' && Number(t.grand_total || 0) > 0 && t.no_invoice) {
+          if (!jSet.has('MASUK_PENJUALAN|' + t.no_invoice)) {
+            issues.push('Nota POS ' + t.no_invoice + ' belum memiliki jurnal MASUK_PENJUALAN');
+            if (!dryRun) {
+              db.jurnal_keuangan.push({
+                id_jurnal: 'JRN-FIX-' + Date.now(), tanggal: t.tanggal || nowIso, cabang_id: t.cabang_id || 'ONS-01',
+                jenis_trx: 'MASUK_PENJUALAN', kategori: t.channel || 'POS Kasir', nominal: Number(t.grand_total || 0),
+                metode: t.metode_bayar || 'TUNAI', referensi_id: t.no_invoice, periode_bulan: String(t.tanggal || nowIso).slice(0, 7),
+                status_lock: 'TERBUKA', user_id: t.kasir_id || 'SYSTEM_SYNC'
+              });
+              jurnalBackfilled++;
+            }
+          }
+        }
+      });
+      if (!dryRun) {
+        if (Array.isArray(db.mutasi_cabang) && db.mutasi_cabang.length === 0) db.mutasi_cabang = [];
+        db.epoch++;
+        saveDb(db);
+      }
+      return {
+        ok: true,
+        mode: dryRun ? 'SCAN_PREVIEW' : 'REPAIRED',
+        issues,
+        sheets_deleted: [],
+        sheets_healed_headers: [],
+        empty_rows_removed: 0,
+        legacy_normalized: legacyNorm,
+        stok_batch_synced: stokSynced,
+        piutang_synced: piutangSynced,
+        hutang_pbf_synced: hutangSynced,
+        sp_synced: spSynced,
+        jurnal_backfilled: jurnalBackfilled,
+        tagihan_synced: 0,
+        pesan: dryRun ? ('Pindai Selesai: ' + issues.length + ' temuan sinkronisasi.') : ('Sinkronisasi Demo DB selesai (' + (stokSynced + piutangSynced + hutangSynced + spSynced + jurnalBackfilled + legacyNorm) + ' perbaikan).')
+      };
     }
 
     if (action === 'system.factoryReset') {
