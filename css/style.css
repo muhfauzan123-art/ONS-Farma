@@ -2193,6 +2193,76 @@ html.dark .ons-login-portal-pill:hover {
   color: #93C5FD;
 }
 
+/* ==========================================================================
+   W-03B TUTUP SHIFT & Z-REPORT PRO — DENOMINATION MATRIX & DRAWER SPLIT
+   ========================================================================== */
+.ons-denom-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(82px, auto);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  transition: border-color 0.14s ease, background-color 0.14s ease;
+}
+.ons-denom-row.is-nonzero {
+  border-color: rgba(0, 102, 254, 0.45);
+  background: rgba(0, 102, 254, 0.05);
+}
+html.dark .ons-denom-row.is-nonzero {
+  background: rgba(37, 99, 235, 0.12);
+}
+.ons-denom-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.4rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.55rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+.ons-denom-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.ons-denom-stepbtn {
+  min-width: 34px;
+  min-height: 36px;
+  padding: 0 0.45rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  color: var(--ons-text-main);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.ons-denom-stepbtn:hover {
+  border-color: var(--ons-primary-bright);
+  color: var(--ons-primary-bright);
+  background: var(--ons-primary-tint);
+}
+.ons-denom-stepbtn:active {
+  transform: scale(0.97);
+}
+.ons-shift-split-card {
+  border-radius: 1rem;
+  border: 1px solid var(--ons-border);
+  background: linear-gradient(180deg, var(--ons-bg-subtle) 0%, rgba(16, 185, 129, 0.06) 100%);
+  padding: 0.9rem 1rem;
+}
+html.dark .ons-shift-split-card {
+  background: linear-gradient(180deg, var(--ons-bg-subtle) 0%, rgba(16, 185, 129, 0.11) 100%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill {
     transition: none !important;

@@ -20,7 +20,11 @@
   let financeDateTo = '';
   let jurnalFilter = 'SEMUA';
   let sipnapTab = 'narkotika'; // narkotika | pareto | deadstock
-  let shiftDenomCounts = { 100000: 0, 50000: 0, 20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0 };
+  let shiftDenomCounts = { 100000: 0, 50000: 0, 20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0 };
+  let shiftBlindRevealed = false;
+  let shiftAktualCustom = null;
+  let shiftFloatNext = null;
+  let shiftVarianceReason = '';
   let activeBillingTab = 'tagihan'; // tagihan | verifikasi | potongan | reminder
   let activeDocTab = 'surat'; // surat | pindai
   let settingsTab = 'profil'; // profil | akun | struk | vault | audit
@@ -1742,18 +1746,93 @@
     return 0;
   }
 
-  function renderTutupShiftView() {
+  const SHIFT_BILLS = [
+    { val: 100000, label: 'Rp 100.000', tone: 'bg-red-500/12 text-red-700 dark:text-red-300 border-red-500/30' },
+    { val: 50000, label: 'Rp 50.000', tone: 'bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/30' },
+    { val: 20000, label: 'Rp 20.000', tone: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+    { val: 10000, label: 'Rp 10.000', tone: 'bg-sky-500/12 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+    { val: 5000, label: 'Rp 5.000', tone: 'bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+    { val: 2000, label: 'Rp 2.000', tone: 'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/30' }
+  ];
+  const SHIFT_COINS = [
+    { val: 1000, label: 'Rp 1.000', tone: 'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/30' },
+    { val: 500, label: 'Rp 500', tone: 'bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+    { val: 200, label: 'Rp 200', tone: 'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/30' },
+    { val: 100, label: 'Rp 100', tone: 'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/30' }
+  ];
+  let shiftMetaCtx = { expectedBase: 0, sisTunai: 0, canReveal: false };
+
+  function _calcDenomSum() {
+    return Object.keys(shiftDenomCounts).reduce((s, d) => s + (Number(d) * Number(shiftDenomCounts[d] || 0)), 0);
+  }
+
+  function _shiftDurationText(tglBuka) {
+    if (!tglBuka) return '-';
+    const startMs = Date.parse(tglBuka);
+    if (!Number.isFinite(startMs)) return '-';
+    const diffMin = Math.max(0, Math.round((Date.now() - startMs) / 60000));
+    const h = Math.floor(diffMin / 60);
+    const m = diffMin % 60;
+    return h > 0 ? `${h} jam ${m} mnt` : `${m} menit`;
+  }
+
+  function _syncShiftSplitPreview() {
+    const aktEl = document.getElementById('shAktual');
+    const modalEl = document.getElementById('shModal');
+    const floatEl = document.getElementById('shFloatNext');
+    const aktVal = aktEl ? Math.max(0, Number(aktEl.value || 0)) : (shiftAktualCustom !== null ? shiftAktualCustom : _calcDenomSum());
+    const modalVal = modalEl ? Math.max(0, Number(modalEl.value || 0)) : 0;
+    const floatVal = floatEl ? Math.max(0, Number(floatEl.value || 0)) : (shiftFloatNext !== null ? shiftFloatNext : modalVal);
+    const bankDrop = Math.max(0, aktVal - floatVal);
+    const dropEl = document.getElementById('shBankDropPreview');
+    if (dropEl) dropEl.textContent = S().rp(bankDrop);
+
+    const varEl = document.getElementById('shLiveVariancePreview');
+    if (varEl && shiftMetaCtx.canReveal && shiftBlindRevealed) {
+      const target = modalVal + Number(shiftMetaCtx.sisTunai || 0);
+      const diff = aktVal - target;
+      const cls = diff === 0 ? 'text-emerald-600' : (diff > 0 ? 'text-blue-600' : 'text-red-600');
+      const txt = diff === 0 ? 'Klop (Rp 0)' : (diff > 0 ? ('Lebih +' + S().rp(diff)) : ('Kurang -' + S().rp(Math.abs(diff))));
+      varEl.className = 'font-mono-num font-extrabold text-sm ' + cls;
+      varEl.textContent = txt;
+    }
+  }
+
+  function renderDenomRowHtml(item) {
+    const qty = Number(shiftDenomCounts[item.val] || 0);
+    const sub = item.val * qty;
+    return `<div id="denomRow_${item.val}" class="ons-denom-row ${qty > 0 ? 'is-nonzero' : ''}">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="ons-denom-pill border ${item.tone} shrink-0">${item.label}</span>
+        <span class="text-[11px] hidden sm:inline truncate" style="color:var(--ons-text-soft)">&times;</span>
+      </div>
+      <div class="ons-denom-ctrl">
+        <button type="button" onclick="window.stepShiftDenom(${item.val}, -1)" aria-label="Kurangi 1 lembar ${item.label}" class="ons-denom-stepbtn">&minus;</button>
+        <input id="denomInp_${item.val}" type="number" min="0" value="${qty}" oninput="window.updateShiftDenom(${item.val}, this.value)" aria-label="Jumlah ${item.label}" class="ons-input font-mono-num w-14 text-center py-1 min-h-0 h-9 font-bold"/>
+        <button type="button" onclick="window.stepShiftDenom(${item.val}, 1)" aria-label="Tambah 1 lembar ${item.label}" class="ons-denom-stepbtn">+1</button>
+        <button type="button" onclick="window.stepShiftDenom(${item.val}, 5)" aria-label="Tambah 5 lembar ${item.label}" class="ons-denom-stepbtn hidden sm:inline-flex items-center justify-center">+5</button>
+      </div>
+      <div id="denomSub_${item.val}" class="font-mono-num font-bold text-right text-xs truncate ${qty > 0 ? 'text-blue-600 dark:text-blue-400' : ''}" style="${qty > 0 ? '' : 'color:var(--ons-text-soft)'}">${S().rp(sub)}</div>
+    </div>`;
+  }
+
+  function renderTutupShiftView(opts) {
     const st = S().AppState;
     const todayIso = new Date().toISOString().slice(0, 10);
-    const validToday = (st.penjualan || []).filter((p) => {
+    const allToday = (st.penjualan || []).filter((p) => {
       const tgl = String(p.tanggal || '').slice(0, 10);
-      return (!tgl || tgl === todayIso) && String(p.status_trx || '') !== 'RETUR';
+      return !tgl || tgl === todayIso;
     });
+    const validToday = allToday.filter((p) => String(p.status_trx || '') !== 'RETUR');
+    const returToday = allToday.length - validToday.length;
     let sisTunai = 0;
     let sisQris = 0;
     let sisTransfer = 0;
+    let sisPiutang = 0;
+    let totalBruto = 0;
     validToday.forEach((p) => {
       const tot = Number(p.grand_total || 0);
+      totalBruto += tot;
       const met = String(p.metode_bayar || 'TUNAI').toUpperCase();
       if (met === 'TUNAI') {
         sisTunai += tot;
@@ -1763,87 +1842,249 @@
         sisQris += Math.max(0, tot - cashPart);
       } else if (met === 'QRIS') {
         sisQris += tot;
+      } else if (met === 'PIUTANG') {
+        sisPiutang += tot;
       } else {
         sisTransfer += tot;
       }
     });
-    const nonTunai = sisQris + sisTransfer;
     const actShift = st.activeShift || (st.shiftHistory || []).find((sh) => String(sh.status_shift || '').toUpperCase() === 'TERBUKA') || null;
     const modalDefault = actShift ? Number(actShift.modal_awal || 0) : 300000;
-    const denoms = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500];
-    const denomSum = denoms.reduce((s, d) => s + (d * Number(shiftDenomCounts[d] || 0)), 0);
-    const defaultAktual = denomSum > 0 ? denomSum : (modalDefault + sisTunai);
-    const shiftHist = st.shiftHistory || [];
+    const expectedTunai = modalDefault + sisTunai;
+    const canReveal = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
+    shiftMetaCtx = { expectedBase: expectedTunai, sisTunai, canReveal };
 
-    return `<div class="space-y-5 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">Rekonsiliasi &amp; Tutup Shift Kasir (Blind Count + Denominasi)</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Rekonsiliasi penjualan valid hari ini (${S().esc(todayIso)} — ${validToday.length} nota). Sahkan dengan 6-digit PIN APJ / Supervisor.</p>
-        </div>
-        <span class="badge-bpom bpom-terbatas font-mono-num">Non-Tunai Hari Ini (QRIS/EDC): ${S().rp(nonTunai)}</span>
-      </div>
+    const denomSum = _calcDenomSum();
+    const currentAktual = shiftAktualCustom !== null ? shiftAktualCustom : denomSum;
+    const floatDefault = shiftFloatNext !== null ? shiftFloatNext : modalDefault;
+    const bankDrop = Math.max(0, currentAktual - floatDefault);
+    const liveDiff = currentAktual - expectedTunai;
+    const shiftHist = (st.shiftHistory || []).filter((sh) => String(sh.status_shift || '').toUpperCase() !== 'TERBUKA');
+    const latestClosed = shiftHist[0] || null;
 
-      <div class="ons-card p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs" style="border-left:4px solid ${actShift ? '#059669' : '#D97706'}">
-        ${actShift ? `
-          <div>
-            <span class="badge-bpom bpom-bebas mr-1.5">SHIFT TERBUKA</span>
-            <b class="font-mono-num">${S().esc(actShift.id_shift)}</b> &bull; Kasir: <b>${S().esc(actShift.kasir_id)}</b> &bull; Modal Laci: <b class="font-mono-num text-emerald-600">${S().rp(actShift.modal_awal || 0)}</b>
-          </div>
-          <span class="text-[11px]" style="color:var(--ons-text-soft)">Buka: ${S().formatTgl(actShift.tgl_buka)}</span>
-        ` : `
-          <div>
-            <span class="badge-bpom bpom-terbatas mr-1.5">BELUM ADA SHIFT TERBUKA</span>
-            <span style="color:var(--ons-text-soft)">Anda tetap bisa menutup shift langsung atau buka shift baru terlebih dahulu.</span>
-          </div>
-          ${typeof global.openBukaShiftModal === 'function' ? `<button onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">+ Buka Shift Baru</button>` : ''}
-        `}
-      </div>
+    return `<div class="space-y-4 ons-view-enter">
+      ${(opts && opts.subTabHeader) ? opts.subTabHeader : ''}
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-sm">Kalkulator Pecahan Uang Laci</h3>
-            <span class="font-mono-num font-bold text-blue-600" id="denomTotalPreview">${S().rp(denomSum)}</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            ${denoms.map((d) => `
-              <div class="flex items-center justify-between gap-2 p-2 rounded-lg border" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-                <span class="font-mono-num font-bold">${S().rp(d)}</span>
-                <input type="number" min="0" value="${shiftDenomCounts[d] || 0}" oninput="window.updateShiftDenom(${d}, this.value)" class="ons-input font-mono-num w-16 text-right py-1 min-h-0 h-7"/>
-              </div>`).join('')}
-          </div>
-          <button type="button" onclick="window.applyDenomToAktual()" class="ons-btn ons-btn-primary w-full text-xs">Salin Total Pecahan (${S().rp(denomSum)}) ke Aktual &rarr;</button>
-        </div>
-
-        <div class="ons-card p-5 lg:col-span-6 space-y-4 text-xs">
-          <h3 class="font-bold text-sm">Formulir Penutupan Kas &amp; Serah Terima</h3>
-          <div class="space-y-3">
-            <div><label class="font-semibold block mb-1">Modal Awal Laci (Rp)</label><input id="shModal" type="number" class="ons-input font-mono-num" value="${modalDefault}"/></div>
-            <div><label class="font-semibold block mb-1">Hitung Fisik Tunai Laci Aktual (Rp) *</label><input id="shAktual" type="number" class="ons-input font-mono-num font-bold text-base" value="${defaultAktual}"/></div>
-            <div><label class="font-semibold block mb-1">Catatan Handover Shift Berikutnya</label><textarea id="shNote" rows="2" class="ons-textarea" placeholder="Serah terima kunci laci, modal laci &amp; catatan selisih..."></textarea></div>
-            <div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-2">
-              <div class="font-bold text-amber-700 dark:text-amber-300">Otorisasi PIN APJ / Supervisor Penutup Shift</div>
-              <input id="shPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN${API().isDemoMode() ? ' (Demo: 123456)' : ''}"/>
+      <!-- Shift Status Workstation Header -->
+      <div class="ons-pos-bar p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex flex-wrap items-center gap-3 min-w-0">
+          ${actShift
+            ? `<span class="ons-pos-live-dot"></span>`
+            : `<span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>`}
+          <div class="min-w-0 space-y-0.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="badge-bpom ${actShift ? 'bpom-bebas' : 'bpom-prekursor'}">${actShift ? 'SHIFT TERBUKA' : 'BELUM BUKA SHIFT'}</span>
+              <h1 class="text-base sm:text-lg font-extrabold tracking-tight">Tutup Shift &amp; Rekonsiliasi Laci Kas</h1>
             </div>
-            <button onclick="window.submitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer})" class="ons-btn ons-btn-emerald w-full py-2.5">Rekonsiliasi, Tutup Shift &amp; Kirim ke Pemilik</button>
+            <p class="text-[11px] truncate" style="color:var(--ons-text-soft)">
+              ${actShift
+                ? `<span class="font-mono-num font-bold">${S().esc(actShift.id_shift)}</span> &bull; Kasir: <b>${S().esc(actShift.kasir_id || '-')}</b> &bull; Buka: ${S().formatTgl(actShift.tgl_buka, true)} (${_shiftDurationText(actShift.tgl_buka)}) &bull; Modal Laci: <b class="font-mono-num text-emerald-600">${S().rp(modalDefault)}</b>`
+                : 'Belum ada shift aktif dibuka. Anda dapat membuka shift baru atau langsung melakukan penutupan kas harian.'}
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          ${!actShift && typeof global.openBukaShiftModal === 'function'
+            ? `<button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs">+ Buka Shift Baru</button>`
+            : ''}
+          ${canReveal
+            ? `<button type="button" onclick="window.toggleShiftBlindView()" class="ons-btn ${shiftBlindRevealed ? 'ons-btn-amber' : 'ons-btn-ghost'} text-xs" title="Pemilik/APJ dapat membuka target sistem untuk mencocokkan selisih">${shiftBlindRevealed ? 'Sembunyikan Target Sistem' : 'Intip Target Sistem (APJ/Pemilik)'}</button>`
+            : `<span class="badge-bpom bpom-terbatas">Blind Count Terjaga</span>`}
+          ${latestClosed
+            ? `<button type="button" onclick="window.openZReportModal(0)" class="ons-btn ons-btn-ghost text-xs">Z-Report Terakhir</button>`
+            : ''}
+        </div>
+      </div>
+
+      <!-- 4 Tender Reconciliation Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-xs">
+        <div class="ons-kpi-card is-blue">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div style="color:var(--ons-text-soft)">Total Penjualan (${todayIso})</div>
+              <div class="text-xl font-extrabold font-mono-num mt-1 text-blue-600 truncate">${S().rp(totalBruto)}</div>
+            </div>
+            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          </div>
+          <div class="mt-2 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <span>${validToday.length} nota lunas</span>
+            <span>${returToday > 0 ? returToday + ' retur/void' : '0 retur'}</span>
+          </div>
+        </div>
+
+        <div class="ons-kpi-card is-emerald">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div style="color:var(--ons-text-soft)">Non-Tunai QRIS</div>
+              <div class="text-xl font-extrabold font-mono-num mt-1 text-emerald-600 truncate">${S().rp(sisQris)}</div>
+            </div>
+            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7h-7z"/></svg></span>
+          </div>
+          <div class="mt-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Cocokkan dengan mutasi settlement QRIS</div>
+        </div>
+
+        <div class="ons-kpi-card is-blue">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div style="color:var(--ons-text-soft)">Transfer Bank / EDC</div>
+              <div class="text-xl font-extrabold font-mono-num mt-1 truncate">${S().rp(sisTransfer)}</div>
+            </div>
+            <span class="ons-kpi-ico bg-sky-500/10 text-sky-600"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+          </div>
+          <div class="mt-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${sisPiutang > 0 ? ('Tempo/Piutang: ' + S().rp(sisPiutang)) : 'Settlement mesin EDC & mutasi rekening'}</div>
+        </div>
+
+        <div class="ons-kpi-card ${canReveal && shiftBlindRevealed ? 'is-emerald' : 'is-amber'}">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div style="color:var(--ons-text-soft)">Target Kas Tunai Laci</div>
+              <div class="text-xl font-extrabold font-mono-num mt-1 truncate ${canReveal && shiftBlindRevealed ? 'text-emerald-600' : 'text-amber-600'}">
+                ${(canReveal && shiftBlindRevealed) ? S().rp(expectedTunai) : 'Blind Count'}
+              </div>
+            </div>
+            <span class="ons-kpi-ico ${canReveal && shiftBlindRevealed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          </div>
+          <div class="mt-2 pt-2 border-t text-[11px] truncate" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            ${(canReveal && shiftBlindRevealed) ? ('Modal ' + S().rp(modalDefault) + ' + Tunai ' + S().rp(sisTunai)) : 'Hitung fisik uang terlebih dahulu'}
           </div>
         </div>
       </div>
 
-      <div class="ons-card p-4 space-y-3">
-        <h3 class="font-bold text-sm">Arsip Riwayat Tutup Shift Kasir (${shiftHist.length})</h3>
+      <!-- Workspace 2-Kolom Ergonomis: Pecahan Rupiah vs Rekonsiliasi & Setoran -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+        <div class="ons-card p-5 xl:col-span-7 space-y-4 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+            <div>
+              <h2 class="font-bold text-sm">1. Kalkulator Pecahan Uang Fisik Laci (Rupiah)</h2>
+              <p class="text-[11px]" style="color:var(--ons-text-soft)">Ketuk tombol <b>+1 / +5</b> atau isi jumlah lembar &amp; keping. Total fisik otomatis tersinkron.</p>
+            </div>
+            <button type="button" onclick="window.resetShiftDenom()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Reset 0</button>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Uang Kertas</div>
+            <div class="space-y-1.5">
+              ${SHIFT_BILLS.map((item) => renderDenomRowHtml(item)).join('')}
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Uang Koin / Receh</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              ${SHIFT_COINS.map((item) => renderDenomRowHtml(item)).join('')}
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div>
+              <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Hitungan Pecahan Laci</div>
+              <div id="denomTotalPreview" class="text-xl font-extrabold font-mono-num text-blue-600">${S().rp(denomSum)}</div>
+            </div>
+            <button type="button" onclick="window.applyDenomToAktual()" class="ons-btn ons-btn-primary text-xs">Salin ke Fisik Aktual &rarr;</button>
+          </div>
+        </div>
+
+        <div class="ons-card p-5 xl:col-span-5 space-y-4 text-xs">
+          <div class="pb-2 border-b" style="border-color:var(--ons-border)">
+            <h2 class="font-bold text-sm">2. Alokasi Setoran, Audit Selisih &amp; Pengesahan Z-Report</h2>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Tentukan modal receh yang ditinggal di laci dan setoran kas untuk Pemilik.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="font-semibold block mb-1">Modal Awal Laci (Rp)</label>
+              <input id="shModal" type="number" min="0" oninput="window.onShiftModalChange(this.value)" class="ons-input font-mono-num" value="${modalDefault}"/>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Fisik Tunai Laci Aktual (Rp) *</label>
+              <input id="shAktual" type="number" min="0" oninput="window.onShiftAktualManualInput(this.value)" class="ons-input font-mono-num font-extrabold text-base text-blue-600" value="${currentAktual}"/>
+            </div>
+          </div>
+
+          <!-- Cash Management Split Wizard -->
+          <div class="ons-shift-split-card space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold text-xs">Pembagian Uang Laci (Float vs Setoran)</span>
+              <span class="badge-bpom bpom-bebas text-[10px]">Anti-Keliru Setoran</span>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Sisakan Modal Shift Berikutnya / Float (Rp)</label>
+              <input id="shFloatNext" type="number" min="0" oninput="window.onShiftFloatChange(this.value)" class="ons-input font-mono-num font-bold" value="${floatDefault}"/>
+              <div class="flex flex-wrap gap-1.5 mt-1.5">
+                ${[0, 200000, 300000, 500000].map((v) => `<button type="button" onclick="window.setShiftFloatPreset(${v})" class="ons-quick-denom">${v === 0 ? 'Rp 0' : S().rp(v)}</button>`).join('')}
+              </div>
+            </div>
+            <div class="p-3 rounded-xl border flex items-center justify-between gap-2" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+              <div>
+                <div class="font-bold">Setoran Kas ke Brankas / Pemilik</div>
+                <div class="text-[10px]" style="color:var(--ons-text-soft)">Fisik Tunai &minus; Modal Shift Berikutnya</div>
+              </div>
+              <div id="shBankDropPreview" class="text-lg font-extrabold font-mono-num text-emerald-600">${S().rp(bankDrop)}</div>
+            </div>
+          </div>
+
+          <!-- Blind / Variance Evaluation -->
+          <div class="p-3 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold">Evaluasi Selisih Kas</span>
+              ${(canReveal && shiftBlindRevealed)
+                ? `<span id="shLiveVariancePreview" class="font-mono-num font-extrabold text-sm ${liveDiff === 0 ? 'text-emerald-600' : (liveDiff > 0 ? 'text-blue-600' : 'text-red-600')}">${liveDiff === 0 ? 'Klop (Rp 0)' : (liveDiff > 0 ? ('Lebih +' + S().rp(liveDiff)) : ('Kurang -' + S().rp(Math.abs(liveDiff))))}</span>`
+                : `<span id="shLiveVariancePreview" class="badge-bpom bpom-terbatas">Dihitung Otomatis Saat Simpan</span>`}
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Keterangan / Alasan Selisih (Bila Ada)</label>
+              <select id="shVarianceReason" onchange="window.onShiftReasonChange(this.value)" class="ons-select text-xs">
+                <option value="" ${!shiftVarianceReason ? 'selected' : ''}>Tidak ada selisih / hitung fisik normal</option>
+                <option value="Kembalian selisih receh" ${shiftVarianceReason === 'Kembalian selisih receh' ? 'selected' : ''}>Kembalian selisih uang receh</option>
+                <option value="Pengeluaran kas kecil belum dicatat" ${shiftVarianceReason === 'Pengeluaran kas kecil belum dicatat' ? 'selected' : ''}>Pengeluaran kas kecil / ongkir belum dicatat</option>
+                <option value="Salah metode QRIS / Transfer tercatat Tunai" ${shiftVarianceReason === 'Salah metode QRIS / Transfer tercatat Tunai' ? 'selected' : ''}>Salah metode pembayaran (QRIS / Transfer)</option>
+                <option value="Kelebihan/kekurangan uang laci" ${shiftVarianceReason === 'Kelebihan/kekurangan uang laci' ? 'selected' : ''}>Selisih hitung laci lainnya (jelaskan di catatan)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-semibold block mb-1">Catatan Serah Terima (Handover Shift Berikutnya)</label>
+            <textarea id="shNote" rows="2" class="ons-textarea" placeholder="Serah terima kunci laci, modal receh &amp; catatan penting untuk kasir berikutnya..."></textarea>
+          </div>
+
+          <div class="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-2">
+            <div class="font-bold text-amber-700 dark:text-amber-300">Otorisasi PIN 6 Digit APJ / Pemilik</div>
+            <input id="shPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num font-bold tracking-widest" placeholder="Masukkan 6 Digit PIN${API().isDemoMode() ? ' (Demo: 123456)' : ''}"/>
+          </div>
+
+          <button type="button" onclick="window.submitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer})" class="ons-btn ons-btn-emerald w-full py-3 font-bold text-xs shadow-sm">Tutup Shift, Simpan &amp; Terbitkan Z-Report</button>
+          <p class="text-[10px] text-center" style="color:var(--ons-text-soft)">Setelah ditutup, Z-Report resmi langsung terbit dan rekap terkirim ke email/WA Pemilik.</p>
+        </div>
+      </div>
+
+      <!-- Arsip Riwayat Tutup Shift & Cetak Z-Report -->
+      <div class="ons-card p-5 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Arsip Riwayat Tutup Shift &amp; Z-Report (${shiftHist.length})</h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Klik tombol <b>Z-Report</b> untuk melihat rincian tender, cetak struk 58/80mm, atau kirim laporan ke WhatsApp Pemilik.</p>
+          </div>
+        </div>
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>ID Shift &amp; Waktu</th><th>Kasir / Supervisor</th><th>Tunai Aktual</th><th>Selisih Kas</th><th>Catatan Handover</th></tr></thead>
+            <thead><tr><th>ID Shift &amp; Waktu Tutup</th><th>Kasir / Supervisor</th><th>Penjualan Sistem</th><th>Tunai Aktual</th><th>Selisih Kas</th><th>Catatan Handover</th><th class="text-right">Aksi</th></tr></thead>
             <tbody>
-              ${shiftHist.length ? shiftHist.slice(0, 20).map((sh) => `<tr>
-                <td class="font-mono-num text-xs"><b>${S().esc(sh.id_shift)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sh.tgl_tutup, true)}</span></td>
-                <td class="text-xs"><b>${S().esc(sh.kasir_id || '-')}</b><br/><span style="color:var(--ons-text-soft)">SPV: ${S().esc(sh.supervisor_id || '-')}</span></td>
-                <td class="font-mono-num text-xs font-bold">${S().rp(sh.aktual_tunai || 0)}</td>
-                <td class="font-mono-num text-xs font-bold ${Number(sh.selisih_kas || 0) === 0 ? 'text-emerald-600' : 'text-amber-600'}">${S().rp(sh.selisih_kas || 0)}</td>
-                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(sh.catatan_handover || '-')}</td>
-              </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4 text-xs">Belum ada arsip penutupan shift tersimpan.</td></tr>'}
+              ${shiftHist.length ? shiftHist.slice(0, 20).map((sh, idx) => {
+                const diff = Number(sh.selisih_kas || 0);
+                const sysTot = Number(sh.sistem_tunai || 0) + Number(sh.sistem_qris || 0) + Number(sh.sistem_transfer || 0);
+                const diffBadgeCls = diff === 0 ? 'bpom-bebas' : (diff > 0 ? 'bpom-terbatas' : 'bpom-keras');
+                const diffTxt = diff === 0 ? 'Klop Rp 0' : ((diff > 0 ? '+' : '-') + S().rp(Math.abs(diff)));
+                return `<tr>
+                  <td class="font-mono-num text-xs"><b>${S().esc(sh.id_shift)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sh.tgl_tutup, true)}</span></td>
+                  <td class="text-xs"><b>${S().esc(sh.kasir_id || '-')}</b><br/><span style="color:var(--ons-text-soft)">SPV: ${S().esc(sh.supervisor_id || '-')}</span></td>
+                  <td class="font-mono-num text-xs"><b>${S().rp(sysTot)}</b><br/><span class="text-[10px]" style="color:var(--ons-text-soft)">T:${S().rp(sh.sistem_tunai || 0)} &bull; Q:${S().rp(sh.sistem_qris || 0)}</span></td>
+                  <td class="font-mono-num text-xs font-bold">${S().rp(sh.aktual_tunai || 0)}</td>
+                  <td><span class="badge-bpom ${diffBadgeCls} font-mono-num">${diffTxt}</span></td>
+                  <td class="text-xs max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(sh.catatan_handover || '-')}</td>
+                  <td class="text-right"><button type="button" onclick="window.openZReportModal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Z-Report</button></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada arsip penutupan shift tersimpan.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -1851,36 +2092,242 @@
     </div>`;
   }
 
-  global.updateShiftDenom = (denom, qty) => {
-    shiftDenomCounts[denom] = Math.max(0, Number(qty || 0));
-    const sum = Object.keys(shiftDenomCounts).reduce((s, d) => s + (Number(d) * Number(shiftDenomCounts[d] || 0)), 0);
+  function _refreshDenomRowDom(denomVal) {
+    const qty = Number(shiftDenomCounts[denomVal] || 0);
+    const inp = document.getElementById('denomInp_' + denomVal);
+    if (inp && Number(inp.value) !== qty) inp.value = qty;
+    const subEl = document.getElementById('denomSub_' + denomVal);
+    if (subEl) {
+      subEl.textContent = S().rp(denomVal * qty);
+      subEl.className = 'font-mono-num font-bold text-right text-xs truncate ' + (qty > 0 ? 'text-blue-600 dark:text-blue-400' : '');
+    }
+    const rowEl = document.getElementById('denomRow_' + denomVal);
+    if (rowEl && rowEl.classList) {
+      rowEl.classList.toggle('is-nonzero', qty > 0);
+    }
+    const sum = _calcDenomSum();
+    shiftAktualCustom = sum;
     const prev = document.getElementById('denomTotalPreview');
     if (prev) prev.textContent = S().rp(sum);
     const akt = document.getElementById('shAktual');
-    if (akt && sum > 0) akt.value = sum;
+    if (akt) akt.value = sum;
+    _syncShiftSplitPreview();
+  }
+
+  global.stepShiftDenom = (denom, delta) => {
+    const d = Number(denom || 0);
+    shiftDenomCounts[d] = Math.max(0, Number(shiftDenomCounts[d] || 0) + Number(delta || 0));
+    _refreshDenomRowDom(d);
   };
+
+  global.updateShiftDenom = (denom, qty) => {
+    const d = Number(denom || 0);
+    shiftDenomCounts[d] = Math.max(0, Number(qty || 0));
+    _refreshDenomRowDom(d);
+  };
+
+  global.resetShiftDenom = () => {
+    Object.keys(shiftDenomCounts).forEach((k) => { shiftDenomCounts[k] = 0; });
+    shiftAktualCustom = 0;
+    global.renderActiveView();
+    global.toast('Hitungan pecahan direset ke Rp 0.', 'info');
+  };
+
+  global.onShiftAktualManualInput = (v) => {
+    shiftAktualCustom = Math.max(0, Number(v || 0));
+    _syncShiftSplitPreview();
+  };
+
+  global.onShiftModalChange = () => { _syncShiftSplitPreview(); };
+
+  global.onShiftFloatChange = (v) => {
+    shiftFloatNext = Math.max(0, Number(v || 0));
+    _syncShiftSplitPreview();
+  };
+
+  global.setShiftFloatPreset = (v) => {
+    shiftFloatNext = Math.max(0, Number(v || 0));
+    const el = document.getElementById('shFloatNext');
+    if (el) el.value = shiftFloatNext;
+    _syncShiftSplitPreview();
+  };
+
+  global.onShiftReasonChange = (v) => { shiftVarianceReason = String(v || ''); };
+
+  global.toggleShiftBlindView = () => {
+    if (!(S().canSeeFinancialCost && S().canSeeFinancialCost())) {
+      global.toast('Mode Blind Count terkunci untuk peran Kasir.', 'warn');
+      return;
+    }
+    shiftBlindRevealed = !shiftBlindRevealed;
+    global.renderActiveView();
+  };
+
   global.applyDenomToAktual = () => {
-    const sum = Object.keys(shiftDenomCounts).reduce((s, d) => s + (Number(d) * Number(shiftDenomCounts[d] || 0)), 0);
+    const sum = _calcDenomSum();
+    shiftAktualCustom = sum;
     const akt = document.getElementById('shAktual');
-    if (akt) { akt.value = sum; global.toast('Hitungan pecahan disalin ke Tunai Laci Aktual!', 'ok'); }
+    if (akt) {
+      akt.value = sum;
+      _syncShiftSplitPreview();
+      global.toast('Hitungan pecahan disalin ke Tunai Laci Aktual!', 'ok');
+    }
+  };
+
+  let lastClosedZReport = null;
+
+  global.openZReportModal = (idxOrObj) => {
+    const st = S().AppState;
+    const hist = (st.shiftHistory || []).filter((sh) => String(sh.status_shift || '').toUpperCase() !== 'TERBUKA');
+    const sh = (typeof idxOrObj === 'object' && idxOrObj) ? idxOrObj : (hist[Number(idxOrObj) || 0] || lastClosedZReport);
+    if (!sh) return global.toast('Data Z-Report shift belum tersedia.', 'warn');
+    lastClosedZReport = sh;
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const modal = Number(sh.modal_awal || 0);
+    const tunai = Number(sh.sistem_tunai || 0);
+    const qris = Number(sh.sistem_qris || 0);
+    const trf = Number(sh.sistem_transfer || 0);
+    const totalOmzet = tunai + qris + trf;
+    const targetLaci = modal + tunai;
+    const aktual = Number(sh.aktual_tunai || 0);
+    const selisih = Number(sh.selisih_kas !== undefined ? sh.selisih_kas : (aktual - targetLaci));
+    const selisihTxt = selisih === 0 ? 'Klop (Rp 0)' : ((selisih > 0 ? 'Lebih +' : 'Kurang -') + S().rp(Math.abs(selisih)));
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex items-start justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+        <div>
+          <span class="badge-bpom bpom-bebas">Z-REPORT RESMI SHIFT KASIR</span>
+          <h3 class="font-extrabold text-base mt-1">${S().esc(prof.nama_usaha || 'Apotek ONS Farma')}</h3>
+          <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(sh.id_shift)} &bull; Ditutup ${S().formatTgl(sh.tgl_tutup, true)}</div>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="text-xl px-2">&times;</button>
+      </div>
+
+      <div id="zReportPrintBody" class="p-4 rounded-xl border space-y-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div>Kasir: <b>${S().esc(sh.kasir_id || '-')}</b></div>
+          <div>Supervisor PIN: <b>${S().esc(sh.supervisor_id || '-')}</b></div>
+          <div>Waktu Buka: <span class="font-mono-num">${S().formatTgl(sh.tgl_buka, true)}</span></div>
+          <div>Waktu Tutup: <span class="font-mono-num">${S().formatTgl(sh.tgl_tutup, true)}</span></div>
+        </div>
+        <div class="border-t pt-2 space-y-1.5" style="border-color:var(--ons-border)">
+          <div class="flex justify-between"><span>Penjualan Tunai</span><b class="font-mono-num">${S().rp(tunai)}</b></div>
+          <div class="flex justify-between"><span>Non-Tunai QRIS</span><b class="font-mono-num">${S().rp(qris)}</b></div>
+          <div class="flex justify-between"><span>Transfer Bank / EDC</span><b class="font-mono-num">${S().rp(trf)}</b></div>
+          <div class="flex justify-between pt-1.5 border-t font-extrabold text-sm" style="border-color:var(--ons-border)">
+            <span>Total Penjualan Shift</span><span class="font-mono-num text-blue-600">${S().rp(totalOmzet)}</span>
+          </div>
+        </div>
+        <div class="border-t pt-2 space-y-1.5" style="border-color:var(--ons-border)">
+          <div class="flex justify-between"><span>Modal Awal Laci</span><span class="font-mono-num">${S().rp(modal)}</span></div>
+          <div class="flex justify-between"><span>Target Tunai Laci (Modal + Tunai)</span><span class="font-mono-num">${S().rp(targetLaci)}</span></div>
+          <div class="flex justify-between"><span>Fisik Tunai Laci Aktual</span><b class="font-mono-num">${S().rp(aktual)}</b></div>
+          <div class="flex justify-between font-extrabold">
+            <span>Selisih Kas</span>
+            <span class="font-mono-num ${selisih === 0 ? 'text-emerald-600' : 'text-amber-600'}">${selisihTxt}</span>
+          </div>
+        </div>
+        <div class="border-t pt-2 text-[11px]" style="border-color:var(--ons-border)">
+          <b>Catatan Handover:</b> ${S().esc(sh.catatan_handover || '-')}
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="window.printShiftZReport()" class="ons-btn ons-btn-primary flex-1 text-xs">Cetak Z-Report (Thermal / PDF)</button>
+        <button type="button" onclick="window.sendZReportWaOwner()" class="ons-btn ons-btn-emerald flex-1 text-xs">Kirim ke WA Pemilik</button>
+      </div>
+    </div>`, '520px');
+  };
+
+  global.printShiftZReport = () => {
+    const sh = lastClosedZReport;
+    if (!sh) return;
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const html = `<div style="font-family:monospace;font-size:12px;max-width:300px;margin:0 auto">
+      <div style="text-align:center;font-weight:bold;font-size:14px">${S().esc(prof.nama_usaha || 'APOTEK ONS FARMA')}</div>
+      <div style="text-align:center;font-size:11px;margin-bottom:8px">Z-REPORT TUTUP SHIFT KASIR</div>
+      <hr/>
+      <div>ID Shift : ${S().esc(sh.id_shift)}</div>
+      <div>Kasir    : ${S().esc(sh.kasir_id || '-')}</div>
+      <div>SPV PIN  : ${S().esc(sh.supervisor_id || '-')}</div>
+      <div>Tutup    : ${S().formatTgl(sh.tgl_tutup, true)}</div>
+      <hr/>
+      <div>Tunai Sistem  : ${S().rp(sh.sistem_tunai || 0)}</div>
+      <div>QRIS          : ${S().rp(sh.sistem_qris || 0)}</div>
+      <div>Transfer/EDC  : ${S().rp(sh.sistem_transfer || 0)}</div>
+      <div>Modal Awal    : ${S().rp(sh.modal_awal || 0)}</div>
+      <div>Fisik Laci    : ${S().rp(sh.aktual_tunai || 0)}</div>
+      <div><b>Selisih Kas   : ${S().rp(sh.selisih_kas || 0)}</b></div>
+      <hr/>
+      <div>Catatan: ${S().esc(sh.catatan_handover || '-')}</div>
+    </div>`;
+    if (S().printHtmlZone) {
+      S().printHtmlZone('Z-Report ' + (sh.id_shift || ''), html, { widthMm: 58 });
+    }
+  };
+
+  global.sendZReportWaOwner = () => {
+    const sh = lastClosedZReport;
+    if (!sh) return;
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const targetWa = prof.wa_pemilik || prof.wa_usaha || '';
+    const msg = [
+      '*Z-REPORT TUTUP SHIFT - ' + String(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase() + '*',
+      'ID Shift   : ' + sh.id_shift,
+      'Kasir      : ' + (sh.kasir_id || '-') + ' (SPV: ' + (sh.supervisor_id || '-') + ')',
+      'Tunai Sis  : ' + S().rp(sh.sistem_tunai || 0),
+      'QRIS       : ' + S().rp(sh.sistem_qris || 0),
+      'Trf/EDC    : ' + S().rp(sh.sistem_transfer || 0),
+      'Modal Awal : ' + S().rp(sh.modal_awal || 0),
+      'Fisik Laci : ' + S().rp(sh.aktual_tunai || 0),
+      'Selisih    : ' + S().rp(sh.selisih_kas || 0),
+      'Catatan    : ' + (sh.catatan_handover || '-')
+    ].join('\n');
+    if (S().buildWaUrl && targetWa) {
+      const url = S().buildWaUrl(targetWa, msg);
+      if (url && global.open) global.open(url, '_blank');
+    } else {
+      global.toast('Nomor WA Pemilik belum diisi di Profil Usaha. Gunakan tombol Cetak Z-Report.', 'info');
+    }
   };
 
   global.submitCloseShift = async (sisTunai, sisQris, sisTransfer) => {
     try {
       const act = S().AppState.activeShift || (S().AppState.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
+      const modalVal = Number((document.getElementById('shModal') || {}).value || 0);
+      const aktVal = Number((document.getElementById('shAktual') || {}).value || 0);
+      const floatVal = Number((document.getElementById('shFloatNext') || {}).value || 0);
+      const bankDrop = Math.max(0, aktVal - floatVal);
+      const reasonSel = ((document.getElementById('shVarianceReason') || {}).value || '').trim();
+      const rawNote = ((document.getElementById('shNote') || {}).value || '').trim();
+      const noteParts = [];
+      if (reasonSel) noteParts.push('[Alasan: ' + reasonSel + ']');
+      noteParts.push('[Float Laci: ' + S().rp(floatVal) + ' | Setor Brankas: ' + S().rp(bankDrop) + ']');
+      if (rawNote) noteParts.push(rawNote);
+
       const res = await API().callApi('shift.close', {
         id_shift: act ? act.id_shift : '',
         tgl_buka: act ? act.tgl_buka : '',
-        modal_awal: Number(document.getElementById('shModal').value || 0),
-        aktual_tunai: Number(document.getElementById('shAktual').value || 0),
+        modal_awal: modalVal,
+        aktual_tunai: aktVal,
         sistem_tunai: Number(sisTunai || 0),
         sistem_qris: Number(sisQris || 0),
         sistem_transfer: Number(sisTransfer || 0),
-        catatan_handover: document.getElementById('shNote').value,
-        supervisor_pin: document.getElementById('shPin').value
+        catatan_handover: noteParts.join(' '),
+        supervisor_pin: (document.getElementById('shPin') || {}).value || ''
       }, { isWrite: true });
+
+      Object.keys(shiftDenomCounts).forEach((k) => { shiftDenomCounts[k] = 0; });
+      shiftAktualCustom = null;
+      shiftFloatNext = null;
+      shiftVarianceReason = '';
+      lastClosedZReport = res && res.shift ? res.shift : null;
+
       global.toast('Shift berhasil ditutup! Selisih kas: ' + S().rp(res.shift.selisih_kas), 'ok');
       await global.bootLoadState(true);
+      if (res && res.shift) {
+        global.openZReportModal(res.shift);
+      }
     } catch (e) { global.toast(e.message, 'err'); }
   };
 

@@ -273,6 +273,9 @@
     if (r === 'Pemilik') return true;
     const perms = getUserPermissions(AppState.user);
     const compound = `${viewId}:${subTab}`;
+    if (compound === 'pos:tutup-shift') {
+      return perms.includes('pos:tutup-shift') || perms.includes('tutup-shift') || perms.includes('pos');
+    }
     if (compound === 'gudang:opname' || compound === 'gudang:transfer' || compound === 'settings:audit') {
       return perms.includes(compound);
     }

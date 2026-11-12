@@ -1143,7 +1143,7 @@
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="badge-bpom bpom-bebas">${S().esc(fullDateLabel)}</span>
               <span class="badge-bpom bpom-terbatas">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('Cabang ' + S().esc(cabId)) : 'Outlet Utama'} &bull; ${S().esc(S().getRole())}</span>
-              ${canShift ? `<button type="button" onclick="navigateView('tutup-shift','')" class="badge-bpom ${activeShift ? 'bpom-bebas' : 'bpom-prekursor'} cursor-pointer">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
+              ${canShift ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="badge-bpom ${activeShift ? 'bpom-bebas' : 'bpom-prekursor'} cursor-pointer">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
             </div>
             <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">${greetText}, ${S().esc(activeUserDisplay)}</h1>
             <p class="text-xs sm:text-sm truncate" style="color:var(--ons-text-soft)">${S().esc(usahaNama)} &bull; SIA: ${S().esc(prof.no_sia || '-')} &bull; ${S().esc(prof.jam_operasional || 'Siap Melayani')}</p>
@@ -1238,7 +1238,7 @@
             <span class="truncate" style="color:var(--ons-text-soft)">${openFaktur.length} faktur (${apNearDueCount} tempo &le;7h)${piutangTotal > 0 ? ' &bull; Piutang ' + S().rp(piutangTotal) : ''}</span>
             ${canFin ? `<span class="font-semibold text-amber-600 shrink-0">Kelola AP &rarr;</span>` : ''}
           </div>
-        </div>` : `<div class="ons-kpi-card is-amber" ${canShift ? `onclick="navigateView('tutup-shift','')"` : ''}>
+        </div>` : `<div class="ons-kpi-card is-amber" ${canShift ? `onclick="navigateView('pos','tutup-shift')"` : ''}>
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Status Shift &amp; Laci Kas</div>
@@ -2011,11 +2011,15 @@
         <div class="ons-tab-bar">
           <button onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir Aktif (${cart.items.length})</button>
           <button onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Riwayat, Struk &amp; Retur PIN (${st.penjualan.length})</button>
+          ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button onclick="window.setPosSubTab('tutup-shift')" class="ons-tab-btn ${posSubTab === 'tutup-shift' ? 'active' : ''}">Tutup Shift &amp; Kas${st.activeShift ? ' <span class="ml-1 inline-block w-2 h-2 rounded-full bg-emerald-500"></span>' : ''}</button>` : ''}
         </div>
       </div>`;
 
     if (posSubTab === 'riwayat') {
       return renderPosHistoryView(st, subTabHeader);
+    }
+    if (posSubTab === 'tutup-shift' && global.ONSViewsClinicalFinanceAdmin && typeof global.ONSViewsClinicalFinanceAdmin.renderTutupShiftView === 'function') {
+      return global.ONSViewsClinicalFinanceAdmin.renderTutupShiftView({ embeddedInPos: true, subTabHeader });
     }
 
     const catalog = getFilteredPosCatalog();
@@ -2055,7 +2059,7 @@
           <div class="flex flex-wrap items-center gap-1.5">
             <button type="button" onclick="window.togglePosBeepSetting()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5" title="Suara bip saat scan/tambah item">Suara: ${posBeepEnabled ? 'ON' : 'OFF'}</button>
             <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Printer BT</button>
-            <button type="button" onclick="navigateView('tutup-shift')" class="ons-btn ons-btn-ghost text-xs py-1 px-3 font-semibold">Rekonsiliasi &amp; Tutup Shift &rarr;</button>
+            <button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-primary text-xs py-1 px-3 font-semibold">Rekonsiliasi &amp; Tutup Shift &rarr;</button>
           </div>
         ` : `
           <div class="flex flex-wrap items-center gap-2">

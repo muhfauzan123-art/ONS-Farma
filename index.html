@@ -102,17 +102,13 @@
             },
             {
               viewId: 'pos', label: 'Penjualan (POS)', icon: 'pos',
-              desc: 'Transaksi kasir FEFO cepat, cetak struk/etiket, riwayat nota & retur PIN.',
-              kw: 'kasir pos fefo penjualan jual barcode f2 riwayat nota void retur',
+              desc: 'Transaksi kasir FEFO cepat, cetak struk/etiket, riwayat nota, retur PIN & tutup shift laci kas.',
+              kw: 'kasir pos fefo penjualan jual barcode f2 riwayat nota void retur tutup shift z-report kas',
               tabs: [
                 { subTab: 'kasir', label: 'Kasir POS FEFO', kw: 'kasir jual scan barcode f2 split poin diskon etiket' },
-                { subTab: 'riwayat', label: 'Riwayat & Retur', kw: 'riwayat nota penjualan cetak ulang rincian void retur pin' }
+                { subTab: 'riwayat', label: 'Riwayat & Retur', kw: 'riwayat nota penjualan cetak ulang rincian void retur pin' },
+                { subTab: 'tutup-shift', label: 'Tutup Shift & Kas', kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi laci kas' }
               ]
-            },
-            {
-              viewId: 'tutup-shift', label: 'Tutup Shift & Kas', icon: 'clock',
-              desc: 'Hitung pecahan kas laci kasir, selisih setoran & serah terima shift.',
-              kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi'
             }
           ]
         },
@@ -540,6 +536,7 @@
 
       window.navigateView = function (viewId, subTab) {
         if (viewId === 'omnichannel') { viewId = 'pos'; subTab = 'kasir'; }
+        if (viewId === 'tutup-shift') { viewId = 'pos'; subTab = 'tutup-shift'; }
         if (viewId === 'pos' && subTab === 'online') subTab = 'kasir';
         if (viewId === 'gudang' && subTab === 'coldchain') subTab = 'batch';
         if (!ONSStore.canAccessView(viewId)) {
