@@ -3412,8 +3412,8 @@
 
         <div class="ons-card p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <h3 class="font-bold text-sm">Riwayat &amp; Status Surat Pesanan (SP Terintegrasi Faktur &amp; Arsip) (${(st.suratPesanan || []).length})</h3>
-            <button onclick="navigateView('doc-engine','surat')" class="ons-btn ons-btn-ghost text-xs">Buka Mesin Surat Resmi &rarr;</button>
+            <h3 class="font-bold text-sm">Riwayat &amp; Status Surat Pesanan (SP Terintegrasi Faktur &amp; A4) (${(st.suratPesanan || []).length})</h3>
+            <button type="button" onclick="window.setDefectaTab('sp')" class="ons-btn ons-btn-ghost text-xs">Buka Daftar Surat Pesanan (A4) &rarr;</button>
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
@@ -3432,6 +3432,7 @@
                     <td>
                       <div class="flex flex-wrap gap-1.5">
                         <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Preview A4</button>
+                        <button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Edit</button>
                         ${!done
                           ? `<button onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Faktur (GRN) &rarr;</button>`
                           : `<button onclick="navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Lihat Faktur</button>`}
@@ -3537,11 +3538,15 @@
         nama_pbf: pbfName,
         golongan_sp: golSp,
         items: spItems,
-        create_doc: true,
+        create_doc: false,
         catatan: 'SP dibuat otomatis dari analisa Defecta Apotek'
       }, { isWrite: true });
-      global.toast('SP Resmi (' + res.item.no_sp + ') tersimpan & draf dikirim ke Arsip Doc Engine!', 'ok');
+      global.toast('SP Resmi (' + res.item.no_sp + ') tersimpan! Siap Preview, Edit & Print A4.', 'ok');
       await global.bootLoadState(true);
+      if (res && res.item && res.item.id_sp && typeof global.openSpA4PreviewModal === 'function') {
+        global.setDefectaTab('sp');
+        global.openSpA4PreviewModal(res.item.id_sp);
+      }
     } catch (e) { global.toast(e.message, 'err'); }
   };
 

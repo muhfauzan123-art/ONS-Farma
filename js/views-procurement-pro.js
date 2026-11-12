@@ -16,6 +16,9 @@
   let spSearchQ = '';
   let spPreviewShowPrice = true;
 
+  let spEditingId = '';
+  let spDraftNoSp = '';
+  let spDraftTanggal = '';
   let spDraftPbfId = '';
   let spDraftGol = 'REGULER';
   let spDraftCatatan = '';
@@ -337,15 +340,27 @@
     const gol = String(sp.golongan_sp || 'REGULER').toUpperCase();
     const isNarcPsiPreOot = gol !== 'REGULER';
     const includePrice = showPrice !== undefined ? Boolean(showPrice) : !isNarcPsiPreOot;
-    const estSum = items.reduce((s, it) => s + (Number(it.qty || it.qty_pesan || 0) * Number(it.hpp_terakhir || it.hpp || 0)), 0);
+    const estSum = items.reduce((s, it) => s + (Number(it.qty || it.qty_pesan || 0) * Number(it.hpp_terakhir || it.hpp_unit || it.hpp || 0)), 0);
+
+    const apotekName = prof.nama_usaha || prof.nama_apotek || 'APOTEK ONS FARMA';
+    const apotekAddr = [prof.alamat_usaha || prof.alamat || '', prof.kota || '', prof.kode_pos || ''].filter(Boolean).join(', ') || '-';
+    const apotekTelp = prof.wa_usaha || prof.telepon_usaha || prof.telp_wa || '-';
+    const apotekEmail = prof.email_usaha || '';
+    const apotekLogo = prof.logo_usaha_url || '';
+    const apjName = prof.nama_pemilik || prof.nama_apj || sp.dibuat_oleh || '-';
+    const apjSipa = prof.sipa_pemilik || prof.no_sipa || '-';
+    const spTanggalFormatted = S().formatTgl(sp.tanggal || sp.tgl_sp || new Date().toISOString().slice(0, 10));
 
     return `<div id="spA4PaperSheet" style="width:100%;max-width:794px;margin:0 auto;background:#ffffff;color:#0f172a;padding:28px 34px;border:1px solid #cbd5e1;border-radius:4px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.45;box-shadow:0 8px 30px rgba(15,23,42,.12)">
       <!-- KOP SURAT APOTEK -->
       <div style="border-bottom:3px double #0f172a;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
-        <div>
-          <div style="font-size:17px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#003d99">${S().esc(prof.nama_apotek || 'APOTEK ONS FARMA ENTERPRISE')}</div>
-          <div style="font-size:11px;color:#334155">${S().esc(prof.alamat || '-')}</div>
-          <div style="font-size:11px;color:#334155">SIA: <b>${S().esc(prof.no_sia || '-')}</b> &bull; Telp/WA: ${S().esc(prof.telp_wa || '-')}</div>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          ${apotekLogo ? `<img src="${S().esc(apotekLogo)}" alt="Logo Apotek" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #cbd5e1;flex-shrink:0"/>` : ''}
+          <div>
+            <div style="font-size:17px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#003d99">${S().esc(apotekName)}</div>
+            <div style="font-size:11px;color:#334155">${S().esc(apotekAddr)}</div>
+            <div style="font-size:11px;color:#334155">SIA: <b>${S().esc(prof.no_sia || '-')}</b> &bull; Telp/WA: ${S().esc(apotekTelp)}${apotekEmail ? ` &bull; ${S().esc(apotekEmail)}` : ''}</div>
+          </div>
         </div>
         <div style="text-align:right;font-size:11px;white-space:nowrap">
           <div style="display:inline-block;padding:3px 8px;border:1.5px solid #003d99;border-radius:4px;font-weight:800;color:#003d99">${S().esc(gol)}</div>
@@ -364,8 +379,8 @@
           <td style="width:52%;vertical-align:top;padding:4px 0">
             <div>Yang bertanda tangan di bawah ini:</div>
             <table style="width:100%;margin-top:4px">
-              <tr><td style="width:110px;color:#475569">Nama Apoteker</td><td>: <b>${S().esc(prof.nama_apj || sp.dibuat_oleh || '-')}</b></td></tr>
-              <tr><td style="color:#475569">No. SIPA</td><td>: ${S().esc(prof.no_sipa || '-')}</td></tr>
+              <tr><td style="width:110px;color:#475569">Nama Apoteker</td><td>: <b>${S().esc(apjName)}</b></td></tr>
+              <tr><td style="color:#475569">No. SIPA</td><td>: ${S().esc(apjSipa)}</td></tr>
               <tr><td style="color:#475569">Jabatan</td><td>: Apoteker Penanggung Jawab (APJ)</td></tr>
             </table>
           </td>
@@ -374,7 +389,7 @@
             <div style="font-weight:800;font-size:12.5px">${S().esc(sp.nama_pbf || pbf.nama_pbf || '-')}</div>
             <div style="font-size:11px;color:#334155">Izin CDOB: ${S().esc(pbf.kode_cdob || '-')}</div>
             <div style="font-size:11px;color:#334155">Telp / Email: ${S().esc(pbf.kontak_wa || '-')} / ${S().esc(pbf.email_pbf || '-')}</div>
-            <div style="font-size:11px;color:#334155">Tanggal SP: <b>${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</b></div>
+            <div style="font-size:11px;color:#334155">Tanggal SP: <b>${spTanggalFormatted}</b></div>
           </td>
         </tr>
       </table>
@@ -396,7 +411,7 @@
         <tbody>
           ${items.length ? items.map((it, idx) => {
             const qty = Number(it.qty || it.qty_pesan || 0);
-            const hpp = Number(it.hpp_terakhir || it.hpp || 0);
+            const hpp = Number(it.hpp_terakhir || it.hpp_unit || it.hpp || 0);
             const obRef = (st.masterObat || []).find((m) => m.id_obat === it.id_obat) || {};
             return `<tr>
               <td style="border:1px solid #94a3b8;padding:6px;text-align:center">${idx + 1}</td>
@@ -410,7 +425,7 @@
           ${includePrice ? `
             <tr style="background:#f8fafc">
               <td colspan="6" style="border:1px solid #64748b;padding:7px;text-align:right;font-weight:800">TOTAL ESTIMASI NILAI PESANAN</td>
-              <td style="border:1px solid #64748b;padding:7px;text-align:right;font-weight:800;font-family:monospace">${S().rp(sp.estimasi_total || estSum)}</td>
+              <td style="border:1px solid #64748b;padding:7px;text-align:right;font-weight:800;font-family:monospace">${S().rp(estSum || sp.estimasi_total || 0)}</td>
             </tr>
           ` : ''}
         </tbody>
@@ -419,22 +434,22 @@
       ${sp.catatan ? `<div style="margin-bottom:14px;padding:7px 10px;background:#f8fafc;border-left:3px solid #0050CA;font-size:11px"><b>Catatan Pengadaan:</b> ${S().esc(sp.catatan)}</div>` : ''}
 
       <div style="font-size:11px;color:#334155;margin-bottom:22px">
-        Obat tersebut di atas akan dipergunakan untuk memenuhi kebutuhan pelayanan kesehatan di <b>${S().esc(prof.nama_apotek || 'Apotek ONS Farma')}</b> (SIA: ${S().esc(prof.no_sia || '-')}). Atas kerja sama dan pengirimannya kami ucapkan terima kasih.
+        Obat tersebut di atas akan dipergunakan untuk memenuhi kebutuhan pelayanan kesehatan di <b>${S().esc(apotekName)}</b> (SIA: ${S().esc(prof.no_sia || '-')}). Atas kerja sama dan pengirimannya kami ucapkan terima kasih.
       </div>
 
       <!-- TANDA TANGAN APJ & STEMPEL -->
       <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px">
         <div style="font-size:10.5px;color:#475569;border:1px dashed #94a3b8;padding:8px 12px;border-radius:4px">
-          <div><b>Verifikasi Digital SP:</b> ${S().esc(sp.no_sp || '-')}</div>
-          <div>Status Saat Ini: <b>${S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</b></div>
+          <div><b>Nomor Dokumen SP:</b> ${S().esc(sp.no_sp || '-')}</div>
+          <div>Status Pengadaan: <b>${S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</b></div>
           <div>Dicetak dari Sistem ONS Farma Enterprise</div>
         </div>
         <div style="text-align:center;min-width:240px">
-          <div>${S().esc(prof.kota || 'Makassar')}, ${S().formatTgl(sp.tanggal || new Date().toISOString().slice(0, 10))}</div>
+          <div>${S().esc(prof.kota || 'Makassar')}, ${spTanggalFormatted}</div>
           <div style="font-weight:700;margin-top:2px">Pemesan / Apoteker Penanggung Jawab,</div>
           <div style="height:58px"></div>
-          <div style="font-weight:800;text-decoration:underline">${S().esc(prof.nama_apj || sp.dibuat_oleh || '-')}</div>
-          <div style="font-size:11px">SIPA: ${S().esc(prof.no_sipa || '-')}</div>
+          <div style="font-weight:800;text-decoration:underline">${S().esc(apjName)}</div>
+          <div style="font-size:11px">SIPA: ${S().esc(apjSipa)}</div>
         </div>
       </div>
     </div>`;
@@ -532,6 +547,7 @@
                   <td>
                     <div class="flex flex-wrap gap-1.5">
                       <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Preview &amp; Cetak A4</button>
+                      <button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit SP</button>
                       <button type="button" onclick="window.sendSpViaWa('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">WA PBF</button>
                       ${!done ? `<button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Barang Tiba &rarr; Faktur</button>` : ''}
                     </div>
@@ -549,6 +565,7 @@
     const st = S().AppState;
     const pbfs = st.supplierPbf || [];
     if (!spDraftPbfId && pbfs[0]) spDraftPbfId = pbfs[0].id_pbf;
+    const isEdit = Boolean(spEditingId);
     const dq = spDraftSearch.trim().toLowerCase();
     const candidates = (st.masterObat || []).filter((o) => {
       if (!dq) return true;
@@ -559,15 +576,25 @@
     return `<div class="ons-ws-modal" data-ws-custom="1">
       <div class="ons-ws-header">
         <div>
-          <h2 class="text-base sm:text-lg font-extrabold tracking-tight">Buat Surat Pesanan (SP) Manual &amp; Custom</h2>
-          <p class="text-[11px]" style="color:var(--ons-text-soft)">Pilih PBF resmi, golongan BPOM, dan daftar obat yang dipesan. Setelah tersimpan bisa langsung Preview &amp; Print A4.</p>
+          <h2 class="text-base sm:text-lg font-extrabold tracking-tight">${isEdit ? `Edit Surat Pesanan (SP) &mdash; ${S().esc(spDraftNoSp || spEditingId)}` : 'Buat Surat Pesanan (SP) Manual &amp; Custom'}</h2>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">${isEdit ? 'Ubah nomor surat, tanggal, PBF, daftar obat, satuan, atau jumlah pesanan sebelum dicetak ke kertas A4.' : 'Pilih PBF resmi, golongan BPOM, dan daftar obat yang dipesan. Setelah tersimpan langsung tampil Preview &amp; Print A4.'}</p>
         </div>
         <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup (Esc)</button>
       </div>
       <div class="ons-ws-body">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div class="lg:col-span-5 ons-card p-4 space-y-3">
-            <div class="text-xs font-extrabold uppercase tracking-wider text-blue-600">1. Identitas PBF &amp; Golongan SP</div>
+            <div class="text-xs font-extrabold uppercase tracking-wider text-blue-600">1. Identitas &amp; Kop Surat Pesanan</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="text-[11px] font-bold block mb-1">Nomor SP</label>
+                <input id="spDraftNoInp" class="ons-input font-mono-num text-xs" value="${S().esc(spDraftNoSp)}" placeholder="Otomatis jika dikosongkan" oninput="window.setSpDraftField('no_sp', this.value)"/>
+              </div>
+              <div>
+                <label class="text-[11px] font-bold block mb-1">Tanggal SP</label>
+                <input id="spDraftTglInp" type="date" class="ons-input text-xs" value="${S().esc(spDraftTanggal || new Date().toISOString().slice(0, 10))}" onchange="window.setSpDraftField('tanggal', this.value)"/>
+              </div>
+            </div>
             <div>
               <label class="text-[11px] font-bold block mb-1">Supplier PBF Tujuan *</label>
               <select class="ons-select text-xs" onchange="window.setSpDraftField('pbf', this.value)">
@@ -587,7 +614,7 @@
             <div class="pt-2 border-t space-y-2" style="border-color:var(--ons-border)">
               <div class="text-xs font-extrabold uppercase tracking-wider text-blue-600">2. Cari &amp; Tambah Obat Katalog</div>
               <input class="ons-input text-xs" value="${S().esc(spDraftSearch)}" placeholder="Ketik nama obat / zat aktif..." oninput="window.setSpDraftField('search', this.value)"/>
-              <div class="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+              <div class="max-h-52 overflow-y-auto space-y-1.5 pr-1">
                 ${candidates.map((o) => {
                   const stok = S().getSellableStok(o.id_obat);
                   return `<div class="p-2 rounded-lg border flex items-center justify-between gap-2 text-xs" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
@@ -599,26 +626,41 @@
                   </div>`;
                 }).join('')}
               </div>
+              <div class="pt-2 border-t space-y-1.5" style="border-color:var(--ons-border)">
+                <div class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Atau Tambah Item Manual (Belum Ada di Katalog):</div>
+                <div class="grid grid-cols-12 gap-1.5">
+                  <input id="spCustomNameInp" class="ons-input text-xs col-span-6" placeholder="Nama Obat / Alkes..."/>
+                  <input id="spCustomUnitInp" class="ons-input text-xs col-span-3" placeholder="Satuan" value="Box"/>
+                  <button type="button" onclick="window.addSpDraftCustomItem()" class="ons-btn ons-btn-ghost text-[11px] col-span-3 px-2">+ Item</button>
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="lg:col-span-7 ons-card p-4 space-y-3 flex flex-col">
-            <div class="flex items-center justify-between gap-2">
-              <div class="text-xs font-extrabold uppercase tracking-wider text-emerald-600">3. Daftar Item Pada Surat Pesanan (${spDraftItems.length})</div>
-              <span class="font-mono-num text-xs font-bold">Estimasi: ${S().rp(estTotal)}</span>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-extrabold uppercase tracking-wider text-emerald-600">3. Daftar Item Pesanan (${spDraftItems.length} Item)</div>
+                <div class="text-[11px]" style="color:var(--ons-text-soft)">Nama item, satuan, qty pesan, dan estimasi HPP dapat diubah langsung sebelum cetak A4.</div>
+              </div>
+              <span id="spDraftEstTotalBadge" class="font-mono-num text-xs font-bold">Estimasi: ${S().rp(estTotal)}</span>
             </div>
             <div class="ons-table-wrap flex-1">
               <table class="ons-table">
-                <thead><tr><th>Nama Obat</th><th>Satuan</th><th>Qty Pesan</th><th>Est. HPP Unit</th><th>Subtotal</th><th></th></tr></thead>
+                <thead><tr><th>Nama Obat / Sediaan</th><th>Satuan</th><th>Qty Pesan</th><th>Est. HPP Unit (Rp)</th><th>Subtotal</th><th></th></tr></thead>
                 <tbody>
                   ${spDraftItems.length ? spDraftItems.map((it, idx) => `<tr>
-                    <td class="text-xs font-bold">${S().esc(it.nama_dagang)}</td>
-                    <td class="text-xs">${S().esc(it.satuan_dasar || 'Unit')}</td>
-                    <td><input type="number" min="1" class="ons-input w-20 text-xs font-mono-num py-1 min-h-0" value="${it.qty}" onchange="window.updateSpDraftQty(${idx}, this.value)"/></td>
-                    <td class="font-mono-num text-xs">${S().rp(it.hpp_terakhir || 0)}</td>
-                    <td class="font-mono-num text-xs font-bold">${S().rp(Number(it.qty || 0) * Number(it.hpp_terakhir || 0))}</td>
-                    <td><button type="button" onclick="window.removeSpDraftItem(${idx})" class="text-xs text-red-600 font-bold">Hapus</button></td>
-                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-10 text-xs" style="color:var(--ons-text-soft)">Pilih obat dari daftar di sebelah kiri untuk dimasukkan ke SP.</td></tr>'}
+                    <td>
+                      <input class="ons-input text-xs font-bold py-1 min-h-0 min-w-[160px]" value="${S().esc(it.nama_dagang)}" onchange="window.updateSpDraftField(${idx}, 'nama_dagang', this.value)"/>
+                    </td>
+                    <td>
+                      <input class="ons-input text-xs w-20 py-1 min-h-0" value="${S().esc(it.satuan_dasar || it.satuan || 'Unit')}" onchange="window.updateSpDraftField(${idx}, 'satuan_dasar', this.value)"/>
+                    </td>
+                    <td><input type="number" min="1" class="ons-input w-20 text-xs font-mono-num py-1 min-h-0 text-right" value="${it.qty}" onchange="window.updateSpDraftQty(${idx}, this.value)"/></td>
+                    <td><input type="number" min="0" class="ons-input w-24 text-xs font-mono-num py-1 min-h-0 text-right" value="${Number(it.hpp_terakhir || it.hpp_unit || 0)}" onchange="window.updateSpDraftField(${idx}, 'hpp_terakhir', this.value)"/></td>
+                    <td class="font-mono-num text-xs font-bold whitespace-nowrap">${S().rp(Number(it.qty || 0) * Number(it.hpp_terakhir || it.hpp_unit || 0))}</td>
+                    <td><button type="button" onclick="window.removeSpDraftItem(${idx})" class="text-xs text-red-600 font-bold px-1.5 py-1">Hapus</button></td>
+                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-10 text-xs" style="color:var(--ons-text-soft)">Pilih obat dari daftar di sebelah kiri atau tambahkan item manual untuk dimasukkan ke SP.</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -627,7 +669,7 @@
       </div>
       <div class="ons-ws-footer">
         <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
-        <button type="button" onclick="window.submitCreateSpManual()" class="ons-btn ons-btn-primary text-xs">Simpan SP &amp; Buka Preview A4 &rarr;</button>
+        <button type="button" onclick="window.submitCreateSpManual()" class="ons-btn ons-btn-primary text-xs">${isEdit ? 'Simpan Perubahan &amp; Preview A4 &rarr;' : 'Simpan SP &amp; Buka Preview A4 &rarr;'}</button>
       </div>
     </div>`;
   }
@@ -679,18 +721,71 @@
   global.setSpSearchQ = (v) => { spSearchQ = v || ''; global.renderActiveView(); };
 
   global.openCreateSpModal = () => {
+    const pbfs = S().AppState.supplierPbf || [];
+    spEditingId = '';
+    spDraftNoSp = '';
+    spDraftTanggal = new Date().toISOString().slice(0, 10);
+    spDraftPbfId = (pbfs[0] && pbfs[0].id_pbf) || '';
+    spDraftGol = 'REGULER';
     spDraftItems = [];
     spDraftSearch = '';
     spDraftCatatan = '';
     S().openModal(buildCreateSpModalHtml(), 'full');
   };
 
+  global.openEditSpModal = (idSp) => {
+    const st = S().AppState;
+    const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Data Surat Pesanan tidak ditemukan.', 'warn');
+    const pbf = (st.supplierPbf || []).find((p) => p.id_pbf === sp.id_pbf || p.nama_pbf === sp.nama_pbf);
+    spEditingId = sp.id_sp;
+    spDraftNoSp = sp.no_sp || '';
+    spDraftTanggal = String(sp.tanggal || sp.tgl_sp || new Date().toISOString().slice(0, 10)).slice(0, 10);
+    spDraftPbfId = (pbf && pbf.id_pbf) || sp.id_pbf || ((st.supplierPbf[0] && st.supplierPbf[0].id_pbf) || '');
+    spDraftGol = String(sp.golongan_sp || 'REGULER').toUpperCase();
+    spDraftCatatan = sp.catatan || '';
+    spDraftSearch = '';
+    spDraftItems = parseSpItems(sp).map((it) => {
+      const obRef = (st.masterObat || []).find((m) => m.id_obat === it.id_obat) || {};
+      return {
+        id_obat: it.id_obat || ('CUSTOM-' + Math.random().toString(36).slice(2, 6).toUpperCase()),
+        nama_dagang: it.nama_dagang || obRef.nama_dagang || it.id_obat || 'Obat',
+        zat_aktif: it.zat_aktif || obRef.zat_aktif || '',
+        golongan_bpom: it.golongan_bpom || obRef.golongan_bpom || spDraftGol,
+        satuan_dasar: it.satuan_dasar || it.satuan || obRef.satuan_dasar || 'Unit',
+        qty: Math.max(1, Number(it.qty || it.qty_pesan || 1)),
+        hpp_terakhir: Math.max(0, Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit !== undefined ? it.hpp_unit : (it.hpp || obRef.hpp_terakhir || obRef.hpp_avg || 0))))
+      };
+    });
+    S().openModal(buildCreateSpModalHtml(), 'full');
+  };
+
   global.setSpDraftField = (key, val) => {
-    if (key === 'pbf') spDraftPbfId = val;
+    if (key === 'no_sp') spDraftNoSp = val;
+    else if (key === 'tanggal') spDraftTanggal = val;
+    else if (key === 'pbf') spDraftPbfId = val;
     else if (key === 'gol') spDraftGol = val;
     else if (key === 'catatan') spDraftCatatan = val;
     else if (key === 'search') spDraftSearch = val;
-    if (key !== 'catatan') S().openModal(buildCreateSpModalHtml(), 'full');
+    if (key !== 'catatan' && key !== 'no_sp') S().openModal(buildCreateSpModalHtml(), 'full');
+  };
+
+  global.addSpDraftCustomItem = () => {
+    const nmEl = document.getElementById('spCustomNameInp');
+    const unitEl = document.getElementById('spCustomUnitInp');
+    const nm = nmEl ? String(nmEl.value || '').trim() : '';
+    const unit = (unitEl ? String(unitEl.value || '').trim() : '') || 'Box';
+    if (!nm) return global.toast('Isi nama obat/alkes terlebih dahulu.', 'warn');
+    spDraftItems.push({
+      id_obat: 'CUSTOM-' + Date.now().toString().slice(-5),
+      nama_dagang: nm,
+      zat_aktif: '-',
+      golongan_bpom: spDraftGol || 'REGULER',
+      satuan_dasar: unit,
+      qty: 1,
+      hpp_terakhir: 0
+    });
+    S().openModal(buildCreateSpModalHtml(), 'full');
   };
 
   global.addSpDraftItem = (idObat) => {
@@ -713,6 +808,15 @@
     S().openModal(buildCreateSpModalHtml(), 'full');
   };
 
+  global.updateSpDraftField = (idx, field, val) => {
+    const it = spDraftItems[idx];
+    if (!it) return;
+    if (field === 'hpp_terakhir') it.hpp_terakhir = Math.max(0, Number(val || 0));
+    else if (field === 'qty') it.qty = Math.max(1, Number(val || 1));
+    else it[field] = String(val || '');
+    S().openModal(buildCreateSpModalHtml(), 'full');
+  };
+
   global.updateSpDraftQty = (idx, val) => {
     if (spDraftItems[idx]) spDraftItems[idx].qty = Math.max(1, Number(val || 1));
     S().openModal(buildCreateSpModalHtml(), 'full');
@@ -726,17 +830,27 @@
   global.submitCreateSpManual = async () => {
     try {
       if (!spDraftItems.length) throw new Error('Tambahkan minimal 1 item obat ke Surat Pesanan.');
+      const noEl = document.getElementById('spDraftNoInp');
+      const tglEl = document.getElementById('spDraftTglInp');
+      if (noEl) spDraftNoSp = String(noEl.value || '').trim();
+      if (tglEl && tglEl.value) spDraftTanggal = String(tglEl.value || '').trim();
       const pbf = (S().AppState.supplierPbf || []).find((p) => p.id_pbf === spDraftPbfId) || {};
-      const res = await API().callApi('sp.save', {
+      const payload = {
         id_pbf: pbf.id_pbf || '',
         nama_pbf: pbf.nama_pbf || 'PBF Reguler',
         golongan_sp: spDraftGol || 'REGULER',
+        tanggal: spDraftTanggal || new Date().toISOString().slice(0, 10),
         items: spDraftItems,
-        create_doc: true,
-        catatan: spDraftCatatan || 'SP Manual Pengadaan Apotek'
-      }, { isWrite: true });
+        create_doc: false,
+        catatan: spDraftCatatan
+      };
+      if (spEditingId) payload.id_sp = spEditingId;
+      if (spDraftNoSp) payload.no_sp = spDraftNoSp;
+      const wasEdit = Boolean(spEditingId);
+      const res = await API().callApi('sp.save', payload, { isWrite: true });
+      spEditingId = '';
       S().closeModal();
-      global.toast('Surat Pesanan ' + (res && res.item ? res.item.no_sp : '') + ' berhasil dibuat!', 'ok');
+      global.toast('Surat Pesanan ' + (res && res.item ? res.item.no_sp : '') + (wasEdit ? ' berhasil diperbarui!' : ' berhasil dibuat!'), 'ok');
       await global.bootLoadState(true);
       if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
       if (res && res.item && res.item.id_sp) {
@@ -757,13 +871,14 @@
       <div class="ons-ws-header">
         <div>
           <h2 class="text-base sm:text-lg font-extrabold tracking-tight">Preview Cetak Kertas A4 &mdash; ${S().esc(sp.no_sp)}</h2>
-          <p class="text-[11px]" style="color:var(--ons-text-soft)">Pratinjau proporsi kertas A4 Portrait (210 &times; 297 mm) sebelum dicetak ke printer atau dikirim ke sales PBF.</p>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Pratinjau proporsi kertas A4 Portrait (210 &times; 297 mm). Bisa langsung edit isi/item SP sebelum dicetak.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <label class="text-xs flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border)">
             <input type="checkbox" ${spPreviewShowPrice ? 'checked' : ''} onchange="window.toggleSpA4PricePreview('${S().esc(idSp)}', this.checked)"/>
             <span>Tampilkan Estimasi Harga</span>
           </label>
+          <button type="button" onclick="window.openEditSpModal('${S().esc(idSp)}')" class="ons-btn ons-btn-amber text-xs">Edit Isi SP</button>
           <button type="button" onclick="window.printSuratPesananA4('${S().esc(idSp)}')" class="ons-btn ons-btn-primary text-xs">Cetak Kertas A4 (Print)</button>
           <button type="button" onclick="window.sendSpViaWa('${S().esc(idSp)}')" class="ons-btn ons-btn-emerald text-xs">Kirim Order WA PBF</button>
           ${!done ? `<button type="button" onclick="window.ONSStore.closeModal();window.loadSpIntoGrn('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">Barang Tiba &rarr; Terima Faktur</button>` : ''}

@@ -1350,15 +1350,17 @@
         throw new Error('Supplier PBF dan minimal 1 item obat Surat Pesanan wajib diisi.');
       }
       const pbf = db.supplier_pbf.find((p) => p.id_pbf === d.id_pbf || String(p.nama_pbf || '').toLowerCase() === String(d.nama_pbf || '').toLowerCase());
-      const idSp = d.id_sp || ('SP-' + Date.now().toString().slice(-6));
-      db.doc_counter = (db.doc_counter || 13) + 1;
-      const noSp = d.no_sp || ('SP/' + String(db.doc_counter).padStart(4, '0') + '/ONS/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear());
+      const existing = d.id_sp ? db.surat_pesanan.find((s) => s.id_sp === d.id_sp) : null;
+      const isUpdate = Boolean(existing);
+      const idSp = isUpdate ? existing.id_sp : (d.id_sp || ('SP-' + Date.now().toString().slice(-6)));
+      if (!isUpdate) db.doc_counter = (db.doc_counter || 13) + 1;
+      const noSp = String(d.no_sp || (existing && existing.no_sp) || ('SP/' + String(db.doc_counter).padStart(4, '0') + '/ONS/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear())).trim();
       const namaPbf = (pbf && pbf.nama_pbf) || d.nama_pbf || d.id_pbf;
-      const golSp = String(d.golongan_sp || 'REGULER').toUpperCase();
+      const golSp = String(d.golongan_sp || (existing && existing.golongan_sp) || 'REGULER').toUpperCase();
       const estTotal = spItems.reduce((s, it) => s + (Number(it.qty || it.qty_order || 0) * Number(it.hpp_unit || it.hpp_terakhir || 0)), 0);
 
       let docObj = null;
-      if (d.create_doc !== false) {
+      if (!isUpdate && d.create_doc !== false) {
         docObj = {
           ID: 'DOC-' + Date.now().toString().slice(-5),
           ID_Templat: 'TPL-SP',
@@ -1381,6 +1383,21 @@
           Catatan: 'Terhubung dari Surat Pesanan ' + idSp
         };
         db.de_dokumen.unshift(docObj);
+      }
+
+      if (isUpdate) {
+        existing.no_sp = noSp;
+        existing.tanggal = d.tanggal || existing.tanggal || isoToday;
+        existing.id_pbf = (pbf && pbf.id_pbf) || d.id_pbf || existing.id_pbf || '';
+        existing.nama_pbf = namaPbf;
+        existing.golongan_sp = golSp;
+        existing.items_json = JSON.stringify(spItems);
+        existing.estimasi_total = Math.round(estTotal);
+        if (d.catatan !== undefined) existing.catatan = String(d.catatan || '');
+        db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'SURAT_PESANAN_UPDATE', entitas: 'SURAT_PESANAN', entitas_id: idSp, diff_sesudah_json: JSON.stringify({ no_sp: noSp, pbf: namaPbf, jml_item: spItems.length }) });
+        db.epoch++;
+        saveDb(db);
+        return { item: existing, updated: true, doc: null };
       }
 
       const row = {

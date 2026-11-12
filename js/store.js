@@ -35,7 +35,6 @@
     { key: 'finance', label: 'Keuangan & Kas (P&L, Piutang, Hutang, Pajak)', group: 'Keuangan & Laporan' },
     { key: 'billing', label: 'Tagihan & Kwitansi QR', group: 'Keuangan & Laporan' },
     { key: 'sipnap', label: 'Laporan & SIPNAP Kemenkes', group: 'Keuangan & Laporan' },
-    { key: 'doc-engine', label: 'Dokumen Resmi QR HMAC', group: 'Keuangan & Laporan' },
     { key: 'settings', label: 'Pengaturan Apotek & Akun', group: 'Sistem' },
     { key: 'settings:audit', label: 'Edit Sistem Audit & Log Audit', group: 'Sistem' },
     { key: 'mobile-preview', label: 'Tampilan Mode HP', group: 'Sistem' }

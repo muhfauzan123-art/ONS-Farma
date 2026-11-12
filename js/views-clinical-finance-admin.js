@@ -2879,7 +2879,7 @@
       <div class="ons-card p-5 space-y-4 text-xs">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="font-bold text-sm">3. Pratinjau Kop Resmi &amp; Konfirmasi Data</h3>
-          <span class="text-[11px]" style="color:var(--ons-text-soft)">Menampilkan pratinjau langsung pada Etiket, Kwitansi, &amp; Dokumen Resmi.</span>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Menampilkan pratinjau langsung pada Etiket, Kwitansi, &amp; Surat Pesanan (SP A4).</span>
         </div>
         <div id="profKopPreviewBox" class="p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
           <div class="flex items-center gap-3">

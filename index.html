@@ -255,15 +255,6 @@
                 { subTab: 'pareto', label: 'Pareto ABC & WHO', kw: 'pareto abc fast slow moving who' },
                 { subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock permintaan tertolak lost sales' }
               ]
-            },
-            {
-              viewId: 'doc-engine', label: 'Dokumen Resmi QR', icon: 'doc',
-              desc: 'Terbitkan surat resmi apotek ber-QR HMAC & pindai templat {{Tag}}.',
-              kw: 'doc engine surat resmi bpom qr verifikasi ttd pin templat',
-              tabs: [
-                { subTab: 'surat', label: 'Arsip & Surat QR', kw: 'buat surat resmi tanda tangan pin qr' },
-                { subTab: 'pindai', label: 'Pemindai Templat', kw: 'templat google docs placeholder' }
-              ]
             }
           ]
         },
@@ -567,6 +558,7 @@
         if (viewId === 'tutup-shift') { viewId = 'pos'; subTab = 'tutup-shift'; }
         if (viewId === 'pos' && subTab === 'online') subTab = 'kasir';
         if (viewId === 'defecta' && subTab === 'supplier') { viewId = 'obat'; subTab = 'supplier'; }
+        if (viewId === 'doc-engine') { viewId = 'defecta'; subTab = 'sp'; }
         if (!ONSStore.canAccessView(viewId)) {
           toast('Akses dibatasi untuk peran ' + ONSStore.getRole(), 'warn');
           return;
@@ -591,7 +583,6 @@
             finance: window.setFinanceTab,
             sipnap: window.setSipnapTab,
             billing: window.setBillingTab,
-            'doc-engine': window.setDocTab,
             settings: window.setSettingsTab
           };
           if (typeof setterMap[viewId] === 'function') {
@@ -798,7 +789,7 @@
           case 'crm-wa': slot.innerHTML = v4.renderCrmWaView(); break;
           case 'finance': slot.innerHTML = v3.renderFinanceView(); break;
           case 'billing': slot.innerHTML = v3.renderBillingModuleView(); break;
-          case 'doc-engine': slot.innerHTML = v3.renderDocEngineView(); break;
+          case 'doc-engine': slot.innerHTML = v2.renderDefectaView(); break;
           case 'tutup-shift': slot.innerHTML = v3.renderTutupShiftView(); break;
           case 'sipnap': slot.innerHTML = v3.renderSipnapParetoView(); break;
           case 'settings': slot.innerHTML = v3.renderSettingsView(); break;
@@ -1333,7 +1324,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.21 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.22 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
@@ -1431,9 +1422,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_21') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_22') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_21', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_22', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {
