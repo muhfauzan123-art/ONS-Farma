@@ -455,7 +455,33 @@
   };
 
   /**
-   * W-01: Halaman Autentikasi & Multi-Branch Switcher
+   * Ikon SVG Terpadu Halaman Login (2px stroke — UI/UX Pro Max)
+   */
+  function _loginIco(name, cls) {
+    const p = {
+      shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+      lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+      user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+      eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+      eyeOff: '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>',
+      sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+      moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+      check: '<polyline points="20 6 9 17 4 12"/>',
+      bolt: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+      cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+      building: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>',
+      clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+      arrowRight: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+      qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v3h-3"/><path d="M14 20h7"/><path d="M20 17v3"/>',
+      store: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/>',
+      rx: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15h6"/>',
+      warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'
+    };
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="${cls || 'w-4 h-4 shrink-0'}">${p[name] || p.shield}</svg>`;
+  }
+
+  /**
+   * W-01: Halaman Autentikasi & Multi-Branch Switcher Enterprise
    */
   function renderLoginView(root) {
     const demoMode = API().isDemoMode();
@@ -463,125 +489,302 @@
     const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
     const usahaNama = prof.nama_usaha || 'APOTEK ONS FARMA';
     const pemilikNama = prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
-    root.innerHTML = `<div class="min-h-screen flex items-center justify-center p-4" style="background:radial-gradient(circle at top right,#0050CA22,transparent 50%),linear-gradient(155deg,#09202A 0%,#0F172A 100%);">
-      <div class="ons-card max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 overflow-hidden shadow-2xl border-slate-700/40">
-        <div class="md:col-span-5 p-7 text-white flex flex-col justify-between" style="background:linear-gradient(175deg,#09202A 0%,#06171F 100%);">
-          <div>
-            <div class="flex items-center gap-3 mb-5">
-              <img src="${S().esc(usahaLogo)}" alt="Logo" class="w-12 h-12 rounded-xl border border-white/15 object-cover bg-white"/>
-              <div>
-                <div class="font-bold text-lg tracking-tight">${S().esc(usahaNama.toUpperCase())}</div>
-                <div class="text-xs text-sky-300 font-semibold">${S().esc(pemilikNama)}</div>
+    const nowDt = new Date();
+    const hr = nowDt.getHours();
+    const autoShift = (hr >= 21 || hr < 7) ? 'MALAM' : (hr >= 14 ? 'SIANG' : 'PAGI');
+    const timeStr = nowDt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = nowDt.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const isDark = !!(S().AppState && S().AppState.darkMode);
+    const gasConfigured = !!(global.ONS_CONFIG && global.ONS_CONFIG.GAS_URL && global.ONS_CONFIG.GAS_URL.indexOf('GANTI_DENGAN_ID') === -1);
+
+    root.innerHTML = `<div class="ons-login-stage">
+      <div class="ons-login-shell grid grid-cols-1 lg:grid-cols-12">
+        <!-- Panel Kiri: Identitas Klinis, Jaminan Kepatuhan & Status Koneksi -->
+        <div class="ons-login-hero lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between gap-6">
+          <div class="space-y-5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="relative shrink-0">
+                  <img src="${S().esc(usahaLogo)}" alt="Logo ${S().esc(usahaNama)}" class="w-14 h-14 rounded-2xl border-2 border-white/20 object-cover bg-white shadow-lg"/>
+                  <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#071928] flex items-center justify-center text-white">${_loginIco('check', 'w-2.5 h-2.5')}</span>
+                </div>
+                <div class="min-w-0">
+                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-bold tracking-wider uppercase text-sky-200 mb-1">Portal Staf Terenkripsi</div>
+                  <div class="font-extrabold text-lg sm:text-xl tracking-tight text-white truncate">${S().esc(usahaNama.toUpperCase())}</div>
+                  <div class="text-xs text-sky-300 font-semibold truncate">${S().esc(pemilikNama)}</div>
+                </div>
               </div>
             </div>
-            <h2 class="text-xl font-bold leading-snug mb-3">Sistem Terpadu POS, FEFO Gudang, Layanan Klinis &amp; Keuangan</h2>
-            <p class="text-xs text-slate-300 leading-relaxed">Arsitektur Terpisah GitHub Pages PWA + Google Apps Script REST API + Perlindungan HMAC-SHA256.</p>
-            <div class="mt-3 text-[11px] text-slate-400">SIA: ${S().esc(prof.no_sia || '-')} &bull; ${S().esc(prof.kota || 'Makassar')}</div>
-          </div>
-          <div class="mt-6 space-y-2 text-xs">
-            <div class="p-3 rounded-lg bg-white/5 border border-white/10">
-              <div class="font-semibold text-emerald-300 mb-1">Status Koneksi Backend:</div>
-              <div>${demoMode ? '&#9889; Mode Sandbox Lokal Interaktif (Siap Uji Coba Instan)' : '&#127760; Mode Live Google Apps Script (/exec)'}</div>
+
+            <div class="space-y-2.5">
+              <h2 class="text-xl sm:text-[22px] font-extrabold leading-snug tracking-tight text-white">Sistem Terpadu POS, FEFO Gudang, Layanan Klinis &amp; Keuangan</h2>
+              <p class="text-xs text-slate-300 leading-relaxed">Arsitektur Terpisah Cloud PWA + Google Apps Script REST API dengan perlindungan kriptografi sesi HMAC-SHA256.</p>
             </div>
-            <div class="flex gap-2">
-              <button onclick="window.switchBackendMode('DEMO')" class="ons-btn ons-btn-ghost flex-1 text-xs py-1.5" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2);">Mode Demo</button>
-              <button onclick="window.switchBackendMode('LIVE')" class="ons-btn ons-btn-ghost flex-1 text-xs py-1.5" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2);">Mode Live GAS</button>
+
+            <div class="grid grid-cols-1 gap-2 text-xs">
+              <div class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.06] border border-white/10">
+                <span class="text-emerald-400 shrink-0">${_loginIco('shield', 'w-4 h-4')}</span>
+                <div class="min-w-0">
+                  <div class="text-[11px] font-semibold text-white truncate">Izin SIA: ${S().esc(prof.no_sia || '-')}</div>
+                  <div class="text-[10px] text-slate-300 truncate">${S().esc(prof.kota || 'Sigi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || prof.no_sipa || 'Aktif')}</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-200">
+                <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10">
+                  <span class="text-sky-400 shrink-0">${_loginIco('lock', 'w-3.5 h-3.5')}</span>
+                  <span class="font-medium truncate">Anti Brute-Force 5x</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10">
+                  <span class="text-emerald-400 shrink-0">${_loginIco('clock', 'w-3.5 h-3.5')}</span>
+                  <span class="font-medium truncate">Auto-Lock 25 Menit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kartu Status Koneksi & Pengalih Mode -->
+          <div class="space-y-2.5">
+            <div class="p-3.5 rounded-2xl bg-black/25 border border-white/12 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0 ${demoMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
+                  <span class="text-xs font-bold uppercase tracking-wider ${demoMode ? 'text-amber-300' : 'text-emerald-300'}">${demoMode ? 'Mode Sandbox Demo' : 'Live Google Apps Script'}</span>
+                </div>
+                <button type="button" onclick="window.pingBackendHealth()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white transition-colors shrink-0">Cek Koneksi</button>
+              </div>
+              <div class="text-xs text-slate-200 leading-snug flex items-center gap-2">
+                <span class="${demoMode ? 'text-amber-300' : 'text-emerald-300'} shrink-0">${_loginIco(demoMode ? 'bolt' : 'cloud', 'w-4 h-4')}</span>
+                <span id="loginConnDesc">${demoMode ? 'Penyimpanan lokal browser (aman untuk uji coba &amp; simulasi peran).' : (gasConfigured ? 'Terhubung langsung ke Google Sheets &amp; Drive Apotek (/exec).' : 'URL Google Apps Script belum terpasang di config.js.')}</span>
+              </div>
+              <div id="loginPingResult" class="text-[11px] font-mono-num text-slate-300 hidden"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2" role="group" aria-label="Pilih Mode Backend">
+              <button type="button" onclick="window.switchBackendMode('DEMO')" class="ons-login-mode-btn ${demoMode ? 'is-active-demo' : ''}">
+                ${demoMode ? _loginIco('check', 'w-3.5 h-3.5') : _loginIco('bolt', 'w-3.5 h-3.5')}
+                <span>Mode Demo</span>
+              </button>
+              <button type="button" onclick="window.switchBackendMode('LIVE')" class="ons-login-mode-btn ${!demoMode ? 'is-active-live' : ''}">
+                ${!demoMode ? _loginIco('check', 'w-3.5 h-3.5') : _loginIco('cloud', 'w-3.5 h-3.5')}
+                <span>Mode Live GAS</span>
+              </button>
             </div>
           </div>
         </div>
-        <div class="md:col-span-7 p-7 space-y-5">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-xl font-bold">Masuk ke Ruang Kerja Apotek</h1>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Pilih cabang, shift kerja, dan kredensial peran Anda.</p>
-            </div>
-            <button onclick="ONSStore.toggleDarkMode();renderApp();" class="ons-btn ons-btn-ghost text-xs px-3">${S().AppState.darkMode ? '&#9728;&#65039; Terang' : '&#127769; Malam'}</button>
-          </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs font-semibold block mb-1">Cabang Apotek</label>
-              <select id="loginBranch" class="ons-select">
-                <option value="ONS-01">ONS-01 — Pusat Utama (SIA Aktif)</option>
-                <option value="ONS-02">ONS-02 — Cabang Klinik Mitra</option>
-                <option value="ONS-03">ONS-03 — Gudang &amp; Distribusi</option>
-              </select>
+        <!-- Panel Kanan: Form Login Staf & Portal Publik -->
+        <div class="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between gap-5">
+          <div class="space-y-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2 text-[11px] font-semibold mb-1" style="color:var(--ons-text-soft)">
+                  <span class="inline-flex items-center gap-1">${_loginIco('clock', 'w-3.5 h-3.5 text-blue-600')} ${S().esc(dateStr)} &bull; <span class="font-mono-num font-bold">${S().esc(timeStr)}</span></span>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Masuk ke Ruang Kerja Apotek</h1>
+                <p class="text-xs mt-0.5" style="color:var(--ons-text-soft)">Pilih cabang apotek, shift aktif, lalu verifikasi akun Anda.</p>
+              </div>
+              <button type="button" onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-3 min-h-[40px]">
+                ${_loginIco(isDark ? 'sun' : 'moon', 'w-4 h-4')}
+                <span>${isDark ? 'Terang' : 'Malam'}</span>
+              </button>
             </div>
-            <div>
-              <label class="text-xs font-semibold block mb-1">Shift Operasional</label>
-              <select id="loginShift" class="ons-select">
-                <option value="PAGI">Shift Pagi (07:30 - 14:30)</option>
-                <option value="SIANG">Shift Siang (14:00 - 21:30)</option>
-                <option value="MALAM">Shift Malam 24J</option>
-              </select>
-            </div>
-          </div>
 
-          <form onsubmit="event.preventDefault();window.handleLoginSubmit();" class="space-y-3" autocomplete="on">
-            <div>
-              <label class="text-xs font-semibold block mb-1">Username</label>
-              <input id="loginUser" name="username" autocomplete="username" class="ons-input" placeholder="${demoMode ? 'pemilik / apj / kasir' : 'Masukkan username staf'}" value="${demoMode ? 'pemilik' : ''}" required/>
-            </div>
-            <div>
-              <label class="text-xs font-semibold block mb-1">Kata Sandi</label>
-              <div class="relative flex items-center">
-                <input id="loginPass" name="password" type="password" autocomplete="current-password" class="ons-input pr-16" placeholder="${demoMode ? 'Bebas di mode Demo Sandbox' : 'Masukkan kata sandi anda'}" value="" ${demoMode ? '' : 'required'}/>
-                <button type="button" onclick="window.togglePasswordFieldVis('loginPass', this)" class="absolute right-2 px-2 py-1 rounded text-[11px] font-semibold opacity-75 hover:opacity-100" style="color:var(--ons-text-soft)">Lihat</button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="loginBranch" class="text-xs font-semibold flex items-center gap-1.5 mb-1.5" style="color:var(--ons-text-muted)">
+                  ${_loginIco('building', 'w-3.5 h-3.5 text-blue-600')}
+                  <span>Cabang Apotek</span>
+                </label>
+                <select id="loginBranch" class="ons-select text-[13px] font-medium">
+                  <option value="ONS-01">ONS-01 &bull; Pusat Utama (SIA)</option>
+                  <option value="ONS-02">ONS-02 &bull; Cabang Klinik Mitra</option>
+                  <option value="ONS-03">ONS-03 &bull; Gudang &amp; Distribusi</option>
+                </select>
+              </div>
+              <div>
+                <label for="loginShift" class="text-xs font-semibold flex items-center gap-1.5 mb-1.5" style="color:var(--ons-text-muted)">
+                  ${_loginIco('clock', 'w-3.5 h-3.5 text-emerald-600')}
+                  <span>Shift Operasional</span>
+                </label>
+                <select id="loginShift" class="ons-select text-[13px] font-medium">
+                  <option value="PAGI" ${autoShift === 'PAGI' ? 'selected' : ''}>Shift Pagi (07:30&ndash;14:30)</option>
+                  <option value="SIANG" ${autoShift === 'SIANG' ? 'selected' : ''}>Shift Siang (14:00&ndash;21:30)</option>
+                  <option value="MALAM" ${autoShift === 'MALAM' ? 'selected' : ''}>Shift Malam (24 Jam)</option>
+                </select>
               </div>
             </div>
-            <button id="loginSubmitBtn" type="submit" class="ons-btn ons-btn-primary w-full py-2.5 text-sm">Masuk &amp; Muat Sistem (Scale Turbo)</button>
-          </form>
 
-          ${demoMode ? `<div class="pt-3 border-t" style="border-color:var(--ons-border)">
-            <div class="text-xs font-semibold mb-2" style="color:var(--ons-text-soft)">Pintasan Masuk Cepat Mode Demo Sandbox (Uji RBAC Offline):</div>
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" onclick="window.quickRoleLogin('pemilik')" class="ons-btn ons-btn-ghost text-xs flex-col py-2 h-auto">
-                <span class="font-bold text-blue-600">Pemilik</span><span class="text-[10px]">Akses Penuh</span>
-              </button>
-              <button type="button" onclick="window.quickRoleLogin('apj')" class="ons-btn ons-btn-ghost text-xs flex-col py-2 h-auto">
-                <span class="font-bold text-emerald-600">APJ Apoteker</span><span class="text-[10px]">Klinis &amp; BPOM</span>
-              </button>
-              <button type="button" onclick="window.quickRoleLogin('kasir')" class="ons-btn ons-btn-ghost text-xs flex-col py-2 h-auto">
-                <span class="font-bold text-amber-600">Kasir POS</span><span class="text-[10px]">HPP Terkunci</span>
-              </button>
-            </div>
-          </div>` : `<div class="p-3 rounded-xl border text-[11px] space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">
-            <div class="font-bold flex items-center gap-1.5 text-emerald-600">&#128737;&#65039; Keamanan Produksi Aktif (Live GAS)</div>
-            <div>Autentikasi HMAC-SHA256, Hashing 250x SHA-256 + Salt + Pepper, serta kunci otomatis 15 menit setelah 5x percobaan gagal.</div>
-          </div>`}
+            <form onsubmit="event.preventDefault();window.handleLoginSubmit();" class="space-y-3.5" autocomplete="on">
+              <div>
+                <label for="loginUser" class="text-xs font-semibold block mb-1.5" style="color:var(--ons-text-muted)">Username Staf</label>
+                <div class="ons-login-field-wrap">
+                  <span class="ons-login-field-icon">${_loginIco('user', 'w-4 h-4')}</span>
+                  <input id="loginUser" name="username" autocomplete="username" oninput="window.clearLoginInlineError()" class="ons-input" placeholder="${demoMode ? 'pemilik / apj / kasir' : 'Masukkan username staf Anda'}" value="${demoMode ? 'pemilik' : ''}" required/>
+                </div>
+              </div>
 
-          <div class="flex flex-wrap gap-3 text-xs pt-1" style="color:var(--ons-text-soft)">
-            <a href="./index.html?erx=DOKTER-MITRA-01" class="underline hover:text-blue-600">Buka Mini-Portal E-Resep Dokter</a>
-            <span>&bull;</span>
-            <button type="button" onclick="window.openManualVerifyPrompt()" class="underline hover:text-blue-600">Verifikasi QR Kwitansi / Surat</button>
+              <div>
+                <label for="loginPass" class="text-xs font-semibold block mb-1.5" style="color:var(--ons-text-muted)">Kata Sandi</label>
+                <div class="ons-login-field-wrap">
+                  <span class="ons-login-field-icon">${_loginIco('lock', 'w-4 h-4')}</span>
+                  <input id="loginPass" name="password" type="password" autocomplete="current-password" oninput="window.clearLoginInlineError()" onkeyup="window.handleLoginCapsCheck(event)" onkeydown="window.handleLoginCapsCheck(event)" class="ons-input pr-24" placeholder="${demoMode ? 'Kosongkan atau isi bebas di Demo Sandbox' : 'Masukkan kata sandi akun Anda'}" value="" ${demoMode ? '' : 'required'}/>
+                  <button type="button" onclick="window.togglePasswordFieldVis('loginPass', this)" aria-label="Tampilkan atau sembunyikan kata sandi" class="absolute right-1.5 inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[34px] rounded-lg text-[11px] font-semibold hover:bg-slate-500/10 transition-colors" style="color:var(--ons-text-soft)">
+                    ${_loginIco('eye', 'w-3.5 h-3.5')}
+                    <span>Lihat</span>
+                  </button>
+                </div>
+                <div id="loginCapsWarn" class="hidden mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                  ${_loginIco('warn', 'w-3.5 h-3.5')}
+                  <span>Caps Lock aktif &mdash; kata sandi membedakan huruf besar dan kecil.</span>
+                </div>
+              </div>
+
+              <div id="loginInlineError" role="alert" class="hidden p-3 rounded-xl border border-red-500/35 bg-red-500/10 text-red-700 dark:text-red-300 text-xs font-semibold flex items-start gap-2">
+                ${_loginIco('warn', 'w-4 h-4 mt-0.5 shrink-0')}
+                <span id="loginInlineErrorText"></span>
+              </div>
+
+              <button id="loginSubmitBtn" type="submit" class="ons-btn ons-btn-primary w-full min-h-[46px] text-sm font-bold tracking-tight">
+                ${_loginIco('lock', 'w-4 h-4')}
+                <span>Masuk ke Ruang Kerja Apotek</span>
+                ${_loginIco('arrowRight', 'w-4 h-4')}
+              </button>
+            </form>
+
+            ${demoMode ? `<div class="pt-3 border-t space-y-2.5" style="border-color:var(--ons-border)">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="text-xs font-bold flex items-center gap-1.5" style="color:var(--ons-text-muted)">
+                  ${_loginIco('bolt', 'w-3.5 h-3.5 text-amber-500')}
+                  <span>Pintasan Masuk Cepat Mode Demo (Uji RBAC Offline)</span>
+                </div>
+                <button type="button" onclick="window.switchBackendMode('LIVE')" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Buka Data Asli (Live GAS) &rarr;</button>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button type="button" onclick="window.quickRoleLogin('pemilik')" class="ons-login-quick-card">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400">Pemilik</span>
+                  <span class="font-bold text-xs mt-0.5">Akses Penuh</span>
+                  <span class="text-[10px]" style="color:var(--ons-text-soft)">Keuangan, Staf &amp; Audit</span>
+                </button>
+                <button type="button" onclick="window.quickRoleLogin('apj')" class="ons-login-quick-card">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">APJ Apoteker</span>
+                  <span class="font-bold text-xs mt-0.5">Klinis &amp; BPOM</span>
+                  <span class="text-[10px]" style="color:var(--ons-text-soft)">FEFO, E-Resep &amp; SIPNAP</span>
+                </button>
+                <button type="button" onclick="window.quickRoleLogin('kasir')" class="ons-login-quick-card">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">Kasir POS</span>
+                  <span class="font-bold text-xs mt-0.5">HPP Terkunci</span>
+                  <span class="text-[10px]" style="color:var(--ons-text-soft)">Kasir Cepat &amp; Shift</span>
+                </button>
+              </div>
+            </div>` : `<div class="p-3.5 rounded-2xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="flex items-center justify-between gap-2">
+                <div class="font-bold text-xs flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  ${_loginIco('shield', 'w-4 h-4')}
+                  <span>Perisai Keamanan Produksi Aktif (Live GAS)</span>
+                </div>
+                <span class="badge-bpom bpom-bebas text-[10px]">TERENKRIPSI</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]" style="color:var(--ons-text-soft)">
+                <div class="flex items-center gap-1.5">${_loginIco('check', 'w-3.5 h-3.5 text-emerald-500')}<span>Token sesi HMAC-SHA256 unik</span></div>
+                <div class="flex items-center gap-1.5">${_loginIco('check', 'w-3.5 h-3.5 text-emerald-500')}<span>250x SHA-256 + Salt &amp; Pepper</span></div>
+                <div class="flex items-center gap-1.5">${_loginIco('check', 'w-3.5 h-3.5 text-emerald-500')}<span>Blokir otomatis 15 mnt (5x salah)</span></div>
+                <div class="flex items-center gap-1.5">${_loginIco('check', 'w-3.5 h-3.5 text-emerald-500')}<span>Wipe cache otomatis saat keluar</span></div>
+              </div>
+            </div>`}
+          </div>
+
+          <div class="pt-3 border-t flex flex-wrap items-center gap-2" style="border-color:var(--ons-border)">
+            <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Portal Publik:</span>
+            <a href="./index.html?katalog=1" class="ons-login-portal-pill">
+              ${_loginIco('store', 'w-3.5 h-3.5 text-blue-600')}
+              <span>Etalase E-Apotek</span>
+            </a>
+            <a href="./index.html?erx=DOKTER-MITRA-01" class="ons-login-portal-pill">
+              ${_loginIco('rx', 'w-3.5 h-3.5 text-emerald-600')}
+              <span>E-Resep Dokter</span>
+            </a>
+            <button type="button" onclick="window.openManualVerifyPrompt()" class="ons-login-portal-pill">
+              ${_loginIco('qr', 'w-3.5 h-3.5 text-amber-600')}
+              <span>Verifikasi QR Surat</span>
+            </button>
           </div>
         </div>
       </div>
     </div>`;
   }
 
+  global.clearLoginInlineError = () => {
+    const box = document.getElementById('loginInlineError');
+    if (box && box.classList && typeof box.classList.add === 'function') {
+      box.classList.add('hidden');
+    }
+  };
+
+  global.handleLoginCapsCheck = (ev) => {
+    const warn = document.getElementById('loginCapsWarn');
+    if (!warn || !ev || typeof ev.getModifierState !== 'function') return;
+    const isOn = !!ev.getModifierState('CapsLock');
+    if (warn.classList && typeof warn.classList.toggle === 'function') {
+      warn.classList.toggle('hidden', !isOn);
+    }
+  };
+
+  global.pingBackendHealth = async () => {
+    const resEl = document.getElementById('loginPingResult');
+    if (resEl) {
+      if (resEl.classList && typeof resEl.classList.remove === 'function') resEl.classList.remove('hidden');
+      resEl.textContent = 'Menguji koneksi ke server backend...';
+    }
+    const t0 = (global.performance && typeof global.performance.now === 'function') ? global.performance.now() : Date.now();
+    try {
+      const pong = await API().callApi('ping', {}, { token: '' });
+      const ms = Math.max(1, Math.round(((global.performance && typeof global.performance.now === 'function') ? global.performance.now() : Date.now()) - t0));
+      const ver = (pong && pong.version) || 'Aktif';
+      const msg = `Terhubung (${ver}) • Latensi ${ms} ms`;
+      if (resEl) resEl.textContent = msg;
+      global.toast('Koneksi backend berhasil: ' + msg, 'ok');
+    } catch (e) {
+      if (resEl) resEl.textContent = 'Gagal terhubung: ' + e.message;
+      global.toast('Koneksi server gagal: ' + e.message, 'err');
+    }
+  };
+
   global.togglePasswordFieldVis = (inputId, btnEl) => {
     const inp = document.getElementById(inputId);
     if (!inp) return;
     const isPw = inp.type === 'password';
     inp.type = isPw ? 'text' : 'password';
-    if (btnEl) btnEl.textContent = isPw ? 'Tutup' : 'Lihat';
+    if (btnEl) {
+      if (btnEl.innerHTML && btnEl.innerHTML.indexOf('<svg') !== -1) {
+        btnEl.innerHTML = `${_loginIco(isPw ? 'eyeOff' : 'eye', 'w-3.5 h-3.5')}<span>${isPw ? 'Tutup' : 'Lihat'}</span>`;
+      } else {
+        btnEl.textContent = isPw ? 'Tutup' : 'Lihat';
+      }
+    }
   };
 
   global.switchBackendMode = (mode) => {
     API().setModeOverride(mode);
-    global.toast('Mode koneksi diubah ke: ' + mode, 'info');
+    global.toast('Mode koneksi diubah ke: ' + (mode === 'LIVE' ? 'Live Google Apps Script' : 'Demo Sandbox'), 'info');
     global.renderApp();
   };
 
   global.openManualVerifyPrompt = () => {
     S().openModal(`<div class="p-6 space-y-4">
-      <h3 class="font-bold text-lg">Verifikasi Publik Dokumen &amp; Kwitansi</h3>
-      <div class="space-y-3">
-        <div><label class="text-xs font-semibold">Kode Verifikasi Surat (20 Karakter)</label><input id="manDocKode" class="ons-input font-mono-num" value="ONS9F42A18D77B0C41E2"/></div>
-        <button onclick="window.location.hash='#doc='+encodeURIComponent(document.getElementById('manDocKode').value);ONSStore.closeModal();renderApp();" class="ons-btn ons-btn-primary w-full">Verifikasi Dokumen Resmi</button>
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-bold text-lg">Verifikasi Keaslian Dokumen &amp; Kwitansi</h3>
+          <p class="text-xs mt-0.5" style="color:var(--ons-text-soft)">Validasi tanda tangan kriptografis HMAC-SHA256 dokumen resmi apotek.</p>
+        </div>
       </div>
-    </div>`, '440px');
+      <div class="space-y-3">
+        <div>
+          <label for="manDocKode" class="text-xs font-semibold block mb-1">Kode Verifikasi Surat / Tautan QR</label>
+          <input id="manDocKode" class="ons-input font-mono-num" placeholder="Masukkan 20 karakter kode surat resmi (contoh: ONS...)"/>
+        </div>
+        <button type="button" onclick="const v=(document.getElementById('manDocKode').value||'').trim();if(!v){toast('Masukkan kode verifikasi terlebih dahulu.','warn');return;}window.location.hash=v.indexOf('=')!==-1?v.replace(/^#/,''):('doc='+encodeURIComponent(v));ONSStore.closeModal();renderApp();" class="ons-btn ons-btn-primary w-full">Verifikasi Dokumen Resmi</button>
+      </div>
+    </div>`, '460px');
   };
 
   global.quickRoleLogin = (username) => {
@@ -599,9 +802,24 @@
     const password = document.getElementById('loginPass').value;
     const branch = document.getElementById('loginBranch').value;
     const shift = document.getElementById('loginShift').value;
+    const setInlineErr = (msg) => {
+      const box = document.getElementById('loginInlineError');
+      const txt = document.getElementById('loginInlineErrorText');
+      if (txt) txt.textContent = msg;
+      if (box && box.classList && typeof box.classList.remove === 'function') box.classList.remove('hidden');
+    };
+    global.clearLoginInlineError();
     if (!username || (!password && !(opts && opts.demoQuick) && !API().isDemoMode())) {
-      global.toast('Masukkan username dan kata sandi.', 'warn');
+      const m = 'Masukkan username dan kata sandi terlebih dahulu.';
+      setInlineErr(m);
+      global.toast(m, 'warn');
       return;
+    }
+    const btn = document.getElementById('loginSubmitBtn');
+    const prevHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `${_loginIco('clock', 'w-4 h-4')}<span>Memverifikasi Sesi &amp; Memuat Data...</span>`;
     }
     try {
       const res = await API().callApi('auth.login', { username, password: password || (API().isDemoMode() ? 'demo-sandbox' : ''), cabang_id: branch, include_boot: true }, { isWrite: true, token: '' });
@@ -625,7 +843,13 @@
         setTimeout(() => global.toast('Peringatan Keamanan: Segera ganti sandi & PIN awal Anda di Pengaturan -> Akun.', 'warn'), 1200);
       }
     } catch (e) {
+      setInlineErr(e.message);
       global.toast(e.message, 'err');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = prevHtml;
+      }
     }
   };
 

@@ -2051,8 +2051,150 @@ html.dark .ons-pos-ledger {
   transform: translateY(0);
 }
 
+/* ==========================================================================
+   W-01 LOGIN PORTAL PRO — CLINICAL ENTERPRISE AUTH CANVAS & CONTROLS
+   ========================================================================== */
+.ons-login-stage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.75rem, 2.5vw, 1.75rem);
+  background:
+    radial-gradient(circle at 86% 12%, rgba(0, 102, 254, 0.22), transparent 46%),
+    radial-gradient(circle at 14% 88%, rgba(16, 185, 129, 0.14), transparent 42%),
+    linear-gradient(155deg, #061420 0%, #0A1D2E 48%, #0F172A 100%);
+  overflow-x: hidden;
+}
+.ons-login-stage::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.055) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+}
+.ons-login-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 64rem;
+  border-radius: 1.35rem;
+  overflow: hidden;
+  background: var(--ons-bg-card);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 28px 70px -15px rgba(2, 6, 23, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  animation: onsViewEnter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ons-login-hero {
+  position: relative;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(14, 165, 233, 0.18), transparent 45%),
+    radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.14), transparent 45%),
+    linear-gradient(172deg, #071928 0%, #0A2438 52%, #05131E 100%);
+  color: #F8FAFC;
+  border-right: 1px solid rgba(148, 163, 184, 0.14);
+}
+.ons-login-field-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ons-login-field-icon {
+  position: absolute;
+  left: 0.85rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--ons-text-soft);
+  pointer-events: none;
+}
+.ons-login-field-wrap .ons-input {
+  padding-left: 2.55rem;
+  min-height: 44px;
+}
+.ons-login-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #CBD5E1;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.ons-login-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+.ons-login-mode-btn.is-active-demo {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  border-color: #FBBF24;
+  color: #0F172A;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.28);
+}
+.ons-login-mode-btn.is-active-live {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  border-color: #34D399;
+  color: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.28);
+}
+.ons-login-quick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.18rem;
+  min-height: 60px;
+  padding: 0.62rem 0.78rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+.ons-login-quick-card:hover {
+  border-color: var(--ons-primary-bright);
+  background: var(--ons-primary-tint);
+  transform: translateY(-1px);
+  box-shadow: var(--ons-shadow-card);
+}
+.ons-login-portal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.4rem 0.78rem;
+  border-radius: 999px;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease, background-color 0.14s ease;
+}
+.ons-login-portal-pill:hover {
+  border-color: var(--ons-primary-bright);
+  color: var(--ons-primary);
+  background: var(--ons-primary-tint);
+}
+html.dark .ons-login-portal-pill:hover {
+  color: #93C5FD;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip {
+  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill {
     transition: none !important;
     animation: none !important;
   }
