@@ -129,13 +129,14 @@
           items: [
             {
               viewId: 'obat', label: 'Master Data', icon: 'pill',
-              desc: 'Database terpadu Obat KFA, Supplier PBF, Pelanggan Apotek & Dokter Mitra.',
-              kw: 'master data obat kfa nie bpom supplier pbf cdob pelanggan member pasien dokter sip str',
+              desc: 'Database terpadu Obat KFA, Supplier PBF, Pelanggan Apotek, Dokter Mitra & Sales/Pelayan.',
+              kw: 'master data obat kfa nie bpom supplier pbf cdob pelanggan member pasien dokter sip str sales pelayan',
               tabs: [
                 { subTab: 'obat', label: 'Obat', kw: 'master data obat kfa nie bpom harga jual beli margin code128' },
-                { subTab: 'supplier', label: 'Supplier', kw: 'supplier pbf cdob termin sla kontak vendor', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'pelanggan', label: 'Pelanggan', kw: 'pelanggan member pasien terapi rutin alergi poin loyalitas' },
-                { subTab: 'dokter', label: 'Dokter', kw: 'dokter mitra penulis resep sip str klinik faskes' }
+                { subTab: 'supplier', label: 'Supplier', kw: 'supplier pbf cdob termin sla kontak vendor minimal order', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'pelanggan', label: 'Pelanggan', kw: 'pelanggan member pasien terapi rutin alergi poin rekam medis' },
+                { subTab: 'dokter', label: 'Dokter', kw: 'dokter mitra penulis resep sip str ktp satusehat klinik faskes' },
+                { subTab: 'sales', label: 'Sales/Pelayan', kw: 'sales pelayan pegawai kasir kode sales telepon' }
               ]
             },
             {

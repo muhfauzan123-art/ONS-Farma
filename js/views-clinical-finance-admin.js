@@ -2040,7 +2040,7 @@
       <div><label class="font-semibold block mb-1">Nama Pelanggan / Debitur</label><input id="ttfPelInp" class="ons-input" value="${S().esc(namaPel || '')}"/></div>
       <div class="grid grid-cols-3 gap-3">
         <div><label class="font-semibold block mb-1">Jadwal Penyerahan</label><input id="ttfJadwalInp" type="date" class="ons-input" value="${today}"/></div>
-        <div><label class="font-semibold block mb-1">Sales / Kurir</label><input id="ttfSalesInp" class="ons-input" value="Sales Apotek"/></div>
+        <div><label class="font-semibold block mb-1">Sales / Kurir</label><input id="ttfSalesInp" list="ttfSalesDatalist" class="ons-input" value="Sales Apotek"/><datalist id="ttfSalesDatalist">${(typeof global.getOnsSalesStaffList === 'function' ? global.getOnsSalesStaffList() : []).map((x) => `<option value="${S().esc(x.nama_sales)}"></option>`).join('')}</datalist></div>
         <div><label class="font-semibold block mb-1">Tagihan Awal (Rp)</label><input id="ttfTagihanInp" type="number" class="ons-input font-mono-num" value="${Number(tagihan || 0)}"/></div>
       </div>
       <button type="button" onclick="window.submitBuatTtfModal()" class="ons-btn ons-btn-emerald w-full font-bold py-2">Simpan Tanda Terima Faktur</button>

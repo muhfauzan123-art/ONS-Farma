@@ -3898,8 +3898,12 @@
   }
 
   function renderPosCartPanelHtml(st, cart, member, totals, isBelowHppCart, estHppCart, seeCost) {
+    const masterSales = (typeof global.getOnsSalesStaffList === 'function' ? global.getOnsSalesStaffList() : [])
+      .map((x) => x && x.nama_sales)
+      .filter(Boolean);
     const staffOpts = Array.from(new Set(
       [(st.user && st.user.nama_lengkap) || 'Kasir']
+        .concat(masterSales)
         .concat((st.daftarUser || st.pegawai || []).map((u) => u.nama_lengkap || u.nama || '').filter(Boolean))
     ));
     const dokterList = st.masterDokter || [];
