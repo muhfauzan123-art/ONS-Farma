@@ -901,7 +901,7 @@
     const ppnKurangBayar = Math.max(0, ppnKeluaran - ppnMasukanFaktur);
     const pphFinal = Math.round((salesValid.reduce((s, p) => s + Number(p.grand_total || 0), 0) || totalMasuk) * 0.005);
 
-    const openFaktur = st.fakturPbf.filter((f) => Number(f.sisa_hutang || 0) > 0);
+    const openFaktur = st.fakturPbf.filter((f) => Number(f.sisa_hutang || 0) > 0 && String(f.status_bayar || '').toUpperCase() !== 'KONSINYASI' && String(f.jenis_penerimaan || '').toUpperCase() !== 'KONSINYASI');
     const apBuckets = [0, 0, 0, 0];
     openFaktur.forEach((f) => {
       const h = S().daysUntil(f.tgl_jatuh_tempo);
@@ -916,7 +916,11 @@
     const grossMarginPct = omzetPos > 0 ? ((grossProfit / omzetPos) * 100).toFixed(1) : '0.0';
     const bebanOps = jurnalScoped.filter((j) => String(j.jenis_trx || '') === 'KELUAR_OPERASIONAL').reduce((s, j) => s + Number(j.nominal || 0), 0);
     const netProfit = grossProfit - bebanOps;
-    const valuasiAsetStok = (st.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0)
+    const isKonsinyasiStock = (b) => String(b.is_konsinyasi || '').toUpperCase() === 'YA' || String(b.is_konsinyasi || '').toUpperCase() === 'TRUE';
+    const activeBatches = (st.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0);
+    const valuasiAsetStok = activeBatches.filter((b) => !isKonsinyasiStock(b))
+      .reduce((s, b) => s + Number(b.qty_sisa || 0) * Number(b.hpp_beli || 0), 0);
+    const valuasiKonsinyasi = activeBatches.filter((b) => isKonsinyasiStock(b))
       .reduce((s, b) => s + Number(b.qty_sisa || 0) * Number(b.hpp_beli || 0), 0);
 
     const payMethodMap = { TUNAI: 0, QRIS: 0, TRANSFER: 0, SPLIT: 0 };
@@ -1122,7 +1126,7 @@
             <div><div class="text-[11px]" style="color:var(--ons-text-soft)">HPP Terjual (COGS)</div><div class="text-base font-extrabold font-mono-num">${S().rp(totalHppPos)}</div></div>
             <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Laba Kotor (${grossMarginPct}%)</div><div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(grossProfit)}</div></div>
             <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Est. Laba Bersih (-Beban)</div><div class="text-base font-extrabold font-mono-num ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(netProfit)}</div></div>
-            <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Valuasi Aset Stok (HPP)</div><div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(valuasiAsetStok)}</div></div>
+            <div><div class="text-[11px]" style="color:var(--ons-text-soft)">Valuasi Aset Stok (HPP)</div><div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(valuasiAsetStok)}</div>${valuasiKonsinyasi > 0 ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">+Titipan Konsinyasi: ${S().rp(valuasiKonsinyasi)}</div>` : ''}</div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">

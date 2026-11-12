@@ -179,6 +179,7 @@
     crmKontak: [],
     antrianNotif: [],
     fakturPbf: [],
+    konsinyasiSummary: { items: [], settlements: [], totals: { qty_terjual: 0, qty_sisa: 0, tagihan_belum_bayar: 0, sudah_dibayar: 0 } },
     jurnalKeuangan: [],
     suratPesanan: [],
     deDokumen: [],

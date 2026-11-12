@@ -3388,11 +3388,12 @@
   };
 
   /**
-   * W-07: Terima Faktur PBF Multi-Item GRN & Retur BAR-PBF (3 Sub-Menu: daftar | input | retur)
+   * W-07: Terima Faktur PBF Multi-Item GRN, Konsinyasi & Retur BAR-PBF (daftar | input | harga | retur | konsinyasi)
    */
   let fakturTab = 'daftar';
   let fakturListQ = '';
   let fakturListFilter = 'SEMUA';
+  let fakturKonsinyasiPbfFilter = '';
   let grnHeader = {
     id_sp: '',
     no_faktur_pbf: '',
@@ -3401,6 +3402,7 @@
     tgl_jatuh_tempo: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
     diskon_pbf: 0,
     ppn_masukan: 0,
+    jenis_penerimaan: 'BELI_PUTUS',
     status_bayar: 'BELUM_LUNAS',
     catatan: ''
   };
@@ -3501,6 +3503,7 @@
           <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">Terima Faktur (Scan OCR / SP)</button>
           <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active' : ''}">Analisa Harga &amp; Margin</button>
           <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active' : ''}">Retur BAR-PBF (${returCandidates.length})</button>
+          <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active' : ''}">Konsinyasi (Titip Jual)</button>
         </div>
       </div>
 
@@ -3643,12 +3646,22 @@
               <div><label class="font-semibold block mb-1">Jatuh Tempo Pembayaran</label><input type="date" class="ons-input" value="${S().esc(grnHeader.tgl_jatuh_tempo)}" onchange="window.setGrnField('tgl_jatuh_tempo', this.value)"/></div>
               <div><label class="font-semibold block mb-1">Diskon Faktur PBF (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.diskon_pbf}" oninput="window.setGrnField('diskon_pbf', Number(this.value||0), true)"/></div>
               <div><label class="font-semibold block mb-1">PPN Masukan 11% (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.ppn_masukan}" oninput="window.setGrnField('ppn_masukan', Number(this.value||0), true)"/></div>
+              <div><label class="font-semibold block mb-1">Jenis Penerimaan</label>
+                <select class="ons-select" onchange="window.setGrnJenisPenerimaan(this.value)">
+                  <option value="BELI_PUTUS" ${grnHeader.jenis_penerimaan !== 'KONSINYASI' ? 'selected' : ''}>BELI PUTUS (Reguler PBF)</option>
+                  <option value="KONSINYASI" ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? 'selected' : ''}>KONSINYASI (Titip Jual Distributor)</option>
+                </select>
+              </div>
+              ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? `
+              <div><label class="font-semibold block mb-1">Status Hutang Konsinyasi</label>
+                <div class="ons-input text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 border-blue-500/30">Rp 0 Hutang Awal (Settlement saat Laku)</div>
+              </div>` : `
               <div><label class="font-semibold block mb-1">Status Pembayaran Awal</label>
                 <select class="ons-select" onchange="window.setGrnField('status_bayar', this.value)">
                   <option value="BELUM_LUNAS" ${grnHeader.status_bayar !== 'LUNAS' ? 'selected' : ''}>BELUM LUNAS (Hutang Dagang PBF)</option>
                   <option value="LUNAS" ${grnHeader.status_bayar === 'LUNAS' ? 'selected' : ''}>LUNAS (Bayar Langsung Kas/Transfer)</option>
                 </select>
-              </div>
+              </div>`}
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
@@ -3725,7 +3738,7 @@
             </table>
           </div>
         </div>
-      ` : `
+      ` : fakturTab === 'konsinyasi' ? renderKonsinyasiTabHtml(st) : `
         <div class="ons-card p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap gap-2">
@@ -3740,15 +3753,18 @@
             <table class="ons-table">
               <thead><tr><th>No. Faktur &amp; SP</th><th>Supplier PBF</th><th>Jatuh Tempo</th><th>Netto Hutang</th><th>Sisa Hutang</th><th>Status</th><th>Aksi</th></tr></thead>
               <tbody>
-                ${filteredFaktur.length ? filteredFaktur.map((f) => `<tr>
+                ${filteredFaktur.length ? filteredFaktur.map((f) => {
+                  const isKons = String(f.status_bayar || '').toUpperCase() === 'KONSINYASI' || String(f.jenis_penerimaan || '').toUpperCase() === 'KONSINYASI';
+                  return `<tr>
                   <td class="font-mono-num text-xs"><b>${S().esc(f.no_faktur_pbf)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(f.no_sp)}</span></td>
                   <td class="font-semibold">${S().esc(f.id_pbf)}</td>
                   <td class="font-mono-num">${S().esc(f.tgl_jatuh_tempo)}</td>
-                  <td class="font-mono-num">${S().rp(f.netto_hutang)}</td>
-                  <td class="font-mono-num font-bold ${Number(f.sisa_hutang || 0) > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(f.sisa_hutang)}</td>
-                  <td><span class="badge-bpom ${f.status_bayar === 'LUNAS' ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(f.status_bayar)}</span></td>
-                  <td>${Number(f.sisa_hutang || 0) > 0 ? `<button onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Bayar / Cicil</button>` : '<span class="text-xs text-emerald-600 font-semibold">Selesai</span>'}</td>
-                </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Tidak ada faktur PBF yang sesuai filter.</td></tr>'}
+                  <td class="font-mono-num">${isKons ? '<span class="text-[11px] text-blue-600 font-semibold">Titip Jual</span>' : S().rp(f.netto_hutang)}</td>
+                  <td class="font-mono-num font-bold ${isKons ? 'text-blue-600' : (Number(f.sisa_hutang || 0) > 0 ? 'text-red-600' : 'text-emerald-600')}">${S().rp(f.sisa_hutang)}</td>
+                  <td><span class="badge-bpom ${isKons ? 'bpom-terbatas' : (f.status_bayar === 'LUNAS' ? 'bpom-bebas' : 'bpom-prekursor')}">${S().esc(f.status_bayar)}</span></td>
+                  <td>${isKons ? `<button onclick="window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Kelola Konsinyasi</button>` : (Number(f.sisa_hutang || 0) > 0 ? `<button onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Bayar / Cicil</button>` : '<span class="text-xs text-emerald-600 font-semibold">Selesai</span>')}</td>
+                </tr>`;
+                }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Tidak ada faktur PBF yang sesuai filter.</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -4010,12 +4026,88 @@
     global.renderActiveView();
   };
 
+  function renderKonsinyasiTabHtml(st) {
+    const sum = st.konsinyasiSummary || { items: [], settlements: [], totals: { qty_terjual: 0, qty_sisa: 0, tagihan_belum_bayar: 0, sudah_dibayar: 0 } };
+    const allItems = Array.isArray(sum.items) ? sum.items : [];
+    const suppliers = Array.from(new Set(allItems.map((it) => it.id_pbf).filter(Boolean)));
+    const filteredItems = fakturKonsinyasiPbfFilter
+      ? allItems.filter((it) => String(it.id_pbf || '') === fakturKonsinyasiPbfFilter)
+      : allItems;
+    const filteredTagihan = filteredItems.reduce((s, it) => s + Number(it.tagihan_belum_bayar || 0), 0);
+    const filteredTerjual = filteredItems.reduce((s, it) => s + Number(it.qty_terjual || 0), 0);
+    const filteredSisa = filteredItems.reduce((s, it) => s + Number(it.qty_sisa || 0), 0);
+    const filteredDibayar = filteredItems.reduce((s, it) => s + Number(it.nilai_sudah_dibayar || 0), 0);
+    const settlements = Array.isArray(sum.settlements) ? sum.settlements : [];
+
+    return `<div class="space-y-4">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Unit Laku Terjual</div><div class="text-xl font-extrabold font-mono-num text-blue-600">${filteredTerjual} Unit</div></div>
+        <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Unit Sisa Titipan (Gudang)</div><div class="text-xl font-extrabold font-mono-num">${filteredSisa} Unit</div></div>
+        <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Tagihan Belum Disettle</div><div class="text-xl font-extrabold font-mono-num ${filteredTagihan > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(filteredTagihan)}</div></div>
+        <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Sudah Dibayar (Settle)</div><div class="text-xl font-extrabold font-mono-num text-emerald-600">${S().rp(filteredDibayar)}</div></div>
+      </div>
+
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <select class="ons-select text-xs w-60" onchange="window.setKonsinyasiSupplierFilter(this.value)">
+              <option value="">Semua Supplier Konsinyasi (${suppliers.length})</option>
+              ${suppliers.map((sup) => `<option value="${S().esc(sup)}" ${fakturKonsinyasiPbfFilter === sup ? 'selected' : ''}>${S().esc(sup)}</option>`).join('')}
+            </select>
+            <button type="button" onclick="window.setGrnJenisPenerimaan('KONSINYASI');window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs">+ Terima Barang Konsinyasi</button>
+          </div>
+          ${filteredTagihan > 0 ? `<button type="button" onclick="window.openSettleKonsinyasiModal('${S().esc(fakturKonsinyasiPbfFilter || (filteredItems.find((x) => x.qty_belum_bayar > 0) || {}).id_pbf || '')}')" class="ons-btn ons-btn-emerald text-xs font-bold">Lunasi / Settle Terjual (${S().rp(filteredTagihan)})</button>` : ''}
+        </div>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>Obat &amp; Batch / ED</th><th>Supplier PBF &amp; Faktur</th><th class="text-right">Masuk / Laku / Retur / Sisa</th><th class="text-right">HPP &amp; Belum Settle</th><th>Aksi</th></tr></thead>
+            <tbody>
+              ${filteredItems.length ? filteredItems.map((it) => `<tr>
+                <td class="text-xs"><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)} &bull; ED ${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</div></td>
+                <td class="text-xs"><div class="font-semibold">${S().esc(it.id_pbf)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_faktur_pbf || '-')}</div></td>
+                <td class="text-right font-mono-num text-xs">Awal <b>${it.qty_awal}</b> &bull; Laku <b class="text-blue-600">${it.qty_terjual}</b> &bull; Retur <b class="text-amber-600">${it.qty_retur_supplier}</b><br/>Sisa Titipan: <b>${it.qty_sisa} ${S().esc(it.satuan_dasar)}</b></td>
+                <td class="text-right font-mono-num text-xs"><div>HPP: ${S().rp(it.hpp_beli)}</div><div class="font-bold ${it.qty_belum_bayar > 0 ? 'text-red-600' : 'text-emerald-600'}">${it.qty_belum_bayar} unit (${S().rp(it.tagihan_belum_bayar)})</div></td>
+                <td>
+                  <div class="flex flex-wrap gap-1.5">
+                    ${it.qty_belum_bayar > 0 ? `<button type="button" onclick="window.openSettleKonsinyasiModal('${S().esc(it.id_pbf)}', '${S().esc(it.id_batch)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Settle</button>` : ''}
+                    ${it.qty_sisa > 0 ? `<button type="button" onclick="window.openReturnKonsinyasiModal('${S().esc(it.id_batch)}', '${S().esc(it.nama_dagang)}', ${Number(it.qty_sisa || 0)})" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Tarik Tak Laku</button>` : '<span class="text-[11px]" style="color:var(--ons-text-soft)">Kosong</span>'}
+                  </div>
+                </td>
+              </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6 text-xs">Belum ada batch titip jual (konsinyasi). Gunakan <b>+ Terima Barang Konsinyasi</b> di atas untuk menerima faktur titip jual dengan Rp 0 hutang awal.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ons-card p-4 space-y-2.5">
+        <h3 class="font-bold text-sm">Riwayat Settlement Konsinyasi (${settlements.length})</h3>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>No. Settlement</th><th>Tanggal</th><th>Supplier PBF</th><th class="text-right">Qty Laku</th><th class="text-right">Nominal Dibayar</th><th>Metode</th><th>Status</th></tr></thead>
+            <tbody>
+              ${settlements.length ? settlements.map((sr) => `<tr>
+                <td class="font-mono-num text-xs font-bold">${S().esc(sr.no_settlement)}</td>
+                <td class="font-mono-num text-xs">${S().esc(String(sr.tanggal || '').slice(0, 10))}</td>
+                <td class="text-xs font-semibold">${S().esc(sr.id_pbf)}</td>
+                <td class="text-right font-mono-num text-xs">${Number(sr.total_qty_terjual || 0)} unit</td>
+                <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(sr.total_nilai_hpp || 0)}</td>
+                <td class="text-xs">${S().esc(sr.metode_bayar || 'TRANSFER_BANK')}</td>
+                <td><span class="badge-bpom bpom-bebas">${S().esc(sr.status_settlement || 'LUNAS')}</span></td>
+              </tr>`).join('') : '<tr><td colspan="7" class="text-center py-4 text-xs">Belum ada riwayat settlement konsinyasi.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
   global.submitGrnFaktur = async () => {
     try {
       ensureGrnInitialized();
       if (!grnHeader.no_faktur_pbf.trim()) throw new Error('No. Faktur PBF wajib diisi.');
       const totalBruto = grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0);
       const netto = Math.max(0, totalBruto - Number(grnHeader.diskon_pbf || 0) + Number(grnHeader.ppn_masukan || 0));
+      const jenisPenerimaan = grnHeader.jenis_penerimaan || 'BELI_PUTUS';
       const res = await API().callApi('pengadaan.fakturSave', {
         id_sp: grnHeader.id_sp || '',
         sp_status: grnHeader.id_sp ? (grnHeader.sp_status || 'SELESAI_DITERIMA') : '',
@@ -4026,8 +4118,9 @@
         total_bruto: totalBruto,
         diskon_pbf: Number(grnHeader.diskon_pbf || 0),
         ppn_masukan: Number(grnHeader.ppn_masukan || 0),
-        netto_hutang: netto,
-        status_bayar: grnHeader.status_bayar || 'BELUM_LUNAS',
+        netto_hutang: jenisPenerimaan === 'KONSINYASI' ? 0 : netto,
+        jenis_penerimaan: jenisPenerimaan,
+        status_bayar: jenisPenerimaan === 'KONSINYASI' ? 'KONSINYASI' : (grnHeader.status_bayar || 'BELUM_LUNAS'),
         items: grnItems.map((it) => ({
           id_obat: it.id_obat,
           no_batch: it.no_batch,
@@ -4039,6 +4132,7 @@
       grnHeader.id_sp = '';
       grnHeader.no_faktur_pbf = '';
       grnHeader.no_sp = '';
+      grnHeader.jenis_penerimaan = 'BELI_PUTUS';
       grnHeader.status_bayar = 'BELUM_LUNAS';
       grnItems = [];
       grnScanState.rawText = '';
@@ -4051,6 +4145,10 @@
         const listTxt = res.hpp_alerts.map((a) => `${a.nama_dagang} (HPP naik +${a.pct_naik !== undefined ? a.pct_naik : a.pct_up}% -> ${S().rp(a.new_hpp)})`).join(', ');
         global.toast('Faktur masuk gudang! HPP NAIK TERDETEKSI: ' + listTxt + ' — Mengalihkan ke Analisa Harga & Margin.', 'warn');
         window.setFakturTab('harga');
+      } else if (jenisPenerimaan === 'KONSINYASI') {
+        S().AppState._lastHppAlerts = [];
+        global.toast('Stok konsinyasi masuk ke gudang FEFO (Rp 0 hutang AP awal)!', 'ok');
+        window.setFakturTab('konsinyasi');
       } else {
         S().AppState._lastHppAlerts = [];
         global.toast('Faktur Multi-Item & semua batch FEFO berhasil masuk ke gudang!', 'ok');
@@ -4125,6 +4223,80 @@
         }
       });
     }
+  };
+
+  global.setKonsinyasiSupplierFilter = (pbf) => {
+    fakturKonsinyasiPbfFilter = pbf || '';
+    global.renderActiveView();
+  };
+  global.setGrnJenisPenerimaan = (val) => {
+    grnHeader.jenis_penerimaan = val === 'KONSINYASI' ? 'KONSINYASI' : 'BELI_PUTUS';
+    grnHeader.status_bayar = grnHeader.jenis_penerimaan === 'KONSINYASI' ? 'KONSINYASI' : 'BELUM_LUNAS';
+    global.renderActiveView();
+  };
+  global.openSettleKonsinyasiModal = (idPbf, singleBatchId) => {
+    const sum = (S().AppState.konsinyasiSummary || {}).items || [];
+    const targets = sum.filter((it) => it.qty_belum_bayar > 0 && (!idPbf || it.id_pbf === idPbf) && (!singleBatchId || it.id_batch === singleBatchId));
+    if (!targets.length) return global.toast('Tidak ada stok terjual yang belum disettle.', 'info');
+    const totalQty = targets.reduce((s, it) => s + Number(it.qty_belum_bayar || 0), 0);
+    const totalNominal = targets.reduce((s, it) => s + Number(it.tagihan_belum_bayar || 0), 0);
+    const pbfName = idPbf || targets[0].id_pbf || 'Supplier Konsinyasi';
+    const batchCsv = targets.map((t) => t.id_batch).join(',');
+    S().openModal(`<div class="p-6 space-y-3.5 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Settlement Konsinyasi (${S().esc(pbfName)})</h3><button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button></div>
+      <div class="p-3.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 space-y-1">
+        <div>Total Unit Terjual Belum Bayar: <b class="font-mono-num">${totalQty} unit (${targets.length} batch)</b></div>
+        <div>Total Tagihan HPP Disettle: <b class="font-mono-num text-sm text-emerald-700 dark:text-emerald-300">${S().rp(totalNominal)}</b></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Metode Pembayaran</label>
+        <select id="knsMetodeInp" class="ons-select">
+          <option value="TRANSFER_BANK">TRANSFER_BANK</option>
+          <option value="TUNAI">TUNAI (Kas Toko)</option>
+          <option value="QRIS">QRIS / Virtual Account</option>
+        </select>
+      </div>
+      <div><label class="font-semibold block mb-1">Catatan Settlement (Opsional)</label><input id="knsCatatanInp" class="ons-input" value="Settlement konsinyasi barang laku terjual"/></div>
+      <button type="button" onclick="window.submitSettleKonsinyasi('${S().esc(pbfName)}', '${S().esc(batchCsv)}')" class="ons-btn ons-btn-emerald w-full py-2.5 font-bold">Bayar &amp; Catat Jurnal Settlement</button>
+    </div>`, '480px');
+  };
+  global.submitSettleKonsinyasi = async (idPbf, batchCsv) => {
+    try {
+      const batchIds = batchCsv ? batchCsv.split(',').filter(Boolean) : [];
+      const res = await API().callApi('konsinyasi.settle', {
+        id_pbf: idPbf,
+        batch_ids: batchIds,
+        metode_bayar: (document.getElementById('knsMetodeInp') || {}).value || 'TRANSFER_BANK',
+        catatan: (document.getElementById('knsCatatanInp') || {}).value || ''
+      }, { isWrite: true });
+      S().closeModal();
+      global.toast(`Settlement ${(res.settlement && res.settlement.no_settlement) || 'konsinyasi'} berhasil (${res.total_qty} unit).`, 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.openReturnKonsinyasiModal = (idBatch, namaObat, maxQty) => {
+    S().openModal(`<div class="p-6 space-y-3.5 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base text-amber-600">Tarik / Retur Konsinyasi Tak Laku</h3><button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button></div>
+      <div class="p-3 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        Obat: <b>${S().esc(namaObat)}</b> &bull; Sisa Stok Titipan: <b class="font-mono-num">${maxQty}</b>
+      </div>
+      <div><label class="font-semibold block mb-1">Qty Ditarik Kembali Distributor *</label><input id="knsReturQty" type="number" min="1" max="${maxQty}" value="${maxQty}" class="ons-input font-mono-num"/></div>
+      <div><label class="font-semibold block mb-1">Alasan Penarikan</label><input id="knsReturAlasan" class="ons-input" value="Penarikan barang konsinyasi tak laku / selesai periode"/></div>
+      <button type="button" onclick="window.submitReturnKonsinyasi('${S().esc(idBatch)}')" class="ons-btn ons-btn-amber w-full py-2.5 font-bold">Proses Tarik Konsinyasi</button>
+    </div>`, '440px');
+  };
+  global.submitReturnKonsinyasi = async (idBatch) => {
+    try {
+      const qtyRet = Number((document.getElementById('knsReturQty') || {}).value || 0);
+      const alasan = (document.getElementById('knsReturAlasan') || {}).value || '';
+      const res = await API().callApi('konsinyasi.returnUnsold', {
+        id_batch: idBatch,
+        qty_retur: qtyRet,
+        alasan
+      }, { isWrite: true });
+      S().closeModal();
+      global.toast(`Berhasil tarik ${res.qty_retur} unit konsinyasi dari gudang.`, 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
   };
 
   global.ONSViewsInventoryProcurement = { renderMasterObatView, renderGudangView, renderDefectaView, renderFakturView };

@@ -1738,17 +1738,20 @@
    * Mengambil detail penanda retur (otorisator PIN, alasan & bukti pemulihan stok) dari nota + MUTASI_STOK.
    */
   function _extractPosReturInfo(trx, mutasiStok) {
-    const isRetur = String((trx && trx.status_trx) || '').toUpperCase() === 'RETUR';
-    if (!isRetur) return { isRetur: false, authorizer: '', alasan: '', tglRetur: '', restoredQty: 0, restoredItemsCount: 0, muts: [] };
-    const noInv = String(trx.no_invoice || '');
+    const stUp = String((trx && trx.status_trx) || '').toUpperCase();
+    const isFullRetur = stUp === 'RETUR';
+    const isPartialRetur = stUp === 'RETUR_SEBAGIAN';
+    const noInv = String((trx && trx.no_invoice) || '');
     const muts = (mutasiStok || []).filter((m) => String(m.jenis_mutasi || '') === 'RETUR_PENJUALAN' && String(m.referensi_id || '') === noInv);
+    const hasReturHistory = isFullRetur || isPartialRetur || muts.length > 0;
+    if (!hasReturHistory) return { isRetur: false, isFullRetur: false, isPartialRetur: false, hasReturHistory: false, authorizer: '', alasan: '', tglRetur: '', restoredQty: 0, restoredItemsCount: 0, muts: [] };
     const cat = String((muts[0] && muts[0].catatan) || '');
     const match = /Retur\/Void PIN \(([^)]+)\):\s*(.*)$/i.exec(cat);
     const authorizer = String(trx.apj_override_id || (match && match[1]) || 'APJ / Pemilik');
     const alasan = String(trx.retur_alasan || (match && match[2]) || cat.replace(/^Retur\/Void PIN\s*:\s*/i, '') || 'Retur/Void terotorisasi PIN').trim();
     const tglRetur = String(trx.tgl_retur || (muts[0] && muts[0].timestamp) || '');
     const restoredQty = muts.reduce((s, m) => s + Number(m.qty_ubah || 0), 0);
-    return { isRetur: true, authorizer, alasan, tglRetur, restoredQty, restoredItemsCount: muts.length, muts };
+    return { isRetur: isFullRetur, isFullRetur, isPartialRetur, hasReturHistory, authorizer, alasan, tglRetur, restoredQty, restoredItemsCount: muts.length, muts };
   }
 
   function _getPosItemsForTrx(st, trx) {
@@ -1786,7 +1789,7 @@
     const filtered = periodRows.filter((p) => {
       const statusUp = String(p.status_trx || 'LUNAS').toUpperCase();
       const metUp = String(p.metode_bayar || '').toUpperCase();
-      if (posHistFilter === 'RETUR' && statusUp !== 'RETUR') return false;
+      if (posHistFilter === 'RETUR' && statusUp !== 'RETUR' && statusUp !== 'RETUR_SEBAGIAN') return false;
       if (posHistFilter === 'BELUM_LUNAS' && statusUp !== 'BELUM_LUNAS') return false;
       if (posHistFilter === 'LUNAS' && statusUp !== 'LUNAS') return false;
       if (posHistMethod !== 'SEMUA' && metUp !== posHistMethod) return false;
@@ -1804,6 +1807,7 @@
   function _renderPosHistorySummaryAndRowsHtml(st, filteredSales) {
     const activeSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() !== 'RETUR');
     const returSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR');
+    const partialReturSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR_SEBAGIAN');
     const activeNominal = activeSubset.reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const returNominal = returSubset.reduce((s, p) => s + Number(p.grand_total || 0), 0);
 
@@ -1811,7 +1815,8 @@
       <div>Menampilkan <b class="font-mono-num">${filteredSales.length}</b> transaksi${filteredSales.length > 80 ? ' (80 terbaru)' : ''}</div>
       <div class="flex flex-wrap items-center gap-3 font-mono-num">
         <span>Netto Aktif: <b class="text-emerald-600">${S().rp(activeNominal)}</b> (${activeSubset.length} nota)</span>
-        ${returSubset.length ? `<span class="text-red-600 dark:text-red-400 font-bold">Penanda Retur: ${returSubset.length} nota (-${S().rp(returNominal)})</span>` : ''}
+        ${partialReturSubset.length ? `<span class="text-amber-600 dark:text-amber-400 font-bold">Retur Sebagian: ${partialReturSubset.length} nota</span>` : ''}
+        ${returSubset.length ? `<span class="text-red-600 dark:text-red-400 font-bold">Penanda Void Penuh: ${returSubset.length} nota (-${S().rp(returNominal)})</span>` : ''}
       </div>
     </div>`;
 
@@ -1820,18 +1825,22 @@
       const ret = _extractPosReturInfo(p, st.mutasiStok);
       const items = _getPosItemsForTrx(st, p);
       const itemPreview = items.length
-        ? items.slice(0, 2).map((it) => `${S().esc(it.nama_dagang || it.id_obat)} &times;${Number(it.qty || 1)}`).join(', ') + (items.length > 2 ? ` <span class="font-semibold">(+${items.length - 2} obat)</span>` : '')
+        ? items.slice(0, 2).map((it) => {
+            const qtyRet = Number(it.qty_retur || 0);
+            const qtySisa = Math.max(0, Number(it.qty || 0) - qtyRet);
+            return `${S().esc(it.nama_dagang || it.id_obat)} &times;${qtyRet > 0 ? `${qtySisa}<span class="text-amber-600">(ret:${qtyRet})</span>` : Number(it.qty || 1)}`;
+          }).join(', ') + (items.length > 2 ? ` <span class="font-semibold">(+${items.length - 2} obat)</span>` : '')
         : '';
       const statusUp = String(p.status_trx || 'LUNAS').toUpperCase();
-      const statusCls = ret.isRetur ? 'bpom-keras' : (statusUp === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas');
-      const statusLabel = ret.isRetur ? '&#8617; DIRETUR / VOID' : (statusUp === 'BELUM_LUNAS' ? 'TEMPO / BELUM LUNAS' : 'LUNAS');
+      const statusCls = ret.isFullRetur ? 'bpom-keras' : (ret.isPartialRetur ? 'bpom-prekursor' : (statusUp === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas'));
+      const statusLabel = ret.isFullRetur ? '&#8617; DIRETUR / VOID' : (ret.isPartialRetur ? '&#8617; RETUR SEBAGIAN' : (statusUp === 'BELUM_LUNAS' ? 'TEMPO / BELUM LUNAS' : 'LUNAS'));
       const metodeCls = _getPosMethodBadgeTone(p.metode_bayar);
 
-      return `<tr class="${ret.isRetur ? 'ons-trx-row-retur' : ''}">
+      return `<tr class="${ret.isFullRetur ? 'ons-trx-row-retur' : ''}">
         <td class="text-xs align-top">
           <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="font-mono-num font-bold hover:underline text-left ${ret.isRetur ? 'text-red-700 dark:text-red-300' : 'text-blue-600 dark:text-blue-400'}">${S().esc(p.no_invoice)}</button>
-            ${ret.isRetur ? '<span class="ons-retur-stamp">&#8617; RETUR / VOID</span>' : ''}
+            <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="font-mono-num font-bold hover:underline text-left ${ret.isFullRetur ? 'text-red-700 dark:text-red-300' : 'text-blue-600 dark:text-blue-400'}">${S().esc(p.no_invoice)}</button>
+            ${ret.isFullRetur ? '<span class="ons-retur-stamp">&#8617; RETUR / VOID</span>' : (ret.isPartialRetur ? '<span class="badge-bpom bpom-prekursor text-[10px]">&#8617; SEBAGIAN</span>' : '')}
           </div>
           <div class="font-mono-num text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${S().formatTgl(p.tanggal, true)}</div>
           <div class="text-[10px]" style="color:var(--ons-text-soft)">Kasir: <b>${S().esc(p.kasir_id || '-')}</b> &bull; ${S().esc(p.channel || 'Toko Fisik')}</div>
@@ -1839,8 +1848,8 @@
         <td class="text-xs align-top max-w-[300px]">
           <div class="font-bold">${S().esc(mem ? mem.nama_pasien : (p.id_member && p.id_member !== 'UMUM' ? p.id_member : 'Pasien Umum'))}</div>
           ${itemPreview ? `<div class="text-[11px] mt-0.5 truncate" style="color:var(--ons-text-soft)">${itemPreview}</div>` : `<div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Klik Rincian untuk lihat daftar obat</div>`}
-          ${ret.isRetur ? `<div class="ons-retur-trace-pill">
-            <div class="font-bold text-red-700 dark:text-red-300">&#8617; Otorisasi Retur: ${S().esc(ret.authorizer)}</div>
+          ${ret.hasReturHistory ? `<div class="ons-retur-trace-pill">
+            <div class="font-bold ${ret.isFullRetur ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'}">&#8617; Otorisasi ${ret.isPartialRetur ? 'Retur Sebagian' : 'Retur'}: ${S().esc(ret.authorizer)}</div>
             <div class="text-[10px]" style="color:var(--ons-text-soft)">Alasan: <i>${S().esc(ret.alasan)}</i> &bull; <b class="text-emerald-700 dark:text-emerald-300">${ret.restoredQty > 0 ? '+' + ret.restoredQty + ' qty ' : ''}Stok FEFO dipulihkan</b></div>
           </div>` : ''}
         </td>
@@ -1849,22 +1858,22 @@
             <span class="inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold ${metodeCls}">${S().esc(p.metode_bayar || 'TUNAI')}</span>
             ${p.detail_split ? `<span class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(p.detail_split)}</span>` : ''}
           </div>
-          ${ret.isRetur ? `<div class="mt-1 font-mono-num">
+          ${ret.isFullRetur ? `<div class="mt-1 font-mono-num">
             <span class="text-[11px] line-through opacity-65">${S().rp(p.grand_total)}</span>
             <div class="font-extrabold text-red-600 dark:text-red-400">-${S().rp(p.grand_total)} (Dibatalkan)</div>
-          </div>` : `<div class="mt-1 font-mono-num font-extrabold text-sm">${S().rp(p.grand_total)}</div>
+          </div>` : `<div class="mt-1 font-mono-num font-extrabold text-sm">${S().rp(p.grand_total)}${ret.isPartialRetur ? ' <span class="text-[10px] font-normal text-amber-600">(Netto)</span>' : ''}</div>
           ${Number(p.diskon_total || 0) > 0 ? `<div class="text-[10px] text-emerald-600 font-semibold">Disc -${S().rp(p.diskon_total)}</div>` : ''}
           ${Number(p.poin_didapat || 0) > 0 ? `<div class="text-[10px] text-amber-600 font-semibold">+${Number(p.poin_didapat)} poin</div>` : ''}`}
         </td>
         <td class="align-top">
           <span class="badge-bpom ${statusCls}">${statusLabel}</span>
-          ${ret.isRetur && ret.tglRetur ? `<div class="text-[10px] font-mono-num mt-1 text-red-700 dark:text-red-300">${S().formatTgl(ret.tglRetur, true)}</div>` : ''}
+          ${ret.hasReturHistory && ret.tglRetur ? `<div class="text-[10px] font-mono-num mt-1 ${ret.isFullRetur ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'}">${S().formatTgl(ret.tglRetur, true)}</div>` : ''}
         </td>
         <td class="align-top">
           <div class="flex flex-wrap gap-1.5">
-            <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">${ret.isRetur ? 'Bukti Retur' : 'Rincian Item'}</button>
-            <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ${ret.isRetur ? 'ons-btn-ghost' : 'ons-btn-primary'} text-[11px] py-1 px-2.5">${ret.isRetur ? 'Nota Void' : 'Struk Thermal'}</button>
-            ${!ret.isRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(p.no_invoice)}', ${Number(p.grand_total || 0)})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2.5">Retur/Void PIN</button>` : ''}
+            <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">${ret.isFullRetur ? 'Bukti Retur' : 'Rincian Item'}</button>
+            <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ${ret.isFullRetur ? 'ons-btn-ghost' : 'ons-btn-primary'} text-[11px] py-1 px-2.5">${ret.isFullRetur ? 'Nota Void' : 'Struk Thermal'}</button>
+            ${!ret.isFullRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(p.no_invoice)}', ${Number(p.grand_total || 0)})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2.5">Retur/Void PIN</button>` : ''}
           </div>
         </td>
       </tr>`;
@@ -2508,9 +2517,11 @@
         } catch (err) {}
       }
       const statusUp = String(trx.status_trx || 'LUNAS').toUpperCase();
-      const statusBadge = ret.isRetur
+      const statusBadge = ret.isFullRetur
         ? '<span class="ons-retur-stamp">&#8617; TRANSAKSI DIRETUR / VOID</span>'
-        : `<span class="badge-bpom ${statusUp === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas'}">${S().esc(statusUp)}</span>`;
+        : (ret.isPartialRetur
+          ? '<span class="badge-bpom bpom-prekursor">&#8617; RETUR SEBAGIAN</span>'
+          : `<span class="badge-bpom ${statusUp === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas'}">${S().esc(statusUp)}</span>`);
 
       S().openModal(`<div class="p-6 space-y-4 text-xs">
         <div class="flex justify-between items-start gap-2">
@@ -2523,35 +2534,41 @@
           </div>
           <button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
         </div>
-        ${ret.isRetur ? `<div class="p-3.5 rounded-xl border border-red-500/40 border-l-4 bg-red-500/10 space-y-1" style="border-left-color:#DC2626">
-          <div class="font-extrabold text-red-700 dark:text-red-300">&#8617; PENANDA KHUSUS: TRANSAKSI INI TELAH DIRETUR / VOID</div>
+        ${ret.hasReturHistory ? `<div class="p-3.5 rounded-xl border ${ret.isFullRetur ? 'border-red-500/40 bg-red-500/10' : 'border-amber-500/40 bg-amber-500/10'} border-l-4 space-y-1" style="border-left-color:${ret.isFullRetur ? '#DC2626' : '#D97706'}">
+          <div class="font-extrabold ${ret.isFullRetur ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'}">&#8617; PENANDA KHUSUS: ${ret.isFullRetur ? 'TRANSAKSI INI TELAH DIRETUR / VOID PENUH' : 'TRANSAKSI INI MEMILIKI RIWAYAT RETUR SEBAGIAN'}</div>
           <div><b>Diotorisasi Oleh (PIN APJ/Pemilik):</b> ${S().esc(ret.authorizer)}${ret.tglRetur ? ` &bull; <span class="font-mono-num">${S().formatTgl(ret.tglRetur, true)}</span>` : ''}</div>
           <div><b>Alasan Retur:</b> ${S().esc(ret.alasan)}</div>
           <div><b>Status Pemulihan Stok:</b> <span class="font-semibold text-emerald-700 dark:text-emerald-300">${ret.restoredQty > 0 ? `+${ret.restoredQty} qty dari ${ret.restoredItemsCount} baris batch dikembalikan ke stok FEFO` : 'Batch stok dikembalikan & jurnal pembalik tercatat'}</span></div>
         </div>` : ''}
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>Nama Obat</th><th>Batch &amp; ED</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
+            <thead><tr><th>Nama Obat</th><th>Batch &amp; ED</th><th>Qty Aktif</th><th>Harga</th><th>Subtotal</th></tr></thead>
             <tbody>
-              ${items.length ? items.map((it) => `<tr>
-                <td><div class="font-semibold">${S().esc(it.nama_dagang || it.id_obat)}</div>${it.aturan_pakai ? `<div class="text-[10px] text-emerald-600">${S().esc(it.aturan_pakai)}</div>` : ''}</td>
-                <td class="font-mono-num"><b>${S().esc(it.no_batch || it.id_batch || '-')}</b>${it.tgl_kadaluarsa ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(String(it.tgl_kadaluarsa).slice(0, 10))}</div>` : ''}</td>
-                <td class="font-mono-num">${it.qty} ${S().esc(it.satuan || '')}</td>
-                <td class="font-mono-num">${S().rp(it.harga_jual)}</td>
-                <td class="font-mono-num font-bold">${S().rp(it.subtotal_item || (Number(it.qty) * Number(it.harga_jual)))}</td>
-              </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4">Detail baris item belum tersedia pada log lokal.</td></tr>'}
+              ${items.length ? items.map((it) => {
+                const qtyOrig = Number(it.qty || 0);
+                const qtyRet = Number(it.qty_retur || 0);
+                const qtySisa = Math.max(0, qtyOrig - qtyRet);
+                const subAktif = qtyOrig > 0 ? Math.round((qtySisa / qtyOrig) * Number(it.subtotal_item || (qtyOrig * Number(it.harga_jual || 0)))) : 0;
+                return `<tr>
+                  <td><div class="font-semibold">${S().esc(it.nama_dagang || it.id_obat)}</div>${it.aturan_pakai ? `<div class="text-[10px] text-emerald-600">${S().esc(it.aturan_pakai)}</div>` : ''}</td>
+                  <td class="font-mono-num"><b>${S().esc(it.no_batch || it.id_batch || '-')}</b>${it.tgl_kadaluarsa ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(String(it.tgl_kadaluarsa).slice(0, 10))}</div>` : ''}</td>
+                  <td class="font-mono-num">${qtyRet > 0 ? `<b>${qtySisa}</b> <span class="text-[10px] text-amber-600">(Awal ${qtyOrig}, Retur ${qtyRet})</span>` : `${qtyOrig}`} ${S().esc(it.satuan || '')}</td>
+                  <td class="font-mono-num">${S().rp(it.harga_jual)}</td>
+                  <td class="font-mono-num font-bold">${S().rp(subAktif)}</td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="5" class="text-center py-4">Detail baris item belum tersedia pada log lokal.</td></tr>'}
             </tbody>
           </table>
         </div>
         <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t font-bold" style="border-color:var(--ons-border)">
           <span>Total Nota (${S().esc(trx.status_trx || 'LUNAS')})</span>
-          <span class="text-base font-mono-num ${ret.isRetur ? 'line-through text-red-600' : 'text-blue-600'}">${S().rp(trx.grand_total || 0)}</span>
+          <span class="text-base font-mono-num ${ret.isFullRetur ? 'line-through text-red-600' : 'text-blue-600'}">${S().rp(trx.grand_total || 0)}</span>
         </div>
         <div class="flex flex-wrap gap-2 pt-1">
-          <button type="button" onclick="window.openPosReprintModal('${S().esc(noInvoice)}')" class="ons-btn ons-btn-primary flex-1 text-xs">${ret.isRetur ? 'Cetak Nota Void (Thermal)' : 'Cetak Ulang Struk'}</button>
-          ${!ret.isRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(noInvoice)}', ${Number(trx.grand_total || 0)})" class="ons-btn ons-btn-danger flex-1 text-xs">Proses Retur / Void PIN</button>` : ''}
+          <button type="button" onclick="window.openPosReprintModal('${S().esc(noInvoice)}')" class="ons-btn ons-btn-primary flex-1 text-xs">${ret.isFullRetur ? 'Cetak Nota Void (Thermal)' : 'Cetak Ulang Struk'}</button>
+          ${!ret.isFullRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(noInvoice)}', ${Number(trx.grand_total || 0)})" class="ons-btn ons-btn-danger flex-1 text-xs">Proses Retur / Void PIN</button>` : ''}
         </div>
-      </div>`, '640px');
+      </div>`, '660px');
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -3236,7 +3253,52 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
-  global.openPosVoidReturnModal = (noInvoice, nominal) => {
+  let activeVoidItems = [];
+  let activeVoidGrandTotal = 0;
+
+  global.recalcVoidPartialRefund = () => {
+    const modeEl = document.querySelector('input[name="voidMode"]:checked');
+    const mode = modeEl ? modeEl.value : 'PARTIAL';
+    const box = document.getElementById('voidPartialBox');
+    const estEl = document.getElementById('voidEstimatedRefund');
+    if (box) box.style.display = mode === 'PARTIAL' ? 'block' : 'none';
+    if (!estEl) return;
+    if (mode === 'FULL') {
+      estEl.textContent = S().rp(activeVoidGrandTotal);
+      return;
+    }
+    let activeOrigSub = 0;
+    let selectedSub = 0;
+    activeVoidItems.forEach((it) => {
+      const qtyOrig = Number(it.qty || 0);
+      const qtySisa = Math.max(0, qtyOrig - Number(it.qty_retur || 0));
+      if (qtySisa <= 0) return;
+      const lineSub = Number(it.subtotal_item || (qtyOrig * Number(it.harga_jual || 0)));
+      const unitNet = qtyOrig > 0 ? (lineSub / qtyOrig) : Number(it.harga_jual || 0);
+      activeOrigSub += unitNet * qtySisa;
+      const inp = document.getElementById(`voidQty_${it.id_detail}`);
+      const qSel = Math.max(0, Math.min(qtySisa, Math.floor(Number(inp ? inp.value : 0))));
+      selectedSub += unitNet * qSel;
+    });
+    const est = activeOrigSub > 0 ? Math.round((selectedSub / activeOrigSub) * activeVoidGrandTotal) : 0;
+    estEl.textContent = S().rp(est);
+  };
+
+  global.openPosVoidReturnModal = async (noInvoice, nominal) => {
+    const st = S().AppState;
+    const trx = (st.penjualan || []).find((p) => p.no_invoice === noInvoice) || { no_invoice: noInvoice, grand_total: nominal };
+    activeVoidGrandTotal = Number(trx.grand_total != null ? trx.grand_total : nominal || 0);
+    let items = _getPosItemsForTrx(st, trx);
+    if (!items.length) {
+      try {
+        const res = await API().callApi('pos.details', { no_invoice: noInvoice });
+        items = res.items || [];
+      } catch (e) {}
+    }
+    activeVoidItems = items.filter((it) => Math.max(0, Number(it.qty || 0) - Number(it.qty_retur || 0)) > 0);
+    const hasItemBreakdown = activeVoidItems.length > 0;
+    const defaultMode = hasItemBreakdown ? 'PARTIAL' : 'FULL';
+
     const alasanPresets = [
       'Kesalahan input item / qty kasir',
       'Penyesuaian resep dokter / alergi pasien',
@@ -3246,9 +3308,40 @@
     S().openModal(`<div class="p-6 space-y-3.5 text-xs">
       <div class="flex justify-between items-center"><h3 class="font-bold text-base text-red-600">&#8617; Proses Retur / Void Transaksi ${S().esc(noInvoice)}</h3><button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button></div>
       <div class="p-3.5 rounded-xl border border-red-500/35 bg-red-500/10 space-y-1">
-        <div class="font-bold text-red-700 dark:text-red-300">Nilai transaksi yang dibatalkan: <span class="font-mono-num text-sm">${S().rp(nominal)}</span></div>
-        <div style="color:var(--ons-text-soft)">Nota akan diberi <b>Penanda Khusus Retur</b>, stok batch FEFO otomatis kembali ke gudang, &amp; jurnal pembalik tercatat.</div>
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <span class="font-bold text-red-700 dark:text-red-300">Sisa Nilai Aktif Nota: <span class="font-mono-num">${S().rp(activeVoidGrandTotal)}</span></span>
+          <span class="font-bold text-red-700 dark:text-red-300">Estimasi Refund/Koreksi: <span id="voidEstimatedRefund" class="font-mono-num text-sm">${S().rp(defaultMode === 'FULL' ? activeVoidGrandTotal : 0)}</span></span>
+        </div>
+        <div style="color:var(--ons-text-soft)">Stok batch FEFO otomatis kembali ke gudang &amp; jurnal pembalik tercatat. Retur sebagian menandai nota sebagai <b>RETUR SEBAGIAN</b> dan mempertahankan item tersisa.</div>
       </div>
+      ${hasItemBreakdown ? `<div>
+        <label class="font-semibold block mb-1.5">Mode Retur</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <input type="radio" name="voidMode" value="PARTIAL" checked onchange="window.recalcVoidPartialRefund()"/>
+            <div><div class="font-bold">Retur Sebagian Item</div><div class="text-[10px]" style="color:var(--ons-text-soft)">Pilih item &amp; qty tertentu saja</div></div>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <input type="radio" name="voidMode" value="FULL" onchange="window.recalcVoidPartialRefund()"/>
+            <div><div class="font-bold text-red-600">Void Seluruh Sisa Nota</div><div class="text-[10px]" style="color:var(--ons-text-soft)">Batalkan 100% sisa nota</div></div>
+          </label>
+        </div>
+      </div>
+      <div id="voidPartialBox" class="ons-table-wrap max-h-48 overflow-y-auto">
+        <table class="ons-table">
+          <thead><tr><th>Obat &amp; Batch</th><th class="text-right">Sisa Aktif</th><th class="text-right">Qty Retur</th></tr></thead>
+          <tbody>
+            ${activeVoidItems.map((it) => {
+              const sisaAktif = Math.max(0, Number(it.qty || 0) - Number(it.qty_retur || 0));
+              return `<tr>
+                <td><div class="font-semibold">${S().esc(it.nama_dagang || it.id_obat)}</div><div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Batch: ${S().esc(it.no_batch || it.id_batch || '-')} &bull; ${S().rp(it.harga_jual)}</div></td>
+                <td class="text-right font-mono-num font-bold">${sisaAktif} ${S().esc(it.satuan || '')}</td>
+                <td class="text-right"><input id="voidQty_${S().esc(it.id_detail)}" type="number" min="0" max="${sisaAktif}" step="1" value="0" oninput="window.recalcVoidPartialRefund()" class="ons-input font-mono-num text-xs w-20 text-right py-1"/></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>` : `<input type="radio" name="voidMode" value="FULL" checked class="hidden"/>`}
       <div>
         <label class="font-semibold block mb-1.5">Pilih Alasan Cepat atau Ketik Manual *</label>
         <div class="flex flex-wrap gap-1.5 mb-2">
@@ -3258,18 +3351,36 @@
       </div>
       <div><label class="font-semibold block mb-1">PIN Otorisasi APJ / Pemilik${API().isDemoMode() ? ' (Demo: 123456)' : ''} *</label><input id="voidPinInp" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num font-bold tracking-widest" placeholder="Masukkan 6 digit PIN"/></div>
       <button type="button" onclick="window.submitPosVoidReturn('${S().esc(noInvoice)}')" class="ons-btn ons-btn-danger w-full py-2.5 font-bold">Otorisasi PIN &amp; Sah-kan Retur</button>
-    </div>`, '500px');
+    </div>`, '580px');
   };
 
   global.submitPosVoidReturn = async (noInvoice) => {
     try {
-      const res = await API().callApi('pos.voidReturn', {
+      const modeEl = document.querySelector('input[name="voidMode"]:checked');
+      const mode = modeEl ? modeEl.value : 'FULL';
+      const payload = {
         no_invoice: noInvoice,
         alasan: (document.getElementById('voidAlasanInp') || {}).value || 'Retur PIN',
         pin_override: (document.getElementById('voidPinInp') || {}).value || ''
-      }, { isWrite: true });
+      };
+      if (mode === 'PARTIAL' && activeVoidItems.length) {
+        const returItems = [];
+        activeVoidItems.forEach((it) => {
+          const sisaAktif = Math.max(0, Number(it.qty || 0) - Number(it.qty_retur || 0));
+          const inp = document.getElementById(`voidQty_${it.id_detail}`);
+          const qSel = Math.max(0, Math.min(sisaAktif, Math.floor(Number(inp ? inp.value : 0))));
+          if (qSel > 0) returItems.push({ id_detail: it.id_detail, qty: qSel });
+        });
+        if (!returItems.length) {
+          global.toast('Pilih minimal 1 item dengan Qty Retur > 0, atau pilih mode Void Seluruh Sisa Nota.', 'warn');
+          return;
+        }
+        payload.retur_items = returItems;
+      }
+      const res = await API().callApi('pos.voidReturn', payload, { isWrite: true });
       S().closeModal();
-      global.toast(`Retur ${res.no_invoice} disahkan (${res.restored_items} item stok kembali).`, 'ok');
+      const labelMode = res.is_partial ? 'Retur Sebagian' : 'Retur Penuh / Void';
+      global.toast(`${labelMode} ${res.no_invoice} disahkan (${res.restored_qty || res.restored_items} unit stok kembali).`, 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };

@@ -164,7 +164,8 @@
                 { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf' },
                 { subTab: 'input', label: 'Terima Faktur (Scan)', kw: 'terima faktur grn sp multi item ocr scan batch masuk' },
                 { subTab: 'harga', label: 'Analisa Harga Jual', kw: 'analisa harga margin hpp naik keputusan harga jual' },
-                { subTab: 'retur', label: 'Retur Barang PBF', kw: 'retur barang pbf near ed kadaluarsa' }
+                { subTab: 'retur', label: 'Retur Barang PBF', kw: 'retur barang pbf near ed kadaluarsa' },
+                { subTab: 'konsinyasi', label: 'Konsinyasi (Titip Jual)', kw: 'konsinyasi titip jual distributor settlement laku bayar' }
               ]
             }
           ]
@@ -735,6 +736,7 @@
         st.omnichannelOrders = data.omnichannel_orders || [];
         st.strukTemplates = data.struk_templates || [];
         st.fakturPbf = data.faktur_pbf || [];
+        st.konsinyasiSummary = data.konsinyasi_summary || { items: [], settlements: [], totals: { qty_terjual: 0, qty_sisa: 0, tagihan_belum_bayar: 0, sudah_dibayar: 0 } };
         st.jurnalKeuangan = data.jurnal_keuangan || [];
         st.suratPesanan = data.surat_pesanan || [];
         st.deDokumen = data.de_dokumen || [];
@@ -764,6 +766,7 @@
         st.penjualan = [];
         st.detailPenjualan = [];
         st.fakturPbf = [];
+        st.konsinyasiSummary = { items: [], settlements: [], totals: { qty_terjual: 0, qty_sisa: 0, tagihan_belum_bayar: 0, sudah_dibayar: 0 } };
         st.jurnalKeuangan = [];
         st.rekamKlinis = [];
         st.pemeriksaanPasien = [];
@@ -1431,9 +1434,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_13') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_14') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_13', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_14', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {
