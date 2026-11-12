@@ -466,13 +466,14 @@
           ? `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <span>${ONSStore.esc(item.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeTab.label)}</strong>`
           : `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(item.label)}</strong>`;
 
-        const chipsHtml = (item.viewId !== 'obat' && tabs.length > 1) ? `
+        const hideRibbon = item.viewId === 'obat' || item.viewId === 'settings';
+        const chipsHtml = (!hideRibbon && tabs.length > 1) ? `
           <div class="ons-subnav-ribbon mt-2" role="navigation" aria-label="Sub-tab ${ONSStore.esc(item.label)}">
             ${tabs.map((t) => {
               const act = curSub === t.subTab;
               return `<button type="button" onclick="navigateView('${item.viewId}','${t.subTab}')" class="ons-subnav-chip ${act ? 'active' : ''}">${ONSStore.esc(t.label)}</button>`;
             }).join('')}
-          </div>` : (item.viewId !== 'obat' && item.desc ? `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ONSStore.esc(item.desc)}</div>` : '');
+          </div>` : (!hideRibbon && item.desc ? `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ONSStore.esc(item.desc)}</div>` : '');
 
         return `<div class="flex flex-wrap items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
           <div class="flex items-center flex-wrap gap-1">${trail}</div>
@@ -1331,7 +1332,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.8 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.9 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>

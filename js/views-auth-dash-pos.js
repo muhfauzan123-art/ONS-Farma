@@ -3075,27 +3075,36 @@
   function buildAndShowStrukModal(strukData, lebarMm, waTarget, itemsForEtiket) {
     const st = S().AppState;
     const tpls = st.strukTemplates || [];
-    const activeTpl = tpls.find((t) => Number(t.lebar_mm || 58) === Number(lebarMm || 58)) || tpls[0];
-    const tplText = (activeTpl && activeTpl.template_teks) || (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '';
-    const htmlPaper = global.StrukEngine ? global.StrukEngine.renderHtml(tplText, strukData, lebarMm || 58) : '<pre>Struk OK</pre>';
-    const plainTxt = global.StrukEngine ? global.StrukEngine.formatPlainText(tplText, strukData, lebarMm || 58) : '';
-    const waText = S().formatStrukWaMessage ? S().formatStrukWaMessage(strukData) : plainTxt;
+    const targetMm = Number(lebarMm) === 80 ? 80 : 58;
+    const activeTpl = tpls.find((t) => Number(t.lebar_mm || 58) === targetMm) || tpls[0];
+    const tplText = (activeTpl && activeTpl.template_teks) || (targetMm === 80 && global.StrukEngine && global.StrukEngine.PRESET_TEMPLATE_80MM) || (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '';
+    const normData = (global.StrukEngine && typeof global.StrukEngine.enrichStrukData === 'function')
+      ? global.StrukEngine.enrichStrukData(strukData)
+      : strukData;
+    const htmlPaper = global.StrukEngine ? global.StrukEngine.renderHtml(tplText, normData, targetMm) : '<pre>Struk OK</pre>';
+    const plainTxt = global.StrukEngine ? global.StrukEngine.formatPlainText(tplText, normData, targetMm) : '';
+    const waText = S().formatStrukWaMessage ? S().formatStrukWaMessage(normData) : plainTxt;
     const cleanWa = String(waTarget || '').trim();
     const waHref = S().buildWaUrl ? S().buildWaUrl(cleanWa, waText) : ('https://wa.me/?text=' + encodeURIComponent(waText));
-    global._lastStrukPayload = { tplText, strukData, lebarMm: lebarMm || 58, plainTxt, waText, waTarget: cleanWa, itemsForEtiket: itemsForEtiket || [] };
+    const btConnected = !!(S().ThermalPrinter && S().ThermalPrinter.characteristic);
+    const btLabel = btConnected ? ('Terhubung: ' + (S().ThermalPrinter.deviceName || 'Bluetooth')) : 'Bluetooth';
+    global._lastStrukPayload = { tplText, strukData: normData, lebarMm: targetMm, plainTxt, waText, waTarget: cleanWa, itemsForEtiket: itemsForEtiket || [] };
 
     S().openModal(`<div class="p-5 space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="text-emerald-600 font-bold text-base">&#9989; Nota ${S().esc(strukData.NOTA)}</div>
-        <div class="flex gap-1.5">
-          <button onclick="window.switchStrukPreviewWidth(58)" class="ons-btn ${Number(lebarMm) !== 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">58mm</button>
-          <button onclick="window.switchStrukPreviewWidth(80)" class="ons-btn ${Number(lebarMm) === 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">80mm</button>
-          <button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="text-emerald-600 font-bold text-base">&#9989; Nota ${S().esc(normData.NOTA)}</div>
+          <div class="text-[11px]" style="color:var(--ons-text-soft)">Kertas Thermal ${targetMm} mm (${targetMm === 80 ? '46' : '32'} kolom) &bull; Siap cetak &amp; kirim WA</div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="window.switchStrukPreviewWidth(58)" class="ons-btn ${targetMm !== 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5">58mm</button>
+          <button onclick="window.switchStrukPreviewWidth(80)" class="ons-btn ${targetMm === 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5">80mm</button>
+          <button onclick="ONSStore.closeModal()" class="text-xl px-1.5">&times;</button>
         </div>
       </div>
-      <div class="max-h-72 overflow-y-auto py-2 rounded-xl" style="background:var(--ons-bg-subtle)">${htmlPaper}</div>
+      <div class="ons-struk-paper-tray max-h-[48vh] overflow-y-auto">${htmlPaper}</div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
-        <button onclick="window.printStrukWebBt()" class="ons-btn ons-btn-primary py-1.5">Bluetooth</button>
+        <button onclick="window.printStrukWebBt()" class="ons-btn ons-btn-primary py-1.5" title="Cetak langsung via Web Bluetooth ESC/POS">${S().esc(btLabel)}</button>
         <button onclick="window.printStrukRawBt()" class="ons-btn ons-btn-ghost py-1.5">RawBT HP</button>
         <button onclick="window.printStrukBrowser()" class="ons-btn ons-btn-ghost py-1.5">Print / PDF</button>
         <button onclick="window.downloadStrukPngNow()" class="ons-btn ons-btn-ghost py-1.5">Unduh PNG</button>
@@ -3167,8 +3176,12 @@
     const p = global._lastStrukPayload;
     if (p && global.StrukEngine) {
       document.body.classList.add('printing-thermal');
-      S().printHtmlZone(global.StrukEngine.renderHtml(p.tplText, p.strukData, p.lebarMm));
-      setTimeout(() => document.body.classList.remove('printing-thermal'), 800);
+      const cleanup = () => document.body.classList.remove('printing-thermal');
+      if (typeof global.addEventListener === 'function') {
+        global.addEventListener('afterprint', cleanup, { once: true });
+      }
+      S().printHtmlZone(global.StrukEngine.renderHtml(p.tplText, p.strukData, p.lebarMm), { widthMm: p.lebarMm });
+      setTimeout(cleanup, 1200);
     }
   };
   global.downloadStrukPngNow = () => {
@@ -3196,9 +3209,12 @@
       const mem = (S().AppState.members || []).find((m) => m.id_member === trx.id_member);
       const strukData = {
         NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
-        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || ('Cabang ' + (trx.cabang_id || S().AppState.cabangId)),
+        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || ('Outlet ' + (trx.cabang_id || S().AppState.cabangId)),
+        SIA_TOKO: prof.no_sia || '',
         WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
+        APJ_NAMA: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
         APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
+        LOGO_URL: prof.logo_url || '',
         NOTA: trx.no_invoice,
         TANGGAL: S().formatTgl(trx.tanggal, true),
         KASIR: trx.kasir_id || 'Kasir',
@@ -3600,9 +3616,12 @@
       const prof = S().getStoreProfile ? S().getStoreProfile() : {};
       buildAndShowStrukModal({
         NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
-        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || ('Cabang ' + st.cabangId),
+        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Kesehatan Raya No. 88',
+        SIA_TOKO: prof.no_sia || '',
         WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
+        APJ_NAMA: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
         APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
+        LOGO_URL: prof.logo_url || '',
         NOTA: notaNo,
         TANGGAL: new Date().toLocaleString('id-ID'),
         KASIR: (st.user && st.user.nama_lengkap) || 'Kasir',

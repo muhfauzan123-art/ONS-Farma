@@ -32,6 +32,21 @@
   let billingCache = { tagihan: [], pending: [], history: [], potongan: [] };
   let docCache = { templates: [], docs: [], pejabat: [] };
   let mobilePreviewBp = '390px';
+  let strukPreviewMode = 'paper'; // paper | text
+  let strukPreviewExtras = true;
+  let strukActiveIdx = 0;
+  const STRUK_TOKEN_SNIPPETS = [
+    { label: '+ Nama Apotek', token: '{{NAMA_TOKO}}' },
+    { label: '+ Izin SIA', token: '{{SIA_TOKO}}' },
+    { label: '+ SIPA APJ', token: '{{APJ_SIPA}}' },
+    { label: '+ No Nota', token: '{{NOTA}}' },
+    { label: '+ Pasien', token: '{{PELANGGAN}}' },
+    { label: '+ Diskon Opsional', token: '{{?DISKON}}[LR]Diskon||-{{DISKON|rp}}\n{{/DISKON}}' },
+    { label: '+ Garis Ganda', token: '[=]' },
+    { label: '+ Garis Putus', token: '[-]' },
+    { label: '+ QR Verifikasi', token: '[QR]{{QR_URL}}' },
+    { label: '+ Barcode Nota', token: '[BAR]{{NOTA}}' }
+  ];
   const LOST_SALES_KEY = 'ons_lost_sales_v10';
 
   let racikanState = {
@@ -3115,51 +3130,86 @@
 
       ${settingsTab === 'struk' ? (() => {
         const tpls = (S().AppState && S().AppState.strukTemplates) || [];
-        const curTpl = tpls[0] || {
-          kode: 'STRUK_58_DEFAULT',
-          nama: 'Struk Kasir Thermal 58mm (Standar)',
+        const safeIdx = (strukActiveIdx >= 0 && strukActiveIdx < tpls.length) ? strukActiveIdx : 0;
+        const curTpl = tpls[safeIdx] || {
+          id_tpl: 'TPL-58-DEFAULT',
+          kode: 'STRUK_POS_58MM',
+          nama: 'Struk Kasir Standar 58mm (Apotek ONS Farma)',
           lebar_mm: 58,
           template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || ''
         };
-        const sampleData = {
-          NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
-          ALAMAT_TOKO: prof.alamat_usaha || 'Jl. Kesehatan Raya No. 88',
-          WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
-          APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
-          NOTA: 'INV-PREVIEW-001',
-          TANGGAL: new Date().toLocaleDateString('id-ID'),
-          KASIR: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
-          PELANGGAN: 'Tn. Bambang (PRB)',
-          METODE: 'QRIS',
-          CHANNEL: 'Toko Fisik',
-          ITEM: [{ NAMA: 'Paracetamol Sanmol 500mg', QTY: 10, SATUAN: 'Tab', HARGA: 650, SUBTOTAL: 6500 }],
-          SUBTOTAL: 6500, DISKON: 0, PPN: 0, TOTAL: 6500, DIBAYAR: 6500, KEMBALI: 0, POIN: 1,
-          CATATAN: 'Semoga lekas sembuh!', QR_URL: 'https://onsfarma.id/v/PREVIEW'
-        };
-        const previewHtml = global.StrukEngine ? global.StrukEngine.renderHtml(curTpl.template_teks, sampleData, curTpl.lebar_mm) : '';
-        return `<div class="ons-card p-5 space-y-3 text-xs">
-          <div class="flex flex-wrap items-center justify-between gap-2">
+        const widthNum = Number(curTpl.lebar_mm) === 80 ? 80 : 58;
+        const sampleData = buildStrukEditorSampleData(prof);
+        const previewHtml = renderStrukPreviewContent(curTpl.template_teks, sampleData, widthNum);
+        const presets = (global.StrukEngine && global.StrukEngine.TEMPLATE_PRESETS) || [];
+        return `<div class="ons-card p-5 space-y-4 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
             <div>
-              <h3 class="font-bold text-sm">Editor Template Struk Thermal 58mm / 80mm (/gas-struk-resi-printer)</h3>
-              <p style="color:var(--ons-text-soft)">Gunakan direktif <code>[C]</code>, <code>[B]</code>, <code>[LR]Kiri|Kanan</code>, <code>[QR]</code>, <code>[BAR]</code>, dan blok <code>{{#ITEM}}...{{/ITEM}}</code>.</p>
+              <h3 class="font-bold text-sm">Desain &amp; Pratinjau Struk Thermal 58mm / 80mm</h3>
+              <p style="color:var(--ons-text-soft)">Atur tata letak struk kasir dengan direktif <code>[C]</code>, <code>[B]</code>, <code>[LR]Kiri||Kanan</code>, blok item <code>{{#ITEM}}...{{/ITEM}}</code>, dan <code>[QR]</code>.</p>
             </div>
-            <div class="flex gap-2">
-              <select id="strukTplWidth" onchange="window.previewEditedStruk()" class="ons-select w-28 text-xs">
-                <option value="58" ${Number(curTpl.lebar_mm) !== 80 ? 'selected' : ''}>58 mm</option>
-                <option value="80" ${Number(curTpl.lebar_mm) === 80 ? 'selected' : ''}>80 mm</option>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="strukTplWidth" onchange="window.previewEditedStruk()" class="ons-select w-32 text-xs font-semibold">
+                <option value="58" ${widthNum !== 80 ? 'selected' : ''}>58 mm (32 Kolom)</option>
+                <option value="80" ${widthNum === 80 ? 'selected' : ''}>80 mm (46 Kolom)</option>
               </select>
-              <button onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs">Simpan Template ke Sheets</button>
+              <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Cetak</button>
+              <button type="button" onclick="window.downloadEditedStrukPng()" class="ons-btn ons-btn-ghost text-xs">Unduh PNG</button>
+              <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template ke Sheets</button>
             </div>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div class="lg:col-span-7 space-y-2">
-              <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_58_DEFAULT')}"/>
-              <input id="strukTplNama" class="ons-input text-xs font-bold" value="${S().esc(curTpl.nama || 'Struk Thermal 58mm')}"/>
-              <textarea id="strukTplText" rows="12" oninput="window.previewEditedStruk()" class="ons-textarea font-mono-num text-[11px]">${S().esc(curTpl.template_teks || '')}</textarea>
+
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Preset Cepat:</span>
+              ${presets.map((pr) => `<button type="button" onclick="window.applyStrukPreset('${S().esc(pr.id)}')" class="ons-struk-preset-btn ${curTpl.kode === pr.kode ? 'active' : ''}">${S().esc(pr.label)}</button>`).join('')}
             </div>
-            <div class="lg:col-span-5 p-3 rounded-xl border overflow-auto max-h-80" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-              <div class="text-[11px] font-bold mb-2 text-center">Live Preview Struk Thermal</div>
-              <div id="strukEditorLivePreview">${previewHtml}</div>
+            ${tpls.length > 1 ? `<div class="flex items-center gap-1.5">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
+              <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-xs w-56">
+                ${tpls.map((t, idx) => `<option value="${idx}" ${idx === safeIdx ? 'selected' : ''}>${S().esc(t.nama || t.kode)} (${Number(t.lebar_mm) === 80 ? '80mm' : '58mm'})</option>`).join('')}
+              </select>
+            </div>` : ''}
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <div class="lg:col-span-7 space-y-2.5">
+              <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_POS_58MM')}"/>
+              <div>
+                <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Nama Template Struk</label>
+                <input id="strukTplNama" class="ons-input text-xs font-bold" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <label class="font-semibold text-[11px]" style="color:var(--ons-text-soft)">Kode Tata Letak Struk</label>
+                  <button type="button" onclick="window.resetEditedStrukPreset()" class="text-[11px] font-semibold text-blue-600 hover:underline">Pulihkan Template Bawaan</button>
+                </div>
+                <textarea id="strukTplText" rows="16" oninput="window.previewEditedStruk()" class="ons-textarea font-mono-num text-[11.5px] leading-relaxed">${S().esc(curTpl.template_teks || '')}</textarea>
+              </div>
+              <div class="p-2.5 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Sisipkan Variabel / Direktif Cepat (klik untuk menambah ke editor):</div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${STRUK_TOKEN_SNIPPETS.map((c, idx) => `<button type="button" onclick="window.insertStrukToken(${idx})" class="ons-struk-chip">${S().esc(c.label)}</button>`).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-5 space-y-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-xs">Live Preview</span>
+                  <span id="strukPreviewWidthPill" class="badge-bpom bpom-terbatas">${widthNum} mm &bull; ${widthNum === 80 ? '46' : '32'} Kolom</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button type="button" onclick="window.setStrukPreviewMode('paper')" class="ons-btn ${strukPreviewMode === 'paper' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">Kertas</button>
+                  <button type="button" onclick="window.setStrukPreviewMode('text')" class="ons-btn ${strukPreviewMode === 'text' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">ESC/POS</button>
+                </div>
+              </div>
+              <label class="flex items-center gap-2 text-[11px] cursor-pointer" style="color:var(--ons-text-soft)">
+                <input type="checkbox" ${strukPreviewExtras ? 'checked' : ''} onchange="window.toggleStrukPreviewExtras(this.checked)" class="w-3.5 h-3.5 accent-blue-600"/>
+                <span>Tampilkan contoh diskon, aturan pakai &amp; kembalian di pratinjau</span>
+              </label>
+              <div id="strukEditorLivePreview" class="ons-struk-paper-tray">${previewHtml}</div>
             </div>
           </div>
         </div>`;
@@ -4143,38 +4193,161 @@
     global.navigateView('pos');
   };
 
+  function buildStrukEditorSampleData(profObj) {
+    const prof = profObj || (S().getStoreProfile ? S().getStoreProfile() : {});
+    const kasirRaw = (S().AppState.user && S().AppState.user.nama_lengkap) || prof.nama_pemilik || 'Kasir Apotek';
+    const items = strukPreviewExtras
+      ? [
+          { NAMA: 'Paracetamol Sanmol 500mg', QTY: 10, SATUAN: 'Tab', HARGA: 650, SUBTOTAL: 6500, ATURAN_PAKAI: '3 x 1 Tab sesudah makan (bila demam)' },
+          { NAMA: 'Vitamin C 500mg IPI', QTY: 1, SATUAN: 'Btl', HARGA: 8500, SUBTOTAL: 8500, ATURAN_PAKAI: '1 x 1 Tab pagi hari' }
+        ]
+      : [{ NAMA: 'Paracetamol Sanmol 500mg', QTY: 10, SATUAN: 'Tab', HARGA: 650, SUBTOTAL: 6500, ATURAN_PAKAI: '' }];
+    const sub = items.reduce((s, it) => s + Number(it.SUBTOTAL || 0), 0);
+    const disc = strukPreviewExtras ? 1000 : 0;
+    const tot = Math.max(0, sub - disc);
+    const paid = strukPreviewExtras ? 20000 : tot;
+    return {
+      NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
+      ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Kesehatan Raya No. 88',
+      SIA_TOKO: prof.no_sia || '449/SIA-DPMPTSP/2025/0088',
+      WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
+      APJ_NAMA: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
+      APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
+      LOGO_URL: prof.logo_url || '',
+      NOTA: 'INV-PREVIEW-001',
+      TANGGAL: new Date().toLocaleDateString('id-ID'),
+      KASIR: kasirRaw,
+      PELANGGAN: 'Tn. Bambang (PRB)',
+      METODE: strukPreviewExtras ? 'TUNAI' : 'QRIS',
+      CHANNEL: 'Toko Fisik',
+      STATUS: 'LUNAS',
+      ITEM: items,
+      SUBTOTAL: sub,
+      DISKON: disc,
+      PPN: 0,
+      TOTAL: tot,
+      DIBAYAR: paid,
+      KEMBALI: Math.max(0, paid - tot),
+      POIN: Math.floor(tot / 10000),
+      CATATAN: 'Konsultasi obat gratis bersama Apoteker.',
+      QR_URL: 'https://onsfarma.id/v/PREVIEW'
+    };
+  }
+
+  function renderStrukPreviewContent(tplText, sampleData, lebarMm) {
+    if (!global.StrukEngine) return '';
+    const w = Number(lebarMm) === 80 ? 80 : 58;
+    if (strukPreviewMode === 'text') {
+      const plain = global.StrukEngine.formatPlainText(tplText, sampleData, w);
+      return `<pre class="ons-struk-pre">${S().esc(plain)}</pre>`;
+    }
+    return global.StrukEngine.renderHtml(tplText, sampleData, w);
+  }
+
   global.previewEditedStruk = () => {
     const txt = (document.getElementById('strukTplText') || {}).value || '';
-    const w = Number((document.getElementById('strukTplWidth') || {}).value || 58);
+    const w = Number((document.getElementById('strukTplWidth') || {}).value || 58) === 80 ? 80 : 58;
     const box = document.getElementById('strukEditorLivePreview');
-    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const pill = document.getElementById('strukPreviewWidthPill');
+    if (pill) pill.textContent = `${w} mm • ${w === 80 ? '46' : '32'} Kolom`;
     if (box && global.StrukEngine) {
-      box.innerHTML = global.StrukEngine.renderHtml(txt, {
-        NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
-        ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Kesehatan Raya No. 88',
-        WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
-        APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
-        NOTA: 'INV-PREVIEW-001', TANGGAL: new Date().toLocaleDateString('id-ID'),
-        KASIR: (S().AppState.user && S().AppState.user.nama_lengkap) || 'Kasir',
-        PELANGGAN: 'Tn. Bambang (PRB)', METODE: 'QRIS', CHANNEL: 'Toko Fisik',
-        ITEM: [{ NAMA: 'Paracetamol Sanmol 500mg', QTY: 10, SATUAN: 'Tab', HARGA: 650, SUBTOTAL: 6500 }],
-        SUBTOTAL: 6500, DISKON: 0, PPN: 0, TOTAL: 6500, DIBAYAR: 6500, KEMBALI: 0, POIN: 1,
-        CATATAN: 'Semoga lekas sembuh!', QR_URL: 'https://onsfarma.id/v/PREVIEW'
-      }, w);
+      box.innerHTML = renderStrukPreviewContent(txt, buildStrukEditorSampleData(), w);
     }
+  };
+
+  global.setStrukPreviewMode = (mode) => {
+    strukPreviewMode = mode === 'text' ? 'text' : 'paper';
+    if (document.getElementById('strukTplText')) {
+      global.renderActiveView();
+    }
+  };
+
+  global.toggleStrukPreviewExtras = (checked) => {
+    strukPreviewExtras = !!checked;
+    global.previewEditedStruk();
+  };
+
+  global.selectStrukTemplateIdx = (idx) => {
+    strukActiveIdx = Math.max(0, Number(idx || 0));
+    global.renderActiveView();
+  };
+
+  global.applyStrukPreset = (presetId) => {
+    const presets = (global.StrukEngine && global.StrukEngine.TEMPLATE_PRESETS) || [];
+    const found = presets.find((p) => p.id === presetId) || presets[0];
+    if (!found) return;
+    const txtEl = document.getElementById('strukTplText');
+    const wEl = document.getElementById('strukTplWidth');
+    const nameEl = document.getElementById('strukTplNama');
+    const codeEl = document.getElementById('strukTplKode');
+    if (txtEl) txtEl.value = found.template_teks;
+    if (wEl) wEl.value = String(found.lebar_mm);
+    if (nameEl) nameEl.value = found.nama;
+    if (codeEl) codeEl.value = found.kode;
+    global.previewEditedStruk();
+    global.toast('Preset "' + found.label + '" dimuat ke editor (klik Simpan Template ke Sheets untuk menyimpan permanen).', 'info');
+  };
+
+  global.resetEditedStrukPreset = () => {
+    const w = Number((document.getElementById('strukTplWidth') || {}).value || 58);
+    global.applyStrukPreset(w === 80 ? '80_KLINIS' : '58_STANDAR');
+  };
+
+  global.insertStrukToken = (tokenOrIdx) => {
+    const ta = document.getElementById('strukTplText');
+    if (!ta) return;
+    const resolved = typeof tokenOrIdx === 'number'
+      ? ((STRUK_TOKEN_SNIPPETS[tokenOrIdx] && STRUK_TOKEN_SNIPPETS[tokenOrIdx].token) || '')
+      : String(tokenOrIdx || '');
+    if (!resolved) return;
+    const val = String(ta.value || '');
+    const start = typeof ta.selectionStart === 'number' ? ta.selectionStart : val.length;
+    const end = typeof ta.selectionEnd === 'number' ? ta.selectionEnd : val.length;
+    ta.value = val.slice(0, start) + resolved + val.slice(end);
+    if (typeof ta.focus === 'function') ta.focus();
+    if (typeof ta.setSelectionRange === 'function') {
+      const pos = start + resolved.length;
+      ta.setSelectionRange(pos, pos);
+    }
+    global.previewEditedStruk();
+  };
+
+  global.testPrintEditedStruk = () => {
+    const txt = (document.getElementById('strukTplText') || {}).value || (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '';
+    const w = Number((document.getElementById('strukTplWidth') || {}).value || 58) === 80 ? 80 : 58;
+    if (!global.StrukEngine || !S().printHtmlZone) return;
+    const html = global.StrukEngine.renderHtml(txt, buildStrukEditorSampleData(), w);
+    document.body.classList.add('printing-thermal');
+    S().printHtmlZone(html, { widthMm: w });
+    setTimeout(() => document.body.classList.remove('printing-thermal'), 900);
+  };
+
+  global.downloadEditedStrukPng = () => {
+    const txt = (document.getElementById('strukTplText') || {}).value || (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '';
+    const w = Number((document.getElementById('strukTplWidth') || {}).value || 58) === 80 ? 80 : 58;
+    if (global.StrukEngine) global.StrukEngine.downloadStrukPng(txt, buildStrukEditorSampleData(), w);
   };
 
   global.saveStrukTemplateServer = async () => {
     try {
       const payload = {
-        kode: (document.getElementById('strukTplKode') || {}).value || 'STRUK_58_DEFAULT',
-        nama: (document.getElementById('strukTplNama') || {}).value || 'Struk Kasir Thermal 58mm',
+        kode: (document.getElementById('strukTplKode') || {}).value || 'STRUK_POS_58MM',
+        nama: (document.getElementById('strukTplNama') || {}).value || 'Struk Kasir Standar 58mm',
         lebar_mm: Number((document.getElementById('strukTplWidth') || {}).value || 58),
         template_teks: (document.getElementById('strukTplText') || {}).value || ''
       };
       const res = await API().callApi('struk.saveTemplate', payload, { isWrite: true });
       if (res && res.item) {
-        S().AppState.strukTemplates = [res.item];
+        const list = Array.isArray(S().AppState.strukTemplates) ? S().AppState.strukTemplates.slice() : [];
+        const existIdx = list.findIndex((t) => t.kode === res.item.kode);
+        if (existIdx >= 0) {
+          list[existIdx] = res.item;
+          strukActiveIdx = existIdx;
+        } else {
+          list.unshift(res.item);
+          strukActiveIdx = 0;
+        }
+        S().AppState.strukTemplates = list;
       }
       global.toast('Template struk thermal berhasil disimpan & langsung aktif di Kasir POS!', 'ok');
     } catch (e) { global.toast(e.message, 'err'); }

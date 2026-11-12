@@ -996,11 +996,20 @@ html.dark .ons-cmdk-shell {
 }
 
 @media print {
-  body.printing-thermal #printZone {
+  body.printing-thermal #onsPrintZone {
+    position: static;
     width: 100%;
     max-width: 80mm;
     margin: 0 auto;
     padding: 0 !important;
+  }
+  body.printing-thermal #onsPrintZone #thermalPaperRender {
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 2mm !important;
+    border-radius: 0 !important;
   }
 }
 
@@ -2496,6 +2505,78 @@ button.ons-md-kpi:hover {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+}
+
+/* === THERMAL RECEIPT STUDIO & PREVIEW STAGE (v17.9) === */
+.ons-struk-paper-tray {
+  background: linear-gradient(180deg, #e2e8f0 0%, #f1f5f9 100%);
+  border: 1px solid var(--ons-border);
+  border-radius: 0.9rem;
+  padding: 1rem 0.85rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: auto;
+}
+html.dark .ons-struk-paper-tray {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.72) 100%);
+}
+.ons-struk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.24rem 0.55rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ons-border-strong);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-main);
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+}
+.ons-struk-chip:hover {
+  background: var(--ons-primary-tint);
+  border-color: var(--ons-primary-bright);
+  color: var(--ons-primary-bright);
+  transform: translateY(-1px);
+}
+.ons-struk-preset-btn {
+  padding: 0.32rem 0.68rem;
+  border-radius: 0.58rem;
+  border: 1px solid var(--ons-border-strong);
+  background: var(--ons-bg-card);
+  color: var(--ons-text-main);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.ons-struk-preset-btn:hover {
+  border-color: var(--ons-primary-bright);
+  color: var(--ons-primary-bright);
+  background: var(--ons-primary-tint);
+}
+.ons-struk-preset-btn.active {
+  background: var(--ons-primary);
+  border-color: var(--ons-primary);
+  color: #ffffff;
+}
+.ons-struk-pre {
+  width: 100%;
+  max-width: 350px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 0.65rem;
+  padding: 0.85rem;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.69rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid #334155;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -164,8 +164,8 @@
         { id_notif: 'NTF-02', created_at: isoToday + 'T11:25:00', channel: 'WA', tujuan: '6281299887766', nama_penerima: 'Tn. Hendri Wijaya', jenis_event: 'OMNI_STATUS', referensi_id: 'ORD-902', pesan: 'Pesanan Anda sedang diantar oleh Kurir Internal (Pak Hasan).', status: 'ANTRI', percobaan: 0, catatan_error: '', sent_at: '' }
       ],
       st_template: [
-        { id_tpl: 'TPL-58', kode: 'STRUK_58_DEFAULT', nama: 'Struk Kasir Thermal 58mm (Standar)', lebar_mm: 58, template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No|{{NOTA}}\n[LR]Total|{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday },
-        { id_tpl: 'TPL-80', kode: 'STRUK_80_RESEP', nama: 'Struk Apotek Thermal 80mm (Detail Klinik)', lebar_mm: 80, template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No|{{NOTA}}\n[LR]Total|{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday }
+        { id_tpl: 'TPL-58', kode: 'STRUK_POS_58MM', nama: 'Struk Kasir Standar 58mm (Apotek ONS Farma)', lebar_mm: 58, template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No||{{NOTA}}\n[LR]Total||{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday },
+        { id_tpl: 'TPL-80', kode: 'STRUK_80_RESEP', nama: 'Struk Apotek Thermal 80mm (Detail Klinik & Barcode)', lebar_mm: 80, template_teks: (global.StrukEngine && (global.StrukEngine.PRESET_TEMPLATE_80MM || global.StrukEngine.DEFAULT_STRUK_TEMPLATE)) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No||{{NOTA}}\n[LR]Total||{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday }
       ],
       jurnal_keuangan: [
         { id_jurnal: 'JRN-1', tanggal: isoToday + 'T08:42:00', cabang_id: 'ONS-01', jenis_trx: 'MASUK_PENJUALAN', kategori: 'Toko Fisik', nominal: 296000, metode: 'QRIS', referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-001', periode_bulan: isoToday.slice(0, 7), status_lock: 'TERBUKA', user_id: 'USR-003' },
