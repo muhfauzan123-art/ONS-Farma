@@ -1151,26 +1151,35 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
-  global.exportFinancePnlExcel = () => {
+  global.exportFinancePnlExcel = (fmt) => {
     const st = S().AppState;
-    const rows = (st.penjualan || []).map((p) => ({
-      no_invoice: p.no_invoice,
+    const rows = (st.penjualan || []).map((p, idx) => ({
+      no: idx + 1,
+      no_invoice: p.no_invoice || '-',
       tanggal: String(p.tanggal || '').slice(0, 10),
-      metode: p.metode_bayar,
+      metode: p.metode_bayar || 'TUNAI',
       grand_total: Number(p.grand_total || 0),
       total_hpp: Number(p.total_hpp || 0),
-      margin: Number(p.estimasi_margin || (Number(p.grand_total || 0) - Number(p.total_hpp || 0))),
+      margin: Number(p.estimasi_margin !== undefined ? p.estimasi_margin : (Number(p.grand_total || 0) - Number(p.total_hpp || 0))),
       status: p.status_trx || 'LUNAS'
     }));
-    S().exportDataset('xlsx', 'Laporan Laba Rugi P&L ONS Farma', 'Laporan_PnL_ONS_Farma', [
-      { key: 'no_invoice', label: 'No Invoice' },
-      { key: 'tanggal', label: 'Tanggal' },
-      { key: 'metode', label: 'Metode' },
-      { key: 'grand_total', label: 'Omzet (Rp)' },
-      { key: 'total_hpp', label: 'HPP COGS (Rp)' },
-      { key: 'margin', label: 'Laba Kotor (Rp)' },
-      { key: 'status', label: 'Status' }
-    ], rows);
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'Apotek ONS Farma';
+    const dStamp = new Date().toISOString().slice(0, 10);
+    S().exportDataset(fmt || 'xlsx', `Laporan Laba Rugi (P&L) - ${apotekName}`, `Laporan_PnL_${dStamp}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'no_invoice', label: 'No Invoice', type: 'text', width: 22 },
+      { key: 'tanggal', label: 'Tanggal', type: 'date', width: 13 },
+      { key: 'metode', label: 'Metode Bayar', type: 'text', width: 15 },
+      { key: 'grand_total', label: 'Omzet (Rp)', type: 'currency', sum: true, width: 17 },
+      { key: 'total_hpp', label: 'HPP / COGS (Rp)', type: 'currency', sum: true, width: 17 },
+      { key: 'margin', label: 'Laba Kotor (Rp)', type: 'currency', sum: true, width: 17 },
+      { key: 'status', label: 'Status', type: 'status', width: 14 }
+    ], rows, {
+      sheetName: 'Laporan_PnL',
+      subtitle: `Dicetak ${S().formatTgl(new Date().toISOString(), true)} | Total ${rows.length} transaksi`,
+      emptyMessage: 'Belum ada transaksi penjualan pada laporan Laba Rugi.'
+    });
   };
 
   global.openPayHutangModal = (idBeli, noFak, sisaMax) => {
@@ -2243,23 +2252,38 @@
     const sh = lastClosedZReport;
     if (!sh) return;
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    const html = `<div style="font-family:monospace;font-size:12px;max-width:300px;margin:0 auto">
-      <div style="text-align:center;font-weight:bold;font-size:14px">${S().esc(prof.nama_usaha || 'APOTEK ONS FARMA')}</div>
-      <div style="text-align:center;font-size:11px;margin-bottom:8px">Z-REPORT TUTUP SHIFT KASIR</div>
-      <hr/>
-      <div>ID Shift : ${S().esc(sh.id_shift)}</div>
-      <div>Kasir    : ${S().esc(sh.kasir_id || '-')}</div>
-      <div>SPV PIN  : ${S().esc(sh.supervisor_id || '-')}</div>
-      <div>Tutup    : ${S().formatTgl(sh.tgl_tutup, true)}</div>
-      <hr/>
-      <div>Tunai Sistem  : ${S().rp(sh.sistem_tunai || 0)}</div>
-      <div>QRIS          : ${S().rp(sh.sistem_qris || 0)}</div>
-      <div>Transfer/EDC  : ${S().rp(sh.sistem_transfer || 0)}</div>
-      <div>Modal Awal    : ${S().rp(sh.modal_awal || 0)}</div>
-      <div>Fisik Laci    : ${S().rp(sh.aktual_tunai || 0)}</div>
-      <div><b>Selisih Kas   : ${S().rp(sh.selisih_kas || 0)}</b></div>
-      <hr/>
-      <div>Catatan: ${S().esc(sh.catatan_handover || '-')}</div>
+    const selisih = Number(sh.selisih_kas || 0);
+    const kv = (lbl, val, bold) => `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;line-height:1.45;${bold ? 'font-weight:700;' : ''}"><span>${lbl}</span><span style="text-align:right;font-variant-numeric:tabular-nums">${val}</span></div>`;
+    const hr = '<div style="border-top:1px dashed #334155;margin:6px 0"></div>';
+    const html = `<div style="font-family:'Courier New',monospace;font-size:11px;color:#0f172a;max-width:210px;margin:0 auto">
+      <div style="text-align:center">
+        <div style="font-weight:800;font-size:13px;letter-spacing:.3px">${S().esc(prof.nama_usaha || 'APOTEK ONS FARMA')}</div>
+        ${(prof.alamat_usaha || prof.alamat) ? `<div style="font-size:9.5px;color:#334155">${S().esc([prof.alamat_usaha || prof.alamat, prof.kota].filter(Boolean).join(', '))}</div>` : ''}
+        ${(prof.no_sia || prof.sia) ? `<div style="font-size:9.5px;color:#334155">SIA: ${S().esc(prof.no_sia || prof.sia)}</div>` : ''}
+        <div style="font-weight:700;font-size:11px;margin-top:4px;padding:2px 0;border-top:1px solid #0f172a;border-bottom:1px solid #0f172a">Z-REPORT TUTUP SHIFT KASIR</div>
+      </div>
+      ${hr}
+      ${kv('ID Shift', S().esc(sh.id_shift || '-'))}
+      ${kv('Kasir', S().esc(sh.kasir_id || '-'))}
+      ${kv('Otorisasi SPV', S().esc(sh.supervisor_id || '-'))}
+      ${sh.tgl_buka ? kv('Waktu Buka', S().formatTgl(sh.tgl_buka, true)) : ''}
+      ${kv('Waktu Tutup', S().formatTgl(sh.tgl_tutup, true))}
+      ${hr}
+      <div style="font-weight:700;margin-bottom:2px">REKAP PENJUALAN &amp; KAS</div>
+      ${kv('Tunai Sistem', S().rp(sh.sistem_tunai || 0))}
+      ${kv('QRIS', S().rp(sh.sistem_qris || 0))}
+      ${kv('Transfer / EDC', S().rp(sh.sistem_transfer || 0))}
+      ${kv('Modal Awal', S().rp(sh.modal_awal || 0))}
+      ${kv('Fisik Laci', S().rp(sh.aktual_tunai || 0), true)}
+      ${hr}
+      ${kv('Selisih Kas', (selisih > 0 ? '+' : '') + S().rp(selisih), true)}
+      ${kv('Status Laci', selisih === 0 ? 'PAS / SEIMBANG' : (selisih > 0 ? 'LEBIH (SURPLUS)' : 'KURANG (DEFISIT)'), true)}
+      ${hr}
+      <div style="font-size:10px;line-height:1.4"><b>Catatan Handover:</b><br/>${S().esc(sh.catatan_handover || '-')}</div>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;font-size:9.5px;text-align:center">
+        <div>Kasir<br/><br/>(${S().esc(sh.kasir_id || '.......')})</div>
+        <div>Supervisor/APJ<br/><br/>(${S().esc(sh.supervisor_id || '.......')})</div>
+      </div>
     </div>`;
     if (S().printHtmlZone) {
       S().printHtmlZone('Z-Report ' + (sh.id_shift || ''), html, { widthMm: 58 });
@@ -2599,13 +2623,26 @@
     global.renderActiveView();
   };
 
-  global.exportSipnapExcel = () => {
-    const rows = _buildSipnapRows(S().AppState);
-    S().exportDataset('xlsx', 'Laporan Bulanan SIPNAP Kemenkes', 'Laporan_SIPNAP_ONS_Farma', [
-      { key: 'kode', label: 'Kode KFA' }, { key: 'nama', label: 'Nama Obat' }, { key: 'gol', label: 'Golongan' },
-      { key: 'awal', label: 'Stok Awal' }, { key: 'masuk', label: 'Masuk PBF' }, { key: 'keluar', label: 'Keluar Resep' },
-      { key: 'musnah', label: 'Pemusnahan' }, { key: 'akhir', label: 'Stok Akhir' }
-    ], rows);
+  global.exportSipnapExcel = (fmt) => {
+    const rows = _buildSipnapRows(S().AppState).map((r, idx) => Object.assign({ no: idx + 1 }, r));
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'Apotek ONS Farma';
+    const dStamp = new Date().toISOString().slice(0, 10);
+    S().exportDataset(fmt || 'xlsx', `Laporan Bulanan SIPNAP Kemenkes - ${apotekName}`, `Laporan_SIPNAP_${dStamp}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'kode', label: 'Kode KFA', type: 'text', width: 16 },
+      { key: 'nama', label: 'Nama Obat (Narkotika/Psikotropika)', type: 'wrap', width: 32 },
+      { key: 'gol', label: 'Golongan', type: 'status', width: 16 },
+      { key: 'awal', label: 'Stok Awal', type: 'int', sum: true, width: 13 },
+      { key: 'masuk', label: 'Masuk PBF', type: 'int', sum: true, width: 13 },
+      { key: 'keluar', label: 'Keluar Resep', type: 'int', sum: true, width: 14 },
+      { key: 'musnah', label: 'Pemusnahan', type: 'int', sum: true, width: 14 },
+      { key: 'akhir', label: 'Stok Akhir', type: 'int', sum: true, width: 13 }
+    ], rows, {
+      sheetName: 'SIPNAP_Kemenkes',
+      subtitle: `Pelaporan Sediaan Narkotika & Psikotropika • Dicetak ${S().formatTgl(new Date().toISOString(), true)}`,
+      emptyMessage: 'Belum ada item golongan Narkotika/Psikotropika/OOT di Master Obat.'
+    });
   };
 
   /**

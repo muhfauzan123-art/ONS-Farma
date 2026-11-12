@@ -6,7 +6,7 @@
     DEFAULT:0,TITLE:1,SUBTITLE:2,SECTION:3,HEADER:4,TEXT:5,TEXT_ALT:6,
     INT:7,INT_ALT:8,CURRENCY:9,CURRENCY_ALT:10,PERCENT:11,PERCENT_ALT:12,
     DATE:13,DATE_ALT:14,GOOD:15,WARN:16,DANGER:17,GUIDE_LABEL:18,
-    GUIDE_TEXT:19,WRAP:20,INFO:21
+    GUIDE_TEXT:19,WRAP:20,INFO:21,TOTAL_TEXT:22,TOTAL_INT:23,TOTAL_CURRENCY:24
   };
 
   const crcTable=(()=>{const table=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xEDB88320^(c>>>1):c>>>1;table[n]=c>>>0;}return table;})();
@@ -38,11 +38,15 @@
 
   function xml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
   function columnName(index){let result='';for(let n=index+1;n;n=Math.floor((n-1)/26))result=String.fromCharCode(65+(n-1)%26)+result;return result;}
-  function cell(value,style=STYLE.DEFAULT,type){return {v:value,s:style,t:type};}
+  function cell(value,style=STYLE.DEFAULT,type,formula){return {v:value,s:style,t:type,f:formula};}
   function cellXml(value,rowIndex,colIndex){
     const c=value&&typeof value==='object'&&Object.prototype.hasOwnProperty.call(value,'v')?value:{v:value};
-    if(c.v===undefined||c.v===null||c.v==='')return '';
+    if(!c.f&&(c.v===undefined||c.v===null||c.v===''))return '';
     const ref=`${columnName(colIndex)}${rowIndex+1}`,style=Number.isInteger(c.s)&&c.s>0?` s="${c.s}"`:'';
+    if(c.f){
+      const valTag=(typeof c.v==='number'&&Number.isFinite(c.v))?`<v>${Number(c.v)}</v>`:'';
+      return `<c r="${ref}"${style}><f>${xml(c.f)}</f>${valTag}</c>`;
+    }
     if(c.t==='n'||(typeof c.v==='number'&&Number.isFinite(c.v)))return `<c r="${ref}"${style}><v>${Number(c.v)}</v></c>`;
     if(c.t==='b'||typeof c.v==='boolean')return `<c r="${ref}"${style} t="b"><v>${c.v?1:0}</v></c>`;
     return `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${xml(c.v)}</t></is></c>`;
@@ -104,9 +108,9 @@ ${cols?`<cols>${cols}</cols>`:''}
 <fill><patternFill patternType="solid"><fgColor rgb="FF1E293B"/><bgColor indexed="64"/></patternFill></fill>
 <fill><patternFill patternType="solid"><fgColor rgb="FFF1F5F9"/><bgColor indexed="64"/></patternFill></fill>
 </fills>
-<borders count="2"><border/><border><left style="thin"><color rgb="FFD9E2EC"/></left><right style="thin"><color rgb="FFD9E2EC"/></right><top style="thin"><color rgb="FFD9E2EC"/></top><bottom style="thin"><color rgb="FFD9E2EC"/></bottom><diagonal/></border></borders>
+<borders count="3"><border/><border><left style="thin"><color rgb="FFD9E2EC"/></left><right style="thin"><color rgb="FFD9E2EC"/></right><top style="thin"><color rgb="FFD9E2EC"/></top><bottom style="thin"><color rgb="FFD9E2EC"/></bottom><diagonal/></border><border><left style="thin"><color rgb="FFD9E2EC"/></left><right style="thin"><color rgb="FFD9E2EC"/></right><top style="medium"><color rgb="FF0B63CE"/></top><bottom style="double"><color rgb="FF0B63CE"/></bottom><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="22">
+<cellXfs count="25">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFill="1" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>
 <xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFill="1" applyFont="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
@@ -129,6 +133,9 @@ ${cols?`<cols>${cols}</cols>`:''}
 <xf numFmtId="0" fontId="6" fillId="3" borderId="1" xfId="0" applyFill="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="6" fillId="9" borderId="1" xfId="0" applyFill="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="5" fillId="3" borderId="2" xfId="0" applyFill="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="1" fontId="5" fillId="3" borderId="2" xfId="0" applyNumberFormat="1" applyFill="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
+<xf numFmtId="164" fontId="5" fillId="3" borderId="2" xfId="0" applyNumberFormat="1" applyFill="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="0"/><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>
 </styleSheet>`;}

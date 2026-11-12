@@ -1632,10 +1632,62 @@
     }
     if (action === 'system.seedStarterCatalog') return { ok: true, pesan: 'Data katalog awal sudah tersedia!' };
     if (action === 'obat.bulkImport') {
-      (d.items || []).forEach((it, idx) => db.master_obat.push(Object.assign({ id_obat: 'OBT-IMP-' + Date.now() + idx, status_aktif: 'AKTIF' }, it)));
+      const list = Array.isArray(d.items) ? d.items : [];
+      const now = new Date().toISOString();
+      let inserted = 0;
+      let updated = 0;
+      list.slice(0, 500).forEach((raw, idx) => {
+        if (!raw || !raw.nama_dagang) return;
+        const kfa = String(raw.kode_kfa || '').trim();
+        const existing = db.master_obat.find((m) =>
+          (raw.id_obat && String(m.id_obat) === String(raw.id_obat)) ||
+          (kfa && String(m.kode_kfa || '').trim() === kfa)
+        );
+        if (existing) {
+          Object.keys(raw).forEach((k) => {
+            if (k === 'id_obat') return;
+            const v = raw[k];
+            if (v !== undefined && v !== null && v !== '') existing[k] = v;
+          });
+          existing.updated_at = now;
+          updated++;
+        } else {
+          db.master_obat.push({
+            id_obat: raw.id_obat || ('OBT-IMP-' + Date.now() + idx),
+            kode_kfa: kfa,
+            nama_dagang: String(raw.nama_dagang).trim(),
+            zat_aktif: raw.zat_aktif || '',
+            kekuatan: raw.kekuatan || '',
+            golongan_bpom: raw.golongan_bpom || 'BEBAS',
+            bentuk_sediaan: raw.bentuk_sediaan || raw.satuan_dasar || 'Tablet',
+            nie_bpom: raw.nie_bpom || '',
+            suhu_simpan: raw.suhu_simpan || 'Suhu Ruang (15-25 C)',
+            rak_lokasi: raw.rak_lokasi || 'RAK-A1',
+            satuan_dasar: raw.satuan_dasar || 'Tablet',
+            satuan_sedang: raw.satuan_sedang || 'Strip',
+            rasio_sedang: Number(raw.rasio_sedang || 10),
+            satuan_besar: raw.satuan_besar || 'Box',
+            rasio_besar: Number(raw.rasio_besar || 100),
+            stok_min: Number(raw.stok_min !== undefined ? raw.stok_min : 10),
+            stok_max: Number(raw.stok_max || 100),
+            hpp_avg: Number(raw.hpp_avg || 0),
+            hpp_terakhir: Number(raw.hpp_terakhir || raw.hpp_avg || 0),
+            harga_umum: Number(raw.harga_umum || 0),
+            harga_member: Number(raw.harga_member || raw.harga_umum || 0),
+            harga_grosir: Number(raw.harga_grosir || raw.harga_member || raw.harga_umum || 0),
+            min_qty_grosir: Math.max(2, Number(raw.min_qty_grosir || 10)),
+            harga_faskes: Number(raw.harga_faskes || raw.harga_grosir || raw.harga_umum || 0),
+            pbf_utama: raw.pbf_utama || '',
+            status_aktif: 'AKTIF',
+            substitusi_ids: raw.substitusi_ids || '',
+            updated_at: now
+          });
+          inserted++;
+        }
+      });
       db.epoch++;
       saveDb(db);
-      return { inserted: (d.items || []).length, updated: 0 };
+      return { inserted, updated };
     }
     if (action === 'finance.payHutangPbf') {
       const f = db.faktur_pbf.find((x) => x.id_beli === d.id_beli);

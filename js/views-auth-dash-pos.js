@@ -1959,7 +1959,9 @@
               { id: '7D', lbl: '7 Hari' },
               { id: '30D', lbl: '30 Hari' }
             ].map((pr) => `<button type="button" onclick="window.setPosHistPeriod('${pr.id}')" class="ons-pos-chip ${posHistPeriod === pr.id ? 'is-active' : ''}">${pr.lbl}</button>`).join('')}
-            <button type="button" onclick="window.exportPosHistoryExcel()" class="ons-btn ons-btn-ghost text-xs ml-1">Export Excel</button>
+            <button type="button" onclick="window.exportPosHistoryExcel('xlsx')" class="ons-btn ons-btn-emerald text-xs ml-1">Export Excel</button>
+            <button type="button" onclick="window.exportPosHistoryExcel('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
+            <button type="button" onclick="window.exportPosHistoryExcel('pdf')" class="ons-btn ons-btn-ghost text-xs">Cetak PDF</button>
             <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs">Segarkan</button>
           </div>
         </div>
@@ -2383,22 +2385,54 @@
     global.renderActiveView();
   };
 
-  global.exportPosHistoryExcel = () => {
+  global.exportPosHistoryExcel = (fmt) => {
     const st = S().AppState;
-    const rows = (st.penjualan || []).map((p) => {
+    const rawList = (typeof _getFilteredPosHistoryRows === 'function' ? _getFilteredPosHistoryRows(st).filtered : (st.penjualan || [])).slice();
+    const rows = rawList.map((p, idx) => {
       const mem = (st.members || []).find((m) => m.id_member === p.id_member);
       const ret = _extractPosReturInfo(p, st.mutasiStok);
-      return [
-        p.no_invoice, S().formatTgl(p.tanggal, true), p.kasir_id || '-',
-        mem ? mem.nama_pasien : (p.id_member || 'UMUM'), p.channel || 'Toko Fisik',
-        p.metode_bayar || 'TUNAI', Number(p.subtotal || 0), Number(p.diskon_total || 0),
-        Number(p.grand_total || 0), p.status_trx || 'LUNAS',
-        ret.isRetur ? `Retur (${ret.authorizer}): ${ret.alasan}` : '-'
-      ];
+      const returKet = ret.isRetur
+        ? `RETUR (${ret.authorizer || 'APJ'}${ret.restoredQty > 0 ? ', +' + ret.restoredQty + ' stok pulih' : ''}): ${ret.alasan || '-'}`
+        : '-';
+      return {
+        no: idx + 1,
+        no_invoice: p.no_invoice || '-',
+        tanggal: S().formatTgl(p.tanggal, true),
+        kasir: p.kasir_id || '-',
+        pasien: mem ? mem.nama_pasien : (p.id_member || 'UMUM'),
+        channel: p.channel || 'Toko Fisik',
+        metode_bayar: p.metode_bayar || 'TUNAI',
+        subtotal: Number(p.subtotal || 0),
+        diskon_total: Number(p.diskon_total || 0),
+        grand_total: Number(p.grand_total || 0),
+        status_trx: ret.isRetur ? 'RETUR / VOID' : (p.status_trx || 'LUNAS'),
+        retur_ket: returKet
+      };
     });
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'Apotek ONS Farma';
+    const dStamp = new Date().toISOString().slice(0, 10);
+    const mode = (!fmt || fmt === 'excel') ? 'xlsx' : fmt;
+    const returCnt = rawList.filter((p) => _extractPosReturInfo(p, st.mutasiStok).isRetur).length;
     if (S().exportDataset) {
-      S().exportDataset('excel', 'Riwayat Transaksi POS ONS Farma', 'riwayat-transaksi-' + new Date().toISOString().slice(0, 10),
-        ['No Invoice', 'Tanggal', 'Kasir', 'Pasien/Member', 'Channel', 'Metode', 'Subtotal', 'Diskon', 'Grand Total', 'Status', 'Keterangan Retur'], rows);
+      S().exportDataset(mode, `Riwayat Transaksi POS - ${apotekName}`, `riwayat-transaksi-${dStamp}`, [
+        { key: 'no', label: 'No', type: 'int', width: 6 },
+        { key: 'no_invoice', label: 'No Invoice', type: 'text', width: 22 },
+        { key: 'tanggal', label: 'Tanggal & Waktu', type: 'text', width: 19 },
+        { key: 'kasir', label: 'Kasir', type: 'text', width: 14 },
+        { key: 'pasien', label: 'Pasien / Member', type: 'wrap', width: 22 },
+        { key: 'channel', label: 'Channel', type: 'text', width: 14 },
+        { key: 'metode_bayar', label: 'Metode', type: 'text', width: 13 },
+        { key: 'subtotal', label: 'Subtotal (Rp)', type: 'currency', sum: true, width: 16 },
+        { key: 'diskon_total', label: 'Diskon (Rp)', type: 'currency', sum: true, width: 15 },
+        { key: 'grand_total', label: 'Grand Total (Rp)', type: 'currency', sum: true, width: 17 },
+        { key: 'status_trx', label: 'Status', type: 'status', width: 14 },
+        { key: 'retur_ket', label: 'Keterangan Retur / Void', type: 'wrap', width: 32 }
+      ], rows, {
+        sheetName: 'Riwayat_Transaksi',
+        subtitle: `Dicetak ${S().formatTgl(new Date().toISOString(), true)} | ${rows.length} transaksi (${returCnt} retur/void)`,
+        emptyMessage: 'Belum ada transaksi penjualan POS yang tercatat.'
+      });
     }
   };
 

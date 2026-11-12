@@ -789,52 +789,284 @@
 
   /**
    * Universal 5-Format Export Helper (.xlsx, .doc, .csv, .json, Print/PDF)
+   * Menghasilkan keluaran profesional berkop apotek resmi, auto-width, Rp currency,
+   * AutoFilter, rumus SUM total, CSV aman UTF-8 BOM & cetak A4 rapi.
    */
-  function exportDataset(format, title, filenameBase, headers, rows) {
-    const cleanRows = rows.map((r) => headers.map((h) => r[h.key] !== undefined ? r[h.key] : ''));
-    if (format === 'xlsx' && global.ONSXlsxExport) {
+  function _xlsxColLetter(idx) {
+    let s = '';
+    for (let n = idx + 1; n > 0; n = Math.floor((n - 1) / 26)) {
+      s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+    }
+    return s;
+  }
+
+  function _inferColType(h) {
+    if (h && h.type) return h.type;
+    const bag = (String((h && h.key) || '') + ' ' + String((h && h.label) || '')).toLowerCase();
+    if (/\(rp\)|\bhpp\b|\bharga|\bomzet\b|\bmargin\b|subtotal|grand_total|diskon|biaya|nominal|hutang|piutang|valuasi/.test(bag)) return 'currency';
+    if (/\(%\)|margin_pct|persen/.test(bag)) return 'percent';
+    if (/^(qty|stok|awal|masuk|keluar|musnah|akhir|rasio|min_qty|poin)/.test(String((h && h.key) || '').toLowerCase()) || /\b(qty|stok|awal|masuk|keluar|musnah|akhir|rasio)\b/.test(String((h && h.label) || '').toLowerCase())) return 'int';
+    if (/tgl|tanggal|ed_terdekat|timestamp|jatuh_tempo/.test(String((h && h.key) || '').toLowerCase())) return 'date';
+    if (/status|golongan|risiko|triage/.test(String((h && h.key) || '').toLowerCase())) return 'status';
+    if (/zat_aktif|catatan|saran|keterangan|alamat|komposisi/.test(String((h && h.key) || '').toLowerCase())) return 'wrap';
+    return 'text';
+  }
+
+  function _resolveSemanticStyle(S, val) {
+    const up = String(val || '').trim().toUpperCase();
+    if (!up) return null;
+    if (/^(AMAN|LUNAS|AKTIF|NORMAL|BEBAS|SELESAI|TERBIT|TERVERIFIKASI)$/.test(up)) return S.GOOD;
+    if (/^(MENIPIS|TERBATAS|PREKURSOR|OOT|SEBAGIAN|WASPADA|MENUNGGU|SEDANG|MENUNGGU_VERIFIKASI)$/.test(up) || up.includes('NEAR')) return S.WARN;
+    if (/^(HABIS|KRITIS|KADALUARSA|KERAS|NARKOTIKA|PSIKOTROPIKA|VOID|RETUR|BATAL|BELUM_LUNAS|BELUM_BAYAR|TINGGI|DANGER|BAHAYA)$/.test(up) || up.startsWith('RETUR')) return S.DANGER;
+    return null;
+  }
+
+  function _csvSafeCell(val) {
+    if (val === null || val === undefined) return '""';
+    let s = String(val).replace(/\r?\n/g, ' ');
+    const isNegativeNumber = /^-\d+(\.\d+)?$/.test(s.trim());
+    if (!isNegativeNumber && /^[=+\-@\t\r]/.test(s)) {
+      s = "'" + s;
+    }
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+
+  function _safeSheetTabName(rawTitle) {
+    const clean = String(rawTitle || 'Laporan').replace(/[\\/?*[\]:]/g, ' ').replace(/\s+/g, ' ').trim();
+    return (clean || 'Laporan').slice(0, 31);
+  }
+
+  function exportDataset(format, title, filenameBase, headers, rows, options) {
+    const opts = options || {};
+    const fmt = String(format || 'xlsx').toLowerCase() === 'excel' ? 'xlsx' : String(format || 'xlsx').toLowerCase();
+    const normHeaders = (Array.isArray(headers) ? headers : []).map((h, i) => {
+      if (typeof h === 'string') return { key: '__col_' + i, label: h, _rawIdx: i };
+      return Object.assign({}, h);
+    });
+    normHeaders.forEach((h) => { h._type = _inferColType(h); });
+
+    const srcRows = Array.isArray(rows) ? rows : [];
+    const cleanRows = srcRows.map((r) => normHeaders.map((h) => {
+      if (Array.isArray(r) && typeof h._rawIdx === 'number') {
+        return r[h._rawIdx] !== undefined && r[h._rawIdx] !== null ? r[h._rawIdx] : '';
+      }
+      const v = r && h.key ? r[h.key] : '';
+      return v !== undefined && v !== null ? v : '';
+    }));
+
+    const prof = getStoreProfile();
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+    const siaNo = prof.no_sia || '-';
+    const alamatLine = [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ');
+    const userName = (AppState.user && AppState.user.nama_lengkap) || prof.nama_pemilik || 'Petugas Apotek';
+    const stampText = new Date().toLocaleString('id-ID');
+    const colCount = Math.max(1, normHeaders.length);
+    const lastCol = _xlsxColLetter(colCount - 1);
+    const hasSum = normHeaders.some((h) => h.sum === true) && cleanRows.length > 0;
+
+    if (fmt === 'xlsx' && global.ONSXlsxExport) {
       const S = global.ONSXlsxExport.STYLE;
+      const colWidths = normHeaders.map((h, cIdx) => {
+        if (h.width) return Number(h.width);
+        let maxLen = String(h.label || '').length + 3;
+        const limitSample = Math.min(cleanRows.length, 150);
+        for (let r = 0; r < limitSample; r++) {
+          const val = cleanRows[r][cIdx];
+          let strLen = String(val === null || val === undefined ? '' : val).length;
+          if (h._type === 'currency' && typeof val === 'number') {
+            strLen = ('Rp ' + Math.round(val).toLocaleString('id-ID')).length + 2;
+          }
+          if (strLen > maxLen) maxLen = strLen;
+        }
+        const floor = h._type === 'currency' ? 16 : (h._type === 'date' ? 13 : 11);
+        const ceil = (h._type === 'wrap' || h.wrap) ? 38 : 42;
+        return Math.max(floor, Math.min(ceil, maxLen + 2));
+      });
+
+      const titleFull = String(title || 'Laporan').toLowerCase().includes(usahaNama.toLowerCase())
+        ? String(title || 'Laporan')
+        : `${title} - ${usahaNama}`;
+      const titleRow = [global.ONSXlsxExport.cell(titleFull.toUpperCase(), S.TITLE)];
+      const subText = opts.subtitle
+        ? `${usahaNama} | SIA: ${siaNo} | ${opts.subtitle}`
+        : `${usahaNama} | SIA: ${siaNo} | Dicetak: ${stampText} | Oleh: ${userName} | Total Data: ${cleanRows.length} baris`;
+      const subRow = [global.ONSXlsxExport.cell(subText, S.SUBTITLE)];
+      for (let pad = 1; pad < colCount; pad++) {
+        titleRow.push(global.ONSXlsxExport.cell('', S.TITLE));
+        subRow.push(global.ONSXlsxExport.cell('', S.SUBTITLE));
+      }
+
+      const rowHeights = { 1: 30, 2: 22, 3: 28 };
+      const dataRows = cleanRows.length ? cleanRows.map((row, rIdx) => {
+        const alt = rIdx % 2 === 1;
+        let maxLines = 1;
+        const built = row.map((val, cIdx) => {
+          const h = normHeaders[cIdx];
+          const w = colWidths[cIdx] || 20;
+          const isNumericVal = typeof val === 'number' && Number.isFinite(val);
+          if (h._type === 'currency' && isNumericVal) {
+            return global.ONSXlsxExport.cell(val, alt ? S.CURRENCY_ALT : S.CURRENCY, 'n');
+          }
+          if (h._type === 'percent' && isNumericVal) {
+            return global.ONSXlsxExport.cell(val, alt ? S.PERCENT_ALT : S.PERCENT, 'n');
+          }
+          if (h._type === 'int' && isNumericVal) {
+            return global.ONSXlsxExport.cell(val, alt ? S.INT_ALT : S.INT, 'n');
+          }
+          if (isNumericVal) {
+            return global.ONSXlsxExport.cell(val, alt ? S.INT_ALT : S.INT, 'n');
+          }
+          if (h._type === 'status') {
+            const sem = _resolveSemanticStyle(S, val);
+            if (sem !== null) return global.ONSXlsxExport.cell(val, sem);
+          }
+          if (h._type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(String(val || ''))) {
+            return global.ONSXlsxExport.cell(val, alt ? S.DATE_ALT : S.DATE);
+          }
+          const txt = String(val === null || val === undefined ? '' : val);
+          if (h._type === 'wrap' || h.wrap || txt.length > w - 2) {
+            const lines = Math.max(1, Math.ceil(txt.length / Math.max(10, w - 3)));
+            if (lines > maxLines) maxLines = Math.min(lines, 5);
+            return global.ONSXlsxExport.cell(txt, alt ? S.TEXT_ALT : S.WRAP);
+          }
+          return global.ONSXlsxExport.cell(txt, alt ? S.TEXT_ALT : S.TEXT);
+        });
+        if (maxLines > 1) rowHeights[4 + rIdx] = Math.min(90, 15 + (maxLines - 1) * 14);
+        return built;
+      }) : [[global.ONSXlsxExport.cell(opts.emptyMessage || 'Belum ada data tersedia untuk diekspor pada tampilan ini.', S.INFO)]];
+
       const sheetRows = [
-        [global.ONSXlsxExport.cell(title, S.TITLE)],
-        [global.ONSXlsxExport.cell('Dicetak: ' + new Date().toLocaleString('id-ID') + ' | Apotek ONS Farma Enterprise', S.SUBTITLE)],
-        headers.map((h) => global.ONSXlsxExport.cell(h.label, S.HEADER)),
-        ...cleanRows.map((row, idx) => row.map((val, cIdx) => {
-          const isNum = typeof val === 'number';
-          return global.ONSXlsxExport.cell(val, isNum ? (idx % 2 ? S.INT_ALT : S.INT) : (idx % 2 ? S.TEXT_ALT : S.TEXT));
-        }))
+        titleRow,
+        subRow,
+        normHeaders.map((h) => global.ONSXlsxExport.cell(h.label, S.HEADER)),
+        ...dataRows
       ];
-      global.ONSXlsxExport.download([{ name: title.slice(0, 28), freezeRows: 3, widths: headers.map(() => 20), rows: sheetRows }], filenameBase + '.xlsx');
-      showToast('File Excel (.xlsx) berhasil diunduh.', 'ok');
+
+      if (hasSum) {
+        const firstDataExcelRow = 4;
+        const lastDataExcelRow = 3 + cleanRows.length;
+        const totalRowIndex = lastDataExcelRow + 1;
+        rowHeights[totalRowIndex] = 24;
+        const sumRow = normHeaders.map((h, cIdx) => {
+          if (cIdx === 0 && !h.sum) {
+            return global.ONSXlsxExport.cell(`TOTAL (${cleanRows.length} BARIS)`, S.TOTAL_TEXT);
+          }
+          if (h.sum) {
+            const sumVal = cleanRows.reduce((acc, r) => acc + (Number(r[cIdx]) || 0), 0);
+            const letter = _xlsxColLetter(cIdx);
+            const styleId = h._type === 'currency' ? S.TOTAL_CURRENCY : S.TOTAL_INT;
+            return global.ONSXlsxExport.cell(sumVal, styleId, 'n', `SUM(${letter}${firstDataExcelRow}:${letter}${lastDataExcelRow})`);
+          }
+          return global.ONSXlsxExport.cell('', S.TOTAL_TEXT);
+        });
+        sheetRows.push(sumRow);
+      }
+
+      const merges = [`A1:${lastCol}1`, `A2:${lastCol}2`];
+      if (!cleanRows.length && colCount > 1) merges.push(`A4:${lastCol}4`);
+
+      const primarySheet = {
+        name: _safeSheetTabName(opts.sheetName || title),
+        freezeRows: 3,
+        widths: colWidths,
+        rowHeights,
+        merges,
+        autoFilter: cleanRows.length ? `A3:${lastCol}${3 + cleanRows.length}` : '',
+        rows: sheetRows
+      };
+      const allSheets = [primarySheet].concat(Array.isArray(opts.extraSheets) ? opts.extraSheets : []);
+      global.ONSXlsxExport.download(allSheets, filenameBase + '.xlsx', { title, creator: usahaNama });
+      showToast('File Excel (.xlsx) rapi berhasil diunduh.', 'ok');
       return;
     }
 
-    if (format === 'csv') {
-      const lines = [headers.map((h) => `"${String(h.label).replace(/"/g, '""')}"`).join(',')];
-      cleanRows.forEach((r) => lines.push(r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')));
+    if (fmt === 'csv') {
+      const lines = [normHeaders.map((h) => _csvSafeCell(h.label)).join(',')];
+      cleanRows.forEach((r) => lines.push(r.map((v) => _csvSafeCell(v)).join(',')));
       _triggerDownload(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }), filenameBase + '.csv');
-      showToast('File CSV berhasil diunduh.', 'ok');
+      showToast('File CSV (UTF-8 BOM) berhasil diunduh.', 'ok');
       return;
     }
 
-    if (format === 'json') {
-      _triggerDownload(new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' }), filenameBase + '.json');
+    if (fmt === 'json') {
+      _triggerDownload(new Blob([JSON.stringify(srcRows, null, 2)], { type: 'application/json;charset=utf-8' }), filenameBase + '.json');
       showToast('File JSON berhasil diunduh.', 'ok');
       return;
     }
 
-    const htmlTable = `<h2 style="margin:0 0 6px;">${esc(title)}</h2><p style="font-size:12px;color:#555;margin:0 0 12px;">Apotek ONS Farma Enterprise — ${new Date().toLocaleString('id-ID')}</p>
-      <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:11px;font-family:Arial,sans-serif;">
-        <thead style="background:#09202A;color:#fff;"><tr>${headers.map((h) => `<th>${esc(h.label)}</th>`).join('')}</tr></thead>
-        <tbody>${cleanRows.map((r) => `<tr>${r.map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody>
-      </table>`;
+    const formatHtmlVal = (val, h) => {
+      if (val === null || val === undefined || val === '') return '-';
+      if (typeof val === 'number' && Number.isFinite(val)) {
+        if (h._type === 'currency') return rp(val);
+        if (h._type === 'percent') return (Math.abs(val) > 0 && Math.abs(val) <= 2 ? (val * 100) : val).toFixed(1) + '%';
+        return val.toLocaleString('id-ID');
+      }
+      return esc(val);
+    };
 
-    if (format === 'doc') {
-      _triggerDownload(new Blob([`<html><meta charset="utf-8"><body>${htmlTable}</body></html>`], { type: 'application/msword' }), filenameBase + '.doc');
+    const totalFooterHtml = hasSum ? `<tfoot><tr style="background:#EAF2FF;font-weight:700;color:#0F172A;">
+      ${normHeaders.map((h, cIdx) => {
+        if (cIdx === 0 && !h.sum) return `<td style="padding:7px;border:1px solid #CBD5E1;">TOTAL (${cleanRows.length} BARIS)</td>`;
+        if (h.sum) {
+          const sumVal = cleanRows.reduce((acc, r) => acc + (Number(r[cIdx]) || 0), 0);
+          return `<td style="padding:7px;border:1px solid #CBD5E1;text-align:right;font-family:monospace;">${h._type === 'currency' ? rp(sumVal) : sumVal.toLocaleString('id-ID')}</td>`;
+        }
+        return `<td style="padding:7px;border:1px solid #CBD5E1;"></td>`;
+      }).join('')}
+    </tr></tfoot>` : '';
+
+    const htmlDoc = `<style>@page{size:A4 landscape;margin:12mm;}body{font-family:Arial,Helvetica,sans-serif;color:#0F172A;}</style>
+      <div style="font-family:Arial,Helvetica,sans-serif;color:#0F172A;max-width:100%;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #09202A;padding-bottom:8px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:15px;font-weight:800;letter-spacing:0.2px;color:#09202A;">${esc(title)}</div>
+            <div style="font-size:11px;font-weight:700;color:#0050CA;margin-top:2px;">${esc(usahaNama.toUpperCase())}${alamatLine ? (' &bull; ' + esc(alamatLine)) : ''}</div>
+            <div style="font-size:10px;color:#475569;">No. SIA: ${esc(siaNo)} &bull; APJ: ${esc(prof.nama_pemilik || '-')} (SIPA: ${esc(prof.sipa_pemilik || '-')})</div>
+          </div>
+          <div style="text-align:right;font-size:10px;color:#475569;">
+            <div>Dicetak: <b>${esc(stampText)}</b></div>
+            <div>Oleh: <b>${esc(userName)}</b></div>
+            <div>Jumlah Data: <b>${cleanRows.length} baris</b></div>
+          </div>
+        </div>
+        <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:10.5px;">
+          <thead>
+            <tr style="background:#09202A;color:#FFFFFF;">
+              ${normHeaders.map((h) => {
+                const isNum = h._type === 'currency' || h._type === 'int' || h._type === 'percent';
+                return `<th style="padding:7px 6px;border:1px solid #334155;text-align:${isNum ? 'right' : 'left'};white-space:nowrap;">${esc(h.label)}</th>`;
+              }).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${cleanRows.length ? cleanRows.map((r, rIdx) => `<tr style="background:${rIdx % 2 ? '#F8FAFC' : '#FFFFFF'};">
+              ${r.map((v, cIdx) => {
+                const h = normHeaders[cIdx];
+                const isNum = (h._type === 'currency' || h._type === 'int' || h._type === 'percent') && typeof v === 'number';
+                return `<td style="padding:6px;border:1px solid #CBD5E1;text-align:${isNum ? 'right' : 'left'};${isNum ? 'font-family:monospace;white-space:nowrap;' : ''}">${formatHtmlVal(v, h)}</td>`;
+              }).join('')}
+            </tr>`).join('') : `<tr><td colspan="${colCount}" style="padding:14px;text-align:center;color:#64748B;">${esc(opts.emptyMessage || 'Belum ada data tersedia untuk ditampilkan.')}</td></tr>`}
+          </tbody>
+          ${totalFooterHtml}
+        </table>
+        <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:10px;color:#475569;">
+          <div>Dokumen dihasilkan secara otomatis oleh Sistem ${esc(usahaNama)}.</div>
+          <div style="text-align:center;">
+            <div>${esc(prof.kota || 'Lokasi Apotek')}, ${esc(new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }))}</div>
+            <div style="height:28px;"></div>
+            <div style="font-weight:700;color:#0F172A;text-decoration:underline;">${esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')}</div>
+            <div>SIPA: ${esc(prof.sipa_pemilik || '-')}</div>
+          </div>
+        </div>
+      </div>`;
+
+    if (fmt === 'doc') {
+      _triggerDownload(new Blob([`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${htmlDoc}</body></html>`], { type: 'application/msword' }), filenameBase + '.doc');
       showToast('Dokumen Word (.doc) berhasil diunduh.', 'ok');
       return;
     }
 
-    printHtmlZone(htmlTable);
+    printHtmlZone(htmlDoc);
   }
 
   function _triggerDownload(blob, filename) {
@@ -842,19 +1074,36 @@
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);
+    setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 2000);
   }
 
-  function printHtmlZone(innerHtml) {
+  function printHtmlZone(arg1, arg2, arg3) {
+    let htmlContent = '';
+    let opts = {};
+    if (typeof arg2 === 'string' && arg2.includes('<')) {
+      htmlContent = arg2;
+      opts = (arg3 && typeof arg3 === 'object') ? arg3 : {};
+    } else if (typeof arg1 === 'string' && !arg1.includes('<') && typeof document !== 'undefined') {
+      const targetEl = document.getElementById(arg1);
+      htmlContent = targetEl ? targetEl.outerHTML : arg1;
+      opts = (arg3 && typeof arg3 === 'object') ? arg3 : ((arg2 && typeof arg2 === 'object') ? arg2 : {});
+    } else {
+      htmlContent = String(arg1 || '');
+      opts = (arg2 && typeof arg2 === 'object') ? arg2 : {};
+    }
+    if (opts && opts.widthMm) {
+      htmlContent = `<style>@page{margin:4mm;}</style><div style="width:${Number(opts.widthMm)}mm;max-width:100%;margin:0 auto;">${htmlContent}</div>`;
+    }
     let zone = document.getElementById('onsPrintZone');
     if (!zone) {
       zone = document.createElement('div');
       zone.id = 'onsPrintZone';
       document.body.appendChild(zone);
     }
-    zone.innerHTML = innerHtml;
+    zone.innerHTML = htmlContent;
     setTimeout(() => {
       if (typeof window !== 'undefined' && typeof window.print === 'function') window.print();
     }, 150);
@@ -1132,6 +1381,7 @@
     buildQrisEmvcoPayload,
     renderSvgQr,
     exportDataset,
+    downloadFile: _triggerDownload,
     printHtmlZone,
     ThermalPrinter
   };

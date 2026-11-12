@@ -2313,7 +2313,7 @@
     S().printHtmlZone(html, true);
   };
 
-  global.exportPemeriksaanXlsx = () => {
+  global.exportPemeriksaanXlsx = (fmt) => {
     const subTab = (S().AppState.subTabs && S().AppState.subTabs.pemeriksaan) || 'semua';
     const list = getFilteredRecords(subTab);
     if (!list.length) {
@@ -2321,24 +2321,24 @@
       return;
     }
     const headers = [
-      { key: 'id_periksa', label: 'ID Pemeriksaan' },
-      { key: 'tanggal', label: 'Tanggal Cek' },
-      { key: 'nama_pasien', label: 'Nama Pasien' },
-      { key: 'no_wa', label: 'No. WhatsApp' },
-      { key: 'gender_usia', label: 'Gender / Usia' },
-      { key: 'imt_bmi', label: 'IMT (BMI)' },
-      { key: 'tensi', label: 'Tekanan Darah (mmHg)' },
-      { key: 'status_tensi', label: 'Status Tensi' },
-      { key: 'gula', label: 'Gula Darah (mg/dL)' },
-      { key: 'status_gula', label: 'Status Gula' },
-      { key: 'kolesterol_total', label: 'Kolesterol Total' },
-      { key: 'status_kolesterol', label: 'Status Kolesterol' },
-      { key: 'asam_urat', label: 'Asam Urat (mg/dL)' },
-      { key: 'status_asam_urat', label: 'Status Asam Urat' },
-      { key: 'tingkat_risiko', label: 'Triage Risiko' },
-      { key: 'tgl_kontrol', label: 'Jadwal Kontrol' },
-      { key: 'biaya_cek', label: 'Biaya Cek (Rp)' },
-      { key: 'saran_apoteker', label: 'Saran Apoteker' }
+      { key: 'id_periksa', label: 'ID Pemeriksaan', type: 'text', width: 18 },
+      { key: 'tanggal', label: 'Tanggal Cek', type: 'text', width: 18 },
+      { key: 'nama_pasien', label: 'Nama Pasien', type: 'wrap', width: 24 },
+      { key: 'no_wa', label: 'No. WhatsApp', type: 'text', width: 16 },
+      { key: 'gender_usia', label: 'Gender / Usia', type: 'text', width: 15 },
+      { key: 'imt_bmi', label: 'IMT (BMI)', type: 'text', width: 12 },
+      { key: 'tensi', label: 'Tekanan Darah (mmHg)', type: 'text', width: 18 },
+      { key: 'status_tensi', label: 'Status Tensi', type: 'status', width: 16 },
+      { key: 'gula', label: 'Gula Darah (mg/dL)', type: 'text', width: 18 },
+      { key: 'status_gula', label: 'Status Gula', type: 'status', width: 16 },
+      { key: 'kolesterol_total', label: 'Kolesterol Total', type: 'int', width: 16 },
+      { key: 'status_kolesterol', label: 'Status Kolesterol', type: 'status', width: 16 },
+      { key: 'asam_urat', label: 'Asam Urat (mg/dL)', type: 'text', width: 16 },
+      { key: 'status_asam_urat', label: 'Status Asam Urat', type: 'status', width: 16 },
+      { key: 'tingkat_risiko', label: 'Triage Risiko', type: 'status', width: 15 },
+      { key: 'tgl_kontrol', label: 'Jadwal Kontrol', type: 'date', width: 14 },
+      { key: 'biaya_cek', label: 'Biaya Cek (Rp)', type: 'currency', sum: true, width: 16 },
+      { key: 'saran_apoteker', label: 'Saran Apoteker', type: 'wrap', width: 34 }
     ];
     const rows = list.map((r) => {
       const ev = evalPemeriksaanStatus(r);
@@ -2363,7 +2363,13 @@
         saran_apoteker: r.saran_apoteker || ''
       };
     });
-    S().exportDataset('xlsx', 'Rekap Pemeriksaan Kesehatan ONS Farma', 'Rekap_Pemeriksaan_POCT_' + subTab, headers, rows);
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'Apotek ONS Farma';
+    const dStamp = new Date().toISOString().slice(0, 10);
+    S().exportDataset(fmt || 'xlsx', `Rekap Pemeriksaan Kesehatan (POCT) - ${apotekName}`, `Rekap_Pemeriksaan_POCT_${subTab}_${dStamp}`, headers, rows, {
+      sheetName: 'Rekap_POCT',
+      subtitle: `Filter: ${subTab.toUpperCase()} • ${rows.length} pasien | Dicetak ${S().formatTgl(new Date().toISOString(), true)}`
+    });
   };
 
   global.deletePemeriksaanRecord = async (idPeriksa) => {
