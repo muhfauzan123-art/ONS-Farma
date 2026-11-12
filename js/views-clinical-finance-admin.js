@@ -15,10 +15,22 @@
   let erxSearchQ = '';
   let prbSearchQ = '';
   let prbFilter = 'SEMUA';
-  let financeTab = 'pnl'; // pnl | jurnal | hutang | pajak
+  let financeTab = 'pnl'; // pnl | akun-kas | jurnal | piutang | hutang | pajak
   let financeDateFrom = '';
   let financeDateTo = '';
   let jurnalFilter = 'SEMUA';
+  let akunKasSearchQ = '';
+  let akunKasStatusFilter = 'SEMUA';
+  let kasBookAccountFilter = 'SEMUA';
+  let kasBookSearchQ = '';
+  let hutangSubView = 'list'; // list | riwayat
+  let hutangSearchQ = '';
+  let hutangDueFilter = '';
+  let hutangStatusFilter = 'SEMUA';
+  let piutangSubView = 'list'; // list | ttf | riwayat
+  let piutangSearchQ = '';
+  let piutangDueFilter = '';
+  let piutangStatusFilter = 'SEMUA';
   let sipnapTab = 'narkotika'; // narkotika | pareto | deadstock
   let shiftDenomCounts = { 100000: 0, 50000: 0, 20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0 };
   let shiftBlindRevealed = false;
@@ -878,20 +890,70 @@
   };
 
   /**
-   * W-10 BAGIAN A: Keuangan, AP Radar, Pajak PPn/PPh & Period Lock
+   * W-10 BAGIAN A: Keuangan Apotek Digital v17.28 (Daftar Akun Kas, Buku Kas, Utang Usaha, Piutang Usaha, Laba-Rugi P&L, Pajak & Slip Gaji)
    */
+  const KAS_ACCOUNTS_KEY = 'ONS_KAS_ACCOUNTS_V1';
+  const MANUAL_UTANG_KEY = 'ONS_MANUAL_UTANG_V1';
+  const MANUAL_PIUTANG_KEY = 'ONS_MANUAL_PIUTANG_V1';
+  const TTF_PIUTANG_KEY = 'ONS_TTF_PIUTANG_V1';
+
+  function _readFinLocalList(key) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(raw) ? raw : [];
+    } catch (e) { return []; }
+  }
+  function _writeFinLocalList(key, arr) {
+    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch (e) {}
+  }
+  function _getKasAccountsList() {
+    let list = _readFinLocalList(KAS_ACCOUNTS_KEY);
+    if (!list.length) {
+      list = [{ id_akun: 'KAS-01', nama: 'Kas Utama', deskripsi: 'Akun Kas Utama', kode_kustom: '1-101', catatan: '', jenis: 'other', saldo_awal: 0, status: 'Aktif' }];
+      _writeFinLocalList(KAS_ACCOUNTS_KEY, list);
+    }
+    return list;
+  }
+  function _resolveJurnalAkunId(j, accounts) {
+    const ref = String(j.referensi_id || '');
+    const mTag = ref.match(/\[AKUN:([A-Z0-9_-]+)\]/i);
+    if (mTag) {
+      const found = accounts.find((a) => a.id_akun === mTag[1]);
+      if (found) return found.id_akun;
+    }
+    if (j.id_akun && accounts.some((a) => a.id_akun === j.id_akun)) return j.id_akun;
+    const metLower = String(j.metode || '').toLowerCase();
+    const byName = accounts.find((a) => metLower && (metLower === String(a.nama || '').toLowerCase() || metLower.includes(String(a.nama || '').toLowerCase())));
+    if (byName) return byName.id_akun;
+    return (accounts[0] && accounts[0].id_akun) || 'KAS-01';
+  }
+  function _computeKasAccountsWithBalance(st) {
+    const accounts = _getKasAccountsList();
+    const balMap = new Map();
+    accounts.forEach((a) => balMap.set(a.id_akun, Number(a.saldo_awal || 0)));
+    (st.jurnalKeuangan || []).forEach((j) => {
+      const akId = _resolveJurnalAkunId(j, accounts);
+      const isMasuk = String(j.jenis_trx || '').toUpperCase().includes('MASUK');
+      const delta = isMasuk ? Number(j.nominal || 0) : -Number(j.nominal || 0);
+      balMap.set(akId, (balMap.get(akId) || 0) + delta);
+    });
+    return accounts.map((a) => Object.assign({}, a, { saldo_saat_ini: balMap.get(a.id_akun) || 0 }));
+  }
+
   function renderFinanceView() {
     const st = S().AppState;
     financeTab = (st.subTabs && st.subTabs.finance) || financeTab || 'pnl';
 
     const inDateRange = (isoDate) => {
       const d = String(isoDate || '').slice(0, 10);
-      if (financeDateFrom && d < financeDateFrom) return false;
-      if (financeDateTo && d > financeDateTo) return false;
+      if (financeDateFrom && (!d || d < financeDateFrom)) return false;
+      if (financeDateTo && (!d || d > financeDateTo)) return false;
       return true;
     };
 
-    const jurnalScoped = (st.jurnalKeuangan || []).filter((j) => inDateRange(j.tanggal));
+    const kasAccounts = _computeKasAccountsWithBalance(st);
+    const jurnalAll = (st.jurnalKeuangan || []);
+    const jurnalScoped = jurnalAll.filter((j) => inDateRange(j.tanggal));
     const salesValid = (st.penjualan || []).filter((p) => String(p.status_trx || 'LUNAS') !== 'RETUR' && inDateRange(p.tanggal));
 
     const totalMasuk = jurnalScoped.filter((j) => String(j.jenis_trx).includes('MASUK')).reduce((s, j) => s + Number(j.nominal || 0), 0);
@@ -901,12 +963,38 @@
     const ppnKurangBayar = Math.max(0, ppnKeluaran - ppnMasukanFaktur);
     const pphFinal = Math.round((salesValid.reduce((s, p) => s + Number(p.grand_total || 0), 0) || totalMasuk) * 0.005);
 
-    const openFaktur = st.fakturPbf.filter((f) => Number(f.sisa_hutang || 0) > 0 && String(f.status_bayar || '').toUpperCase() !== 'KONSINYASI' && String(f.jenis_penerimaan || '').toUpperCase() !== 'KONSINYASI');
+    const openFakturPbf = st.fakturPbf.filter((f) => Number(f.sisa_hutang || 0) > 0 && String(f.status_bayar || '').toUpperCase() !== 'KONSINYASI' && String(f.jenis_penerimaan || '').toUpperCase() !== 'KONSINYASI');
+    const manualUtang = _readFinLocalList(MANUAL_UTANG_KEY).filter((u) => Number(u.sisa_utang || 0) > 0);
+    const combinedOpenUtang = [
+      ...openFakturPbf.map((f) => ({
+        is_manual: false,
+        id_row: f.id_beli,
+        waktu_trx: String(f.tgl_terima || f.tgl_faktur || '').slice(0, 10),
+        kreditur: f.id_pbf || '-',
+        no_faktur: f.no_faktur_pbf || f.id_beli || '-',
+        keterangan: f.catatan || ('Faktur Pembelian ' + (f.no_sp || '')),
+        tgl_jatuh_tempo: f.tgl_jatuh_tempo || '',
+        nominal_awal: Number(f.netto_hutang || f.total_bruto || f.sisa_hutang || 0),
+        nominal_sisa: Number(f.sisa_hutang || 0)
+      })),
+      ...manualUtang.map((u) => ({
+        is_manual: true,
+        id_row: u.id_utang,
+        waktu_trx: String(u.waktu_trx || '').slice(0, 10),
+        kreditur: u.id_pbf || '-',
+        no_faktur: u.kode_faktur || u.kode_eksternal || u.id_utang,
+        keterangan: u.catatan || ('Utang Manual (' + (u.akun_lawan || '-') + ')'),
+        tgl_jatuh_tempo: u.tgl_jatuh_tempo || '',
+        nominal_awal: Number(u.jumlah_utang || 0),
+        nominal_sisa: Number(u.sisa_utang || 0)
+      }))
+    ];
+
     const apBuckets = [0, 0, 0, 0];
-    openFaktur.forEach((f) => {
+    combinedOpenUtang.forEach((f) => {
       const h = S().daysUntil(f.tgl_jatuh_tempo);
       const wIdx = h <= 7 ? 0 : (h <= 14 ? 1 : (h <= 21 ? 2 : 3));
-      apBuckets[wIdx] += Number(f.sisa_hutang || 0);
+      apBuckets[wIdx] += Number(f.nominal_sisa || 0);
     });
     const maxAp = Math.max(...apBuckets, 1);
 
@@ -930,42 +1018,126 @@
     });
 
     const filteredJurnal = jurnalScoped.filter((j) => {
-      if (jurnalFilter === 'MASUK') return String(j.jenis_trx).includes('MASUK');
-      if (jurnalFilter === 'KELUAR') return !String(j.jenis_trx).includes('MASUK');
+      if (jurnalFilter === 'MASUK' && !String(j.jenis_trx).includes('MASUK')) return false;
+      if (jurnalFilter === 'KELUAR' && String(j.jenis_trx).includes('MASUK')) return false;
+      if (kasBookAccountFilter && kasBookAccountFilter !== 'SEMUA') {
+        if (_resolveJurnalAkunId(j, kasAccounts) !== kasBookAccountFilter) return false;
+      }
+      if (kasBookSearchQ) {
+        const hay = `${j.kategori || ''} ${j.referensi_id || ''} ${j.jenis_trx || ''} ${j.metode || ''}`.toLowerCase();
+        if (!hay.includes(kasBookSearchQ.toLowerCase())) return false;
+      }
       return true;
     });
-    const piutangList = st.piutangPelanggan || [];
+
+    const manualPiutang = _readFinLocalList(MANUAL_PIUTANG_KEY);
+    const piutangList = [
+      ...(st.piutangPelanggan || []).map((pt) => Object.assign({}, pt, { is_manual: false })),
+      ...manualPiutang.map((pt) => Object.assign({}, pt, { is_manual: true }))
+    ];
     const openPiutang = piutangList.filter((pt) => String(pt.status_piutang || '').toUpperCase() !== 'LUNAS');
     const totalPiutangOpen = openPiutang.reduce((s, pt) => s + Number(pt.sisa_piutang || 0), 0);
 
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Keuangan, Laba-Rugi Live (P&amp;L), Piutang, Hutang PBF &amp; Pajak</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis P&amp;L kotor/bersih &amp; aset inventori FEFO, buku kas &amp; lock periode, piutang tempo pelanggan, hutang PBF, PPN/PPh, &amp; slip gaji A4.</p>
+          <h1 class="text-xl font-extrabold">Keuangan, Akun Kas, Buku Kas, Utang &amp; Piutang Usaha</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis P&amp;L &amp; aset FEFO, daftar akun kas, buku kas harian &amp; lock periode, piutang usaha &amp; TTF, utang PBF, pajak &amp; slip gaji A4.</p>
         </div>
         <div class="ons-tab-bar">
           <button onclick="window.setFinanceTab('pnl')" class="ons-tab-btn ${financeTab === 'pnl' ? 'active' : ''}">Laba-Rugi (P&amp;L)</button>
+          <button onclick="window.setFinanceTab('akun-kas')" class="ons-tab-btn ${financeTab === 'akun-kas' ? 'active' : ''}">Daftar Akun Kas (${kasAccounts.length})</button>
           <button onclick="window.setFinanceTab('jurnal')" class="ons-tab-btn ${financeTab === 'jurnal' ? 'active' : ''}">Buku Kas &amp; Lock (${jurnalScoped.length})</button>
           <button onclick="window.setFinanceTab('piutang')" class="ons-tab-btn ${financeTab === 'piutang' ? 'active' : ''}">Piutang Pelanggan (${openPiutang.length})</button>
-          <button onclick="window.setFinanceTab('hutang')" class="ons-tab-btn ${financeTab === 'hutang' ? 'active' : ''}">Hutang Faktur PBF (${openFaktur.length})</button>
+          <button onclick="window.setFinanceTab('hutang')" class="ons-tab-btn ${financeTab === 'hutang' ? 'active' : ''}">Hutang Faktur PBF (${combinedOpenUtang.length})</button>
           <button onclick="window.setFinanceTab('pajak')" class="ons-tab-btn ${financeTab === 'pajak' ? 'active' : ''}">Pajak &amp; Slip Gaji</button>
         </div>
       </div>
 
-      ${financeTab === 'jurnal' ? `
-        <div class="space-y-4">
+      ${financeTab === 'akun-kas' ? (() => {
+        const akFiltered = kasAccounts.filter((a) => {
+          if (akunKasStatusFilter !== 'SEMUA' && String(a.status || 'Aktif').toUpperCase() !== akunKasStatusFilter) return false;
+          if (akunKasSearchQ) {
+            const hay = `${a.nama || ''} ${a.deskripsi || ''} ${a.kode_kustom || ''}`.toLowerCase();
+            if (!hay.includes(akunKasSearchQ.toLowerCase())) return false;
+          }
+          return true;
+        });
+        const totalSaldoKas = akFiltered.reduce((s, a) => s + Number(a.saldo_saat_ini || 0), 0);
+        return `<div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-base">Daftar Akun Kas</h3>
+              <p class="text-[11px]" style="color:var(--ons-text-soft)">Kelola akun kas tunai, rekening bank &amp; e-wallet serta transfer saldo antar kas.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="window.exportAkunKasExcel()" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+              <button type="button" onclick="window.openAddAkunKasModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Akun Kas Baru</button>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input class="ons-input text-xs w-56" placeholder="Cari data akun kas..." value="${S().esc(akunKasSearchQ)}" oninput="window.setAkunKasSearchQ(this.value)"/>
+            <select class="ons-select text-xs w-40" onchange="window.setAkunKasStatusFilter(this.value)">
+              <option value="SEMUA" ${akunKasStatusFilter === 'SEMUA' ? 'selected' : ''}>Filter: Semua</option>
+              <option value="AKTIF" ${akunKasStatusFilter === 'AKTIF' ? 'selected' : ''}>Status: Aktif</option>
+              <option value="NONAKTIF" ${akunKasStatusFilter === 'NONAKTIF' ? 'selected' : ''}>Status: Nonaktif</option>
+            </select>
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead><tr><th>No.</th><th>Nama</th><th>Deskripsi</th><th>Jenis</th><th class="text-right">Saldo Saat Ini</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${akFiltered.length ? akFiltered.map((a, idx) => `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="text-xs font-bold">${S().esc(a.nama)}${a.kode_kustom ? `<div class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${S().esc(a.kode_kustom)}</div>` : ''}</td>
+                  <td class="text-xs">${S().esc(a.deskripsi || '-')}</td>
+                  <td><span class="badge-bpom bpom-terbatas uppercase">${S().esc(a.jenis || 'other')}</span></td>
+                  <td class="text-right font-mono-num text-xs font-bold ${a.saldo_saat_ini >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(a.saldo_saat_ini)}</td>
+                  <td><span class="badge-bpom bpom-bebas">${S().esc(a.status || 'Aktif')}</span></td>
+                  <td>
+                    <div class="flex flex-wrap gap-1.5">
+                      <button type="button" onclick="window.openTransferKasModal('${S().esc(a.id_akun)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Transfer</button>
+                      <button type="button" onclick="window.openBukuKasForAkun('${S().esc(a.id_akun)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Buku Kas</button>
+                    </div>
+                  </td>
+                </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Data akun kas tidak ditemukan.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+          <div class="p-3 rounded-xl border flex flex-wrap justify-between items-center text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <span>Total Akun Aktif: <b class="font-mono-num">${akFiltered.length} akun</b></span>
+            <span>Total Saldo Kas &amp; Bank: <b class="font-mono-num text-sm text-emerald-600">${S().rp(totalSaldoKas)}</b></span>
+          </div>
+        </div>`;
+      })() : financeTab === 'jurnal' ? (() => {
+        // Compute chronological running balance for Buku Kas
+        let runBal = 0;
+        const ascScoped = filteredJurnal.slice().map((j) => {
+          const isM = String(j.jenis_trx || '').includes('MASUK');
+          const nom = Number(j.nominal || 0);
+          runBal += isM ? nom : -nom;
+          return Object.assign({}, j, { _isMasuk: isM, _masuk: isM ? nom : 0, _keluar: isM ? 0 : nom, _saldo: runBal });
+        });
+        const scopedMasuk = ascScoped.reduce((s, x) => s + x._masuk, 0);
+        const scopedKeluar = ascScoped.reduce((s, x) => s + x._keluar, 0);
+        return `<div class="space-y-4">
           <div class="ons-card p-4 space-y-3 text-xs">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-sm">Input Cepat Jurnal Kas / Petty Cash</h3>
-              <button onclick="window.lockCurrentFinancePeriod()" class="ons-btn ons-btn-danger text-xs">Kunci Periode Bulan Ini</button>
+              <div>
+                <h3 class="font-bold text-base">Buku Kas</h3>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Catatan pemasukan/pengeluaran kas apotek &amp; penguncian periode bulanan.</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.openCreateKasTransaksiModal('KELUAR')" class="ons-btn ons-btn-emerald text-xs font-bold">+ Transaksi Baru</button>
+                <button type="button" onclick="window.lockCurrentFinancePeriod()" class="ons-btn ons-btn-danger text-xs">Kunci Periode Bulan Ini</button>
+              </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
               <select id="jrInlineJenis" class="ons-select sm:col-span-3">
                 <option value="KELUAR_OPERASIONAL">KELUAR_OPERASIONAL (Biaya/Petty Cash)</option>
                 <option value="MASUK_LAINNYA">MASUK_LAINNYA (Pemasukan Lain)</option>
               </select>
-              <input id="jrInlineKat" class="ons-input sm:col-span-5" placeholder="Keterangan biaya / pemasukan (cth. Beli kertas struk 58mm)"/>
+              <input id="jrInlineKat" class="ons-input sm:col-span-5" placeholder="Input cepat: keterangan biaya / pemasukan (cth. Beli kertas struk 58mm)"/>
               <input id="jrInlineNom" type="number" min="1" class="ons-input font-mono-num sm:col-span-2" placeholder="Nominal (Rp)"/>
               <button onclick="window.saveInlineJurnal()" class="ons-btn ons-btn-primary sm:col-span-2">+ Catat Jurnal</button>
             </div>
@@ -973,30 +1145,154 @@
 
           <div class="ons-card p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="ons-tab-bar">
-                ${['SEMUA', 'MASUK', 'KELUAR'].map((f) => `<button onclick="window.setJurnalFilter('${f}')" class="ons-tab-btn ${jurnalFilter === f ? 'active' : ''}">${f}</button>`).join('')}
+              <div class="flex flex-wrap items-center gap-2">
+                <select class="ons-select text-xs w-44" onchange="window.setKasBookAccountFilter(this.value)">
+                  <option value="SEMUA" ${kasBookAccountFilter === 'SEMUA' ? 'selected' : ''}>Semua Akun Kas</option>
+                  ${kasAccounts.map((a) => `<option value="${S().esc(a.id_akun)}" ${kasBookAccountFilter === a.id_akun ? 'selected' : ''}>${S().esc(a.nama)}</option>`).join('')}
+                </select>
+                <input class="ons-input text-xs w-44" placeholder="Cari data aktivitas..." value="${S().esc(kasBookSearchQ)}" oninput="window.setKasBookSearchQ(this.value)"/>
+                <input type="date" class="ons-input text-xs w-36" value="${S().esc(financeDateFrom)}" onchange="window.setFinanceDateRange(this.value, '${S().esc(financeDateTo)}')"/>
+                <input type="date" class="ons-input text-xs w-36" value="${S().esc(financeDateTo)}" onchange="window.setFinanceDateRange('${S().esc(financeDateFrom)}', this.value)"/>
+                <div class="ons-tab-bar">
+                  ${['SEMUA', 'MASUK', 'KELUAR'].map((f) => `<button onclick="window.setJurnalFilter('${f}')" class="ons-tab-btn ${jurnalFilter === f ? 'active' : ''}">${f}</button>`).join('')}
+                </div>
               </div>
-              <div class="text-xs font-mono-num">Masuk: <b class="text-emerald-600">${S().rp(totalMasuk)}</b> &bull; Keluar: <b class="text-red-600">${S().rp(totalKeluar)}</b></div>
+              <button type="button" onclick="window.exportBukuKasExcel()" class="ons-btn ons-btn-ghost text-xs">Excel</button>
             </div>
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>Tanggal</th><th>Jenis</th><th>Kategori / Referensi</th><th>Nominal</th><th>Metode</th><th>Status Lock</th></tr></thead>
+                <thead><tr><th>No.</th><th>Tanggal</th><th>Aktivitas</th><th class="text-right">Masuk</th><th class="text-right">Keluar</th><th class="text-right">Saldo</th><th>Status Lock</th><th>Action</th></tr></thead>
                 <tbody>
-                  ${filteredJurnal.length ? filteredJurnal.slice().reverse().map((j) => `<tr>
+                  ${ascScoped.length ? ascScoped.slice().reverse().map((j, idx) => `<tr>
+                    <td class="font-mono-num text-xs">${idx + 1}</td>
                     <td class="font-mono-num text-xs">${S().formatTgl(j.tanggal)}</td>
-                    <td><span class="badge-bpom ${String(j.jenis_trx).includes('MASUK') ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(j.jenis_trx)}</span></td>
-                    <td class="text-xs"><b>${S().esc(j.kategori)}</b> (${S().esc(j.referensi_id || '-')})</td>
-                    <td class="font-mono-num font-bold">${S().rp(j.nominal)}</td>
-                    <td class="text-xs">${S().esc(j.metode || '-')}</td>
+                    <td class="text-xs"><b>${S().esc(j.kategori)}</b><div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(j.jenis_trx)} &bull; Ref: ${S().esc(j.referensi_id || '-')} &bull; ${S().esc(j.metode || 'Kas Utama')}</div></td>
+                    <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${j._masuk > 0 ? S().rp(j._masuk) : '-'}</td>
+                    <td class="text-right font-mono-num text-xs font-bold text-red-600">${j._keluar > 0 ? S().rp(j._keluar) : '-'}</td>
+                    <td class="text-right font-mono-num text-xs font-bold">${S().rp(j._saldo)}</td>
                     <td><span class="badge-bpom ${j.status_lock === 'TERKUNCI' ? 'bpom-keras' : 'bpom-terbatas'}">${S().esc(j.status_lock || 'TERBUKA')}</span></td>
-                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada entri jurnal pada filter ini.</td></tr>'}
+                    <td><button type="button" onclick="window.openKasTrxDetailModal('${S().esc(j.id_jurnal || '')}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Detail</button></td>
+                  </tr>`).join('') : '<tr><td colspan="8" class="text-center py-6 text-xs">Tidak ada entri buku kas pada filter ini.</td></tr>'}
                 </tbody>
               </table>
             </div>
+            <div class="p-3 rounded-xl border flex flex-wrap justify-between gap-4 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="font-bold text-blue-600">Rekap Buku Kas (${ascScoped.length} transaksi)</div>
+              <div class="flex flex-wrap gap-6 font-mono-num">
+                <div>Masuk: <b class="text-emerald-600">${S().rp(scopedMasuk)}</b></div>
+                <div>Keluar: <b class="text-red-600">${S().rp(scopedKeluar)}</b></div>
+                <div>Saldo Akhir: <b class="text-sm">${S().rp(runBal)}</b></div>
+              </div>
+            </div>
           </div>
-        </div>
-      ` : financeTab === 'piutang' ? `
-        <div class="space-y-4">
+        </div>`;
+      })() : financeTab === 'piutang' ? (() => {
+        if (piutangSubView === 'ttf') {
+          const ttfList = _readFinLocalList(TTF_PIUTANG_KEY).filter((t) => {
+            if (piutangSearchQ) {
+              const hay = `${t.no_ttf || ''} ${t.kode_faktur || ''} ${t.nama_pelanggan || ''} ${t.sales || ''}`.toLowerCase();
+              if (!hay.includes(piutangSearchQ.toLowerCase())) return false;
+            }
+            return true;
+          });
+          const totalTtfNom = ttfList.reduce((s, t) => s + Number(t.tagihan_awal || 0), 0);
+          return `<div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="window.setPiutangSubView('list')" class="ons-btn ons-btn-ghost text-xs">&larr; Kembali</button>
+                <h3 class="font-bold text-base">Daftar Tanda Terima Faktur (TTF)</h3>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.openBuatTtfModal('','','0')" class="ons-btn ons-btn-emerald text-xs font-bold">+ Buat TTF</button>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <input class="ons-input text-xs w-56" placeholder="Cari no TTF / faktur / pelanggan..." value="${S().esc(piutangSearchQ)}" oninput="window.setPiutangSearchQ(this.value)"/>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>No.</th><th>Waktu Terbit</th><th>No. Tanda Terima Faktur</th><th>Kode Faktur</th><th>Pelanggan</th><th>Jadwal Penyerahan TTF</th><th>Sales</th><th>Status</th><th class="text-right">Tagihan Awal</th></tr></thead>
+                <tbody>
+                  ${ttfList.length ? ttfList.map((t, i) => `<tr>
+                    <td class="font-mono-num text-xs">${i + 1}</td>
+                    <td class="font-mono-num text-xs">${S().esc(String(t.waktu_terbit || '').slice(0, 10))}</td>
+                    <td class="font-mono-num text-xs font-bold">${S().esc(t.no_ttf)}</td>
+                    <td class="font-mono-num text-xs">${S().esc(t.kode_faktur)}</td>
+                    <td class="text-xs font-semibold">${S().esc(t.nama_pelanggan || '-')}</td>
+                    <td class="font-mono-num text-xs">${S().esc(t.jadwal_serah || '-')}</td>
+                    <td class="text-xs">${S().esc(t.sales || '-')}</td>
+                    <td><span class="badge-bpom bpom-terbatas">${S().esc(t.status || 'TERBIT')}</span></td>
+                    <td class="text-right font-mono-num text-xs font-bold">${S().rp(t.tagihan_awal || 0)}</td>
+                  </tr>`).join('') : '<tr><td colspan="9" class="text-center py-6 text-xs">Data tidak ditemukan. Klik <b>+ Buat TTF</b> atau tombol <b>TTF</b> di daftar Piutang Usaha.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3.5 rounded-xl border flex flex-wrap justify-between gap-4 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="font-bold text-blue-600">Rekap Tanda Terima Faktur</div>
+              <div class="flex flex-wrap gap-6">
+                <div>Total Nominal Tanda Terima Faktur : <b class="font-mono-num text-sm">${S().rp(totalTtfNom)}</b></div>
+                <div>Jumlah Tanda Terima Faktur : <b class="font-mono-num text-sm">${ttfList.length} data</b></div>
+              </div>
+            </div>
+          </div>`;
+        }
+        if (piutangSubView === 'riwayat') {
+          const payRows = jurnalAll.filter((j) => String(j.jenis_trx || '').startsWith('MASUK_PIUTANG')).filter((j) => {
+            if (piutangSearchQ) {
+              const hay = `${j.id_jurnal || ''} ${j.kategori || ''} ${j.referensi_id || ''}`.toLowerCase();
+              if (!hay.includes(piutangSearchQ.toLowerCase())) return false;
+            }
+            return true;
+          });
+          const totalBayar = payRows.reduce((s, r) => s + Number(r.nominal || 0), 0);
+          return `<div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="window.setPiutangSubView('list')" class="ons-btn ons-btn-ghost text-xs">&larr; Kembali</button>
+                <h3 class="font-bold text-base">Pembayaran Piutang</h3>
+              </div>
+              <button type="button" onclick="window.exportPiutangUsahaExcel('riwayat')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <input class="ons-input text-xs w-56" placeholder="Cari transaksi pembayaran piutang..." value="${S().esc(piutangSearchQ)}" oninput="window.setPiutangSearchQ(this.value)"/>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>No.</th><th>Waktu Transaksi</th><th>No. Transaksi</th><th>Detail Transaksi Asal</th><th>Akun Kas</th><th>Catatan Transaksi</th><th class="text-right">Nominal Bayar</th><th>Action</th></tr></thead>
+                <tbody>
+                  ${payRows.length ? payRows.slice().reverse().map((r, i) => `<tr>
+                    <td class="font-mono-num text-xs">${i + 1}</td>
+                    <td class="font-mono-num text-xs">${S().formatTgl(r.tanggal)}</td>
+                    <td class="font-mono-num text-xs font-bold">${S().esc(r.id_jurnal || '-')}</td>
+                    <td class="font-mono-num text-xs">${S().esc(r.referensi_id || '-')}</td>
+                    <td class="text-xs">${S().esc(r.metode || 'Kas Utama')}</td>
+                    <td class="text-xs">${S().esc(r.kategori || '-')}</td>
+                    <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(r.nominal || 0)}</td>
+                    <td><button type="button" onclick="window.printKwitansiPiutang('${S().esc(r.id_jurnal || '')}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Kwitansi</button></td>
+                  </tr>`).join('') : '<tr><td colspan="8" class="text-center py-6 text-xs">Belum ada riwayat pembayaran piutang.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3.5 rounded-xl border flex flex-wrap justify-between gap-4 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="font-bold text-blue-600">Rekap Pembayaran Piutang</div>
+              <div class="flex flex-wrap gap-6">
+                <div>Total Pembayaran Piutang Usaha : <b class="font-mono-num text-sm text-emerald-600">${S().rp(totalBayar)}</b></div>
+                <div>Jumlah Transaksi Pembayaran Piutang Usaha : <b class="font-mono-num text-sm">${payRows.length} kali</b></div>
+              </div>
+            </div>
+          </div>`;
+        }
+        const filteredPiutang = piutangList.filter((pt) => {
+          if (piutangStatusFilter !== 'SEMUA' && String(pt.status_piutang || '').toUpperCase() !== piutangStatusFilter) return false;
+          if (piutangDueFilter && String(pt.tgl_jatuh_tempo || '').slice(0, 10) > piutangDueFilter) return false;
+          if (piutangSearchQ) {
+            const hay = `${pt.no_invoice || ''} ${pt.kode_faktur || ''} ${pt.nama_pelanggan || ''} ${pt.catatan || ''}`.toLowerCase();
+            if (!hay.includes(piutangSearchQ.toLowerCase())) return false;
+          }
+          return true;
+        });
+        const totalPiutangFiltered = filteredPiutang.filter((p) => String(p.status_piutang || '').toUpperCase() !== 'LUNAS').reduce((s, p) => s + Number(p.sisa_piutang || 0), 0);
+        return `<div class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Total Sisa Piutang Berjalan</div><div class="text-xl font-extrabold font-mono-num text-amber-600">${S().rp(totalPiutangOpen)}</div></div>
             <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Nota Tempo Aktif / Sebagian</div><div class="text-xl font-extrabold font-mono-num text-blue-600">${openPiutang.length} Nota</div></div>
@@ -1004,41 +1300,127 @@
           </div>
           <div class="ons-card p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-sm">Buku Piutang Pelanggan &amp; Mitra Dokter (${piutangList.length})</h3>
-              <span class="text-xs" style="color:var(--ons-text-soft)">Pelunasan otomatis mencatat kas masuk (<code>MASUK_PIUTANG</code>) &amp; melunaskan invoice POS.</span>
+              <div>
+                <h3 class="font-bold text-sm">Piutang Usaha &amp; Buku Piutang Pelanggan (${filteredPiutang.length})</h3>
+                <span class="text-xs" style="color:var(--ons-text-soft)">Pelunasan otomatis mencatat kas masuk (<code>MASUK_PIUTANG</code>) &amp; melunaskan invoice POS.</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.setPiutangSubView('ttf')" class="ons-btn ons-btn-emerald text-xs">Daftar TTF</button>
+                <button type="button" onclick="window.setPiutangSubView('riwayat')" class="ons-btn ons-btn-emerald text-xs">Riwayat Pembayaran</button>
+                <button type="button" onclick="window.openImportPiutangInfoModal()" class="ons-btn ons-btn-ghost text-xs">Import</button>
+                <button type="button" onclick="window.openCatatPiutangModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Catat Piutang</button>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <input class="ons-input text-xs w-48" placeholder="Cari data debitur / faktur..." value="${S().esc(piutangSearchQ)}" oninput="window.setPiutangSearchQ(this.value)"/>
+                <input type="date" class="ons-input text-xs w-40" title="Tgl. Jatuh Tempo maks" value="${S().esc(piutangDueFilter)}" onchange="window.setPiutangDueFilter(this.value)"/>
+                <select class="ons-select text-xs w-36" onchange="window.setPiutangStatusFilter(this.value)">
+                  <option value="SEMUA" ${piutangStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Status</option>
+                  <option value="BELUM_LUNAS" ${piutangStatusFilter === 'BELUM_LUNAS' ? 'selected' : ''}>Belum Lunas</option>
+                  <option value="SEBAGIAN" ${piutangStatusFilter === 'SEBAGIAN' ? 'selected' : ''}>Sebagian</option>
+                  <option value="LUNAS" ${piutangStatusFilter === 'LUNAS' ? 'selected' : ''}>Lunas</option>
+                </select>
+              </div>
+              <button type="button" onclick="window.exportPiutangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
             </div>
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>No. Invoice &amp; Pelanggan</th><th>Jatuh Tempo</th><th>Tagihan</th><th>Terbayar</th><th>Sisa Piutang</th><th>Status</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>No.</th><th>Waktu &amp; Debitur</th><th>No. Faktur</th><th>Metode Bayar</th><th>Keterangan</th><th>Jatuh Tempo</th><th class="text-right">Nominal Awal</th><th class="text-right">Nominal Sisa</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
-                  ${piutangList.length ? piutangList.map((pt) => {
+                  ${filteredPiutang.length ? filteredPiutang.map((pt, idx) => {
                     const days = S().daysUntil(pt.tgl_jatuh_tempo);
                     const isPaid = String(pt.status_piutang || '').toUpperCase() === 'LUNAS';
-                    const waMsg = 'Yth. ' + (pt.nama_pelanggan || 'Pelanggan') + ', pengingat tagihan tempo Apotek ONS Farma untuk nota ' + (pt.no_invoice || pt.id_piutang) + ' jatuh tempo ' + (pt.tgl_jatuh_tempo || '-') + ' sebesar ' + S().rp(pt.sisa_piutang || 0) + '. Terima kasih.';
+                    const invNo = pt.no_invoice || pt.kode_faktur || pt.id_piutang;
+                    const waMsg = 'Yth. ' + (pt.nama_pelanggan || 'Pelanggan') + ', pengingat tagihan tempo Apotek ONS Farma untuk nota ' + invNo + ' jatuh tempo ' + (pt.tgl_jatuh_tempo || '-') + ' sebesar ' + S().rp(pt.sisa_piutang || 0) + '. Terima kasih.';
                     const waUrl = S().buildWaUrl ? S().buildWaUrl(pt.no_wa || '', waMsg) : ('https://wa.me/?text=' + encodeURIComponent(waMsg));
                     return `<tr>
-                      <td class="text-xs"><b>${S().esc(pt.no_invoice || pt.id_piutang)}</b><br/>${S().esc(pt.nama_pelanggan)}</td>
+                      <td class="font-mono-num text-xs">${idx + 1}</td>
+                      <td class="text-xs"><b>${S().esc(pt.nama_pelanggan)}</b><div class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${S().esc(String(pt.waktu_trx || pt.tanggal || '').slice(0, 10))}</div></td>
+                      <td class="font-mono-num text-xs font-bold">${S().esc(invNo)}</td>
+                      <td class="text-xs">${S().esc(pt.metode_bayar || 'TEMPO')}</td>
+                      <td class="text-xs">${S().esc(pt.catatan || '-')}</td>
                       <td class="font-mono-num text-xs ${!isPaid && days < 0 ? 'text-red-600 font-bold' : ''}">${S().esc(pt.tgl_jatuh_tempo || '-')}${!isPaid && days < 0 ? ' (Lewat ' + Math.abs(days) + 'h)' : ''}</td>
-                      <td class="font-mono-num text-xs">${S().rp(pt.total_tagihan)}</td>
-                      <td class="font-mono-num text-xs text-emerald-600">${S().rp(pt.total_dibayar || 0)}</td>
-                      <td class="font-mono-num text-xs font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'}">${S().rp(pt.sisa_piutang || 0)}</td>
+                      <td class="text-right font-mono-num text-xs">${S().rp(pt.total_tagihan)}</td>
+                      <td class="text-right font-mono-num text-xs font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'}">${S().rp(pt.sisa_piutang || 0)}</td>
                       <td><span class="badge-bpom ${isPaid ? 'bpom-bebas' : 'bpom-terbatas'}">${S().esc(pt.status_piutang)}</span></td>
                       <td>
                         <div class="flex flex-wrap gap-1">
-                          ${!isPaid ? `<button onclick="window.openPayPiutangModal('${S().esc(pt.id_piutang)}','${S().esc(pt.no_invoice)}','${S().esc(pt.nama_pelanggan)}',${Number(pt.sisa_piutang || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2">Cicil / Lunas</button>` : ''}
-                          ${!isPaid ? `<a target="_blank" rel="noopener" href="${S().esc(waUrl)}" class="ons-btn ons-btn-ghost text-xs py-1 px-2">WA Tagih</a>` : ''}
+                          ${!isPaid ? `<button onclick="window.openPayPiutangModal('${S().esc(pt.id_piutang)}','${S().esc(invNo)}','${S().esc(pt.nama_pelanggan)}',${Number(pt.sisa_piutang || 0)},${pt.is_manual ? 'true' : 'false'})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Cicil / Lunas</button>` : ''}
+                          ${!isPaid ? `<button type="button" onclick="window.openBuatTtfModal('${S().esc(invNo)}','${S().esc(pt.nama_pelanggan)}',${Number(pt.total_tagihan || 0)})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">TTF</button>` : ''}
+                          ${!isPaid ? `<a target="_blank" rel="noopener" href="${S().esc(waUrl)}" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">WA Tagih</a>` : ''}
                         </div>
                       </td>
                     </tr>`;
-                  }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Belum ada transaksi piutang pelanggan.</td></tr>'}
+                  }).join('') : '<tr><td colspan="10" class="text-center py-6 text-xs">Belum ada transaksi piutang usaha.</td></tr>'}
                 </tbody>
               </table>
             </div>
+            <div class="p-3.5 rounded-xl border flex flex-wrap justify-between gap-4 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="font-bold text-blue-600">Rekap Data Piutang Usaha</div>
+              <div class="flex flex-wrap gap-6">
+                <div>Total Piutang Usaha : <b class="font-mono-num text-sm text-amber-600">${S().rp(totalPiutangFiltered)}</b></div>
+                <div>Jumlah Transaksi Piutang Usaha : <b class="font-mono-num text-sm">${filteredPiutang.length} kali</b></div>
+              </div>
+            </div>
           </div>
-        </div>
-      ` : financeTab === 'hutang' ? `
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div class="ons-card p-4 lg:col-span-5">
+        </div>`;
+      })() : financeTab === 'hutang' ? (() => {
+        if (hutangSubView === 'riwayat') {
+          const payRows = jurnalAll.filter((j) => String(j.jenis_trx || '').includes('PEMBAYARAN_PBF') || String(j.jenis_trx || '').includes('PEMBAYARAN_UTANG')).filter((j) => {
+            if (hutangSearchQ) {
+              const hay = `${j.id_jurnal || ''} ${j.kategori || ''} ${j.referensi_id || ''}`.toLowerCase();
+              if (!hay.includes(hutangSearchQ.toLowerCase())) return false;
+            }
+            return true;
+          });
+          const totPay = payRows.reduce((s, x) => s + Number(x.nominal || 0), 0);
+          return `<div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="window.setHutangSubView('list')" class="ons-btn ons-btn-ghost text-xs">&larr; Kembali</button>
+                <h3 class="font-bold text-base">Riwayat Pembayaran Utang Usaha</h3>
+              </div>
+              <button type="button" onclick="window.exportUtangUsahaExcel('riwayat')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+            </div>
+            <input class="ons-input text-xs w-56" placeholder="Cari faktur / supplier..." value="${S().esc(hutangSearchQ)}" oninput="window.setHutangSearchQ(this.value)"/>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>No.</th><th>Waktu Transaksi</th><th>No. Transaksi</th><th>No. Faktur</th><th>Akun Kas</th><th>Keterangan</th><th class="text-right">Nominal Bayar</th></tr></thead>
+                <tbody>
+                  ${payRows.length ? payRows.slice().reverse().map((r, i) => `<tr>
+                    <td class="font-mono-num text-xs">${i + 1}</td>
+                    <td class="font-mono-num text-xs">${S().formatTgl(r.tanggal)}</td>
+                    <td class="font-mono-num text-xs font-bold">${S().esc(r.id_jurnal || '-')}</td>
+                    <td class="font-mono-num text-xs">${S().esc(r.referensi_id || '-')}</td>
+                    <td class="text-xs">${S().esc(r.metode || 'TRANSFER_BANK')}</td>
+                    <td class="text-xs">${S().esc(r.kategori || '-')}</td>
+                    <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(r.nominal || 0)}</td>
+                  </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Belum ada riwayat pembayaran utang usaha.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3.5 rounded-xl border flex flex-wrap justify-between gap-4 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="font-bold text-blue-600">Rekap Pembayaran Utang</div>
+              <div class="flex flex-wrap gap-6">
+                <div>Total Pembayaran Utang : <b class="font-mono-num text-sm text-emerald-600">${S().rp(totPay)}</b></div>
+                <div>Jumlah Transaksi : <b class="font-mono-num text-sm">${payRows.length} kali</b></div>
+              </div>
+            </div>
+          </div>`;
+        }
+        const filteredUtang = combinedOpenUtang.filter((u) => {
+          if (hutangStatusFilter === 'TEMPO_7H' && S().daysUntil(u.tgl_jatuh_tempo) > 7) return false;
+          if (hutangDueFilter && String(u.tgl_jatuh_tempo || '').slice(0, 10) > hutangDueFilter) return false;
+          if (hutangSearchQ) {
+            const hay = `${u.kreditur} ${u.no_faktur} ${u.keterangan}`.toLowerCase();
+            if (!hay.includes(hutangSearchQ.toLowerCase())) return false;
+          }
+          return true;
+        });
+        const totalUtangFiltered = filteredUtang.reduce((s, u) => s + Number(u.nominal_sisa || 0), 0);
+        return `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="ons-card p-4 lg:col-span-4">
             <h3 class="font-bold text-sm mb-3">Proyeksi AP Outflow 4 Minggu</h3>
             <div class="flex items-end gap-3 h-36 pt-2">
               ${['Mgg 1', 'Mgg 2', 'Mgg 3', 'Mgg 4+'].map((lbl, idx) => {
@@ -1052,33 +1434,65 @@
               }).join('')}
             </div>
             <div class="mt-4 pt-3 border-t text-xs flex justify-between font-bold" style="border-color:var(--ons-border)">
-              <span>Total Sisa Hutang Usaha PBF</span>
-              <span class="font-mono-num text-amber-600">${S().rp(openFaktur.reduce((s, f) => s + Number(f.sisa_hutang || 0), 0))}</span>
+              <span>Total Sisa Hutang Usaha</span>
+              <span class="font-mono-num text-amber-600">${S().rp(combinedOpenUtang.reduce((s, f) => s + Number(f.nominal_sisa || 0), 0))}</span>
             </div>
           </div>
-          <div class="ons-card p-4 lg:col-span-7">
-            <h3 class="font-bold text-sm mb-3">Radar Pelunasan / Cicilan Hutang PBF (${openFaktur.length} Faktur Aktif)</h3>
+          <div class="ons-card p-4 lg:col-span-8 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-bold text-base">Utang Usaha (${filteredUtang.length} Aktif)</h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.setHutangSubView('riwayat')" class="ons-btn ons-btn-emerald text-xs">Riwayat Pembayaran</button>
+                <button type="button" onclick="window.openImportUtangInfoModal()" class="ons-btn ons-btn-ghost text-xs">Import</button>
+                <button type="button" onclick="window.openCatatUtangModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Catat Utang</button>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <input class="ons-input text-xs w-44" placeholder="Cari kreditur / faktur..." value="${S().esc(hutangSearchQ)}" oninput="window.setHutangSearchQ(this.value)"/>
+                <input type="date" class="ons-input text-xs w-36" title="Tgl. Jatuh Tempo maks" value="${S().esc(hutangDueFilter)}" onchange="window.setHutangDueFilter(this.value)"/>
+                <select class="ons-select text-xs w-36" onchange="window.setHutangStatusFilter(this.value)">
+                  <option value="SEMUA" ${hutangStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Tempo</option>
+                  <option value="TEMPO_7H" ${hutangStatusFilter === 'TEMPO_7H' ? 'selected' : ''}>Tempo &le; 7 Hari</option>
+                </select>
+              </div>
+              <button type="button" onclick="window.exportUtangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+            </div>
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>Faktur &amp; PBF</th><th>Jatuh Tempo</th><th>Sisa Hutang</th><th>Aksi Pelunasan</th></tr></thead>
+                <thead><tr><th>Waktu Transaksi</th><th>Kreditur &amp; No. Faktur</th><th>Keterangan</th><th>Jatuh Tempo</th><th class="text-right">Nominal Awal</th><th class="text-right">Nominal Sisa</th><th>Actions</th></tr></thead>
                 <tbody>
-                  ${openFaktur.length ? openFaktur.map((f) => `<tr>
-                    <td class="text-xs"><b>${S().esc(f.no_faktur_pbf)}</b><br/>${S().esc(f.id_pbf)}</td>
-                    <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo)}</td>
-                    <td class="font-mono-num font-bold text-amber-600">${S().rp(f.sisa_hutang)}</td>
+                  ${filteredUtang.length ? filteredUtang.map((u) => `<tr>
+                    <td class="font-mono-num text-xs">${S().esc(u.waktu_trx || '-')}</td>
+                    <td class="text-xs"><b>${S().esc(u.no_faktur)}</b><div style="color:var(--ons-text-soft)">${S().esc(u.kreditur)}</div></td>
+                    <td class="text-xs">${S().esc(u.keterangan || '-')}</td>
+                    <td class="font-mono-num text-xs">${S().esc(u.tgl_jatuh_tempo || '-')}</td>
+                    <td class="text-right font-mono-num text-xs">${S().rp(u.nominal_awal)}</td>
+                    <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(u.nominal_sisa)}</td>
                     <td>
                       <div class="flex flex-wrap gap-1">
-                        <button onclick="window.openPayHutangModal('${S().esc(f.id_beli)}','${S().esc(f.no_faktur_pbf)}',${Number(f.sisa_hutang || 0)})" class="ons-btn ons-btn-primary text-xs py-1 px-2">Cicil</button>
-                        <button onclick="window.payHutangPbfNow('${S().esc(f.id_beli)}', ${Number(f.sisa_hutang || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2">Bayar Lunas</button>
+                        ${u.is_manual ? `
+                          <button type="button" onclick="window.payManualUtang('${S().esc(u.id_row)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Bayar Lunas</button>
+                        ` : `
+                          <button onclick="window.openPayHutangModal('${S().esc(u.id_row)}','${S().esc(u.no_faktur)}',${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Cicil</button>
+                          <button onclick="window.payHutangPbfNow('${S().esc(u.id_row)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Bayar Lunas</button>
+                        `}
                       </div>
                     </td>
-                  </tr>`).join('') : '<tr><td colspan="4" class="text-xs text-center py-6">Seluruh hutang faktur PBF telah lunas.</td></tr>'}
+                  </tr>`).join('') : '<tr><td colspan="7" class="text-xs text-center py-6">Seluruh hutang faktur PBF telah lunas.</td></tr>'}
                 </tbody>
               </table>
             </div>
+            <div class="p-3.5 rounded-xl border flex flex-wrap justify-between gap-4 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="font-bold text-blue-600">Rekap Data Utang Usaha</div>
+              <div class="flex flex-wrap gap-6">
+                <div>Total Utang Usaha : <b class="font-mono-num text-sm text-amber-600">${S().rp(totalUtangFiltered)}</b></div>
+                <div>Jumlah Transaksi Utang Usaha : <b class="font-mono-num text-sm">${filteredUtang.length} kali</b></div>
+              </div>
+            </div>
           </div>
-        </div>
-      ` : financeTab === 'pajak' ? `
+        </div>`;
+      })() : financeTab === 'pajak' ? `
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div class="ons-card p-5 lg:col-span-5 space-y-3 text-xs">
             <h3 class="font-bold text-sm">Rekonsiliasi Pajak Apotek (PPN 11% &amp; PPh Final 0.5%)</h3>
@@ -1156,6 +1570,550 @@
   };
   global.setFinanceDateRange = (from, to) => { financeDateFrom = from || ''; financeDateTo = to || ''; global.renderActiveView(); };
   global.setJurnalFilter = (v) => { jurnalFilter = v || 'SEMUA'; global.renderActiveView(); };
+  global.setAkunKasSearchQ = (q) => { akunKasSearchQ = q || ''; global.renderActiveView(); };
+  global.setAkunKasStatusFilter = (s) => { akunKasStatusFilter = s || 'SEMUA'; global.renderActiveView(); };
+  global.setKasBookAccountFilter = (id) => { kasBookAccountFilter = id || 'SEMUA'; global.renderActiveView(); };
+  global.setKasBookSearchQ = (q) => { kasBookSearchQ = q || ''; global.renderActiveView(); };
+  global.openBukuKasForAkun = (idAkun) => {
+    kasBookAccountFilter = idAkun || 'SEMUA';
+    global.setFinanceTab('jurnal');
+  };
+
+  let akunKasJenisTemp = 'bank';
+  global.openAddAkunKasModal = () => {
+    akunKasJenisTemp = 'bank';
+    S().openModal(`<div class="p-6 space-y-3.5 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-blue-600">Tambah Akun Kas</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div><label class="font-semibold block mb-1">Nama Akun Kas *</label><input id="akNamaInp" class="ons-input" placeholder="Mis. Bank BCA Operasional / QRIS Toko"/></div>
+      <div><label class="font-semibold block mb-1">Deskripsi</label><input id="akDescInp" class="ons-input" placeholder="Rekening operasional utama apotek"/></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Kode Akun Kustom</label><input id="akKodeInp" class="ons-input font-mono-num" placeholder="1-102"/></div>
+        <div><label class="font-semibold block mb-1">Saldo Awal (Rp)</label><input id="akSaldoAwalInp" type="number" min="0" class="ons-input font-mono-num" value="0"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Catatan</label><input id="akCatatanInp" class="ons-input" placeholder="Opsional"/></div>
+      <div>
+        <label class="font-semibold block mb-1">Jenis Akun *</label>
+        <div class="grid grid-cols-3 gap-2">
+          ${['bank', 'ewallet', 'other'].map((j) => `<button type="button" id="akJenisBtn_${j}" onclick="window.setAkunKasJenisInp('${j}')" class="ons-btn ${j === 'bank' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-2">${j}</button>`).join('')}
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.saveAkunKasModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan</button>
+      </div>
+    </div>`, '460px');
+  };
+  global.setAkunKasJenisInp = (j) => {
+    akunKasJenisTemp = j || 'other';
+    ['bank', 'ewallet', 'other'].forEach((k) => {
+      const btn = document.getElementById('akJenisBtn_' + k);
+      if (btn) btn.className = `ons-btn ${k === akunKasJenisTemp ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-2`;
+    });
+  };
+  global.saveAkunKasModal = () => {
+    const nama = String((document.getElementById('akNamaInp') || {}).value || '').trim();
+    if (!nama) return global.toast('Nama Akun Kas wajib diisi.', 'warn');
+    const list = _getKasAccountsList();
+    list.push({
+      id_akun: 'KAS-' + Date.now().toString().slice(-5),
+      nama,
+      deskripsi: String((document.getElementById('akDescInp') || {}).value || '').trim() || ('Akun ' + nama),
+      kode_kustom: String((document.getElementById('akKodeInp') || {}).value || '').trim(),
+      catatan: String((document.getElementById('akCatatanInp') || {}).value || '').trim(),
+      jenis: akunKasJenisTemp || 'other',
+      saldo_awal: Math.max(0, Number((document.getElementById('akSaldoAwalInp') || {}).value || 0)),
+      status: 'Aktif'
+    });
+    _writeFinLocalList(KAS_ACCOUNTS_KEY, list);
+    S().closeModal();
+    global.toast('Akun Kas "' + nama + '" berhasil ditambahkan.', 'ok');
+    global.renderActiveView();
+  };
+  global.openTransferKasModal = (fromAkunId) => {
+    const accounts = _computeKasAccountsWithBalance(S().AppState);
+    if (accounts.length < 2) {
+      return global.toast('Tambahkan minimal 1 akun kas tujuan terlebih dahulu (+ Akun Kas Baru).', 'warn');
+    }
+    const targets = accounts.filter((a) => a.id_akun !== fromAkunId);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base">Transfer Saldo Antar Akun Kas</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div><label class="font-semibold block mb-1">Dari Akun Kas</label>
+        <select id="trfKasFrom" class="ons-select">
+          ${accounts.map((a) => `<option value="${S().esc(a.id_akun)}" ${a.id_akun === fromAkunId ? 'selected' : ''}>${S().esc(a.nama)} (Saldo: ${S().rp(a.saldo_saat_ini)})</option>`).join('')}
+        </select>
+      </div>
+      <div><label class="font-semibold block mb-1">Ke Akun Kas Tujuan</label>
+        <select id="trfKasTo" class="ons-select">
+          ${targets.map((a) => `<option value="${S().esc(a.id_akun)}">${S().esc(a.nama)} (Saldo: ${S().rp(a.saldo_saat_ini)})</option>`).join('')}
+        </select>
+      </div>
+      <div><label class="font-semibold block mb-1">Nominal Transfer (Rp) *</label><input id="trfKasAmt" type="number" min="1" class="ons-input font-mono-num" value="100000"/></div>
+      <div><label class="font-semibold block mb-1">Keterangan</label><input id="trfKasNote" class="ons-input" value="Setor / pemindahan saldo antar kas"/></div>
+      <button type="button" onclick="window.submitTransferKas()" class="ons-btn ons-btn-primary w-full font-bold py-2.5">Proses Transfer Antar Kas</button>
+    </div>`, '440px');
+  };
+  global.submitTransferKas = async () => {
+    try {
+      const fromId = (document.getElementById('trfKasFrom') || {}).value || '';
+      const toId = (document.getElementById('trfKasTo') || {}).value || '';
+      const amt = Number((document.getElementById('trfKasAmt') || {}).value || 0);
+      const note = String((document.getElementById('trfKasNote') || {}).value || '').trim();
+      if (!fromId || !toId || fromId === toId) throw new Error('Pilih akun asal & tujuan yang berbeda.');
+      if (amt <= 0) throw new Error('Nominal transfer harus > 0.');
+      const accounts = _getKasAccountsList();
+      const akFrom = accounts.find((a) => a.id_akun === fromId) || { nama: fromId };
+      const akTo = accounts.find((a) => a.id_akun === toId) || { nama: toId };
+      const refCode = 'TRF-' + Date.now().toString().slice(-6);
+      const per = new Date().toISOString().slice(0, 7);
+      await API().callApi('finance.saveJurnal', { jenis_trx: 'KELUAR_TRANSFER_KAS', kategori: `Transfer ke ${akTo.nama}${note ? ' (' + note + ')' : ''}`, nominal: amt, metode: akFrom.nama, referensi_id: `${refCode} [AKUN:${fromId}]`, periode_bulan: per }, { isWrite: true });
+      await API().callApi('finance.saveJurnal', { jenis_trx: 'MASUK_TRANSFER_KAS', kategori: `Transfer dari ${akFrom.nama}${note ? ' (' + note + ')' : ''}`, nominal: amt, metode: akTo.nama, referensi_id: `${refCode} [AKUN:${toId}]`, periode_bulan: per }, { isWrite: true });
+      S().closeModal();
+      global.toast(`Transfer ${S().rp(amt)} dari ${akFrom.nama} ke ${akTo.nama} tercatat.`, 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.exportAkunKasExcel = () => {
+    const rows = _computeKasAccountsWithBalance(S().AppState).map((a, i) => ({ no: i + 1, nama: a.nama, kode: a.kode_kustom || '-', deskripsi: a.deskripsi || '-', jenis: a.jenis || 'other', saldo: a.saldo_saat_ini, status: a.status || 'Aktif' }));
+    S().exportDataset('xlsx', 'Daftar Akun Kas', `daftar-akun-kas-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Akun Kas', type: 'wrap', width: 24 },
+      { key: 'kode', label: 'Kode Akun', type: 'str', width: 12 },
+      { key: 'deskripsi', label: 'Deskripsi', type: 'wrap', width: 28 },
+      { key: 'jenis', label: 'Jenis', type: 'str', width: 12 },
+      { key: 'saldo', label: 'Saldo Saat Ini', type: 'currency', sum: true, width: 18 },
+      { key: 'status', label: 'Status', type: 'str', width: 12 }
+    ], rows, { sheetName: 'AkunKas' });
+  };
+
+  let kasTrxTabTemp = 'KELUAR';
+  global.openCreateKasTransaksiModal = (mode) => {
+    kasTrxTabTemp = mode === 'MASUK' ? 'MASUK' : 'KELUAR';
+    const accounts = _getKasAccountsList();
+    const autoNo = 'TRXB' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.floor(10 + Math.random() * 89);
+    const nowDt = new Date().toISOString().slice(0, 16);
+    const outCats = ['Pembayaran Sewa Tempat', 'Biaya Listrik, Air & Internet', 'Gaji & Tunjangan Karyawan', 'Biaya Kemasan & Struk', 'Biaya Operasional Lainnya'];
+    const inCats = ['Pendapatan Lainnya', 'Penambahan Modal Pemilik', 'Pendapatan Jasa Klinik / Praktek', 'Cashback / Rebate PBF'];
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-blue-600">Buat Transaksi Baru (Buku Kas)</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" id="kasTrxBtnKeluar" onclick="window.switchKasTrxModalTab('KELUAR')" class="ons-btn ${kasTrxTabTemp === 'KELUAR' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-2 font-bold">Pengeluaran</button>
+        <button type="button" id="kasTrxBtnMasuk" onclick="window.switchKasTrxModalTab('MASUK')" class="ons-btn ${kasTrxTabTemp === 'MASUK' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-2 font-bold">Pemasukan</button>
+      </div>
+      <div><label class="font-semibold block mb-1">Pilih Transaksi</label>
+        <select id="kasTrxKatSel" class="ons-select">
+          ${(kasTrxTabTemp === 'KELUAR' ? outCats : inCats).map((c) => `<option value="${S().esc(c)}">${S().esc(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div><label id="kasTrxAkunLbl" class="font-semibold block mb-1">${kasTrxTabTemp === 'KELUAR' ? 'Pilih Akun Pembayaran' : 'Pilih Akun Penerima'}</label>
+        <select id="kasTrxAkunSel" class="ons-select">
+          ${accounts.map((a) => `<option value="${S().esc(a.id_akun)}">${S().esc(a.nama)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Waktu Transaksi</label><input id="kasTrxWaktu" type="datetime-local" class="ons-input font-mono-num" value="${nowDt}"/></div>
+        <div><label class="font-semibold block mb-1">Nilai Bayar (Rp) *</label><input id="kasTrxNominal" type="number" min="1" class="ons-input font-mono-num" value="0"/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">No. Transaksi</label><input id="kasTrxNo" class="ons-input font-mono-num" value="${autoNo}"/></div>
+        <div><label class="font-semibold block mb-1">Keterangan</label><input id="kasTrxKet" class="ons-input" placeholder="Opsional"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Upload Bukti Transaksi (Opsional)</label><input id="kasTrxBuktiInp" type="file" accept="image/*,.pdf" class="ons-input text-xs"/></div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitCreateKasTransaksi()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan</button>
+      </div>
+    </div>`, '480px');
+  };
+  global.switchKasTrxModalTab = (tab) => {
+    kasTrxTabTemp = tab === 'MASUK' ? 'MASUK' : 'KELUAR';
+    const bKel = document.getElementById('kasTrxBtnKeluar');
+    const bMas = document.getElementById('kasTrxBtnMasuk');
+    if (bKel) bKel.className = `ons-btn ${kasTrxTabTemp === 'KELUAR' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-2 font-bold`;
+    if (bMas) bMas.className = `ons-btn ${kasTrxTabTemp === 'MASUK' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-2 font-bold`;
+    const lbl = document.getElementById('kasTrxAkunLbl');
+    if (lbl) lbl.textContent = kasTrxTabTemp === 'KELUAR' ? 'Pilih Akun Pembayaran' : 'Pilih Akun Penerima';
+    const sel = document.getElementById('kasTrxKatSel');
+    if (sel) {
+      const cats = kasTrxTabTemp === 'KELUAR'
+        ? ['Pembayaran Sewa Tempat', 'Biaya Listrik, Air & Internet', 'Gaji & Tunjangan Karyawan', 'Biaya Kemasan & Struk', 'Biaya Operasional Lainnya']
+        : ['Pendapatan Lainnya', 'Penambahan Modal Pemilik', 'Pendapatan Jasa Klinik / Praktek', 'Cashback / Rebate PBF'];
+      sel.innerHTML = cats.map((c) => `<option value="${S().esc(c)}">${S().esc(c)}</option>`).join('');
+    }
+  };
+  global.submitCreateKasTransaksi = async () => {
+    try {
+      const kat = (document.getElementById('kasTrxKatSel') || {}).value || 'Transaksi Kas';
+      const akunId = (document.getElementById('kasTrxAkunSel') || {}).value || 'KAS-01';
+      const waktu = (document.getElementById('kasTrxWaktu') || {}).value || new Date().toISOString();
+      const nom = Number((document.getElementById('kasTrxNominal') || {}).value || 0);
+      const noTrx = String((document.getElementById('kasTrxNo') || {}).value || '').trim();
+      const ket = String((document.getElementById('kasTrxKet') || {}).value || '').trim();
+      const fileInp = document.getElementById('kasTrxBuktiInp');
+      const fileName = (fileInp && fileInp.files && fileInp.files[0]) ? fileInp.files[0].name : '';
+      if (nom <= 0) throw new Error('Nilai bayar harus lebih dari 0.');
+      const accounts = _getKasAccountsList();
+      const akObj = accounts.find((a) => a.id_akun === akunId) || { nama: 'Kas Utama' };
+      const fullKat = `${kat}${ket ? ' - ' + ket : ''}${fileName ? ' [Bukti: ' + fileName + ']' : ''}`;
+      await API().callApi('finance.saveJurnal', {
+        tanggal: waktu.length === 16 ? waktu + ':00Z' : waktu,
+        jenis_trx: kasTrxTabTemp === 'MASUK' ? 'MASUK_LAINNYA' : 'KELUAR_OPERASIONAL',
+        kategori: fullKat,
+        nominal: nom,
+        metode: akObj.nama,
+        referensi_id: `${noTrx || ('TRX-' + Date.now())} [AKUN:${akunId}]`,
+        periode_bulan: String(waktu || '').slice(0, 7) || new Date().toISOString().slice(0, 7)
+      }, { isWrite: true });
+      S().closeModal();
+      global.toast('Transaksi Buku Kas berhasil disimpan!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.openKasTrxDetailModal = (idJurnal) => {
+    const j = (S().AppState.jurnalKeuangan || []).find((x) => String(x.id_jurnal || '') === String(idJurnal));
+    if (!j) return global.toast('Detail entri buku kas tidak ditemukan.', 'warn');
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)"><h3 class="font-bold text-base">Detail Transaksi Kas</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="p-3.5 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div>ID Jurnal: <b class="font-mono-num">${S().esc(j.id_jurnal || '-')}</b></div>
+        <div>Waktu: <b class="font-mono-num">${S().formatTgl(j.tanggal, true)}</b></div>
+        <div>Jenis: <b>${S().esc(j.jenis_trx)}</b></div>
+        <div>Aktivitas / Kategori: <b>${S().esc(j.kategori)}</b></div>
+        <div>Nominal: <b class="font-mono-num text-sm">${S().rp(j.nominal)}</b></div>
+        <div>Akun / Metode: <b>${S().esc(j.metode || '-')}</b></div>
+        <div>Referensi: <b class="font-mono-num">${S().esc(j.referensi_id || '-')}</b></div>
+        <div>Status Lock: <b>${S().esc(j.status_lock || 'TERBUKA')}</b></div>
+      </div>
+    </div>`, '440px');
+  };
+  global.exportBukuKasExcel = () => {
+    const rows = (S().AppState.jurnalKeuangan || []).map((j, i) => ({
+      no: i + 1, tanggal: String(j.tanggal || '').slice(0, 10), jenis: j.jenis_trx, aktivitas: j.kategori,
+      masuk: String(j.jenis_trx || '').includes('MASUK') ? Number(j.nominal || 0) : 0,
+      keluar: String(j.jenis_trx || '').includes('MASUK') ? 0 : Number(j.nominal || 0),
+      akun: j.metode || 'Kas Utama', ref: j.referensi_id || '-'
+    }));
+    if (!rows.length) return global.toast('Belum ada data Buku Kas.', 'warn');
+    S().exportDataset('xlsx', 'Buku Kas Apotek', `buku-kas-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'tanggal', label: 'Tanggal', type: 'str', width: 13 },
+      { key: 'jenis', label: 'Jenis', type: 'str', width: 20 },
+      { key: 'aktivitas', label: 'Aktivitas', type: 'wrap', width: 32 },
+      { key: 'masuk', label: 'Masuk (Rp)', type: 'currency', sum: true, width: 16 },
+      { key: 'keluar', label: 'Keluar (Rp)', type: 'currency', sum: true, width: 16 },
+      { key: 'akun', label: 'Akun Kas', type: 'str', width: 16 },
+      { key: 'ref', label: 'Referensi', type: 'str', width: 20 }
+    ], rows, { sheetName: 'BukuKas' });
+  };
+
+  global.setHutangSubView = (v) => { hutangSubView = v === 'riwayat' ? 'riwayat' : 'list'; global.renderActiveView(); };
+  global.setHutangSearchQ = (q) => { hutangSearchQ = q || ''; global.renderActiveView(); };
+  global.setHutangDueFilter = (d) => { hutangDueFilter = d || ''; global.renderActiveView(); };
+  global.setHutangStatusFilter = (s) => { hutangStatusFilter = s || 'SEMUA'; global.renderActiveView(); };
+  global.openCatatUtangModal = () => {
+    const pbfs = S().AppState.supplierPbf || [];
+    const autoNo = 'INVB' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-1';
+    const today = new Date().toISOString().slice(0, 10);
+    const dueDef = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-blue-600">Detail Utang Usaha</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Kode Faktur</label><input id="cuKodeFak" class="ons-input font-mono-num" value="${autoNo}"/></div>
+        <div><label class="font-semibold block mb-1">Kode Invoice Eksternal</label><input id="cuKodeEks" class="ons-input font-mono-num" placeholder="Opsional"/></div>
+      </div>
+      <div>
+        <label class="font-semibold block mb-1">Supplier *</label>
+        <div class="flex gap-2">
+          <select id="cuSupplier" class="ons-select flex-1">
+            ${pbfs.length ? pbfs.map((p) => `<option value="${S().esc(p.nama_pbf)}">${S().esc(p.nama_pbf)}</option>`).join('') : '<option value="Supplier Umum">Supplier Umum</option>'}
+          </select>
+          <button type="button" onclick="ONSStore.closeModal();navigateView('obat','supplier')" class="ons-btn ons-btn-primary text-xs px-3" title="Kelola Supplier">+</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="font-semibold block mb-1">Jumlah Utang (Rp) *</label><input id="cuJumlah" type="number" min="1" class="ons-input font-mono-num" value="0" oninput="window.refreshUtangJurnalPreview()"/></div>
+        <div><label class="font-semibold block mb-1">Waktu Transaksi</label><input id="cuWaktu" type="date" class="ons-input" value="${today}"/></div>
+        <div><label class="font-semibold block mb-1">Tanggal Jatuh Tempo</label><input id="cuTempo" type="date" class="ons-input" value="${dueDef}"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Catatan</label><input id="cuCatatan" class="ons-input" placeholder="Opsional keterangan utang"/></div>
+      <div><label class="font-semibold block mb-1">Pilih Akun Lawan</label>
+        <select id="cuAkunLawan" class="ons-select" onchange="window.refreshUtangJurnalPreview()">
+          <option value="Persediaan Obat & Alkes">Persediaan Obat &amp; Alkes</option>
+          <option value="Beban Sewa & Operasional">Beban Sewa &amp; Operasional</option>
+          <option value="Saldo Awal Utang Usaha">Saldo Awal Utang Usaha</option>
+          <option value="Utang Biaya / Lainnya">Utang Biaya / Lainnya</option>
+        </select>
+      </div>
+      <div class="pt-1">
+        <div class="font-bold text-blue-600 mb-1.5">Jurnal Transaksi</div>
+        <div class="ons-table-wrap">
+          <table class="ons-table"><thead><tr><th>No.</th><th>Akun</th><th class="text-right">Debit</th><th class="text-right">Kredit</th></tr></thead><tbody id="cuJurnalPrev">
+            <tr><td>1</td><td>Hutang Usaha</td><td class="text-right">-</td><td class="text-right font-mono-num">Rp 0</td></tr>
+            <tr><td>2</td><td>Persediaan Obat &amp; Alkes</td><td class="text-right font-mono-num">Rp 0</td><td class="text-right">-</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitCatatUtangModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan</button>
+      </div>
+    </div>`, '560px');
+  };
+  global.refreshUtangJurnalPreview = () => {
+    const val = Math.max(0, Number((document.getElementById('cuJumlah') || {}).value || 0));
+    const akun = (document.getElementById('cuAkunLawan') || {}).value || 'Persediaan Obat & Alkes';
+    const tb = document.getElementById('cuJurnalPrev');
+    if (tb) tb.innerHTML = `<tr><td>1</td><td>Hutang Usaha</td><td class="text-right">-</td><td class="text-right font-mono-num">${S().rp(val)}</td></tr><tr><td>2</td><td>${S().esc(akun)}</td><td class="text-right font-mono-num">${S().rp(val)}</td><td class="text-right">-</td></tr>`;
+  };
+  global.submitCatatUtangModal = () => {
+    const amt = Math.max(0, Number((document.getElementById('cuJumlah') || {}).value || 0));
+    if (amt <= 0) return global.toast('Jumlah Utang harus lebih dari 0.', 'warn');
+    const list = _readFinLocalList(MANUAL_UTANG_KEY);
+    list.unshift({
+      id_utang: 'UTG-' + Date.now().toString().slice(-6),
+      kode_faktur: String((document.getElementById('cuKodeFak') || {}).value || '').trim() || ('INVB-' + Date.now()),
+      kode_eksternal: String((document.getElementById('cuKodeEks') || {}).value || '').trim(),
+      id_pbf: (document.getElementById('cuSupplier') || {}).value || 'Supplier Umum',
+      jumlah_utang: amt,
+      sisa_utang: amt,
+      waktu_trx: (document.getElementById('cuWaktu') || {}).value || new Date().toISOString().slice(0, 10),
+      tgl_jatuh_tempo: (document.getElementById('cuTempo') || {}).value || new Date().toISOString().slice(0, 10),
+      catatan: String((document.getElementById('cuCatatan') || {}).value || '').trim(),
+      akun_lawan: (document.getElementById('cuAkunLawan') || {}).value || 'Persediaan Obat & Alkes',
+      status_bayar: 'BELUM_LUNAS'
+    });
+    _writeFinLocalList(MANUAL_UTANG_KEY, list);
+    S().closeModal();
+    global.toast('Catatan Utang Usaha baru berhasil disimpan.', 'ok');
+    global.renderActiveView();
+  };
+  global.payManualUtang = async (idUtang, nom) => {
+    try {
+      const list = _readFinLocalList(MANUAL_UTANG_KEY);
+      const target = list.find((u) => u.id_utang === idUtang);
+      if (!target) throw new Error('Data utang manual tidak ditemukan.');
+      await API().callApi('finance.saveJurnal', {
+        jenis_trx: 'KELUAR_PEMBAYARAN_UTANG',
+        kategori: `Bayar Utang ${target.kode_faktur} (${target.id_pbf})`,
+        nominal: Number(nom || target.sisa_utang || 0),
+        metode: 'TRANSFER_BANK',
+        referensi_id: target.kode_faktur,
+        periode_bulan: new Date().toISOString().slice(0, 7)
+      }, { isWrite: true });
+      target.sisa_utang = 0;
+      target.status_bayar = 'LUNAS';
+      _writeFinLocalList(MANUAL_UTANG_KEY, list);
+      global.toast('Pelunasan Utang Usaha dicatat ke Buku Kas!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.openImportUtangInfoModal = () => {
+    global.toast('Gunakan Import Faktur PBF di menu Pembelian & Faktur atau + Catat Utang untuk saldo awal.', 'info');
+  };
+  global.exportUtangUsahaExcel = (mode) => {
+    const st = S().AppState;
+    if (mode === 'riwayat') {
+      const rows = (st.jurnalKeuangan || []).filter((j) => String(j.jenis_trx || '').includes('PEMBAYARAN_PBF') || String(j.jenis_trx || '').includes('PEMBAYARAN_UTANG')).map((r, i) => ({ no: i + 1, tanggal: String(r.tanggal || '').slice(0, 10), faktur: r.referensi_id || '-', keterangan: r.kategori, metode: r.metode, nominal: Number(r.nominal || 0) }));
+      if (!rows.length) return global.toast('Belum ada riwayat pembayaran utang.', 'warn');
+      return S().exportDataset('xlsx', 'Riwayat Pembayaran Utang', `riwayat-utang-${new Date().toISOString().slice(0, 10)}`, [
+        { key: 'no', label: 'No', type: 'int', width: 6 },
+        { key: 'tanggal', label: 'Tanggal', type: 'str', width: 13 },
+        { key: 'faktur', label: 'No. Faktur', type: 'str', width: 18 },
+        { key: 'keterangan', label: 'Keterangan', type: 'wrap', width: 28 },
+        { key: 'metode', label: 'Akun Kas', type: 'str', width: 16 },
+        { key: 'nominal', label: 'Nominal Bayar', type: 'currency', sum: true, width: 18 }
+      ], rows, { sheetName: 'RiwayatUtang' });
+    }
+    const rows = (st.fakturPbf || []).filter((f) => Number(f.sisa_hutang || 0) > 0).map((f, i) => ({ no: i + 1, faktur: f.no_faktur_pbf, supplier: f.id_pbf, tempo: f.tgl_jatuh_tempo, sisa: Number(f.sisa_hutang || 0) }));
+    if (!rows.length) return global.toast('Tidak ada utang aktif.', 'warn');
+    S().exportDataset('xlsx', 'Daftar Utang Usaha PBF', `utang-usaha-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'faktur', label: 'No. Faktur', type: 'str', width: 20 },
+      { key: 'supplier', label: 'Kreditur', type: 'wrap', width: 24 },
+      { key: 'tempo', label: 'Jatuh Tempo', type: 'str', width: 14 },
+      { key: 'sisa', label: 'Nominal Sisa', type: 'currency', sum: true, width: 18 }
+    ], rows, { sheetName: 'UtangUsaha' });
+  };
+
+  global.setPiutangSubView = (v) => { piutangSubView = ['list', 'ttf', 'riwayat'].includes(v) ? v : 'list'; global.renderActiveView(); };
+  global.setPiutangSearchQ = (q) => { piutangSearchQ = q || ''; global.renderActiveView(); };
+  global.setPiutangDueFilter = (d) => { piutangDueFilter = d || ''; global.renderActiveView(); };
+  global.setPiutangStatusFilter = (s) => { piutangStatusFilter = s || 'SEMUA'; global.renderActiveView(); };
+  global.openCatatPiutangModal = () => {
+    const members = S().AppState.members || [];
+    const autoNo = 'INVP' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-1';
+    const today = new Date().toISOString().slice(0, 10);
+    const dueDef = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-blue-600">Detail Piutang Usaha</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">Kode Faktur</label><input id="cpKodeFak" class="ons-input font-mono-num" value="${autoNo}"/></div>
+        <div><label class="font-semibold block mb-1">Kode Invoice Eksternal</label><input id="cpKodeEks" class="ons-input font-mono-num" placeholder="Opsional"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Customer *</label>
+        <input id="cpCustomer" list="cpCustList" class="ons-input" placeholder="Ketik atau pilih nama pelanggan / klinik / dokter"/>
+        <datalist id="cpCustList">${members.map((m) => `<option value="${S().esc(m.nama_lengkap || m.nama || '')}">`).join('')}</datalist>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="font-semibold block mb-1">Jumlah Piutang (Rp) *</label><input id="cpJumlah" type="number" min="1" class="ons-input font-mono-num" value="0" oninput="window.refreshPiutangJurnalPreview()"/></div>
+        <div><label class="font-semibold block mb-1">Waktu Transaksi</label><input id="cpWaktu" type="date" class="ons-input" value="${today}"/></div>
+        <div><label class="font-semibold block mb-1">Tanggal Jatuh Tempo</label><input id="cpTempo" type="date" class="ons-input" value="${dueDef}"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Catatan</label><input id="cpCatatan" class="ons-input" placeholder="Opsional keterangan piutang"/></div>
+      <div><label class="font-semibold block mb-1">Pilih Akun Lawan</label>
+        <select id="cpAkunLawan" class="ons-select" onchange="window.refreshPiutangJurnalPreview()">
+          <option value="Pendapatan Penjualan Obat">Pendapatan Penjualan Obat</option>
+          <option value="Pendapatan Jasa Klinik / Praktek">Pendapatan Jasa Klinik / Praktek</option>
+          <option value="Saldo Awal Piutang Usaha">Saldo Awal Piutang Usaha</option>
+        </select>
+      </div>
+      <div class="pt-1">
+        <div class="font-bold text-blue-600 mb-1.5">Jurnal Transaksi</div>
+        <div class="ons-table-wrap">
+          <table class="ons-table"><thead><tr><th>No.</th><th>Akun</th><th class="text-right">Debit</th><th class="text-right">Kredit</th></tr></thead><tbody id="cpJurnalPrev">
+            <tr><td>1</td><td>Piutang Usaha</td><td class="text-right font-mono-num">Rp 0</td><td class="text-right">-</td></tr>
+            <tr><td>2</td><td>Pendapatan Penjualan Obat</td><td class="text-right">-</td><td class="text-right font-mono-num">Rp 0</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitCatatPiutangModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan</button>
+      </div>
+    </div>`, '560px');
+  };
+  global.refreshPiutangJurnalPreview = () => {
+    const val = Math.max(0, Number((document.getElementById('cpJumlah') || {}).value || 0));
+    const akun = (document.getElementById('cpAkunLawan') || {}).value || 'Pendapatan Penjualan Obat';
+    const tb = document.getElementById('cpJurnalPrev');
+    if (tb) tb.innerHTML = `<tr><td>1</td><td>Piutang Usaha</td><td class="text-right font-mono-num">${S().rp(val)}</td><td class="text-right">-</td></tr><tr><td>2</td><td>${S().esc(akun)}</td><td class="text-right">-</td><td class="text-right font-mono-num">${S().rp(val)}</td></tr>`;
+  };
+  global.submitCatatPiutangModal = () => {
+    const cust = String((document.getElementById('cpCustomer') || {}).value || '').trim();
+    const amt = Math.max(0, Number((document.getElementById('cpJumlah') || {}).value || 0));
+    if (!cust) return global.toast('Customer wajib diisi.', 'warn');
+    if (amt <= 0) return global.toast('Jumlah Piutang harus lebih dari 0.', 'warn');
+    const list = _readFinLocalList(MANUAL_PIUTANG_KEY);
+    list.unshift({
+      id_piutang: 'PTGM-' + Date.now().toString().slice(-6),
+      kode_faktur: String((document.getElementById('cpKodeFak') || {}).value || '').trim() || ('INVP-' + Date.now()),
+      kode_eksternal: String((document.getElementById('cpKodeEks') || {}).value || '').trim(),
+      nama_pelanggan: cust,
+      metode_bayar: 'TEMPO',
+      total_tagihan: amt,
+      total_dibayar: 0,
+      sisa_piutang: amt,
+      waktu_trx: (document.getElementById('cpWaktu') || {}).value || new Date().toISOString().slice(0, 10),
+      tgl_jatuh_tempo: (document.getElementById('cpTempo') || {}).value || new Date().toISOString().slice(0, 10),
+      catatan: String((document.getElementById('cpCatatan') || {}).value || '').trim(),
+      akun_lawan: (document.getElementById('cpAkunLawan') || {}).value || 'Pendapatan Penjualan Obat',
+      status_piutang: 'BELUM_LUNAS'
+    });
+    _writeFinLocalList(MANUAL_PIUTANG_KEY, list);
+    S().closeModal();
+    global.toast('Catatan Piutang Usaha berhasil disimpan.', 'ok');
+    global.renderActiveView();
+  };
+  global.openBuatTtfModal = (kodeFaktur, namaPel, tagihan) => {
+    const autoTtf = 'TTF-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.floor(10 + Math.random() * 89);
+    const today = new Date().toISOString().slice(0, 10);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)"><h3 class="font-bold text-base text-blue-600">Terbitkan Tanda Terima Faktur (TTF)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-semibold block mb-1">No. TTF *</label><input id="ttfNoInp" class="ons-input font-mono-num" value="${autoTtf}"/></div>
+        <div><label class="font-semibold block mb-1">Kode Faktur *</label><input id="ttfFakInp" class="ons-input font-mono-num" value="${S().esc(kodeFaktur || '')}"/></div>
+      </div>
+      <div><label class="font-semibold block mb-1">Nama Pelanggan / Debitur</label><input id="ttfPelInp" class="ons-input" value="${S().esc(namaPel || '')}"/></div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="font-semibold block mb-1">Jadwal Penyerahan</label><input id="ttfJadwalInp" type="date" class="ons-input" value="${today}"/></div>
+        <div><label class="font-semibold block mb-1">Sales / Kurir</label><input id="ttfSalesInp" class="ons-input" value="Sales Apotek"/></div>
+        <div><label class="font-semibold block mb-1">Tagihan Awal (Rp)</label><input id="ttfTagihanInp" type="number" class="ons-input font-mono-num" value="${Number(tagihan || 0)}"/></div>
+      </div>
+      <button type="button" onclick="window.submitBuatTtfModal()" class="ons-btn ons-btn-emerald w-full font-bold py-2">Simpan Tanda Terima Faktur</button>
+    </div>`, '500px');
+  };
+  global.submitBuatTtfModal = () => {
+    const noTtf = String((document.getElementById('ttfNoInp') || {}).value || '').trim();
+    const kodeF = String((document.getElementById('ttfFakInp') || {}).value || '').trim();
+    if (!noTtf || !kodeF) return global.toast('No. TTF dan Kode Faktur wajib diisi.', 'warn');
+    const list = _readFinLocalList(TTF_PIUTANG_KEY);
+    list.unshift({
+      id_ttf: 'TTF-' + Date.now().toString().slice(-6),
+      waktu_terbit: new Date().toISOString().slice(0, 10),
+      no_ttf: noTtf,
+      kode_faktur: kodeF,
+      nama_pelanggan: String((document.getElementById('ttfPelInp') || {}).value || '').trim() || '-',
+      jadwal_serah: (document.getElementById('ttfJadwalInp') || {}).value || new Date().toISOString().slice(0, 10),
+      sales: String((document.getElementById('ttfSalesInp') || {}).value || '').trim() || 'Sales Apotek',
+      status: 'TERBIT',
+      tagihan_awal: Number((document.getElementById('ttfTagihanInp') || {}).value || 0)
+    });
+    _writeFinLocalList(TTF_PIUTANG_KEY, list);
+    S().closeModal();
+    piutangSubView = 'ttf';
+    global.toast('Tanda Terima Faktur (TTF) berhasil diterbitkan.', 'ok');
+    global.renderActiveView();
+  };
+  global.printKwitansiPiutang = (idJurnal) => {
+    const j = (S().AppState.jurnalKeuangan || []).find((x) => String(x.id_jurnal || '') === String(idJurnal));
+    if (!j) return global.toast('Data pembayaran piutang tidak ditemukan.', 'warn');
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;border:1px solid #cbd5e1;border-radius:8px">
+      <h2 style="margin:0 0 6px;font-size:16px">KWITANSI PEMBAYARAN PIUTANG</h2>
+      <div style="font-size:12px;color:#475569;margin-bottom:12px">${S().esc(S().getStoreProfile().nama_usaha || 'Apotek ONS Farma')}</div>
+      <div style="font-size:12px;line-height:1.7">
+        <div>No. Transaksi: <b>${S().esc(j.id_jurnal)}</b></div>
+        <div>Tanggal: <b>${S().formatTgl(j.tanggal, true)}</b></div>
+        <div>Referensi Nota / Faktur: <b>${S().esc(j.referensi_id || '-')}</b></div>
+        <div>Keterangan: <b>${S().esc(j.kategori)}</b></div>
+        <div>Nominal Diterima: <b style="font-size:15px">${S().rp(j.nominal)}</b> (${S().esc(j.metode || 'TUNAI')})</div>
+      </div>
+    </div>`;
+    S().printHtmlZone(html, 'Kwitansi Pembayaran Piutang');
+  };
+  global.openImportPiutangInfoModal = () => {
+    global.toast('Gunakan + Catat Piutang untuk mencatat saldo awal piutang manual, atau transaksi POS Tempo.', 'info');
+  };
+  global.exportPiutangUsahaExcel = (mode) => {
+    const st = S().AppState;
+    if (mode === 'riwayat') {
+      const rows = (st.jurnalKeuangan || []).filter((j) => String(j.jenis_trx || '').startsWith('MASUK_PIUTANG')).map((r, i) => ({ no: i + 1, tanggal: String(r.tanggal || '').slice(0, 10), no_trx: r.id_jurnal, ref: r.referensi_id, keterangan: r.kategori, akun: r.metode, nominal: Number(r.nominal || 0) }));
+      if (!rows.length) return global.toast('Belum ada riwayat pembayaran piutang.', 'warn');
+      return S().exportDataset('xlsx', 'Riwayat Pembayaran Piutang', `riwayat-piutang-${new Date().toISOString().slice(0, 10)}`, [
+        { key: 'no', label: 'No', type: 'int', width: 6 },
+        { key: 'tanggal', label: 'Tanggal', type: 'str', width: 13 },
+        { key: 'no_trx', label: 'No. Transaksi', type: 'str', width: 16 },
+        { key: 'ref', label: 'Asal Faktur', type: 'str', width: 18 },
+        { key: 'keterangan', label: 'Keterangan', type: 'wrap', width: 28 },
+        { key: 'akun', label: 'Akun Kas', type: 'str', width: 16 },
+        { key: 'nominal', label: 'Nominal Bayar', type: 'currency', sum: true, width: 18 }
+      ], rows, { sheetName: 'PembayaranPiutang' });
+    }
+    const rows = (st.piutangPelanggan || []).map((pt, i) => ({ no: i + 1, invoice: pt.no_invoice || pt.id_piutang, debitur: pt.nama_pelanggan, tempo: pt.tgl_jatuh_tempo || '-', tagihan: Number(pt.total_tagihan || 0), sisa: Number(pt.sisa_piutang || 0), status: pt.status_piutang }));
+    if (!rows.length) return global.toast('Belum ada data piutang.', 'warn');
+    S().exportDataset('xlsx', 'Daftar Piutang Usaha', `piutang-usaha-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'invoice', label: 'No. Invoice', type: 'str', width: 20 },
+      { key: 'debitur', label: 'Debitur', type: 'wrap', width: 24 },
+      { key: 'tempo', label: 'Jatuh Tempo', type: 'str', width: 13 },
+      { key: 'tagihan', label: 'Nominal Awal', type: 'currency', sum: true, width: 18 },
+      { key: 'sisa', label: 'Nominal Sisa', type: 'currency', sum: true, width: 18 },
+      { key: 'status', label: 'Status', type: 'str', width: 14 }
+    ], rows, { sheetName: 'PiutangUsaha' });
+  };
 
   global.saveInlineJurnal = async () => {
     try {
@@ -2380,7 +3338,8 @@
   /**
    * Piutang Pelanggan & Arsip Salinan Resep (p.c.c) Handlers (v15.0)
    */
-  global.openPayPiutangModal = (idPiutang, noInv, namaPel, sisaMax) => {
+  global.openPayPiutangModal = (idPiutang, noInv, namaPel, sisaMax, isManual) => {
+    const kasAccounts = _getKasAccountsList();
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center">
         <h3 class="font-bold text-base">Terima Pembayaran Piutang (${S().esc(noInv || idPiutang)})</h3>
@@ -2391,18 +3350,48 @@
         Sisa Tagihan: <b class="font-mono-num text-amber-600">${S().rp(sisaMax)}</b>
       </div>
       <div><label class="font-semibold block mb-1">Nominal Diterima (Rp) *</label><input id="payPiutangAmt" type="number" min="1" max="${sisaMax}" class="ons-input font-mono-num" value="${sisaMax}"/></div>
-      <div><label class="font-semibold block mb-1">Metode Penerimaan</label><select id="payPiutangMetode" class="ons-select"><option value="TRANSFER_BANK">TRANSFER_BANK</option><option value="TUNAI">KAS TUNAI</option><option value="QRIS">QRIS</option></select></div>
+      <div><label class="font-semibold block mb-1">Akun Kas / Metode Penerimaan</label>
+        <select id="payPiutangMetode" class="ons-select">
+          ${kasAccounts.map((a) => `<option value="${S().esc(a.nama)}">${S().esc(a.nama)}</option>`).join('')}
+          <option value="TRANSFER_BANK">TRANSFER_BANK</option>
+          <option value="TUNAI">KAS TUNAI</option>
+          <option value="QRIS">QRIS</option>
+        </select>
+      </div>
       <div><label class="font-semibold block mb-1">Catatan</label><input id="payPiutangNote" class="ons-input" placeholder="Opsional: transfer BCA an ..."/></div>
-      <button onclick="window.submitPayPiutang('${S().esc(idPiutang)}')" class="ons-btn ons-btn-emerald w-full py-2.5 text-xs">Catat Pembayaran ke Buku Kas (MASUK_PIUTANG)</button>
+      <button onclick="window.submitPayPiutang('${S().esc(idPiutang)}', ${isManual ? 'true' : 'false'})" class="ons-btn ons-btn-emerald w-full py-2.5 text-xs">Catat Pembayaran ke Buku Kas (MASUK_PIUTANG)</button>
     </div>`, '440px');
   };
 
-  global.submitPayPiutang = async (idPiutang) => {
+  global.submitPayPiutang = async (idPiutang, isManual) => {
     try {
       const nom = Number((document.getElementById('payPiutangAmt') || {}).value || 0);
       const met = (document.getElementById('payPiutangMetode') || {}).value || 'TRANSFER_BANK';
       const cat = (document.getElementById('payPiutangNote') || {}).value || '';
       if (nom <= 0) throw new Error('Nominal bayar harus lebih dari 0.');
+      if (isManual) {
+        const list = _readFinLocalList(MANUAL_PIUTANG_KEY);
+        const target = list.find((p) => p.id_piutang === idPiutang);
+        if (!target) throw new Error('Data piutang manual tidak ditemukan.');
+        const sisa = Math.max(0, Number(target.sisa_piutang || 0));
+        if (nom > sisa) throw new Error('Nominal bayar melebihi sisa piutang (' + sisa + ').');
+        await API().callApi('finance.saveJurnal', {
+          jenis_trx: 'MASUK_PIUTANG',
+          kategori: `Pelunasan Piutang ${target.nama_pelanggan} (${target.kode_faktur})${cat ? ' - ' + cat : ''}`,
+          nominal: nom,
+          metode: met,
+          referensi_id: target.kode_faktur || target.id_piutang,
+          periode_bulan: new Date().toISOString().slice(0, 7)
+        }, { isWrite: true });
+        target.total_dibayar = Number(target.total_dibayar || 0) + nom;
+        target.sisa_piutang = Math.max(0, sisa - nom);
+        target.status_piutang = target.sisa_piutang <= 0 ? 'LUNAS' : 'SEBAGIAN';
+        _writeFinLocalList(MANUAL_PIUTANG_KEY, list);
+        S().closeModal();
+        global.toast('Pembayaran piutang dicatat! Status: ' + target.status_piutang, 'ok');
+        await global.bootLoadState(true);
+        return;
+      }
       const res = await API().callApi('piutang.pay', { id_piutang: idPiutang, nominal_bayar: nom, metode: met, catatan: cat }, { isWrite: true });
       S().closeModal();
       global.toast('Pembayaran piutang dicatat! Status: ' + res.item.status_piutang, 'ok');
