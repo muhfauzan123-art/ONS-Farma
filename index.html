@@ -512,7 +512,7 @@
         }
         document.querySelectorAll('[data-mobile-nav]').forEach((el) => {
           const isMatch = el.getAttribute('data-mobile-nav') === curView;
-          el.classList.toggle('text-blue-600', isMatch);
+          el.classList.toggle('is-active', isMatch);
         });
       };
 
@@ -1328,12 +1328,12 @@
 
             <!-- Konten Utama -->
             <div class="flex-1 flex flex-col min-w-0">
-              <header class="h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+              <header class="ons-topbar h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30">
                 <div class="flex items-center gap-2 min-w-0">
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.20 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.21 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
@@ -1349,20 +1349,20 @@
               <!-- Breadcrumb & Sub-Menu Kontekstual Cepat -->
               <div id="workspaceSubnavBar" class="ons-subnav-bar">${renderSubnavBarHtml()}</div>
 
-              <main id="mainViewSlot" class="flex-1 p-4 md:p-6 ons-main-scroll"></main>
+              <main id="mainViewSlot" class="flex-1 p-3 sm:p-4 md:p-6 ons-main-scroll"></main>
             </div>
 
             <!-- Mobile Bottom Nav (<768px) dengan Touch Target >=44px & Drawer Menu -->
-            <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-5 ons-mobile-bottom" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-5 ons-mobile-bottom">
               ${[
                 { id: 'dashboard', l: 'Beranda', i: 'home' },
                 { id: 'pos', l: 'Kasir', i: 'pos' },
                 { id: 'gudang', l: 'Gudang', i: 'inventory' },
                 { id: 'billing', l: 'Tagihan', i: 'receipt' }
-              ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold ${st.activeView === b.id ? 'text-blue-600' : ''}">
+              ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold ${st.activeView === b.id ? 'is-active' : ''}">
                 ${svgIcon(b.i, 'w-5 h-5')}<span class="mt-0.5">${b.l}</span>
               </button>`).join('')}
-              <button onclick="window.openMobileDrawer()" aria-label="Buka Semua Menu" class="flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold">
+              <button onclick="window.openMobileDrawer()" aria-label="Buka Semua Menu" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold">
                 ${svgIcon('menu', 'w-5 h-5')}<span class="mt-0.5">Menu</span>
               </button>
             </nav>
@@ -1431,9 +1431,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_20') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_21') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_20', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v17_21', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {

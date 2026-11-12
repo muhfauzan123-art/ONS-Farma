@@ -4,9 +4,11 @@
    ========================================================================== */
 
 :root {
+  color-scheme: light;
   --ons-bg-canvas: #F8FAFC;
   --ons-bg-card: #FFFFFF;
   --ons-bg-subtle: #F1F5F9;
+  --ons-topbar-bg: rgba(255, 255, 255, 0.88);
   --ons-border: #E2E8F0;
   --ons-border-strong: #CBD5E1;
   --ons-text-main: #0B1C30;
@@ -48,13 +50,16 @@
   --ons-nav-danger: #DC2626;
   --ons-nav-danger-bg: #FEF2F2;
   --ons-nav-status-ok: #047857;
-  --ons-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --ons-shadow-elev: 0 12px 32px rgba(11, 28, 48, 0.12);
+  --ons-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --ons-shadow-card-hover: 0 10px 26px -10px rgba(0, 80, 202, 0.14), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --ons-shadow-elev: 0 14px 36px rgba(11, 28, 48, 0.14);
 }
 
 html.dark {
+  color-scheme: dark;
   --ons-bg-canvas: #0F172A;
   --ons-bg-card: #1E293B;
+  --ons-topbar-bg: rgba(30, 41, 59, 0.88);
   --ons-nav-start: #0F172A;
   --ons-nav-end: #111827;
   --ons-nav-border: #1E293B;
@@ -89,8 +94,9 @@ html.dark {
   --ons-amber-tint: rgba(245, 158, 11, 0.14);
   --ons-red-tint: rgba(220, 38, 38, 0.15);
   --ons-purple-tint: rgba(124, 58, 237, 0.16);
-  --ons-shadow-card: 0 4px 12px rgba(2, 6, 23, 0.45);
-  --ons-shadow-elev: 0 16px 40px rgba(2, 6, 23, 0.72);
+  --ons-shadow-card: 0 4px 12px rgba(2, 6, 23, 0.42);
+  --ons-shadow-card-hover: 0 14px 30px -10px rgba(2, 6, 23, 0.72), 0 0 0 1px rgba(96, 165, 250, 0.24);
+  --ons-shadow-elev: 0 18px 44px rgba(2, 6, 23, 0.74);
 }
 
 *, *::before, *::after {
@@ -176,6 +182,11 @@ html, body {
   border-color: var(--ons-primary-bright);
   box-shadow: 0 0 0 3px rgba(0, 102, 254, 0.18);
 }
+.ons-input:disabled, .ons-select:disabled, .ons-textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background-color: var(--ons-bg-subtle);
+}
 
 .ons-btn {
   display: inline-flex;
@@ -184,15 +195,37 @@ html, body {
   gap: 0.45rem;
   padding: 0.52rem 0.95rem;
   min-height: 40px;
-  border-radius: 0.6rem;
+  border-radius: 0.65rem;
   font-size: 0.84rem;
   font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.08s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.08s ease, background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
   user-select: none;
 }
-.ons-btn:active { transform: scale(0.98); }
+.ons-btn:active:not(:disabled) { transform: scale(0.98); }
+.ons-btn:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.ons-btn:focus-visible,
+.ons-tab-btn:focus-visible,
+.ons-md-tab:focus-visible,
+.ons-subnav-chip:focus-visible,
+.ons-menu-parent:focus-visible,
+.ons-submenu-btn:focus-visible,
+.ons-nav-btn:focus-visible,
+.ons-nav-row:focus-visible,
+.ons-kpi-card:focus-visible,
+.ons-ops-tile:focus-visible,
+.ons-priority-pill:focus-visible,
+.ons-login-mode-btn:focus-visible,
+.ons-login-quick-card:focus-visible,
+.ons-login-portal-pill:focus-visible {
+  outline: 2px solid var(--ons-primary-bright);
+  outline-offset: 2px;
+}
 
 .ons-btn-primary { background: linear-gradient(135deg, #0050CA 0%, #0066FE 100%); color: #FFFFFF; box-shadow: 0 2px 6px rgba(0, 80, 202, 0.22); }
 .ons-btn-primary:hover { background: linear-gradient(135deg, #0044AD 0%, #0055D6 100%); box-shadow: 0 4px 12px rgba(0, 80, 202, 0.28); }
@@ -242,8 +275,9 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
 .ons-table-wrap {
   width: 100%;
   overflow-x: auto;
-  border-radius: 0.75rem;
+  border-radius: 0.85rem;
   border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
 }
 
 .ons-table {
@@ -254,25 +288,39 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
 
 .ons-table th {
   text-align: left;
-  padding: 0.68rem 0.85rem;
-  font-size: 0.73rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.045em;
   font-weight: 700;
-  color: var(--ons-text-soft);
+  color: var(--ons-text-muted);
   background: var(--ons-bg-subtle);
   border-bottom: 1px solid var(--ons-border);
+  box-shadow: inset 0 -1px 0 var(--ons-border);
   white-space: nowrap;
 }
 
 .ons-table td {
-  padding: 0.68rem 0.85rem;
+  padding: 0.7rem 0.9rem;
   border-bottom: 1px solid var(--ons-border);
   vertical-align: middle;
 }
 
+.ons-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ons-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
 .ons-table tbody tr:hover {
   background-color: var(--ons-primary-tint);
+}
+
+@keyframes onsModalPop {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* Modal Backdrop, Spotlight & Full-Viewport Workspace Dialogs */
@@ -280,11 +328,14 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 9990;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  animation: onsBackdropFade 0.12s ease-out both;
 }
 .ons-modal-backdrop.is-spotlight {
   align-items: flex-start;
@@ -294,6 +345,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   padding: 0;
   background: var(--ons-bg-canvas);
   backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   align-items: stretch;
   justify-content: stretch;
 }
@@ -307,6 +359,9 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+  animation: onsModalPop 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .ons-modal-box.is-full {
   width: 100%;
@@ -706,8 +761,30 @@ html.dark .ons-wiz-chip:hover {
   .ons-btn, .ons-nav-btn, .ons-input, .ons-select {
     min-height: 44px;
   }
+  .ons-input, .ons-select, .ons-textarea {
+    font-size: 16px;
+  }
   .ons-desktop-only { display: none !important; }
-  .ons-main-scroll { padding-bottom: 5.5rem !important; }
+  .ons-main-scroll { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important; }
+  .ons-tab-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    width: 100%;
+    max-width: 100%;
+    scroll-snap-type: x proximity;
+  }
+  .ons-tab-bar::-webkit-scrollbar { display: none; }
+  .ons-tab-btn {
+    min-height: 40px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+  .ons-page-header {
+    padding: 0.9rem 1rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -799,29 +876,29 @@ html.dark .ons-wiz-chip:hover {
 .ons-tab-bar {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.3rem;
   padding: 0.3rem;
   background: var(--ons-bg-subtle);
   border: 1px solid var(--ons-border);
-  border-radius: 0.75rem;
+  border-radius: 0.85rem;
 }
 .ons-tab-btn {
-  padding: 0.42rem 0.85rem;
-  border-radius: 0.55rem;
+  padding: 0.44rem 0.92rem;
+  border-radius: 0.6rem;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--ons-text-muted);
   cursor: pointer;
   border: 1px solid transparent;
-  transition: all 0.12s ease;
+  transition: color 0.14s ease, background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
   background: transparent;
 }
-.ons-tab-btn:hover { color: var(--ons-text-main); }
+.ons-tab-btn:hover { color: var(--ons-text-main); background: rgba(148, 163, 184, 0.08); }
 .ons-tab-btn.active {
   background: var(--ons-bg-card);
   color: var(--ons-primary);
-  border-color: var(--ons-border);
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  border-color: var(--ons-border-strong);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 .ons-sidebar-group-label {
@@ -1222,10 +1299,20 @@ html.dark .ons-nav-badge.info {
 }
 
 /* Breadcrumb & Sub-Menu Horizontal Ribbon di Workspace Utama */
+.ons-topbar {
+  background: var(--ons-topbar-bg);
+  border-color: var(--ons-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
 .ons-subnav-bar {
   background: var(--ons-bg-card);
   border-bottom: 1px solid var(--ons-border);
-  padding: 0.38rem 1.05rem;
+  padding: 0.4rem 1.05rem;
+}
+.ons-main-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.32) transparent;
 }
 @media (max-width: 767px) {
   .ons-subnav-bar { padding: 0.45rem 0.85rem; }
@@ -1311,8 +1398,36 @@ html.dark .ons-nav-badge.info {
 }
 
 .ons-mobile-bottom {
+  background: var(--ons-topbar-bg) !important;
+  border-color: var(--ons-border) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  height: calc(4rem + env(safe-area-inset-bottom, 0px));
+  height: calc(4.1rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.06);
+}
+.ons-mobile-nav-btn {
+  position: relative;
+  color: var(--ons-text-muted);
+  transition: color 0.14s ease, background-color 0.14s ease;
+}
+.ons-mobile-nav-btn.is-active {
+  color: var(--ons-primary);
+  font-weight: 700;
+}
+html.dark .ons-mobile-nav-btn.is-active {
+  color: var(--ons-primary-bright);
+}
+.ons-mobile-nav-btn.is-active::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2580,7 +2695,7 @@ html.dark .ons-struk-paper-tray {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill, .ons-md-tab, .ons-md-kpi {
+  .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill, .ons-md-tab, .ons-md-kpi, .ons-modal-backdrop, .ons-modal-box {
     transition: none !important;
     animation: none !important;
   }
