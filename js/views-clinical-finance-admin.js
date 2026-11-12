@@ -2401,6 +2401,39 @@
           Hanya peran <b>Pemilik</b> atau <b>APJ</b> yang dapat mengonfirmasi dan mengubah identitas resmi apotek.
         </div>`}
       </div>
+
+      <!-- Skala Outlet: Mode 1 Apotek Tunggal vs Multi-Cabang -->
+      <div class="ons-card p-5 space-y-3 text-xs">
+        ${(() => {
+          const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
+          const activeBranches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
+          return `<div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-sm">Skala Outlet Apotek</h3>
+                <span class="badge-bpom ${multiOn ? 'bpom-terbatas' : 'bpom-bebas'}">${multiOn ? 'Multi-Cabang Aktif (' + activeBranches.length + ' Outlet)' : 'Mode 1 Apotek Tunggal (ONS-01)'}</span>
+              </div>
+              <p class="mt-0.5" style="color:var(--ons-text-soft)">
+                ${multiOn
+                  ? 'Menu Mutasi Antar-Cabang, pilihan cabang saat login, &amp; pembanding stok antar-outlet sedang aktif.'
+                  : 'Apotek berjalan dalam mode 1 outlet utama tanpa cabang fiktif (tombol Cabang &amp; menu Mutasi Antar-Cabang disembunyikan agar simpel).'}
+              </p>
+            </div>
+            ${S().getRole() === 'Pemilik' ? `<div class="flex flex-wrap gap-2">
+              ${multiOn
+                ? `<button type="button" onclick="window.toggleMultiBranchMode(false)" class="ons-btn ons-btn-ghost text-xs">Kembalikan ke Mode 1 Apotek</button>`
+                : `<button type="button" onclick="window.toggleMultiBranchMode(true)" class="ons-btn ons-btn-primary text-xs">Buka Cabang Baru (Aktifkan Multi-Cabang)</button>`}
+            </div>` : ''}
+          </div>
+          ${multiOn ? `<div class="p-3 rounded-xl border flex flex-wrap items-end gap-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="flex-1 min-w-[220px]">
+              <label class="font-semibold block mb-1">Daftar Kode Outlet / Cabang Aktif (pisahkan dengan koma)</label>
+              <input id="profMultiBranchCodes" class="ons-input font-mono-num text-xs" value="${S().esc(activeBranches.join(', '))}" placeholder="ONS-01, ONS-02"/>
+            </div>
+            ${S().getRole() === 'Pemilik' ? `<button type="button" onclick="window.saveMultiBranchCodes()" class="ons-btn ons-btn-emerald text-xs">Simpan Daftar Cabang</button>` : ''}
+          </div>` : ''}`;
+        })()}
+      </div>
     </div>`;
   }
 
@@ -2504,7 +2537,7 @@
             </div>
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>Username</th><th>Nama Lengkap</th><th>Role &amp; Cabang</th><th>No. SIPA</th><th>Hak Akses Modul</th><th>Status</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Username</th><th>Nama Lengkap</th><th>Role ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? '&amp; Cabang' : 'Outlet'}</th><th>No. SIPA</th><th>Hak Akses Modul</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody>
                   ${staffList.length ? staffList.map((u) => {
                     const effPerms = S().getUserPermissions ? S().getUserPermissions(u) : [];
@@ -2878,6 +2911,25 @@
     }
   };
 
+  global.toggleMultiBranchMode = (enabled) => {
+    if (!S().setMultiBranchMode) return;
+    S().setMultiBranchMode(!!enabled);
+    if (typeof global.renderApp === 'function') global.renderApp();
+    global.toast(enabled ? 'Mode Multi-Cabang diaktifkan (Mutasi & Pembanding Cabang tersedia).' : 'Mode 1 Apotek Tunggal aktif (tampilan cabang disederhanakan).', 'ok');
+  };
+
+  global.saveMultiBranchCodes = () => {
+    const raw = ((document.getElementById('profMultiBranchCodes') || {}).value || '').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+    const list = Array.from(new Set(['ONS-01'].concat(raw)));
+    if (list.length < 2) {
+      global.toast('Masukkan minimal 2 kode outlet (mis. ONS-01, ONS-02) atau kembalikan ke Mode 1 Apotek.', 'warn');
+      return;
+    }
+    S().setMultiBranchMode(true, list);
+    if (typeof global.renderApp === 'function') global.renderApp();
+    global.toast('Daftar outlet cabang diperbarui: ' + list.join(', '), 'ok');
+  };
+
   let _setLoading = false;
   let _setLoadPromise = null;
   global.loadSettingsBundle = async (force) => {
@@ -3098,7 +3150,7 @@
           </div>
           <div><label class="font-semibold block mb-1">Nama Lengkap (Pemilik / APJ / Kasir) *</label><input id="usrFull" class="ons-input" value="${S().esc((target && target.nama_lengkap) || '')}" placeholder="Contoh: apt. Dewi Kartika, S.Farm"/></div>
           <div class="grid grid-cols-2 gap-2.5">
-            <div><label class="font-semibold block mb-1">Cabang</label><input id="usrBranch" class="ons-input font-mono-num" value="${S().esc((target && target.cabang_id) || S().AppState.cabangId || 'ONS-01')}"/></div>
+            <div><label class="font-semibold block mb-1">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Cabang' : 'Outlet Apotek'}</label><input id="usrBranch" ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? '' : 'readonly'} class="ons-input font-mono-num" value="${S().esc((target && target.cabang_id) || S().AppState.cabangId || 'ONS-01')}"/></div>
             <div><label class="font-semibold block mb-1">Status Aktif</label>
               <select id="usrStatus" class="ons-select">
                 <option value="AKTIF" ${(!target || String(target.status_aktif || 'AKTIF') === 'AKTIF') ? 'selected' : ''}>AKTIF</option>

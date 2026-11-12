@@ -306,7 +306,9 @@
           (sect.items || []).forEach((item) => {
             if (!ONSStore.canAccessView(item.viewId)) return;
             if (item.roles && !item.roles.includes(curRole)) return;
+            const multiOn = ONSStore.isMultiBranchEnabled ? ONSStore.isMultiBranchEnabled() : false;
             const filteredTabs = (item.tabs || []).filter((t) => {
+              if (item.viewId === 'gudang' && t.subTab === 'transfer' && !multiOn) return false;
               if (t.roles && !t.roles.includes(curRole) && !(ONSStore.canAccessSubTab && ONSStore.canAccessSubTab(item.viewId, t.subTab))) return false;
               if (item.viewId === 'settings' && ONSStore.canAccessSubTab && !ONSStore.canAccessSubTab('settings', t.subTab)) return false;
               return true;
@@ -516,7 +518,7 @@
               <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
               <div class="min-w-0">
                 <div class="font-bold text-sm ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
-                <div class="text-[11px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                <div class="text-[11px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc((ONSStore.isMultiBranchEnabled && ONSStore.isMultiBranchEnabled()) ? st.cabangId : 'Outlet Utama')} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
               </div>
             </div>
             <button onclick="window.closeMobileDrawer()" aria-label="Tutup Menu" class="p-2 rounded-lg ons-nav-icon-btn min-w-[44px] min-h-[44px] flex items-center justify-center">${svgIcon('close')}</button>
@@ -804,7 +806,7 @@
                       <span class="font-extrabold text-sm sm:text-base tracking-tight truncate">Pencarian Cepat &amp; Pusat Navigasi</span>
                       <span class="ons-ws-pill hidden sm:inline-flex">${ONSStore.esc(prof.nama_usaha || 'Apotek ONS Farma')}</span>
                     </div>
-                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">Cabang ${ONSStore.esc(st.cabangId || 'ONS-01')} &bull; ${ONSStore.esc(role)} &bull; <span id="cmdkMatchMeta">Siap mencari seluruh modul &amp; data</span></div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${(ONSStore.isMultiBranchEnabled && ONSStore.isMultiBranchEnabled()) ? ('Cabang ' + ONSStore.esc(st.cabangId || 'ONS-01')) : 'Apotek Utama'} &bull; ${ONSStore.esc(role)} &bull; <span id="cmdkMatchMeta">Siap mencari seluruh modul &amp; data</span></div>
                   </div>
                 </div>
                 <div class="hidden md:flex items-center gap-2 text-[11px]" style="color:var(--ons-text-soft)">
@@ -1162,7 +1164,7 @@
                     <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-9 h-9 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
                     <div class="min-w-0 ons-hide-collapsed">
                       <div class="font-bold text-sm ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
-                      <div class="text-[11px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc(st.cabangId)} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                      <div class="text-[11px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc((ONSStore.isMultiBranchEnabled && ONSStore.isMultiBranchEnabled()) ? st.cabangId : 'Outlet Utama')} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
                     </div>
                   </div>
                   <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1.5 rounded-lg ons-nav-icon-btn shrink-0">

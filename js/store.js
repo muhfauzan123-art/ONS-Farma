@@ -7,6 +7,16 @@
   const DARK_KEY = 'ons_farma_v10_dark';
   const PROFILE_CACHE_KEY = 'ons_farma_v13_profile';
   const AUDIT_SYS_KEY = 'ons_farma_v164_audit_sys';
+  const MULTI_BRANCH_KEY = 'ons_farma_v172_multi_cabang';
+  const EXTRA_BRANCHES_KEY = 'ons_farma_v172_branches';
+
+  function loadBranchesList() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(EXTRA_BRANCHES_KEY) || 'null');
+      if (Array.isArray(raw) && raw.length) return raw;
+    } catch (e) {}
+    return ['ONS-01'];
+  }
 
   const RBAC_MODULE_CATALOG = [
     { key: 'dashboard', label: 'Beranda & Audit BPOM', group: 'Operasional' },
@@ -177,7 +187,8 @@
     pemeriksaanPasien: [],
     mutasiCabang: [],
     branchStockCompare: null,
-    branchesList: ['ONS-01', 'ONS-02', 'ONS-03'],
+    multiCabangAktif: localStorage.getItem(MULTI_BRANCH_KEY) === '1',
+    branchesList: loadBranchesList(),
     carts: [
       { id: 'K1', label: 'Pelanggan #1', channel: 'Toko Fisik', id_member: 'UMUM', tier_harga: 'UMUM', items: [], diskon_global: 0, held_note: '', held_at: '' }
     ],
@@ -297,6 +308,54 @@
   function canSeeFinancialCost() {
     const r = getRole();
     return r === 'Pemilik' || r === 'APJ';
+  }
+
+  function isMultiBranchEnabled() {
+    if (AppState.multiCabangAktif) return true;
+    const cmp = AppState.branchStockCompare;
+    if (cmp && Array.isArray(cmp.branches) && cmp.branches.length > 1) return true;
+    if (Array.isArray(AppState.mutasiCabang) && AppState.mutasiCabang.length > 0) return true;
+    return false;
+  }
+
+  function getActiveBranches() {
+    const set = new Set(['ONS-01']);
+    if (isMultiBranchEnabled()) {
+      const cmp = AppState.branchStockCompare;
+      if (cmp && Array.isArray(cmp.branches) && cmp.branches.length) {
+        cmp.branches.forEach((b) => { if (b) set.add(String(b).trim()); });
+      }
+      (AppState.branchesList || []).forEach((b) => { if (b) set.add(String(b).trim()); });
+      if (set.size < 2) set.add('ONS-02');
+    }
+    return Array.from(set);
+  }
+
+  function getBranchLabel(cabId) {
+    const id = String(cabId || 'ONS-01').trim() || 'ONS-01';
+    const prof = getStoreProfile();
+    if (id === 'ONS-01') {
+      return prof.nama_usaha ? `${prof.nama_usaha} (Utama)` : 'Outlet Utama (SIA)';
+    }
+    return `Cabang ${id}`;
+  }
+
+  function setMultiBranchMode(enabled, branchCodes) {
+    const on = !!enabled;
+    AppState.multiCabangAktif = on;
+    try { localStorage.setItem(MULTI_BRANCH_KEY, on ? '1' : '0'); } catch (e) {}
+    if (on) {
+      const nextList = Array.isArray(branchCodes) && branchCodes.length
+        ? Array.from(new Set(['ONS-01'].concat(branchCodes.map((x) => String(x || '').trim()).filter(Boolean))))
+        : ['ONS-01', 'ONS-02'];
+      AppState.branchesList = nextList;
+      try { localStorage.setItem(EXTRA_BRANCHES_KEY, JSON.stringify(nextList)); } catch (e) {}
+    } else {
+      AppState.branchesList = ['ONS-01'];
+      AppState.cabangId = 'ONS-01';
+      try { localStorage.setItem(EXTRA_BRANCHES_KEY, JSON.stringify(['ONS-01'])); } catch (e) {}
+    }
+    return { multi_cabang: on, branches: getActiveBranches() };
   }
 
   /**
@@ -986,6 +1045,10 @@
     getAuditSystem,
     setAuditSystem,
     canSeeFinancialCost,
+    isMultiBranchEnabled,
+    getActiveBranches,
+    getBranchLabel,
+    setMultiBranchMode,
     isBatchExpired,
     getTotalStok,
     getSellableStok,

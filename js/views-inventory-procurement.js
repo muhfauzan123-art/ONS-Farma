@@ -303,8 +303,9 @@
       .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF')
       .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
     const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(idObat, 90) : { hasNearEd: false };
+    const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
     const cmpItem = ((st.branchStockCompare && st.branchStockCompare.items) || []).find((x) => x.id_obat === idObat);
-    const branches = (st.branchStockCompare && st.branchStockCompare.branches) || st.branchesList || ['ONS-01', 'ONS-02', 'ONS-03'];
+    const branches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
     const perCb = (cmpItem && cmpItem.stok_per_cabang) || {};
 
     S().openDrawer(`<div class="p-6 space-y-4 text-xs">
@@ -349,9 +350,9 @@
         </div>
       </div>
 
-      <div class="p-3 rounded-xl border space-y-2" style="border-color:var(--ons-border)">
-        <div class="font-bold">Komparasi Stok Antar-Cabang Real-Time</div>
-        <div class="grid grid-cols-3 gap-2">
+      ${multiOn && branches.length > 1 ? `<div class="p-3 rounded-xl border space-y-2" style="border-color:var(--ons-border)">
+        <div class="font-bold">Komparasi Stok Antar-Outlet Real-Time</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           ${branches.map((br) => {
             const qBr = br === (st.cabangId || 'ONS-01') ? m.stok : Number(perCb[br] || 0);
             return `<div class="p-2 rounded-lg text-center border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
@@ -360,7 +361,7 @@
             </div>`;
           }).join('')}
         </div>
-      </div>
+      </div>` : ''}
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border" style="border-color:var(--ons-border)">
         <div><b>Kode KFA:</b> <span class="font-mono-num">${S().esc(o.kode_kfa || '-')}</span></div>
@@ -1318,20 +1319,33 @@
             <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Batch &amp; FEFO (${sorted.length})</button>
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok (${(st.mutasiStok || []).length})</button>
             ${(seeCost || S().canAccessSubTab('gudang', 'opname')) ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
-            ${(seeCost || S().canAccessSubTab('gudang', 'transfer')) ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
+            ${((S().isMultiBranchEnabled && S().isMultiBranchEnabled()) && (seeCost || S().canAccessSubTab('gudang', 'transfer'))) ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
           </div>
         </div>
       </div>
 
       ${gudangTab === 'transfer' && (seeCost || S().canAccessSubTab('gudang', 'transfer')) ? (() => {
+        const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
+        if (!multiOn) {
+          return `<div class="ons-card p-6 space-y-3 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="badge-bpom bpom-bebas">Mode 1 Apotek Tunggal (ONS-01)</span>
+                <h3 class="font-bold text-base mt-2">Mutasi Antar-Cabang Belum Diaktifkan</h3>
+                <p style="color:var(--ons-text-soft)">Saat ini apotek Anda beroperasi sebagai <b>1 outlet tunggal</b> tanpa cabang tambahan, sehingga menu transfer antar-cabang disembunyikan agar tampilan tetap ringkas &amp; fokus.</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button type="button" onclick="window.setGudangTab('batch')" class="ons-btn ons-btn-primary text-xs">&larr; Kembali ke Stok Batch &amp; FEFO</button>
+              ${S().getRole() === 'Pemilik' ? `<button type="button" onclick="window.toggleMultiBranchMode(true)" class="ons-btn ons-btn-ghost text-xs">Saya Sudah Buka Cabang Baru (Aktifkan Multi-Cabang)</button>` : ''}
+            </div>
+          </div>`;
+        }
         const cmpObj = st.branchStockCompare && !Array.isArray(st.branchStockCompare) ? st.branchStockCompare : null;
-        const branchIds = (cmpObj && Array.isArray(cmpObj.branches) && cmpObj.branches.length)
-          ? cmpObj.branches
-          : (Array.isArray(st.branchesList) && st.branchesList.length ? st.branchesList : ['ONS-01', 'ONS-02', 'ONS-03']);
-        const branchLabels = { 'ONS-01': 'Pusat (Jaksel)', 'ONS-02': 'Cabang Bekasi', 'ONS-03': 'Cabang Depok' };
+        const branchIds = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01', 'ONS-02'];
         const compList = (cmpObj && Array.isArray(cmpObj.items)) ? cmpObj.items : (Array.isArray(st.branchStockCompare) ? st.branchStockCompare : []);
         const trfList = st.mutasiCabang || [];
-        const defDest = branchIds.find((bid) => bid !== st.cabangId) || 'ONS-02';
+        const defDest = branchIds.find((bid) => bid !== st.cabangId) || branchIds[0] || 'ONS-02';
         return `<div class="space-y-4">
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
@@ -1343,13 +1357,13 @@
                 <div>
                   <label class="font-semibold block mb-1">Cabang Asal</label>
                   <select id="trfAsalCab" class="ons-select text-xs">
-                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === st.cabangId ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(branchLabels[bid] || bid)}</option>`).join('')}
+                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === st.cabangId ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(S().getBranchLabel ? S().getBranchLabel(bid) : bid)}</option>`).join('')}
                   </select>
                 </div>
                 <div>
                   <label class="font-semibold block mb-1">Cabang Tujuan</label>
                   <select id="trfTujuanCab" class="ons-select text-xs">
-                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === defDest ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(branchLabels[bid] || bid)}</option>`).join('')}
+                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === defDest ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(S().getBranchLabel ? S().getBranchLabel(bid) : bid)}</option>`).join('')}
                   </select>
                 </div>
               </div>
@@ -1374,8 +1388,8 @@
 
             <div class="ons-card p-4 lg:col-span-7 space-y-3">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="font-bold text-sm">Komparator Stok Real-Time 3 Cabang</h3>
-                <span class="text-[11px]" style="color:var(--ons-text-soft)">Cabang aktif: <b class="font-mono-num">${S().esc(st.cabangId)}</b></span>
+                <h3 class="font-bold text-sm">Komparator Stok Real-Time (${branchIds.length} Outlet)</h3>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Outlet aktif: <b class="font-mono-num">${S().esc(st.cabangId)}</b></span>
               </div>
               <div class="ons-table-wrap max-h-64 overflow-y-auto">
                 <table class="ons-table">

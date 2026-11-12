@@ -581,7 +581,7 @@
                   <span class="inline-flex items-center gap-1">${_loginIco('clock', 'w-3.5 h-3.5 text-blue-600')} ${S().esc(dateStr)} &bull; <span class="font-mono-num font-bold">${S().esc(timeStr)}</span></span>
                 </div>
                 <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Masuk ke Ruang Kerja Apotek</h1>
-                <p class="text-xs mt-0.5" style="color:var(--ons-text-soft)">Pilih cabang apotek, shift aktif, lalu verifikasi akun Anda.</p>
+                <p class="text-xs mt-0.5" style="color:var(--ons-text-soft)">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Pilih cabang apotek, shift aktif, lalu verifikasi akun Anda.' : 'Pilih shift operasional aktif, lalu verifikasi akun apotek Anda.'}</p>
               </div>
               <button type="button" onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-3 min-h-[40px]">
                 ${_loginIco(isDark ? 'sun' : 'moon', 'w-4 h-4')}
@@ -593,13 +593,23 @@
               <div>
                 <label for="loginBranch" class="text-xs font-semibold flex items-center gap-1.5 mb-1.5" style="color:var(--ons-text-muted)">
                   ${_loginIco('building', 'w-3.5 h-3.5 text-blue-600')}
-                  <span>Cabang Apotek</span>
+                  <span>${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Cabang Apotek' : 'Outlet Apotek'}</span>
                 </label>
-                <select id="loginBranch" class="ons-select text-[13px] font-medium">
-                  <option value="ONS-01">ONS-01 &bull; Pusat Utama (SIA)</option>
-                  <option value="ONS-02">ONS-02 &bull; Cabang Klinik Mitra</option>
-                  <option value="ONS-03">ONS-03 &bull; Gudang &amp; Distribusi</option>
-                </select>
+                ${(() => {
+                  const multi = S().isMultiBranchEnabled && S().isMultiBranchEnabled();
+                  const branches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
+                  if (!multi || branches.length <= 1) {
+                    const outletTitle = (prof && prof.nama_usaha) ? `${prof.nama_usaha} (Utama)` : 'Apotek Utama (SIA)';
+                    return `<input type="hidden" id="loginBranch" value="ONS-01"/>
+                      <div class="ons-input text-[13px] font-semibold flex items-center justify-between gap-2 select-none" style="background:var(--ons-bg-subtle)">
+                        <span class="truncate">${S().esc(outletTitle)}</span>
+                        <span class="font-mono-num text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 shrink-0">ONS-01</span>
+                      </div>`;
+                  }
+                  return `<select id="loginBranch" class="ons-select text-[13px] font-medium">
+                    ${branches.map((bid) => `<option value="${S().esc(bid)}">${S().esc(bid)} &bull; ${S().esc(S().getBranchLabel ? S().getBranchLabel(bid) : bid)}</option>`).join('')}
+                  </select>`;
+                })()}
               </div>
               <div>
                 <label for="loginShift" class="text-xs font-semibold flex items-center gap-1.5 mb-1.5" style="color:var(--ons-text-muted)">
@@ -1132,7 +1142,7 @@
           <div class="min-w-0 space-y-1.5">
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="badge-bpom bpom-bebas">${S().esc(fullDateLabel)}</span>
-              <span class="badge-bpom bpom-terbatas">Cabang ${S().esc(cabId)} &bull; ${S().esc(S().getRole())}</span>
+              <span class="badge-bpom bpom-terbatas">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('Cabang ' + S().esc(cabId)) : 'Outlet Utama'} &bull; ${S().esc(S().getRole())}</span>
               ${canShift ? `<button type="button" onclick="navigateView('tutup-shift','')" class="badge-bpom ${activeShift ? 'bpom-bebas' : 'bpom-prekursor'} cursor-pointer">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
             </div>
             <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">${greetText}, ${S().esc(activeUserDisplay)}</h1>
@@ -1151,7 +1161,7 @@
 
       ${st.masterObat.length === 0 ? `<div class="ons-card p-4 border-l-4 flex flex-wrap items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.06)">
         <div class="min-w-0">
-          <div class="font-bold text-sm">Belum Ada Produk Obat di Katalog Cabang Ini</div>
+          <div class="font-bold text-sm">Belum Ada Produk Obat di ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Katalog Cabang Ini' : 'Katalog Apotek Ini'}</div>
           <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan daftar obat melalui menu <b>Master Katalog Obat</b> atau catat penerimaan barang lewat <b>Faktur Masuk</b> agar transaksi POS dan pemantauan stok langsung aktif.</p>
         </div>
         ${canObat ? `<button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-primary text-xs shrink-0">Buka Master Katalog Obat &rarr;</button>` : ''}
@@ -1267,7 +1277,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 class="font-bold text-sm">Tren ${seeCost ? 'Omzet vs Laba Kotor' : 'Penjualan'} 7 Hari</h3>
-              <div class="text-[11px]" style="color:var(--ons-text-soft)">Performa penjualan harian cabang ${S().esc(cabId)}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Performa penjualan harian ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('cabang ' + S().esc(cabId)) : 'outlet aktif'}</div>
             </div>
             <div class="flex items-center gap-2.5 text-[10px]">
               <span class="inline-flex items-center gap-1 font-semibold"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#0066FE"></span> Omzet</span>
@@ -1441,7 +1451,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div>
             <h3 class="font-bold text-sm">Radar Batch Mendekati Kadaluarsa (FEFO Terdekat)</h3>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Prioritaskan penjualan batch aktif cabang ${S().esc(cabId)} yang paling cepat mendekati tanggal kedaluwarsa.</p>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Prioritaskan penjualan batch aktif ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('cabang ' + S().esc(cabId)) : 'apotek'} yang paling cepat mendekati tanggal kedaluwarsa.</p>
           </div>
           <div class="flex flex-wrap items-center gap-1.5">
             <span class="badge-bpom ${expiredBatches.length ? 'bpom-keras' : 'bpom-bebas'} font-mono-num">${expiredBatches.length} Expired</span>
@@ -1469,7 +1479,7 @@
               }).join('')}
             </tbody>
           </table>
-        </div>` : `<div class="py-6 text-center text-xs rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Belum ada stok batch aktif pada cabang ${S().esc(cabId)}.</div>`}
+        </div>` : `<div class="py-6 text-center text-xs rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Belum ada stok batch aktif${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? (' pada cabang ' + S().esc(cabId)) : ''}.</div>`}
       </div>
     </div>`;
   }
@@ -1599,13 +1609,17 @@
               <div class="text-xs font-extrabold font-mono-num text-blue-600">${S().rp(effPrice.harga)}<span class="text-[10px] font-normal">/${S().esc(o.satuan_dasar)}</span></div>
               <div class="text-[10px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok}</div>
             </div>
-            <button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[10px] px-2 py-1 min-h-0 h-7">Cabang</button>
+            ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[10px] px-2 py-1 min-h-0 h-7">Cabang</button>` : ''}
             <button type="button" onclick="event.stopPropagation();window.posAddToCart('${S().esc(o.id_obat)}')" ${isEmpty ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs px-2.5 py-1 min-h-0 h-7">+</button>
           </div>
         </div>`;
       }
 
-      return `<div onclick="${isEmpty ? `window.openBranchCompareDrawer('${S().esc(o.id_obat)}')` : `window.posAddToCart('${S().esc(o.id_obat)}')`}" class="ons-pos-card gap-2 ${qtyInCart ? 'is-incart' : ''} ${isEmpty ? 'is-empty' : ''}">
+      const emptyAction = (S().isMultiBranchEnabled && S().isMultiBranchEnabled())
+        ? `window.openBranchCompareDrawer('${S().esc(o.id_obat)}')`
+        : `window.toast('Stok habis — periksa Batch FEFO atau input Faktur PBF untuk restok.','warn')`;
+
+      return `<div onclick="${isEmpty ? emptyAction : `window.posAddToCart('${S().esc(o.id_obat)}')`}" class="ons-pos-card gap-2 ${qtyInCart ? 'is-incart' : ''} ${isEmpty ? 'is-empty' : ''}">
         <div>
           <div class="flex items-start justify-between gap-2">
             <div class="font-bold text-sm leading-snug line-clamp-2">${S().esc(o.nama_dagang)}</div>
@@ -1630,7 +1644,7 @@
             <div class="text-[11px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok}${expiredQty > 0 ? ` <span class="text-amber-600">(+${expiredQty} ED)</span>` : ''}</div>
           </div>
           <div class="flex gap-1 shrink-0">
-            <button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8" title="Cek Stok Antar-Cabang">Cabang</button>
+            ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8" title="Cek Stok Antar-Cabang">Cabang</button>` : ''}
             ${o.substitusi_ids ? `<button type="button" onclick="event.stopPropagation();window.openSubstitusiModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8" title="Alternatif Substitusi">Sub</button>` : ''}
             <button type="button" onclick="event.stopPropagation();window.posAddToCart('${S().esc(o.id_obat)}')" ${isEmpty ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs px-2.5 py-1 min-h-0 h-8">+ Keranjang</button>
           </div>
@@ -2447,15 +2461,16 @@
     const st = S().AppState;
     const obat = st.masterObat.find((o) => o.id_obat === idObat);
     if (!obat) return;
+    const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
     const cmp = (st.branchStockCompare && st.branchStockCompare.items) || [];
     const entry = cmp.find((x) => x.id_obat === idObat);
-    const branches = (st.branchStockCompare && st.branchStockCompare.branches) || st.branchesList || ['ONS-01', 'ONS-02', 'ONS-03'];
+    const branches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
     const perCb = (entry && entry.stok_per_cabang) || {};
     if (!entry) perCb[st.cabangId || 'ONS-01'] = S().getSellableStok(idObat);
     S().openDrawer(`<div class="p-5 space-y-4 text-xs">
       <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
         <div>
-          <span class="badge-bpom bpom-terbatas">MULTI-CABANG REAL-TIME</span>
+          <span class="badge-bpom bpom-terbatas">${multiOn ? 'MULTI-CABANG REAL-TIME' : 'STOK OUTLET AKTIF'}</span>
           <h3 class="font-extrabold text-base mt-1">${S().esc(obat.nama_dagang)}</h3>
           <div style="color:var(--ons-text-soft)">${S().esc(obat.zat_aktif)} &bull; Rak ${S().esc(obat.rak_lokasi || '-')}</div>
         </div>
@@ -2466,7 +2481,7 @@
           const qty = br === (st.cabangId || 'ONS-01') ? S().getSellableStok(idObat) : Number(perCb[br] || 0);
           return `<div class="p-3 rounded-xl border flex items-center justify-between" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
             <div>
-              <div class="font-bold">${S().esc(br)} ${br === (st.cabangId || 'ONS-01') ? '<span class="badge-bpom bpom-bebas text-[9px] ml-1">CABANG AKTIF</span>' : ''}</div>
+              <div class="font-bold">${S().esc(S().getBranchLabel ? S().getBranchLabel(br) : br)} <span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">(${S().esc(br)})</span> ${br === (st.cabangId || 'ONS-01') ? '<span class="badge-bpom bpom-bebas text-[9px] ml-1">AKTIF</span>' : ''}</div>
               <div class="text-[11px]" style="color:var(--ons-text-soft)">Stok siap jual (FEFO non-ED)</div>
             </div>
             <div class="text-base font-extrabold font-mono-num ${qty > 0 ? 'text-emerald-600' : 'text-red-500'}">${qty} ${S().esc(obat.satuan_dasar)}</div>
@@ -2474,7 +2489,9 @@
         }).join('')}
       </div>
       <div class="flex gap-2 pt-2">
-        <button onclick="ONSStore.closeDrawer();navigateView('gudang','transfer');" class="ons-btn ons-btn-primary flex-1 text-xs">Buat Mutasi Antar-Cabang &rarr;</button>
+        ${multiOn
+          ? `<button onclick="ONSStore.closeDrawer();navigateView('gudang','transfer');" class="ons-btn ons-btn-primary flex-1 text-xs">Buat Mutasi Antar-Cabang &rarr;</button>`
+          : `<button onclick="ONSStore.closeDrawer();navigateView('gudang','batch');" class="ons-btn ons-btn-primary flex-1 text-xs">Cek Stok Batch &amp; Faktur PBF &rarr;</button>`}
         <button onclick="ONSStore.closeDrawer()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
       </div>
     </div>`, '460px');

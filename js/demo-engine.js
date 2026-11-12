@@ -86,10 +86,7 @@
         { id_batch: 'BTH-108', cabang_id: 'ONS-01', id_obat: 'OBT-006', no_batch: 'IBU-2603W', tgl_kadaluarsa: addDays(62), qty_sisa: 120, qty_karantina: 0, hpp_beli: 890, no_faktur_pbf: 'FK-ENS-5501', status_batch: 'AKTIF' },
         { id_batch: 'BTH-109', cabang_id: 'ONS-01', id_obat: 'OBT-007', no_batch: 'AML-2607N', tgl_kadaluarsa: addDays(390), qty_sisa: 65, qty_karantina: 0, hpp_beli: 410, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
         { id_batch: 'BTH-110', cabang_id: 'ONS-01', id_obat: 'OBT-008', no_batch: 'COD-2608K', tgl_kadaluarsa: addDays(290), qty_sisa: 42, qty_karantina: 0, hpp_beli: 2300, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-111', cabang_id: 'ONS-01', id_obat: 'OBT-009', no_batch: 'WAR-2610M', tgl_kadaluarsa: addDays(310), qty_sisa: 50, qty_karantina: 0, hpp_beli: 1350, no_faktur_pbf: 'FK-FHR-0081', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-201', cabang_id: 'ONS-02', id_obat: 'OBT-004', no_batch: 'RHN-CB2-01', tgl_kadaluarsa: addDays(300), qty_sisa: 80, qty_karantina: 0, hpp_beli: 7800, no_faktur_pbf: 'FK-DXA-CB2', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-202', cabang_id: 'ONS-02', id_obat: 'OBT-007', no_batch: 'AML-CB2-02', tgl_kadaluarsa: addDays(400), qty_sisa: 180, qty_karantina: 0, hpp_beli: 410, no_faktur_pbf: 'FK-KFT-CB2', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-203', cabang_id: 'ONS-03', id_obat: 'OBT-001', no_batch: 'AMX-CB3-01', tgl_kadaluarsa: addDays(360), qty_sisa: 150, qty_karantina: 0, hpp_beli: 480, no_faktur_pbf: 'FK-BSP-CB3', status_batch: 'AKTIF' }
+        { id_batch: 'BTH-111', cabang_id: 'ONS-01', id_obat: 'OBT-009', no_batch: 'WAR-2610M', tgl_kadaluarsa: addDays(310), qty_sisa: 50, qty_karantina: 0, hpp_beli: 1350, no_faktur_pbf: 'FK-FHR-0081', status_batch: 'AKTIF' }
       ],
       members: [
         { id_member: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_hp: '6281234567801', tgl_lahir: '1965-04-19', alergi_list: 'Penisilin', penyakit_kronis: 'Hipertensi + Jantung', program_prb: 'PRB_BPJS', obat_rutin_ids: 'OBT-007,OBT-009', tgl_habis_obat: addDays(2), tgl_reminder_berikut: isoToday, poin_loyalitas: 245, riwayat_skrining_json: JSON.stringify([{ tgl: addDays(-30), td: '148/92', gds: 112, bmi: 26.4 }, { tgl: isoToday, td: '136/86', gds: 108, bmi: 25.9 }]) },
@@ -398,21 +395,7 @@
     if (!Array.isArray(db.copy_resep)) { db.copy_resep = buildCopyResepSeed(isoToday); changed = true; }
     if (!Array.isArray(db.pemeriksaan_pasien)) { db.pemeriksaan_pasien = buildPemeriksaanSeed(isoToday); changed = true; }
     if (!Array.isArray(db.mutasi_cabang)) {
-      db.mutasi_cabang = [{
-        id_transfer: 'TRF-DEMO-01',
-        no_surat_jalan: 'SJ-MUT/' + isoToday.replace(/-/g, '') + '/0001',
-        tanggal_kirim: isoToday + 'T09:00:00',
-        tanggal_terima: '',
-        cabang_asal: 'ONS-02',
-        cabang_tujuan: 'ONS-01',
-        items_json: JSON.stringify([{ id_obat: 'OBT-004', nama_dagang: 'Rhinos SR Kapsul Lepas Lambat', satuan_dasar: 'Kapsul', no_batch: 'RHN-CB2-01', tgl_kadaluarsa: addDays(300), hpp_beli: 7800, qty: 20 }]),
-        total_qty_dasar: 20,
-        estimasi_nilai_hpp: 156000,
-        status_transfer: 'DIKIRIM',
-        dikirim_oleh: 'APJ Cabang ONS-02',
-        diterima_oleh: '',
-        catatan: 'Drop stok antrean cabang timur'
-      }];
+      db.mutasi_cabang = [];
       changed = true;
     }
     if (!db.profil_usaha || typeof db.profil_usaha !== 'object') {
@@ -506,15 +489,18 @@
   }
 
   function _computeBranchCompareDemo(db, idObat) {
-    const branches = ['ONS-01', 'ONS-02', 'ONS-03'];
-    const brSet = new Set(branches);
+    const brSet = new Set(['ONS-01']);
+    (db.mutasi_cabang || []).forEach((t) => {
+      if (t.cabang_asal) brSet.add(t.cabang_asal);
+      if (t.cabang_tujuan) brSet.add(t.cabang_tujuan);
+    });
     const mapByObat = {};
     (db.stok_batch || []).forEach((b) => {
       if (String(b.status_batch || 'AKTIF') !== 'AKTIF' || Number(b.qty_sisa || 0) <= 0) return;
       if (String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) < isoToday) return;
-      if (idObat && b.id_obat !== idObat) return;
       const br = b.cabang_id || 'ONS-01';
       brSet.add(br);
+      if (idObat && b.id_obat !== idObat) return;
       if (!mapByObat[b.id_obat]) mapByObat[b.id_obat] = {};
       mapByObat[b.id_obat][br] = (mapByObat[b.id_obat][br] || 0) + Number(b.qty_sisa || 0);
     });
