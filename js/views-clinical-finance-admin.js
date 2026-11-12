@@ -591,7 +591,7 @@
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
     const last = vals[vals.length - 1];
-    const stroke = last > 200 ? '#DC2626' : (last > 140 ? '#D97706' : '#10B981');
+    const stroke = last >= 200 ? '#DC2626' : (last >= 140 ? '#D97706' : '#10B981');
     return `<svg viewBox="0 0 70 28" class="w-16 h-6 inline-block align-middle">
       <polyline fill="none" stroke="${stroke}" stroke-width="2" points="${pts}"/>
       ${vals.length === 1 ? `<circle cx="35" cy="${pts.split(',')[1]}" r="2.5" fill="${stroke}"/>` : ''}
@@ -759,7 +759,10 @@
     const members = S().AppState.members || [];
     if (!members.length) return global.toast('Daftarkan minimal 1 pasien/member terlebih dahulu.', 'warn');
     S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Catat Skrining Metabolik Pasien (TD / GDS / BMI)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Catat Skrining Metabolik Pasien (TD / GDS / IMT)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="p-2.5 rounded-lg border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">
+        <b>Acuan Normal (Kemenkes RI / PERKI / PERKENI):</b> TD &lt;120/80 mmHg (L/P) &bull; GDS &lt;140 mg/dL (L/P) &bull; IMT Kemenkes <b>18.5–25.0</b> (Asia-Pasifik 18.5–22.9 &bull; Gemuk 25.1–27.0 &bull; Obesitas &gt;27.0) &bull; Lingkar Perut aman: <b>L &lt;90 / P &lt;80 cm</b>.
+      </div>
       <div><label class="font-semibold block mb-1">Pilih Pasien</label><select id="skrMemId" class="ons-select">${members.map((m) => `<option value="${S().esc(m.id_member)}" ${m.id_member === idMember ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.program_prb)})</option>`).join('')}</select></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="font-semibold block mb-1">Tekanan Darah (mmHg)</label><input id="skrTd" class="ons-input font-mono-num" value="125/80"/></div>
@@ -767,16 +770,36 @@
         <div><label class="font-semibold block mb-1">Berat Badan (kg)</label><input id="skrBb" type="number" class="ons-input font-mono-num" value="65" oninput="window.recalcSkriningBmi()"/></div>
         <div><label class="font-semibold block mb-1">Tinggi Badan (cm)</label><input id="skrTb" type="number" class="ons-input font-mono-num" value="168" oninput="window.recalcSkriningBmi()"/></div>
       </div>
-      <div class="p-2.5 rounded-lg border font-mono-num text-center" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">BMI Terhitung: <b id="skrBmiOut">23.0</b></div>
+      <div class="p-2.5 rounded-lg border font-mono-num text-center" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">IMT Terhitung: <b id="skrBmiOut">23.0</b> <span id="skrBmiCat" class="font-sans font-semibold text-[11px] text-emerald-700 dark:text-emerald-300">(Normal Kemenkes · Waspada Asia-Pasifik ≥23)</span></div>
       <button onclick="window.saveSkriningSubmit()" class="ons-btn ons-btn-emerald w-full">Simpan Skrining ke Rekam Pasien</button>
-    </div>`, '480px');
+    </div>`, '500px');
+    setTimeout(() => { if (typeof global.recalcSkriningBmi === 'function') global.recalcSkriningBmi(); }, 10);
   };
 
   global.recalcSkriningBmi = () => {
     const bb = Number((document.getElementById('skrBb') || {}).value || 0);
     const tb = Number((document.getElementById('skrTb') || {}).value || 0) / 100;
     const el = document.getElementById('skrBmiOut');
-    if (el && bb > 0 && tb > 0) el.textContent = (bb / (tb * tb)).toFixed(1);
+    const catEl = document.getElementById('skrBmiCat');
+    if (el && bb > 0 && tb > 0) {
+      const imt = Math.round((bb / (tb * tb)) * 10) / 10;
+      el.textContent = imt.toFixed(1);
+      if (catEl) {
+        if (imt < 18.5) {
+          catEl.className = 'font-sans font-semibold text-[11px] text-sky-600 dark:text-sky-300';
+          catEl.textContent = '(BB Kurang / Kurus <18.5)';
+        } else if (imt <= 25.0) {
+          catEl.className = 'font-sans font-semibold text-[11px] text-emerald-700 dark:text-emerald-300';
+          catEl.textContent = imt >= 23.0 ? '(Normal Kemenkes · Waspada Asia-Pasifik ≥23)' : '(Normal Ideal L/P)';
+        } else if (imt <= 27.0) {
+          catEl.className = 'font-sans font-semibold text-[11px] text-amber-600 dark:text-amber-300';
+          catEl.textContent = '(Gemuk Ringan / Overweight 25.1–27.0)';
+        } else {
+          catEl.className = 'font-sans font-semibold text-[11px] text-red-600 dark:text-red-300';
+          catEl.textContent = '(Obesitas >27.0 Kemenkes RI)';
+        }
+      }
+    }
   };
 
   global.saveSkriningSubmit = async () => {

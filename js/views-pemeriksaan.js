@@ -20,6 +20,73 @@
   let modalFocusOnly = false;
   let modalFocusParam = 'semua';
   let waModalMode = 'HASIL'; // HASIL | REMINDER
+  let showClinicalMatrix = true;
+
+  /**
+   * Acuan Nilai Normal Klinis Terpadu (v16.8)
+   * Sumber: Kemenkes RI P2PTM, PERKI / INA-SH (Hipertensi & Lipid),
+   * PERKENI (DM / Prediabetes), IRA (Hiperurisemia), & AHA/ESC 2024.
+   */
+  const CLINICAL_NORMS = {
+    tensi: {
+      normalL: '< 120 / < 80 mmHg',
+      normalP: '< 120 / < 80 mmHg',
+      elevated: '120–129 / < 80 (Normal-Tinggi)',
+      stage1: '130–139 / 80–89 (Pra-HT / Thp 1 AHA)',
+      stage2: '≥ 140 / ≥ 90 (Hipertensi Klinik INA-SH)',
+      krisis: '≥ 180 / ≥ 120 (Krisis -> IGD) | Rendah < 90/60',
+      noteGender: 'Standar klinis dewasa L & P sama (<120/80 mmHg).'
+    },
+    nadi: {
+      normalL: '60 – 100 bpm (istirahat)',
+      normalP: '60 – 100 bpm (istirahat)',
+      low: '< 60 bpm (Bradikardia; atlet terlatih bisa 40–60)',
+      high: '> 100 bpm (Takikardia); Kritis <45 atau ≥130 bpm',
+      noteGender: 'Ambang sehat dewasa L & P sama (60–100 bpm); rata-rata wanita sedikit lebih cepat.'
+    },
+    gula: {
+      gdpNormal: '70 – 99 mg/dL (<100)',
+      gdpWarn: '100 – 125 mg/dL (Prediabetes/GDPT)',
+      gdpHigh: '≥ 126 mg/dL (Suspek DM)',
+      gdsNormal: '70 – 139 mg/dL (<140)',
+      gd2ppNormal: '70 – 139 mg/dL (<140)',
+      postWarn: '140 – 199 mg/dL (Waspada / TGT)',
+      postHigh: '≥ 200 mg/dL (Suspek DM)',
+      hypo: '< 70 mg/dL (Hipoglikemia — Berat <54) | Kritis ≥300 mg/dL',
+      noteGender: 'Dewasa non-hamil L & P sama (hamil/gestasional memakai target Sp.OG).'
+    },
+    kolesterol: {
+      normalAdultL: '< 200 mg/dL (≥ 20 th)',
+      normalAdultP: '< 200 mg/dL (≥ 20 th)',
+      normalYouth: '< 170 mg/dL (Anak/Remaja < 20 th)',
+      warnAdult: '200 – 239 mg/dL (Remaja 170–199)',
+      highAdult: '≥ 240 mg/dL (Remaja ≥ 200)',
+      lipidNote: 'Profil Lipid lengkap: LDL <100, TG <150 | HDL Baik: L ≥40 mg/dL, P ≥50 mg/dL.'
+    },
+    asam_urat: {
+      normalL: '3.4 – 7.0 mg/dL',
+      normalP: '2.4 – 6.0 mg/dL',
+      highL: '> 7.0 mg/dL (Hiperurisemia L)',
+      highP: '> 6.0 mg/dL (Hiperurisemia P)',
+      targetGout: 'Target terapi Gout (IRA): < 6.0 mg/dL (< 5.0 bila tofus). Pascamenopause wanita dapat mendekati batas L.'
+    },
+    imt: {
+      normalL: '18.5 – 25.0 kg/m² (Kemenkes) · Asia-Pasifik 18.5–22.9',
+      normalP: '18.5 – 25.0 kg/m² (Kemenkes) · Asia-Pasifik 18.5–22.9',
+      kurus: '< 18.5 (Kurus Berat <17.0 | Ringan 17.0–18.4)',
+      overweight: '25.1 – 27.0 (Gemuk Ringan Kemenkes)',
+      obesitas: '> 27.0 (Gemuk Berat / Obesitas Kemenkes)',
+      perutL: '< 90 cm',
+      perutP: '< 80 cm'
+    }
+  };
+
+  function getGulaRefLabel(gulaJenis) {
+    const gj = String(gulaJenis || 'GDS').toUpperCase();
+    if (gj === 'GDP') return 'GDP Puasa 70–99 mg/dL';
+    if (gj === 'GD2PP') return '2 Jam PP < 140 mg/dL';
+    return 'GDS Sewaktu < 140 mg/dL';
+  }
 
   function _todayIso() {
     return new Date().toISOString().slice(0, 10);
@@ -42,6 +109,9 @@
   function evalPemeriksaanStatus(d) {
     const rec = d || {};
     const jk = String(rec.jenis_kelamin || 'L').toUpperCase() === 'P' ? 'P' : 'L';
+    const usia = Number(rec.usia_tahun || 0);
+    const isYouth = usia > 0 && usia < 20;
+
     const sistol = Number(rec.tensi_sistol || 0);
     const diastol = Number(rec.tensi_diastol || 0);
     let statusTensi = '';
@@ -56,7 +126,16 @@
     const mapMmhg = (sistol > 0 && diastol > 0) ? Math.round((sistol + 2 * diastol) / 3) : '';
     const pulsePressure = (sistol > 0 && diastol > 0 && sistol > diastol) ? (sistol - diastol) : '';
 
-    const gulaJenis = String(rec.gula_jenis || 'GDS').toUpperCase();
+    const nadi = Number(rec.nadi_bpm || 0);
+    let statusNadi = '';
+    if (nadi > 0) {
+      if (nadi < 60) statusNadi = 'BRADIKARDIA';
+      else if (nadi > 100) statusNadi = 'TAKIKARDIA';
+      else statusNadi = 'NORMAL';
+    }
+
+    const gulaJenisRaw = String(rec.gula_jenis || 'GDS').toUpperCase();
+    const gulaJenis = (gulaJenisRaw === 'GDP' || gulaJenisRaw === 'GD2PP') ? gulaJenisRaw : 'GDS';
     const gulaVal = Number(rec.gula_darah || 0);
     let statusGula = '';
     if (gulaVal > 0) {
@@ -64,6 +143,7 @@
       else if (gulaJenis === 'GDP') {
         statusGula = gulaVal >= 126 ? 'TINGGI' : (gulaVal >= 100 ? 'WASPADA' : 'NORMAL');
       } else {
+        // GDS & GD2PP (2 Jam Post-Prandial / TTGO): PERKENI <140 Normal, 140-199 TGT/Waspada, >=200 Suspek DM
         statusGula = gulaVal >= 200 ? 'TINGGI' : (gulaVal >= 140 ? 'WASPADA' : 'NORMAL');
       }
     }
@@ -71,7 +151,9 @@
     const kolVal = Number(rec.kolesterol_total || 0);
     let statusKolesterol = '';
     if (kolVal > 0) {
-      statusKolesterol = kolVal >= 240 ? 'TINGGI' : (kolVal >= 200 ? 'BATAS_TINGGI' : 'NORMAL');
+      const kolWarn = isYouth ? 170 : 200;
+      const kolHigh = isYouth ? 200 : 240;
+      statusKolesterol = kolVal >= kolHigh ? 'TINGGI' : (kolVal >= kolWarn ? 'BATAS_TINGGI' : 'NORMAL');
     }
 
     const auVal = Number(rec.asam_urat || 0);
@@ -89,9 +171,10 @@
       : (Number(rec.imt_bmi || 0) > 0 ? Number(rec.imt_bmi) : '');
     let statusBmi = '';
     if (imtBmi) {
+      // Kemenkes RI P2PTM: <18.5 Kurus, 18.5-25.0 Normal, 25.1-27.0 Gemuk Ringan, >27.0 Obesitas
       if (imtBmi < 18.5) statusBmi = 'KURUS';
-      else if (imtBmi < 25) statusBmi = 'NORMAL';
-      else if (imtBmi < 30) statusBmi = 'OVERWEIGHT';
+      else if (imtBmi <= 25.0) statusBmi = 'NORMAL';
+      else if (imtBmi <= 27.0) statusBmi = 'OVERWEIGHT';
       else statusBmi = 'OBESITAS';
     }
 
@@ -99,18 +182,27 @@
     if (statusTensi === 'KRISIS_HIPERTENSI') {
       redFlagReasons.push('Tekanan darah >=180/120 mmHg (Krisis Hipertensi) — Rujuk segera ke dokter/IGD.');
     }
-    if (sistol > 0 && sistol < 80) {
-      redFlagReasons.push('Tekanan darah sistolik <80 mmHg (Hipotensi berat) — Evaluasi kondisi klinis segera.');
+    if ((sistol > 0 && sistol < 80) || (diastol > 0 && diastol < 50)) {
+      redFlagReasons.push('Hipotensi berat (<80/50 mmHg) — Evaluasi kondisi klinis/IGD segera.');
+    }
+    if (nadi > 0 && nadi < 45) {
+      redFlagReasons.push('Bradikardia berat (Nadi <45 bpm) — Evaluasi EKG/dokter segera.');
+    }
+    if (nadi >= 130) {
+      redFlagReasons.push('Takikardia berat saat istirahat (Nadi >=130 bpm) — Evaluasi dokter segera.');
     }
     if (statusGula === 'HIPOGLIKEMIA') {
-      redFlagReasons.push('Gula darah <70 mg/dL (Hipoglikemia) — Tangani asupan glukosa & evaluasi terapi insulin/OAD.');
+      const beratTxt = gulaVal < 54 ? ' Hipoglikemia Berat (<54 mg/dL)!' : '';
+      redFlagReasons.push('Gula darah <70 mg/dL (Hipoglikemia).' + beratTxt + ' Tangani asupan glukosa & evaluasi terapi insulin/OAD.');
     }
     if (gulaVal >= 300) {
       redFlagReasons.push('Gula darah >=300 mg/dL (Hiperglikemia berat) — Perlu evaluasi dokter segera.');
     }
 
     const activeStatuses = [statusTensi, statusGula, statusKolesterol, statusAsamUrat].filter(Boolean);
-    const abnCount = activeStatuses.filter((s) => s !== 'NORMAL').length;
+    const abnCoreCount = activeStatuses.filter((s) => s !== 'NORMAL').length;
+    const abnNadi = (statusNadi && statusNadi !== 'NORMAL') ? 1 : 0;
+    const abnCount = abnCoreCount + abnNadi;
     let tingkatRisiko = 'NORMAL';
     if (redFlagReasons.length > 0) {
       tingkatRisiko = 'KRISIS_RUJUK';
@@ -128,8 +220,11 @@
 
     return {
       jenis_kelamin: jk,
+      usia_tahun: usia || '',
+      is_youth_lipid: isYouth,
       gula_jenis: gulaJenis,
       status_tensi: statusTensi,
+      status_nadi: statusNadi,
       status_gula: statusGula,
       status_kolesterol: statusKolesterol,
       status_asam_urat: statusAsamUrat,
@@ -137,6 +232,7 @@
       pulse_pressure: pulsePressure,
       imt_bmi: imtBmi,
       status_bmi: statusBmi,
+      bmi_asia_warn: !!(imtBmi && imtBmi >= 23.0 && imtBmi <= 25.0),
       tingkat_risiko: tingkatRisiko,
       red_flag_reasons: redFlagReasons
     };
@@ -146,19 +242,21 @@
     const c = String(code || '').toUpperCase();
     const map = {
       NORMAL: { label: 'Normal', tone: 'bpom-bebas', hex: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-      MENINGKAT: { label: 'Meningkat', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-      WASPADA: { label: 'Waspada / Pra-DM', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-      BATAS_TINGGI: { label: 'Batas Tinggi', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-      HIPERTENSI_1: { label: 'Hipertensi Tahap 1', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-      HIPERTENSI_2: { label: 'Hipertensi Tahap 2', tone: 'bpom-keras', hex: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
+      MENINGKAT: { label: 'Meningkat (Normal-Tinggi)', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+      WASPADA: { label: 'Waspada / Prediabetes', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+      BATAS_TINGGI: { label: 'Ambang Batas Tinggi', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+      HIPERTENSI_1: { label: 'Pra-HT / Hipertensi Thp 1', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+      HIPERTENSI_2: { label: 'Hipertensi Klinik (≥140/90)', tone: 'bpom-keras', hex: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
       KRISIS_HIPERTENSI: { label: 'Krisis Hipertensi!', tone: 'bpom-narko', hex: 'bg-red-600/20 text-red-700 dark:text-red-300 border-red-500/50' },
-      HIPOTENSI: { label: 'Tensi Rendah', tone: 'bpom-terbatas', hex: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
-      HIPOGLIKEMIA: { label: 'Gula Rendah!', tone: 'bpom-keras', hex: 'bg-red-600/20 text-red-700 dark:text-red-300 border-red-500/50' },
+      HIPOTENSI: { label: 'Tensi Rendah (<90/60)', tone: 'bpom-terbatas', hex: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+      BRADIKARDIA: { label: 'Nadi Lambat (<60 bpm)', tone: 'bpom-terbatas', hex: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+      TAKIKARDIA: { label: 'Nadi Cepat (>100 bpm)', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+      HIPOGLIKEMIA: { label: 'Hipoglikemia (<70)!', tone: 'bpom-keras', hex: 'bg-red-600/20 text-red-700 dark:text-red-300 border-red-500/50' },
       TINGGI: { label: 'Tinggi / Perlu Kontrol', tone: 'bpom-keras', hex: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
       RENDAH: { label: 'Di Bawah Normal', tone: 'bpom-terbatas', hex: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
-      KURUS: { label: 'BB Kurang', tone: 'bpom-terbatas', hex: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
-      OVERWEIGHT: { label: 'BB Berlebih', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-      OBESITAS: { label: 'Obesitas', tone: 'bpom-keras', hex: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' }
+      KURUS: { label: 'BB Kurang (Kurus)', tone: 'bpom-terbatas', hex: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+      OVERWEIGHT: { label: 'Gemuk Ringan (25.1–27)', tone: 'bpom-terbatas', hex: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+      OBESITAS: { label: 'Obesitas (>27.0)', tone: 'bpom-keras', hex: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' }
     };
     return map[c] || { label: c || '-', tone: 'bpom-bebas', hex: 'bg-slate-500/10 text-slate-600 dark:text-slate-300 border-slate-500/25' };
   }
@@ -175,7 +273,8 @@
   }
 
   function isAbnormalRow(r) {
-    const s = [r.status_tensi, r.status_gula, r.status_kolesterol, r.status_asam_urat].filter(Boolean);
+    const ev = evalPemeriksaanStatus(r);
+    const s = [r.status_tensi || ev.status_tensi, ev.status_nadi, r.status_gula || ev.status_gula, r.status_kolesterol || ev.status_kolesterol, r.status_asam_urat || ev.status_asam_urat].filter(Boolean);
     return s.some((x) => x !== 'NORMAL');
   }
 
@@ -312,14 +411,20 @@
     let idxNum = 1;
     if (Number(rec.tensi_sistol || 0) > 0 && Number(rec.tensi_diastol || 0) > 0) {
       const tdDelta = deltas.tensi ? (' _(vs lalu ' + deltas.tensi.prevText + ': ' + deltas.tensi.text + ')_') : '';
+      const nadiVal = Number(rec.nadi_bpm || 0);
+      const nadiStTxt = (stEval.status_nadi && stEval.status_nadi !== 'NORMAL') ? (' [' + metaStatusBadge(stEval.status_nadi).label + ']') : '';
       lines.push('*' + (idxNum++) + '. Tekanan Darah (Tensi)*');
-      lines.push('   Hasil  : *' + rec.tensi_sistol + '/' + rec.tensi_diastol + ' mmHg*' + (Number(rec.nadi_bpm || 0) > 0 ? (' | Nadi: ' + rec.nadi_bpm + ' bpm') : '') + (stEval.map_mmhg ? (' | MAP: ' + stEval.map_mmhg) : '') + tdDelta);
-      lines.push('   Status : ' + metaStatusBadge(stTensi).label + ' _(Normal <120/80 mmHg)_');
+      lines.push('   Hasil  : *' + rec.tensi_sistol + '/' + rec.tensi_diastol + ' mmHg*' + (nadiVal > 0 ? (' | Nadi: ' + nadiVal + ' bpm' + nadiStTxt) : '') + (stEval.map_mmhg ? (' | MAP: ' + stEval.map_mmhg) : '') + tdDelta);
+      lines.push('   Status : ' + metaStatusBadge(stTensi).label + ' _(Normal L/P <120/80 mmHg | Nadi 60-100 bpm)_');
+    } else if (Number(rec.nadi_bpm || 0) > 0) {
+      lines.push('*' + (idxNum++) + '. Denyut Nadi Istirahat*');
+      lines.push('   Hasil  : *' + rec.nadi_bpm + ' bpm*');
+      lines.push('   Status : ' + metaStatusBadge(stEval.status_nadi || 'NORMAL').label + ' _(Normal L/P 60-100 bpm)_');
     }
 
     if (Number(rec.gula_darah || 0) > 0) {
-      const gj = String(rec.gula_jenis || 'GDS').toUpperCase();
-      const refGula = gj === 'GDP' ? 'Normal Puasa <100 mg/dL' : 'Normal Sewaktu <140 mg/dL';
+      const gj = stEval.gula_jenis || 'GDS';
+      const refGula = 'Normal ' + getGulaRefLabel(gj);
       const gDelta = deltas.gula ? (' _(vs lalu ' + deltas.gula.prev + ': ' + deltas.gula.text + ')_') : '';
       lines.push('*' + (idxNum++) + '. Gula Darah (' + gj + ')*');
       lines.push('   Hasil  : *' + rec.gula_darah + ' mg/dL*' + gDelta);
@@ -328,15 +433,16 @@
 
     if (Number(rec.kolesterol_total || 0) > 0) {
       const kDelta = deltas.kolesterol ? (' _(vs lalu ' + deltas.kolesterol.prev + ': ' + deltas.kolesterol.text + ')_') : '';
-      lines.push('*Kolesterol Total*');
+      const refKol = stEval.is_youth_lipid ? 'Optimal Usia <20th <170 mg/dL' : 'Normal L/P <200 mg/dL';
+      lines.push('*' + (idxNum++) + '. Kolesterol Total*');
       lines.push('   Hasil  : *' + rec.kolesterol_total + ' mg/dL*' + kDelta);
-      lines.push('   Status : ' + metaStatusBadge(stKol).label + ' _(Normal <200 mg/dL)_');
+      lines.push('   Status : ' + metaStatusBadge(stKol).label + ' _(' + refKol + ')_');
     }
 
     if (Number(rec.asam_urat || 0) > 0) {
       const refAu = stEval.jenis_kelamin === 'P' ? 'Wanita Normal 2.4-6.0 mg/dL' : 'Pria Normal 3.4-7.0 mg/dL';
       const auDelta = deltas.asam_urat ? (' _(vs lalu ' + deltas.asam_urat.prev + ': ' + deltas.asam_urat.text + ')_') : '';
-      lines.push('*Asam Urat*');
+      lines.push('*' + (idxNum++) + '. Asam Urat*');
       lines.push('   Hasil  : *' + rec.asam_urat + ' mg/dL*' + auDelta);
       lines.push('   Status : ' + metaStatusBadge(stAu).label + ' _(' + refAu + ')_');
     }
@@ -395,30 +501,50 @@
       if (ev.status_tensi === 'HIPOTENSI') {
         tips.push('Tensi rendah: cukupi cairan/air putih, istirahat cukup, hindari berdiri mendadak.');
       } else if (ev.status_tensi !== 'KRISIS_HIPERTENSI') {
-        tips.push('Tensi di atas normal: kurangi garam & makanan gurih/gorengan, kelola stres, patuhi konsumsi obat antihipertensi dokter.');
+        tips.push('Tensi di atas normal: kurangi garam (<1 sdt/hari) & gorengan, kelola stres, ukur ulang rutin & patuhi obat antihipertensi.');
+      }
+    }
+    if (ev.status_nadi && ev.status_nadi !== 'NORMAL') {
+      if (ev.status_nadi === 'BRADIKARDIA' && Number(rec.nadi_bpm || 0) >= 45) {
+        tips.push('Nadi <60 bpm: tanyakan apakah rutin olahraga berat atau konsumsi obat jantung (beta-blocker); evaluasi bila pusing/lemas.');
+      } else if (ev.status_nadi === 'TAKIKARDIA' && Number(rec.nadi_bpm || 0) < 130) {
+        tips.push('Nadi >100 bpm: istirahat 10 menit, hindari kafein berlebih & ukur ulang; konsultasikan bila menetap.');
       }
     }
     if (ev.status_gula && ev.status_gula !== 'NORMAL') {
       if (ev.status_gula === 'HIPOGLIKEMIA') {
-        tips.push('Segera berikan asupan manis aman (air gula/permen) bila pasien sadar & tinjau ulang dosis obat diabetes bersama dokter.');
+        tips.push('Segera berikan asupan manis aman (15g karbohidrat cepat serap: air gula/permen) bila pasien sadar, cek ulang 15 menit & tinjau ulang dosis obat diabetes bersama dokter.');
       } else {
-        tips.push('Gula darah meningkat: batasi gula/minuman manis & karbohidrat sederhana, perbanyak serat sayur & aktivitas fisik teratur.');
+        tips.push('Gula darah meningkat (' + ev.gula_jenis + '): batasi gula/minuman manis & karbohidrat sederhana, perbanyak serat sayur & aktivitas fisik 150 menit/minggu' + (ev.status_gula === 'WASPADA' ? ', konfirmasi GDP/HbA1c.' : '.'));
       }
     }
     if (ev.status_kolesterol && ev.status_kolesterol !== 'NORMAL') {
-      tips.push('Kolesterol tinggi: hindari santan kental, gorengan berulang & daging berlemak; perbanyak serat larut & olahraga 30 menit/hari.');
+      tips.push('Kolesterol tinggi: hindari santan kental, gorengan berulang, jeroan & daging berlemak; perbanyak serat larut & olahraga 30 menit/hari.');
     }
     if (ev.status_asam_urat && ev.status_asam_urat !== 'NORMAL') {
-      tips.push('Asam urat di atas batas normal: batasi jeroan, emping/melinjo, kacang-kacangan & seafood; minum air putih minimal 2L/hari.');
+      if (ev.status_asam_urat === 'RENDAH') {
+        tips.push('Asam urat di bawah rentang normal (' + (ev.jenis_kelamin === 'P' ? 'P: 2.4-6.0' : 'L: 3.4-7.0') + ' mg/dL): evaluasi asupan nutrisi & riwayat obat penurun urat.');
+      } else {
+        tips.push('Asam urat di atas normal (' + (ev.jenis_kelamin === 'P' ? 'P >6.0' : 'L >7.0') + ' mg/dL): batasi jeroan, emping/melinjo, alkohol & seafood; minum air putih min. 2L/hari (target terapi gout <6.0).');
+      }
     }
     if (ev.status_bmi === 'OVERWEIGHT' || ev.status_bmi === 'OBESITAS') {
-      tips.push('IMT (' + ev.imt_bmi + ') melebihi rentang ideal: atur porsi kalori harian & aktivitas aerobik ringan bertahap.');
+      tips.push('IMT ' + ev.imt_bmi + ' (' + metaStatusBadge(ev.status_bmi).label + ' Kemenkes RI): atur defisit kalori bertahap, jaga lingkar perut (' + (ev.jenis_kelamin === 'P' ? 'P <80 cm' : 'L <90 cm') + ') & aktivitas aerobik.');
+    } else if (ev.bmi_asia_warn) {
+      tips.push('IMT ' + ev.imt_bmi + ' normal Kemenkes (18.5-25.0), namun memasuki ambang waspada Asia-Pasifik (>=23.0): jaga porsi makan & lingkar perut.');
+    } else if (ev.status_bmi === 'KURUS') {
+      tips.push('IMT ' + ev.imt_bmi + ' (<18.5 BB Kurang): tingkatkan asupan protein & gizi seimbang.');
     }
     if (!tips.length) {
-      return 'Seluruh parameter yang diperiksa berada dalam rentang normal. Pertahankan pola makan seimbang, hidrasi cukup & cek rutin berkala.';
+      return 'Seluruh parameter yang diperiksa berada dalam rentang normal (' + (ev.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki') + '). Pertahankan pola makan seimbang, hidrasi cukup & cek rutin berkala.';
     }
     return tips.join(' ');
   }
+
+  global.togglePemeriksaanClinicalMatrix = () => {
+    showClinicalMatrix = !showClinicalMatrix;
+    global.renderActiveView();
+  };
 
   global.setPemeriksaanTab = (t) => {
     S().AppState.subTabs.pemeriksaan = t || 'semua';
@@ -501,12 +627,12 @@
         <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanFilter('KRISIS')">
           <div class="text-[11px] font-bold uppercase opacity-70">Kritis / Rujuk Dokter</div>
           <div class="text-2xl font-extrabold font-mono-num ${krisisCount > 0 ? 'text-red-600' : 'text-emerald-600'} mt-1">${krisisCount}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">TD &ge;180/120 / Gula &ge;300</div>
+          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">TD &ge;180/120 &bull; Gula &lt;70/&ge;300</div>
         </div>
         <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanTab('tensi')">
           <div class="text-[11px] font-bold uppercase opacity-70">Tensi Waspada/Tinggi</div>
           <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${tensiHigh}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">TD &ge;130/80 mmHg</div>
+          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Pra-HT / HT (&ge;130/80 mmHg)</div>
         </div>
         <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanTab('gula')">
           <div class="text-[11px] font-bold uppercase opacity-70">Gula / Metabolik Pantau</div>
@@ -615,48 +741,96 @@
   }
 
   function renderGuidanceBanner(subTab) {
+    if (subTab === 'semua') {
+      const matrixRows = [
+        { param: 'Tekanan Darah (PERKI / INA-SH)', male: '< 120 / < 80 mmHg', female: '< 120 / < 80 mmHg (sama)', diff: false, warn: 'Normal-Tinggi 120–129/<80 • HT Thp 1: 130–139/80–89 • HT Klinik: ≥140/90 • Krisis IGD: ≥180/120 | Rendah: <90/60' },
+        { param: 'Denyut Nadi Istirahat (AHA)', male: '60 – 100 bpm', female: '60 – 100 bpm (sama)', diff: false, warn: 'Bradikardia <60 bpm (atlet bugar bisa 40–60) • Takikardia >100 bpm • Kritis <45 atau ≥130 bpm' },
+        { param: 'Gula Darah Puasa (GDP ≥8 jam)', male: '70 – 99 mg/dL', female: '70 – 99 mg/dL (sama)', diff: false, warn: 'Prediabetes (GDPT): 100–125 • Diabetes: ≥126 • Hipoglikemia: <70 (Berat <54) • Kritis: ≥300 mg/dL' },
+        { param: 'Gula Sewaktu (GDS) & 2 Jam PP', male: '< 140 mg/dL (70–139)', female: '< 140 mg/dL (sama*)', diff: false, warn: 'Waspada / Prediabetes (TGT): 140–199 • Suspek DM: ≥200 • *Hamil ikut target khusus dokter Sp.OG' },
+        { param: 'Kolesterol Total & Profil Lipid', male: '< 200 mg/dL | HDL ≥ 40', female: '< 200 mg/dL | HDL ≥ 50', diff: true, warn: 'Batas Tinggi: 200–239 • Tinggi: ≥240 (<20 th: Optimal <170) • LDL <100, TG <150 (Pascamenopause perlu rutin)' },
+        { param: 'Asam Urat Darah (Kemenkes / IRA)', male: '3.4 – 7.0 mg/dL', female: '2.4 – 6.0 mg/dL', diff: true, warn: 'Hiperurisemia: Pria >7.0 | Wanita >6.0 mg/dL • Target terapi pasien Gout (IRA): <6.0 mg/dL (<5.0 bila tofus)' },
+        { param: 'IMT & Lingkar Perut (Kemenkes RI)', male: 'IMT 18.5–25.0 | LP < 90 cm', female: 'IMT 18.5–25.0 | LP < 80 cm', diff: true, warn: 'Kurus <18.5 • Gemuk Ringan 25.1–27.0 • Obesitas >27.0 (Asia-Pasifik waspada ≥23.0, obesitas ≥25.0)' }
+      ];
+      return `<div class="ons-card p-3.5 sm:p-4 text-xs space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-extrabold text-sm" style="color:var(--ons-text)">Acuan Nilai Normal Kesehatan Terbaru (Laki-laki vs Perempuan)</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/25">Kemenkes RI P2PTM &bull; PERKI &bull; PERKENI &bull; IRA</span>
+          </div>
+          <button type="button" onclick="window.togglePemeriksaanClinicalMatrix()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">${showClinicalMatrix ? 'Sembunyikan Tabel Acuan' : 'Tampilkan Tabel Acuan L/P'}</button>
+        </div>
+        ${showClinicalMatrix ? `<div class="ons-table-wrap rounded-xl border" style="border-color:var(--ons-border)">
+          <table class="ons-table text-[11px]">
+            <thead>
+              <tr>
+                <th>Pemeriksaan / Pedoman</th>
+                <th>Normal Laki-laki (L)</th>
+                <th>Normal Perempuan (P)</th>
+                <th>Batas Waspada, Tinggi &amp; Rujukan Klinis</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${matrixRows.map((row) => `<tr>
+                <td class="font-bold">${S().esc(row.param)} ${row.diff ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 text-[9px] font-bold">Beda L/P</span>' : ''}</td>
+                <td class="font-mono-num font-bold text-emerald-700 dark:text-emerald-300">${S().esc(row.male)}</td>
+                <td class="font-mono-num font-bold text-emerald-700 dark:text-emerald-300">${S().esc(row.female)}</td>
+                <td style="color:var(--ons-text-soft)">${S().esc(row.warn)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : `<div class="text-[11px]" style="color:var(--ons-text-soft)">Ringkasan cepat: Tensi &lt;120/80 &bull; Nadi 60–100 &bull; GDP 70–99 / GDS &amp; 2JPP &lt;140 &bull; Kolesterol &lt;200 (HDL L&ge;40 / P&ge;50) &bull; Asam Urat L 3.4–7.0 / P 2.4–6.0 &bull; IMT 18.5–25.0 (LP L&lt;90 / P&lt;80 cm).</div>`}
+      </div>`;
+    }
+
     const info = {
       tensi: {
-        title: 'Panduan Referensi Tekanan Darah (AHA / Kemenkes)',
+        title: 'Panduan Tekanan Darah & Denyut Nadi (PERKI / INA-SH / Kemenkes & AHA/ESC 2024) — L & P Dewasa Sama',
         items: [
-          { lbl: 'Normal', rng: '< 120 / < 80 mmHg', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-          { lbl: 'Meningkat / HT 1', rng: '120-139 / 80-89 mmHg', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-          { lbl: 'Hipertensi Tahap 2', rng: '>= 140 / >= 90 mmHg', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
-          { lbl: 'KRISIS (Rujuk IGD)', rng: '>= 180 / >= 120 mmHg', cls: 'bg-red-600 text-white border-red-700' }
+          { lbl: 'Normal / Optimal (L & P)', rng: '< 120 / < 80 mmHg', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+          { lbl: 'Meningkat (Elevated)', rng: '120–129 / < 80 mmHg', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+          { lbl: 'Pra-HT / Thp 1 (AHA)', rng: '130–139 / 80–89 mmHg', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+          { lbl: 'Hipertensi Klinik (INA-SH)', rng: '≥ 140 / ≥ 90 mmHg', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
+          { lbl: 'Nadi Normal (L & P)', rng: '60 – 100 bpm', cls: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+          { lbl: 'KRISIS (IGD) / Hipotensi', rng: '≥180/120 | Rendah <90/60', cls: 'bg-red-600 text-white border-red-700' }
         ]
       },
       gula: {
-        title: 'Panduan Referensi Gula Darah Kapiler (PERKENI)',
+        title: 'Panduan Gula Darah Kapiler / Vena (PERKENI & Kemenkes RI P2PTM) — Dewasa Non-Hamil L & P Sama',
         items: [
-          { lbl: 'GDS Normal', rng: '< 140 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-          { lbl: 'GDP Normal (Puasa)', rng: '70 - 99 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-          { lbl: 'Waspada / Pra-DM', rng: 'GDS 140-199 | GDP 100-125', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-          { lbl: 'Tinggi / Rujuk >=300', rng: 'GDS >= 200 | GDP >= 126', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' }
+          { lbl: 'GDP Normal (Puasa ≥8j)', rng: '70 – 99 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+          { lbl: 'GDS & 2 Jam PP Normal', rng: '70 – 139 mg/dL (<140)', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+          { lbl: 'Prediabetes (GDPT / TGT)', rng: 'GDP 100–125 | GDS/2JPP 140–199', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+          { lbl: 'Suspek DM / Tinggi', rng: 'GDP ≥ 126 | GDS/2JPP ≥ 200', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
+          { lbl: 'Hipoglikemia / Kritis ≥300', rng: '< 70 mg/dL (Berat <54)', cls: 'bg-red-600 text-white border-red-700' }
         ]
       },
       kolesterol: {
-        title: 'Panduan Referensi Kolesterol Total (NCEP ATP III)',
+        title: 'Panduan Kolesterol Total & Profil Lipid (Kemenkes RI / PERKI / NCEP ATP III)',
         items: [
-          { lbl: 'Optimal / Normal', rng: '< 200 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-          { lbl: 'Batas Tinggi (Waspada)', rng: '200 - 239 mg/dL', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-          { lbl: 'Tinggi', rng: '>= 240 mg/dL', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' }
+          { lbl: 'Normal Dewasa L & P (≥20th)', rng: '< 200 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+          { lbl: 'Optimal Anak/Remaja (<20th)', rng: '< 170 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+          { lbl: 'Ambang Batas Tinggi', rng: '200 – 239 mg/dL (Remaja 170–199)', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+          { lbl: 'Tinggi (Hiperkolesterolemia)', rng: '≥ 240 mg/dL (Remaja ≥200)', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
+          { lbl: 'HDL Baik (Beda L/P) & LDL/TG', rng: 'HDL: L ≥40 | P ≥50 · LDL <100 · TG <150', cls: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' }
         ]
       },
       asam_urat: {
-        title: 'Panduan Referensi Asam Urat Darah (WHO / Kemenkes)',
+        title: 'Panduan Asam Urat Darah (Kemenkes RI & Perhimpunan Reumatologi Indonesia / IRA)',
         items: [
-          { lbl: 'Normal Pria (L)', rng: '3.4 - 7.0 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-          { lbl: 'Normal Wanita (P)', rng: '2.4 - 6.0 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-          { lbl: 'Hiperurisemia (Tinggi)', rng: 'L > 7.0 | P > 6.0 mg/dL', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' }
+          { lbl: 'Normal Laki-laki (L)', rng: '3.4 – 7.0 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+          { lbl: 'Normal Perempuan (P)', rng: '2.4 – 6.0 mg/dL', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+          { lbl: 'Hiperurisemia (Tinggi)', rng: 'L > 7.0 | P > 6.0 mg/dL', cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
+          { lbl: 'Di Bawah Normal', rng: 'L < 3.4 | P < 2.4 mg/dL', cls: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+          { lbl: 'Target Terapi Gout (IRA)', rng: '< 6.0 mg/dL (< 5.0 bila tofus)', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' }
         ]
       }
     };
     const cfg = info[subTab];
     if (!cfg) return '';
     return `<div class="ons-card p-3.5 text-xs">
-      <div class="font-bold mb-2" style="color:var(--ons-text)">${cfg.title}</div>
+      <div class="font-bold mb-2" style="color:var(--ons-text)">${S().esc(cfg.title)}</div>
       <div class="flex flex-wrap gap-2">
-        ${cfg.items.map((it) => `<div class="px-2.5 py-1.5 rounded-lg border font-medium ${it.cls}"><b>${it.lbl}:</b> <span class="font-mono-num">${it.rng}</span></div>`).join('')}
+        ${cfg.items.map((it) => `<div class="px-2.5 py-1.5 rounded-lg border font-medium ${it.cls}"><b>${S().esc(it.lbl)}:</b> <span class="font-mono-num">${S().esc(it.rng)}</span></div>`).join('')}
       </div>
     </div>`;
   }
@@ -794,7 +968,7 @@
                       ${!r.id_member ? `<button onclick="window.daftarkanMemberDariPemeriksaan('${S().esc(r.id_periksa)}')" class="px-1.5 py-0.5 rounded border text-[10px] font-semibold hover:bg-blue-500/10" style="border-color:var(--ons-border)">+ Member</button>` : ''}
                     </div>
                   </td>
-                  ${(subTab === 'semua' || subTab === 'tensi') ? `<td>${renderParamChip(tensiTxt, r.status_tensi || stEv.status_tensi, deltas.tensi, 'mmHg')}${stEv.map_mmhg ? `<div class="text-[10px] font-mono-num opacity-70 mt-0.5">MAP ${stEv.map_mmhg} · PP ${stEv.pulse_pressure || '-'}</div>` : ''}</td>` : ''}
+                  ${(subTab === 'semua' || subTab === 'tensi') ? `<td>${renderParamChip(tensiTxt, r.status_tensi || stEv.status_tensi, deltas.tensi, 'mmHg')}${stEv.map_mmhg ? `<div class="text-[10px] font-mono-num opacity-70 mt-0.5">MAP ${stEv.map_mmhg} · PP ${stEv.pulse_pressure || '-'}</div>` : ''}${(stEv.status_nadi && stEv.status_nadi !== 'NORMAL') ? `<div class="mt-0.5"><span class="px-1.5 py-0.5 rounded border text-[9px] font-bold ${metaStatusBadge(stEv.status_nadi).hex}">${S().esc(metaStatusBadge(stEv.status_nadi).label)}</span></div>` : ''}</td>` : ''}
                   ${(subTab === 'semua' || subTab === 'gula') ? `<td>${renderParamChip(gulaTxt, r.status_gula || stEv.status_gula, deltas.gula, '')}</td>` : ''}
                   ${(subTab === 'semua' || subTab === 'kolesterol') ? `<td>${renderParamChip(kolTxt, r.status_kolesterol || stEv.status_kolesterol, deltas.kolesterol, '')}</td>` : ''}
                   ${(subTab === 'semua' || subTab === 'asam_urat') ? `<td>${renderParamChip(auTxt, r.status_asam_urat || stEv.status_asam_urat, deltas.asam_urat, '')}</td>` : ''}
@@ -841,22 +1015,26 @@
     let allNums = [];
     let targetVal = 0;
     let targetLabel = '';
+    const lastRec = historyAsc[historyAsc.length - 1] || {};
+    const jkLast = String(lastRec.jenis_kelamin || 'L').toUpperCase() === 'P' ? 'P' : 'L';
+    const isYouthLast = Number(lastRec.usia_tahun || 0) > 0 && Number(lastRec.usia_tahun || 0) < 20;
     if (mode === 'tensi') {
       allNums = historyAsc.flatMap((x) => [Number(x.tensi_sistol || 0), Number(x.tensi_diastol || 0)]).filter((n) => n > 0);
       targetVal = 120;
-      targetLabel = 'Target Sistol 120';
+      targetLabel = 'Normal Sistol <120';
     } else if (mode === 'gula') {
       allNums = historyAsc.map((x) => Number(x.gula_darah || 0)).filter((n) => n > 0);
-      targetVal = 140;
-      targetLabel = 'Batas GDS 140';
+      const gMode = String(lastRec.gula_jenis || 'GDS').toUpperCase();
+      targetVal = gMode === 'GDP' ? 100 : 140;
+      targetLabel = gMode === 'GDP' ? 'Batas GDP <100' : (gMode === 'GD2PP' ? 'Batas 2JPP <140' : 'Batas GDS <140');
     } else if (mode === 'kolesterol') {
       allNums = historyAsc.map((x) => Number(x.kolesterol_total || 0)).filter((n) => n > 0);
-      targetVal = 200;
-      targetLabel = 'Batas Normal 200';
+      targetVal = isYouthLast ? 170 : 200;
+      targetLabel = isYouthLast ? 'Optimal <20th <170' : 'Normal <200';
     } else {
       allNums = historyAsc.map((x) => Number(x.asam_urat || 0)).filter((n) => n > 0);
-      targetVal = 7.0;
-      targetLabel = 'Batas Normal 7.0';
+      targetVal = jkLast === 'P' ? 6.0 : 7.0;
+      targetLabel = jkLast === 'P' ? 'Batas Normal P <=6.0' : 'Batas Normal L <=7.0';
     }
     if (!allNums.length) {
       return `<div class="text-[11px] opacity-60 py-4 text-center">Belum ada pengukuran tercatat.</div>`;
@@ -1088,16 +1266,45 @@
       el.textContent = m.label;
     };
 
-    setBadge('chkBadgeTensi', ev.status_tensi, 'Belum diisi');
+    setBadge('chkBadgeTensi', ev.status_tensi || ev.status_nadi, 'Belum diisi');
     setBadge('chkBadgeGula', ev.status_gula, 'Belum diisi');
     setBadge('chkBadgeKol', ev.status_kolesterol, 'Belum diisi');
     setBadge('chkBadgeAu', ev.status_asam_urat, 'Belum diisi');
 
     const mapEl = document.getElementById('chkTensiCalcInfo');
     if (mapEl) {
+      const nadiTxt = ev.status_nadi && ev.status_nadi !== 'NORMAL'
+        ? ` &bull; <span class="text-amber-600 dark:text-amber-300 font-bold">${S().esc(metaStatusBadge(ev.status_nadi).label)}</span>`
+        : (Number(d.nadi_bpm || 0) > 0 ? ' &bull; Nadi Normal (60–100 bpm)' : '');
       mapEl.innerHTML = ev.map_mmhg
-        ? `MAP: <b class="font-mono-num">${ev.map_mmhg} mmHg</b> &bull; Tekanan Nadi (PP): <b class="font-mono-num">${ev.pulse_pressure || '-'} mmHg</b>`
-        : 'Rujukan normal: &lt;120/80 mmHg.';
+        ? `MAP: <b class="font-mono-num">${ev.map_mmhg} mmHg</b> &bull; PP: <b class="font-mono-num">${ev.pulse_pressure || '-'} mmHg</b>${nadiTxt} <span class="opacity-75">(L/P Normal &lt;120/80)</span>`
+        : 'Normal L &amp; P sama: <b>&lt;120/80 mmHg</b> &bull; Nadi: <b>60–100 bpm</b>.';
+    }
+
+    const gulaRefEl = document.getElementById('chkGulaRefInfo');
+    if (gulaRefEl) {
+      const gj = ev.gula_jenis || 'GDS';
+      if (gj === 'GDP') {
+        gulaRefEl.innerHTML = 'Acuan <b>GDP (Puasa ≥8j)</b> L/P: Normal <b>70–99</b> &bull; Pra-DM 100–125 &bull; DM ≥126 &bull; Hipo &lt;70 mg/dL.';
+      } else if (gj === 'GD2PP') {
+        gulaRefEl.innerHTML = 'Acuan <b>2 Jam PP</b> L/P: Normal <b>&lt;140</b> &bull; Pra-DM (TGT) 140–199 &bull; DM ≥200 &bull; Hipo &lt;70 mg/dL.';
+      } else {
+        gulaRefEl.innerHTML = 'Acuan <b>GDS Sewaktu</b> L/P: Normal <b>&lt;140</b> &bull; Waspada 140–199 &bull; Suspek DM ≥200 &bull; Hipo &lt;70 mg/dL.';
+      }
+    }
+
+    const kolRefEl = document.getElementById('chkKolRefInfo');
+    if (kolRefEl) {
+      kolRefEl.innerHTML = ev.is_youth_lipid
+        ? 'Usia <b>&lt;20 th</b>: Optimal <b>&lt;170</b> &bull; Batas 170–199 &bull; Tinggi ≥200 mg/dL.'
+        : 'Dewasa <b>L &amp; P sama</b>: Optimal <b>&lt;200</b> &bull; Waspada 200–239 &bull; Tinggi ≥240 | HDL L≥40 / P≥50.';
+    }
+
+    const auRefEl = document.getElementById('chkAuRefInfo');
+    if (auRefEl) {
+      auRefEl.innerHTML = ev.jenis_kelamin === 'P'
+        ? '<span class="font-bold text-blue-700 dark:text-blue-300">Acuan Perempuan (P): Normal 2.4 – 6.0 mg/dL</span> (Tinggi &gt;6.0) &bull; Pria: 3.4–7.0'
+        : '<span class="font-bold text-blue-700 dark:text-blue-300">Acuan Laki-laki (L): Normal 3.4 – 7.0 mg/dL</span> (Tinggi &gt;7.0) &bull; Wanita: 2.4–6.0';
     }
 
     const gT = document.getElementById('chkGaugeTensi');
@@ -1108,18 +1315,19 @@
       gG.innerHTML = renderClinicalGaugeBar(d.gula_darah, isGdp ? 99 : 139, isGdp ? 125 : 199, 300);
     }
     const gK = document.getElementById('chkGaugeKol');
-    if (gK) gK.innerHTML = renderClinicalGaugeBar(d.kolesterol_total, 199, 239, 340);
+    if (gK) gK.innerHTML = renderClinicalGaugeBar(d.kolesterol_total, ev.is_youth_lipid ? 169 : 199, ev.is_youth_lipid ? 199 : 239, 340);
     const gA = document.getElementById('chkGaugeAu');
     if (gA) {
-      const auNorm = d.jenis_kelamin === 'P' ? 6.0 : 7.0;
+      const auNorm = ev.jenis_kelamin === 'P' ? 6.0 : 7.0;
       gA.innerHTML = renderClinicalGaugeBar(d.asam_urat, auNorm, auNorm + 1.5, 12);
     }
 
     const bmiEl = document.getElementById('chkBmiLive');
     if (bmiEl) {
+      const asiaNote = ev.bmi_asia_warn ? ' · Asia-Pasifik ≥23' : '';
       bmiEl.innerHTML = ev.imt_bmi
-        ? `IMT: <b class="font-mono-num">${ev.imt_bmi}</b> (${S().esc(metaStatusBadge(ev.status_bmi).label)})`
-        : 'IMT otomatis';
+        ? `IMT: <b class="font-mono-num">${ev.imt_bmi}</b> (${S().esc(metaStatusBadge(ev.status_bmi).label)}${asiaNote})`
+        : `Normal 18.5–25.0 &bull; LP ${ev.jenis_kelamin === 'P' ? 'P &lt;80' : 'L &lt;90'} cm`;
     }
 
     const triageBox = document.getElementById('chkTriageLiveBox');
@@ -1130,6 +1338,9 @@
       } else if (ev.tingkat_risiko === 'TINGGI_KONTROL') {
         triageBox.className = 'p-2.5 rounded-xl border bg-amber-500/15 border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-semibold';
         triageBox.textContent = 'Kategori Triage: Perlu Evaluasi Dokter / Kontrol Terapi. Disarankan jadwalkan kontrol ulang.';
+      } else if (ev.tingkat_risiko === 'PANTAU') {
+        triageBox.className = 'p-2.5 rounded-xl border bg-sky-500/10 border-sky-500/30 text-sky-800 dark:text-sky-300 text-xs font-semibold';
+        triageBox.textContent = 'Kategori Triage: Pantau Gaya Hidup — Terdapat parameter di luar rentang normal ideal.';
       } else {
         triageBox.className = 'hidden';
         triageBox.textContent = '';
@@ -1154,13 +1365,18 @@
 
     const summaryBox = document.getElementById('chkClinicalSummaryBox');
     if (summaryBox) {
-      const warnCount = filledStatuses.filter((st) => st !== 'NORMAL').length;
-      const normCount = filledStatuses.length - warnCount;
+      const allEvalList = filledStatuses.concat(ev.status_nadi ? [ev.status_nadi] : []);
+      const warnCount = allEvalList.filter((st) => st !== 'NORMAL').length;
+      const normCount = allEvalList.length - warnCount;
+      const genderBadge = ev.jenis_kelamin === 'P'
+        ? '<span class="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 text-[10px] font-bold">Perempuan (P) · AU 2.4–6.0</span>'
+        : '<span class="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 text-[10px] font-bold">Laki-laki (L) · AU 3.4–7.0</span>';
       summaryBox.innerHTML = `
-        <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
           <span class="font-bold text-xs uppercase tracking-wide" style="color:var(--ons-text-muted)">Ringkasan Klinis Live</span>
-          <span class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${filledCount ? riskMeta.cls : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}">${filledCount ? S().esc(riskMeta.label) : 'Belum Ada Angka'}</span>
+          <span class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${(filledCount || ev.status_nadi) ? riskMeta.cls : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}">${(filledCount || ev.status_nadi) ? S().esc(riskMeta.label) : 'Belum Ada Angka'}</span>
         </div>
+        <div class="mb-2">${genderBadge}</div>
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="p-2 rounded-lg border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
             <div class="text-[10px]" style="color:var(--ons-text-soft)">Parameter</div>
@@ -1175,9 +1391,10 @@
             <div class="font-mono-num font-extrabold text-sm ${warnCount ? 'text-amber-600' : 'text-slate-500'}">${warnCount}</div>
           </div>
         </div>
-        ${(ev.imt_bmi || ev.map_mmhg) ? `<div class="mt-2 pt-2 border-t flex flex-wrap gap-2 text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+        ${(ev.imt_bmi || ev.map_mmhg || (ev.status_nadi && ev.status_nadi !== 'NORMAL')) ? `<div class="mt-2 pt-2 border-t flex flex-wrap gap-2 text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
           ${ev.imt_bmi ? `<span>IMT: <b class="font-mono-num" style="color:var(--ons-text-main)">${ev.imt_bmi}</b> (${S().esc(metaStatusBadge(ev.status_bmi).label)})</span>` : ''}
           ${ev.map_mmhg ? `<span>MAP: <b class="font-mono-num" style="color:var(--ons-text-main)">${ev.map_mmhg} mmHg</b></span>` : ''}
+          ${(ev.status_nadi && ev.status_nadi !== 'NORMAL') ? `<span class="text-amber-600 font-bold">Nadi: ${S().esc(metaStatusBadge(ev.status_nadi).label)}</span>` : ''}
         </div>` : ''}`;
     }
 
@@ -1388,7 +1605,7 @@
           </div>
         </div>
         <div id="chkGaugeTensi"></div>
-        <div id="chkTensiCalcInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Rujukan normal: &lt;120/80 mmHg.</div>
+        <div id="chkTensiCalcInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Normal L &amp; P sama: &lt;120/80 mmHg &bull; Nadi: 60–100 bpm.</div>
       </div>`;
     }
     if (key === 'gula') {
@@ -1412,7 +1629,7 @@
           </div>
         </div>
         <div id="chkGaugeGula"></div>
-        <div class="text-[11px]" style="color:var(--ons-text-soft)">Normal GDS &lt;140 mg/dL &bull; GDP Puasa 70-99 mg/dL.</div>
+        <div id="chkGulaRefInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Normal L/P: GDS &amp; 2JPP &lt;140 &bull; GDP Puasa 70–99 &bull; Hipo &lt;70 mg/dL.</div>
       </div>`;
     }
     if (key === 'kolesterol') {
@@ -1426,7 +1643,7 @@
           <input id="chkKolVal" type="number" min="50" max="600" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.kolesterol_total) || '')}" placeholder="cth. 185"/>
         </div>
         <div id="chkGaugeKol"></div>
-        <div class="text-[11px]" style="color:var(--ons-text-soft)">Optimal &lt;200 mg/dL &bull; Waspada 200-239 &bull; Tinggi &ge;240.</div>
+        <div id="chkKolRefInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Dewasa L/P: Optimal &lt;200 &bull; Waspada 200–239 &bull; Tinggi ≥240 mg/dL.</div>
       </div>`;
     }
     return `<div id="chkCard_asam_urat" class="ons-card p-3.5 space-y-2 ${ringCls('asam_urat')}">
@@ -1439,7 +1656,7 @@
         <input id="chkAuVal" type="number" step="0.1" min="1" max="25" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.asam_urat) || '')}" placeholder="cth. 6.2"/>
       </div>
       <div id="chkGaugeAu"></div>
-      <div class="text-[11px]" style="color:var(--ons-text-soft)">Normal menyesuaikan gender: L 3.4-7.0 &bull; P 2.4-6.0 mg/dL.</div>
+      <div id="chkAuRefInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Normal menyesuaikan gender: L 3.4–7.0 &bull; P 2.4–6.0 mg/dL.</div>
     </div>`;
   }
 
@@ -1943,20 +2160,31 @@
     const deltas = prev ? computeAllDeltas(rec, prev) : {};
     const rows = [];
     if (Number(rec.tensi_sistol || 0) > 0 && Number(rec.tensi_diastol || 0) > 0) {
+      const nadiVal = Number(rec.nadi_bpm || 0);
+      const nadiSt = (stEv.status_nadi && stEv.status_nadi !== 'NORMAL') ? (' [' + metaStatusBadge(stEv.status_nadi).label + ']') : '';
       rows.push({
-        nama: 'Tekanan Darah (Tensi)' + (Number(rec.nadi_bpm || 0) > 0 ? ' & Nadi' : ''),
-        hasil: rec.tensi_sistol + '/' + rec.tensi_diastol + ' mmHg' + (Number(rec.nadi_bpm || 0) > 0 ? (' · Nadi ' + rec.nadi_bpm + ' bpm') : '') + (stEv.map_mmhg ? (' (MAP ' + stEv.map_mmhg + ')') : ''),
+        nama: 'Tekanan Darah (Tensi)' + (nadiVal > 0 ? ' & Nadi' : ''),
+        hasil: rec.tensi_sistol + '/' + rec.tensi_diastol + ' mmHg' + (nadiVal > 0 ? (' · Nadi ' + nadiVal + ' bpm' + nadiSt) : '') + (stEv.map_mmhg ? (' (MAP ' + stEv.map_mmhg + ')') : ''),
         delta: deltas.tensi ? (deltas.tensi.text + ' vs ' + deltas.tensi.prevText) : '-',
-        rujukan: '< 120 / < 80 mmHg',
+        rujukan: 'TD <120/80 mmHg · Nadi 60–100 bpm (L & P)',
         status: metaStatusBadge(rec.status_tensi || stEv.status_tensi).label
+      });
+    } else if (Number(rec.nadi_bpm || 0) > 0) {
+      rows.push({
+        nama: 'Denyut Nadi Istirahat',
+        hasil: rec.nadi_bpm + ' bpm',
+        delta: '-',
+        rujukan: '60 – 100 bpm (L & P)',
+        status: metaStatusBadge(stEv.status_nadi || 'NORMAL').label
       });
     }
     if (Number(rec.gula_darah || 0) > 0) {
+      const gjPrint = stEv.gula_jenis || 'GDS';
       rows.push({
-        nama: 'Gula Darah (' + (rec.gula_jenis || 'GDS') + ')',
+        nama: 'Gula Darah (' + gjPrint + ')',
         hasil: rec.gula_darah + ' mg/dL',
         delta: deltas.gula ? (deltas.gula.text + ' vs ' + deltas.gula.prev) : '-',
-        rujukan: rec.gula_jenis === 'GDP' ? '70 - 99 mg/dL (Puasa)' : '< 140 mg/dL (Sewaktu)',
+        rujukan: getGulaRefLabel(gjPrint) + ' (L & P)',
         status: metaStatusBadge(rec.status_gula || stEv.status_gula).label
       });
     }
@@ -1965,7 +2193,7 @@
         nama: 'Kolesterol Total',
         hasil: rec.kolesterol_total + ' mg/dL',
         delta: deltas.kolesterol ? (deltas.kolesterol.text + ' vs ' + deltas.kolesterol.prev) : '-',
-        rujukan: '< 200 mg/dL',
+        rujukan: stEv.is_youth_lipid ? '< 170 mg/dL (<20 th)' : '< 200 mg/dL (L & P · HDL L≥40/P≥50)',
         status: metaStatusBadge(rec.status_kolesterol || stEv.status_kolesterol).label
       });
     }
@@ -1974,7 +2202,7 @@
         nama: 'Asam Urat',
         hasil: rec.asam_urat + ' mg/dL',
         delta: deltas.asam_urat ? (deltas.asam_urat.text + ' vs ' + deltas.asam_urat.prev) : '-',
-        rujukan: stEv.jenis_kelamin === 'P' ? '2.4 - 6.0 mg/dL (P)' : '3.4 - 7.0 mg/dL (L)',
+        rujukan: stEv.jenis_kelamin === 'P' ? '2.4 – 6.0 mg/dL (Wanita)' : '3.4 – 7.0 mg/dL (Pria)',
         status: metaStatusBadge(rec.status_asam_urat || stEv.status_asam_urat).label
       });
     }

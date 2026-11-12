@@ -2228,7 +2228,10 @@
       const existIdx = db.pemeriksaan_pasien.findIndex((x) => x.id_periksa === id);
       const existing = existIdx >= 0 ? db.pemeriksaan_pasien[existIdx] : null;
       const jk = String(d.jenis_kelamin || (existing && existing.jenis_kelamin) || 'L').toUpperCase() === 'P' ? 'P' : 'L';
-      const gulaJenis = String(d.gula_jenis || (existing && existing.gula_jenis) || 'GDS').toUpperCase();
+      const usia = Number(d.usia_tahun !== undefined && d.usia_tahun !== '' ? d.usia_tahun : ((existing && existing.usia_tahun) || 0));
+      const isYouth = usia > 0 && usia < 20;
+      const gulaJenisRaw = String(d.gula_jenis || (existing && existing.gula_jenis) || 'GDS').toUpperCase();
+      const gulaJenis = (gulaJenisRaw === 'GDP' || gulaJenisRaw === 'GD2PP') ? gulaJenisRaw : 'GDS';
 
       let statusTensi = '';
       if (sistol > 0 && diastol > 0) {
@@ -2239,6 +2242,13 @@
         else if (sistol >= 120 && diastol < 80) statusTensi = 'MENINGKAT';
         else statusTensi = 'NORMAL';
       }
+      const nadiVal = Number(d.nadi_bpm || 0);
+      let statusNadi = '';
+      if (nadiVal > 0) {
+        if (nadiVal < 60) statusNadi = 'BRADIKARDIA';
+        else if (nadiVal > 100) statusNadi = 'TAKIKARDIA';
+        else statusNadi = 'NORMAL';
+      }
       let statusGula = '';
       if (gulaVal > 0) {
         if (gulaVal < 70) statusGula = 'HIPOGLIKEMIA';
@@ -2246,7 +2256,11 @@
         else statusGula = gulaVal >= 200 ? 'TINGGI' : (gulaVal >= 140 ? 'WASPADA' : 'NORMAL');
       }
       let statusKol = '';
-      if (kolVal > 0) statusKol = kolVal >= 240 ? 'TINGGI' : (kolVal >= 200 ? 'BATAS_TINGGI' : 'NORMAL');
+      if (kolVal > 0) {
+        const kolWarn = isYouth ? 170 : 200;
+        const kolHigh = isYouth ? 200 : 240;
+        statusKol = kolVal >= kolHigh ? 'TINGGI' : (kolVal >= kolWarn ? 'BATAS_TINGGI' : 'NORMAL');
+      }
       let statusAu = '';
       if (auVal > 0) {
         const hi = jk === 'P' ? 6.0 : 7.0;
@@ -2257,10 +2271,25 @@
       const bbVal = Number(d.berat_badan || (existing && existing.berat_badan) || 0);
       const tbVal = Number(d.tinggi_badan || (existing && existing.tinggi_badan) || 0);
       const imtBmi = (bbVal > 0 && tbVal >= 50) ? Math.round((bbVal / Math.pow(tbVal / 100, 2)) * 10) / 10 : '';
+      let statusBmi = '';
+      if (imtBmi) {
+        if (imtBmi < 18.5) statusBmi = 'KURUS';
+        else if (imtBmi <= 25.0) statusBmi = 'NORMAL';
+        else if (imtBmi <= 27.0) statusBmi = 'OVERWEIGHT';
+        else statusBmi = 'OBESITAS';
+      }
       const allSt = [statusTensi, statusGula, statusKol, statusAu].filter(Boolean);
-      const abnCnt = allSt.filter((s) => s !== 'NORMAL').length;
+      const abnCnt = allSt.filter((s) => s !== 'NORMAL').length + (statusNadi && statusNadi !== 'NORMAL' ? 1 : 0);
       let tingkatRisiko = 'NORMAL';
-      if (statusTensi === 'KRISIS_HIPERTENSI' || (sistol > 0 && sistol < 80) || statusGula === 'HIPOGLIKEMIA' || gulaVal >= 300) {
+      if (
+        statusTensi === 'KRISIS_HIPERTENSI' ||
+        (sistol > 0 && sistol < 80) ||
+        (diastol > 0 && diastol < 50) ||
+        (nadiVal > 0 && nadiVal < 45) ||
+        nadiVal >= 130 ||
+        statusGula === 'HIPOGLIKEMIA' ||
+        gulaVal >= 300
+      ) {
         tingkatRisiko = 'KRISIS_RUJUK';
       } else if (statusTensi === 'HIPERTENSI_2' || statusGula === 'TINGGI' || statusKol === 'TINGGI' || statusAu === 'TINGGI' || abnCnt >= 2) {
         tingkatRisiko = 'TINGGI_KONTROL';
@@ -2293,9 +2322,11 @@
         kolesterol_total: kolVal > 0 ? kolVal : '',
         asam_urat: auVal > 0 ? auVal : '',
         status_tensi: statusTensi,
+        status_nadi: statusNadi,
         status_gula: statusGula,
         status_kolesterol: statusKol,
         status_asam_urat: statusAu,
+        status_bmi: statusBmi,
         tingkat_risiko: tingkatRisiko,
         riwayat_terapi: String(d.riwayat_terapi !== undefined ? d.riwayat_terapi : ((existing && existing.riwayat_terapi) || '')).trim(),
         keluhan_catatan: String(d.keluhan_catatan || '').trim(),
