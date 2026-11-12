@@ -1277,6 +1277,11 @@
 
     if (action === 'stok.opnameSave') {
       let adj = 0;
+      const refCode = d.no_opname || ('SO-' + isoToday.replace(/-/g, '') + '-' + Date.now().toString().slice(-3));
+      const gudangName = d.gudang || 'Gudang Utama';
+      let sumPos = 0;
+      let sumNeg = 0;
+      let sumVal = 0;
       (d.entries || []).forEach((ent) => {
         const b = db.stok_batch.find((x) => x.id_batch === ent.id_batch);
         if (b) {
@@ -1289,20 +1294,29 @@
           adj++;
           if (selisih !== 0) {
             const obat = db.master_obat.find((o) => o.id_obat === b.id_obat) || {};
+            const hppUnit = Number(b.hpp_beli || obat.hpp_avg || 0);
+            const nilaiSel = selisih * hppUnit;
+            if (selisih > 0) sumPos += selisih;
+            else sumNeg += selisih;
+            sumVal += nilaiSel;
+            const penyebab = ent.penyebab || d.penyebab || 'Stok Opname';
+            const noteText = ent.catatan || ent.alasan || d.catatan || ('Stok Opname (Sistem: ' + lama + ' -> Fisik: ' + baru + ')');
             db.mutasi_stok.unshift({
               id_mutasi: 'OPN-' + Date.now() + Math.random().toString(36).slice(2, 5),
               timestamp: nowIso, cabang_id: 'ONS-01', id_obat: b.id_obat, nama_dagang: obat.nama_dagang || b.id_obat,
               id_batch: b.id_batch, no_batch: b.no_batch, tgl_kadaluarsa: b.tgl_kadaluarsa || '',
-              jenis_mutasi: 'OPNAME', qty_ubah: selisih, stok_akhir: baru,
-              referensi_id: 'SO-' + isoToday, user_id: userId, catatan: ent.alasan || ('Stok Opname (Sistem: ' + lama + ' -> Fisik: ' + baru + ')')
+              jenis_mutasi: d.is_adjustment ? 'PENYESUAIAN' : 'OPNAME', qty_ubah: selisih, stok_akhir: baru,
+              referensi_id: refCode, user_id: userId, petugas: userNama, gudang: gudangName,
+              penyebab_selisih: penyebab, hpp_unit: hppUnit, nilai_selisih: nilaiSel,
+              catatan: noteText
             });
           }
         }
       });
-      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'CYCLE_COUNT_OPNAME', entitas: 'STOK_BATCH', entitas_id: 'SO-' + isoToday, diff_sebelum_json: '{}', diff_sesudah_json: JSON.stringify({ jumlah: adj }) });
+      db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: 'CYCLE_COUNT_OPNAME', entitas: 'STOK_BATCH', entitas_id: refCode, diff_sebelum_json: '{}', diff_sesudah_json: JSON.stringify({ jumlah: adj, gudang: gudangName, pos: sumPos, neg: sumNeg, nilai: sumVal }) });
       db.epoch++;
       saveDb(db);
-      return { adjusted: adj };
+      return { adjusted: adj, ref_id: refCode, pos: sumPos, neg: sumNeg, nilai: sumVal };
     }
 
     if (action === 'pbf.save') {

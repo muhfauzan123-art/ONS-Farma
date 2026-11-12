@@ -27,6 +27,53 @@
   let mutasiFilterJenis = '';
   let opnameRakFilter = '';
   let opnameViewMode = 'TABLE'; // TABLE | CARD (Mobile HP)
+  let opnameSessionActive = false;
+  let edSelectedIds = new Set();
+  let edDateFrom = '';
+  let edDateTo = '';
+  let adjFilterType = 'SEMUA'; // SEMUA | POSITIF | NEGATIF
+  let adjSearchQ = '';
+  let adjDateFrom = '';
+  let adjDateTo = '';
+  let trfSearchQ = '';
+  let trfFilterMode = 'SEMUA'; // SEMUA | INTERNAL | CABANG
+  let trfDateFrom = '';
+  let trfDateTo = '';
+  let defectaSearchQ = '';
+  let defectaStatusFilter = 'SEMUA'; // SEMUA | DIBAWAH_MIN | KOSONG
+  let invRekapCollapsed = {};
+
+  function _readJsonLs(key, fallback) {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
+      return parsed !== null && parsed !== undefined ? parsed : fallback;
+    } catch (e) { return fallback; }
+  }
+  function _writeJsonLs(key, val) {
+    try { if (typeof localStorage !== 'undefined') localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+  function _renderInvRekapFooter(keyId, titleText, items) {
+    const isCollapsed = Boolean(invRekapCollapsed[keyId]);
+    const colsHtml = (items || []).map((it) => `
+      <div class="flex items-center justify-between gap-2 text-xs py-1">
+        <span style="color:var(--ons-text-soft)">${S().esc(it.label)}${it.sub ? `<br/><span class="text-[10px] italic">${S().esc(it.sub)}</span>` : ''}</span>
+        <span class="font-bold font-mono-num ${it.cls || ''}">: ${it.valHtml}</span>
+      </div>
+    `).join('');
+    return `<div class="ons-pos-rekap-foot">
+      <div class="flex items-center justify-between gap-2 ${isCollapsed ? '' : 'mb-2'}">
+        <span class="font-extrabold text-sm text-blue-600 dark:text-blue-400">${titleText}</span>
+        <button type="button" onclick="window.toggleInvRekapPanel('${S().esc(keyId)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2" aria-label="Toggle Ringkasan">${isCollapsed ? '&#9660;' : '&#9650;'}</button>
+      </div>
+      ${isCollapsed ? '' : `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">${colsHtml}</div>`}
+    </div>`;
+  }
+  global.toggleInvRekapPanel = (keyId) => {
+    invRekapCollapsed[keyId] = !invRekapCollapsed[keyId];
+    global.renderActiveView();
+  };
 
   function _buildWaLink(rawPhone, msg) {
     const digits = S().normalizeWa62 ? S().normalizeWa62(rawPhone) : String(rawPhone || '').replace(/[^0-9]/g, '');
@@ -146,6 +193,10 @@
     const safeCount = allMeta.filter((m) => !m.isCritical).length;
     const critCount = allMeta.filter((m) => m.isCritical).length;
     const nearEdCount = allMeta.filter((m) => m.isNearEd).length;
+    const dijualCount = allMeta.filter((m) => String(m.o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF').length;
+    const tidakDijualCount = Math.max(0, totalCount - dijualCount);
+    const potensiRugiCount = seeCost ? allMeta.filter((m) => Number(m.hpp || 0) > 0 && Number(m.harga || 0) <= Number(m.hpp || 0)).length : 0;
+    const stokNegatifKosongCount = allMeta.filter((m) => Number(m.stok || 0) <= 0).length;
     const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (m.stok * m.hpp), 0) : 0;
     const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA');
 
@@ -222,46 +273,47 @@
         <table class="ons-table is-compact">
           <thead>
             <tr>
-              <th>Kode KFA / NIE</th>
-              <th>Produk, Zat Aktif &amp; Rak</th>
-              <th>Golongan</th>
-              <th>Multi-Satuan</th>
-              <th>Stok &amp; ED Terdekat</th>
-              ${seeCost ? '<th>HPP &amp; Margin</th>' : ''}
+              <th>No.</th>
+              <th>Nama Produk &amp; Kode KFA</th>
+              <th>Rak</th>
+              <th>Stok &amp; ED</th>
+              ${seeCost ? '<th>Harga Pokok</th>' : ''}
               <th>Harga Jual</th>
-              <th>Aksi</th>
+              ${seeCost ? '<th>Min. Markup</th>' : ''}
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            ${filtered.map((m) => {
+            ${filtered.map((m, idx) => {
               const o = m.o;
+              const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
+              const rugiWarn = seeCost && m.hpp > 0 && m.harga <= m.hpp;
               return `<tr>
-                <td class="font-mono-num text-xs">
-                  <div class="font-bold">${S().esc(o.kode_kfa || o.id_obat)}</div>
-                  <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.nie_bpom || '-')}</div>
-                </td>
+                <td class="font-mono-num text-xs">${idx + 1}.</td>
                 <td>
                   <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="font-bold text-left hover:text-blue-600 transition-colors">${S().esc(o.nama_dagang)}</button>
                   <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
                   <div class="flex flex-wrap items-center gap-1 mt-0.5">
-                    <span class="text-[10px] font-mono-num px-1.5 py-0.2 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK')}</span>
+                    ${S().bpomBadge(o.golongan_bpom)}
+                    <span class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">KFA ${S().esc(o.kode_kfa || o.id_obat)}</span>
                     ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-600">Chiller 2-8&deg;C</span>` : ''}
                   </div>
                 </td>
-                <td>${S().bpomBadge(o.golongan_bpom)}</td>
-                <td class="text-xs font-mono-num">
-                  <div>1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar)}</div>
-                  <div class="text-[11px]" style="color:var(--ons-text-soft)">1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar)}</div>
-                </td>
+                <td class="font-mono-num text-xs">${S().esc(o.rak_lokasi || 'RAK-A1')}</td>
                 <td>${renderObatStockBarHtml(m)}</td>
-                ${seeCost ? `<td class="font-mono-num text-xs">
-                  <div>${S().rp(o.hpp_avg)}</div>
-                  ${m.marginPct !== null ? `<div class="text-[11px] font-bold text-emerald-600">+${m.marginPct}% Margin</div>` : ''}
-                </td>` : ''}
+                ${seeCost ? `<td class="font-mono-num text-xs">${S().rp(o.hpp_avg)}</td>` : ''}
                 <td class="font-mono-num text-xs">
                   <div class="font-bold text-blue-600">${S().rp(o.harga_umum)}</div>
                   <div class="text-[11px]" style="color:var(--ons-text-soft)">Mbr: ${S().rp(o.harga_member || o.harga_umum)}</div>
                 </td>
+                ${seeCost ? `<td class="font-mono-num text-xs">
+                  ${m.marginPct !== null
+                    ? `<span class="font-bold ${rugiWarn ? 'text-red-600' : 'text-emerald-600'}">${m.marginPct >= 0 ? '+' : ''}${m.marginPct}%</span>`
+                    : '<span style="color:var(--ons-text-soft)">-</span>'}
+                  ${rugiWarn ? '<div class="text-[10px] font-bold text-red-600">Potensi Rugi</div>' : ''}
+                </td>` : ''}
+                <td><span class="badge-bpom ${isAktifJual ? 'bpom-bebas' : 'bpom-prekursor'}">${isAktifJual ? 'Dijual' : 'Tidak Dijual'}</span></td>
                 <td>${actionButtons(o)}</td>
               </tr>`;
             }).join('')}
@@ -270,7 +322,14 @@
       </div>
     </div>`);
 
-    return `<div class="space-y-3">${kpiHtml}${listHtml}</div>`;
+    const kondisiFooter = _renderInvRekapFooter('daftar-produk', 'Kondisi Produk', [
+      { label: 'Produk Dijual', valHtml: `${dijualCount} produk`, cls: 'text-emerald-600' },
+      { label: 'Produk Tidak Dijual', valHtml: `${tidakDijualCount} produk` },
+      ...(seeCost ? [{ label: 'Produk Berpotensi Rugi', valHtml: `${potensiRugiCount} produk`, cls: potensiRugiCount ? 'text-red-600' : '' }] : []),
+      { label: 'Produk Stok Negatif / Kosong', valHtml: `${stokNegatifKosongCount} produk`, cls: stokNegatifKosongCount ? 'text-amber-600' : '' }
+    ]);
+
+    return `<div class="space-y-3">${kpiHtml}${listHtml}${kondisiFooter}</div>`;
   }
 
   function _renderMasterObatSubTab(seeCost, allMeta, filtered) {
@@ -712,9 +771,9 @@
     let headerActions = '';
     if (masterTab === 'obat') {
       headerActions = `
-        ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Obat</button>
-        <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">Import</button>` : ''}
-        <button onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Barcode</button>
+        <button onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Cetak Barcode</button>
+        ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Tambah Produk</button>
+        <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>` : ''}
         ${exportBtns('exportMasterObat')}
       `;
     } else if (masterTab === 'supplier') {
@@ -2480,6 +2539,530 @@
     return aliases ? aliases.includes(j) : j === filterJenis;
   }
 
+  function _calcBatasReturIso(tglEd) {
+    if (!tglEd || String(tglEd).length < 10) return '-';
+    const ms = new Date(String(tglEd).slice(0, 10) + 'T00:00:00Z').getTime();
+    if (Number.isNaN(ms)) return '-';
+    return new Date(ms - 90 * 86400000).toISOString().slice(0, 10);
+  }
+
+  function _resolveBatchSupplier(st, b, ob) {
+    if (b && b.nama_pbf) return b.nama_pbf;
+    if (b && b.no_faktur_pbf && b.no_faktur_pbf !== '-') {
+      const fk = (st.fakturPbf || []).find((f) => f.no_faktur_pbf === b.no_faktur_pbf || f.no_sp === b.no_sp);
+      if (fk && fk.nama_pbf) return fk.nama_pbf;
+    }
+    return (ob && ob.pbf_utama) || 'PBF Reguler';
+  }
+
+  function _getAdjustmentRows(st) {
+    const metaMap = _readJsonLs('ONS_ADJ_META_V1', {});
+    const allowedJenis = new Set(['OPNAME', 'PENYESUAIAN', 'PENYESUAIAN_MASUK', 'RECALL_KARANTINA']);
+    return (st.mutasiStok || [])
+      .filter((m) => allowedJenis.has(String(m.jenis_mutasi || '').toUpperCase()))
+      .map((m) => {
+        const meta = metaMap[m.id_mutasi] || {};
+        const batch = (st.stokBatch || []).find((b) => b.id_batch === m.id_batch);
+        const ob = (st.masterObat || []).find((o) => o.id_obat === m.id_obat) || {};
+        const qtyUbah = Number(m.qty_ubah || 0);
+        const hpp = Number(m.hpp_unit || (batch && batch.hpp_beli) || ob.hpp_avg || 0);
+        const nilai = m.nilai_selisih !== undefined ? Number(m.nilai_selisih) : (qtyUbah * hpp);
+        const isoDate = String(m.timestamp || '').slice(0, 10);
+        return {
+          raw: m,
+          id_mutasi: m.id_mutasi,
+          isoDate,
+          timestamp: m.timestamp,
+          id_obat: m.id_obat,
+          nama_dagang: m.nama_dagang || ob.nama_dagang || m.id_obat || '-',
+          no_batch: m.no_batch || (batch && batch.no_batch) || '-',
+          id_batch: m.id_batch || '',
+          petugas: m.petugas || meta.petugas || m.user_id || 'Pemilik / APJ',
+          qty_ubah: qtyUbah,
+          nilai_selisih: nilai,
+          penyebab: m.penyebab_selisih || meta.penyebab || (String(m.jenis_mutasi) === 'OPNAME' ? 'Stok Opname' : String(m.jenis_mutasi || 'Penyesuaian')),
+          catatan: m.catatan || meta.catatan || '-'
+        };
+      });
+  }
+
+  function _getCombinedTransferRows(st) {
+    const internalList = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
+    const branches = (st.mutasiCabang || []).map((tr) => {
+      let trLines = [];
+      try { trLines = JSON.parse(tr.items_json || '[]'); } catch (e) {}
+      const firstLn = trLines[0] || {};
+      const totQty = tr.total_qty_dasar !== undefined ? Number(tr.total_qty_dasar) : Number(tr.qty_kirim || 0);
+      const totVal = trLines.reduce((sum, ln) => sum + (Number(ln.qty || 0) * Number(ln.hpp_beli || 0)), 0);
+      return {
+        kind: 'CABANG',
+        id: tr.id_transfer,
+        isoDate: String(tr.tanggal_kirim || tr.tgl_kirim || '').slice(0, 10),
+        timestamp: tr.tanggal_kirim || tr.tgl_kirim || '',
+        no_transaksi: tr.no_surat_jalan || tr.id_transfer,
+        asal: tr.cabang_asal || 'ONS-01',
+        tujuan: tr.cabang_tujuan || 'ONS-02',
+        produkLabel: trLines.length > 1 ? `${firstLn.nama_dagang || 'Item'} (+${trLines.length - 1} lainnya)` : (firstLn.nama_dagang || tr.nama_dagang || '-'),
+        qty: totQty,
+        totalNilai: totVal,
+        status: tr.status_transfer || 'DIKIRIM',
+        diterima_oleh: tr.diterima_oleh || '',
+        catatan: tr.catatan || '-'
+      };
+    });
+    const internalRows = (Array.isArray(internalList) ? internalList : []).map((it) => ({
+      kind: 'INTERNAL',
+      id: it.id,
+      isoDate: String(it.timestamp || '').slice(0, 10),
+      timestamp: it.timestamp || '',
+      no_transaksi: it.no_transaksi || it.id,
+      asal: it.asal || 'Gudang Utama',
+      tujuan: it.tujuan || 'Etalase Depan',
+      produkLabel: it.nama_dagang || '-',
+      qty: Number(it.qty || 0),
+      totalNilai: Number(it.total_nilai || 0),
+      status: 'SELESAI',
+      diterima_oleh: it.petugas || 'APJ',
+      catatan: it.catatan || '-'
+    }));
+    return internalRows.concat(branches).sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+  }
+
+  function _renderGudangKadaluarsaTab(st, sorted, expiredCount, kritisCount, totalNilaiGudang, seeCost) {
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const pemilikLabel = prof.nama_usaha || 'Apotek ONS Farma';
+    const gq = gudangBatchQ.trim().toLowerCase();
+    const filteredBatches = sorted.filter((b) => {
+      const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+      const d = S().daysUntil(b.tgl_kadaluarsa);
+      const activeQty = String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0;
+      if (gudangBatchFilter === 'KADALUARSA' && !(activeQty && d < 0)) return false;
+      if (gudangBatchFilter === 'KRITIS' && !(activeQty && d >= 0 && d <= 90)) return false;
+      if (gudangBatchFilter === 'KARANTINA' && !(String(b.status_batch || 'AKTIF') === 'KARANTINA_RECALL' || Number(b.qty_karantina || 0) > 0 || String(b.status_batch) === 'RETUR_PBF')) return false;
+      if (gudangBatchFilter === 'AMAN' && !(activeQty && d > 90)) return false;
+      const edIso = String(b.tgl_kadaluarsa || '').slice(0, 10);
+      if (edDateFrom && edIso && edIso < edDateFrom) return false;
+      if (edDateTo && edIso && edIso > edDateTo) return false;
+      if (gq) {
+        const supName = _resolveBatchSupplier(st, b, o);
+        const hay = `${b.no_batch} ${b.no_faktur_pbf} ${b.no_sp || ''} ${o ? o.nama_dagang : b.id_obat} ${supName} ${o ? (o.rak_lokasi || '') : ''}`.toLowerCase();
+        if (!hay.includes(gq)) return false;
+      }
+      return true;
+    });
+
+    const selectedCount = edSelectedIds.size;
+    return `<div class="space-y-4">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Total Batch Tersedia</div><div class="text-lg font-bold font-mono-num">${sorted.length}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Kadaluarsa / Kritis &le; 90h</div><div class="text-lg font-bold font-mono-num text-red-600">${expiredCount} ED &bull; ${kritisCount} Kritis</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Stok Karantina Recall</div><div class="text-lg font-bold font-mono-num text-amber-600">${sorted.reduce((s, b) => s + Number(b.qty_karantina || 0), 0)} Unit</div></div>
+        ${seeCost ? `<div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Valuasi Persediaan (HPP)</div><div class="text-lg font-bold font-mono-num text-blue-600">${S().rp(totalNilaiGudang)}</div></div>` : `<div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Ditampilkan</div><div class="text-lg font-bold font-mono-num text-blue-600">${filteredBatches.length}</div></div>`}
+      </div>
+
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap gap-2 items-center">
+            <input class="ons-input text-xs w-56" placeholder="Cari data (produk, rak, supplier, batch)..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
+            <div class="flex items-center gap-1 text-xs">
+              <span class="text-[11px]" style="color:var(--ons-text-soft)">Filter Tgl ED:</span>
+              <input type="date" value="${S().esc(edDateFrom)}" onchange="window.setEdDateRange(this.value, '${S().esc(edDateTo)}')" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+              <span>-</span>
+              <input type="date" value="${S().esc(edDateTo)}" onchange="window.setEdDateRange('${S().esc(edDateFrom)}', this.value)" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+            </div>
+            <div class="ons-tab-bar">
+              ${['SEMUA', 'KADALUARSA', 'KRITIS', 'KARANTINA', 'AMAN'].map((f) => `<button onclick="window.setGudangBatchFilter('${f}')" class="ons-tab-btn ${gudangBatchFilter === f ? 'active' : ''}">${f}</button>`).join('')}
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="window.exportStokKadaluarsa('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
+            <button onclick="window.exportStokKadaluarsa('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Print</button>
+            ${seeCost ? `<button onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">+ Input Batch Manual</button>` : ''}
+          </div>
+        </div>
+
+        ${selectedCount > 0 ? `<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <span><b>${selectedCount}</b> batch kadaluarsa / FEFO dipilih</span>
+          <div class="flex flex-wrap gap-1.5">
+            ${seeCost ? `<button type="button" onclick="window.batchRecallSelected()" class="ons-btn ons-btn-danger text-xs py-1 px-2.5">Karantina Batch Terpilih</button>` : ''}
+            ${seeCost ? `<button type="button" onclick="window.navigateView('faktur','retur')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Proses Retur PBF &rarr;</button>` : ''}
+            <button type="button" onclick="window.clearEdBatchSelection()" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Batal Pilih</button>
+          </div>
+        </div>` : ''}
+
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr>
+                <th>Pilih</th>
+                <th>No.</th>
+                <th>Nama Produk</th>
+                <th>Rak</th>
+                <th>Supplier</th>
+                <th>Pemilik</th>
+                <th>Tanggal Masuk</th>
+                <th>Gudang</th>
+                <th>Tgl. Kadaluarsa</th>
+                <th>Batas Retur</th>
+                ${seeCost ? '<th>Harga Pokok</th>' : ''}
+                <th>Kuantitas</th>
+                ${seeCost ? '<th>Actions</th>' : ''}
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredBatches.map((b, idx) => {
+                const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                const d = S().daysUntil(b.tgl_kadaluarsa);
+                const isEd = d < 0 && Number(b.qty_sisa || 0) > 0;
+                const edBadge = d < 0 ? 'bpom-keras' : (d <= 90 ? 'bpom-keras' : (d <= 180 ? 'bpom-prekursor' : 'bpom-bebas'));
+                const supName = _resolveBatchSupplier(st, b, o);
+                const batasRetur = _calcBatasReturIso(b.tgl_kadaluarsa);
+                const returLewat = batasRetur !== '-' && batasRetur < new Date().toISOString().slice(0, 10);
+                const checked = edSelectedIds.has(b.id_batch);
+                const tglMasuk = b.created_at || b.tgl_masuk || '-';
+                const gudangName = b.gudang || (b.cabang_id && b.cabang_id !== 'ONS-01' ? b.cabang_id : 'Gudang Utama');
+                return `<tr>
+                  <td><input type="checkbox" data-batch-sel="${S().esc(b.id_batch)}" ${checked ? 'checked' : ''} onchange="window.toggleEdBatchSelect('${S().esc(b.id_batch)}', this.checked)" aria-label="Pilih batch ${S().esc(b.no_batch)}"/></td>
+                  <td class="font-mono-num text-xs">${idx + 1}.</td>
+                  <td class="text-xs">
+                    <div class="font-semibold">${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
+                    <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Batch: <b>${S().esc(b.no_batch)}</b> &bull; ${S().esc(b.no_faktur_pbf || '-')}</div>
+                  </td>
+                  <td class="font-mono-num text-xs">${S().esc((b.rak_penyimpanan || (o && o.rak_lokasi)) || '-')}</td>
+                  <td class="text-xs">${S().esc(supName)}</td>
+                  <td class="text-xs">${S().esc(pemilikLabel)}</td>
+                  <td class="font-mono-num text-xs">${tglMasuk !== '-' ? S().formatTgl(tglMasuk) : '-'}</td>
+                  <td class="text-xs">${S().esc(gudangName)}</td>
+                  <td><span class="badge-bpom ${edBadge} font-mono-num">${isEd ? 'ED / BLOKIR POS ' : ''}${S().esc(b.tgl_kadaluarsa)} (${d}h)</span></td>
+                  <td class="font-mono-num text-xs ${returLewat ? 'text-red-600 font-bold' : ''}">${S().esc(batasRetur)}</td>
+                  ${seeCost ? `<td class="font-mono-num text-xs">${S().rp(b.hpp_beli || (o && o.hpp_avg) || 0)}</td>` : ''}
+                  <td class="font-mono-num text-xs">
+                    <span class="font-bold">${b.qty_sisa}</span>
+                    ${Number(b.qty_karantina || 0) > 0 ? `<div class="text-[10px] text-red-600">Karantina: ${b.qty_karantina}</div>` : ''}
+                  </td>
+                  ${seeCost ? `<td><button onclick="window.triggerRecallBatch('${b.id_batch}','${S().esc(b.no_batch)}')" ${b.status_batch !== 'AKTIF' ? 'disabled' : ''} class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Recall BPOM</button></td>` : ''}
+                </tr>`;
+              }).join('') || `<tr><td colspan="${seeCost ? 13 : 11}" class="text-center py-6 text-xs">Data tidak ditemukan.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function _renderGudangOpnameTab(st, activeForOpname, rakList, opnameCounted, opnameSelisihUnit, opnameSelisihRp) {
+    const infoBanner = `<div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 rounded-xl border text-xs bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200">
+      <div>
+        Proses <b>Stock Opname (Stok Opname)</b> dan <b>Penyesuaian Stok</b> tersedia dalam 2 tahap terstruktur agar audit apotek lebih rapi. Jika ingin penyesuaian langsung pada 1–2 item tanpa sesi penuh, gunakan menu <b>Penyesuaian Stok</b>.
+      </div>
+      <button type="button" onclick="window.setGudangTab('penyesuaian')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 font-bold shrink-0">Penyesuaian Stok &rarr;</button>
+    </div>`;
+
+    if (!opnameSessionActive) {
+      return `<div class="space-y-4">
+        ${infoBanner}
+        <div class="ons-card p-8 sm:p-10 text-center space-y-4">
+          <div class="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center bg-blue-500/10 text-blue-600">
+            <svg viewBox="0 0 24 24" class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+          </div>
+          <div class="max-w-md mx-auto space-y-1">
+            <h3 class="font-extrabold text-base">Belum ada opname yang dipilih</h3>
+            <p class="text-xs" style="color:var(--ons-text-soft)">Silakan pilih <b>Mulai Opname Baru</b> untuk melakukan Stock Opname Fisik (${activeForOpname.length} batch aktif siap hitung), atau cek opname lainnya di <b>Riwayat Opname</b>.</p>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+            <button type="button" onclick="window.openRiwayatOpnameModal()" class="ons-btn ons-btn-emerald text-xs px-4 py-2">Riwayat Opname</button>
+            <button type="button" onclick="window.startNewOpnameSession()" class="ons-btn ons-btn-primary text-xs px-4 py-2">+ Mulai Opname Baru</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="space-y-4">
+      ${infoBanner}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Aktif Dipindai</div><div class="text-lg font-bold font-mono-num">${activeForOpname.length}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Sudah Diisi Hitungan</div><div class="text-lg font-bold font-mono-num text-blue-600">${opnameCounted}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Net Selisih Unit</div><div class="text-lg font-bold font-mono-num ${opnameSelisihUnit === 0 ? 'text-emerald-600' : 'text-amber-600'}">${opnameSelisihUnit > 0 ? '+' : ''}${opnameSelisihUnit}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Dampak Nilai HPP Selisih</div><div class="text-lg font-bold font-mono-num ${opnameSelisihRp >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(opnameSelisihRp)}</div></div>
+      </div>
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <input class="ons-input text-xs w-52" placeholder="Cari obat / KFA / batch opname..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
+            <select class="ons-select text-xs w-40" onchange="window.setOpnameRakFilter(this.value)" aria-label="Filter Lokasi Rak">
+              <option value="">-- Semua Rak --</option>
+              ${rakList.map((rk) => `<option value="${S().esc(rk)}" ${opnameRakFilter === rk ? 'selected' : ''}>Rak: ${S().esc(rk)}</option>`).join('')}
+            </select>
+            <button type="button" onclick="window.scanOpnameBarcodeNow()" class="ons-btn ons-btn-primary text-xs">Scan Barcode</button>
+            <div class="inline-flex rounded-lg border p-0.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+              <button type="button" onclick="window.setOpnameViewMode('TABLE')" class="ons-btn text-xs py-1 px-2 ${opnameViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Tabel</button>
+              <button type="button" onclick="window.setOpnameViewMode('CARD')" class="ons-btn text-xs py-1 px-2 ${opnameViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Mode HP</button>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="window.openRiwayatOpnameModal()" class="ons-btn ons-btn-ghost text-xs">Riwayat Opname</button>
+            <button type="button" onclick="window.closeOpnameSession()" class="ons-btn ons-btn-ghost text-xs">Tutup Sesi</button>
+            <input id="opnameWorkspaceReason" class="ons-input text-xs w-48" placeholder="Catatan/Alasan SO..." value="${S().esc(opnameDraftReason || 'Stock Opname Rutin Gudang')}" oninput="window.setOpnameDraftReason(this.value)"/>
+            <button onclick="window.submitFullOpnameWorkspace()" class="ons-btn ons-btn-emerald text-xs">Simpan Hasil Opname (${opnameCounted} Batch)</button>
+          </div>
+        </div>
+        ${opnameViewMode === 'CARD' ? `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            ${activeForOpname.map((b) => {
+              const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+              const sysQty = Number(b.qty_sisa || 0);
+              const val = opnameDraftQty[b.id_batch] !== undefined ? opnameDraftQty[b.id_batch] : '';
+              const diff = val !== '' ? (Number(val) - sysQty) : null;
+              return `<div class="p-3.5 rounded-xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="font-bold text-sm">${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
+                    <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Rak: <b>${S().esc((o && o.rak_lokasi) || '-')}</b> &bull; Batch <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</div>
+                  </div>
+                  <span class="badge-bpom bpom-terbatas font-mono-num">Sistem: ${sysQty}</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, -1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">-1</button>
+                  <input type="number" min="0" value="${S().esc(val)}" placeholder="${sysQty}" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-sm font-bold w-24 text-center py-1 min-h-0 h-8"/>
+                  <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+1</button>
+                  <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 10)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+10</button>
+                  <button type="button" onclick="window.setOpnameDraftQty('${b.id_batch}', ${sysQty})" class="ons-btn ons-btn-emerald text-xs px-2.5 py-1 ml-auto">= Sistem</button>
+                </div>
+                ${diff !== null ? `<div class="text-xs font-mono-num font-bold ${diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600')}">Selisih: ${diff > 0 ? '+' : ''}${diff} unit (${S().rp(diff * Number(b.hpp_beli || 0))})</div>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+        ` : `
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>Nama Obat &amp; Rak</th><th>No. Batch &amp; ED</th><th>Stok Sistem</th><th>Hitung Fisik Riil</th><th>Selisih Unit</th><th>Estimasi Selisih Rp</th></tr></thead>
+            <tbody>
+              ${activeForOpname.map((b) => {
+                const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                const val = opnameDraftQty[b.id_batch] !== undefined ? opnameDraftQty[b.id_batch] : '';
+                const diff = val !== '' ? (Number(val) - Number(b.qty_sisa || 0)) : null;
+                const diffRp = diff !== null ? diff * Number(b.hpp_beli || 0) : 0;
+                return `<tr>
+                  <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}<br/><span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">Rak: ${S().esc((o && o.rak_lokasi) || '-')}</span></td>
+                  <td class="font-mono-num text-xs"><b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</td>
+                  <td class="font-mono-num font-bold">${b.qty_sisa}</td>
+                  <td><input type="number" min="0" value="${S().esc(val)}" placeholder="Isi qty riil" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-xs w-28 py-1 text-right"/></td>
+                  <td class="font-mono-num font-bold ${diff === null ? '' : (diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600'))}">${diff === null ? '-' : ((diff > 0 ? '+' : '') + diff)}</td>
+                  <td class="font-mono-num text-xs ${diffRp < 0 ? 'text-red-600' : 'text-emerald-600'}">${diff === null ? '-' : S().rp(diffRp)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`}
+      </div>
+    </div>`;
+  }
+
+  function _renderGudangPenyesuaianTab(st, seeCost) {
+    const q = adjSearchQ.trim().toLowerCase();
+    const allRows = _getAdjustmentRows(st);
+    const filtered = allRows.filter((r) => {
+      if (adjFilterType === 'POSITIF' && r.qty_ubah <= 0) return false;
+      if (adjFilterType === 'NEGATIF' && r.qty_ubah >= 0) return false;
+      if (adjDateFrom && r.isoDate && r.isoDate < adjDateFrom) return false;
+      if (adjDateTo && r.isoDate && r.isoDate > adjDateTo) return false;
+      if (q) {
+        const hay = `${r.nama_dagang} ${r.no_batch} ${r.petugas} ${r.penyebab} ${r.catatan}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const posSum = filtered.filter((r) => r.qty_ubah > 0).reduce((s, r) => s + r.qty_ubah, 0);
+    const negSum = filtered.filter((r) => r.qty_ubah < 0).reduce((s, r) => s + r.qty_ubah, 0);
+    const prodSet = new Set(filtered.map((r) => r.id_obat));
+    const totalNilai = filtered.reduce((s, r) => s + r.nilai_selisih, 0);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const rekapLabel = `Rekap dari ${S().formatTgl(adjDateFrom || todayStr)} s.d. ${S().formatTgl(adjDateTo || todayStr)}`;
+
+    return `<div class="space-y-4">
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <select class="ons-select text-xs w-44" onchange="window.setAdjFilterType(this.value)" aria-label="Pilihan Data Penyesuaian">
+              <option value="SEMUA" ${adjFilterType === 'SEMUA' ? 'selected' : ''}>Semua Penyesuaian</option>
+              <option value="POSITIF" ${adjFilterType === 'POSITIF' ? 'selected' : ''}>Penyesuaian Positif (+)</option>
+              <option value="NEGATIF" ${adjFilterType === 'NEGATIF' ? 'selected' : ''}>Penyesuaian Negatif (-)</option>
+            </select>
+            <input class="ons-input text-xs w-52" placeholder="Cari data produk / petugas..." value="${S().esc(adjSearchQ)}" oninput="window.setAdjSearchQ(this.value)"/>
+            <div class="flex items-center gap-1 text-xs">
+              <span class="text-[11px]" style="color:var(--ons-text-soft)">Filter Tgl:</span>
+              <input type="date" value="${S().esc(adjDateFrom)}" onchange="window.setAdjDateRange(this.value, '${S().esc(adjDateTo)}')" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+              <span>-</span>
+              <input type="date" value="${S().esc(adjDateTo)}" onchange="window.setAdjDateRange('${S().esc(adjDateFrom)}', this.value)" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="window.exportPenyesuaianStok('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
+            <button type="button" onclick="window.openQuickAdjustmentModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">+ Sesuaikan Stok</button>
+          </div>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Tanggal</th>
+                <th>Nama Produk</th>
+                <th>Petugas</th>
+                <th>Total Selisih</th>
+                ${seeCost ? '<th>Nilai Penyesuaian</th>' : ''}
+                <th>Penyebab Selisih</th>
+                <th>Catatan</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filtered.length ? filtered.slice(0, 120).map((r, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}.</td>
+                <td class="font-mono-num text-xs whitespace-nowrap">${S().formatTgl(r.timestamp, true)}</td>
+                <td class="text-xs"><div class="font-semibold">${S().esc(r.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Batch: ${S().esc(r.no_batch)}</div></td>
+                <td class="text-xs">${S().esc(r.petugas)}</td>
+                <td class="font-mono-num font-bold text-xs ${r.qty_ubah >= 0 ? 'text-emerald-600' : 'text-red-600'}">${r.qty_ubah > 0 ? '+' : ''}${r.qty_ubah}</td>
+                ${seeCost ? `<td class="font-mono-num text-xs font-semibold ${r.nilai_selisih < 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(r.nilai_selisih)}</td>` : ''}
+                <td class="text-xs"><span class="badge-bpom bpom-terbatas">${S().esc(r.penyebab)}</span></td>
+                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(r.catatan)}</td>
+                <td><button type="button" onclick="window.openObatDetailModal('${S().esc(r.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Detail</button></td>
+              </tr>`).join('') : `<tr><td colspan="${seeCost ? 9 : 8}" class="text-center py-6 text-xs">Data tidak ditemukan. Klik <b>+ Sesuaikan Stok</b> untuk mencatat penyesuaian manual.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      ${_renderInvRekapFooter('penyesuaian-stok', rekapLabel, [
+        { label: 'Penyesuaian Positif', valHtml: `+${posSum}`, cls: 'text-emerald-600' },
+        { label: 'Penyesuaian Negatif', valHtml: `${negSum}`, cls: negSum < 0 ? 'text-red-600' : '' },
+        { label: 'Produk yang Disesuaikan', valHtml: `${prodSet.size} produk` },
+        ...(seeCost ? [{ label: 'Total Nilai Penyesuaian', valHtml: S().rp(totalNilai), cls: totalNilai < 0 ? 'text-red-600' : 'text-emerald-600' }] : [])
+      ])}
+    </div>`;
+  }
+
+  function _renderGudangTransferTab(st, seeCost) {
+    const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
+    const rows = _getCombinedTransferRows(st).filter((r) => {
+      if (trfFilterMode !== 'SEMUA' && r.kind !== trfFilterMode) return false;
+      if (trfDateFrom && r.isoDate && r.isoDate < trfDateFrom) return false;
+      if (trfDateTo && r.isoDate && r.isoDate > trfDateTo) return false;
+      const q = trfSearchQ.trim().toLowerCase();
+      if (q && !`${r.no_transaksi} ${r.produkLabel} ${r.asal} ${r.tujuan} ${r.catatan}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const drafts = _readJsonLs('ONS_TRANSFER_DRAFTS_V1', []);
+    const totalNilai = rows.reduce((s, r) => s + Number(r.totalNilai || 0), 0);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const rekapLabel = `Rekap dari ${S().formatTgl(trfDateFrom || todayStr)} s.d. ${S().formatTgl(trfDateTo || todayStr)}`;
+
+    const branchIds = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01', 'ONS-02'];
+    const cmpObj = st.branchStockCompare && !Array.isArray(st.branchStockCompare) ? st.branchStockCompare : null;
+    const compList = (cmpObj && Array.isArray(cmpObj.items)) ? cmpObj.items : (Array.isArray(st.branchStockCompare) ? st.branchStockCompare : []);
+
+    return `<div class="space-y-4">
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <input class="ons-input text-xs w-52" placeholder="Cari data transaksi / produk..." value="${S().esc(trfSearchQ)}" oninput="window.setTrfSearchQ(this.value)"/>
+            <div class="flex items-center gap-1 text-xs">
+              <span class="text-[11px]" style="color:var(--ons-text-soft)">Filter Tgl:</span>
+              <input type="date" value="${S().esc(trfDateFrom)}" onchange="window.setTrfDateRange(this.value, '${S().esc(trfDateTo)}')" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+              <span>-</span>
+              <input type="date" value="${S().esc(trfDateTo)}" onchange="window.setTrfDateRange('${S().esc(trfDateFrom)}', this.value)" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+            </div>
+            <select class="ons-select text-xs w-36" onchange="window.setTrfFilterMode(this.value)" aria-label="Filter Jenis Perpindahan">
+              <option value="SEMUA" ${trfFilterMode === 'SEMUA' ? 'selected' : ''}>Semua Mode</option>
+              <option value="INTERNAL" ${trfFilterMode === 'INTERNAL' ? 'selected' : ''}>Gudang / Rak</option>
+              <option value="CABANG" ${trfFilterMode === 'CABANG' ? 'selected' : ''}>Antar-Cabang</option>
+            </select>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="window.openTransferDraftsModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">Draft (${drafts.length})</button>
+            <button type="button" onclick="window.openImportTransferModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
+            <button type="button" onclick="window.exportPerpindahanStok('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2">Excel</button>
+            <button type="button" onclick="window.openPindahkanStokModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">+ Pindahkan Stok</button>
+          </div>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Tanggal</th>
+                <th>No. Transaksi</th>
+                <th>Produk &amp; Tujuan</th>
+                ${seeCost ? '<th>Total Nilai Stok</th>' : ''}
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.length ? rows.map((r, idx) => {
+                const isPendingCabang = r.kind === 'CABANG' && r.status !== 'DITERIMA';
+                return `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}.</td>
+                  <td class="font-mono-num text-xs whitespace-nowrap">${S().formatTgl(r.timestamp, true)}</td>
+                  <td class="font-mono-num text-xs font-bold">${S().esc(r.no_transaksi)}</td>
+                  <td class="text-xs">
+                    <div class="font-semibold">${S().esc(r.produkLabel)} <span class="font-mono-num">(${r.qty} unit)</span></div>
+                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(r.asal)} &rarr; ${S().esc(r.tujuan)} &bull; <span class="badge-bpom ${r.status === 'DIKIRIM' ? 'bpom-prekursor' : 'bpom-bebas'}">${S().esc(r.status)}</span></div>
+                  </td>
+                  ${seeCost ? `<td class="font-mono-num text-xs font-bold">${S().rp(r.totalNilai)}</td>` : ''}
+                  <td>
+                    <div class="flex flex-wrap gap-1.5">
+                      ${r.kind === 'CABANG'
+                        ? `<button type="button" onclick="window.printSuratJalanMutasi('${S().esc(r.id)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Cetak SJ</button>
+                           ${isPendingCabang ? `<button type="button" onclick="window.receiveMutasiCabang('${S().esc(r.id)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Terima</button>` : ''}`
+                        : `<button type="button" onclick="window.printInternalTransferNote('${S().esc(r.id)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Cetak Bukti</button>`}
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('') : `<tr><td colspan="${seeCost ? 6 : 5}" class="text-center py-6 text-xs">Data tidak ditemukan. Klik <b>+ Pindahkan Stok</b> untuk mencatat perpindahan rak, gudang, atau antar-cabang.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      ${_renderInvRekapFooter('perpindahan-stok', rekapLabel, [
+        { label: 'Total Perpindahan', valHtml: seeCost ? S().rp(totalNilai) : `${rows.reduce((s, r) => s + r.qty, 0)} unit` },
+        { label: 'Frek. Transaksi', valHtml: `${rows.length}x` }
+      ])}
+
+      ${multiOn ? `<div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-bold text-sm">Komparator Stok Real-Time (${branchIds.length} Outlet Multi-Cabang)</h3>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Outlet aktif: <b class="font-mono-num">${S().esc(st.cabangId)}</b></span>
+        </div>
+        <div class="ons-table-wrap max-h-56 overflow-y-auto">
+          <table class="ons-table">
+            <thead><tr><th>Obat</th>${branchIds.map((bid) => `<th class="text-right font-mono-num">${S().esc(bid)}</th>`).join('')}<th class="text-right">Total Grup</th></tr></thead>
+            <tbody>
+              ${(compList.length ? compList : st.masterObat.map((o) => {
+                const perBranch = {};
+                branchIds.forEach((bid) => { perBranch[bid] = bid === st.cabangId ? S().getSellableStok(o.id_obat) : 0; });
+                return { id_obat: o.id_obat, nama_dagang: o.nama_dagang, stok_per_cabang: perBranch, total_semua_cabang: Object.values(perBranch).reduce((a, b) => a + b, 0) };
+              })).map((row) => `<tr>
+                <td class="font-semibold text-xs">${S().esc(row.nama_dagang)}</td>
+                ${branchIds.map((bid) => {
+                  const qtyBr = Number(((row.stok_per_cabang || row.per_cabang || {})[bid]) || 0);
+                  return `<td class="text-right font-mono-num text-xs ${qtyBr <= 5 ? 'text-red-600 font-bold' : 'text-emerald-600'}">${qtyBr}</td>`;
+                }).join('')}
+                <td class="text-right font-mono-num font-bold text-xs">${row.total_semua_cabang !== undefined ? row.total_semua_cabang : (row.total_all || 0)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>` : `<div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl border text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <span><b>Mode 1 Apotek Tunggal (${S().esc(st.cabangId || 'ONS-01')})</b> aktif — mendukung pemindahan stok antar gudang, rak &amp; chiller.</span>
+        ${S().getRole() === 'Pemilik' ? `<button type="button" onclick="window.toggleMultiBranchMode(true)" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Aktifkan Mutasi Multi-Cabang</button>` : ''}
+      </div>`}
+    </div>`;
+  }
+
   function renderGudangView() {
     const st = S().AppState;
     gudangTab = (st.subTabs && st.subTabs.gudang) || gudangTab || 'batch';
@@ -2501,27 +3084,10 @@
     });
 
     const totalNilaiGudang = seeCost ? st.stokBatch.reduce((s, b) => s + (Number(b.qty_sisa || 0) * Number(b.hpp_beli || 0)), 0) : 0;
-
-    // Filter Batch Tab
     const gq = gudangBatchQ.trim().toLowerCase();
     const expiredCount = sorted.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) < 0).length;
     const kritisCount = sorted.filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) >= 0 && S().daysUntil(b.tgl_kadaluarsa) <= 90).length;
-    const filteredBatches = sorted.filter((b) => {
-      const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
-      const d = S().daysUntil(b.tgl_kadaluarsa);
-      const activeQty = String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0;
-      if (gudangBatchFilter === 'KADALUARSA' && !(activeQty && d < 0)) return false;
-      if (gudangBatchFilter === 'KRITIS' && !(activeQty && d >= 0 && d <= 90)) return false;
-      if (gudangBatchFilter === 'KARANTINA' && !(String(b.status_batch || 'AKTIF') === 'KARANTINA_RECALL' || Number(b.qty_karantina || 0) > 0 || String(b.status_batch) === 'RETUR_PBF')) return false;
-      if (gudangBatchFilter === 'AMAN' && !(activeQty && d > 90)) return false;
-      if (gq) {
-        const hay = `${b.no_batch} ${b.no_faktur_pbf} ${b.no_sp || ''} ${o ? o.nama_dagang : b.id_obat}`.toLowerCase();
-        if (!hay.includes(gq)) return false;
-      }
-      return true;
-    });
 
-    // Opname Physical Count Draft Rows + Filter Lokasi Rak & Mode HP
     const rakSet = new Set();
     st.masterObat.forEach((o) => { if (o.rak_lokasi) rakSet.add(String(o.rak_lokasi).trim()); });
     const rakList = Array.from(rakSet).sort();
@@ -2552,19 +3118,24 @@
     const latestCold = coldLogs[0] || null;
     const hasColdAlarm = latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL';
 
+    const canOpname = seeCost || S().canAccessSubTab('gudang', 'opname');
+    const canAdj = seeCost || S().canAccessSubTab('gudang', 'penyesuaian');
+    const canTrf = seeCost || S().canAccessSubTab('gudang', 'transfer');
+
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Gudang Batch FEFO, Kartu Stok, Monitor Suhu &amp; Opname</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola batch kedaluwarsa terdekat, buku mutasi Kartu Stok BPOM, log suhu kulkas 2&ndash;8&deg;C, dan penyesuaian fisik Stock Opname.</p>
+          <h1 class="text-xl font-extrabold">Persediaan &amp; Stok Apotek</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Pantau stok kadaluarsa FEFO, stok opname, penyesuaian stok, perpindahan gudang/rak, kartu stok BPOM &amp; suhu 2&ndash;8&deg;C.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
-            <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Stok Batch &amp; FEFO (${sorted.length})</button>
+            <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Stok Kadaluarsa (${sorted.length})</button>
+            ${canOpname ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stok Opname</button>` : ''}
+            ${canAdj ? `<button onclick="window.setGudangTab('penyesuaian')" class="ons-tab-btn ${gudangTab === 'penyesuaian' ? 'active' : ''}">Penyesuaian Stok</button>` : ''}
+            ${canTrf ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Perpindahan Stok</button>` : ''}
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok Digital (${(st.mutasiStok || []).length})</button>
             <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu (2&ndash;8&deg;C) (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
-            ${(seeCost || S().canAccessSubTab('gudang', 'opname')) ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stock Opname Fisik</button>` : ''}
-            ${((S().isMultiBranchEnabled && S().isMultiBranchEnabled()) && (seeCost || S().canAccessSubTab('gudang', 'transfer'))) ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Mutasi Antar-Cabang (${(st.mutasiCabang || []).length})</button>` : ''}
           </div>
         </div>
       </div>
@@ -2656,133 +3227,10 @@
             </div>
           </div>
         </div>`;
-      })() : ''}
-      ${gudangTab === 'transfer' && (seeCost || S().canAccessSubTab('gudang', 'transfer')) ? (() => {
-        const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
-        if (!multiOn) {
-          return `<div class="ons-card p-6 space-y-3 text-xs">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <span class="badge-bpom bpom-bebas">Mode 1 Apotek Tunggal (ONS-01)</span>
-                <h3 class="font-bold text-base mt-2">Mutasi Antar-Cabang Belum Diaktifkan</h3>
-                <p style="color:var(--ons-text-soft)">Saat ini apotek Anda beroperasi sebagai <b>1 outlet tunggal</b> tanpa cabang tambahan, sehingga menu transfer antar-cabang disembunyikan agar tampilan tetap ringkas &amp; fokus.</p>
-              </div>
-            </div>
-            <div class="flex flex-wrap gap-2 pt-1">
-              <button type="button" onclick="window.setGudangTab('batch')" class="ons-btn ons-btn-primary text-xs">&larr; Kembali ke Stok Batch &amp; FEFO</button>
-              ${S().getRole() === 'Pemilik' ? `<button type="button" onclick="window.toggleMultiBranchMode(true)" class="ons-btn ons-btn-ghost text-xs">Saya Sudah Buka Cabang Baru (Aktifkan Multi-Cabang)</button>` : ''}
-            </div>
-          </div>`;
-        }
-        const cmpObj = st.branchStockCompare && !Array.isArray(st.branchStockCompare) ? st.branchStockCompare : null;
-        const branchIds = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01', 'ONS-02'];
-        const compList = (cmpObj && Array.isArray(cmpObj.items)) ? cmpObj.items : (Array.isArray(st.branchStockCompare) ? st.branchStockCompare : []);
-        const trfList = st.mutasiCabang || [];
-        const defDest = branchIds.find((bid) => bid !== st.cabangId) || branchIds[0] || 'ONS-02';
-        return `<div class="space-y-4">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
-              <div class="flex items-center justify-between">
-                <h3 class="font-bold text-sm">Kirim Mutasi Stok Antar-Cabang (FEFO)</h3>
-                <span class="badge-bpom bpom-terbatas">Gudang ${S().esc(st.cabangId)}</span>
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="font-semibold block mb-1">Cabang Asal</label>
-                  <select id="trfAsalCab" class="ons-select text-xs">
-                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === st.cabangId ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(S().getBranchLabel ? S().getBranchLabel(bid) : bid)}</option>`).join('')}
-                  </select>
-                </div>
-                <div>
-                  <label class="font-semibold block mb-1">Cabang Tujuan</label>
-                  <select id="trfTujuanCab" class="ons-select text-xs">
-                    ${branchIds.map((bid) => `<option value="${S().esc(bid)}" ${bid === defDest ? 'selected' : ''}>${S().esc(bid)} — ${S().esc(S().getBranchLabel ? S().getBranchLabel(bid) : bid)}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-              <div class="grid grid-cols-3 gap-2">
-                <div class="col-span-2">
-                  <label class="font-semibold block mb-1">Produk Obat *</label>
-                  <select id="trfObatId" class="ons-select text-xs">
-                    ${st.masterObat.map((o) => `<option value="${S().esc(o.id_obat)}">${S().esc(o.nama_dagang)} (Stok ${S().getSellableStok(o.id_obat)})</option>`).join('')}
-                  </select>
-                </div>
-                <div>
-                  <label class="font-semibold block mb-1">Qty Kirim *</label>
-                  <input id="trfQtyInp" type="number" min="1" value="10" class="ons-input font-mono-num text-right text-xs"/>
-                </div>
-              </div>
-              <div>
-                <label class="font-semibold block mb-1">Catatan Surat Jalan</label>
-                <input id="trfNoteInp" class="ons-input text-xs" placeholder="Cth: Permintaan darurat cabang / rebalancing stok ED"/>
-              </div>
-              <button onclick="window.submitMutasiCabangSend()" class="ons-btn ons-btn-primary w-full text-xs">Terbitkan Surat Jalan &amp; Kirim Mutasi FEFO</button>
-            </div>
-
-            <div class="ons-card p-4 lg:col-span-7 space-y-3">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="font-bold text-sm">Komparator Stok Real-Time (${branchIds.length} Outlet)</h3>
-                <span class="text-[11px]" style="color:var(--ons-text-soft)">Outlet aktif: <b class="font-mono-num">${S().esc(st.cabangId)}</b></span>
-              </div>
-              <div class="ons-table-wrap max-h-64 overflow-y-auto">
-                <table class="ons-table">
-                  <thead><tr><th>Obat</th>${branchIds.map((bid) => `<th class="text-right font-mono-num">${S().esc(bid)}</th>`).join('')}<th class="text-right">Total Grup</th></tr></thead>
-                  <tbody>
-                    ${(compList.length ? compList : st.masterObat.map((o) => {
-                      const perBranch = {};
-                      branchIds.forEach((bid) => { perBranch[bid] = bid === st.cabangId ? S().getSellableStok(o.id_obat) : 0; });
-                      return { id_obat: o.id_obat, nama_dagang: o.nama_dagang, satuan_dasar: o.satuan_dasar, stok_per_cabang: perBranch, total_semua_cabang: Object.values(perBranch).reduce((a, b) => a + b, 0) };
-                    })).map((row) => `<tr>
-                      <td class="font-semibold text-xs">${S().esc(row.nama_dagang)}</td>
-                      ${branchIds.map((bid) => {
-                        const qtyBr = Number(((row.stok_per_cabang || row.per_cabang || {})[bid]) || 0);
-                        return `<td class="text-right font-mono-num text-xs ${qtyBr <= 5 ? 'text-red-600 font-bold' : 'text-emerald-600'}">${qtyBr}</td>`;
-                      }).join('')}
-                      <td class="text-right font-mono-num font-bold text-xs">${row.total_semua_cabang !== undefined ? row.total_semua_cabang : (row.total_all || 0)}</td>
-                    </tr>`).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div class="ons-card p-4 space-y-3">
-            <h3 class="font-bold text-sm">Riwayat Surat Jalan &amp; Penerimaan Mutasi Antar-Cabang (${trfList.length})</h3>
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>No. Surat Jalan</th><th>Asal &rarr; Tujuan</th><th>Obat &amp; Batch</th><th>Qty</th><th>Status</th><th>Aksi Cabang</th></tr></thead>
-                <tbody>
-                  ${trfList.length ? trfList.map((tr) => {
-                    const done = String(tr.status_transfer || '') === 'DITERIMA';
-                    let trLines = [];
-                    try { trLines = JSON.parse(tr.items_json || '[]'); } catch (e) {}
-                    const firstLn = trLines[0] || {};
-                    const prodTitle = trLines.length > 1
-                      ? `${firstLn.nama_dagang || 'Item'} (+${trLines.length - 1} lainnya)`
-                      : (firstLn.nama_dagang || tr.nama_dagang || '-');
-                    const batchInfo = firstLn.no_batch ? `Batch: ${firstLn.no_batch} • ED ${firstLn.tgl_kadaluarsa || '-'}` : (tr.no_batch || '-');
-                    const totQty = tr.total_qty_dasar !== undefined ? tr.total_qty_dasar : (tr.qty_kirim || 0);
-                    return `<tr>
-                      <td class="font-mono-num text-xs"><b>${S().esc(tr.no_surat_jalan || tr.id_transfer)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(tr.tanggal_kirim || tr.tgl_kirim, true)}</span></td>
-                      <td class="text-xs font-semibold">${S().esc(tr.cabang_asal)} &rarr; ${S().esc(tr.cabang_tujuan)}</td>
-                      <td class="text-xs"><b>${S().esc(prodTitle)}</b><br/><span class="font-mono-num" style="color:var(--ons-text-soft)">${S().esc(batchInfo)}</span></td>
-                      <td class="font-mono-num font-bold">${totQty}</td>
-                      <td><span class="badge-bpom ${done ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(tr.status_transfer || 'DIKIRIM')}</span></td>
-                      <td>
-                        <div class="flex flex-wrap gap-1.5">
-                          <button onclick="window.printSuratJalanMutasi('${S().esc(tr.id_transfer)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Cetak SJ</button>
-                          ${!done ? `<button onclick="window.receiveMutasiCabang('${S().esc(tr.id_transfer)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Barang Masuk</button>` : `<span class="text-[11px]" style="color:var(--ons-text-soft)">Diterima ${S().esc(tr.diterima_oleh || '')}</span>`}
-                        </div>
-                      </td>
-                    </tr>`;
-                  }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Belum ada mutasi antar-cabang tercatat.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>`;
-      })() : ''}
-      ${(gudangTab === 'coldchain' || gudangTab === 'transfer') ? '' : (gudangTab === 'kartu-stok' ? `
+      })() : (gudangTab === 'transfer' && canTrf ? _renderGudangTransferTab(st, seeCost)
+      : (gudangTab === 'penyesuaian' && canAdj ? _renderGudangPenyesuaianTab(st, seeCost)
+      : (gudangTab === 'opname' && canOpname ? _renderGudangOpnameTab(st, activeForOpname, rakList, opnameCounted, opnameSelisihUnit, opnameSelisihRp)
+      : (gudangTab === 'kartu-stok' ? `
         <div class="ons-card p-4 space-y-4">
           ${global.ONSProcurementPro ? global.ONSProcurementPro.renderStockFlowSummary(mutasiRows) : ''}
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -2799,7 +3247,7 @@
               </select>
               <select class="ons-select w-48 text-xs" onchange="window.setMutasiFilterJenis(this.value)">
                 <option value="">-- Semua Jenis Mutasi --</option>
-                ${['PENJUALAN_POS', 'RETUR_PENJUALAN', 'PEMBELIAN_PBF', 'OPNAME', 'RECALL_KARANTINA', 'RETUR_PBF', 'PENYESUAIAN_MASUK'].map((j) => `<option value="${j}" ${mutasiFilterJenis === j ? 'selected' : ''}>${j}</option>`).join('')}
+                ${['PENJUALAN_POS', 'RETUR_PENJUALAN', 'PEMBELIAN_PBF', 'OPNAME', 'PENYESUAIAN', 'RECALL_KARANTINA', 'RETUR_PBF', 'PENYESUAIAN_MASUK'].map((j) => `<option value="${j}" ${mutasiFilterJenis === j ? 'selected' : ''}>${j}</option>`).join('')}
               </select>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -2827,129 +3275,7 @@
             </table>
           </div>
         </div>
-      ` : (gudangTab === 'opname' && (seeCost || S().canAccessSubTab('gudang', 'opname'))) ? `
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Aktif Dipindai</div><div class="text-lg font-bold font-mono-num">${activeForOpname.length}</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Sudah Diisi Hitungan</div><div class="text-lg font-bold font-mono-num text-blue-600">${opnameCounted}</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Net Selisih Unit</div><div class="text-lg font-bold font-mono-num ${opnameSelisihUnit === 0 ? 'text-emerald-600' : 'text-amber-600'}">${opnameSelisihUnit > 0 ? '+' : ''}${opnameSelisihUnit}</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Dampak Nilai HPP Selisih</div><div class="text-lg font-bold font-mono-num ${opnameSelisihRp >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(opnameSelisihRp)}</div></div>
-          </div>
-          <div class="ons-card p-4 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex flex-wrap items-center gap-2">
-                <input class="ons-input text-xs w-52" placeholder="Cari obat / KFA / batch opname..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
-                <select class="ons-select text-xs w-40" onchange="window.setOpnameRakFilter(this.value)" aria-label="Filter Lokasi Rak">
-                  <option value="">-- Semua Rak --</option>
-                  ${rakList.map((rk) => `<option value="${S().esc(rk)}" ${opnameRakFilter === rk ? 'selected' : ''}>Rak: ${S().esc(rk)}</option>`).join('')}
-                </select>
-                <button type="button" onclick="window.scanOpnameBarcodeNow()" class="ons-btn ons-btn-primary text-xs">Scan Barcode</button>
-                <div class="inline-flex rounded-lg border p-0.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-                  <button type="button" onclick="window.setOpnameViewMode('TABLE')" class="ons-btn text-xs py-1 px-2 ${opnameViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Tabel</button>
-                  <button type="button" onclick="window.setOpnameViewMode('CARD')" class="ons-btn text-xs py-1 px-2 ${opnameViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Mode HP</button>
-                </div>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <input id="opnameWorkspaceReason" class="ons-input text-xs w-56" placeholder="Catatan/Alasan SO..." value="${S().esc(opnameDraftReason || 'Stock Opname Rutin Gudang')}" oninput="window.setOpnameDraftReason(this.value)"/>
-                <button onclick="window.submitFullOpnameWorkspace()" class="ons-btn ons-btn-emerald text-xs">Simpan Hasil Opname (${opnameCounted} Batch)</button>
-              </div>
-            </div>
-            ${opnameViewMode === 'CARD' ? `
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                ${activeForOpname.map((b) => {
-                  const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
-                  const sysQty = Number(b.qty_sisa || 0);
-                  const val = opnameDraftQty[b.id_batch] !== undefined ? opnameDraftQty[b.id_batch] : '';
-                  const diff = val !== '' ? (Number(val) - sysQty) : null;
-                  return `<div class="p-3.5 rounded-xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                    <div class="flex items-start justify-between gap-2">
-                      <div>
-                        <div class="font-bold text-sm">${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
-                        <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Rak: <b>${S().esc((o && o.rak_lokasi) || '-')}</b> &bull; Batch <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</div>
-                      </div>
-                      <span class="badge-bpom bpom-terbatas font-mono-num">Sistem: ${sysQty}</span>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-1.5">
-                      <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, -1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">-1</button>
-                      <input type="number" min="0" value="${S().esc(val)}" placeholder="${sysQty}" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-sm font-bold w-24 text-center py-1 min-h-0 h-8"/>
-                      <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+1</button>
-                      <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 10)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+10</button>
-                      <button type="button" onclick="window.setOpnameDraftQty('${b.id_batch}', ${sysQty})" class="ons-btn ons-btn-emerald text-xs px-2.5 py-1 ml-auto">= Sistem</button>
-                    </div>
-                    ${diff !== null ? `<div class="text-xs font-mono-num font-bold ${diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600')}">Selisih: ${diff > 0 ? '+' : ''}${diff} unit (${S().rp(diff * Number(b.hpp_beli || 0))})</div>` : ''}
-                  </div>`;
-                }).join('')}
-              </div>
-            ` : `
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>Nama Obat &amp; Rak</th><th>No. Batch &amp; ED</th><th>Stok Sistem</th><th>Hitung Fisik Riil</th><th>Selisih Unit</th><th>Estimasi Selisih Rp</th></tr></thead>
-                <tbody>
-                  ${activeForOpname.map((b) => {
-                    const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
-                    const val = opnameDraftQty[b.id_batch] !== undefined ? opnameDraftQty[b.id_batch] : '';
-                    const diff = val !== '' ? (Number(val) - Number(b.qty_sisa || 0)) : null;
-                    const diffRp = diff !== null ? diff * Number(b.hpp_beli || 0) : 0;
-                    return `<tr>
-                      <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}<br/><span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">Rak: ${S().esc((o && o.rak_lokasi) || '-')}</span></td>
-                      <td class="font-mono-num text-xs"><b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</td>
-                      <td class="font-mono-num font-bold">${b.qty_sisa}</td>
-                      <td><input type="number" min="0" value="${S().esc(val)}" placeholder="Isi qty riil" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-xs w-28 py-1 text-right"/></td>
-                      <td class="font-mono-num font-bold ${diff === null ? '' : (diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600'))}">${diff === null ? '-' : ((diff > 0 ? '+' : '') + diff)}</td>
-                      <td class="font-mono-num text-xs ${diffRp < 0 ? 'text-red-600' : 'text-emerald-600'}">${diff === null ? '-' : S().rp(diffRp)}</td>
-                    </tr>`;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>`}
-          </div>
-        </div>
-      ` : `
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Total Batch Tersedia</div><div class="text-lg font-bold font-mono-num">${sorted.length}</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Kadaluarsa / Kritis &le; 90h</div><div class="text-lg font-bold font-mono-num text-red-600">${expiredCount} ED &bull; ${kritisCount} Kritis</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Stok Karantina Recall</div><div class="text-lg font-bold font-mono-num text-amber-600">${sorted.reduce((s, b) => s + Number(b.qty_karantina || 0), 0)} Unit</div></div>
-            ${seeCost ? `<div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Valuasi Persediaan (HPP)</div><div class="text-lg font-bold font-mono-num text-blue-600">${S().rp(totalNilaiGudang)}</div></div>` : ''}
-          </div>
-          <div class="ons-card p-4 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex flex-wrap gap-2 items-center">
-                <input class="ons-input text-xs w-60" placeholder="Cari obat, batch, faktur, SP..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
-                <div class="ons-tab-bar">
-                  ${['SEMUA', 'KADALUARSA', 'KRITIS', 'KARANTINA', 'AMAN'].map((f) => `<button onclick="window.setGudangBatchFilter('${f}')" class="ons-tab-btn ${gudangBatchFilter === f ? 'active' : ''}">${f}</button>`).join('')}
-                </div>
-              </div>
-              ${seeCost ? `<div class="flex flex-wrap gap-2">
-                <button onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-emerald text-xs">+ Input Batch Manual</button>
-                <button onclick="window.setGudangTab('opname')" class="ons-btn ons-btn-primary text-xs">Stock Opname Fisik &rarr;</button>
-              </div>` : ''}
-            </div>
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>Obat</th><th>No. Batch / Faktur</th><th>ED</th><th>Sisa Qty</th><th>Karantina</th><th>Status</th>${seeCost ? '<th>Aksi Recall</th>' : ''}</tr></thead>
-                <tbody>
-                  ${filteredBatches.map((b) => {
-                    const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
-                    const d = S().daysUntil(b.tgl_kadaluarsa);
-                    const isEd = d < 0 && Number(b.qty_sisa || 0) > 0;
-                    const edBadge = d < 0 ? 'bpom-keras' : (d <= 90 ? 'bpom-keras' : (d <= 180 ? 'bpom-prekursor' : 'bpom-bebas'));
-                    return `<tr>
-                      <td class="font-semibold">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
-                      <td class="font-mono-num text-xs"><b>${S().esc(b.no_batch)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(b.no_faktur_pbf)}${b.no_sp && b.no_sp !== '-' ? ' &bull; ' + S().esc(b.no_sp) : ''}</span></td>
-                      <td><span class="badge-bpom ${edBadge} font-mono-num">${isEd ? 'KADALUARSA ' : ''}${S().esc(b.tgl_kadaluarsa)} (${d}h)</span></td>
-                      <td class="font-mono-num font-bold">${b.qty_sisa}</td>
-                      <td class="font-mono-num text-red-600">${b.qty_karantina || 0}</td>
-                      <td><span class="badge-bpom ${isEd ? 'bpom-keras' : (b.status_batch === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras')}">${isEd ? 'ED / BLOKIR POS' : S().esc(b.status_batch)}</span></td>
-                      ${seeCost ? `<td><button onclick="window.triggerRecallBatch('${b.id_batch}','${S().esc(b.no_batch)}')" ${b.status_batch !== 'AKTIF' ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs py-1 px-2.5">1-Klik Recall BPOM</button></td>` : ''}
-                    </tr>`;
-                  }).join('') || '<tr><td colspan="7" class="text-center py-6 text-xs">Tidak ada batch cocok dengan filter ini.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      `)}
+      ` : _renderGudangKadaluarsaTab(st, sorted, expiredCount, kritisCount, totalNilaiGudang, seeCost)))))}
     </div>`;
   }
 
@@ -3090,6 +3416,527 @@
   };
   global.setGudangBatchQ = (v) => { gudangBatchQ = v || ''; global.renderActiveView(); };
   global.setGudangBatchFilter = (v) => { gudangBatchFilter = v || 'SEMUA'; global.renderActiveView(); };
+  global.setEdDateRange = (f, t) => { edDateFrom = f || ''; edDateTo = t || ''; global.renderActiveView(); };
+  global.toggleEdBatchSelect = (idBatch, checked) => {
+    if (checked) edSelectedIds.add(idBatch);
+    else edSelectedIds.delete(idBatch);
+    global.renderActiveView();
+  };
+  global.clearEdBatchSelection = () => { edSelectedIds.clear(); global.renderActiveView(); };
+  global.batchRecallSelected = async () => {
+    const ids = Array.from(edSelectedIds);
+    if (!ids.length) return global.toast('Pilih minimal 1 batch terlebih dahulu.', 'warn');
+    try {
+      let okCount = 0;
+      for (let i = 0; i < ids.length; i++) {
+        const b = (S().AppState.stokBatch || []).find((x) => x.id_batch === ids[i]);
+        if (b && b.status_batch === 'AKTIF') {
+          await API().callApi('stok.recallBatch', { id_batch: ids[i], alasan: 'Karantina Batch Kadaluarsa / FEFO' }, { isWrite: true });
+          okCount++;
+        }
+      }
+      edSelectedIds.clear();
+      global.toast(`${okCount} batch terpilih masuk Karantina BPOM!`, 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.exportStokKadaluarsa = (fmt) => {
+    const st = S().AppState;
+    const seeCost = S().canSeeFinancialCost();
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const rows = (st.stokBatch || []).map((b, idx) => {
+      const o = (st.masterObat || []).find((m) => m.id_obat === b.id_obat) || {};
+      return {
+        no: idx + 1,
+        nama_produk: o.nama_dagang || b.id_obat,
+        no_batch: b.no_batch || '-',
+        rak: b.rak_penyimpanan || o.rak_lokasi || '-',
+        supplier: _resolveBatchSupplier(st, b, o),
+        gudang: b.gudang || (b.cabang_id && b.cabang_id !== 'ONS-01' ? b.cabang_id : 'Gudang Utama'),
+        tgl_kadaluarsa: b.tgl_kadaluarsa || '-',
+        batas_retur: _calcBatasReturIso(b.tgl_kadaluarsa),
+        ...(seeCost ? { hpp: Number(b.hpp_beli || o.hpp_avg || 0) } : {}),
+        kuantitas: Number(b.qty_sisa || 0),
+        status: b.status_batch || 'AKTIF'
+      };
+    });
+    const hdr = [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama_produk', label: 'Nama Produk', type: 'wrap', width: 28 },
+      { key: 'no_batch', label: 'No Batch', width: 14 },
+      { key: 'rak', label: 'Rak', width: 10 },
+      { key: 'supplier', label: 'Supplier', type: 'wrap', width: 22 },
+      { key: 'gudang', label: 'Gudang', width: 14 },
+      { key: 'tgl_kadaluarsa', label: 'Tgl. Kadaluarsa', width: 14 },
+      { key: 'batas_retur', label: 'Batas Retur', width: 14 },
+      ...(seeCost ? [{ key: 'hpp', label: 'Harga Pokok', type: 'currency', width: 14 }] : []),
+      { key: 'kuantitas', label: 'Kuantitas', type: 'int', sum: true, width: 11 },
+      { key: 'status', label: 'Status', type: 'status', width: 12 }
+    ];
+    S().exportDataset(fmt || 'xlsx', `Stok Kadaluarsa & Batch FEFO - ${prof.nama_usaha || 'Apotek ONS Farma'}`, `stok-kadaluarsa-${new Date().toISOString().slice(0, 10)}`, hdr, rows, { sheetName: 'Stok_Kadaluarsa' });
+  };
+
+  global.startNewOpnameSession = () => {
+    opnameSessionActive = true;
+    global.renderActiveView();
+  };
+  global.closeOpnameSession = () => {
+    opnameSessionActive = false;
+    global.renderActiveView();
+  };
+  global.openRiwayatOpnameModal = () => {
+    const st = S().AppState;
+    const savedSess = _readJsonLs('ONS_OPNAME_HIST_V1', []);
+    const derivedMap = {};
+    (st.mutasiStok || []).forEach((m) => {
+      if (String(m.jenis_mutasi || '') !== 'OPNAME') return;
+      const key = m.referensi_id || String(m.timestamp || '').slice(0, 10);
+      if (!derivedMap[key]) {
+        derivedMap[key] = {
+          id: key,
+          tanggal: m.timestamp,
+          gudang: m.gudang || 'Gudang Utama',
+          petugas: m.petugas || m.user_id || 'Pemilik / APJ',
+          status: 'SELESAI',
+          jumlah_batch: 0,
+          catatan: m.catatan || 'Stock Opname'
+        };
+      }
+      derivedMap[key].jumlah_batch++;
+    });
+    const merged = (Array.isArray(savedSess) ? savedSess : []).slice();
+    Object.values(derivedMap).forEach((d) => {
+      if (!merged.some((x) => x.id === d.id)) merged.push(d);
+    });
+    merged.sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')));
+
+    const renderRows = (list) => list.length ? list.map((it, idx) => `<tr>
+      <td class="font-mono-num text-xs">${idx + 1}.</td>
+      <td class="text-xs">
+        <div class="font-bold">${S().esc(it.id)} &bull; <span class="badge-bpom bpom-bebas">${S().esc(it.status || 'SELESAI')}</span></div>
+        <div style="color:var(--ons-text-soft)">${S().formatTgl(it.tanggal, true)} &bull; ${S().esc(it.gudang || 'Gudang Utama')} &bull; Petugas: ${S().esc(it.petugas || 'APJ')} &bull; <b>${Number(it.jumlah_batch || 0)}</b> batch</div>
+        ${it.catatan ? `<div class="text-[11px] italic" style="color:var(--ons-text-soft)">${S().esc(it.catatan)}</div>` : ''}
+      </td>
+      <td><button type="button" onclick="ONSStore.closeModal();window.setGudangTab('penyesuaian')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Lihat Penyesuaian</button></td>
+    </tr>`).join('') : '<tr><td colspan="3" class="text-center py-6 text-xs">Data tidak ditemukan.</td></tr>';
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-extrabold text-base text-blue-600">Riwayat Opname</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <select id="roStatusFilter" class="ons-select text-xs w-36" onchange="window.filterRiwayatOpnameModal()">
+          <option value="">Filter Status</option>
+          <option value="SELESAI">SELESAI</option>
+          <option value="PROSES">PROSES</option>
+        </select>
+        <select id="roGudangFilter" class="ons-select text-xs w-40" onchange="window.filterRiwayatOpnameModal()">
+          <option value="">Filter Gudang</option>
+          <option value="Gudang Utama">Gudang Utama</option>
+        </select>
+        <input id="roDateFilter" type="date" class="ons-input text-xs w-36 font-mono-num" onchange="window.filterRiwayatOpnameModal()"/>
+        <button type="button" onclick="ONSStore.closeModal();window.startNewOpnameSession()" class="ons-btn ons-btn-primary text-xs ml-auto">+ Mulai Opname Baru</button>
+      </div>
+      <div class="ons-table-wrap max-h-72 overflow-y-auto">
+        <table class="ons-table is-compact">
+          <thead><tr><th>No.</th><th>Info Opname</th><th>Actions</th></tr></thead>
+          <tbody id="roTableBody">${renderRows(merged)}</tbody>
+        </table>
+      </div>
+    </div>`, '680px');
+    global._roAllRows = merged;
+    global.filterRiwayatOpnameModal = () => {
+      const stVal = (document.getElementById('roStatusFilter') || {}).value || '';
+      const gdVal = (document.getElementById('roGudangFilter') || {}).value || '';
+      const dtVal = (document.getElementById('roDateFilter') || {}).value || '';
+      const filtered = (global._roAllRows || []).filter((x) => {
+        if (stVal && String(x.status || 'SELESAI').toUpperCase() !== stVal) return false;
+        if (gdVal && String(x.gudang || 'Gudang Utama') !== gdVal) return false;
+        if (dtVal && String(x.tanggal || '').slice(0, 10) !== dtVal) return false;
+        return true;
+      });
+      const tbody = document.getElementById('roTableBody');
+      if (tbody) tbody.innerHTML = renderRows(filtered);
+    };
+  };
+
+  global.setAdjFilterType = (v) => { adjFilterType = v || 'SEMUA'; global.renderActiveView(); };
+  global.setAdjSearchQ = (v) => { adjSearchQ = v || ''; global.renderActiveView(); };
+  global.setAdjDateRange = (f, t) => { adjDateFrom = f || ''; adjDateTo = t || ''; global.renderActiveView(); };
+  global.openQuickAdjustmentModal = () => {
+    const st = S().AppState;
+    const batches = (st.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' || String(b.status_batch || '') === 'HABIS');
+    if (!batches.length) return global.toast('Belum ada batch produk untuk disesuaikan.', 'warn');
+    const firstB = batches[0];
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">+ Sesuaikan Stok Produk</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="sm:col-span-2">
+          <label class="font-semibold block mb-1">Pilih Produk &amp; Batch FEFO *</label>
+          <select id="adjBatchInp" class="ons-select text-xs" onchange="window.onQuickAdjBatchChange()">
+            ${batches.map((b) => {
+              const ob = (st.masterObat || []).find((o) => o.id_obat === b.id_obat) || {};
+              return `<option value="${S().esc(b.id_batch)}" data-sys="${Number(b.qty_sisa || 0)}">${S().esc(ob.nama_dagang || b.id_obat)} — Batch ${S().esc(b.no_batch)} (Sistem: ${Number(b.qty_sisa || 0)})</option>`;
+            }).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Stok Sistem Saat Ini</label>
+          <input id="adjSysQtyInp" class="ons-input font-mono-num font-bold" readonly value="${Number(firstB.qty_sisa || 0)}"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Stok Fisik Baru *</label>
+          <input id="adjNewQtyInp" type="number" min="0" class="ons-input font-mono-num font-bold text-blue-600" value="${Number(firstB.qty_sisa || 0)}" oninput="window.onQuickAdjQtyPreview()"/>
+          <div id="adjSelisihPreview" class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Selisih: 0</div>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Penyebab Selisih *</label>
+          <select id="adjPenyebabInp" class="ons-select text-xs">
+            <option value="Stok Opname">Stok Opname</option>
+            <option value="Barang Rusak / Pecah">Barang Rusak / Pecah</option>
+            <option value="Kadaluarsa / Musnah">Kadaluarsa / Musnah</option>
+            <option value="Salah Input Awal">Salah Input Awal</option>
+            <option value="Penyesuaian Lainnya">Penyesuaian Lainnya</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Catatan</label>
+          <input id="adjNoteInp" class="ons-input text-xs" placeholder="Keterangan singkat penyesuaian..."/>
+        </div>
+      </div>
+      <button type="button" onclick="window.submitQuickAdjustmentModal()" class="ons-btn ons-btn-primary w-full py-2.5 text-xs font-bold">Simpan Penyesuaian Stok</button>
+    </div>`, '540px');
+  };
+  global.onQuickAdjBatchChange = () => {
+    const sel = document.getElementById('adjBatchInp');
+    const opt = sel && sel.options ? sel.options[sel.selectedIndex] : null;
+    const sys = opt ? Number(opt.getAttribute('data-sys') || 0) : 0;
+    const sysEl = document.getElementById('adjSysQtyInp');
+    const newEl = document.getElementById('adjNewQtyInp');
+    if (sysEl) sysEl.value = sys;
+    if (newEl) newEl.value = sys;
+    if (typeof global.onQuickAdjQtyPreview === 'function') global.onQuickAdjQtyPreview();
+  };
+  global.onQuickAdjQtyPreview = () => {
+    const sys = Number((document.getElementById('adjSysQtyInp') || {}).value || 0);
+    const baru = Number((document.getElementById('adjNewQtyInp') || {}).value || 0);
+    const diff = baru - sys;
+    const prev = document.getElementById('adjSelisihPreview');
+    if (prev) {
+      prev.textContent = `Selisih: ${diff > 0 ? '+' : ''}${diff}`;
+      prev.className = `text-[11px] font-mono-num font-bold mt-1 ${diff === 0 ? '' : (diff > 0 ? 'text-emerald-600' : 'text-red-600')}`;
+    }
+  };
+  global.submitQuickAdjustmentModal = async () => {
+    try {
+      const idBatch = (document.getElementById('adjBatchInp') || {}).value;
+      const qtyFisik = Math.max(0, Number((document.getElementById('adjNewQtyInp') || {}).value || 0));
+      const penyebab = (document.getElementById('adjPenyebabInp') || {}).value || 'Penyesuaian Manual';
+      const note = ((document.getElementById('adjNoteInp') || {}).value || '').trim() || penyebab;
+      const res = await API().callApi('stok.opnameSave', {
+        is_adjustment: true,
+        penyebab,
+        catatan: note,
+        entries: [{ id_batch: idBatch, qty_fisik: qtyFisik, penyebab, catatan: note, alasan: note }]
+      }, { isWrite: true });
+      const userObj = S().AppState.user || {};
+      const metaMap = _readJsonLs('ONS_ADJ_META_V1', {});
+      (S().AppState.mutasiStok || []).slice(0, 5).forEach((m) => {
+        if (m.id_batch === idBatch) {
+          metaMap[m.id_mutasi] = { penyebab, catatan: note, petugas: userObj.nama_lengkap || 'Pemilik' };
+        }
+      });
+      _writeJsonLs('ONS_ADJ_META_V1', metaMap);
+      S().closeModal();
+      global.toast('Penyesuaian stok berhasil disimpan (' + (res.adjusted || 1) + ' batch)!', 'ok');
+      await global.bootLoadState(true);
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.exportPenyesuaianStok = (fmt) => {
+    const st = S().AppState;
+    const seeCost = S().canSeeFinancialCost();
+    const rows = _getAdjustmentRows(st).map((r, i) => ({
+      no: i + 1,
+      tanggal: S().formatTgl(r.timestamp, true),
+      nama_dagang: r.nama_dagang,
+      no_batch: r.no_batch,
+      petugas: r.petugas,
+      total_selisih: r.qty_ubah,
+      ...(seeCost ? { nilai: r.nilai_selisih } : {}),
+      penyebab: r.penyebab,
+      catatan: r.catatan
+    }));
+    const hdr = [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'tanggal', label: 'Tanggal', width: 20 },
+      { key: 'nama_dagang', label: 'Nama Produk', type: 'wrap', width: 28 },
+      { key: 'no_batch', label: 'Batch', width: 14 },
+      { key: 'petugas', label: 'Petugas', width: 18 },
+      { key: 'total_selisih', label: 'Total Selisih', type: 'int', sum: true, width: 14 },
+      ...(seeCost ? [{ key: 'nilai', label: 'Nilai Penyesuaian', type: 'currency', sum: true, width: 16 }] : []),
+      { key: 'penyebab', label: 'Penyebab Selisih', width: 20 },
+      { key: 'catatan', label: 'Catatan', type: 'wrap', width: 28 }
+    ];
+    S().exportDataset(fmt || 'xlsx', 'Laporan Penyesuaian Stok Apotek', `penyesuaian-stok-${new Date().toISOString().slice(0, 10)}`, hdr, rows, { sheetName: 'Penyesuaian_Stok' });
+  };
+
+  global.setTrfSearchQ = (v) => { trfSearchQ = v || ''; global.renderActiveView(); };
+  global.setTrfFilterMode = (v) => { trfFilterMode = v || 'SEMUA'; global.renderActiveView(); };
+  global.setTrfDateRange = (f, t) => { trfDateFrom = f || ''; trfDateTo = t || ''; global.renderActiveView(); };
+  global.openPindahkanStokModal = (draftPrefill) => {
+    const st = S().AppState;
+    const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
+    const branchIds = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
+    const obts = st.masterObat || [];
+    const pf = draftPrefill || {};
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">+ Pindahkan Stok</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="sm:col-span-2">
+          <label class="font-semibold block mb-1">Mode Perpindahan</label>
+          <select id="mvModeInp" class="ons-select text-xs" onchange="window.togglePindahStokMode(this.value)">
+            <option value="INTERNAL" ${(pf.mode || 'INTERNAL') === 'INTERNAL' ? 'selected' : ''}>Perpindahan Gudang / Rak Internal (1 Outlet)</option>
+            ${multiOn ? `<option value="CABANG" ${pf.mode === 'CABANG' ? 'selected' : ''}>Mutasi Antar-Cabang (Surat Jalan FEFO)</option>` : ''}
+          </select>
+        </div>
+        <div id="mvInternalFields" class="sm:col-span-2 grid grid-cols-2 gap-3 ${(pf.mode === 'CABANG' && multiOn) ? 'hidden' : ''}">
+          <div>
+            <label class="font-semibold block mb-1">Lokasi Asal</label>
+            <select id="mvAsalInt" class="ons-select text-xs">
+              <option value="Gudang Utama">Gudang Utama</option>
+              <option value="Etalase Depan">Etalase Depan</option>
+              <option value="Chiller 2–8°C">Chiller 2&ndash;8&deg;C</option>
+              <option value="Rak Prekursor / OOT">Rak Prekursor / OOT</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Lokasi Tujuan</label>
+            <select id="mvTujuanInt" class="ons-select text-xs">
+              <option value="Etalase Depan" ${(pf.tujuan || '') === 'Etalase Depan' ? 'selected' : ''}>Etalase Depan</option>
+              <option value="Gudang Utama" ${(pf.tujuan || '') === 'Gudang Utama' ? 'selected' : ''}>Gudang Utama</option>
+              <option value="Chiller 2–8°C" ${(pf.tujuan || '') === 'Chiller 2–8°C' ? 'selected' : ''}>Chiller 2&ndash;8&deg;C</option>
+              <option value="Gudang Karantina" ${(pf.tujuan || '') === 'Gudang Karantina' ? 'selected' : ''}>Gudang Karantina</option>
+            </select>
+          </div>
+        </div>
+        <div id="mvCabangFields" class="sm:col-span-2 grid grid-cols-2 gap-3 ${(pf.mode === 'CABANG' && multiOn) ? '' : 'hidden'}">
+          <div>
+            <label class="font-semibold block mb-1">Cabang Asal</label>
+            <select id="mvAsalCab" class="ons-select text-xs">${branchIds.map((b) => `<option value="${S().esc(b)}">${S().esc(b)}</option>`).join('')}</select>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Cabang Tujuan</label>
+            <select id="mvTujuanCab" class="ons-select text-xs">${branchIds.map((b, i) => `<option value="${S().esc(b)}" ${i === 1 ? 'selected' : ''}>${S().esc(b)}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Produk Obat *</label>
+          <select id="mvObatInp" class="ons-select text-xs">${obts.map((o) => `<option value="${S().esc(o.id_obat)}" ${pf.id_obat === o.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)} (Stok ${S().getSellableStok(o.id_obat)})</option>`).join('')}</select>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Kuantitas *</label>
+          <input id="mvQtyInp" type="number" min="1" value="${Number(pf.qty || 10)}" class="ons-input font-mono-num text-right text-xs"/>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="font-semibold block mb-1">Catatan</label>
+          <input id="mvNoteInp" class="ons-input text-xs" value="${S().esc(pf.catatan || '')}" placeholder="Cth: Isi ulang rak etalase depan / mutasi stok"/>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="window.submitPindahkanStokModal(true)" class="ons-btn ons-btn-ghost flex-1 py-2 text-xs">Simpan Draft</button>
+        <button type="button" onclick="window.submitPindahkanStokModal(false)" class="ons-btn ons-btn-primary flex-1 py-2 text-xs font-bold">Eksekusi Pindahkan Stok</button>
+      </div>
+    </div>`, '540px');
+  };
+  global.togglePindahStokMode = (modeVal) => {
+    const intBox = document.getElementById('mvInternalFields');
+    const cabBox = document.getElementById('mvCabangFields');
+    if (intBox) intBox.classList.toggle('hidden', modeVal === 'CABANG');
+    if (cabBox) cabBox.classList.toggle('hidden', modeVal !== 'CABANG');
+  };
+  global.submitPindahkanStokModal = async (asDraft) => {
+    try {
+      const mode = (document.getElementById('mvModeInp') || {}).value || 'INTERNAL';
+      const idObat = (document.getElementById('mvObatInp') || {}).value || '';
+      const qty = Math.max(1, Number((document.getElementById('mvQtyInp') || {}).value || 1));
+      const catatan = ((document.getElementById('mvNoteInp') || {}).value || '').trim() || '-';
+      const ob = (S().AppState.masterObat || []).find((o) => o.id_obat === idObat) || {};
+      const asal = mode === 'CABANG' ? (document.getElementById('mvAsalCab') || {}).value : (document.getElementById('mvAsalInt') || {}).value;
+      const tujuan = mode === 'CABANG' ? (document.getElementById('mvTujuanCab') || {}).value : (document.getElementById('mvTujuanInt') || {}).value;
+
+      if (asDraft) {
+        const drafts = _readJsonLs('ONS_TRANSFER_DRAFTS_V1', []);
+        drafts.unshift({
+          id: 'DRF-' + Date.now().toString().slice(-6),
+          created_at: new Date().toISOString(),
+          mode, asal, tujuan, id_obat: idObat, nama_dagang: ob.nama_dagang || idObat, qty, catatan
+        });
+        _writeJsonLs('ONS_TRANSFER_DRAFTS_V1', drafts);
+        S().closeModal();
+        global.toast('Draft perpindahan stok tersimpan.', 'ok');
+        global.renderActiveView();
+        return;
+      }
+
+      if (mode === 'CABANG') {
+        const res = await API().callApi('cabang.transferSend', { cabang_asal: asal, cabang_tujuan: tujuan, items: [{ id_obat: idObat, qty }], catatan }, { isWrite: true });
+        S().closeModal();
+        global.toast('Surat Jalan ' + (res.item ? res.item.no_surat_jalan : 'Mutasi') + ' terkirim!', 'ok');
+        await global.bootLoadState(true);
+        return;
+      }
+
+      if (asal === tujuan) throw new Error('Lokasi tujuan wajib berbeda dari lokasi asal.');
+      const avStok = S().getSellableStok(idObat);
+      if (avStok < qty) throw new Error(`Stok tersedia hanya ${avStok} ${ob.satuan_dasar || 'unit'}.`);
+      const hppUnit = Number(ob.hpp_avg || ob.hpp_terakhir || 0);
+      const list = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
+      const noTrx = 'TRF-INT/' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '/' + String(list.length + 1).padStart(3, '0');
+      list.unshift({
+        id: 'INT-' + Date.now().toString().slice(-6),
+        no_transaksi: noTrx,
+        timestamp: new Date().toISOString(),
+        asal, tujuan, id_obat: idObat, nama_dagang: ob.nama_dagang || idObat, qty,
+        total_nilai: qty * hppUnit,
+        petugas: (S().AppState.user && S().AppState.user.nama_lengkap) || 'Pemilik',
+        catatan
+      });
+      _writeJsonLs('ONS_INTERNAL_TRANSFERS_V1', list);
+      S().closeModal();
+      global.toast(`Perpindahan stok ${ob.nama_dagang || idObat} (${qty} unit) ke ${tujuan} tercatat!`, 'ok');
+      global.renderActiveView();
+    } catch (e) { global.toast(e.message, 'err'); }
+  };
+  global.openTransferDraftsModal = () => {
+    const drafts = _readJsonLs('ONS_TRANSFER_DRAFTS_V1', []);
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Draft Perpindahan Stok (${drafts.length})</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="ons-table-wrap max-h-72 overflow-y-auto">
+        <table class="ons-table is-compact">
+          <thead><tr><th>No.</th><th>Produk</th><th>Asal &rarr; Tujuan</th><th>Qty</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${drafts.length ? drafts.map((d, i) => `<tr>
+              <td class="font-mono-num">${i + 1}.</td>
+              <td><b>${S().esc(d.nama_dagang)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(d.created_at, true)}</span></td>
+              <td>${S().esc(d.asal)} &rarr; ${S().esc(d.tujuan)}</td>
+              <td class="font-mono-num font-bold">${Number(d.qty || 0)}</td>
+              <td class="flex gap-1">
+                <button type="button" onclick="window.applyTransferDraft('${S().esc(d.id)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Lanjutkan</button>
+                <button type="button" onclick="window.deleteTransferDraft('${S().esc(d.id)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6">Belum ada draft perpindahan stok tersimpan.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`, '600px');
+  };
+  global.applyTransferDraft = (idDraft) => {
+    const drafts = _readJsonLs('ONS_TRANSFER_DRAFTS_V1', []);
+    const target = drafts.find((d) => d.id === idDraft);
+    S().closeModal();
+    if (target) global.openPindahkanStokModal(target);
+  };
+  global.deleteTransferDraft = (idDraft) => {
+    const drafts = _readJsonLs('ONS_TRANSFER_DRAFTS_V1', []).filter((d) => d.id !== idDraft);
+    _writeJsonLs('ONS_TRANSFER_DRAFTS_V1', drafts);
+    global.openTransferDraftsModal();
+    global.renderActiveView();
+  };
+  global.openImportTransferModal = () => {
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Import Batch Perpindahan Stok (CSV)</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Tempel baris CSV dengan format: <code>kode_kfa_atau_id,qty,asal,tujuan,catatan</code></p>
+      <textarea id="impTrfCsv" rows="5" class="ons-input font-mono-num text-xs" placeholder="OBT-001,10,Gudang Utama,Etalase Depan,Isi rak harian"></textarea>
+      <button type="button" onclick="window.submitImportTransferCsv()" class="ons-btn ons-btn-primary w-full py-2 text-xs font-bold">Proses Import Perpindahan Stok</button>
+    </div>`, '520px');
+  };
+  global.submitImportTransferCsv = () => {
+    const txt = ((document.getElementById('impTrfCsv') || {}).value || '').trim();
+    if (!txt) return global.toast('Isi minimal 1 baris CSV.', 'warn');
+    const st = S().AppState;
+    const list = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
+    let okCount = 0;
+    txt.split(/\r?\n/).forEach((line) => {
+      const parts = line.split(',').map((s) => s.trim());
+      if (parts.length < 2) return;
+      const key = parts[0];
+      const qty = Math.max(1, Number(parts[1] || 1));
+      const ob = (st.masterObat || []).find((o) => o.id_obat === key || o.kode_kfa === key || o.nama_dagang.toLowerCase() === key.toLowerCase());
+      if (!ob) return;
+      list.unshift({
+        id: 'INT-' + Date.now().toString().slice(-5) + okCount,
+        no_transaksi: 'TRF-IMP/' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '/' + (okCount + 1),
+        timestamp: new Date().toISOString(),
+        asal: parts[2] || 'Gudang Utama',
+        tujuan: parts[3] || 'Etalase Depan',
+        id_obat: ob.id_obat,
+        nama_dagang: ob.nama_dagang,
+        qty,
+        total_nilai: qty * Number(ob.hpp_avg || 0),
+        petugas: (st.user && st.user.nama_lengkap) || 'Pemilik',
+        catatan: parts[4] || 'Import perpindahan CSV'
+      });
+      okCount++;
+    });
+    _writeJsonLs('ONS_INTERNAL_TRANSFERS_V1', list);
+    S().closeModal();
+    global.toast(`${okCount} baris perpindahan stok berhasil diimport!`, okCount ? 'ok' : 'warn');
+    global.renderActiveView();
+  };
+  global.printInternalTransferNote = (idTrx) => {
+    const list = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
+    const tr = list.find((x) => x.id === idTrx);
+    if (!tr) return global.toast('Bukti perpindahan tidak ditemukan.', 'warn');
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    S().printHtmlZone(`<div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;font-size:12px;border:1.5px solid #1e293b;padding:18px;">
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:8px;margin-bottom:10px;">
+        <div><b>${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</b><br/><span style="font-size:11px;">Bukti Perpindahan Stok Internal</span></div>
+        <div style="text-align:right;font-family:monospace;"><b>${S().esc(tr.no_transaksi)}</b><br/>${S().formatTgl(tr.timestamp, true)}</div>
+      </div>
+      <p><b>Produk:</b> ${S().esc(tr.nama_dagang)} &bull; <b>Qty:</b> ${tr.qty} Unit<br/>
+      <b>Dari:</b> ${S().esc(tr.asal)} &rarr; <b>Ke:</b> ${S().esc(tr.tujuan)}<br/>
+      <b>Catatan:</b> ${S().esc(tr.catatan || '-')}</p>
+    </div>`);
+  };
+  global.exportPerpindahanStok = (fmt) => {
+    const seeCost = S().canSeeFinancialCost();
+    const rows = _getCombinedTransferRows(S().AppState).map((r, i) => ({
+      no: i + 1,
+      tanggal: S().formatTgl(r.timestamp, true),
+      no_transaksi: r.no_transaksi,
+      produk: r.produkLabel,
+      asal: r.asal,
+      tujuan: r.tujuan,
+      qty: r.qty,
+      ...(seeCost ? { nilai: r.totalNilai } : {}),
+      status: r.status
+    }));
+    const hdr = [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'tanggal', label: 'Tanggal', width: 20 },
+      { key: 'no_transaksi', label: 'No. Transaksi', width: 22 },
+      { key: 'produk', label: 'Produk', type: 'wrap', width: 28 },
+      { key: 'asal', label: 'Asal', width: 16 },
+      { key: 'tujuan', label: 'Tujuan', width: 16 },
+      { key: 'qty', label: 'Qty', type: 'int', sum: true, width: 10 },
+      ...(seeCost ? [{ key: 'nilai', label: 'Total Nilai Stok', type: 'currency', sum: true, width: 16 }] : []),
+      { key: 'status', label: 'Status', type: 'status', width: 12 }
+    ];
+    S().exportDataset(fmt || 'xlsx', 'Laporan Perpindahan Stok Apotek', `perpindahan-stok-${new Date().toISOString().slice(0, 10)}`, hdr, rows, { sheetName: 'Perpindahan_Stok' });
+  };
   global.openAddManualBatchModal = () => {
     const obts = S().AppState.masterObat || [];
     S().openModal(`<div class="p-6 space-y-4 text-xs">
@@ -3131,13 +3978,26 @@
   global.setOpnameDraftQty = (idBatch, v) => { opnameDraftQty[idBatch] = v; global.renderActiveView(); };
   global.setOpnameDraftReason = (v) => { opnameDraftReason = v || ''; };
   global.submitFullOpnameWorkspace = async () => {
+    const reasonText = opnameDraftReason || 'Stock Opname Rutin';
     const entries = Object.keys(opnameDraftQty)
       .filter((id) => opnameDraftQty[id] !== '' && opnameDraftQty[id] !== undefined)
-      .map((id) => ({ id_batch: id, qty_fisik: Number(opnameDraftQty[id]), catatan: opnameDraftReason || 'Stock Opname Rutin' }));
+      .map((id) => ({ id_batch: id, qty_fisik: Number(opnameDraftQty[id]), penyebab: 'Stok Opname', catatan: reasonText, alasan: reasonText }));
     if (!entries.length) { global.toast('Isi minimal 1 hitungan fisik batch sebelum menyimpan!', 'warn'); return; }
     try {
-      const res = await API().callApi('stok.opnameSave', { entries, catatan: opnameDraftReason || 'Stock Opname Rutin' }, { isWrite: true });
+      const res = await API().callApi('stok.opnameSave', { entries, penyebab: 'Stok Opname', catatan: reasonText }, { isWrite: true });
+      const hist = _readJsonLs('ONS_OPNAME_HIST_V1', []);
+      hist.unshift({
+        id: res.ref_id || ('SO-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Date.now().toString().slice(-3)),
+        tanggal: new Date().toISOString(),
+        gudang: 'Gudang Utama',
+        petugas: (S().AppState.user && S().AppState.user.nama_lengkap) || 'Pemilik',
+        status: 'SELESAI',
+        jumlah_batch: entries.length,
+        catatan: reasonText
+      });
+      _writeJsonLs('ONS_OPNAME_HIST_V1', hist);
       opnameDraftQty = {};
+      opnameSessionActive = false;
       global.toast('Stock Opname berhasil disimpan (' + (res.adjusted || entries.length) + ' batch diperbarui ke Kartu Stok).', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
@@ -3313,7 +4173,27 @@
         perlu_order: s <= rop || s <= Number(o.stok_min || 10)
       };
     });
-    const lowStock = st.masterObat.filter((o) => forecastMap[o.id_obat] && forecastMap[o.id_obat].perlu_order);
+    const pendingOrderMap = {};
+    (st.suratPesanan || []).forEach((sp) => {
+      if (String(sp.status_sp || '') === 'SELESAI_DITERIMA') return;
+      let spArr = [];
+      try { spArr = JSON.parse(sp.items_json || '[]'); } catch (e) {}
+      spArr.forEach((it) => {
+        if (it.id_obat) pendingOrderMap[it.id_obat] = (pendingOrderMap[it.id_obat] || 0) + Number(it.qty || 0);
+      });
+    });
+
+    const dq = defectaSearchQ.trim().toLowerCase();
+    const belowMinCount = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) > 0 && S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).length;
+    const emptyCount = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= 0).length;
+    const lowStock = st.masterObat.filter((o) => {
+      if (!forecastMap[o.id_obat] || !forecastMap[o.id_obat].perlu_order) return false;
+      const s = S().getSellableStok(o.id_obat);
+      if (defectaStatusFilter === 'KOSONG' && s > 0) return false;
+      if (defectaStatusFilter === 'DIBAWAH_MIN' && !(s > 0 && s <= Number(o.stok_min || 10))) return false;
+      if (dq && !`${o.nama_dagang} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase().includes(dq)) return false;
+      return true;
+    });
     const estDos = (idObat) => (forecastMap[idObat] ? forecastMap[idObat].dos : 0);
     const groupedPbf = {};
     lowStock.forEach((o) => {
@@ -3330,19 +4210,25 @@
       return Math.max(10, Number(o.stok_max || 100) - s);
     };
 
+    const resolveJenisSp = (gol) => {
+      const g = String(gol || '').toUpperCase();
+      if (['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g)) return g;
+      return 'REGULER';
+    };
+
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Defecta Stok &amp; Surat Pesanan (SP A4)</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis stok menipis, buat SP otomatis/manual, pratinjau A4 &amp; kirim ke PBF CDOB.</p>
+          <h1 class="text-xl font-extrabold">Defecta &amp; Surat Pesanan (SP A4)</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Analisis produk di bawah stok minimal atau kosong, terbitkan pesanan otomatis &amp; cetak SP resmi A4 ke PBF CDOB.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
-            <button onclick="window.setDefectaTab('order')" class="ons-tab-btn ${defectaTab === 'order' ? 'active' : ''}">Analisis Defecta (${lowStock.length})</button>
+            <button onclick="window.setDefectaTab('order')" class="ons-tab-btn ${defectaTab === 'order' ? 'active' : ''}">Defecta (${lowStock.length})</button>
             <button onclick="window.setDefectaTab('sp')" class="ons-tab-btn ${defectaTab === 'sp' ? 'active' : ''}">Surat Pesanan (A4) (${(st.suratPesanan || []).length})</button>
           </div>
-          <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-emerald text-xs">+ Buat SP Manual</button>
-          <button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs">Terbitkan SP Otomatis Defecta</button>
+          <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-ghost text-xs">+ Buat SP Manual</button>
+          <button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Pesanan Otomatis</button>
         </div>
       </div>
 
@@ -3369,46 +4255,83 @@
           </div>
         </div>` : ''}
 
-        <div class="ons-card p-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div>
-              <h3 class="font-bold text-sm">Smart Defecta &amp; Peramalan Kebutuhan 30 Hari (${lowStock.length} Item Perlu Reorder)</h3>
-              <p class="text-[11px]" style="color:var(--ons-text-soft)">Memperhitungkan rata-rata laku harian 30 hari, Lead Time PBF, dan Safety Stock otomatis.</p>
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <input class="ons-input text-xs w-56" placeholder="Cari data (nama obat, supplier, jenis SP)..." value="${S().esc(defectaSearchQ)}" oninput="window.setDefectaSearchQ(this.value)"/>
+              <select class="ons-select text-xs w-44" onchange="window.setDefectaStatusFilter(this.value)" aria-label="Filter Kondisi Stok Defecta">
+                <option value="SEMUA" ${defectaStatusFilter === 'SEMUA' ? 'selected' : ''}>Filter: Semua Perlu Order (${lowStock.length})</option>
+                <option value="DIBAWAH_MIN" ${defectaStatusFilter === 'DIBAWAH_MIN' ? 'selected' : ''}>Dibawah Minimal (${belowMinCount})</option>
+                <option value="KOSONG" ${defectaStatusFilter === 'KOSONG' ? 'selected' : ''}>Stok Kosong (${emptyCount})</option>
+              </select>
             </div>
-            <span class="text-xs font-mono-num font-bold text-blue-600">Est. Total PO: ${S().rp(lowStock.reduce((acc, o) => acc + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0))}</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-mono-num font-bold text-blue-600">Est. PO: ${S().rp(lowStock.reduce((acc, o) => acc + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0))}</span>
+              <button type="button" onclick="window.exportDefectaList('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Excel</button>
+            </div>
           </div>
+
           <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>Obat &amp; Golongan</th><th>Stok / ROP</th><th>Laku 30h &amp; DOS</th><th>Qty Order (Forecast)</th><th>PBF &amp; Lead Time</th><th>Estimasi Biaya</th></tr></thead>
+            <table class="ons-table is-compact">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Nama</th>
+                  <th>Stok Minimal</th>
+                  <th>Stok Maksimal</th>
+                  <th>Jenis SP</th>
+                  <th>Stok</th>
+                  <th>Supplier Terakhir</th>
+                  <th>Sedang Dipesan</th>
+                  <th>Dalam Keranjang</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
               <tbody>
-                ${lowStock.length ? lowStock.map((o) => {
+                ${lowStock.length ? lowStock.map((o, idx) => {
                   const s = S().getSellableStok(o.id_obat);
                   const totFisik = S().getTotalStok(o.id_obat);
                   const edBlocked = Math.max(0, totFisik - s);
                   const fc = forecastMap[o.id_obat] || { avg_harian: 0.5, lead_time_hari: 3, reorder_point: Number(o.stok_min || 10), rekomendasi_order: 20, dos: 0 };
                   const qtyOrder = getOrderQty(o);
+                  const sedangDipesan = Number(pendingOrderMap[o.id_obat] || 0);
+                  const jenisSp = resolveJenisSp(o.golongan_bpom);
                   return `<tr>
-                    <td><div class="font-bold">${S().esc(o.nama_dagang)}</div><div class="mt-0.5">${S().bpomBadge(o.golongan_bpom)}</div></td>
-                    <td class="font-mono-num"><span class="text-red-600 font-bold">${s}</span> / ROP ${fc.reorder_point}${edBlocked > 0 ? `<div class="text-[10px] text-amber-600">(${edBlocked} ED terblokir)</div>` : ''}</td>
+                    <td class="font-mono-num text-xs">${idx + 1}.</td>
                     <td>
-                      <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">&plusmn; ${fc.avg_harian}/hr</div>
-                      <span class="badge-bpom ${fc.dos <= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num">&plusmn; ${fc.dos} Hari</span>
+                      <div class="font-bold text-xs">${S().esc(o.nama_dagang)}</div>
+                      <div class="flex flex-wrap items-center gap-1 mt-0.5">${S().bpomBadge(o.golongan_bpom)}<span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">DOS &plusmn;${fc.dos}h</span></div>
                     </td>
+                    <td class="font-mono-num text-xs">${Number(o.stok_min || 10)}</td>
+                    <td class="font-mono-num text-xs">${Number(o.stok_max || 100)}</td>
+                    <td><span class="badge-bpom ${jenisSp === 'REGULER' ? 'bpom-bebas' : 'bpom-prekursor'} text-[10px]">${jenisSp}</span></td>
+                    <td class="font-mono-num text-xs">
+                      <span class="${s <= 0 ? 'text-red-600' : 'text-amber-600'} font-bold">${s}</span>
+                      ${edBlocked > 0 ? `<div class="text-[10px] text-amber-600">(${edBlocked} ED)</div>` : ''}
+                    </td>
+                    <td class="text-xs"><div>${S().esc(o.pbf_utama || '-')}</div><div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">LT ${fc.lead_time_hari}h</div></td>
+                    <td class="font-mono-num text-xs">${sedangDipesan > 0 ? `<span class="badge-bpom bpom-terbatas">${sedangDipesan}</span>` : '0'}</td>
                     <td>
                       <div class="flex items-center gap-1">
-                        <input type="number" min="1" value="${qtyOrder}" onchange="window.setDefectaOrderQty('${o.id_obat}', this.value)" class="ons-input font-mono-num text-right text-xs w-20 py-1 min-h-0 h-8"/>
-                        <span class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.satuan_dasar)}</span>
+                        <input type="number" min="1" value="${qtyOrder}" onchange="window.setDefectaOrderQty('${o.id_obat}', this.value)" class="ons-input font-mono-num text-right text-xs w-16 py-1 min-h-0 h-8"/>
+                        <span class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(o.satuan_dasar)}</span>
                       </div>
-                      ${fc.rekomendasi_order > 0 ? `<button type="button" onclick="window.setDefectaOrderQty('${o.id_obat}', ${fc.rekomendasi_order})" class="text-[10px] font-semibold text-blue-600 hover:underline mt-0.5">Saran Forecast: ${fc.rekomendasi_order}</button>` : ''}
+                      <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}</div>
                     </td>
-                    <td class="text-xs"><div>${S().esc(o.pbf_utama)}</div><div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Lead Time: ${fc.lead_time_hari} Hari</div></td>
-                    <td class="font-mono-num font-semibold">${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}</td>
+                    <td>
+                      <button type="button" onclick="window.generateSpFromDefecta('${S().esc(o.pbf_utama || '')}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">+ Buat SP</button>
+                    </td>
                   </tr>`;
-                }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Seluruh stok produk masih aman di atas Reorder Point!</td></tr>'}
+                }).join('') : '<tr><td colspan="10" class="text-center py-6 text-xs">Data tidak ditemukan. Seluruh stok produk masih aman!</td></tr>'}
               </tbody>
             </table>
           </div>
         </div>
+
+        ${_renderInvRekapFooter('defecta-stok', 'Kondisi Stok Terkini', [
+          { label: 'Dibawah minimal', valHtml: `${belowMinCount} produk`, cls: belowMinCount ? 'text-amber-600' : '' },
+          { label: 'Kosong', valHtml: `${emptyCount} produk`, cls: emptyCount ? 'text-red-600' : '' }
+        ])}
 
         <div class="ons-card p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -3461,6 +4384,29 @@
   global.setDefectaOrderQty = (idObat, val) => {
     defectaOrderQty[idObat] = Math.max(1, Number(val || 1));
     global.renderActiveView();
+  };
+  global.setDefectaSearchQ = (v) => { defectaSearchQ = v || ''; global.renderActiveView(); };
+  global.setDefectaStatusFilter = (v) => { defectaStatusFilter = v || 'SEMUA'; global.renderActiveView(); };
+  global.exportDefectaList = (fmt) => {
+    const st = S().AppState;
+    const rows = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).map((o, i) => ({
+      no: i + 1,
+      nama: o.nama_dagang,
+      stok_min: Number(o.stok_min || 10),
+      stok_max: Number(o.stok_max || 100),
+      stok: S().getSellableStok(o.id_obat),
+      supplier: o.pbf_utama || '-',
+      qty_order: defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - S().getSellableStok(o.id_obat))
+    }));
+    S().exportDataset(fmt || 'xlsx', 'Daftar Defecta Stok Apotek', `defecta-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Produk', type: 'wrap', width: 28 },
+      { key: 'stok_min', label: 'Stok Minimal', type: 'int', width: 12 },
+      { key: 'stok_max', label: 'Stok Maksimal', type: 'int', width: 12 },
+      { key: 'stok', label: 'Stok Saat Ini', type: 'int', width: 12 },
+      { key: 'supplier', label: 'Supplier Terakhir', type: 'wrap', width: 24 },
+      { key: 'qty_order', label: 'Rekomendasi Order', type: 'int', sum: true, width: 15 }
+    ], rows, { sheetName: 'Defecta' });
   };
   global.setDefectaSupplierQ = (v) => { global.setMasterSupplierSearch(v); };
 
@@ -4647,7 +5593,7 @@
   };
 
   global.setOpnameRakFilter = (rak) => { opnameRakFilter = rak || ''; global.renderActiveView(); };
-  global.setOpnameViewMode = (m) => { opnameViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
+  global.setOpnameViewMode = (m) => { opnameViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; opnameSessionActive = true; global.renderActiveView(); };
   global.stepOpnameDraftQty = (idBatch, sysQty, delta) => {
     const cur = opnameDraftQty[idBatch] !== undefined && opnameDraftQty[idBatch] !== '' ? Number(opnameDraftQty[idBatch]) : Number(sysQty || 0);
     opnameDraftQty[idBatch] = Math.max(0, cur + Number(delta || 0));

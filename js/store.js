@@ -23,9 +23,10 @@
     { key: 'pos', label: 'Kasir POS FEFO & Riwayat', group: 'Operasional' },
     { key: 'tutup-shift', label: 'Tutup Shift & Laci Kas', group: 'Operasional' },
     { key: 'obat', label: 'Master Data (Obat, Supplier, Pelanggan, Dokter)', group: 'Produk & Gudang' },
-    { key: 'gudang', label: 'Persediaan & Stok (Batch FEFO, Kartu Stok, Suhu)', group: 'Produk & Gudang' },
-    { key: 'gudang:opname', label: 'Stock Opname Fisik', group: 'Produk & Gudang' },
-    { key: 'gudang:transfer', label: 'Mutasi Antar-Cabang', group: 'Produk & Gudang' },
+    { key: 'gudang', label: 'Persediaan & Stok (Kadaluarsa, Kartu Stok, Suhu)', group: 'Produk & Gudang' },
+    { key: 'gudang:opname', label: 'Stok Opname', group: 'Produk & Gudang' },
+    { key: 'gudang:penyesuaian', label: 'Penyesuaian Stok', group: 'Produk & Gudang' },
+    { key: 'gudang:transfer', label: 'Perpindahan Stok', group: 'Produk & Gudang' },
     { key: 'defecta', label: 'Defecta & Surat Pesanan (A4)', group: 'Pengadaan & PBF' },
     { key: 'faktur', label: 'Pembelian & Faktur PBF (GRN / Scan / Retur)', group: 'Pengadaan & PBF' },
     { key: 'eresep-prb', label: 'E-Resep Dokter & Pasien Rutin', group: 'Klinis & Pasien' },
@@ -288,7 +289,7 @@
     if (compound === 'pos:tutup-shift') {
       return perms.includes('pos:tutup-shift') || perms.includes('tutup-shift') || perms.includes('pos');
     }
-    if (compound === 'gudang:opname' || compound === 'gudang:transfer' || compound === 'settings:audit') {
+    if (compound === 'gudang:opname' || compound === 'gudang:penyesuaian' || compound === 'gudang:transfer' || compound === 'settings:audit') {
       return perms.includes(compound);
     }
     if (compound === 'obat:supplier') {

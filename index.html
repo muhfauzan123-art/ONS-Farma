@@ -140,14 +140,15 @@
             },
             {
               viewId: 'gudang', label: 'Persediaan & Stok', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
-              desc: 'Stok batch FEFO, alur obat masuk/keluar, kartu stok BPOM, monitor suhu 2–8°C, opname & mutasi.',
-              kw: 'persediaan gudang stok batch fefo alur obat masuk keluar kartu stok monitor suhu cold chain chiller opname transfer cabang',
+              desc: 'Stok kadaluarsa FEFO, stok opname, penyesuaian stok, perpindahan stok, kartu stok BPOM & monitor suhu 2–8°C.',
+              kw: 'persediaan gudang stok kadaluarsa batch fefo batas retur stok opname penyesuaian stok perpindahan stok kartu stok monitor suhu cold chain chiller',
               tabs: [
-                { subTab: 'batch', label: 'Stok Batch & FEFO', kw: 'batch fefo near ed kadaluarsa karantina recall' },
+                { subTab: 'batch', label: 'Stok Kadaluarsa', kw: 'stok kadaluarsa batch fefo batas retur karantina recall' },
+                { subTab: 'opname', label: 'Stok Opname', kw: 'stok opname cycle count riwayat opname selisih fisik', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'penyesuaian', label: 'Penyesuaian Stok', kw: 'penyesuaian stok selisih opname rusak expired rekap nilai', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'transfer', label: 'Perpindahan Stok', kw: 'perpindahan stok mutasi rak gudang antar cabang draft import', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'alur obat masuk keluar kartu stok mutasi bpom xlsx' },
-                { subTab: 'coldchain', label: 'Monitor Suhu (2–8°C)', kw: 'monitor suhu cold chain chiller kulkas vaksin insulin cdob' },
-                { subTab: 'opname', label: 'Stock Opname Fisik', kw: 'stock opname cycle count selisih fisik', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'transfer', label: 'Mutasi Antar-Cabang', kw: 'mutasi transfer antar cabang stok multi cabang surat jalan', roles: ['Pemilik', 'APJ'] }
+                { subTab: 'coldchain', label: 'Monitor Suhu (2–8°C)', kw: 'monitor suhu cold chain chiller kulkas vaksin insulin cdob' }
               ]
             }
           ]
@@ -158,10 +159,10 @@
           items: [
             {
               viewId: 'defecta', label: 'Defecta & SP', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
-              desc: 'Analisis stok minimum, ROP & buat Surat Pesanan (SP A4) ke PBF CDOB.',
-              kw: 'defecta surat pesanan sp print preview a4 pbf cdob sla',
+              desc: 'Analisis stok minimum, pesanan otomatis & buat Surat Pesanan (SP A4) ke PBF CDOB.',
+              kw: 'defecta pesanan otomatis surat pesanan sp print preview a4 pbf cdob sla',
               tabs: [
-                { subTab: 'order', label: 'Analisis Defecta', kw: 'defecta stok minimum rekomendasi order pbf' },
+                { subTab: 'order', label: 'Defecta', kw: 'defecta stok minimal maksimal jenis sp pesanan otomatis rekomendasi pbf' },
                 { subTab: 'sp', label: 'Surat Pesanan (A4)', kw: 'surat pesanan sp a4 print preview pbf kirim wa' }
               ]
             },
@@ -313,7 +314,6 @@
             if (item.roles && !item.roles.includes(curRole)) return;
             const multiOn = ONSStore.isMultiBranchEnabled ? ONSStore.isMultiBranchEnabled() : false;
             const filteredTabs = (item.tabs || []).filter((t) => {
-              if (item.viewId === 'gudang' && t.subTab === 'transfer' && !multiOn) return false;
               if (t.roles && !t.roles.includes(curRole) && !(ONSStore.canAccessSubTab && ONSStore.canAccessSubTab(item.viewId, t.subTab))) return false;
               if (item.viewId === 'settings' && ONSStore.canAccessSubTab && !ONSStore.canAccessSubTab('settings', t.subTab)) return false;
               return true;
