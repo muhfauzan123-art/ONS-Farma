@@ -4505,6 +4505,7 @@
    */
   const PLANS_KEY = 'ONS_PURCHASE_PLANS_V1';
   const FAKTUR_DRAFTS_KEY = 'ONS_FAKTUR_DRAFTS_V1';
+  const KONSINYASI_DRAFTS_KEY = 'ONS_KONSINYASI_DRAFTS_V1';
   const RETUR_DRAFTS_KEY = 'ONS_RETUR_DRAFTS_V1';
 
   let fakturTab = 'daftar';
@@ -4514,6 +4515,12 @@
   let fakturDateFrom = '';
   let fakturDateTo = '';
   let fakturKonsinyasiPbfFilter = '';
+  let konsSubTab = 'status';
+  let konsSearchQ = '';
+  let konsDateFrom = '';
+  let konsDateTo = '';
+  let konsEntryMode = 'faktur';
+  let konsReturBannerDismissed = false;
   let planSearchQ = '';
   let planSupplierFilter = '';
   let planJenisSpFilter = '';
@@ -5007,10 +5014,11 @@
           <div class="ons-card p-5 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
               <div>
-                <h3 class="font-bold text-sm">2. Header Penerimaan Barang (GRN &mdash; CDOB)</h3>
-                <div class="text-[11px]" style="color:var(--ons-text-soft)">Status PKP: <b>${S().esc((S().getStoreProfile().status_pkp || 'NON_PKP'))}</b> &bull; Termin default supplier: <b class="font-mono-num">${currentPbfTermin} hari</b></div>
+                <h3 class="font-bold text-sm">${grnHeader.jenis_penerimaan === 'KONSINYASI' ? '2. Tambah Konsinyasi (GRN Konsinyasi Masuk)' : '2. Header Penerimaan Barang (GRN &mdash; CDOB)'}</h3>
+                <div class="text-[11px]" style="color:var(--ons-text-soft)">Status PKP: <b>${S().esc((S().getStoreProfile().status_pkp || 'NON_PKP'))}</b> &bull; Termin default supplier: <b class="font-mono-num">${currentPbfTermin} hari</b>${grnHeader.jenis_penerimaan === 'KONSINYASI' ? ' &bull; <span class="font-bold text-blue-600">Mode: Konsinyasi Masuk</span>' : ''}</div>
               </div>
               <div class="flex flex-wrap gap-2">
+                ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? `<button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-emerald text-xs">Draft Konsinyasi (${_readLocalList(KONSINYASI_DRAFTS_KEY).length})</button>` : ''}
                 <button type="button" onclick="window.saveGrnDraftToLocal()" class="ons-btn ons-btn-ghost text-xs">Simpan Draft</button>
                 <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-primary text-xs">Upload &amp; Baca Faktur</button>
               </div>
@@ -5610,8 +5618,10 @@
 
   global.saveGrnDraftToLocal = () => {
     ensureGrnInitialized();
-    const drafts = _readLocalList(FAKTUR_DRAFTS_KEY);
-    const idDraft = grnActiveDraftId || ('FKD-' + Date.now());
+    const isKns = grnHeader.jenis_penerimaan === 'KONSINYASI';
+    const targetKey = isKns ? KONSINYASI_DRAFTS_KEY : FAKTUR_DRAFTS_KEY;
+    const drafts = _readLocalList(targetKey);
+    const idDraft = grnActiveDraftId || ((isKns ? 'KND-' : 'FKD-') + Date.now());
     const entry = {
       id_draft: idDraft,
       saved_at: new Date().toISOString(),
@@ -5620,9 +5630,9 @@
     };
     const idx = drafts.findIndex((x) => x.id_draft === idDraft);
     if (idx >= 0) drafts[idx] = entry; else drafts.unshift(entry);
-    _writeLocalList(FAKTUR_DRAFTS_KEY, drafts);
+    _writeLocalList(targetKey, drafts);
     grnActiveDraftId = '';
-    global.toast('Draft Faktur Pembelian tersimpan di browser.', 'ok');
+    global.toast(isKns ? 'Draft Konsinyasi Masuk tersimpan di browser.' : 'Draft Faktur Pembelian tersimpan di browser.', 'ok');
     global.renderActiveView();
   };
 
@@ -5968,21 +5978,337 @@
     global.renderActiveView();
   };
 
+  function _konsMatchDate(isoStr) {
+    const d = String(isoStr || '').slice(0, 10);
+    if (konsDateFrom && (!d || d < konsDateFrom)) return false;
+    if (konsDateTo && (!d || d > konsDateTo)) return false;
+    return true;
+  }
+
+  function _getKonsinyasiMasukRows(st, allItems) {
+    const fakList = Array.isArray(st.fakturPbf) ? st.fakturPbf : [];
+    const isK = (f) => String(f.status_bayar || '').toUpperCase() === 'KONSINYASI' || String(f.jenis_penerimaan || '').toUpperCase() === 'KONSINYASI';
+    const knsFakturs = fakList.filter(isK);
+    const seenNos = new Set(knsFakturs.map((f) => String(f.no_faktur_pbf || f.id_faktur || '').trim()).filter(Boolean));
+    const rows = knsFakturs.map((f) => {
+      const noFak = f.no_faktur_pbf || f.id_faktur || '-';
+      const matchBatches = allItems.filter((it) => String(it.no_faktur_pbf || '') === String(noFak));
+      const prodNames = matchBatches.map((it) => it.nama_dagang).filter(Boolean);
+      const totalVal = Number(f.total_bruto || f.netto_hutang || 0) || matchBatches.reduce((s, it) => s + (Number(it.qty_awal || 0) * Number(it.hpp_beli || 0)), 0);
+      return {
+        key: f.id_faktur || noFak,
+        id_faktur: f.id_faktur || '',
+        tanggal: String(f.tgl_terima || f.tgl_faktur || '').slice(0, 10),
+        no_faktur_pbf: noFak,
+        id_pbf: f.id_pbf || (matchBatches[0] && matchBatches[0].id_pbf) || '-',
+        produk_label: prodNames.length ? `${prodNames.slice(0, 2).join(', ')}${prodNames.length > 2 ? ` (+${prodNames.length - 2})` : ''}` : `${matchBatches.length} item`,
+        qty_total: matchBatches.reduce((s, it) => s + Number(it.qty_awal || 0), 0),
+        total_masuk: totalVal,
+        tagihan_belum_bayar: matchBatches.reduce((s, it) => s + Number(it.tagihan_belum_bayar || 0), 0),
+        batches: matchBatches
+      };
+    });
+    // Fallback grouping for seeded consignment batches not tied to fakturPbf row
+    const orphanMap = new Map();
+    allItems.forEach((it) => {
+      const noF = String(it.no_faktur_pbf || it.id_batch || '-').trim();
+      if (seenNos.has(noF)) return;
+      if (!orphanMap.has(noF)) {
+        orphanMap.set(noF, {
+          key: 'BATCH:' + noF,
+          id_faktur: '',
+          tanggal: String(it.tgl_terima || new Date().toISOString().slice(0, 10)).slice(0, 10),
+          no_faktur_pbf: noF,
+          id_pbf: it.id_pbf || '-',
+          items: [],
+          total_masuk: 0,
+          qty_total: 0,
+          tagihan_belum_bayar: 0
+        });
+      }
+      const g = orphanMap.get(noF);
+      g.items.push(it);
+      g.total_masuk += Number(it.qty_awal || 0) * Number(it.hpp_beli || 0);
+      g.qty_total += Number(it.qty_awal || 0);
+      g.tagihan_belum_bayar += Number(it.tagihan_belum_bayar || 0);
+    });
+    orphanMap.forEach((g) => {
+      const names = g.items.map((x) => x.nama_dagang).filter(Boolean);
+      rows.push({
+        key: g.key,
+        id_faktur: '',
+        tanggal: g.tanggal,
+        no_faktur_pbf: g.no_faktur_pbf,
+        id_pbf: g.id_pbf,
+        produk_label: names.length ? `${names.slice(0, 2).join(', ')}${names.length > 2 ? ` (+${names.length - 2})` : ''}` : `${g.items.length} item`,
+        qty_total: g.qty_total,
+        total_masuk: g.total_masuk,
+        tagihan_belum_bayar: g.tagihan_belum_bayar,
+        batches: g.items
+      });
+    });
+    return rows;
+  }
+
+  function _getKonsinyasiReturRows(st, allItems) {
+    const muts = Array.isArray(st.mutasiStok) ? st.mutasiStok : [];
+    const batchMap = new Map();
+    allItems.forEach((it) => batchMap.set(String(it.id_batch || ''), it));
+    (st.stokBatch || []).forEach((b) => {
+      if (!batchMap.has(String(b.id_batch || ''))) batchMap.set(String(b.id_batch || ''), b);
+    });
+    const rows = muts
+      .filter((m) => String(m.jenis_mutasi || '').toUpperCase() === 'KONSINYASI_RETUR')
+      .map((m, i) => {
+        const b = batchMap.get(String(m.id_batch || '')) || {};
+        const qty = Math.abs(Number(m.qty_ubah || 0));
+        const hpp = Number(b.hpp_beli || 0);
+        return {
+          id_mutasi: m.id_mutasi || ('KRT-' + (i + 1)),
+          tanggal: String(m.tanggal || '').slice(0, 10),
+          no_faktur_pbf: m.referensi_id || b.no_faktur_pbf || b.no_batch || '-',
+          id_pbf: b.id_pbf || '-',
+          nama_dagang: b.nama_dagang || m.id_obat || '-',
+          no_batch: b.no_batch || m.id_batch || '-',
+          qty_retur: qty,
+          satuan: b.satuan_dasar || 'unit',
+          total_retur: qty * hpp,
+          catatan: m.catatan || 'Retur barang konsinyasi tak laku',
+          petugas: m.petugas || 'Apoteker'
+        };
+      });
+    return rows;
+  }
+
   function renderKonsinyasiTabHtml(st) {
     const sum = st.konsinyasiSummary || { items: [], settlements: [], totals: { qty_terjual: 0, qty_sisa: 0, tagihan_belum_bayar: 0, sudah_dibayar: 0 } };
     const allItems = Array.isArray(sum.items) ? sum.items : [];
     const suppliers = Array.from(new Set(allItems.map((it) => it.id_pbf).filter(Boolean)));
-    const filteredItems = fakturKonsinyasiPbfFilter
-      ? allItems.filter((it) => String(it.id_pbf || '') === fakturKonsinyasiPbfFilter)
-      : allItems;
+    const settlements = Array.isArray(sum.settlements) ? sum.settlements : [];
+    const knsDrafts = _readLocalList(KONSINYASI_DRAFTS_KEY);
+    const qLower = String(konsSearchQ || '').trim().toLowerCase();
+
+    const filteredItems = allItems.filter((it) => {
+      if (fakturKonsinyasiPbfFilter && String(it.id_pbf || '') !== fakturKonsinyasiPbfFilter) return false;
+      if (qLower) {
+        const hay = `${it.nama_dagang || ''} ${it.no_batch || ''} ${it.id_pbf || ''} ${it.no_faktur_pbf || ''}`.toLowerCase();
+        if (!hay.includes(qLower)) return false;
+      }
+      return true;
+    });
     const filteredTagihan = filteredItems.reduce((s, it) => s + Number(it.tagihan_belum_bayar || 0), 0);
     const filteredTerjual = filteredItems.reduce((s, it) => s + Number(it.qty_terjual || 0), 0);
     const filteredSisa = filteredItems.reduce((s, it) => s + Number(it.qty_sisa || 0), 0);
     const filteredDibayar = filteredItems.reduce((s, it) => s + Number(it.nilai_sudah_dibayar || 0), 0);
-    const settlements = Array.isArray(sum.settlements) ? sum.settlements : [];
+    const totalNilaiBarang = filteredItems.reduce((s, it) => s + ((Number(it.qty_sisa || 0) + Number(it.qty_belum_bayar || 0)) * Number(it.hpp_beli || 0)), 0);
 
-    return `<div class="space-y-4">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    // Sub-tab switcher header
+    const subNavHtml = `<div class="ons-card p-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-1.5">
+        ${[
+          { id: 'status', label: 'Status Konsinyasi' },
+          { id: 'masuk', label: 'Konsinyasi Masuk' },
+          { id: 'retur', label: 'Retur Konsinyasi' },
+          { id: 'stok', label: 'Stok Konsinyasi' }
+        ].map((t) => `<button type="button" onclick="window.setKonsSubTab('${t.id}')" class="ons-tab-btn ${konsSubTab === t.id ? 'active' : ''}">${t.label}</button>`).join('')}
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${knsDrafts.length})</button>
+        <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold">+ Input Konsinyasi</button>
+      </div>
+    </div>`;
+
+    let bodyHtml = '';
+
+    if (konsSubTab === 'masuk') {
+      const rawMasuk = _getKonsinyasiMasukRows(st, allItems);
+      const masukRows = rawMasuk.filter((r) => {
+        if (!_konsMatchDate(r.tanggal)) return false;
+        if (fakturKonsinyasiPbfFilter && r.id_pbf !== fakturKonsinyasiPbfFilter) return false;
+        if (qLower) {
+          const hay = `${r.no_faktur_pbf} ${r.id_pbf} ${r.produk_label}`.toLowerCase();
+          if (!hay.includes(qLower)) return false;
+        }
+        return true;
+      });
+      const masukProdRows = filteredItems.filter((it) => _konsMatchDate(it.tgl_terima || it.tgl_faktur || new Date().toISOString().slice(0, 10)));
+      const totalKeseluruhan = konsEntryMode === 'produk'
+        ? masukProdRows.reduce((s, it) => s + (Number(it.qty_awal || 0) * Number(it.hpp_beli || 0)), 0)
+        : masukRows.reduce((s, r) => s + Number(r.total_masuk || 0), 0);
+      const jumlahTx = konsEntryMode === 'produk' ? masukProdRows.length : masukRows.length;
+
+      bodyHtml = `<div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-bold text-sm">Daftar Konsinyasi Masuk</h3>
+          <div class="flex flex-wrap items-center gap-2">
+            <select class="ons-select text-xs w-36" onchange="window.setKonsEntryMode(this.value)">
+              <option value="faktur" ${konsEntryMode !== 'produk' ? 'selected' : ''}>Pilihan: Faktur</option>
+              <option value="produk" ${konsEntryMode === 'produk' ? 'selected' : ''}>Pilihan: Produk</option>
+            </select>
+            <input class="ons-input text-xs w-48" placeholder="Cari data (faktur/supplier/obat)..." value="${S().esc(konsSearchQ)}" oninput="window.setKonsSearchQ(this.value)"/>
+            <input type="date" class="ons-input text-xs w-36" title="Dari tanggal" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/>
+            <input type="date" class="ons-input text-xs w-36" title="Sampai tanggal" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/>
+            ${(konsDateFrom || konsDateTo || konsSearchQ) ? `<button type="button" onclick="window.setKonsSearchQ('');window.setKonsDateRange('','')" class="ons-btn ons-btn-ghost text-xs">Reset</button>` : ''}
+            <button type="button" onclick="window.exportKonsinyasiData('masuk')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+          </div>
+        </div>
+        <div class="ons-table-wrap">
+          ${konsEntryMode === 'produk' ? `<table class="ons-table">
+            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur</th><th>Supplier</th><th>Produk &amp; Batch</th><th class="text-right">Qty Masuk</th><th class="text-right">Total Konsinyasi Masuk</th></tr></thead>
+            <tbody>
+              ${masukProdRows.length ? masukProdRows.map((it, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-mono-num text-xs">${S().esc(String(it.tgl_terima || new Date().toISOString().slice(0, 10)).slice(0, 10))}</td>
+                <td class="font-mono-num text-xs font-bold">${S().esc(it.no_faktur_pbf || '-')}</td>
+                <td class="text-xs font-semibold">${S().esc(it.id_pbf)}</td>
+                <td class="text-xs"><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)} &bull; ED ${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</div></td>
+                <td class="text-right font-mono-num text-xs">${Number(it.qty_awal || 0)} ${S().esc(it.satuan_dasar || 'unit')}</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(Number(it.qty_awal || 0) * Number(it.hpp_beli || 0))}</td>
+              </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Data tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>` : `<table class="ons-table">
+            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Konsinyasi Masuk</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${masukRows.length ? masukRows.map((r, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-mono-num text-xs">${S().esc(r.tanggal || '-')}</td>
+                <td class="font-mono-num text-xs font-bold">${S().esc(r.no_faktur_pbf)}</td>
+                <td class="text-xs font-semibold">${S().esc(r.id_pbf)}</td>
+                <td class="text-xs">${S().esc(r.produk_label)} <span class="text-[11px]" style="color:var(--ons-text-soft)">(${r.qty_total} unit)</span></td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.total_masuk)}</td>
+                <td>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" onclick="window.openKonsinyasiMasukDetail('${S().esc(r.key)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Detail</button>
+                    ${r.tagihan_belum_bayar > 0 ? `<button type="button" onclick="window.openSettleKonsinyasiModal('${S().esc(r.id_pbf)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Settle</button>` : ''}
+                  </div>
+                </td>
+              </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Data tidak ditemukan. Klik <b>+ Input Konsinyasi</b> untuk mencatat barang titip jual masuk.</td></tr>'}
+            </tbody>
+          </table>`}
+        </div>
+        <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="font-bold text-blue-600">Akumulasi Konsinyasi Masuk${(konsDateFrom || konsDateTo) ? ` (${S().esc(konsDateFrom || '...')} s.d. ${S().esc(konsDateTo || '...')})` : ''}</div>
+          <div class="flex flex-wrap gap-6">
+            <div>Total Keseluruhan : <b class="font-mono-num text-sm">${S().rp(totalKeseluruhan)}</b></div>
+            <div>Jumlah Konsinyasi Masuk : <b class="font-mono-num text-sm">${jumlahTx} transaksi</b></div>
+          </div>
+        </div>
+      </div>`;
+    } else if (konsSubTab === 'retur') {
+      const rawReturs = _getKonsinyasiReturRows(st, allItems);
+      const returRows = rawReturs.filter((r) => {
+        if (!_konsMatchDate(r.tanggal)) return false;
+        if (qLower) {
+          const hay = `${r.no_faktur_pbf} ${r.id_pbf} ${r.nama_dagang} ${r.no_batch}`.toLowerCase();
+          if (!hay.includes(qLower)) return false;
+        }
+        return true;
+      });
+      const totalNilaiRetur = returRows.reduce((s, r) => s + Number(r.total_retur || 0), 0);
+
+      bodyHtml = `<div class="space-y-3">
+        ${!konsReturBannerDismissed ? `<div class="p-3 rounded-xl border border-emerald-500/35 bg-emerald-500/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-emerald-700 dark:text-emerald-300">&#10003; Lakukan Retur Produk Konsinyasi di halaman Status Konsinyasi</span>
+            <button type="button" onclick="window.setKonsSubTab('status')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 font-bold">Status Konsinyasi</button>
+          </div>
+          <button type="button" onclick="window.dismissKonsReturBanner()" class="text-sm px-1.5 opacity-70 hover:opacity-100">&times;</button>
+        </div>` : ''}
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="font-bold text-sm">Retur Konsinyasi</h3>
+            <div class="flex flex-wrap items-center gap-2">
+              <input class="ons-input text-xs w-48" placeholder="Cari data retur..." value="${S().esc(konsSearchQ)}" oninput="window.setKonsSearchQ(this.value)"/>
+              <input type="date" class="ons-input text-xs w-36" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/>
+              <input type="date" class="ons-input text-xs w-36" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/>
+              <button type="button" onclick="window.exportKonsinyasiData('retur')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+            </div>
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Retur</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${returRows.length ? returRows.map((r, idx) => `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="font-mono-num text-xs">${S().esc(r.tanggal || '-')}</td>
+                  <td class="font-mono-num text-xs font-bold">${S().esc(r.no_faktur_pbf)}</td>
+                  <td class="text-xs font-semibold">${S().esc(r.id_pbf)}</td>
+                  <td class="text-xs"><div class="font-bold">${S().esc(r.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Batch ${S().esc(r.no_batch)} &bull; ${r.qty_retur} ${S().esc(r.satuan)}</div></td>
+                  <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(r.total_retur)}</td>
+                  <td><button type="button" onclick="window.printKonsinyasiReturBukti('${S().esc(r.id_mutasi)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Cetak Bukti</button></td>
+                </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Data tidak ditemukan. Gunakan tombol <b>Tarik Tak Laku</b> di tab <b>Status Konsinyasi</b> untuk mencatat retur ke supplier.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+          <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="font-bold text-blue-600">Ringkasan Retur Konsinyasi</div>
+            <div class="flex flex-wrap gap-6">
+              <div>Jumlah Transaksi : <b class="font-mono-num text-sm">${returRows.length} transaksi</b></div>
+              <div>Total Nilai Retur : <b class="font-mono-num text-sm text-amber-600">${S().rp(totalNilaiRetur)}</b></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    } else if (konsSubTab === 'stok') {
+      const stokRows = filteredItems.filter((it) => {
+        if (Number(it.qty_sisa || 0) <= 0) return false;
+        if (!_konsMatchDate(it.tgl_kadaluarsa || it.tgl_terima || new Date().toISOString().slice(0, 10))) return false;
+        return true;
+      });
+      const totalQtyStok = stokRows.reduce((s, it) => s + Number(it.qty_sisa || 0), 0);
+      const totalValStok = stokRows.reduce((s, it) => s + (Number(it.qty_sisa || 0) * Number(it.hpp_beli || 0)), 0);
+
+      bodyHtml = `<div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-bold text-sm">Stok Konsinyasi</h3>
+          <div class="flex flex-wrap items-center gap-2">
+            <input class="ons-input text-xs w-48" placeholder="Cari produk / batch..." value="${S().esc(konsSearchQ)}" oninput="window.setKonsSearchQ(this.value)"/>
+            <select class="ons-select text-xs w-48" onchange="window.setKonsinyasiSupplierFilter(this.value)">
+              <option value="">Semua Supplier (${suppliers.length})</option>
+              ${suppliers.map((sup) => `<option value="${S().esc(sup)}" ${fakturKonsinyasiPbfFilter === sup ? 'selected' : ''}>${S().esc(sup)}</option>`).join('')}
+            </select>
+            <input type="date" class="ons-input text-xs w-36" title="ED dari" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/>
+            <input type="date" class="ons-input text-xs w-36" title="ED sampai" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/>
+            <button type="button" onclick="window.exportKonsinyasiData('stok')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+          </div>
+        </div>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>No.</th><th>Nama Produk</th><th>Batch &amp; ED</th><th>No. Faktur</th><th>Supplier / Penitip</th><th class="text-right">Kuantitas</th></tr></thead>
+            <tbody>
+              ${stokRows.length ? stokRows.map((it, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="text-xs font-bold">${S().esc(it.nama_dagang)}</td>
+                <td class="font-mono-num text-xs">${S().esc(it.no_batch)} &bull; ED ${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</td>
+                <td class="font-mono-num text-xs">${S().esc(it.no_faktur_pbf || '-')}</td>
+                <td class="text-xs font-semibold">${S().esc(it.id_pbf)}</td>
+                <td class="text-right font-mono-num text-xs font-bold">${Number(it.qty_sisa || 0)} ${S().esc(it.satuan_dasar || 'unit')}</td>
+              </tr>`).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Data tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="font-bold text-blue-600">Ringkasan Stok Konsinyasi Aktif</div>
+          <div class="flex flex-wrap gap-6">
+            <div>Total Kuantitas Sisa : <b class="font-mono-num text-sm">${totalQtyStok} unit (${stokRows.length} batch)</b></div>
+            <div>Nilai Persediaan Titipan : <b class="font-mono-num text-sm">${S().rp(totalValStok)}</b></div>
+          </div>
+        </div>
+      </div>`;
+    } else {
+      // Default: 'status' (Status Konsinyasi) - preserves DEMO-B-KNS & Tarik Tak Laku immediately
+      const penitipMap = new Map();
+      filteredItems.forEach((it) => {
+        const key = it.id_pbf || 'Supplier Konsinyasi';
+        if (!penitipMap.has(key)) penitipMap.set(key, { id_pbf: key, sisa_qty: 0, terjual_qty: 0, belum_disetor: 0 });
+        const p = penitipMap.get(key);
+        p.sisa_qty += Number(it.qty_sisa || 0);
+        p.terjual_qty += Number(it.qty_terjual || 0);
+        p.belum_disetor += Number(it.tagihan_belum_bayar || 0);
+      });
+      const penitipRows = Array.from(penitipMap.values());
+
+      bodyHtml = `<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Unit Laku Terjual</div><div class="text-xl font-extrabold font-mono-num text-blue-600">${filteredTerjual} Unit</div></div>
         <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Unit Sisa Titipan (Gudang)</div><div class="text-xl font-extrabold font-mono-num">${filteredSisa} Unit</div></div>
         <div class="ons-card p-4"><div class="text-xs" style="color:var(--ons-text-soft)">Tagihan Belum Disettle</div><div class="text-xl font-extrabold font-mono-num ${filteredTagihan > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(filteredTagihan)}</div></div>
@@ -5992,13 +6318,41 @@
       <div class="ons-card p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
-            <select class="ons-select text-xs w-60" onchange="window.setKonsinyasiSupplierFilter(this.value)">
+            <input class="ons-input text-xs w-48" placeholder="Cari data..." value="${S().esc(konsSearchQ)}" oninput="window.setKonsSearchQ(this.value)"/>
+            <select class="ons-select text-xs w-56" onchange="window.setKonsinyasiSupplierFilter(this.value)">
               <option value="">Semua Supplier Konsinyasi (${suppliers.length})</option>
               ${suppliers.map((sup) => `<option value="${S().esc(sup)}" ${fakturKonsinyasiPbfFilter === sup ? 'selected' : ''}>${S().esc(sup)}</option>`).join('')}
             </select>
-            <button type="button" onclick="window.setGrnJenisPenerimaan('KONSINYASI');window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs">+ Terima Barang Konsinyasi</button>
+            <button type="button" onclick="window.exportKonsinyasiData('status')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
           </div>
           ${filteredTagihan > 0 ? `<button type="button" onclick="window.openSettleKonsinyasiModal('${S().esc(fakturKonsinyasiPbfFilter || (filteredItems.find((x) => x.qty_belum_bayar > 0) || {}).id_pbf || '')}')" class="ons-btn ons-btn-emerald text-xs font-bold">Lunasi / Settle Terjual (${S().rp(filteredTagihan)})</button>` : ''}
+        </div>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>No.</th><th>Penitip</th><th class="text-right">Sisa Produk</th><th class="text-right">Terjual</th><th class="text-right">Belum Disetor</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${penitipRows.length ? penitipRows.map((p, idx) => `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="text-xs font-bold">${S().esc(p.id_pbf)}</td>
+                <td class="text-right font-mono-num text-xs">${p.sisa_qty} unit</td>
+                <td class="text-right font-mono-num text-xs text-blue-600">${p.terjual_qty} unit</td>
+                <td class="text-right font-mono-num text-xs font-bold ${p.belum_disetor > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(p.belum_disetor)}</td>
+                <td>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" onclick="window.setKonsinyasiSupplierFilter('${S().esc(fakturKonsinyasiPbfFilter === p.id_pbf ? '' : p.id_pbf)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">${fakturKonsinyasiPbfFilter === p.id_pbf ? 'Semua' : 'Filter'}</button>
+                    ${p.belum_disetor > 0 ? `<button type="button" onclick="window.openSettleKonsinyasiModal('${S().esc(p.id_pbf)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Settle</button>` : ''}
+                  </div>
+                </td>
+              </tr>`).join('') : '<tr><td colspan="6" class="text-center py-4 text-xs">Data tidak ditemukan.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm">Rincian Batch Konsinyasi &amp; Retur Tak Laku</h3>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Klik <b>Tarik Tak Laku</b> untuk retur barang ke supplier</span>
         </div>
         <div class="ons-table-wrap">
           <table class="ons-table">
@@ -6015,7 +6369,7 @@
                     ${it.qty_sisa > 0 ? `<button type="button" onclick="window.openReturnKonsinyasiModal('${S().esc(it.id_batch)}', '${S().esc(it.nama_dagang)}', ${Number(it.qty_sisa || 0)})" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Tarik Tak Laku</button>` : '<span class="text-[11px]" style="color:var(--ons-text-soft)">Kosong</span>'}
                   </div>
                 </td>
-              </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6 text-xs">Belum ada batch titip jual (konsinyasi). Gunakan <b>+ Terima Barang Konsinyasi</b> di atas untuk menerima faktur titip jual dengan Rp 0 hutang awal.</td></tr>'}
+              </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6 text-xs">Belum ada batch titip jual (konsinyasi). Gunakan <b>+ Input Konsinyasi</b> di atas untuk menerima faktur titip jual dengan Rp 0 hutang awal.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -6040,6 +6394,19 @@
           </table>
         </div>
       </div>
+
+      <div class="ons-card p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs" style="background:var(--ons-bg-subtle)">
+        <div class="font-bold text-blue-600">Status Konsinyasi per ${S().esc(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }))}</div>
+        <div class="flex flex-wrap gap-6">
+          <div>Total nilai barang konsinyasi : <b class="font-mono-num text-sm">${S().rp(totalNilaiBarang)}</b></div>
+          <div>Total hutang konsinyasi : <b class="font-mono-num text-sm ${filteredTagihan > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(filteredTagihan)}</b></div>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="space-y-4">
+      ${subNavHtml}
+      ${bodyHtml}
     </div>`;
   }
 
@@ -6099,6 +6466,7 @@
       }, { isWrite: true });
       if (grnActiveDraftId) {
         _writeLocalList(FAKTUR_DRAFTS_KEY, _readLocalList(FAKTUR_DRAFTS_KEY).filter((x) => x.id_draft !== grnActiveDraftId));
+        _writeLocalList(KONSINYASI_DRAFTS_KEY, _readLocalList(KONSINYASI_DRAFTS_KEY).filter((x) => x.id_draft !== grnActiveDraftId));
         grnActiveDraftId = '';
       }
       grnHeader.id_sp = '';
@@ -6764,6 +7132,219 @@
       global.toast(`Berhasil tarik ${res.qty_retur} unit konsinyasi dari gudang.`, 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.openInputKonsinyasi = () => {
+    grnHeader.jenis_penerimaan = 'KONSINYASI';
+    grnHeader.status_bayar = 'KONSINYASI';
+    global.setFakturTab('input');
+  };
+  global.setKonsSubTab = (tab) => {
+    konsSubTab = ['status', 'masuk', 'retur', 'stok'].includes(tab) ? tab : 'status';
+    global.renderActiveView();
+  };
+  global.setKonsSearchQ = (val) => {
+    konsSearchQ = val || '';
+    global.renderActiveView();
+  };
+  global.setKonsDateRange = (from, to) => {
+    konsDateFrom = from || '';
+    konsDateTo = to || '';
+    global.renderActiveView();
+  };
+  global.setKonsEntryMode = (mode) => {
+    konsEntryMode = mode === 'produk' ? 'produk' : 'faktur';
+    global.renderActiveView();
+  };
+  global.dismissKonsReturBanner = () => {
+    konsReturBannerDismissed = true;
+    global.renderActiveView();
+  };
+  global.openKonsinyasiDraftModal = () => {
+    const drafts = _readLocalList(KONSINYASI_DRAFTS_KEY);
+    S().openModal(`<div class="p-6 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-blue-600">Draft Konsinyasi Masuk</h3>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div class="ons-table-wrap max-h-96 overflow-y-auto">
+        <table class="ons-table">
+          <thead><tr><th>No.</th><th>Supplier</th><th>No. Faktur</th><th>Terakhir Disimpan</th><th>Produk</th><th class="text-right">Total</th><th>Action</th></tr></thead>
+          <tbody>
+            ${drafts.length ? drafts.map((d, idx) => {
+              const h = d.header || {};
+              const items = Array.isArray(d.items) ? d.items : [];
+              const prodTxt = items.map((it) => it.nama_dagang || it.id_obat).filter(Boolean).slice(0, 2).join(', ') + (items.length > 2 ? ` (+${items.length - 2})` : '');
+              const tot = items.reduce((s, it) => s + Math.max(0, (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)) - Number(it.diskon_item || 0)), 0);
+              return `<tr>
+                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="text-xs font-semibold">${S().esc(h.id_pbf || '-')}</td>
+                <td class="font-mono-num text-xs">${S().esc(h.no_faktur_pbf || '-')}</td>
+                <td class="font-mono-num text-xs">${S().esc(String(d.saved_at || '').slice(0, 16).replace('T', ' '))}</td>
+                <td class="text-xs">${S().esc(prodTxt || (items.length + ' item'))}</td>
+                <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
+                <td>
+                  <div class="flex gap-1.5">
+                    <button type="button" onclick="window.loadKonsinyasiDraftFromLocal('${S().esc(d.id_draft)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Lanjutkan</button>
+                    <button type="button" onclick="window.deleteKonsinyasiDraftFromLocal('${S().esc(d.id_draft)}')" class="ons-btn ons-btn-rose text-[11px] py-1 px-2">Hapus</button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs">Data tidak ditemukan.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t text-xs" style="border-color:var(--ons-border)">
+        <div class="p-2.5 rounded-xl border bg-amber-500/10 border-amber-500/30 flex-1">Draft ini hanya tersimpan di perangkat &amp; browser ini. Klik <b>Lanjutkan</b> untuk menyelesaikan input konsinyasi ke sistem.</div>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Kembali</button>
+      </div>
+    </div>`, { mode: 'spotlight', maxWidth: '820px' });
+  };
+  global.loadKonsinyasiDraftFromLocal = (idDraft) => {
+    const d = _readLocalList(KONSINYASI_DRAFTS_KEY).find((x) => x.id_draft === idDraft);
+    if (!d) return global.toast('Draft konsinyasi tidak ditemukan.', 'warn');
+    grnActiveDraftId = d.id_draft;
+    grnHeader = Object.assign({}, grnHeader, d.header || {}, { jenis_penerimaan: 'KONSINYASI', status_bayar: 'KONSINYASI' });
+    grnItems = Array.isArray(d.items) && d.items.length ? d.items.slice() : [];
+    S().closeModal();
+    global.setFakturTab('input');
+  };
+  global.deleteKonsinyasiDraftFromLocal = (idDraft) => {
+    _writeLocalList(KONSINYASI_DRAFTS_KEY, _readLocalList(KONSINYASI_DRAFTS_KEY).filter((x) => x.id_draft !== idDraft));
+    global.openKonsinyasiDraftModal();
+    global.renderActiveView();
+  };
+  global.openKonsinyasiMasukDetail = (key) => {
+    const st = S().AppState;
+    const allItems = ((st.konsinyasiSummary || {}).items || []);
+    const row = _getKonsinyasiMasukRows(st, allItems).find((r) => String(r.key) === String(key));
+    if (!row) return global.toast('Detail konsinyasi tidak ditemukan.', 'warn');
+    if (row.id_faktur && typeof global.openFakturDetailModal === 'function') {
+      return global.openFakturDetailModal(row.id_faktur);
+    }
+    const items = row.batches || [];
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base">Detail Konsinyasi Masuk &bull; ${S().esc(row.no_faktur_pbf)}</h3>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 p-3 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div>Supplier: <b>${S().esc(row.id_pbf)}</b></div>
+        <div>Tanggal: <b class="font-mono-num">${S().esc(row.tanggal || '-')}</b></div>
+        <div>Total Nilai: <b class="font-mono-num">${S().rp(row.total_masuk)}</b></div>
+        <div>Belum Disetor: <b class="font-mono-num text-red-600">${S().rp(row.tagihan_belum_bayar)}</b></div>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table">
+          <thead><tr><th>Obat &amp; Batch</th><th class="text-right">Awal</th><th class="text-right">Laku</th><th class="text-right">Sisa</th><th class="text-right">HPP</th></tr></thead>
+          <tbody>
+            ${items.map((it) => `<tr>
+              <td><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)}</div></td>
+              <td class="text-right font-mono-num">${it.qty_awal}</td>
+              <td class="text-right font-mono-num text-blue-600">${it.qty_terjual}</td>
+              <td class="text-right font-mono-num font-bold">${it.qty_sisa}</td>
+              <td class="text-right font-mono-num">${S().rp(it.hpp_beli)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`, '620px');
+  };
+  global.printKonsinyasiReturBukti = (idMutasi) => {
+    const st = S().AppState;
+    const allItems = ((st.konsinyasiSummary || {}).items || []);
+    const row = _getKonsinyasiReturRows(st, allItems).find((r) => String(r.id_mutasi) === String(idMutasi));
+    if (!row) return global.toast('Bukti retur konsinyasi tidak ditemukan.', 'warn');
+    const html = `<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:24px;border:1px solid #cbd5e1;border-radius:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:14px">
+        <div><h2 style="margin:0;font-size:16px">BUKTI RETUR KONSINYASI (PENARIKAN BARANG)</h2><div style="font-size:12px;color:#475569">${S().esc(S().getStoreProfile().nama_toko || 'Apotek ONS Farma')}</div></div>
+        <div style="text-align:right;font-size:12px"><div>Ref: <b>${S().esc(row.id_mutasi)}</b></div><div>Tgl: <b>${S().esc(row.tanggal)}</b></div></div>
+      </div>
+      <div style="font-size:12px;margin-bottom:12px">
+        <div>Supplier / Penitip: <b>${S().esc(row.id_pbf)}</b></div>
+        <div>No. Faktur / Ref: <b>${S().esc(row.no_faktur_pbf)}</b></div>
+        <div>Keterangan: ${S().esc(row.catatan)}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px">
+        <thead><tr style="background:#f1f5f9"><th style="border:1px solid #cbd5e1;padding:6px;text-align:left">Produk &amp; Batch</th><th style="border:1px solid #cbd5e1;padding:6px;text-align:right">Qty Retur</th><th style="border:1px solid #cbd5e1;padding:6px;text-align:right">Nilai Retur</th></tr></thead>
+        <tbody><tr>
+          <td style="border:1px solid #cbd5e1;padding:6px"><b>${S().esc(row.nama_dagang)}</b><br/><span style="color:#64748b">Batch: ${S().esc(row.no_batch)}</span></td>
+          <td style="border:1px solid #cbd5e1;padding:6px;text-align:right">${row.qty_retur} ${S().esc(row.satuan)}</td>
+          <td style="border:1px solid #cbd5e1;padding:6px;text-align:right">${S().rp(row.total_retur)}</td>
+        </tr></tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:24px">
+        <div>Petugas Apotek,<br/><br/><br/><b>(${S().esc(row.petugas)})</b></div>
+        <div style="text-align:right">Sales / Kurir Supplier,<br/><br/><br/><b>(................................)</b></div>
+      </div>
+    </div>`;
+    S().openModal(`<div class="p-6 space-y-3">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Bukti Retur Konsinyasi</h3><button type="button" onclick="window.ONSStore.closeModal()" class="text-xl px-1">&times;</button></div>
+      <div id="konsReturPrintArea">${html}</div>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+        <button type="button" onclick="ONSStore.printHtmlZone(document.getElementById('konsReturPrintArea').innerHTML,'Bukti Retur Konsinyasi')" class="ons-btn ons-btn-primary text-xs font-bold">Cetak / Print</button>
+      </div>
+    </div>`, { mode: 'spotlight', maxWidth: '760px' });
+  };
+  global.exportKonsinyasiData = (mode) => {
+    const st = S().AppState;
+    const allItems = ((st.konsinyasiSummary || {}).items || []);
+    const dt = new Date().toISOString().slice(0, 10);
+    if (mode === 'masuk') {
+      const rows = _getKonsinyasiMasukRows(st, allItems).map((r, i) => ({ no: i + 1, tanggal: r.tanggal, no_faktur: r.no_faktur_pbf, supplier: r.id_pbf, produk: r.produk_label, qty: r.qty_total, total: r.total_masuk }));
+      if (!rows.length) return global.toast('Belum ada data konsinyasi masuk.', 'warn');
+      return S().exportDataset('xlsx', 'Daftar Konsinyasi Masuk', `konsinyasi-masuk-${dt}`, [
+        { key: 'no', label: 'No', type: 'int', width: 6 },
+        { key: 'tanggal', label: 'Tanggal', type: 'str', width: 13 },
+        { key: 'no_faktur', label: 'No. Faktur', type: 'str', width: 20 },
+        { key: 'supplier', label: 'Supplier', type: 'wrap', width: 24 },
+        { key: 'produk', label: 'Produk', type: 'wrap', width: 28 },
+        { key: 'qty', label: 'Qty', type: 'int', width: 10 },
+        { key: 'total', label: 'Total Konsinyasi Masuk', type: 'currency', sum: true, width: 20 }
+      ], rows, { sheetName: 'KonsinyasiMasuk' });
+    }
+    if (mode === 'retur') {
+      const rows = _getKonsinyasiReturRows(st, allItems).map((r, i) => ({ no: i + 1, tanggal: r.tanggal, no_faktur: r.no_faktur_pbf, supplier: r.id_pbf, produk: r.nama_dagang, batch: r.no_batch, qty_retur: r.qty_retur, total_retur: r.total_retur }));
+      if (!rows.length) return global.toast('Belum ada data retur konsinyasi.', 'warn');
+      return S().exportDataset('xlsx', 'Retur Konsinyasi', `retur-konsinyasi-${dt}`, [
+        { key: 'no', label: 'No', type: 'int', width: 6 },
+        { key: 'tanggal', label: 'Tanggal', type: 'str', width: 13 },
+        { key: 'no_faktur', label: 'No. Faktur', type: 'str', width: 20 },
+        { key: 'supplier', label: 'Supplier', type: 'wrap', width: 24 },
+        { key: 'produk', label: 'Produk', type: 'wrap', width: 26 },
+        { key: 'batch', label: 'Batch', type: 'str', width: 16 },
+        { key: 'qty_retur', label: 'Qty Retur', type: 'int', width: 10 },
+        { key: 'total_retur', label: 'Total Retur', type: 'currency', sum: true, width: 18 }
+      ], rows, { sheetName: 'ReturKonsinyasi' });
+    }
+    if (mode === 'stok') {
+      const rows = allItems.filter((it) => Number(it.qty_sisa || 0) > 0).map((it, i) => ({ no: i + 1, produk: it.nama_dagang, batch: it.no_batch, ed: String(it.tgl_kadaluarsa || '').slice(0, 10), faktur: it.no_faktur_pbf || '-', supplier: it.id_pbf, kuantitas: Number(it.qty_sisa || 0), satuan: it.satuan_dasar || 'unit' }));
+      if (!rows.length) return global.toast('Belum ada stok konsinyasi aktif.', 'warn');
+      return S().exportDataset('xlsx', 'Stok Konsinyasi', `stok-konsinyasi-${dt}`, [
+        { key: 'no', label: 'No', type: 'int', width: 6 },
+        { key: 'produk', label: 'Nama Produk', type: 'wrap', width: 28 },
+        { key: 'batch', label: 'Batch', type: 'str', width: 16 },
+        { key: 'ed', label: 'ED', type: 'str', width: 13 },
+        { key: 'faktur', label: 'No. Faktur', type: 'str', width: 18 },
+        { key: 'supplier', label: 'Supplier', type: 'wrap', width: 24 },
+        { key: 'kuantitas', label: 'Kuantitas', type: 'int', width: 12 },
+        { key: 'satuan', label: 'Satuan', type: 'str', width: 12 }
+      ], rows, { sheetName: 'StokKonsinyasi' });
+    }
+    const rows = allItems.map((it, i) => ({ no: i + 1, penitip: it.id_pbf, produk: it.nama_dagang, batch: it.no_batch, masuk: Number(it.qty_awal || 0), laku: Number(it.qty_terjual || 0), retur: Number(it.qty_retur_supplier || 0), sisa: Number(it.qty_sisa || 0), belum_disetor: Number(it.tagihan_belum_bayar || 0) }));
+    if (!rows.length) return global.toast('Belum ada data status konsinyasi.', 'warn');
+    return S().exportDataset('xlsx', 'Status Konsinyasi', `status-konsinyasi-${dt}`, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'penitip', label: 'Penitip / Supplier', type: 'wrap', width: 24 },
+      { key: 'produk', label: 'Nama Produk', type: 'wrap', width: 26 },
+      { key: 'batch', label: 'Batch', type: 'str', width: 16 },
+      { key: 'masuk', label: 'Masuk', type: 'int', width: 8 },
+      { key: 'laku', label: 'Laku', type: 'int', width: 8 },
+      { key: 'retur', label: 'Retur', type: 'int', width: 8 },
+      { key: 'sisa', label: 'Sisa', type: 'int', width: 8 },
+      { key: 'belum_disetor', label: 'Belum Disetor', type: 'currency', sum: true, width: 18 }
+    ], rows, { sheetName: 'StatusKonsinyasi' });
   };
 
   global.ONSViewsInventoryProcurement = { renderMasterObatView, renderGudangView, renderDefectaView, renderFakturView };
