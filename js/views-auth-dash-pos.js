@@ -1392,7 +1392,7 @@
               <h3 class="font-bold text-sm">Komposisi Metode Pembayaran Kasir</h3>
               <div class="text-[11px]" style="color:var(--ons-text-soft)">${validSales.length} transaksi tercatat &bull; Total ${S().rp(omzetTotal)}</div>
             </div>
-            ${canPos ? `<button onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Riwayat Nota &rarr;</button>` : ''}
+            ${canPos ? `<button onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Riwayat Transaksi &rarr;</button>` : ''}
           </div>
           ${payRows.length ? `<div class="ons-pay-mix-strip">
             ${payRows.map((ch) => {
@@ -1490,6 +1490,7 @@
   let posSubTab = 'kasir';
   let posHistQ = '';
   let posHistFilter = 'SEMUA';
+  let posHistMethod = 'SEMUA';
   let posHistPeriod = 'ALL';
   let posStockFilter = 'ALL'; // ALL | READY | LOW | NEAR_ED
   let posCatalogView = (typeof localStorage !== 'undefined' && localStorage.getItem('ons_pos_view')) || 'GRID';
@@ -1693,37 +1694,196 @@
     const todayKey = new Date().toISOString().slice(0, 10);
     const activeRows = (penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() !== 'RETUR');
     const todayRows = activeRows.filter((p) => String(p.tanggal || '').slice(0, 10) === todayKey);
-    const todayRetur = (penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR' && String(p.tanggal || '').slice(0, 10) === todayKey).length;
+    const todayReturRows = (penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR' && String(p.tanggal || '').slice(0, 10) === todayKey);
     const omzetToday = todayRows.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const returNominalToday = todayReturRows.reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const tunaiToday = todayRows.filter((p) => String(p.metode_bayar || '').toUpperCase() === 'TUNAI').reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const nonTunaiToday = Math.max(0, omzetToday - tunaiToday);
     const labaToday = seeCost ? todayRows.reduce((s, p) => s + Number(p.estimasi_margin !== undefined ? p.estimasi_margin : (Number(p.grand_total || 0) - Number(p.total_hpp || 0))), 0) : 0;
     const poinToday = todayRows.reduce((s, p) => s + Number(p.poin_didapat || 0), 0);
-    return { countToday: todayRows.length, todayRetur, omzetToday, tunaiToday, nonTunaiToday, labaToday, poinToday, totalCount: activeRows.length };
+    return {
+      countToday: todayRows.length,
+      todayRetur: todayReturRows.length,
+      returNominalToday,
+      omzetToday,
+      tunaiToday,
+      nonTunaiToday,
+      labaToday,
+      poinToday,
+      totalCount: activeRows.length
+    };
   }
 
-  function renderPosHistoryView(st, subTabHeader) {
-    const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
-    const hq = posHistQ.trim().toLowerCase();
+  /**
+   * Mengambil detail penanda retur (otorisator PIN, alasan & bukti pemulihan stok) dari nota + MUTASI_STOK.
+   */
+  function _extractPosReturInfo(trx, mutasiStok) {
+    const isRetur = String((trx && trx.status_trx) || '').toUpperCase() === 'RETUR';
+    if (!isRetur) return { isRetur: false, authorizer: '', alasan: '', tglRetur: '', restoredQty: 0, restoredItemsCount: 0, muts: [] };
+    const noInv = String(trx.no_invoice || '');
+    const muts = (mutasiStok || []).filter((m) => String(m.jenis_mutasi || '') === 'RETUR_PENJUALAN' && String(m.referensi_id || '') === noInv);
+    const cat = String((muts[0] && muts[0].catatan) || '');
+    const match = /Retur\/Void PIN \(([^)]+)\):\s*(.*)$/i.exec(cat);
+    const authorizer = String(trx.apj_override_id || (match && match[1]) || 'APJ / Pemilik');
+    const alasan = String(trx.retur_alasan || (match && match[2]) || cat.replace(/^Retur\/Void PIN\s*:\s*/i, '') || 'Retur/Void terotorisasi PIN').trim();
+    const tglRetur = String(trx.tgl_retur || (muts[0] && muts[0].timestamp) || '');
+    const restoredQty = muts.reduce((s, m) => s + Number(m.qty_ubah || 0), 0);
+    return { isRetur: true, authorizer, alasan, tglRetur, restoredQty, restoredItemsCount: muts.length, muts };
+  }
+
+  function _getPosItemsForTrx(st, trx) {
+    const noInv = String((trx && trx.no_invoice) || '');
+    const idTrx = String((trx && trx.id_transaksi) || '');
+    return (st.detailPenjualan || []).filter((d) => (noInv && String(d.no_invoice || '') === noInv) || (idTrx && String(d.id_transaksi || '') === idTrx));
+  }
+
+  function _getPosMethodBadgeTone(metode) {
+    const map = {
+      TUNAI: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+      QRIS: 'bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/30',
+      TRANSFER: 'bg-sky-500/12 text-sky-700 dark:text-sky-300 border-sky-500/30',
+      SPLIT: 'bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/30',
+      PIUTANG: 'bg-red-500/12 text-red-700 dark:text-red-300 border-red-500/30'
+    };
+    return map[String(metode || 'TUNAI').toUpperCase()] || 'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/30';
+  }
+
+  function _filterPosSalesByPeriod(salesList) {
     const todayIso = new Date().toISOString().slice(0, 10);
     const sevenDaysMs = Date.now() - 7 * 86400000;
+    const thirtyDaysMs = Date.now() - 30 * 86400000;
+    return (salesList || []).filter((p) => {
+      if (posHistPeriod === 'TODAY') return String(p.tanggal || '').slice(0, 10) === todayIso;
+      if (posHistPeriod === '7D') return new Date(p.tanggal || 0).getTime() >= sevenDaysMs;
+      if (posHistPeriod === '30D') return new Date(p.tanggal || 0).getTime() >= thirtyDaysMs;
+      return true;
+    });
+  }
 
-    const filteredSales = (st.penjualan || []).filter((p) => {
-      if (posHistPeriod === 'TODAY' && String(p.tanggal || '').slice(0, 10) !== todayIso) return false;
-      if (posHistPeriod === '7D' && new Date(p.tanggal || 0).getTime() < sevenDaysMs) return false;
-      if (posHistFilter === 'RETUR' && p.status_trx !== 'RETUR') return false;
-      if (posHistFilter === 'BELUM_LUNAS' && p.status_trx !== 'BELUM_LUNAS') return false;
-      if (posHistFilter !== 'SEMUA' && posHistFilter !== 'RETUR' && posHistFilter !== 'BELUM_LUNAS' && String(p.metode_bayar || '').toUpperCase() !== posHistFilter) return false;
+  function _getFilteredPosHistoryRows(st) {
+    const hq = posHistQ.trim().toLowerCase();
+    const periodRows = _filterPosSalesByPeriod(st.penjualan);
+    const filtered = periodRows.filter((p) => {
+      const statusUp = String(p.status_trx || 'LUNAS').toUpperCase();
+      const metUp = String(p.metode_bayar || '').toUpperCase();
+      if (posHistFilter === 'RETUR' && statusUp !== 'RETUR') return false;
+      if (posHistFilter === 'BELUM_LUNAS' && statusUp !== 'BELUM_LUNAS') return false;
+      if (posHistFilter === 'LUNAS' && statusUp !== 'LUNAS') return false;
+      if (posHistMethod !== 'SEMUA' && metUp !== posHistMethod) return false;
       if (hq) {
         const mem = (st.members || []).find((m) => m.id_member === p.id_member);
-        const hay = `${p.no_invoice || ''} ${p.channel || ''} ${p.metode_bayar || ''} ${p.id_member || ''} ${mem ? mem.nama_pasien : ''} ${p.detail_split || ''}`.toLowerCase();
+        const itemNames = _getPosItemsForTrx(st, p).map((it) => it.nama_dagang || it.id_obat || '').join(' ');
+        const hay = `${p.no_invoice || ''} ${p.channel || ''} ${p.metode_bayar || ''} ${p.kasir_id || ''} ${p.id_member || ''} ${mem ? mem.nama_pasien : ''} ${p.detail_split || ''} ${p.apj_override_id || ''} ${p.retur_alasan || ''} ${itemNames}`.toLowerCase();
         if (!hay.includes(hq)) return false;
       }
       return true;
     });
+    return { periodRows, filtered };
+  }
 
+  function _renderPosHistorySummaryAndRowsHtml(st, filteredSales) {
+    const activeSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() !== 'RETUR');
+    const returSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR');
+    const activeNominal = activeSubset.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const returNominal = returSubset.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+
+    const summaryHtml = `<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+      <div>Menampilkan <b class="font-mono-num">${filteredSales.length}</b> transaksi${filteredSales.length > 80 ? ' (80 terbaru)' : ''}</div>
+      <div class="flex flex-wrap items-center gap-3 font-mono-num">
+        <span>Netto Aktif: <b class="text-emerald-600">${S().rp(activeNominal)}</b> (${activeSubset.length} nota)</span>
+        ${returSubset.length ? `<span class="text-red-600 dark:text-red-400 font-bold">Penanda Retur: ${returSubset.length} nota (-${S().rp(returNominal)})</span>` : ''}
+      </div>
+    </div>`;
+
+    const rowsHtml = filteredSales.slice(0, 80).map((p) => {
+      const mem = (st.members || []).find((m) => m.id_member === p.id_member);
+      const ret = _extractPosReturInfo(p, st.mutasiStok);
+      const items = _getPosItemsForTrx(st, p);
+      const itemPreview = items.length
+        ? items.slice(0, 2).map((it) => `${S().esc(it.nama_dagang || it.id_obat)} &times;${Number(it.qty || 1)}`).join(', ') + (items.length > 2 ? ` <span class="font-semibold">(+${items.length - 2} obat)</span>` : '')
+        : '';
+      const statusUp = String(p.status_trx || 'LUNAS').toUpperCase();
+      const statusCls = ret.isRetur ? 'bpom-keras' : (statusUp === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas');
+      const statusLabel = ret.isRetur ? '&#8617; DIRETUR / VOID' : (statusUp === 'BELUM_LUNAS' ? 'TEMPO / BELUM LUNAS' : 'LUNAS');
+      const metodeCls = _getPosMethodBadgeTone(p.metode_bayar);
+
+      return `<tr class="${ret.isRetur ? 'ons-trx-row-retur' : ''}">
+        <td class="text-xs align-top">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="font-mono-num font-bold hover:underline text-left ${ret.isRetur ? 'text-red-700 dark:text-red-300' : 'text-blue-600 dark:text-blue-400'}">${S().esc(p.no_invoice)}</button>
+            ${ret.isRetur ? '<span class="ons-retur-stamp">&#8617; RETUR / VOID</span>' : ''}
+          </div>
+          <div class="font-mono-num text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${S().formatTgl(p.tanggal, true)}</div>
+          <div class="text-[10px]" style="color:var(--ons-text-soft)">Kasir: <b>${S().esc(p.kasir_id || '-')}</b> &bull; ${S().esc(p.channel || 'Toko Fisik')}</div>
+        </td>
+        <td class="text-xs align-top max-w-[300px]">
+          <div class="font-bold">${S().esc(mem ? mem.nama_pasien : (p.id_member && p.id_member !== 'UMUM' ? p.id_member : 'Pasien Umum'))}</div>
+          ${itemPreview ? `<div class="text-[11px] mt-0.5 truncate" style="color:var(--ons-text-soft)">${itemPreview}</div>` : `<div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Klik Rincian untuk lihat daftar obat</div>`}
+          ${ret.isRetur ? `<div class="ons-retur-trace-pill">
+            <div class="font-bold text-red-700 dark:text-red-300">&#8617; Otorisasi Retur: ${S().esc(ret.authorizer)}</div>
+            <div class="text-[10px]" style="color:var(--ons-text-soft)">Alasan: <i>${S().esc(ret.alasan)}</i> &bull; <b class="text-emerald-700 dark:text-emerald-300">${ret.restoredQty > 0 ? '+' + ret.restoredQty + ' qty ' : ''}Stok FEFO dipulihkan</b></div>
+          </div>` : ''}
+        </td>
+        <td class="text-xs align-top">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold ${metodeCls}">${S().esc(p.metode_bayar || 'TUNAI')}</span>
+            ${p.detail_split ? `<span class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(p.detail_split)}</span>` : ''}
+          </div>
+          ${ret.isRetur ? `<div class="mt-1 font-mono-num">
+            <span class="text-[11px] line-through opacity-65">${S().rp(p.grand_total)}</span>
+            <div class="font-extrabold text-red-600 dark:text-red-400">-${S().rp(p.grand_total)} (Dibatalkan)</div>
+          </div>` : `<div class="mt-1 font-mono-num font-extrabold text-sm">${S().rp(p.grand_total)}</div>
+          ${Number(p.diskon_total || 0) > 0 ? `<div class="text-[10px] text-emerald-600 font-semibold">Disc -${S().rp(p.diskon_total)}</div>` : ''}
+          ${Number(p.poin_didapat || 0) > 0 ? `<div class="text-[10px] text-amber-600 font-semibold">+${Number(p.poin_didapat)} poin</div>` : ''}`}
+        </td>
+        <td class="align-top">
+          <span class="badge-bpom ${statusCls}">${statusLabel}</span>
+          ${ret.isRetur && ret.tglRetur ? `<div class="text-[10px] font-mono-num mt-1 text-red-700 dark:text-red-300">${S().formatTgl(ret.tglRetur, true)}</div>` : ''}
+        </td>
+        <td class="align-top">
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">${ret.isRetur ? 'Bukti Retur' : 'Rincian Item'}</button>
+            <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ${ret.isRetur ? 'ons-btn-ghost' : 'ons-btn-primary'} text-[11px] py-1 px-2.5">${ret.isRetur ? 'Nota Void' : 'Struk Thermal'}</button>
+            ${!ret.isRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(p.no_invoice)}', ${Number(p.grand_total || 0)})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2.5">Retur/Void PIN</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="5" class="text-center py-8 text-xs">
+      <div class="font-semibold mb-1">Tidak ada riwayat transaksi yang cocok dengan filter ini.</div>
+      <button type="button" onclick="window.resetPosHistFilters()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-3 mt-1">Reset Filter Pencarian</button>
+    </td></tr>`;
+
+    return { summaryHtml, rowsHtml };
+  }
+
+  function _syncPosHistoryDomOnly() {
+    const tbody = document.getElementById('posHistoryTableBody');
+    if (!tbody) {
+      global.renderActiveView();
+      return;
+    }
+    const st = S().AppState;
+    const { filtered } = _getFilteredPosHistoryRows(st);
+    const { summaryHtml, rowsHtml } = _renderPosHistorySummaryAndRowsHtml(st, filtered);
+    tbody.innerHTML = rowsHtml;
+    const sumEl = document.getElementById('posHistorySummaryLine');
+    if (sumEl) sumEl.innerHTML = summaryHtml;
+    const clrBtn = document.getElementById('posHistClearBtn');
+    if (clrBtn) clrBtn.classList.toggle('hidden', !posHistQ.trim());
+  }
+
+  function renderPosHistoryView(st, subTabHeader) {
+    const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
+    const { periodRows, filtered: filteredSales } = _getFilteredPosHistoryRows(st);
+    const { summaryHtml, rowsHtml } = _renderPosHistorySummaryAndRowsHtml(st, filteredSales);
     const ds = buildPosDailySummaryStats(st.penjualan, seeCost);
     const marginPct = ds.omzetToday > 0 ? Math.round((ds.labaToday / ds.omzetToday) * 1000) / 10 : 0;
+
+    const allReturRows = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR');
+    const allReturNominal = allReturRows.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const periodLunasCount = periodRows.filter((p) => String(p.status_trx || 'LUNAS').toUpperCase() === 'LUNAS').length;
+    const periodTempoCount = periodRows.filter((p) => String(p.status_trx || '').toUpperCase() === 'BELUM_LUNAS').length;
+    const periodReturCount = periodRows.filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR').length;
 
     return `<div class="space-y-4 ons-view-enter">
       ${subTabHeader}
@@ -1731,12 +1891,12 @@
         <div class="ons-card p-3.5" style="border-top:3px solid #0066FE">
           <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Transaksi Hari Ini</div>
           <div class="text-xl font-extrabold font-mono-num mt-1">${ds.countToday} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">nota aktif</span></div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ds.todayRetur ? `<span class="text-red-600 font-bold">${ds.todayRetur} retur hari ini</span> &bull; ` : ''}Total arsip: ${ds.totalCount} nota</div>
+          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ds.todayRetur ? `<span class="text-red-600 font-bold">&#8617; ${ds.todayRetur} retur hari ini</span> &bull; ` : ''}Total arsip: ${ds.totalCount} nota</div>
         </div>
         <div class="ons-card p-3.5" style="border-top:3px solid #059669">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Omzet Hari Ini</div>
+          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Omzet Bersih Hari Ini</div>
           <div class="text-xl font-extrabold font-mono-num text-emerald-600 mt-1">${S().rp(ds.omzetToday)}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Nilai penjualan non-retur hari ini</div>
+          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ds.returNominalToday > 0 ? `<span class="text-red-600 font-semibold">Dikurangi retur: -${S().rp(ds.returNominalToday)}</span>` : 'Nilai penjualan non-retur hari ini'}</div>
         </div>
         <div class="ons-card p-3.5" style="border-top:3px solid #0284C7">
           <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Tunai vs Non-Tunai</div>
@@ -1754,51 +1914,78 @@
         </div>`}
       </div>
 
+      ${allReturRows.length > 0 ? `<div class="ons-retur-alert-bar text-xs">
+        <div class="flex items-start gap-2.5 min-w-0 flex-1">
+          <span class="ons-retur-stamp shrink-0 mt-0.5">&#8617; PENANDA RETUR</span>
+          <div class="min-w-0">
+            <div class="font-bold text-red-700 dark:text-red-300">Terdapat ${allReturRows.length} transaksi berstatus DIRETUR / VOID (Total nilai balik: <span class="font-mono-num">${S().rp(allReturNominal)}</span>)</div>
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Setiap nota retur diberi penanda merah khusus, dikecualikan dari omzet aktif, dan stok batch telah dipulihkan otomatis ke gudang.</div>
+          </div>
+        </div>
+        ${posHistFilter === 'RETUR'
+          ? `<button type="button" onclick="window.setPosHistFilter('SEMUA')" class="ons-btn ons-btn-ghost text-xs shrink-0">Tampilkan Semua Transaksi</button>`
+          : `<button type="button" onclick="window.setPosHistFilter('RETUR')" class="ons-btn ons-btn-danger text-xs shrink-0">Filter Hanya Retur (${allReturRows.length}) &rarr;</button>`}
+      </div>` : ''}
+
       <div class="ons-card p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="font-bold text-base">Riwayat Penjualan, Rincian Item &amp; Retur/Void Ber-PIN</h2>
-            <p class="text-xs" style="color:var(--ons-text-soft)">Retur/Void transaksi wajib PIN APJ/Pemilik dan otomatis mengembalikan stok FEFO + Kartu Stok.</p>
+            <h2 class="font-bold text-base">Riwayat Transaksi Kasir</h2>
+            <p class="text-xs" style="color:var(--ons-text-soft)">Pantau nota penjualan, filter status lunas atau retur, cetak ulang struk thermal, &amp; proses retur/void ber-PIN APJ/Pemilik.</p>
           </div>
           <div class="flex flex-wrap items-center gap-1.5">
             ${[
               { id: 'ALL', lbl: 'Semua Waktu' },
               { id: 'TODAY', lbl: 'Hari Ini' },
-              { id: '7D', lbl: '7 Hari' }
+              { id: '7D', lbl: '7 Hari' },
+              { id: '30D', lbl: '30 Hari' }
             ].map((pr) => `<button type="button" onclick="window.setPosHistPeriod('${pr.id}')" class="ons-pos-chip ${posHistPeriod === pr.id ? 'is-active' : ''}">${pr.lbl}</button>`).join('')}
+            <button type="button" onclick="window.exportPosHistoryExcel()" class="ons-btn ons-btn-ghost text-xs ml-1">Export Excel</button>
+            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs">Segarkan</button>
           </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <input class="ons-input text-xs flex-1 min-w-[200px]" placeholder="Cari No. Invoice / Pasien / Metode..." value="${S().esc(posHistQ)}" oninput="window.setPosHistQ(this.value)"/>
-          <select class="ons-select text-xs w-40" onchange="window.setPosHistFilter(this.value)">
-            ${['SEMUA', 'TUNAI', 'QRIS', 'TRANSFER', 'SPLIT', 'PIUTANG', 'BELUM_LUNAS', 'RETUR'].map((f) => `<option value="${f}" ${posHistFilter === f ? 'selected' : ''}>${f === 'SEMUA' ? 'Semua Metode & Status' : f}</option>`).join('')}
-          </select>
-          <button type="button" onclick="window.exportPosHistoryExcel()" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
-          <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs">Segarkan</button>
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${[
+              { id: 'SEMUA', lbl: 'Semua Status', cnt: periodRows.length, tone: '' },
+              { id: 'LUNAS', lbl: 'Lunas', cnt: periodLunasCount, tone: '' },
+              { id: 'BELUM_LUNAS', lbl: 'Tempo', cnt: periodTempoCount, tone: '' },
+              { id: 'RETUR', lbl: 'Retur / Void', cnt: periodReturCount, tone: 'retur' }
+            ].map((sf) => {
+              const active = posHistFilter === sf.id;
+              const returCls = sf.tone === 'retur' && sf.cnt > 0
+                ? (active ? 'border-red-600 bg-red-600 text-white' : 'border-red-500/45 text-red-700 dark:text-red-300 bg-red-500/10')
+                : '';
+              return `<button type="button" onclick="window.setPosHistFilter('${sf.id}')" class="ons-pos-chip ${active && !returCls ? 'is-active' : ''} ${returCls}">
+                ${sf.tone === 'retur' && sf.cnt > 0 ? '&#8617; ' : ''}${sf.lbl} (<span class="font-mono-num">${sf.cnt}</span>)
+              </button>`;
+            }).join('')}
+          </div>
+          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px] justify-end">
+            <div class="relative flex-1 min-w-[190px] max-w-sm">
+              <input id="posHistSearchInp" class="ons-input text-xs pr-7" placeholder="Cari No. Invoice, Pasien, Kasir, atau Obat..." value="${S().esc(posHistQ)}" oninput="window.setPosHistQ(this.value)"/>
+              <button id="posHistClearBtn" type="button" onclick="window.setPosHistQ('')" aria-label="Bersihkan pencarian" class="${posHistQ.trim() ? '' : 'hidden '}absolute right-2 top-1/2 -translate-y-1/2 text-sm px-1 font-bold" style="color:var(--ons-text-soft)">&times;</button>
+            </div>
+            <select aria-label="Filter metode pembayaran" class="ons-select text-xs w-40" onchange="window.setPosHistMethod(this.value)">
+              ${[
+                { id: 'SEMUA', lbl: 'Semua Metode' },
+                { id: 'TUNAI', lbl: 'Tunai' },
+                { id: 'QRIS', lbl: 'QRIS' },
+                { id: 'TRANSFER', lbl: 'Transfer / EDC' },
+                { id: 'SPLIT', lbl: 'Split Payment' },
+                { id: 'PIUTANG', lbl: 'Piutang / Tempo' }
+              ].map((m) => `<option value="${m.id}" ${posHistMethod === m.id ? 'selected' : ''}>${m.lbl}</option>`).join('')}
+            </select>
+          </div>
         </div>
+
+        <div id="posHistorySummaryLine">${summaryHtml}</div>
+
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>No. Invoice</th><th>Tanggal &amp; Kasir</th><th>Pasien / Channel &amp; Metode</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody>
-              ${filteredSales.slice(0, 80).map((p) => {
-                const mem = (st.members || []).find((m) => m.id_member === p.id_member);
-                const statusCls = p.status_trx === 'RETUR' ? 'bpom-keras' : (p.status_trx === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas');
-                return `<tr>
-                  <td class="font-mono-num font-bold text-xs">${S().esc(p.no_invoice)}</td>
-                  <td class="font-mono-num text-xs">${S().formatTgl(p.tanggal, true)}<div class="text-[10px]" style="color:var(--ons-text-soft)">Kasir: ${S().esc(p.kasir_id || '-')}</div></td>
-                  <td class="text-xs"><b>${S().esc(mem ? mem.nama_pasien : (p.id_member && p.id_member !== 'UMUM' ? p.id_member : 'Pasien Umum'))}</b> &bull; ${S().esc(p.channel || 'Toko Fisik')}<div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(p.metode_bayar)} ${p.detail_split ? `(${S().esc(p.detail_split)})` : ''}</div></td>
-                  <td class="font-mono-num font-bold">${S().rp(p.grand_total)}${Number(p.diskon_total || 0) > 0 ? `<div class="text-[10px] text-emerald-600 font-semibold">Disc ${S().rp(p.diskon_total)}</div>` : ''}</td>
-                  <td><span class="badge-bpom ${statusCls}">${S().esc(p.status_trx || 'LUNAS')}</span></td>
-                  <td>
-                    <div class="flex flex-wrap gap-1.5">
-                      <button onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Rincian Item</button>
-                      <button onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Struk Thermal</button>
-                      ${p.status_trx !== 'RETUR' ? `<button onclick="window.openPosVoidReturnModal('${S().esc(p.no_invoice)}', ${Number(p.grand_total || 0)})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2.5">Retur/Void PIN</button>` : ''}
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('') || '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada riwayat transaksi yang cocok dengan filter ini.</td></tr>'}
-            </tbody>
+            <thead><tr><th>No. Invoice &amp; Waktu</th><th>Pasien, Obat &amp; Penanda</th><th>Metode &amp; Total</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="posHistoryTableBody">${rowsHtml}</tbody>
           </table>
         </div>
       </div>
@@ -2006,11 +2193,12 @@
     const cdss = S().checkCartCdss(cart);
     const fGol = st.posFilterGol || '';
 
+    const returCountPos = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR').length;
     const subTabHeader = `
       <div class="flex flex-wrap items-center justify-between gap-2 ons-view-enter">
         <div class="ons-tab-bar">
           <button onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir Aktif (${cart.items.length})</button>
-          <button onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Riwayat, Struk &amp; Retur PIN (${st.penjualan.length})</button>
+          <button onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Riwayat Transaksi (${st.penjualan.length})${returCountPos > 0 ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-600 dark:text-red-300">${returCountPos} Retur</span>` : ''}</button>
           ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button onclick="window.setPosSubTab('tutup-shift')" class="ons-tab-btn ${posSubTab === 'tutup-shift' ? 'active' : ''}">Tutup Shift &amp; Kas${st.activeShift ? ' <span class="ml-1 inline-block w-2 h-2 rounded-full bg-emerald-500"></span>' : ''}</button>` : ''}
         </div>
       </div>`;
@@ -2156,24 +2344,42 @@
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
-  global.setPosHistQ = (v) => { posHistQ = v || ''; global.renderActiveView(); };
-  global.setPosHistFilter = (v) => { posHistFilter = v || 'SEMUA'; global.renderActiveView(); };
+  global.setPosHistQ = (v) => { posHistQ = v || ''; _syncPosHistoryDomOnly(); };
+  global.setPosHistFilter = (v) => {
+    const val = String(v || 'SEMUA').toUpperCase();
+    if (['TUNAI', 'QRIS', 'TRANSFER', 'SPLIT', 'PIUTANG'].includes(val)) {
+      posHistMethod = val;
+    } else {
+      posHistFilter = val;
+    }
+    global.renderActiveView();
+  };
+  global.setPosHistMethod = (m) => { posHistMethod = m || 'SEMUA'; global.renderActiveView(); };
   global.setPosHistPeriod = (p) => { posHistPeriod = p || 'ALL'; global.renderActiveView(); };
+  global.resetPosHistFilters = () => {
+    posHistQ = '';
+    posHistFilter = 'SEMUA';
+    posHistMethod = 'SEMUA';
+    posHistPeriod = 'ALL';
+    global.renderActiveView();
+  };
 
   global.exportPosHistoryExcel = () => {
     const st = S().AppState;
     const rows = (st.penjualan || []).map((p) => {
       const mem = (st.members || []).find((m) => m.id_member === p.id_member);
+      const ret = _extractPosReturInfo(p, st.mutasiStok);
       return [
         p.no_invoice, S().formatTgl(p.tanggal, true), p.kasir_id || '-',
         mem ? mem.nama_pasien : (p.id_member || 'UMUM'), p.channel || 'Toko Fisik',
         p.metode_bayar || 'TUNAI', Number(p.subtotal || 0), Number(p.diskon_total || 0),
-        Number(p.grand_total || 0), p.status_trx || 'LUNAS'
+        Number(p.grand_total || 0), p.status_trx || 'LUNAS',
+        ret.isRetur ? `Retur (${ret.authorizer}): ${ret.alasan}` : '-'
       ];
     });
     if (S().exportDataset) {
-      S().exportDataset('excel', 'Riwayat Penjualan POS ONS Farma', 'riwayat-pos-' + new Date().toISOString().slice(0, 10),
-        ['No Invoice', 'Tanggal', 'Kasir', 'Pasien/Member', 'Channel', 'Metode', 'Subtotal', 'Diskon', 'Grand Total', 'Status'], rows);
+      S().exportDataset('excel', 'Riwayat Transaksi POS ONS Farma', 'riwayat-transaksi-' + new Date().toISOString().slice(0, 10),
+        ['No Invoice', 'Tanggal', 'Kasir', 'Pasien/Member', 'Channel', 'Metode', 'Subtotal', 'Diskon', 'Grand Total', 'Status', 'Keterangan Retur'], rows);
     }
   };
 
@@ -2238,21 +2444,37 @@
     try {
       const st = S().AppState;
       const trx = (st.penjualan || []).find((p) => p.no_invoice === noInvoice) || {};
-      let items = (st.detailPenjualan || []).filter((d) => (d.no_invoice && d.no_invoice === noInvoice) || (trx.id_transaksi && d.id_transaksi === trx.id_transaksi));
+      const mem = (st.members || []).find((m) => m.id_member === trx.id_member);
+      const ret = _extractPosReturInfo(trx, st.mutasiStok);
+      let items = _getPosItemsForTrx(st, trx);
       if (!items.length) {
         try {
           const res = await API().callApi('pos.details', { no_invoice: noInvoice });
           items = res.items || [];
         } catch (err) {}
       }
+      const statusUp = String(trx.status_trx || 'LUNAS').toUpperCase();
+      const statusBadge = ret.isRetur
+        ? '<span class="ons-retur-stamp">&#8617; TRANSAKSI DIRETUR / VOID</span>'
+        : `<span class="badge-bpom ${statusUp === 'BELUM_LUNAS' ? 'bpom-prekursor' : 'bpom-bebas'}">${S().esc(statusUp)}</span>`;
+
       S().openModal(`<div class="p-6 space-y-4 text-xs">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-start gap-2">
           <div>
-            <h3 class="font-bold text-base">Rincian Item Nota ${S().esc(noInvoice)}</h3>
-            <div style="color:var(--ons-text-soft)">${S().formatTgl(trx.tanggal, true)} &bull; ${S().esc(trx.channel || 'Toko Fisik')} &bull; ${S().esc(trx.metode_bayar || '-')}</div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-bold text-base">Rincian Transaksi ${S().esc(noInvoice)}</h3>
+              ${statusBadge}
+            </div>
+            <div class="mt-0.5" style="color:var(--ons-text-soft)">${S().formatTgl(trx.tanggal, true)} &bull; Pasien: <b>${S().esc(mem ? mem.nama_pasien : 'Pasien Umum')}</b> &bull; Kasir: ${S().esc(trx.kasir_id || '-')} &bull; ${S().esc(trx.metode_bayar || '-')}</div>
           </div>
-          <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+          <button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
         </div>
+        ${ret.isRetur ? `<div class="p-3.5 rounded-xl border border-red-500/40 border-l-4 bg-red-500/10 space-y-1" style="border-left-color:#DC2626">
+          <div class="font-extrabold text-red-700 dark:text-red-300">&#8617; PENANDA KHUSUS: TRANSAKSI INI TELAH DIRETUR / VOID</div>
+          <div><b>Diotorisasi Oleh (PIN APJ/Pemilik):</b> ${S().esc(ret.authorizer)}${ret.tglRetur ? ` &bull; <span class="font-mono-num">${S().formatTgl(ret.tglRetur, true)}</span>` : ''}</div>
+          <div><b>Alasan Retur:</b> ${S().esc(ret.alasan)}</div>
+          <div><b>Status Pemulihan Stok:</b> <span class="font-semibold text-emerald-700 dark:text-emerald-300">${ret.restoredQty > 0 ? `+${ret.restoredQty} qty dari ${ret.restoredItemsCount} baris batch dikembalikan ke stok FEFO` : 'Batch stok dikembalikan & jurnal pembalik tercatat'}</span></div>
+        </div>` : ''}
         <div class="ons-table-wrap">
           <table class="ons-table">
             <thead><tr><th>Nama Obat</th><th>Batch &amp; ED</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
@@ -2267,11 +2489,15 @@
             </tbody>
           </table>
         </div>
-        <div class="flex justify-between items-center pt-2 border-t font-bold" style="border-color:var(--ons-border)">
+        <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t font-bold" style="border-color:var(--ons-border)">
           <span>Total Nota (${S().esc(trx.status_trx || 'LUNAS')})</span>
-          <span class="text-base font-mono-num text-blue-600">${S().rp(trx.grand_total || 0)}</span>
+          <span class="text-base font-mono-num ${ret.isRetur ? 'line-through text-red-600' : 'text-blue-600'}">${S().rp(trx.grand_total || 0)}</span>
         </div>
-      </div>`, '620px');
+        <div class="flex flex-wrap gap-2 pt-1">
+          <button type="button" onclick="window.openPosReprintModal('${S().esc(noInvoice)}')" class="ons-btn ons-btn-primary flex-1 text-xs">${ret.isRetur ? 'Cetak Nota Void (Thermal)' : 'Cetak Ulang Struk'}</button>
+          ${!ret.isRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(noInvoice)}', ${Number(trx.grand_total || 0)})" class="ons-btn ons-btn-danger flex-1 text-xs">Proses Retur / Void PIN</button>` : ''}
+        </div>
+      </div>`, '640px');
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -2941,13 +3167,28 @@
   };
 
   global.openPosVoidReturnModal = (noInvoice, nominal) => {
-    S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base text-red-600">&#9888;&#65039; Retur / Void Transaksi ${S().esc(noInvoice)}</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
-      <div class="p-3 rounded-lg" style="background:var(--ons-bg-subtle)">Nilai pengembalian: <b>${S().rp(nominal)}</b>. Stok batch akan dipulihkan ke gudang &amp; tercatat di Kartu Stok BPOM.</div>
-      <div><label class="font-semibold block mb-1">Alasan Retur / Void *</label><input id="voidAlasanInp" class="ons-input" value="Kesalahan input item / penyesuaian resep dokter"/></div>
-      <div><label class="font-semibold block mb-1">PIN Otorisasi APJ / Pemilik${API().isDemoMode() ? ' (Demo: 123456)' : ''} *</label><input id="voidPinInp" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 digit PIN"/></div>
-      <button onclick="window.submitPosVoidReturn('${S().esc(noInvoice)}')" class="ons-btn ons-btn-danger w-full">Otorisasi PIN &amp; Eksekusi Retur</button>
-    </div>`, '480px');
+    const alasanPresets = [
+      'Kesalahan input item / qty kasir',
+      'Penyesuaian resep dokter / alergi pasien',
+      'Pasien batal / tukar varian obat',
+      'Salah metode pembayaran (Tunai / QRIS)'
+    ];
+    S().openModal(`<div class="p-6 space-y-3.5 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base text-red-600">&#8617; Proses Retur / Void Transaksi ${S().esc(noInvoice)}</h3><button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button></div>
+      <div class="p-3.5 rounded-xl border border-red-500/35 bg-red-500/10 space-y-1">
+        <div class="font-bold text-red-700 dark:text-red-300">Nilai transaksi yang dibatalkan: <span class="font-mono-num text-sm">${S().rp(nominal)}</span></div>
+        <div style="color:var(--ons-text-soft)">Nota akan diberi <b>Penanda Khusus Retur</b>, stok batch FEFO otomatis kembali ke gudang, &amp; jurnal pembalik tercatat.</div>
+      </div>
+      <div>
+        <label class="font-semibold block mb-1.5">Pilih Alasan Cepat atau Ketik Manual *</label>
+        <div class="flex flex-wrap gap-1.5 mb-2">
+          ${alasanPresets.map((pr) => `<button type="button" onclick="var el=document.getElementById('voidAlasanInp');if(el)el.value=this.textContent;" class="ons-pos-chip text-[11px]">${S().esc(pr)}</button>`).join('')}
+        </div>
+        <input id="voidAlasanInp" class="ons-input" value="Kesalahan input item / penyesuaian resep dokter"/>
+      </div>
+      <div><label class="font-semibold block mb-1">PIN Otorisasi APJ / Pemilik${API().isDemoMode() ? ' (Demo: 123456)' : ''} *</label><input id="voidPinInp" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num font-bold tracking-widest" placeholder="Masukkan 6 digit PIN"/></div>
+      <button type="button" onclick="window.submitPosVoidReturn('${S().esc(noInvoice)}')" class="ons-btn ons-btn-danger w-full py-2.5 font-bold">Otorisasi PIN &amp; Sah-kan Retur</button>
+    </div>`, '500px');
   };
 
   global.submitPosVoidReturn = async (noInvoice) => {

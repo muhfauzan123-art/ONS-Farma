@@ -1878,6 +1878,9 @@
         }
       });
       trx.status_trx = 'RETUR';
+      trx.apj_override_id = 'apt. Siti Rahma, S.Farm';
+      trx.retur_alasan = String(d.alasan || 'Retur/Void PIN');
+      trx.tgl_retur = nowIso;
       if (trx.id_member && trx.id_member !== 'UMUM' && Number(trx.poin_didapat || 0) > 0) {
         const mem = db.members.find((m) => m.id_member === trx.id_member);
         if (mem) mem.poin_loyalitas = Math.max(0, Number(mem.poin_loyalitas || 0) - Number(trx.poin_didapat || 0));

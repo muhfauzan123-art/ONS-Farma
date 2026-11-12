@@ -2263,6 +2263,75 @@ html.dark .ons-shift-split-card {
   background: linear-gradient(180deg, var(--ons-bg-subtle) 0%, rgba(16, 185, 129, 0.11) 100%);
 }
 
+/* ==========================================================================
+   W-03C RIWAYAT TRANSAKSI & PENANDA KHUSUS RETUR
+   ========================================================================== */
+.ons-retur-alert-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.78rem 1rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(220, 38, 38, 0.38);
+  border-left: 4px solid #DC2626;
+  background: rgba(254, 242, 242, 0.88);
+}
+html.dark .ons-retur-alert-bar {
+  background: rgba(127, 29, 29, 0.24);
+  border-color: rgba(248, 113, 113, 0.35);
+  border-left-color: #EF4444;
+}
+.ons-trx-row-retur > td {
+  background: rgba(254, 242, 242, 0.78) !important;
+  border-bottom-color: rgba(220, 38, 38, 0.2) !important;
+}
+.ons-trx-row-retur > td:first-child {
+  box-shadow: inset 4px 0 0 #DC2626;
+}
+.ons-trx-row-retur:hover > td {
+  background: rgba(254, 226, 226, 0.82) !important;
+}
+html.dark .ons-trx-row-retur > td {
+  background: rgba(127, 29, 29, 0.22) !important;
+  border-bottom-color: rgba(248, 113, 113, 0.22) !important;
+}
+html.dark .ons-trx-row-retur:hover > td {
+  background: rgba(127, 29, 29, 0.32) !important;
+}
+.ons-retur-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.14rem 0.48rem;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  background: rgba(220, 38, 38, 0.14);
+  color: #B91C1C;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+}
+html.dark .ons-retur-stamp {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FCA5A5;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+.ons-retur-trace-pill {
+  margin-top: 0.38rem;
+  padding: 0.38rem 0.58rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px dashed rgba(220, 38, 38, 0.36);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+html.dark .ons-retur-trace-pill {
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(248, 113, 113, 0.38);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill {
     transition: none !important;
