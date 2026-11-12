@@ -1520,7 +1520,7 @@
       id_member: mbr.id_member,
       nama_pasien: mbr.nama_pasien,
       no_hp: mbr.no_hp,
-      riwayat_terapi: mbr.penyakit_kronis && mbr.penyakit_kronis !== '-' ? ('PRB ' + mbr.penyakit_kronis) : ''
+      riwayat_terapi: mbr.penyakit_kronis && mbr.penyakit_kronis !== '-' ? ('Terapi Rutin: ' + mbr.penyakit_kronis) : ''
     });
     if (mbr.tgl_lahir && /^\d{4}-\d{2}-\d{2}/.test(mbr.tgl_lahir)) {
       const age = Math.max(1, new Date().getFullYear() - Number(mbr.tgl_lahir.slice(0, 4)));
@@ -1724,7 +1724,7 @@
               <div class="font-bold text-sm text-blue-600 dark:text-blue-400">1. Identitas, WhatsApp &amp; Antropometri Pasien</div>
               ${(members.length || walkinPatients.length) ? `<select id="chkRecallSelect" onchange="window.onSelectMemberPemeriksaan(this.value)" class="ons-select w-full sm:w-72 text-xs">
                 <option value="">-- Recall Member / Pasien Terdahulu --</option>
-                ${members.length ? `<optgroup label="Member &amp; Pasien PRB">
+                ${members.length ? `<optgroup label="Member &amp; Pasien Terdaftar">
                   ${members.map((m) => `<option value="MBR:${S().esc(m.id_member)}" ${seedIdentity && seedIdentity.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.id_member)})</option>`).join('')}
                 </optgroup>` : ''}
                 ${walkinPatients.length ? `<optgroup label="Pasien Kunjungan Sebelumnya">
@@ -1993,7 +1993,7 @@
         nama_pasien: rec.nama_pasien,
         no_hp: rec.no_wa || '',
         penyakit_kronis: notes.join(', ') || '-',
-        program_prb: notes.length ? 'PRB' : 'UMUM',
+        program_prb: notes.length ? 'MEMBER_RUTIN' : 'UMUM',
         tgl_reminder_berikut: rec.tgl_kontrol || '',
         poin_loyalitas: 10
       }, { isWrite: true });

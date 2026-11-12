@@ -464,7 +464,7 @@
     S().openDrawer(`<div class="p-5 space-y-4 text-xs">
       <div class="flex items-start justify-between gap-2 pb-3 border-b" style="border-color:var(--ons-border)">
         <div>
-          <span class="badge-bpom bpom-terbatas">${S().esc(m.program_prb || 'MEMBER')}</span>
+          <span class="badge-bpom bpom-terbatas">${S().esc(S().formatMemberProgram ? S().formatMemberProgram(m.program_prb) : (m.program_prb || 'MEMBER'))}</span>
           <h3 class="text-base font-extrabold mt-1">${S().esc(m.nama_pasien)}</h3>
           <div class="font-mono-num" style="color:var(--ons-text-soft)">ID: ${S().esc(m.id_member)} &bull; WA: ${S().esc(m.no_hp || '-')}</div>
         </div>
@@ -627,10 +627,12 @@
     const erxQueue = erxAll.filter((rx) => !eq || `${rx.id_klinis} ${rx.nama_pasien} ${rx.dokter_asal} ${rx.soap_notes}`.toLowerCase().includes(eq));
     const antreCount = erxAll.filter((x) => x.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
 
+    const fmtProg = (p) => (S().formatMemberProgram ? S().formatMemberProgram(p) : (p || 'MEMBER'));
     const pq = prbSearchQ.trim().toLowerCase();
     const filteredMembers = (st.members || []).filter((m) => {
-      if (prbFilter === 'PRB_BPJS' && m.program_prb !== 'PRB_BPJS') return false;
-      if (prbFilter === 'UMUM' && m.program_prb !== 'UMUM') return false;
+      const prog = fmtProg(m.program_prb);
+      if (prbFilter === 'MEMBER_RUTIN' && prog !== 'MEMBER_RUTIN' && prog !== 'TERAPI_RUTIN') return false;
+      if (prbFilter === 'UMUM' && prog !== 'UMUM') return false;
       if (prbFilter === 'HABIS_SEGERA') {
         const dLeft = m.tgl_habis_obat ? S().daysUntil(m.tgl_habis_obat) : 999;
         if (dLeft > 5) return false;
@@ -645,16 +647,16 @@
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">E-Resep Dokter Mitra, Skrining Kesehatan &amp; Tracker PRB Kronis</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Validasi PIN APJ antrean resep dokter mitra, skrining TDS/GDS/BMI dengan grafik sparkline, &amp; pengingat refill PRB 30 hari.</p>
+          <h1 class="text-xl font-extrabold">E-Resep Dokter Mitra, Skrining Kesehatan &amp; Pantau Pasien Rutin</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Validasi PIN APJ antrean resep dokter mitra, skrining TDS/GDS/BMI dengan grafik sparkline, &amp; pengingat refill obat rutin apotek.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
             <button onclick="window.setEresepTab('erx')" class="ons-tab-btn ${eresepTab === 'erx' ? 'active' : ''}">Antrean E-Resep (${antreCount}/${erxAll.length})</button>
-            <button onclick="window.setEresepTab('prb')" class="ons-tab-btn ${eresepTab === 'prb' ? 'active' : ''}">Pasien PRB &amp; Skrining (${(st.members || []).length})</button>
+            <button onclick="window.setEresepTab('prb')" class="ons-tab-btn ${eresepTab === 'prb' ? 'active' : ''}">Pasien Rutin &amp; Skrining (${(st.members || []).length})</button>
           </div>
           <button onclick="window.openSkriningModal()" class="ons-btn ons-btn-emerald text-xs">+ Catat Skrining</button>
-          <button onclick="window.openAddMemberPrbModal()" class="ons-btn ons-btn-primary text-xs">+ Pasien PRB</button>
+          <button onclick="window.openAddMemberPrbModal()" class="ons-btn ons-btn-primary text-xs">+ Pasien / Member</button>
         </div>
       </div>
 
@@ -666,13 +668,13 @@
               <div class="ons-tab-bar">
                 ${[
                   { id: 'SEMUA', label: 'Semua' },
-                  { id: 'PRB_BPJS', label: 'PRB BPJS' },
+                  { id: 'MEMBER_RUTIN', label: 'Pasien Terapi Rutin' },
                   { id: 'UMUM', label: 'Member Umum' },
                   { id: 'HABIS_SEGERA', label: 'Habis <=5 Hari' }
                 ].map((f) => `<button onclick="window.setPrbFilter('${f.id}')" class="ons-tab-btn ${prbFilter === f.id ? 'active' : ''}">${f.label}</button>`).join('')}
               </div>
             </div>
-            <button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-ghost text-xs">Tagihan PRB &rarr;</button>
+            <button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-ghost text-xs">Tagihan Pasien &rarr;</button>
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
@@ -685,7 +687,7 @@
                   const daysLeft = m.tgl_habis_obat ? S().daysUntil(m.tgl_habis_obat) : null;
                   return `<tr>
                     <td><b>${S().esc(m.nama_pasien)}</b><br/><span class="text-xs text-red-600">Alergi: ${S().esc(m.alergi_list)}</span></td>
-                    <td class="text-xs"><span class="badge-bpom bpom-terbatas">${S().esc(m.program_prb)}</span><div class="mt-1">${S().esc(m.penyakit_kronis)}</div></td>
+                    <td class="text-xs"><span class="badge-bpom bpom-terbatas">${S().esc(fmtProg(m.program_prb))}</span><div class="mt-1">${S().esc(m.penyakit_kronis)}</div></td>
                     <td class="font-mono-num text-xs">${m.tgl_habis_obat ? `<span class="badge-bpom ${daysLeft <= 3 ? 'bpom-keras' : (daysLeft <= 7 ? 'bpom-prekursor' : 'bpom-bebas')}">${m.tgl_habis_obat} (${daysLeft}h)</span>` : '-'}</td>
                     <td class="font-mono-num font-bold text-blue-600">${m.poin_loyalitas || 0}</td>
                     <td class="text-xs font-mono-num">
@@ -703,7 +705,7 @@
                           const eApotekUrl = global.location.origin + global.location.pathname + '?katalog=1';
                           const waBody = [
                             'Halo *' + m.nama_pasien + '*,',
-                            'Pengingat Refill Obat Rutin (' + (m.penyakit_kronis || m.program_prb) + ') dari *' + apotekNm + '*.',
+                            'Pengingat Refill Obat Rutin (' + (m.penyakit_kronis || fmtProg(m.program_prb)) + ') dari *' + apotekNm + '*.',
                             'Jadwal habis obat: *' + (m.tgl_habis_obat || 'minggu ini') + '*.',
                             'Skrining terakhir: ' + (lastSkr ? ('TD ' + lastSkr.td + ', GDS ' + lastSkr.gds + ', BMI ' + lastSkr.bmi) : 'Terpantau baik') + '.',
                             'Pesan ulang online langsung: ' + eApotekUrl,
@@ -715,7 +717,7 @@
                       </div>
                     </td>
                   </tr>`;
-                }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada pasien PRB / Member sesuai filter ini.</td></tr>'}
+                }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada pasien / member sesuai filter ini.</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -783,7 +785,7 @@
       <div class="p-2.5 rounded-lg border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">
         <b>Acuan Normal (Kemenkes RI / PERKI / PERKENI):</b> TD &lt;120/80 mmHg (L/P) &bull; GDS &lt;140 mg/dL (L/P) &bull; IMT Kemenkes <b>18.5–25.0</b> (Asia-Pasifik 18.5–22.9 &bull; Gemuk 25.1–27.0 &bull; Obesitas &gt;27.0) &bull; Lingkar Perut aman: <b>L &lt;90 / P &lt;80 cm</b>.
       </div>
-      <div><label class="font-semibold block mb-1">Pilih Pasien</label><select id="skrMemId" class="ons-select">${members.map((m) => `<option value="${S().esc(m.id_member)}" ${m.id_member === idMember ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.program_prb)})</option>`).join('')}</select></div>
+      <div><label class="font-semibold block mb-1">Pilih Pasien</label><select id="skrMemId" class="ons-select">${members.map((m) => `<option value="${S().esc(m.id_member)}" ${m.id_member === idMember ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(S().formatMemberProgram ? S().formatMemberProgram(m.program_prb) : m.program_prb)})</option>`).join('')}</select></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="font-semibold block mb-1">Tekanan Darah (mmHg)</label><input id="skrTd" class="ons-input font-mono-num" value="125/80"/></div>
         <div><label class="font-semibold block mb-1">Gula Darah Sewaktu (mg/dL)</label><input id="skrGds" type="number" class="ons-input font-mono-num" value="118"/></div>
@@ -847,11 +849,11 @@
 
   global.openAddMemberPrbModal = () => {
     S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Daftar Pasien / Member PRB Baru</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Daftar Pasien / Member Baru</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="font-semibold block mb-1">Nama Pasien *</label><input id="mbNama" class="ons-input"/></div>
         <div><label class="font-semibold block mb-1">No. WhatsApp (628..)</label><input id="mbHp" class="ons-input font-mono-num" placeholder="62812xxxx"/></div>
-        <div><label class="font-semibold block mb-1">Program</label><select id="mbProg" class="ons-select"><option>PRB_BPJS</option><option>UMUM</option></select></div>
+        <div><label class="font-semibold block mb-1">Segmen / Kategori</label><select id="mbProg" class="ons-select"><option value="UMUM">UMUM</option><option value="MEMBER_RUTIN">MEMBER_RUTIN</option><option value="MITRA_KLINIK">MITRA_KLINIK</option></select></div>
         <div><label class="font-semibold block mb-1">Riwayat Alergi</label><input id="mbAlergi" class="ons-input" value="Tidak Ada"/></div>
       </div>
       <div><label class="font-semibold block mb-1">Penyakit Kronis</label><input id="mbPenyakit" class="ons-input" placeholder="Hipertensi / Diabetes Tipe 2"/></div>
@@ -870,7 +872,7 @@
         tgl_habis_obat: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
       }, { isWrite: true });
       S().closeModal();
-      global.toast('Pasien PRB baru tersimpan!', 'ok');
+      global.toast('Data pasien baru tersimpan!', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
@@ -1096,7 +1098,7 @@
               <div><label class="font-semibold block mb-1">Jabatan</label><input id="sgJab" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
               <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="number" class="ons-input font-mono-num" value="4800000"/></div>
               <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="number" class="ons-input font-mono-num" value="1500000"/></div>
-              <div><label class="font-semibold block mb-1">Potongan Kasbon / BPJS</label><input id="sgPot" type="number" class="ons-input font-mono-num" value="150000"/></div>
+              <div><label class="font-semibold block mb-1">Potongan Kasbon / Lainnya</label><input id="sgPot" type="number" class="ons-input font-mono-num" value="150000"/></div>
               <div><label class="font-semibold block mb-1">Periode Bulan</label><input id="sgPer" class="ons-input font-mono-num" value="${new Date().toISOString().slice(0, 7)}"/></div>
             </div>
             <button onclick="window.printSlipGajiPdf()" class="ons-btn ons-btn-primary w-full">Pratinjau &amp; Cetak Slip Gaji Resmi (A4)</button>
@@ -1237,7 +1239,7 @@
         <div><label class="font-semibold block mb-1">Jabatan</label><input id="sgJab" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
         <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="number" class="ons-input font-mono-num" value="4800000"/></div>
         <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="number" class="ons-input font-mono-num" value="1500000"/></div>
-        <div><label class="font-semibold block mb-1">Potongan Kasbon / BPJS</label><input id="sgPot" type="number" class="ons-input font-mono-num" value="150000"/></div>
+        <div><label class="font-semibold block mb-1">Potongan Kasbon / Lainnya</label><input id="sgPot" type="number" class="ons-input font-mono-num" value="150000"/></div>
         <div><label class="font-semibold block mb-1">Periode Bulan</label><input id="sgPer" class="ons-input font-mono-num" value="${new Date().toISOString().slice(0, 7)}"/></div>
       </div>
       <button onclick="window.printSlipGajiPdf()" class="ons-btn ons-btn-primary w-full">Pratinjau &amp; Cetak Slip Gaji A4</button>
@@ -1265,7 +1267,7 @@
       <table style="width:100%;border-collapse:collapse;margin:12px 0;" border="1" cellpadding="6">
         <tr><td>Gaji Pokok</td><td style="text-align:right;">${S().rp(pokok)}</td></tr>
         <tr><td>Tunjangan Profesi / Insentif Shift</td><td style="text-align:right;">${S().rp(tunj)}</td></tr>
-        <tr><td>Potongan BPJS / Kasbon</td><td style="text-align:right;color:#DC2626;">-${S().rp(pot)}</td></tr>
+        <tr><td>Potongan Kasbon / Lainnya</td><td style="text-align:right;color:#DC2626;">-${S().rp(pot)}</td></tr>
         <tr style="background:#f1f5f9;font-weight:bold;font-size:14px;"><td>THP / Gaji Bersih Diterima</td><td style="text-align:right;">${S().rp(bersih)}</td></tr>
       </table>
       <div style="margin-top:28px;display:flex;justify-content:space-between;"><div>Diterima Oleh,<br/><br/><br/>(${S().esc(nama)})</div><div>Pemilik ${S().esc(prof.nama_usaha || 'Apotek ONS Farma')},<br/><br/><br/><b>${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</b></div></div>
@@ -1320,7 +1322,7 @@
     return `<div class="space-y-4 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Tagihan PRB / Home Care, GrupBayar &amp; Kwitansi QR HMAC</h1>
+          <h1 class="text-xl font-extrabold">Tagihan Home Care / Pelanggan, GrupBayar &amp; Kwitansi QR HMAC</h1>
           <p class="text-xs" style="color:var(--ons-text-soft)">1 bukti transfer banyak tagihan, verifikasi 1 klik, nomor kwitansi KW-YYYY-XXXXXX &amp; WA Reminder H-3/H-0.</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -1345,7 +1347,7 @@
             <tbody>
               ${list.map((t) => `<tr>
                 <td class="font-mono-num text-xs"><b>${S().esc(t.ID)}</b><br/>${S().esc(t.Periode)}</td>
-                <td class="text-xs"><b>${S().esc(t.Nama_Pasien)}</b><br/>${S().esc(t.Program)}</td>
+                <td class="text-xs"><b>${S().esc(t.Nama_Pasien)}</b><br/>${S().esc(S().formatMemberProgram ? S().formatMemberProgram(t.Program) : t.Program)}</td>
                 <td class="text-xs">${S().esc(t.Deskripsi)}<br/><span style="color:var(--ons-text-soft)">JT: ${S().esc(t.JatuhTempo)}</span></td>
                 <td class="font-mono-num font-bold">${S().rp(t.Netto)}</td>
                 <td class="font-mono-num text-emerald-600">${S().rp(t.Terbayar)}</td>
@@ -1376,7 +1378,7 @@
       </div>` : ''}
 
       ${activeBillingTab === 'potongan' ? `<div class="ons-card p-4 space-y-3">
-        <h3 class="font-bold text-sm">Daftar Potongan / Subsidi Pasien PRB</h3>
+        <h3 class="font-bold text-sm">Daftar Potongan / Subsidi Tagihan Pasien</h3>
         <div class="space-y-2 text-xs">
           ${potongan.map((pt) => `<div class="p-3 rounded-lg border flex justify-between"><span><b>${S().esc(pt.Nama_Pasien)}</b> (${S().esc(pt.JenisPotongan)})</span><span class="font-mono-num font-bold text-emerald-600">${pt.TipeNilai === 'PERSEN' ? pt.Nilai + '%' : S().rp(pt.Nilai)}</span></div>`).join('')}
         </div>
@@ -1440,11 +1442,11 @@
   global.openGenTagihanModal = () => {
     const curMonth = new Date().toISOString().slice(0, 7);
     S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Terbit Tagihan Massal Pasien PRB</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Terbit Tagihan Massal Pasien &amp; Home Care</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
       <label class="font-semibold block">Periode (pisahkan koma untuk multi-bulan, cth: ${curMonth})</label>
       <input id="tgPer" class="ons-input font-mono-num" value="${curMonth}"/>
       <label class="font-semibold block">Deskripsi Layanan</label>
-      <input id="tgDesk" class="ons-input" value="Paket Home Pharmacy Care PRB Bulanan"/>
+      <input id="tgDesk" class="ons-input" value="Paket Home Pharmacy Care / Terapi Bulanan"/>
       <label class="font-semibold block">Nominal Dasar (Rp)</label>
       <input id="tgNom" type="number" class="ons-input font-mono-num" value="180000"/>
       <button onclick="window.submitGenBatchBilling()" class="ons-btn ons-btn-primary w-full">Terbitkan Tagihan Sekarang</button>
@@ -3122,7 +3124,7 @@
         ${isOwner ? `<div class="ons-card p-5 lg:col-span-12 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div>
             <h3 class="font-bold text-sm">Data Sampel Uji Coba (Saat Katalog Kosong)</h3>
-            <p style="color:var(--ons-text-soft)">Khusus mode uji coba pada Google Sheets yang masih kosong: mengisi 6 contoh produk obat KFA, batch FEFO, PBF, &amp; member PRB. Tidak menimpa data obat yang sudah ada.</p>
+            <p style="color:var(--ons-text-soft)">Khusus mode uji coba pada Google Sheets yang masih kosong: mengisi 6 contoh produk obat KFA, batch FEFO, PBF, &amp; pelanggan apotek. Tidak menimpa data obat yang sudah ada.</p>
           </div>
           <button type="button" onclick="window.seedStarterCatalogFromSettings()" class="ons-btn ons-btn-ghost text-xs">Muat 6 Produk Sampel</button>
         </div>` : ''}
@@ -3994,7 +3996,7 @@
 
       <label class="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
         <input id="rstHapusMaster_${sfx}" type="checkbox" checked class="accent-red-600"/>
-        <span><b>Reset Total 0%</b> &mdash; Hapus juga data Master Obat, Supplier PBF &amp; Member PRB (hapus centang jika Master Obat sudah diisi data asli dan ingin dipertahankan).</span>
+        <span><b>Reset Total 0%</b> &mdash; Hapus juga data Master Obat, Supplier PBF &amp; Pelanggan Member (hapus centang jika Master Obat sudah diisi data asli dan ingin dipertahankan).</span>
       </label>
 
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
@@ -4217,7 +4219,7 @@
       NOTA: 'INV-PREVIEW-001',
       TANGGAL: new Date().toLocaleDateString('id-ID'),
       KASIR: kasirRaw,
-      PELANGGAN: 'Tn. Bambang (PRB)',
+      PELANGGAN: 'Tn. Bambang (Member)',
       METODE: strukPreviewExtras ? 'TUNAI' : 'QRIS',
       CHANNEL: 'Toko Fisik',
       STATUS: 'LUNAS',

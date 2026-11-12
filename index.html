@@ -121,12 +121,12 @@
           items: [
             {
               viewId: 'obat', label: 'Master Data', icon: 'pill',
-              desc: 'Database terpadu Obat KFA, Supplier PBF, Pelanggan PRB & Dokter Mitra.',
-              kw: 'master data obat kfa nie bpom supplier pbf cdob pelanggan member prb dokter sip str',
+              desc: 'Database terpadu Obat KFA, Supplier PBF, Pelanggan Apotek & Dokter Mitra.',
+              kw: 'master data obat kfa nie bpom supplier pbf cdob pelanggan member pasien dokter sip str',
               tabs: [
                 { subTab: 'obat', label: 'Obat', kw: 'master data obat kfa nie bpom harga jual beli margin code128' },
                 { subTab: 'supplier', label: 'Supplier', kw: 'supplier pbf cdob termin sla kontak vendor', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'pelanggan', label: 'Pelanggan', kw: 'pelanggan member pasien prb kronis alergi poin loyalitas' },
+                { subTab: 'pelanggan', label: 'Pelanggan', kw: 'pelanggan member pasien terapi rutin alergi poin loyalitas' },
                 { subTab: 'dokter', label: 'Dokter', kw: 'dokter mitra penulis resep sip str klinik faskes' }
               ]
             },
@@ -174,12 +174,12 @@
           label: 'Klinis & Pasien',
           items: [
             {
-              viewId: 'eresep-prb', label: 'E-Resep & PRB', icon: 'shield', badgeKey: 'erxPending', badgeTone: 'info',
-              desc: 'Validasi E-Resep dokter mitra via PIN SIPA & pantau terapi kronis PRB.',
-              kw: 'e-resep erx pin apj prb kronis bpjs skrining',
+              viewId: 'eresep-prb', label: 'E-Resep &amp; Pasien Rutin', icon: 'shield', badgeKey: 'erxPending', badgeTone: 'info',
+              desc: 'Validasi E-Resep dokter mitra via PIN SIPA & pantau terapi rutin pasien apotek.',
+              kw: 'e-resep erx pin apj pasien rutin kronis skrining terapi',
               tabs: [
                 { subTab: 'erx', label: 'Antrean E-Resep', kw: 'e-resep dokter mitra pin apj validasi pos' },
-                { subTab: 'prb', label: 'Pasien PRB Kronis', kw: 'prb kronis refill gds sparkline wa' }
+                { subTab: 'prb', label: 'Pasien Terapi Rutin', kw: 'pasien rutin kronis refill gds sparkline wa' }
               ]
             },
             {
@@ -238,7 +238,7 @@
               desc: 'Terbit tagihan multi-bulan, verifikasi transfer, potongan & pengingat WA.',
               kw: 'tagihan pembayaran piutang kwitansi qr hmac verifikasi potongan reminder',
               tabs: [
-                { subTab: 'tagihan', label: 'Daftar Tagihan', kw: 'tagihan prb piutang terbit multi bulan' },
+                { subTab: 'tagihan', label: 'Daftar Tagihan', kw: 'tagihan home care piutang terbit multi bulan' },
                 { subTab: 'verifikasi', label: 'Verifikasi Bayar', kw: 'verifikasi bukti transfer qris grupbayar' },
                 { subTab: 'potongan', label: 'Potongan & Subsidi', kw: 'potongan diskon beasiswa subsidi' },
                 { subTab: 'reminder', label: 'Pengingat WA', kw: 'reminder wa jatuh tempo' }
@@ -906,7 +906,7 @@
 
               <div class="ons-cmdk-searchbox">
                 <span class="text-blue-600 shrink-0">${svgIcon('search', 'w-5 h-5')}</span>
-                <input id="cmdkSearchInp" autocomplete="off" placeholder="Ketik nama menu, sub-menu, obat / zat aktif / KFA, pasien PRB, no. SP / faktur / nota..." oninput="window.filterCmdk(this.value)"/>
+                <input id="cmdkSearchInp" autocomplete="off" placeholder="Ketik nama menu, sub-menu, obat / zat aktif / KFA, pasien member, no. SP / faktur / nota..." oninput="window.filterCmdk(this.value)"/>
                 <button type="button" id="cmdkClearBtn" onclick="window.clearCmdkQuery()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 hidden">Bersihkan</button>
                 <span class="ons-shortcut-kbd hidden sm:inline-flex">Ctrl+K</span>
               </div>
@@ -1078,7 +1078,7 @@
               { id: 'SEMUA', label: 'Semua' },
               { id: 'MENU', label: 'Menu &amp; Modul' },
               { id: 'OBAT', label: 'Obat &amp; Stok' },
-              { id: 'PASIEN', label: 'Pasien &amp; PRB' },
+              { id: 'PASIEN', label: 'Pasien &amp; Member' },
               { id: 'TRANSAKSI', label: 'Nota, SP &amp; Faktur' }
             ];
             tabsEl.innerHTML = tabDefs.map((tb) => `<button type="button" onclick="window.setCmdkScope('${tb.id}')" class="ons-cmdk-chip ${cmdkScope === tb.id ? 'active' : ''}">${tb.label} <span class="font-mono-num opacity-80">(${scopeCounts[tb.id] || 0})</span></button>`).join('');
@@ -1155,22 +1155,23 @@
           }
 
           if ((cmdkScope === 'SEMUA' || cmdkScope === 'PASIEN') && pasienMatches.length) {
-            sectionsHtml.push(`<div class="ons-sidebar-group-label">Pasien &amp; Member PRB (${pasienMatches.length})</div>` + pasienMatches.map((m) => {
+            sectionsHtml.push(`<div class="ons-sidebar-group-label">Pasien &amp; Member (${pasienMatches.length})</div>` + pasienMatches.map((m) => {
               const targetView = ONSStore.canAccessView('eresep-prb') ? 'eresep-prb' : (ONSStore.canAccessView('pemeriksaan') ? 'pemeriksaan' : 'crm-wa');
               const targetSub = targetView === 'eresep-prb' ? 'prb' : (targetView === 'pemeriksaan' ? 'semua' : 'kontak');
+              const progLbl = ONSStore.formatMemberProgram ? ONSStore.formatMemberProgram(m.program_prb) : (m.program_prb || 'MEMBER');
               const idx = addEntry({
                 kindLabel: 'Pasien & Member Apotek',
                 title: m.nama_pasien,
-                sub: `${m.program_prb || 'MEMBER'} • ${m.penyakit_kronis || '-'}`,
+                sub: `${progLbl} • ${m.penyakit_kronis || '-'}`,
                 desc: `Alergi tercatat: ${m.alergi_list || 'Tidak ada'} • Poin loyalitas: ${Number(m.poin_loyalitas || 0)}.`,
-                badgeHtml: `<span class="badge-bpom bpom-bebas">${ONSStore.esc(m.program_prb || 'MEMBER')}</span>`,
+                badgeHtml: `<span class="badge-bpom bpom-bebas">${ONSStore.esc(progLbl)}</span>`,
                 metaHtml: `<div><b>No. WA:</b> <span class="font-mono-num">${ONSStore.esc(m.no_hp || '-')}</span></div>`,
                 run: () => { ONSStore.closeModal(); navigateView(targetView, targetSub); }
               });
               return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
                 <div class="min-w-0">
                   <div class="font-bold text-xs sm:text-sm truncate">${ONSStore.esc(m.nama_pasien)}</div>
-                  <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(m.penyakit_kronis || m.program_prb || '-')} &bull; WA ${ONSStore.esc(m.no_hp || '-')}</div>
+                  <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(m.penyakit_kronis || progLbl || '-')} &bull; WA ${ONSStore.esc(m.no_hp || '-')}</div>
                 </div>
                 <span class="badge-bpom bpom-bebas font-mono-num shrink-0">${Number(m.poin_loyalitas || 0)} poin</span>
               </div>`;
@@ -1332,7 +1333,7 @@
                   <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
                   <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.9 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.10 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                   <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>

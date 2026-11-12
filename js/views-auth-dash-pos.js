@@ -1115,7 +1115,7 @@
         onClick: canErx ? `navigateView('eresep-prb','erx')` : ''
       },
       {
-        label: 'Pasien PRB Refill (&le;5 hari)',
+        label: 'Pasien Kontrol Refill (&le;5 hari)',
         count: prbUrgentCount,
         dotCls: prbUrgentCount ? 'bg-blue-500' : 'bg-slate-400',
         pillCls: 'bg-blue-500/15 text-blue-600',
@@ -1930,7 +1930,7 @@
         </div>` : `<div class="ons-card p-3.5" style="border-top:3px solid #D97706">
           <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Poin Loyalitas Terbit</div>
           <div class="text-xl font-extrabold font-mono-num text-amber-600 mt-1">+${ds.poinToday} Poin</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Otomatis dikreditkan ke Member PRB</div>
+          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Otomatis dikreditkan ke Member Apotek</div>
         </div>`}
       </div>
 
@@ -2037,14 +2037,14 @@
         <div>
           <label class="text-[11px] font-semibold block mb-1">Channel Penjualan</label>
           <select onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs py-1.5 min-h-0 h-8">
-            ${['Toko Fisik', 'Resep WA', 'Pasien Rutin PRB'].map((ch) => `<option ${cart.channel === ch ? 'selected' : ''}>${ch}</option>`).join('')}
+            ${['Toko Fisik', 'Resep WA', 'Pasien Rutin'].map((ch) => `<option ${cart.channel === ch ? 'selected' : ''}>${ch}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="text-[11px] font-semibold block mb-1">Pasien / Member PRB</label>
+          <label class="text-[11px] font-semibold block mb-1">Pasien / Member Apotek</label>
           <select onchange="window.onPosMemberChange(this.value)" class="ons-select text-xs py-1.5 min-h-0 h-8">
             <option value="UMUM" ${cart.id_member === 'UMUM' ? 'selected' : ''}>Pasien Umum</option>
-            ${st.members.map((m) => `<option value="${m.id_member}" ${cart.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.program_prb)})</option>`).join('')}
+            ${st.members.map((m) => `<option value="${m.id_member}" ${cart.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(S().formatMemberProgram ? S().formatMemberProgram(m.program_prb) : m.program_prb)})</option>`).join('')}
           </select>
         </div>
         <div>
@@ -2052,7 +2052,7 @@
           <select onchange="window.setPosPriceTier(this.value)" class="ons-select text-xs py-1.5 min-h-0 h-8">
             ${[
               { id: 'UMUM', lbl: 'Eceran Umum' },
-              { id: 'MEMBER', lbl: 'Member / PRB' },
+              { id: 'MEMBER', lbl: 'Member Apotek' },
               { id: 'GROSIR', lbl: 'Grosir (B2B)' },
               { id: 'FASKES', lbl: 'Faskes / Klinik' }
             ].map((t) => `<option value="${t.id}" ${(cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM')) === t.id ? 'selected' : ''}>${t.lbl}</option>`).join('')}

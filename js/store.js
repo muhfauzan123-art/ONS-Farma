@@ -28,7 +28,7 @@
     { key: 'gudang:transfer', label: 'Mutasi Antar-Cabang', group: 'Persediaan' },
     { key: 'defecta', label: 'Defecta & Surat Pesanan A4', group: 'Pembelian' },
     { key: 'faktur', label: 'Terima Faktur, Scan & Retur', group: 'Pembelian' },
-    { key: 'eresep-prb', label: 'E-Resep Dokter & PRB', group: 'Klinis' },
+    { key: 'eresep-prb', label: 'E-Resep Dokter & Pasien Rutin', group: 'Klinis' },
     { key: 'pemeriksaan', label: 'Pemeriksaan Pasien (POCT)', group: 'Klinis' },
     { key: 'klinis', label: 'Pelayanan Klinis (SOAP/PIO)', group: 'Klinis' },
     { key: 'crm-wa', label: 'Pelanggan & CRM Broadcast WA', group: 'Klinis' },
@@ -644,6 +644,18 @@
   function closeDrawer() {
     const el = document.getElementById('onsDrawerRoot');
     if (el) el.remove();
+  }
+
+  /**
+   * Normalisasi label program pelanggan agar tidak menampilkan label PRB / BPJS
+   */
+  function formatMemberProgram(raw) {
+    const s = String(raw || 'UMUM').trim().toUpperCase();
+    if (!s || s === 'UMUM') return 'UMUM';
+    if (s.includes('PRB') || s.includes('BPJS') || s === 'MEMBER_RUTIN' || s === 'TERAPI_RUTIN' || s === 'KRONIS') {
+      return 'MEMBER_RUTIN';
+    }
+    return s;
   }
 
   /**
@@ -1383,6 +1395,7 @@
     checkCartCdss,
     getEffectiveObatPrice,
     getNearEdBatchInfo,
+    formatMemberProgram,
     buildPioScheduleWaText,
     renderDokterDatalistHtml,
     openModal,

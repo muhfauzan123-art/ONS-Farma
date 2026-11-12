@@ -334,7 +334,7 @@
       </div>
       <div><label class="text-xs font-bold block mb-1">Nama Lengkap *</label><input id="crmAddNama" class="ons-input"/></div>
       <div><label class="text-xs font-bold block mb-1">Nomor WA (08xx / 628xx) *</label><input id="crmAddWa" class="ons-input font-mono-num" placeholder="081234567890"/></div>
-      <div><label class="text-xs font-bold block mb-1">Segmen</label><select id="crmAddSeg" class="ons-select"><option value="UMUM">UMUM</option><option value="PRB_KRONIS">PRB_KRONIS</option><option value="ONLINE">ONLINE</option></select></div>
+      <div><label class="text-xs font-bold block mb-1">Segmen</label><select id="crmAddSeg" class="ons-select"><option value="UMUM">UMUM</option><option value="TERAPI_RUTIN">TERAPI_RUTIN</option><option value="ONLINE">ONLINE</option></select></div>
       <div><label class="text-xs font-bold block mb-1">Catatan Medis / Alergi</label><input id="crmAddCat" class="ons-input"/></div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
@@ -401,13 +401,18 @@
     const pendingQ = queue.filter((q) => q.status === 'ANTRI');
     const sentQ = queue.filter((q) => q.status === 'TERKIRIM');
 
+    const normSeg = (s) => {
+      const u = String(s || '').toUpperCase();
+      return (u.includes('PRB') || u.includes('KRONIS')) ? 'TERAPI_RUTIN' : (u || 'UMUM');
+    };
     const filteredContacts = contacts.filter((c) => {
-      const okSeg = crmFilterSeg === 'SEMUA' || String(c.segmen || '') === crmFilterSeg;
+      const sg = normSeg(c.segmen);
+      const okSeg = crmFilterSeg === 'SEMUA' || sg === crmFilterSeg || String(c.segmen || '') === crmFilterSeg;
       const q = crmSearchQ.toLowerCase();
       const okQ = !q || [c.nama, c.no_wa_08, c.no_wa_62, c.catatan_medis].some((v) => String(v || '').toLowerCase().includes(q));
       return okSeg && okQ;
     });
-    const filteredTargets = contacts.filter((c) => (crmFilterSeg === 'SEMUA' || c.segmen === crmFilterSeg) && c.status_aktif !== 'OPT_OUT');
+    const filteredTargets = contacts.filter((c) => (crmFilterSeg === 'SEMUA' || normSeg(c.segmen) === crmFilterSeg || c.segmen === crmFilterSeg) && c.status_aktif !== 'OPT_OUT');
 
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
@@ -416,7 +421,7 @@
           <p class="text-xs" style="color:var(--ons-text-soft)">Arsitektur /gas-notifikasi-wa-crm: normalisasi 62/08, proteksi Opt-Out pasien, &amp; antrean non-blocking.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button onclick="ONSViewsOmniCrm.syncCrmNow()" class="ons-btn ons-btn-primary text-xs">Sinkronkan Member PRB &amp; Pembeli Online</button>
+          <button onclick="ONSViewsOmniCrm.syncCrmNow()" class="ons-btn ons-btn-primary text-xs">Sinkronkan Member &amp; Pembeli Online</button>
           <button onclick="ONSViewsOmniCrm.openAddCrmModal()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Kontak</button>
         </div>
       </div>
@@ -441,7 +446,7 @@
         ${crmTab === 'kontak' ? `
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap gap-2">
-              ${['SEMUA', 'PRB_KRONIS', 'ONLINE', 'UMUM'].map((sg) =>
+              ${['SEMUA', 'TERAPI_RUTIN', 'ONLINE', 'UMUM'].map((sg) =>
                 `<button onclick="ONSViewsOmniCrm.setCrmSeg('${sg}')" class="ons-btn ${crmFilterSeg === sg ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3">${sg}</button>`
               ).join('')}
             </div>
@@ -451,10 +456,10 @@
             <table class="ons-table">
               <thead><tr><th>Pasien</th><th>WA Format 08 / 62</th><th>Segmen</th><th>Catatan Klinis</th><th>Status</th><th>Aksi</th></tr></thead>
               <tbody>
-                ${filteredContacts.length === 0 ? `<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Klik "Sinkronkan Member PRB &amp; Pembeli Online" untuk memuat kontak otomatis.</td></tr>` : filteredContacts.map((c) => `<tr>
+                ${filteredContacts.length === 0 ? `<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Klik "Sinkronkan Member &amp; Pembeli Online" untuk memuat kontak otomatis.</td></tr>` : filteredContacts.map((c) => `<tr>
                   <td class="font-bold text-xs">${S().esc(c.nama)}</td>
                   <td class="font-mono-num text-xs">${S().esc(c.no_wa_08)} <span style="color:var(--ons-text-soft)">(${S().esc(c.no_wa_62)})</span></td>
-                  <td><span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-500/10">${S().esc(c.segmen)}</span></td>
+                  <td><span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-500/10">${S().esc(normSeg(c.segmen))}</span></td>
                   <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(c.catatan_medis || '-')}</td>
                   <td><span class="badge-bpom ${c.status_aktif === 'OPT_OUT' ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(c.status_aktif)}</span></td>
                   <td>
@@ -476,13 +481,13 @@
                 <label class="text-xs font-bold block mb-1">Target Segmen Pasien</label>
                 <select id="blastSegmen" onchange="ONSViewsOmniCrm.setCrmSeg(this.value)" class="ons-select">
                   <option value="SEMUA" ${crmFilterSeg === 'SEMUA' ? 'selected' : ''}>SEMUA PASIEN AKTIF</option>
-                  <option value="PRB_KRONIS" ${crmFilterSeg === 'PRB_KRONIS' ? 'selected' : ''}>PASIEN PRB / PENYAKIT KRONIS</option>
+                  <option value="TERAPI_RUTIN" ${crmFilterSeg === 'TERAPI_RUTIN' ? 'selected' : ''}>PASIEN TERAPI RUTIN / KRONIS</option>
                   <option value="ONLINE" ${crmFilterSeg === 'ONLINE' ? 'selected' : ''}>PELANGGAN RESEP WA / KONSULTASI</option>
                   <option value="UMUM" ${crmFilterSeg === 'UMUM' ? 'selected' : ''}>PELANGGAN UMUM</option>
                 </select>
               </div>
               <div class="flex flex-wrap gap-1.5">
-                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Halo Kak {nama}, Apotek ONS Farma mengingatkan jadwal kontrol dan tebus ulang obat rutin Anda. Silakan balas chat ini atau kunjungi apotek kami ya!')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reminder Kontrol PRB</button>
+                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Halo Kak {nama}, Apotek ONS Farma mengingatkan jadwal kontrol dan tebus ulang obat rutin Anda. Silakan balas chat ini atau kunjungi apotek kami ya!')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reminder Kontrol Rutin</button>
                 <button onclick="ONSViewsOmniCrm.fillBlastTpl('Salam sehat Kak {nama}! Apoteker ONS Farma siap melayani konsultasi penggunaan obat dan penyiapan resep Anda secara langsung maupun via WhatsApp.')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Info Konsultasi Apoteker</button>
               </div>
               <div>

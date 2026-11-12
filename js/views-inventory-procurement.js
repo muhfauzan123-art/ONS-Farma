@@ -16,7 +16,7 @@
   let supplierSearchQ = '';
   let supplierStatusFilter = 'SEMUA'; // SEMUA | AKTIF | NONAKTIF
   let pelangganSearchQ = '';
-  let pelangganProgFilter = 'SEMUA'; // SEMUA | PRB_BPJS | UMUM | MITRA_KLINIK | ALERGI
+  let pelangganProgFilter = 'SEMUA'; // SEMUA | MEMBER_RUTIN | UMUM | MITRA_KLINIK | ALERGI
   let dokterSearchQ = '';
   let dokterStatusFilter = 'SEMUA'; // SEMUA | AKTIF | NONAKTIF | SPESIALIS
   let wizardFullScrollMode = false;
@@ -429,11 +429,15 @@
     </div>`;
   }
 
+  function _normMemberProg(m) {
+    return S().formatMemberProgram ? S().formatMemberProgram(m && m.program_prb) : String((m && m.program_prb) || 'UMUM').toUpperCase();
+  }
+
   function _getFilteredMasterPelanggan() {
     const allMbr = S().AppState.members || [];
     const pq = pelangganSearchQ.trim().toLowerCase();
     const filtered = allMbr.filter((m) => {
-      const prog = String(m.program_prb || 'UMUM').toUpperCase();
+      const prog = _normMemberProg(m);
       const hasAllergy = String(m.alergi_list || '').trim() && !/^(tidak ada|-)$/i.test(String(m.alergi_list).trim());
       if (pelangganProgFilter === 'ALERGI' && !hasAllergy) return false;
       else if (pelangganProgFilter !== 'SEMUA' && pelangganProgFilter !== 'ALERGI' && prog !== pelangganProgFilter) return false;
@@ -445,7 +449,7 @@
 
   function _renderMasterPelangganResultsHtml() {
     const { allMbr, filtered, isFiltered } = _getFilteredMasterPelanggan();
-    const prbCount = allMbr.filter((m) => String(m.program_prb || '').toUpperCase().includes('PRB')).length;
+    const rutinCount = allMbr.filter((m) => _normMemberProg(m) === 'MEMBER_RUTIN').length;
     const alergiCount = allMbr.filter((m) => {
       const a = String(m.alergi_list || '').trim();
       return a && !/^(tidak ada|-)$/i.test(a);
@@ -455,7 +459,7 @@
 
     const kpiHtml = `<div class="ons-md-kpi-strip">
       ${_renderMasterKpiBtn("window.setMasterPelangganProg('SEMUA')", '', pelangganProgFilter === 'SEMUA', 'Total Pelanggan', allMbr.length, 'Member &amp; pasien terdaftar', '')}
-      ${_renderMasterKpiBtn("window.setMasterPelangganProg('PRB_BPJS')", 'is-emerald', pelangganProgFilter === 'PRB_BPJS', 'Peserta PRB BPJS', prbCount, 'Program Rujuk Balik kronis', 'text-emerald-600')}
+      ${_renderMasterKpiBtn("window.setMasterPelangganProg('MEMBER_RUTIN')", 'is-emerald', pelangganProgFilter === 'MEMBER_RUTIN', 'Member Terapi Rutin', rutinCount, 'Pasien kontrol &amp; obat rutin', 'text-emerald-600')}
       ${_renderMasterKpiBtn("window.setMasterPelangganProg('ALERGI')", 'is-red', pelangganProgFilter === 'ALERGI', 'Catatan Alergi', alergiCount, 'Proteksi CDSS saat racik/POS', 'text-red-600')}
       <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Akumulasi Poin</div><div class="text-lg font-extrabold font-mono-num text-amber-600 leading-tight mt-0.5">${totalPoin.toLocaleString('id-ID')}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Loyalitas belanja apotek</div></div>
     </div>`;
@@ -468,7 +472,7 @@
     const bodyHtml = filtered.length === 0 ? `<div class="ons-card p-6 text-center space-y-2">
       ${allMbr.length === 0 ? `
         <div class="font-bold text-sm">Data Pelanggan Masih Kosong</div>
-        <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan pasien member, riwayat alergi obat, dan peserta PRB kronis untuk sinkronisasi POS &amp; CDSS.</p>
+        <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan pasien member, riwayat alergi obat, &amp; pasien terapi rutin untuk sinkronisasi POS &amp; CDSS.</p>
         <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-emerald text-xs">+ Tambah Pelanggan</button>
       ` : `
         <div class="font-bold text-sm">Tidak ada pelanggan/member yang sesuai filter.</div>
@@ -481,10 +485,10 @@
       </div>
       <div class="hidden md:block ons-table-wrap">
         <table class="ons-table is-compact">
-          <thead><tr><th>Pelanggan &amp; Tgl Lahir</th><th>Kontak WhatsApp</th><th>Program</th><th>Riwayat Penyakit &amp; Alergi</th><th>Poin</th><th>Aksi</th></tr></thead>
+          <thead><tr><th>Pelanggan &amp; Tgl Lahir</th><th>Kontak WhatsApp</th><th>Segmen</th><th>Riwayat Penyakit &amp; Alergi</th><th>Poin</th><th>Aksi</th></tr></thead>
           <tbody>
             ${filtered.map((m) => {
-              const prog = String(m.program_prb || 'UMUM').toUpperCase();
+              const prog = _normMemberProg(m);
               const hasAllergy = String(m.alergi_list || '').trim() && !/^(tidak ada|-)$/i.test(String(m.alergi_list).trim());
               const waHref = _buildWaLink(m.no_hp, 'Halo ' + (m.nama_pasien || 'Pelanggan') + ', salam sehat dari ' + (prof.nama_usaha || 'Apotek ONS Farma') + '.');
               return `<tr>
@@ -498,7 +502,7 @@
                     ${waHref ? `<a href="${S().esc(waHref)}" target="_blank" rel="noopener" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">WA</a>` : ''}
                   </div>
                 </td>
-                <td><span class="badge-bpom ${prog.includes('PRB') ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span></td>
+                <td><span class="badge-bpom ${prog === 'MEMBER_RUTIN' ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span></td>
                 <td class="text-xs">
                   <div>${S().esc(m.penyakit_kronis || '-')}</div>
                   <div class="mt-0.5">${hasAllergy ? `<span class="badge-bpom bpom-keras">Alergi: ${S().esc(m.alergi_list)}</span>` : `<span class="text-[11px]" style="color:var(--ons-text-soft)">Alergi: Tidak Ada</span>`}</div>
@@ -512,7 +516,7 @@
       </div>
       <div class="md:hidden space-y-2">
         ${filtered.map((m) => {
-          const prog = String(m.program_prb || 'UMUM').toUpperCase();
+          const prog = _normMemberProg(m);
           const hasAllergy = String(m.alergi_list || '').trim() && !/^(tidak ada|-)$/i.test(String(m.alergi_list).trim());
           const waHref = _buildWaLink(m.no_hp, 'Halo ' + (m.nama_pasien || 'Pelanggan') + ', salam sehat dari ' + (prof.nama_usaha || 'Apotek ONS Farma') + '.');
           return `<div class="ons-md-mobile-card text-xs">
@@ -521,7 +525,7 @@
                 <div class="font-bold truncate">${S().esc(m.nama_pasien)}</div>
                 <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)} &bull; <b class="text-blue-600">${Number(m.poin_loyalitas || 0)} poin</b></div>
               </div>
-              <span class="badge-bpom shrink-0 ${prog.includes('PRB') ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span>
+              <span class="badge-bpom shrink-0 ${prog === 'MEMBER_RUTIN' ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span>
             </div>
             <div class="text-[11px]" style="color:var(--ons-text-soft)">
               Penyakit: ${S().esc(m.penyakit_kronis || '-')} ${hasAllergy ? `&bull; <b class="text-red-600">Alergi: ${S().esc(m.alergi_list)}</b>` : ''}
@@ -546,7 +550,7 @@
           <div class="flex flex-wrap items-center gap-1">
             ${[
               { k: 'SEMUA', label: 'Semua' },
-              { k: 'PRB_BPJS', label: 'PRB BPJS' },
+              { k: 'MEMBER_RUTIN', label: 'Member Rutin' },
               { k: 'UMUM', label: 'Umum' },
               { k: 'MITRA_KLINIK', label: 'Mitra Klinik' },
               { k: 'ALERGI', label: 'Ada Alergi' }
@@ -582,7 +586,7 @@
     const kpiHtml = `<div class="ons-md-kpi-strip">
       ${_renderMasterKpiBtn("window.setMasterDokterStatus('SEMUA')", '', dokterStatusFilter === 'SEMUA', 'Total Dokter Mitra', allDocs.length, 'Autofill E-Resep &amp; Salinan', '')}
       ${_renderMasterKpiBtn("window.setMasterDokterStatus('AKTIF')", 'is-emerald', dokterStatusFilter === 'AKTIF', 'Dokter Aktif', activeCount, 'SIP aktif terverifikasi', 'text-emerald-600')}
-      ${_renderMasterKpiBtn("window.setMasterDokterStatus('SPESIALIS')", 'is-sky', dokterStatusFilter === 'SPESIALIS', 'Dokter Spesialis', specCount, 'Rujukan PRB &amp; spesialis', 'text-sky-600')}
+      ${_renderMasterKpiBtn("window.setMasterDokterStatus('SPESIALIS')", 'is-sky', dokterStatusFilter === 'SPESIALIS', 'Dokter Spesialis', specCount, 'Dokter spesialis mitra', 'text-sky-600')}
       <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Klinik / RS Mitra</div><div class="text-lg font-extrabold font-mono-num text-amber-600 leading-tight mt-0.5">${faskesSet.size}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Faskes asal penulisan resep</div></div>
     </div>`;
 
@@ -722,7 +726,7 @@
     } else if (masterTab === 'pelanggan') {
       headerActions = `
         <button onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Pelanggan</button>
-        <button onclick="window.navigateView('eresep-prb','prb')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PRB Tracker</button>
+        <button onclick="window.navigateView('eresep-prb','prb')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Pantau Terapi</button>
         ${exportBtns('exportMasterPelanggan')}
       `;
     } else {
@@ -746,7 +750,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="min-w-0">
             <h1 class="text-base sm:text-lg font-extrabold tracking-tight">Master Data Apotek</h1>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Kelola terpusat katalog Obat KFA, Supplier PBF, Pelanggan PRB &amp; Dokter Mitra.</p>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Kelola terpusat katalog Obat KFA, Supplier PBF, Pelanggan Apotek &amp; Dokter Mitra.</p>
           </div>
           <div class="flex flex-wrap items-center gap-1.5">${headerActions}</div>
         </div>
@@ -830,7 +834,7 @@
 
   global.openMasterPelangganModal = (idMember) => {
     const existing = idMember ? (S().AppState.members || []).find((m) => m.id_member === idMember) : null;
-    const prog = String((existing && existing.program_prb) || 'UMUM').toUpperCase();
+    const prog = existing ? _normMemberProg(existing) : 'UMUM';
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center">
         <h3 class="font-bold text-base">${existing ? ('Edit Pelanggan: ' + S().esc(existing.nama_pasien)) : 'Tambah Pelanggan / Member Baru'}</h3>
@@ -839,10 +843,10 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div><label class="font-semibold block mb-1">Nama Lengkap *</label><input id="mdPelNama" class="ons-input" value="${S().esc(existing ? existing.nama_pasien : '')}" placeholder="Cth: Tn. Ahmad Fauzi"/></div>
         <div><label class="font-semibold block mb-1">No. WhatsApp / HP</label><input id="mdPelHp" class="ons-input font-mono-num" value="${S().esc(existing ? (existing.no_hp || '') : '628')}" placeholder="62812xxxx"/></div>
-        <div><label class="font-semibold block mb-1">Program Pelanggan</label>
+        <div><label class="font-semibold block mb-1">Segmen Pelanggan</label>
           <select id="mdPelProg" class="ons-select">
-            <option value="UMUM" ${prog === 'UMUM' ? 'selected' : ''}>UMUM (Member Reguler)</option>
-            <option value="PRB_BPJS" ${prog === 'PRB_BPJS' ? 'selected' : ''}>PRB_BPJS (Pasien Kronis)</option>
+            <option value="UMUM" ${prog === 'UMUM' ? 'selected' : ''}>UMUM (Reguler)</option>
+            <option value="MEMBER_RUTIN" ${prog === 'MEMBER_RUTIN' ? 'selected' : ''}>MEMBER_RUTIN (Terapi Rutin / Kronis)</option>
             <option value="MITRA_KLINIK" ${prog === 'MITRA_KLINIK' ? 'selected' : ''}>MITRA_KLINIK / Faskes</option>
           </select>
         </div>
@@ -919,7 +923,7 @@
           </select>
         </div>
         <div class="sm:col-span-2"><label class="font-semibold block mb-1">Alamat Praktek / Faskes</label><input id="mdDokAlamat" class="ons-input" value="${S().esc(existing ? (existing.alamat || '') : '')}" placeholder="Jl. ..."/></div>
-        <div class="sm:col-span-2"><label class="font-semibold block mb-1">Catatan Kolaborasi Apotek</label><input id="mdDokCatatan" class="ons-input" value="${S().esc(existing ? (existing.catatan || '') : '')}" placeholder="Jadwal praktek / fokus pasien PRB / info konfirmasi resep"/></div>
+        <div class="sm:col-span-2"><label class="font-semibold block mb-1">Catatan Kolaborasi Apotek</label><input id="mdDokCatatan" class="ons-input" value="${S().esc(existing ? (existing.catatan || '') : '')}" placeholder="Jadwal praktek / poli / info konfirmasi resep"/></div>
       </div>
       <button type="button" onclick="window.submitMasterDokter('${S().esc(idDokter || '')}')" class="ons-btn ons-btn-emerald w-full text-xs">Simpan Data Dokter</button>
     </div>`, '600px');
@@ -1019,7 +1023,7 @@
       { key: 'id_member', label: 'ID Member', width: 14 },
       { key: 'nama_pasien', label: 'Nama Pelanggan / Pasien', width: 28, wrap: true },
       { key: 'no_hp', label: 'No. WhatsApp / HP', width: 16 },
-      { key: 'program_prb', label: 'Program', width: 14 },
+      { key: 'program_prb', label: 'Segmen', width: 15 },
       { key: 'tgl_lahir', label: 'Tanggal Lahir', type: 'date', width: 14 },
       { key: 'alergi_list', label: 'Riwayat Alergi', width: 22, wrap: true },
       { key: 'penyakit_kronis', label: 'Riwayat Penyakit', width: 28, wrap: true },
@@ -1029,7 +1033,7 @@
       id_member: m.id_member || '-',
       nama_pasien: m.nama_pasien || '-',
       no_hp: m.no_hp || '-',
-      program_prb: m.program_prb || 'UMUM',
+      program_prb: _normMemberProg(m),
       tgl_lahir: m.tgl_lahir ? String(m.tgl_lahir).slice(0, 10) : '-',
       alergi_list: m.alergi_list || 'Tidak Ada',
       penyakit_kronis: m.penyakit_kronis || '-',
@@ -1037,11 +1041,11 @@
     }));
     return S().exportDataset(
       fmt || 'xlsx',
-      'Direktori Master Pelanggan & Pasien PRB' + (hasFilteredRows ? ' (Terfilter)' : ''),
+      'Direktori Master Pelanggan Apotek' + (hasFilteredRows ? ' (Terfilter)' : ''),
       'Master_Pelanggan_ONS_' + dateTag,
       headers,
       rows,
-      { sheetName: 'Master_Pelanggan', subtitle: 'Data member, riwayat alergi obat, program PRB & poin (' + rows.length + ' pelanggan)' }
+      { sheetName: 'Master_Pelanggan', subtitle: 'Data member, riwayat alergi obat, segmen & poin (' + rows.length + ' pelanggan)' }
     );
   };
 
@@ -1144,7 +1148,7 @@
           <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(o.harga_umum)}</div>
         </div>
         <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-          <div style="color:var(--ons-text-soft)">Member / PRB</div>
+          <div style="color:var(--ons-text-soft)">Harga Member</div>
           <div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(o.harga_member || o.harga_umum)}</div>
         </div>
         <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
@@ -1669,9 +1673,9 @@
                       <div id="wizMarginUmumTxt" class="text-[11px] mt-1 font-semibold text-emerald-600">Margin: -</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <label class="font-bold block mb-1">Harga Member / PRB (Rp)</label>
+                      <label class="font-bold block mb-1">Harga Member (Rp)</label>
                       <input id="wHrgMem" type="number" min="0" class="${inpCls} font-mono-num font-bold" value="${o.harga_member}"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Aktif otomatis untuk pasien PRB terdaftar.</div>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Aktif otomatis untuk pelanggan member terdaftar.</div>
                     </div>
                     <div>
                       <label class="font-bold block mb-1.5">Harga Grosir / B2B (Rp)</label>
@@ -2098,7 +2102,7 @@
     { key: 'rasio_besar', label: 'rasio_besar', ket: 'Jumlah satuan dasar per 1 satuan besar (angka, cth: 100)' },
     { key: 'hpp_avg', label: 'hpp_avg', ket: 'Harga pokok pembelian rata-rata per satuan dasar (angka tanpa titik/Rp)' },
     { key: 'harga_umum', label: 'harga_umum', ket: 'Harga jual eceran umum per satuan dasar (>= HPP)' },
-    { key: 'harga_member', label: 'harga_member', ket: 'Harga jual khusus member/pasien PRB (>= HPP)' },
+    { key: 'harga_member', label: 'harga_member', ket: 'Harga jual khusus pelanggan member terdaftar (>= HPP)' },
     { key: 'harga_grosir', label: 'harga_grosir', ket: 'Harga jual grosir minimal qty tertentu (>= HPP)' },
     { key: 'min_qty_grosir', label: 'min_qty_grosir', ket: 'Minimal beli untuk harga grosir (angka >= 2, default 10)' },
     { key: 'harga_faskes', label: 'harga_faskes', ket: 'Harga jual khusus klinik / bidan / faskes mitra' },
