@@ -6,7 +6,7 @@
  * - Selalu sajikan UI instan dari cache untuk pengalaman bebas lag (<50ms)
  */
 
-const CACHE_NAME = 'ons-farma-pwa-v17.4.0';
+const CACHE_NAME = 'ons-farma-pwa-v17.5.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -61,31 +61,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first untuk HTML, JS & CSS domain sendiri agar setiap update Vercel/GitHub langsung tampil tanpa terjebak cache lama
-  const isCodeAsset = url.startsWith(self.location.origin) && (event.request.mode === 'navigate' || /\.(html|js|css)(\?|$)/i.test(url));
-  if (isCodeAsset) {
+  // HTML Navigasi: Network-First ber-batas waktu (1800ms) agar update langsung aktif namun bebas macet di sinyal lambat
+  if (url.startsWith(self.location.origin) && event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request, { cache: 'no-cache' }).then((resp) => {
-        if (resp && resp.status === 200) {
-          const clone = resp.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return resp;
-      }).catch(() => caches.match(event.request))
+      caches.open(CACHE_NAME).then((cache) => {
+        const netPromise = fetch(event.request).then((resp) => {
+          if (resp && resp.status === 200) {
+            cache.put(event.request, resp.clone());
+          }
+          return resp;
+        });
+        const timeoutFallback = new Promise((resolve, reject) => {
+          setTimeout(() => reject(new Error('sw-nav-timeout')), 1800);
+        });
+        return Promise.race([netPromise, timeoutFallback]).catch(() =>
+          cache.match(event.request).then((m) => m || cache.match('./index.html')).then((m) => m || netPromise)
+        );
+      })
     );
     return;
   }
 
+  // Aset Statis (.js, .css, ikon, manifest): Stale-While-Revalidate instan (<5ms) + refresh diam-diam di latar belakang
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request).then((resp) => {
-        if (resp && resp.status === 200 && url.startsWith(self.location.origin)) {
-          const clone = resp.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return resp;
-      }).catch(() => cached);
-      return cached || networkFetch;
-    })
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(event.request).then((cached) => {
+        const networkFetch = fetch(event.request).then((resp) => {
+          if (resp && resp.status === 200 && url.startsWith(self.location.origin)) {
+            cache.put(event.request, resp.clone());
+          }
+          return resp;
+        }).catch(() => cached);
+        return cached || networkFetch;
+      })
+    )
   );
 });

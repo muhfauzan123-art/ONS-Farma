@@ -12,7 +12,10 @@
   <link rel="preconnect" href="https://script.google.com"/>
   <link rel="preconnect" href="https://script.googleusercontent.com"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/></noscript>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -352,7 +355,7 @@
         const nextExpand = typeof expandAll === 'boolean' ? expandAll : !hasOpen;
         openSubmenus = new Set(nextExpand ? tabViews : []);
         persistOpenSubmenus();
-        window.syncNavHighlight();
+        window.syncNavHighlight(true);
       };
 
       window.onSelectMenuItem = function (viewId, defSub, hasTabs) {
@@ -402,7 +405,7 @@
                 const isOpen = hasTabs && openSubmenus.has(item.viewId);
 
                 return `<div class="ons-nav-group">
-                  <div class="ons-nav-row ${isAct ? 'active' : ''}">
+                  <div data-nav-row-id="${item.viewId}" class="ons-nav-row ${isAct ? 'active' : ''}">
                     <button type="button"
                       data-nav-id="${item.viewId}"
                       title="${ONSStore.esc(item.label)}"
@@ -474,14 +477,40 @@
         </div>${chipsHtml}`;
       }
 
-      window.syncNavHighlight = function () {
+      window.syncNavHighlight = function (forceRebuild) {
+        const st = ONSStore.AppState;
+        const curView = st.activeView;
         const sideMount = document.getElementById('sidebarMenuMount');
-        if (sideMount) sideMount.innerHTML = renderMenuTreeHtml();
-        const drawerMount = document.getElementById('drawerMenuMount');
-        if (drawerMount) drawerMount.innerHTML = renderMenuTreeHtml();
         const subBar = document.getElementById('workspaceSubnavBar');
-        if (subBar) subBar.innerHTML = renderSubnavBarHtml();
-        const curView = ONSStore.AppState.activeView;
+        const canFastPatch = !forceRebuild && sideMount && typeof sideMount.querySelectorAll === 'function' && sideMount.querySelectorAll('[data-nav-row-id]').length > 0;
+
+        if (canFastPatch) {
+          const { item } = findActiveSectionAndItem();
+          const tabs = (item && item.tabs) || [];
+          const curSub = (st.subTabs && st.subTabs[curView]) || (tabs[0] && tabs[0].subTab) || '';
+          const subKey = curSub ? (curView + ':' + curSub) : '';
+          document.querySelectorAll('[data-nav-row-id]').forEach((el) => {
+            el.classList.toggle('active', el.getAttribute('data-nav-row-id') === curView);
+          });
+          document.querySelectorAll('[data-subnav-id]').forEach((el) => {
+            el.classList.toggle('active', subKey !== '' && el.getAttribute('data-subnav-id') === subKey);
+          });
+          document.querySelectorAll('[data-subwrap-id]').forEach((el) => {
+            const vid = el.getAttribute('data-subwrap-id');
+            el.classList.toggle('is-open', openSubmenus.has(vid));
+          });
+          document.querySelectorAll('[data-subcaret-id]').forEach((el) => {
+            const vid = el.getAttribute('data-subcaret-id');
+            el.setAttribute('aria-expanded', openSubmenus.has(vid) ? 'true' : 'false');
+          });
+          if (subBar) subBar.innerHTML = renderSubnavBarHtml();
+        } else {
+          const menuHtml = renderMenuTreeHtml();
+          if (sideMount) sideMount.innerHTML = menuHtml;
+          const drawerMount = document.getElementById('drawerMenuMount');
+          if (drawerMount) drawerMount.innerHTML = menuHtml;
+          if (subBar) subBar.innerHTML = renderSubnavBarHtml();
+        }
         document.querySelectorAll('[data-mobile-nav]').forEach((el) => {
           const isMatch = el.getAttribute('data-mobile-nav') === curView;
           el.classList.toggle('text-blue-600', isMatch);
@@ -581,6 +610,31 @@
         window.syncNavHighlight();
       };
 
+      function _computeBootDigest(data) {
+        if (!data || typeof data !== 'object') return '';
+        const prof = data.store_profile || {};
+        const act = data.active_shift || {};
+        return [
+          (data.master_obat || []).length,
+          (data.stok_batch || []).length,
+          (data.members || []).length,
+          (data.penjualan || []).length,
+          (data.faktur_pbf || []).length,
+          (data.jurnal_keuangan || []).length,
+          (data.rekam_klinis || []).length,
+          (data.pemeriksaan_pasien || []).length,
+          (data.shift_history || []).length,
+          (data.surat_pesanan || []).length,
+          (data.omnichannel_orders || []).length,
+          act.id_shift || '',
+          act.status_shift || '',
+          prof.nama_usaha || '',
+          prof.terkonfirmasi || '',
+          prof.multi_cabang_aktif || '',
+          (data.staff_directory || []).length
+        ].join('|');
+      }
+
       window.bootLoadState = async function (forceRefresh) {
         const st = ONSStore.AppState;
         const ses = ONSApi.getSession();
@@ -588,18 +642,33 @@
         st.user = ses.user;
         st.cabangId = ses.cabang_id || (ses.user && ses.user.cabang_id) || 'ONS-01';
 
-        // SWR Instant Cache Render
-        const cached = ONSApi.getCachedRead('boot.getState', { cabang_id: st.cabangId });
+        // SWR Instant Cache Render + Smart Freshness Guard
+        const cachedEntry = (!forceRefresh && ONSApi.getCachedReadEntry)
+          ? ONSApi.getCachedReadEntry('boot.getState', { cabang_id: st.cabangId })
+          : null;
+        const cached = cachedEntry ? cachedEntry.data : (!forceRefresh ? ONSApi.getCachedRead('boot.getState', { cabang_id: st.cabangId }) : null);
+        let renderedDigest = '';
         if (cached && !forceRefresh) {
+          renderedDigest = _computeBootDigest(cached);
           applyBootPayload(cached);
+          st.booted = true;
           window.renderApp();
+          if (cachedEntry && cachedEntry.ageMs < 20000) {
+            return;
+          }
         }
 
         try {
           const live = await ONSApi.callApi('boot.getState', { cabang_id: st.cabangId });
+          const liveDigest = _computeBootDigest(live);
+          const unchanged = !forceRefresh && st.booted && renderedDigest && liveDigest === renderedDigest;
           applyBootPayload(live);
           st.booted = true;
-          window.renderApp();
+          if (!unchanged) {
+            window.renderApp();
+          } else if (typeof window.syncNavHighlight === 'function') {
+            window.syncNavHighlight(true);
+          }
         } catch (err) {
           if (!cached) toast('Gagal memuat state: ' + err.message, 'err');
         }
@@ -634,6 +703,7 @@
 
       window.applyBootPayload = function (data) {
         const st = ONSStore.AppState;
+        if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
         if (data.store_profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(data.store_profile);
         syncOwnerIdentityFromProfile(data.store_profile);
         st.masterObat = data.master_obat || [];
@@ -695,6 +765,7 @@
       window.renderActiveView = function () {
         const slot = document.getElementById('mainViewSlot');
         if (!slot) return;
+        if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
         const v = ONSStore.AppState.activeView;
         const v1 = window.ONSViewsAuthDashPos;
         const v2 = window.ONSViewsInventoryProcurement;
@@ -1125,6 +1196,7 @@
       };
 
       window.renderApp = function () {
+        if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
         const root = document.getElementById('appRoot');
         if (window.ONSViewsAuthDashPos.renderPublicStandaloneIfApplicable(root)) return;
 

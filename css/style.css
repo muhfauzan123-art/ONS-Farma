@@ -279,8 +279,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
 .ons-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.56);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.62);
   z-index: 9990;
   display: flex;
   align-items: center;
@@ -322,7 +321,7 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: onsViewEnter 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: onsFadeSlideIn 0.08s ease-out both;
 }
 
 .ons-ws-topbar,
@@ -1254,11 +1253,10 @@ html.dark .ons-nav-badge.info {
 .ons-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.62);
-  backdrop-filter: blur(3px);
+  background: rgba(2, 6, 23, 0.68);
   z-index: 80;
   display: flex;
-  animation: onsBackdropFade 0.18s ease-out both;
+  animation: onsBackdropFade 0.1s ease-out both;
 }
 .ons-drawer-panel {
   width: min(320px, 86vw);
@@ -1272,7 +1270,7 @@ html.dark .ons-nav-badge.info {
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   box-shadow: 8px 0 32px rgba(2, 6, 23, 0.55);
-  animation: onsDrawerSlideIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: onsDrawerSlideIn 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .ons-drawer-panel .ons-menu-parent,
 .ons-drawer-panel .ons-submenu-btn,
@@ -1296,11 +1294,11 @@ html.dark .ons-nav-badge.info {
    v12.0 PRO UTILITIES: FADE, FOCUS, ETIKET PREVIEW, NARANJO
    ========================================================= */
 @keyframes onsFadeSlideIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0.82; }
+  to   { opacity: 1; }
 }
 .ons-view-enter {
-  animation: onsFadeSlideIn 0.16s ease-out both;
+  animation: onsFadeSlideIn 0.065s ease-out both;
 }
 .ons-quick-denom {
   padding: 0.32rem 0.6rem;
@@ -1804,12 +1802,11 @@ html.dark .ons-scan-zone {
 .ons-context-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.52);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.58);
   z-index: 9980;
   display: flex;
   justify-content: flex-end;
-  animation: onsBackdropFade 0.18s ease-out both;
+  animation: onsBackdropFade 0.1s ease-out both;
 }
 .ons-context-drawer-panel {
   width: min(720px, 96vw);
@@ -1821,7 +1818,7 @@ html.dark .ons-scan-zone {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  animation: onsContextDrawerIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: onsContextDrawerIn 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .ons-shortcut-kbd {
   display: inline-flex;
@@ -2087,7 +2084,7 @@ html.dark .ons-pos-ledger {
   background: var(--ons-bg-card);
   border: 1px solid rgba(148, 163, 184, 0.22);
   box-shadow: 0 28px 70px -15px rgba(2, 6, 23, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04);
-  animation: onsViewEnter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: onsFadeSlideIn 0.1s ease-out both;
 }
 .ons-login-hero {
   position: relative;

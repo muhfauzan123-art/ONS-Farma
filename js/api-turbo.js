@@ -46,26 +46,81 @@
     else localStorage.setItem(SESSION_KEY, JSON.stringify(ses));
   }
 
+  let _lastWarmupTs = 0;
+
   function _cacheKey(action, data) {
     return 'ons_swr_' + action + '_e' + _writeEpoch + '_' + JSON.stringify(data || {}).slice(0, 64);
   }
 
-  function getCachedRead(action, data) {
+  function getCachedReadEntry(action, data) {
     try {
       const raw = localStorage.getItem(_cacheKey(action, data));
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && typeof parsed.ts === 'number' && Object.prototype.hasOwnProperty.call(parsed, 'data')) {
+        return { data: parsed.data, ts: parsed.ts, ageMs: Math.max(0, Date.now() - parsed.ts) };
+      }
+      return { data: parsed, ts: 0, ageMs: Infinity };
     } catch (e) { return null; }
+  }
+
+  function getCachedRead(action, data) {
+    const entry = getCachedReadEntry(action, data);
+    return entry ? entry.data : null;
   }
 
   function setCachedRead(action, data, val) {
     try {
-      localStorage.setItem(_cacheKey(action, data), JSON.stringify(val));
+      localStorage.setItem(_cacheKey(action, data), JSON.stringify({ ts: Date.now(), data: val }));
     } catch (e) {}
+  }
+
+  function warmUpBackend(force) {
+    try {
+      if (isDemoMode() || typeof fetch !== 'function') return false;
+      const url = global.ONS_CONFIG && global.ONS_CONFIG.GAS_URL;
+      if (!url || url.indexOf('GANTI_DENGAN_ID') !== -1) return false;
+      const now = Date.now();
+      if (!force && _lastWarmupTs && (now - _lastWarmupTs) < 90000) return false;
+      _lastWarmupTs = now;
+      const sep = url.indexOf('?') === -1 ? '?' : '&';
+      Promise.resolve(fetch(url + sep + 'action=ping&t=' + now, {
+        method: 'GET',
+        mode: 'cors',
+        redirect: 'follow',
+        cache: 'no-store'
+      })).catch(() => {});
+      return true;
+    } catch (e) { return false; }
+  }
+
+  async function _fetchWithTimeout(url, fetchOpts, timeoutMs) {
+    if (typeof AbortController !== 'function' || !timeoutMs) {
+      return fetch(url, fetchOpts);
+    }
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const optsWithSig = Object.assign({}, fetchOpts, { signal: ctrl.signal });
+      return await fetch(url, optsWithSig);
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        const tErr = new Error('Koneksi server melebihi batas waktu (' + Math.round(timeoutMs / 1000) + ' dtk).');
+        tErr.code = 504;
+        throw tErr;
+      }
+      throw err;
+    } finally {
+      clearTimeout(tid);
+    }
   }
 
   function bumpClientEpoch() {
     _writeEpoch++;
     try { localStorage.setItem('ons_v10_epoch', String(_writeEpoch)); } catch (e) {}
+    if (global.ONSStore && typeof global.ONSStore.invalidateStockIndex === 'function') {
+      global.ONSStore.invalidateStockIndex();
+    }
   }
 
   async function callApi(action, data, opts) {
@@ -82,7 +137,11 @@
         sipa: ses.user.no_sipa,
         branch: cabang
       } : null;
-      return global.ONSDemoEngine.handleAction(action, data || {}, payloadUser);
+      const demoRes = await global.ONSDemoEngine.handleAction(action, data || {}, payloadUser);
+      if (o.isWrite && global.ONSStore && typeof global.ONSStore.invalidateStockIndex === 'function') {
+        global.ONSStore.invalidateStockIndex();
+      }
+      return demoRes;
     }
 
     const reqKey = !o.isWrite ? (action + ':' + JSON.stringify(data || {})) : null;
@@ -106,12 +165,13 @@
         try {
           const t0 = performance.now();
           // WAJIB text/plain;charset=utf-8 untuk bebas CORS preflight ke GAS Web App!
-          const resp = await fetch(global.ONS_CONFIG.GAS_URL, {
+          const reqTimeoutMs = o.isWrite ? 45000 : 18000;
+          const resp = await _fetchWithTimeout(global.ONS_CONFIG.GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(bodyPayload),
             redirect: 'follow'
-          });
+          }, reqTimeoutMs);
 
           const json = await resp.json();
           _lastLatencyMs = Math.round(performance.now() - t0);
@@ -258,6 +318,9 @@
     callApi,
     callBatched,
     getCachedRead,
+    getCachedReadEntry,
+    setCachedRead,
+    warmUpBackend,
     bumpClientEpoch,
     getOfflineQueue,
     pushOfflineQueue,

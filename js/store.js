@@ -227,9 +227,18 @@
     } catch (e) { return String(iso).slice(0, 10); }
   }
 
+  let _nowCache = { ts: 0, iso: '' };
+  function _getNowCache() {
+    const now = Date.now();
+    if (!_nowCache.iso || (now - _nowCache.ts) > 10000) {
+      _nowCache = { ts: now, iso: new Date(now).toISOString().slice(0, 10) };
+    }
+    return _nowCache;
+  }
+
   function daysUntil(dateStr) {
     if (!dateStr) return 9999;
-    const ms = new Date(dateStr).getTime() - Date.now();
+    const ms = new Date(dateStr).getTime() - _getNowCache().ts;
     return Math.ceil(ms / 86400000);
   }
 
@@ -363,11 +372,64 @@
 
   /**
    * Kalkulator Stok FEFO Total & Layak Jual (Belum Kadaluarsa) per ID Obat
+   * O(1) Lookup Indexer (disegarkan otomatis per frame / mutasi data)
    */
+  let _batchIdx = { arr: null, len: -1, br: '', day: '', dirty: true, ts: 0, byId: new Map() };
+
+  function invalidateStockIndex() {
+    _batchIdx.dirty = true;
+    _batchIdx.arr = null;
+  }
+
+  function _getBatchIndex() {
+    const nc = _getNowCache();
+    const arr = AppState.stokBatch || [];
+    const br = AppState.cabangId || 'ONS-01';
+    if (
+      !_batchIdx.dirty &&
+      _batchIdx.arr === arr &&
+      _batchIdx.len === arr.length &&
+      _batchIdx.br === br &&
+      _batchIdx.day === nc.iso &&
+      (Date.now() - _batchIdx.ts) <= 60
+    ) {
+      return _batchIdx.byId;
+    }
+    const map = new Map();
+    for (let i = 0; i < arr.length; i++) {
+      const b = arr[i];
+      if (!b || !b.id_obat || String(b.status_batch || 'AKTIF') !== 'AKTIF') continue;
+      if (b.cabang_id && b.cabang_id !== br) continue;
+      let ent = map.get(b.id_obat);
+      if (!ent) {
+        ent = { totalStok: 0, sellableStok: 0, nearestEd: null, nearestSellable: null, sellableBatches: [] };
+        map.set(b.id_obat, ent);
+      }
+      const qty = Number(b.qty_sisa || 0);
+      ent.totalStok += qty;
+      if (qty > 0) {
+        const bEd = String(b.tgl_kadaluarsa || '');
+        if (!ent.nearestEd || bEd.localeCompare(String(ent.nearestEd.tgl_kadaluarsa || '')) < 0) {
+          ent.nearestEd = b;
+        }
+        const iso = bEd.slice(0, 10);
+        if (!iso || iso >= nc.iso) {
+          ent.sellableStok += qty;
+          ent.sellableBatches.push(b);
+          if (!ent.nearestSellable || bEd.localeCompare(String(ent.nearestSellable.tgl_kadaluarsa || '')) < 0) {
+            ent.nearestSellable = b;
+          }
+        }
+      }
+    }
+    _batchIdx = { arr, len: arr.length, br, day: nc.iso, dirty: false, ts: Date.now(), byId: map };
+    return map;
+  }
+
   function isBatchExpired(tglEd) {
     const iso = String(tglEd || '').slice(0, 10);
     if (!iso) return false;
-    return iso < new Date().toISOString().slice(0, 10);
+    return iso < _getNowCache().iso;
   }
 
   function _isActiveBranchBatch(b, branchOverride) {
@@ -376,27 +438,23 @@
   }
 
   function getTotalStok(idObat) {
-    return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && _isActiveBranchBatch(b))
-      .reduce((acc, b) => acc + Number(b.qty_sisa || 0), 0);
+    const ent = _getBatchIndex().get(idObat);
+    return ent ? ent.totalStok : 0;
   }
 
   function getSellableStok(idObat) {
-    return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa) && _isActiveBranchBatch(b))
-      .reduce((acc, b) => acc + Number(b.qty_sisa || 0), 0);
+    const ent = _getBatchIndex().get(idObat);
+    return ent ? ent.sellableStok : 0;
   }
 
   function getNearestEdBatch(idObat) {
-    return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && _isActiveBranchBatch(b))
-      .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)))[0] || null;
+    const ent = _getBatchIndex().get(idObat);
+    return ent ? ent.nearestEd : null;
   }
 
   function getNearestSellableBatch(idObat) {
-    return AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa) && _isActiveBranchBatch(b))
-      .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)))[0] || null;
+    const ent = _getBatchIndex().get(idObat);
+    return ent ? ent.nearestSellable : null;
   }
 
   /**
@@ -612,10 +670,14 @@
   }
 
   function getNearEdBatchInfo(idObat, thresholdDays = 90) {
-    const batches = AppState.stokBatch
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && !isBatchExpired(b.tgl_kadaluarsa) && (!b.cabang_id || b.cabang_id === AppState.cabangId))
+    const ent = _getBatchIndex().get(idObat);
+    if (!ent || !ent.sellableBatches.length) {
+      return { hasNearEd: false, minDays: null, nearQty: 0, suggestedDiscPct: 0, noBatch: '' };
+    }
+    const maxDays = Number(thresholdDays || 90);
+    const batches = ent.sellableBatches
       .map((b) => ({ batch: b, days: daysUntil(b.tgl_kadaluarsa) }))
-      .filter((x) => x.days >= 0 && x.days <= Number(thresholdDays || 90))
+      .filter((x) => x.days >= 0 && x.days <= maxDays)
       .sort((a, b) => a.days - b.days);
     if (!batches.length) return { hasNearEd: false, minDays: null, nearQty: 0, suggestedDiscPct: 0, noBatch: '' };
     const minDays = batches[0].days;
@@ -1053,6 +1115,7 @@
     getBranchLabel,
     setMultiBranchMode,
     isBatchExpired,
+    invalidateStockIndex,
     getTotalStok,
     getSellableStok,
     getNearestEdBatch,

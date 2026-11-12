@@ -721,6 +721,9 @@
         </div>
       </div>
     </div>`;
+    if (!demoMode && gasConfigured && API() && typeof API().warmUpBackend === 'function') {
+      API().warmUpBackend();
+    }
   }
 
   global.clearLoginInlineError = () => {
@@ -775,6 +778,9 @@
 
   global.switchBackendMode = (mode) => {
     API().setModeOverride(mode);
+    if (mode === 'LIVE' && API() && typeof API().warmUpBackend === 'function') {
+      API().warmUpBackend();
+    }
     global.toast('Mode koneksi diubah ke: ' + (mode === 'LIVE' ? 'Live Google Apps Script' : 'Demo Sandbox'), 'info');
     global.renderApp();
   };
@@ -842,6 +848,9 @@
       if (shift === 'MALAM') S().toggleDarkMode(true);
       S().AppState.activeView = 'dashboard';
       if (res.boot && typeof global.applyBootPayload === 'function') {
+        if (API() && typeof API().setCachedRead === 'function') {
+          API().setCachedRead('boot.getState', { cabang_id: branch }, res.boot);
+        }
         global.applyBootPayload(res.boot);
         S().AppState.booted = true;
         global.renderApp();
@@ -1132,30 +1141,40 @@
     }
 
     return `<div class="space-y-4 ons-view-enter">
-      <!-- Fluid Hero Greeting Cockpit -->
-      <div class="ons-hero-welcome p-5 sm:p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div class="flex items-center gap-4 min-w-0">
-          <div class="relative shrink-0">
+      <!-- Fluid Hero Greeting Cockpit (2-Tier Non-Truncating Layout) -->
+      <div class="ons-hero-welcome p-4 sm:p-6 space-y-4">
+        <div class="flex items-start gap-3.5 sm:gap-4 min-w-0">
+          <div class="relative shrink-0 pt-0.5">
             <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/90 dark:border-slate-700 shadow-md object-cover bg-white"/>
             <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${activeShift ? 'bg-emerald-500' : 'bg-amber-500'} border-2 border-white dark:border-slate-800" title="${activeShift ? 'Shift Kasir Terbuka' : 'Shift Belum Dibuka'}"></span>
           </div>
-          <div class="min-w-0 space-y-1.5">
+          <div class="flex-1 min-w-0 space-y-1.5">
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="badge-bpom bpom-bebas">${S().esc(fullDateLabel)}</span>
               <span class="badge-bpom bpom-terbatas">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('Cabang ' + S().esc(cabId)) : 'Outlet Utama'} &bull; ${S().esc(S().getRole())}</span>
               ${canShift ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="badge-bpom ${activeShift ? 'bpom-bebas' : 'bpom-prekursor'} cursor-pointer">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
             </div>
-            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">${greetText}, ${S().esc(activeUserDisplay)}</h1>
-            <p class="text-xs sm:text-sm truncate" style="color:var(--ons-text-soft)">${S().esc(usahaNama)} &bull; SIA: ${S().esc(prof.no_sia || '-')} &bull; ${S().esc(prof.jam_operasional || 'Siap Melayani')}</p>
+            <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight leading-snug break-words" style="color:var(--ons-text-main)">${greetText}, ${S().esc(activeUserDisplay)}</h1>
+            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs sm:text-sm leading-relaxed" style="color:var(--ons-text-soft)">
+              <span class="font-semibold" style="color:var(--ons-text-main)">${S().esc(usahaNama)}</span>
+              <span aria-hidden="true" class="opacity-45">&bull;</span>
+              <span class="font-mono-num">SIA: ${S().esc(prof.no_sia || '-')}</span>
+              <span aria-hidden="true" class="opacity-45">&bull;</span>
+              <span>${S().esc(prof.jam_operasional || 'Siap Melayani')}</span>
+            </div>
           </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2 shrink-0">
-          ${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm">Buka Kasir POS (F2)</button>` : ''}
-          ${canPoct ? `<button onclick="navigateView('pemeriksaan','semua')" class="ons-btn ons-btn-ghost text-xs">Pemeriksaan Pasien</button>` : ''}
-          ${canObat ? `<button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>` : ''}
-          <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs" title="Pusat Pencarian & Navigasi Cepat">Cari Cepat <span class="ons-shortcut-kbd ml-1">Ctrl+K</span></button>
-          ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs" title="Kirim Ringkasan Harian ke WA Pemilik">Rekap WA Pemilik</button>` : ''}
-          <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
+        <div class="pt-3.5 border-t flex flex-wrap items-center justify-between gap-2.5" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center gap-2">
+            ${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm">Buka Kasir POS (F2)</button>` : ''}
+            ${canPoct ? `<button onclick="navigateView('pemeriksaan','semua')" class="ons-btn ons-btn-ghost text-xs">Pemeriksaan Pasien</button>` : ''}
+            ${canObat ? `<button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>` : ''}
+            <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs" title="Pusat Pencarian &amp; Navigasi Cepat">Cari Cepat <span class="ons-shortcut-kbd ml-1">Ctrl+K</span></button>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs" title="Kirim Ringkasan Harian ke WA Pemilik">Rekap WA Pemilik</button>` : ''}
+            <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
+          </div>
         </div>
       </div>
 
@@ -1176,7 +1195,7 @@
                 <span>Omzet Penjualan Hari Ini</span>
                 ${vsAvgPct !== null ? `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold font-mono-num ${vsAvgPct >= 0 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'}">${vsAvgPct >= 0 ? '+' : ''}${vsAvgPct}% vs avg</span>` : ''}
               </div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-blue-600 tracking-tight truncate">${S().rp(omzetHariIni)}</div>
+              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-blue-600 tracking-tight leading-tight break-words">${S().rp(omzetHariIni)}</div>
             </div>
             <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 font-extrabold text-[15px] tracking-tight" aria-hidden="true">Rp</span>
           </div>
@@ -1190,7 +1209,7 @@
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Estimasi Laba Kotor</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight truncate">${S().rp(omzetHariIni > 0 ? marginHariIni : marginTotal)}</div>
+              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight leading-tight break-words">${S().rp(omzetHariIni > 0 ? marginHariIni : marginTotal)}</div>
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 font-extrabold text-[13px] tracking-tight" aria-hidden="true">${marginPct}%</span>
           </div>
@@ -1202,7 +1221,7 @@
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pemeriksaan Pasien (POCT)</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight truncate">${poctTodayCount} Pasien</div>
+              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight leading-tight">${poctTodayCount} Pasien</div>
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
           </div>
@@ -1230,7 +1249,7 @@
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Hutang PBF &amp; Piutang</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 text-amber-600 tracking-tight truncate">${S().rp(apTotal)}</div>
+              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-amber-600 tracking-tight leading-tight break-words">${S().rp(apTotal)}</div>
             </div>
             <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
           </div>
