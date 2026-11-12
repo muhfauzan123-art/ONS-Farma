@@ -1139,9 +1139,139 @@
     const baseSlot = document.getElementById('chkBaselineLiveSlot');
     if (baseSlot) baseSlot.innerHTML = _findReturningBaselineBanner(d);
 
+    const filledStatuses = [ev.status_tensi, ev.status_gula, ev.status_kolesterol, ev.status_asam_urat].filter(Boolean);
+    const filledCount = filledStatuses.length;
+    const riskMeta = metaRiskBadge(ev.tingkat_risiko);
+
+    const countPill = document.getElementById('chkFilledCountPill');
+    if (countPill) countPill.textContent = filledCount + '/4 Cek Terisi';
+
+    const hdrRiskPill = document.getElementById('chkHeaderRiskPill');
+    if (hdrRiskPill) {
+      hdrRiskPill.className = 'px-2.5 py-0.5 rounded-full border text-[11px] font-bold ' + (filledCount ? riskMeta.cls : 'bg-slate-500/10 text-slate-500 border-slate-500/20');
+      hdrRiskPill.textContent = filledCount ? riskMeta.label : 'Menunggu Input';
+    }
+
+    const summaryBox = document.getElementById('chkClinicalSummaryBox');
+    if (summaryBox) {
+      const warnCount = filledStatuses.filter((st) => st !== 'NORMAL').length;
+      const normCount = filledStatuses.length - warnCount;
+      summaryBox.innerHTML = `
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <span class="font-bold text-xs uppercase tracking-wide" style="color:var(--ons-text-muted)">Ringkasan Klinis Live</span>
+          <span class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${filledCount ? riskMeta.cls : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}">${filledCount ? S().esc(riskMeta.label) : 'Belum Ada Angka'}</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="p-2 rounded-lg border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10px]" style="color:var(--ons-text-soft)">Parameter</div>
+            <div class="font-mono-num font-extrabold text-sm text-blue-600">${filledCount}/4</div>
+          </div>
+          <div class="p-2 rounded-lg border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10px]" style="color:var(--ons-text-soft)">Normal</div>
+            <div class="font-mono-num font-extrabold text-sm text-emerald-600">${normCount}</div>
+          </div>
+          <div class="p-2 rounded-lg border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10px]" style="color:var(--ons-text-soft)">Perhatian</div>
+            <div class="font-mono-num font-extrabold text-sm ${warnCount ? 'text-amber-600' : 'text-slate-500'}">${warnCount}</div>
+          </div>
+        </div>
+        ${(ev.imt_bmi || ev.map_mmhg) ? `<div class="mt-2 pt-2 border-t flex flex-wrap gap-2 text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+          ${ev.imt_bmi ? `<span>IMT: <b class="font-mono-num" style="color:var(--ons-text-main)">${ev.imt_bmi}</b> (${S().esc(metaStatusBadge(ev.status_bmi).label)})</span>` : ''}
+          ${ev.map_mmhg ? `<span>MAP: <b class="font-mono-num" style="color:var(--ons-text-main)">${ev.map_mmhg} mmHg</b></span>` : ''}
+        </div>` : ''}`;
+    }
+
+    const footSum = document.getElementById('chkFootSummary');
+    if (footSum) {
+      const waReady = S().normalizeWa62(d.no_wa);
+      footSum.innerHTML = `
+        <span class="font-bold">${d.nama_pasien ? S().esc(d.nama_pasien) : '<span class="text-amber-600">Nama pasien belum diisi</span>'}</span>
+        <span class="opacity-40">&bull;</span>
+        <span class="font-mono-num font-semibold">${filledCount}/4 Cek</span>
+        <span class="opacity-40">&bull;</span>
+        <span>Biaya: <b class="font-mono-num text-blue-600 dark:text-blue-400">${S().rp(d.biaya_cek || 0)}</b></span>
+        <span class="opacity-40 hidden sm:inline">&bull;</span>
+        <span class="hidden sm:inline ${waReady ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : ''}" style="${waReady ? '' : 'color:var(--ons-text-soft)'}">${waReady ? ('WA Siap: ' + S().esc(d.no_wa)) : 'No. WA opsional'}</span>`;
+    }
+
+    if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+      document.querySelectorAll('[data-tarif-amt]').forEach((btn) => {
+        const amt = Number(btn.getAttribute('data-tarif-amt') || 0);
+        const active = amt === Number(d.biaya_cek || 0);
+        btn.className = 'px-2.5 py-1 rounded-lg border text-[11px] font-mono-num font-semibold transition-colors ' + (active ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-blue-500/10');
+        btn.style.borderColor = active ? '' : 'var(--ons-border)';
+      });
+    }
+
     const prevBox = document.getElementById('chkWaLivePreview');
     if (prevBox) {
       prevBox.textContent = buildPemeriksaanWaText(Object.assign({}, d, ev));
+    }
+  };
+
+  global.resetPemeriksaanDraft = () => {
+    const clearIds = ['chkIdPeriksa', 'chkMemberId', 'chkNamaPasien', 'chkNoWa', 'chkUsia', 'chkBb', 'chkTb', 'chkTerapi', 'chkSistol', 'chkDiastol', 'chkNadi', 'chkGulaVal', 'chkKolVal', 'chkAuVal', 'chkKeluhan', 'chkSaran', 'chkTglKontrol'];
+    clearIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const biayaEl = document.getElementById('chkBiaya');
+    if (biayaEl) biayaEl.value = '0';
+    const jkEl = document.getElementById('chkJk');
+    if (jkEl) jkEl.value = 'L';
+    const gulaEl = document.getElementById('chkGulaJenis');
+    if (gulaEl) gulaEl.value = 'GDS';
+    const recallEl = document.getElementById('chkRecallSelect');
+    if (recallEl) recallEl.value = '';
+    const fonnteEl = document.getElementById('chkQueueFonnte');
+    if (fonnteEl) fonnteEl.checked = false;
+    const soapEl = document.getElementById('chkSimpanSoap');
+    if (soapEl) soapEl.checked = false;
+    global.updatePemeriksaanPreview();
+    const namaEl = document.getElementById('chkNamaPasien');
+    if (namaEl && namaEl.focus) namaEl.focus();
+  };
+
+  global.clearParamCardPemeriksaan = (key) => {
+    const fieldMap = {
+      tensi: ['chkSistol', 'chkDiastol', 'chkNadi'],
+      gula: ['chkGulaVal'],
+      kolesterol: ['chkKolVal'],
+      asam_urat: ['chkAuVal']
+    };
+    (fieldMap[key] || []).forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    global.updatePemeriksaanPreview();
+  };
+
+  global.setKeluhanQuickPemeriksaan = (text) => {
+    const el = document.getElementById('chkKeluhan');
+    if (!el) return;
+    const cur = String(el.value || '').trim();
+    if (!cur) el.value = text;
+    else if (!cur.toLowerCase().includes(text.toLowerCase())) el.value = cur + ', ' + text;
+    global.updatePemeriksaanPreview();
+  };
+
+  global.setTarifQuickPemeriksaan = (amt) => {
+    const el = document.getElementById('chkBiaya');
+    if (el) el.value = String(Number(amt || 0));
+    global.updatePemeriksaanPreview();
+  };
+
+  global.copyLiveWaPreviewPemeriksaan = async () => {
+    const txt = (document.getElementById('chkWaLivePreview') || {}).textContent || '';
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(txt);
+        global.toast('Pratinjau pesan WA disalin!', 'ok');
+      } else {
+        global.toast('Sorot dan salin teks dari pratinjau WA di kanan.', 'info');
+      }
+    } catch (_) {
+      global.toast('Salin manual dari kotak pratinjau WA.', 'info');
     }
   };
 
@@ -1236,24 +1366,25 @@
 
   function _renderParamCardHtml(key, rec, focus) {
     const ringCls = (p) => (focus === p ? 'ring-2 ring-blue-500 border-blue-400' : '');
+    const clearBtn = (k) => `<button type="button" onclick="window.clearParamCardPemeriksaan('${k}')" title="Kosongkan parameter ini" class="text-[10px] font-semibold px-1.5 py-0.5 rounded hover:bg-slate-500/15" style="color:var(--ons-text-muted)">Reset</button>`;
     if (key === 'tensi') {
-      return `<div id="chkCard_tensi" class="ons-card p-4 space-y-2.5 ${ringCls('tensi')}">
+      return `<div id="chkCard_tensi" class="ons-card p-3.5 space-y-2 ${ringCls('tensi')}">
         <div class="flex items-center justify-between gap-2">
-          <div class="font-bold text-sm">A. Pemeriksaan Tensi Darah</div>
-          <span id="chkBadgeTensi" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span>
+          <div class="font-bold text-sm">A. Tensi Darah</div>
+          <div class="flex items-center gap-1.5">${clearBtn('tensi')}<span id="chkBadgeTensi" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span></div>
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="font-semibold block mb-1 text-[11px]">Sistol (Atas)</label>
-            <input id="chkSistol" type="number" min="50" max="300" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((rec && rec.tensi_sistol) || '')}" placeholder="120"/>
+            <input id="chkSistol" type="number" min="50" max="300" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.tensi_sistol) || '')}" placeholder="120"/>
           </div>
           <div>
             <label class="font-semibold block mb-1 text-[11px]">Diastol (Bawah)</label>
-            <input id="chkDiastol" type="number" min="30" max="200" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((rec && rec.tensi_diastol) || '')}" placeholder="80"/>
+            <input id="chkDiastol" type="number" min="30" max="200" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.tensi_diastol) || '')}" placeholder="80"/>
           </div>
           <div>
             <label class="font-semibold block mb-1 text-[11px]">Nadi (bpm)</label>
-            <input id="chkNadi" type="number" min="30" max="220" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((rec && rec.nadi_bpm) || '')}" placeholder="76"/>
+            <input id="chkNadi" type="number" min="30" max="220" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.nadi_bpm) || '')}" placeholder="76"/>
           </div>
         </div>
         <div id="chkGaugeTensi"></div>
@@ -1261,10 +1392,10 @@
       </div>`;
     }
     if (key === 'gula') {
-      return `<div id="chkCard_gula" class="ons-card p-4 space-y-2.5 ${ringCls('gula')}">
+      return `<div id="chkCard_gula" class="ons-card p-3.5 space-y-2 ${ringCls('gula')}">
         <div class="flex items-center justify-between gap-2">
-          <div class="font-bold text-sm">B. Pemeriksaan Gula Darah</div>
-          <span id="chkBadgeGula" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span>
+          <div class="font-bold text-sm">B. Gula Darah</div>
+          <div class="flex items-center gap-1.5">${clearBtn('gula')}<span id="chkBadgeGula" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span></div>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -1277,7 +1408,7 @@
           </div>
           <div>
             <label class="font-semibold block mb-1 text-[11px]">Nilai (mg/dL)</label>
-            <input id="chkGulaVal" type="number" min="20" max="800" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((rec && rec.gula_darah) || '')}" placeholder="cth. 115"/>
+            <input id="chkGulaVal" type="number" min="20" max="800" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.gula_darah) || '')}" placeholder="cth. 115"/>
           </div>
         </div>
         <div id="chkGaugeGula"></div>
@@ -1285,27 +1416,27 @@
       </div>`;
     }
     if (key === 'kolesterol') {
-      return `<div id="chkCard_kolesterol" class="ons-card p-4 space-y-2.5 ${ringCls('kolesterol')}">
+      return `<div id="chkCard_kolesterol" class="ons-card p-3.5 space-y-2 ${ringCls('kolesterol')}">
         <div class="flex items-center justify-between gap-2">
-          <div class="font-bold text-sm">C. Pemeriksaan Kolesterol Total</div>
-          <span id="chkBadgeKol" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span>
+          <div class="font-bold text-sm">C. Kolesterol Total</div>
+          <div class="flex items-center gap-1.5">${clearBtn('kolesterol')}<span id="chkBadgeKol" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span></div>
         </div>
         <div>
           <label class="font-semibold block mb-1 text-[11px]">Kolesterol Total (mg/dL)</label>
-          <input id="chkKolVal" type="number" min="50" max="600" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((rec && rec.kolesterol_total) || '')}" placeholder="cth. 185"/>
+          <input id="chkKolVal" type="number" min="50" max="600" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.kolesterol_total) || '')}" placeholder="cth. 185"/>
         </div>
         <div id="chkGaugeKol"></div>
         <div class="text-[11px]" style="color:var(--ons-text-soft)">Optimal &lt;200 mg/dL &bull; Waspada 200-239 &bull; Tinggi &ge;240.</div>
       </div>`;
     }
-    return `<div id="chkCard_asam_urat" class="ons-card p-4 space-y-2.5 ${ringCls('asam_urat')}">
+    return `<div id="chkCard_asam_urat" class="ons-card p-3.5 space-y-2 ${ringCls('asam_urat')}">
       <div class="flex items-center justify-between gap-2">
-        <div class="font-bold text-sm">D. Pemeriksaan Asam Urat</div>
-        <span id="chkBadgeAu" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span>
+        <div class="font-bold text-sm">D. Asam Urat</div>
+        <div class="flex items-center gap-1.5">${clearBtn('asam_urat')}<span id="chkBadgeAu" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500">Belum diisi</span></div>
       </div>
       <div>
         <label class="font-semibold block mb-1 text-[11px]">Kadar Asam Urat (mg/dL)</label>
-        <input id="chkAuVal" type="number" step="0.1" min="1" max="25" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((rec && rec.asam_urat) || '')}" placeholder="cth. 6.2"/>
+        <input id="chkAuVal" type="number" step="0.1" min="1" max="25" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc((rec && rec.asam_urat) || '')}" placeholder="cth. 6.2"/>
       </div>
       <div id="chkGaugeAu"></div>
       <div class="text-[11px]" style="color:var(--ons-text-soft)">Normal menyesuaikan gender: L 3.4-7.0 &bull; P 2.4-6.0 mg/dL.</div>
@@ -1339,29 +1470,42 @@
       : baseOrder;
 
     const focusReadable = { tensi: 'Tensi', gula: 'Gula Darah', kolesterol: 'Kolesterol', asam_urat: 'Asam Urat' };
+    const quickKeluhanList = ['Kontrol Rutin', 'Pusing / Tengkuk Berat', 'Lemas / Kesemutan', 'Nyeri Sendi'];
+    const quickTarifList = [0, 10000, 15000, 25000, 35000, 45000];
 
     S().openModal(`<div class="ons-ws-modal" data-ws-custom="1">
       <div class="ons-ws-topbar">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 rounded-xl bg-blue-600 text-white font-extrabold flex items-center justify-center shrink-0 text-sm">+POCT</div>
+          <div class="w-11 h-11 rounded-xl bg-blue-600 text-white font-extrabold flex items-center justify-center shrink-0 shadow-sm" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
           <div class="min-w-0">
-            <h3 class="font-extrabold text-base truncate">${rec ? 'Perbarui Data Pemeriksaan Pasien' : 'Studio Pemeriksaan Kesehatan Pasien (4-in-1)'}</h3>
-            <p class="text-xs truncate" style="color:var(--ons-text-soft)">Catat hasil cek kesehatan, deteksi otomatis red-flag &amp; tren vs cek sebelumnya, lalu kirim langsung ke WhatsApp pasien.</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-extrabold text-base truncate">${rec ? 'Perbarui Data Pemeriksaan Pasien' : 'Studio Pemeriksaan Kesehatan Pasien (4-in-1)'}</h3>
+              <span id="chkFilledCountPill" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">0/4 Cek Terisi</span>
+              <span id="chkHeaderRiskPill" class="px-2.5 py-0.5 rounded-full border text-[11px] font-bold bg-slate-500/10 text-slate-500 border-slate-500/20">Menunggu Input</span>
+            </div>
+            <p class="text-xs truncate" style="color:var(--ons-text-soft)">Isi hasil POCT, tinjau triage otomatis &amp; pratinjau WA di kanan, lalu simpan 1 klik dari header atau bilah bawah.</p>
           </div>
         </div>
-        <button onclick="ONSStore.closeModal()" aria-label="Tutup Studio Pemeriksaan" class="ons-btn ons-btn-ghost text-sm px-3 min-h-[40px]">Tutup &times;</button>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          ${!rec ? `<button type="button" onclick="window.resetPemeriksaanDraft()" class="ons-btn ons-btn-ghost text-xs">Kosongkan</button>` : ''}
+          <button type="button" onclick="window.submitPemeriksaanModal(false)" class="ons-btn ons-btn-primary text-xs">Simpan</button>
+          <button type="button" onclick="window.submitPemeriksaanModal(true)" class="ons-btn ons-btn-emerald text-xs">Simpan &amp; WA</button>
+          <button type="button" onclick="ONSStore.closeModal()" aria-label="Tutup Studio Pemeriksaan" class="ons-ws-close-btn" title="Tutup (Esc)">&times;</button>
+        </div>
       </div>
 
       <div class="ons-ws-split">
-        <div class="ons-ws-pane space-y-4 text-xs">
+        <div class="ons-ws-pane space-y-3.5 text-xs">
           <input type="hidden" id="chkIdPeriksa" value="${S().esc((rec && rec.id_periksa) || '')}"/>
           <input type="hidden" id="chkMemberId" value="${S().esc((seedIdentity && seedIdentity.id_member) || '')}"/>
 
-          <!-- Identitas Pasien & Antropometri -->
-          <div class="ons-card p-4 space-y-3">
+          <!-- 1. Identitas Pasien & Antropometri -->
+          <div class="ons-card p-3.5 sm:p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="font-bold text-sm text-blue-600 dark:text-blue-400">1. Identitas, WhatsApp &amp; Antropometri Pasien</div>
-              ${(members.length || walkinPatients.length) ? `<select onchange="window.onSelectMemberPemeriksaan(this.value)" class="ons-select w-72 text-xs">
+              ${(members.length || walkinPatients.length) ? `<select id="chkRecallSelect" onchange="window.onSelectMemberPemeriksaan(this.value)" class="ons-select w-full sm:w-72 text-xs">
                 <option value="">-- Recall Member / Pasien Terdahulu --</option>
                 ${members.length ? `<optgroup label="Member &amp; Pasien PRB">
                   ${members.map((m) => `<option value="MBR:${S().esc(m.id_member)}" ${seedIdentity && seedIdentity.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.id_member)})</option>`).join('')}
@@ -1371,14 +1515,14 @@
                 </optgroup>` : ''}
               </select>` : ''}
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-2.5">
               <div class="md:col-span-5">
                 <label class="font-semibold block mb-1">Nama Lengkap Pasien *</label>
                 <input id="chkNamaPasien" oninput="window.updatePemeriksaanPreview()" class="ons-input" value="${S().esc((seedIdentity && seedIdentity.nama_pasien) || '')}" placeholder="cth. Ny. Siti Aminah / Tn. Budi"/>
               </div>
-              <div class="md:col-span-4">
-                <label class="font-semibold block mb-1">No. WhatsApp (Untuk Kirim Hasil)</label>
-                <input id="chkNoWa" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((seedIdentity && seedIdentity.no_wa) || '')}" placeholder="0812xxxxxxxx / 62812..."/>
+              <div class="md:col-span-3">
+                <label class="font-semibold block mb-1">No. WhatsApp (Kirim Hasil)</label>
+                <input id="chkNoWa" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((seedIdentity && seedIdentity.no_wa) || '')}" placeholder="0812xxxxxxxx"/>
               </div>
               <div class="md:col-span-2">
                 <label class="font-semibold block mb-1">Gender</label>
@@ -1387,24 +1531,26 @@
                   <option value="P" ${(seedIdentity && seedIdentity.jenis_kelamin === 'P') ? 'selected' : ''}>Perempuan (P)</option>
                 </select>
               </div>
-              <div class="md:col-span-1">
-                <label class="font-semibold block mb-1">Usia</label>
-                <input id="chkUsia" type="number" min="1" max="120" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((seedIdentity && seedIdentity.usia_tahun) || '')}" placeholder="Th"/>
+              <div class="md:col-span-2">
+                <label class="font-semibold block mb-1">Usia (Th)</label>
+                <input id="chkUsia" type="number" min="1" max="120" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((seedIdentity && seedIdentity.usia_tahun) || '')}" placeholder="cth. 45"/>
               </div>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-12 gap-3 pt-1">
+            <div class="grid grid-cols-2 md:grid-cols-12 gap-2.5 pt-0.5">
               <div class="md:col-span-2">
-                <label class="font-semibold block mb-1 text-[11px]">Berat Badan (kg)</label>
+                <label class="font-semibold block mb-1 text-[11px]">Berat (kg)</label>
                 <input id="chkBb" type="number" step="0.5" min="10" max="300" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((seedIdentity && seedIdentity.berat_badan) || '')}" placeholder="65"/>
               </div>
               <div class="md:col-span-2">
                 <label class="font-semibold block mb-1 text-[11px]">Tinggi (cm)</label>
                 <input id="chkTb" type="number" min="50" max="240" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num" value="${S().esc((seedIdentity && seedIdentity.tinggi_badan) || '')}" placeholder="165"/>
               </div>
-              <div class="md:col-span-3 flex items-end pb-2">
-                <span id="chkBmiLive" class="text-[11px]" style="color:var(--ons-text-soft)">IMT otomatis</span>
+              <div class="col-span-2 md:col-span-3 flex items-end">
+                <div class="w-full min-h-[42px] px-2.5 py-2 rounded-lg border flex items-center text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                  <span id="chkBmiLive" style="color:var(--ons-text-soft)">IMT otomatis</span>
+                </div>
               </div>
-              <div class="md:col-span-5">
+              <div class="col-span-2 md:col-span-5">
                 <label class="font-semibold block mb-1 text-[11px]">Obat / Terapi Rutin Saat Ini (Opsional)</label>
                 <input id="chkTerapi" oninput="window.updatePemeriksaanPreview()" class="ons-input" value="${S().esc((seedIdentity && seedIdentity.riwayat_terapi) || '')}" placeholder="cth. Amlodipine 10mg, Metformin 500mg"/>
               </div>
@@ -1427,21 +1573,26 @@
             ${orderedKeys.map((k) => _renderParamCardHtml(k, rec, focus)).join('')}
           </div>
 
-          <!-- Keluhan, Saran Apoteker, Jadwal Kontrol & Biaya -->
-          <div class="ons-card p-4 space-y-3">
+          <!-- 2. Keluhan, Saran Apoteker, Jadwal Kontrol & Biaya -->
+          <div class="ons-card p-3.5 sm:p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="font-bold text-sm">2. Keluhan, Edukasi Apoteker, Jadwal Kontrol &amp; Tarif</div>
               <button type="button" onclick="window.applyAutoAdvicePemeriksaan()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Isi Saran Klinis Otomatis</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-              <div class="md:col-span-7 space-y-2">
+              <div class="md:col-span-7 space-y-2.5">
                 <div>
-                  <label class="font-semibold block mb-1">Keluhan / Catatan Pasien</label>
+                  <div class="flex flex-wrap items-center justify-between gap-1 mb-1">
+                    <label class="font-semibold">Keluhan / Catatan Pasien</label>
+                    <div class="flex flex-wrap gap-1">
+                      ${quickKeluhanList.map((kl) => `<button type="button" onclick="window.setKeluhanQuickPemeriksaan('${S().esc(kl)}')" class="px-2 py-0.5 rounded border text-[10px] font-semibold hover:bg-blue-500/10" style="border-color:var(--ons-border)">+ ${S().esc(kl)}</button>`).join('')}
+                    </div>
+                  </div>
                   <input id="chkKeluhan" oninput="window.updatePemeriksaanPreview()" class="ons-input" value="${S().esc((rec && rec.keluhan_catatan) || '')}" placeholder="cth. Pusing ringan sejak pagi / cek kontrol bulanan"/>
                 </div>
                 <div>
-                  <label class="font-semibold block mb-1">Saran &amp; Edukasi Apoteker (Ikut terkirim di WA pasien)</label>
-                  <textarea id="chkSaran" rows="3" oninput="window.updatePemeriksaanPreview()" class="ons-textarea" placeholder="Klik 'Isi Saran Klinis Otomatis' atau tulis saran edukasi obat & pola hidup...">${S().esc((rec && rec.saran_apoteker) || '')}</textarea>
+                  <label class="font-semibold block mb-1">Saran &amp; Edukasi Apoteker (Otomatis jika dikosongkan)</label>
+                  <textarea id="chkSaran" rows="3" oninput="window.updatePemeriksaanPreview()" class="ons-textarea" placeholder="Kosongkan untuk saran klinis otomatis saat simpan, atau tulis edukasi obat khusus...">${S().esc((rec && rec.saran_apoteker) || '')}</textarea>
                 </div>
               </div>
               <div class="md:col-span-5 space-y-2.5">
@@ -1450,15 +1601,15 @@
                   <div class="flex gap-1.5 items-center">
                     <input id="chkTglKontrol" type="date" onchange="window.updatePemeriksaanPreview()" class="ons-input font-mono-num flex-1" value="${S().esc((rec && rec.tgl_kontrol) || '')}"/>
                   </div>
-                  <div class="flex flex-wrap gap-1 mt-1">
-                    ${[7, 14, 30].map((d) => `<button type="button" onclick="window.quickSetKontrolDays(${d})" class="px-2 py-0.5 rounded border text-[10px] font-semibold hover:bg-blue-500/10" style="border-color:var(--ons-border)">+${d} Hari</button>`).join('')}
+                  <div class="flex flex-wrap gap-1 mt-1.5">
+                    ${[3, 7, 14, 30].map((d) => `<button type="button" onclick="window.quickSetKontrolDays(${d})" class="px-2.5 py-1 rounded-lg border text-[11px] font-semibold hover:bg-blue-500/10" style="border-color:var(--ons-border)">+${d} Hari</button>`).join('')}
                   </div>
                 </div>
                 <div>
                   <label class="font-semibold block mb-1">Biaya Layanan Cek (Rp)</label>
-                  <input id="chkBiaya" type="number" min="0" class="ons-input font-mono-num" value="${S().esc(rec && rec.biaya_cek !== undefined ? rec.biaya_cek : 0)}"/>
-                  <div class="flex flex-wrap gap-1 mt-1">
-                    ${[0, 10000, 15000, 25000, 45000].map((amt) => `<button type="button" onclick="document.getElementById('chkBiaya').value=${amt}" class="px-2 py-1 rounded border text-[10px] font-mono-num hover:bg-blue-500/10" style="border-color:var(--ons-border)">${amt === 0 ? 'Gratis' : (amt / 1000 + 'rb')}</button>`).join('')}
+                  <input id="chkBiaya" type="number" min="0" oninput="window.updatePemeriksaanPreview()" class="ons-input font-mono-num font-bold" value="${S().esc(rec && rec.biaya_cek !== undefined ? rec.biaya_cek : 0)}"/>
+                  <div class="flex flex-wrap gap-1 mt-1.5">
+                    ${quickTarifList.map((amt) => `<button type="button" data-tarif-amt="${amt}" onclick="window.setTarifQuickPemeriksaan(${amt})" class="px-2.5 py-1 rounded-lg border text-[11px] font-mono-num font-semibold hover:bg-blue-500/10" style="border-color:var(--ons-border)">${amt === 0 ? 'Gratis' : ('Rp ' + (amt / 1000) + 'rb')}</button>`).join('')}
                   </div>
                   <div class="text-[10px] mt-1" style="color:var(--ons-text-soft)">Jika &gt; Rp 0 pada cek baru, masuk otomatis ke Jurnal Kas Layanan Klinis.</div>
                 </div>
@@ -1467,28 +1618,40 @@
           </div>
         </div>
 
-        <!-- Panel Kanan: Live Preview WA -->
+        <!-- Panel Kanan: Cockpit Klinis & Live Preview WA -->
         <div class="ons-ws-side space-y-3 text-xs">
-          <div class="font-bold text-sm">Pratinjau Pesan WhatsApp Pasien (Real-Time)</div>
-          <p style="color:var(--ons-text-soft)">Perbandingan dengan cek sebelumnya dan peringatan triage tampil otomatis pada pesan di bawah.</p>
-          <pre id="chkWaLivePreview" class="p-3.5 rounded-xl border whitespace-pre-wrap font-mono-num text-[11px] leading-relaxed overflow-auto max-h-[50vh]" style="background:var(--ons-bg-card);border-color:var(--ons-border)"></pre>
-          <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-card)">
-            <input id="chkQueueFonnte" type="checkbox" class="accent-blue-600 mt-0.5"/>
-            <span>Antrekan otomatis ke <b>Fonnte WA Gateway</b> server.</span>
-          </label>
-          <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-card)">
-            <input id="chkSimpanSoap" type="checkbox" class="accent-blue-600 mt-0.5"/>
-            <span>Catat sekaligus ke <b>Rekam Konseling SOAP Klinis</b> apotek.</span>
-          </label>
+          <div id="chkClinicalSummaryBox" class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)"></div>
+
+          <div class="p-3 rounded-xl border space-y-2" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-bold text-sm">Pratinjau WhatsApp Pasien (Real-Time)</div>
+              <button type="button" onclick="window.copyLiveWaPreviewPemeriksaan()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Salin Teks</button>
+            </div>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Delta vs cek sebelumnya, status rujukan klinis &amp; jadwal kontrol langsung terformat rapi.</p>
+            <pre id="chkWaLivePreview" class="p-3 rounded-xl border whitespace-pre-wrap font-mono-num text-[11px] leading-relaxed overflow-auto max-h-[38vh]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></pre>
+          </div>
+
+          <div class="space-y-2">
+            <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-card)">
+              <input id="chkQueueFonnte" type="checkbox" class="accent-blue-600 mt-0.5"/>
+              <span>Antrekan otomatis ke <b>Fonnte WA Gateway</b> server.</span>
+            </label>
+            <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border);background:var(--ons-bg-card)">
+              <input id="chkSimpanSoap" type="checkbox" class="accent-blue-600 mt-0.5"/>
+              <span>Catat sekaligus ke <b>Rekam Konseling SOAP Klinis</b> apotek.</span>
+            </label>
+          </div>
         </div>
       </div>
 
       <div class="ons-ws-foot">
-        <div class="text-xs" style="color:var(--ons-text-soft)">Data tersimpan ke arsip <b>PEMERIKSAAN_PASIEN</b> &amp; tersinkron jika pasien terdaftar sebagai Member PRB.</div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
-          <button onclick="window.submitPemeriksaanModal(false)" class="ons-btn ons-btn-primary text-xs">Simpan Hasil Pemeriksaan</button>
-          <button onclick="window.submitPemeriksaanModal(true)" class="ons-btn ons-btn-emerald text-xs">Simpan &amp; Kirim ke WA Pasien</button>
+        <div id="chkFootSummary" class="text-xs flex flex-wrap items-center gap-1.5" style="color:var(--ons-text-main)">Siap menyimpan pemeriksaan pasien.</div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          ${!rec ? `<button type="button" onclick="window.submitPemeriksaanModal('next')" class="ons-btn ons-btn-ghost text-xs">Simpan &amp; Pasien Berikutnya</button>` : ''}
+          <button type="button" onclick="window.submitPemeriksaanModal('print')" class="ons-btn ons-btn-ghost text-xs">Simpan &amp; Cetak Kartu</button>
+          <button type="button" onclick="window.submitPemeriksaanModal(false)" class="ons-btn ons-btn-primary text-xs">Simpan Hasil Pemeriksaan</button>
+          <button type="button" onclick="window.submitPemeriksaanModal(true)" class="ons-btn ons-btn-emerald text-xs">Simpan &amp; Kirim ke WA Pasien</button>
         </div>
       </div>
     </div>`, 'full');
@@ -1502,10 +1665,12 @@
     }, 30);
   };
 
-  global.submitPemeriksaanModal = async (sendWaNow) => {
+  global.submitPemeriksaanModal = async (actionMode) => {
     const draft = _readModalDraft();
     if (!draft.nama_pasien) {
       global.toast('Nama pasien wajib diisi.', 'err');
+      const namaEl = document.getElementById('chkNamaPasien');
+      if (namaEl && namaEl.focus) namaEl.focus();
       return;
     }
     const hasAny = (Number(draft.tensi_sistol || 0) > 0 && Number(draft.tensi_diastol || 0) > 0) ||
@@ -1539,12 +1704,21 @@
         await global.catatSoapDariPemeriksaan(saved.id_periksa, true);
       }
 
+      if (actionMode === 'next') {
+        global.renderActiveView();
+        global.resetPemeriksaanDraft();
+        global.toast('Hasil ' + saved.nama_pasien + ' tersimpan! Siap lanjut pasien berikutnya.', 'ok');
+        return;
+      }
+
       S().closeModal();
       global.toast('Hasil pemeriksaan ' + saved.nama_pasien + ' berhasil disimpan!', 'ok');
       global.renderActiveView();
 
-      if (sendWaNow) {
+      if (actionMode === true || actionMode === 'wa') {
         await global.kirimWaLangsungPemeriksaan(saved.id_periksa);
+      } else if (actionMode === 'print') {
+        global.printPemeriksaanCard(saved.id_periksa);
       }
     } catch (e) {
       global.toast(e.message || 'Gagal menyimpan hasil pemeriksaan.', 'err');

@@ -325,12 +325,14 @@ html.dark .bpom-narkotika, html.dark .bpom-psikotropika { background: rgba(124,5
   animation: onsViewEnter 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.ons-ws-topbar {
+.ons-ws-topbar,
+.ons-ws-header {
   width: 100%;
   background: var(--ons-bg-card);
   border-bottom: 1px solid var(--ons-border);
-  padding: 0.72rem clamp(1rem, 2.8vw, 2rem);
+  padding: 0.72rem clamp(1rem, 2.5vw, 1.75rem);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -439,6 +441,80 @@ html.dark .ons-ws-pill {
 .ons-ws-surface .aspect-\[4\/3\] {
   max-height: 62vh;
   width: 100%;
+}
+
+/* Custom Full-Viewport Clinical & Procurement Studios (.ons-ws-modal) */
+.ons-ws-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ons-bg-canvas);
+}
+.ons-ws-split {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.ons-ws-split > .ons-ws-pane {
+  padding: 1rem clamp(1rem, 2.4vw, 1.5rem);
+  min-width: 0;
+}
+.ons-ws-split > .ons-ws-side {
+  padding: 1rem clamp(1rem, 2.4vw, 1.4rem);
+  min-width: 0;
+  border-top: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+}
+.ons-ws-modal > .ons-ws-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  overflow-y: auto;
+  padding: 1rem clamp(1rem, 2.4vw, 1.75rem);
+}
+@media (min-width: 1024px) {
+  .ons-ws-split {
+    grid-template-columns: minmax(0, 1.68fr) minmax(350px, 1fr);
+    align-content: stretch;
+    overflow: hidden;
+  }
+  .ons-ws-split > .ons-ws-pane,
+  .ons-ws-split > .ons-ws-side {
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .ons-ws-split > .ons-ws-side {
+    border-top: 0;
+    border-left: 1px solid var(--ons-border);
+  }
+}
+.ons-ws-foot,
+.ons-ws-footer {
+  width: 100%;
+  flex-shrink: 0;
+  background: var(--ons-bg-card);
+  border-top: 1px solid var(--ons-border);
+  padding: 0.72rem clamp(1rem, 2.5vw, 1.75rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.06);
+  z-index: 2;
+}
+html.dark .ons-ws-foot,
+html.dark .ons-ws-footer {
+  box-shadow: 0 -4px 18px rgba(2, 6, 23, 0.35);
 }
 
 /* Full-Viewport Product & Workflow Studio (Wizard Obat & Form Kaya Visual) */

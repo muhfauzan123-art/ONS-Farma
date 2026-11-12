@@ -6,7 +6,7 @@
  * - Selalu sajikan UI instan dari cache untuk pengalaman bebas lag (<50ms)
  */
 
-const CACHE_NAME = 'ons-farma-pwa-v16.0.0';
+const CACHE_NAME = 'ons-farma-pwa-v16.6.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -61,10 +61,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first untuk HTML shell, style.css & config.js agar setiap revisi langsung tampil
-  if (event.request.mode === 'navigate' || url.endsWith('/index.html') || url.endsWith('/css/style.css') || url.endsWith('/config.js')) {
+  // Network-first untuk HTML, JS & CSS domain sendiri agar setiap update Vercel/GitHub langsung tampil tanpa terjebak cache lama
+  const isCodeAsset = url.startsWith(self.location.origin) && (event.request.mode === 'navigate' || /\.(html|js|css)(\?|$)/i.test(url));
+  if (isCodeAsset) {
     event.respondWith(
-      fetch(event.request).then((resp) => {
+      fetch(event.request, { cache: 'no-cache' }).then((resp) => {
         if (resp && resp.status === 200) {
           const clone = resp.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
