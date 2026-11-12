@@ -138,6 +138,7 @@
     activeView: 'dashboard',
     activeSubTab: '',
     subTabs: {
+      dashboard: 'umum',
       pos: 'kasir',
       obat: 'obat',
       omnichannel: 'SEMUA',

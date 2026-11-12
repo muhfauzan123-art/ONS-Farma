@@ -2694,6 +2694,100 @@ html.dark .ons-struk-paper-tray {
   border: 1px solid #334155;
 }
 
+/* Dashboard Suite v17.23 (Adaptasi Apotek Digital Terpadu) */
+.ons-dash-sec-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--ons-primary);
+  letter-spacing: -0.01em;
+}
+html.dark .ons-dash-sec-title {
+  color: #60a5fa;
+}
+.ons-dash-stat-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.95rem 1.05rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  box-shadow: var(--ons-shadow-xs);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+.ons-dash-stat-tile.is-clickable {
+  cursor: pointer;
+}
+.ons-dash-stat-tile.is-clickable:hover {
+  border-color: var(--ons-primary-bright);
+  box-shadow: var(--ons-shadow-sm);
+  transform: translateY(-1px);
+}
+.ons-dash-tile-ico {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ons-dash-status-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 0.95rem;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-card);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+.ons-dash-status-card:hover {
+  border-color: var(--ons-primary-bright);
+  box-shadow: var(--ons-shadow-sm);
+  transform: translateY(-1px);
+}
+.ons-dash-status-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.62rem 0.9rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+.ons-dash-status-body {
+  padding: 1rem 0.9rem;
+  text-align: center;
+}
+.ons-dash-chart-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.ons-dash-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.ons-dash-switch input {
+  accent-color: var(--ons-primary-bright);
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ons-nav-subwrap, .ons-chevron-sub, .ons-drawer-backdrop, .ons-drawer-panel, .ons-context-drawer-backdrop, .ons-context-drawer-panel, .ons-collapse-ico, .ons-product-card, .ons-kpi-card, .ons-ops-tile, .ons-priority-pill, .ons-scan-progress-fill, .ons-pos-card, .ons-pos-listrow, .ons-pos-paybtn, .ons-pos-chip, .ons-login-shell, .ons-login-mode-btn, .ons-login-quick-card, .ons-login-portal-pill, .ons-md-tab, .ons-md-kpi, .ons-modal-backdrop, .ons-modal-box {
     transition: none !important;

@@ -1352,10 +1352,275 @@
     return !row || !row.cabang_id || String(row.cabang_id) === String(cabId);
   }
 
+  let dashSubTab = 'umum';
+  let dashPeriodPreset = '30d';
+  let dashCustomStart = '';
+  let dashCustomEnd = '';
+  let dashSalesGranularity = 'harian';
+  let dashSalesNetRetur = true;
+  let dashPurchaseGranularity = 'harian';
+  let dashInvJenis = 'SEMUA';
+  let dashInvSupplier = 'SEMUA';
+  let dashKpiYear = String(new Date().getFullYear());
+
+  const DASH_LOST_SALES_KEY = 'ons_lost_sales_v10';
+
+  function _shiftLocalYmd(baseDt, offsetDays) {
+    const dt = new Date(baseDt.getFullYear(), baseDt.getMonth(), baseDt.getDate() + offsetDays);
+    return toLocalYmd_(dt);
+  }
+
+  function _getDashDateRange(nowDt) {
+    const todayIso = toLocalYmd_(nowDt);
+    let startYmd = todayIso;
+    let endYmd = todayIso;
+    let label = 'Hari Ini';
+    if (dashPeriodPreset === 'today') {
+      startYmd = todayIso;
+      endYmd = todayIso;
+      label = 'Hari Ini';
+    } else if (dashPeriodPreset === '7d') {
+      startYmd = _shiftLocalYmd(nowDt, -6);
+      endYmd = todayIso;
+      label = '7 Hari Terakhir';
+    } else if (dashPeriodPreset === '30d') {
+      startYmd = _shiftLocalYmd(nowDt, -29);
+      endYmd = todayIso;
+      label = '30 Hari Terakhir';
+    } else if (dashPeriodPreset === 'month') {
+      startYmd = `${nowDt.getFullYear()}-${String(nowDt.getMonth() + 1).padStart(2, '0')}-01`;
+      endYmd = todayIso;
+      label = 'Bulan Ini';
+    } else if (dashPeriodPreset === 'year') {
+      startYmd = `${nowDt.getFullYear()}-01-01`;
+      endYmd = todayIso;
+      label = 'Tahun Ini';
+    } else if (dashPeriodPreset === 'all') {
+      startYmd = '2000-01-01';
+      endYmd = '2099-12-31';
+      label = 'Semua Waktu';
+    } else if (dashPeriodPreset === 'custom') {
+      startYmd = dashCustomStart || _shiftLocalYmd(nowDt, -6);
+      endYmd = dashCustomEnd || todayIso;
+      if (startYmd > endYmd) {
+        const tmp = startYmd;
+        startYmd = endYmd;
+        endYmd = tmp;
+      }
+      label = `${startYmd} s.d. ${endYmd}`;
+    }
+    return { preset: dashPeriodPreset, startYmd, endYmd, label };
+  }
+
+  function _inDashRange(dateVal, range) {
+    if (!dateVal) return false;
+    const ymd = toLocalYmd_(dateVal);
+    return ymd >= range.startYmd && ymd <= range.endYmd;
+  }
+
+  function _getDashLostSales(range) {
+    let arr = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(DASH_LOST_SALES_KEY) || 'null');
+      if (Array.isArray(parsed)) arr = parsed;
+    } catch (e) {}
+    if (!arr.length) {
+      arr = [{ tanggal: toLocalYmd_(new Date()), nama_obat: 'Salbutamol Nebules 2.5mg', qty: 4, alasan: 'Stok habis sementara' }];
+    }
+    return range ? arr.filter((ls) => !ls.tanggal || _inDashRange(ls.tanggal, range)) : arr;
+  }
+
+  function _computeDashInventoryStatus(st, cabId) {
+    const activeBatches = (st.stokBatch || []).filter((b) => sameCabang_(b, cabId) && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0);
+    const expiredBatches = activeBatches.filter((b) => S().daysUntil(b.tgl_kadaluarsa) < 0);
+    const nearEdBatches = activeBatches.filter((b) => {
+      const d = S().daysUntil(b.tgl_kadaluarsa);
+      return d >= 0 && d <= 90;
+    });
+    const lossProducts = (st.masterObat || []).filter((o) => {
+      const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
+      const hj = Number(o.harga_umum || 0);
+      return hpp > 0 && hj > 0 && hj <= hpp;
+    });
+    const zeroProducts = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= 0);
+    const defectaProducts = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
+    const currentStockVal = activeBatches.reduce((sum, b) => {
+      const ob = (st.masterObat || []).find((o) => o.id_obat === b.id_obat);
+      const hpp = Number(b.hpp_beli || (ob && (ob.hpp_avg || ob.hpp_terakhir)) || 0);
+      return sum + (Number(b.qty_sisa || 0) * hpp);
+    }, 0);
+    const currentStockUnits = activeBatches.reduce((sum, b) => sum + Number(b.qty_sisa || 0), 0);
+    return { activeBatches, expiredBatches, nearEdBatches, lossProducts, zeroProducts, defectaProducts, currentStockVal, currentStockUnits };
+  }
+
+  function _compactNumLabel(v) {
+    const n = Number(v || 0);
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'jt';
+    if (n >= 1000) return Math.round(n / 1000) + 'rb';
+    return String(Math.round(n));
+  }
+
+  function _renderSvgVerticalBars(items, seriesDefs, opts) {
+    const cfg = opts || {};
+    const emptyMsg = cfg.emptyMsg || 'Belum ada data pada rentang waktu yang dipilih.';
+    const hasAnyVal = items.some((it) => seriesDefs.some((sd) => Number(it[sd.key] || 0) > 0));
+    const svgW = Math.max(360, items.length * (cfg.barSlotW || 44) + 52);
+    const svgH = 185;
+    const padL = 42;
+    const padR = 14;
+    const padT = 16;
+    const padB = 34;
+    const plotW = svgW - padL - padR;
+    const plotH = svgH - padT - padB;
+    const maxPrim = Math.max(1, ...items.map((it) => Math.max(...seriesDefs.map((sd) => Number(it[sd.key] || 0)))));
+    const gridSteps = [0, 0.25, 0.5, 0.75, 1];
+    const slotW = items.length ? (plotW / items.length) : plotW;
+    const barCount = seriesDefs.length || 1;
+    const groupW = Math.min(34, Math.max(10, slotW * 0.68));
+    const singleW = Math.max(5, (groupW - (barCount - 1) * 2) / barCount);
+
+    return `<div class="space-y-2">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+        <div class="flex flex-wrap items-center gap-3">
+          ${seriesDefs.map((sd) => `<span class="inline-flex items-center gap-1.5 font-semibold"><span class="w-3 h-2.5 rounded-sm inline-block" style="background:${sd.color}"></span>${S().esc(sd.label)}</span>`).join('')}
+        </div>
+        ${cfg.unitHint ? `<span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${S().esc(cfg.unitHint)}</span>` : ''}
+      </div>
+      <div class="ons-dash-chart-scroll">
+        <svg viewBox="0 0 ${svgW} ${svgH}" class="w-full min-w-[340px] h-44 overflow-visible" role="img" aria-label="${S().esc(cfg.ariaLabel || 'Grafik Dashboard')}">
+          ${gridSteps.map((ratio) => {
+            const y = padT + plotH * (1 - ratio);
+            const lbl = cfg.isCurrency ? _compactNumLabel(maxPrim * ratio) : Math.round(maxPrim * ratio * 10) / 10;
+            return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${svgW - padR}" y2="${y.toFixed(1)}" stroke="var(--ons-border)" stroke-width="1" ${ratio > 0 ? 'stroke-dasharray="3 3"' : ''}/>
+              <text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#64748B">${lbl}</text>`;
+          }).join('')}
+          ${items.map((it, idx) => {
+            const cx = padL + idx * slotW + slotW / 2;
+            const startX = cx - groupW / 2;
+            const bars = seriesDefs.map((sd, sIdx) => {
+              const raw = Number(it[sd.key] || 0);
+              const h = raw > 0 ? Math.max(4, (raw / maxPrim) * plotH) : 2;
+              const x = startX + sIdx * (singleW + 2);
+              const y = padT + plotH - h;
+              const valStr = sd.isCurrency ? S().rp(raw) : (raw + (sd.suffix || ''));
+              return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${singleW.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${sd.color}" opacity="${raw > 0 ? '0.92' : '0.22'}"><title>${S().esc(it.label)} — ${S().esc(sd.label)}: ${S().esc(valStr)}</title></rect>`;
+            }).join('');
+            return `${bars}<text x="${cx.toFixed(1)}" y="${svgH - 12}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#64748B">${S().esc(it.shortLabel || it.label)}</text>`;
+          }).join('')}
+        </svg>
+      </div>
+      ${!hasAnyVal ? `<div class="text-[11px] text-center py-1" style="color:var(--ons-text-soft)">${S().esc(emptyMsg)}</div>` : ''}
+    </div>`;
+  }
+
+  function _renderDashFilterBar(range, extraRightHtml) {
+    return `<div class="flex flex-wrap items-center justify-between gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <select aria-label="Pilih Rentang Waktu Dashboard" onchange="window.setDashPeriodPreset(this.value)" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+          <option value="today" ${dashPeriodPreset === 'today' ? 'selected' : ''}>Hari Ini</option>
+          <option value="7d" ${dashPeriodPreset === '7d' ? 'selected' : ''}>7 Hari Terakhir</option>
+          <option value="30d" ${dashPeriodPreset === '30d' ? 'selected' : ''}>30 Hari Terakhir</option>
+          <option value="month" ${dashPeriodPreset === 'month' ? 'selected' : ''}>Bulan Ini</option>
+          <option value="year" ${dashPeriodPreset === 'year' ? 'selected' : ''}>Tahun Ini</option>
+          <option value="all" ${dashPeriodPreset === 'all' ? 'selected' : ''}>Semua Waktu</option>
+          <option value="custom" ${dashPeriodPreset === 'custom' ? 'selected' : ''}>Custom Tanggal</option>
+        </select>
+        ${dashPeriodPreset === 'custom' ? `
+          <div class="flex items-center gap-1.5 text-xs">
+            <input id="dashRangeStart" type="date" value="${S().esc(range.startYmd)}" onchange="window.setDashCustomRange(this.value, (document.getElementById('dashRangeEnd')||{}).value)" class="ons-input text-xs py-1 px-2 font-mono-num"/>
+            <span style="color:var(--ons-text-soft)">s.d.</span>
+            <input id="dashRangeEnd" type="date" value="${S().esc(range.endYmd)}" onchange="window.setDashCustomRange((document.getElementById('dashRangeStart')||{}).value, this.value)" class="ons-input text-xs py-1 px-2 font-mono-num"/>
+          </div>
+        ` : `<span class="text-xs font-mono-num px-2.5 py-1 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(range.startYmd)} s.d. ${S().esc(range.endYmd)}</span>`}
+      </div>
+      ${extraRightHtml || ''}
+    </div>`;
+  }
+
+  function _renderDashStatusPersediaanSection(invStatus, seeCost, canGudang, canDefecta, canFaktur) {
+    const cards = [
+      {
+        title: 'Berpotensi Rugi',
+        headStyle: 'background:rgba(244,63,94,0.12);color:#be123c',
+        count: invStatus.lossProducts.length,
+        unit: seeCost ? 'produk (harga &le; HPP)' : 'produk perlu cek harga',
+        onClick: canFaktur ? `navigateView('faktur','harga')` : (canGudang ? `navigateView('gudang','batch')` : '')
+      },
+      {
+        title: 'Stok Negatif / Kosong',
+        headStyle: 'background:rgba(245,158,11,0.14);color:#b45309',
+        count: invStatus.zeroProducts.length,
+        unit: 'produk stok 0',
+        onClick: canDefecta ? `navigateView('defecta','order')` : (canGudang ? `navigateView('gudang','batch')` : '')
+      },
+      {
+        title: 'Dekat Kadaluarsa',
+        headStyle: 'background:rgba(14,165,233,0.14);color:#0369a1',
+        count: invStatus.nearEdBatches.length,
+        unit: 'batch (&le;90 hari)',
+        onClick: canGudang ? `navigateView('gudang','batch')` : ''
+      },
+      {
+        title: 'Sudah Kadaluarsa',
+        headStyle: 'background:rgba(100,116,139,0.15);color:#334155',
+        count: invStatus.expiredBatches.length,
+        unit: 'batch kadaluarsa',
+        onClick: canGudang ? `navigateView('gudang','batch')` : ''
+      }
+    ];
+    return `<div class="space-y-3">
+      <div class="ons-dash-sec-title">
+        <span>- Status Persediaan</span>
+        ${canGudang ? `<button type="button" onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Kelola Stok &amp; FEFO &rarr;</button>` : ''}
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        ${cards.map((c) => `
+          <button type="button" class="ons-dash-status-card" ${c.onClick ? `onclick="${c.onClick}"` : ''}>
+            <div class="ons-dash-status-head" style="${c.headStyle}">
+              <span>${c.title}</span>
+              <span aria-hidden="true">&rsaquo;</span>
+            </div>
+            <div class="ons-dash-status-body">
+              <div class="text-2xl font-extrabold font-mono-num" style="color:var(--ons-text-main)">${c.count}</div>
+              <div class="text-xs mt-1" style="color:var(--ons-text-soft)">${c.unit}</div>
+            </div>
+          </button>
+        `).join('')}
+      </div>
+    </div>`;
+  }
+
+  function _getBucketKeys(range, granularity) {
+    const startDt = new Date(range.startYmd + 'T00:00:00');
+    const endDt = new Date(range.endYmd + 'T00:00:00');
+    const diffDays = Math.max(0, Math.min(90, Math.round((endDt.getTime() - startDt.getTime()) / 86400000)));
+    const list = [];
+    if (granularity === 'mingguan' || diffDays > 21) {
+      const weeks = Math.max(1, Math.min(12, Math.ceil((diffDays + 1) / 7)));
+      for (let i = 0; i < weeks; i++) {
+        const wStart = _shiftLocalYmd(endDt, -(weeks - 1 - i) * 7 - 6);
+        const wEnd = _shiftLocalYmd(endDt, -(weeks - 1 - i) * 7);
+        list.push({ startYmd: wStart, endYmd: wEnd, label: wStart.slice(5) + '..' + wEnd.slice(5), shortLabel: wEnd.slice(8) + '/' + wEnd.slice(5, 7) });
+      }
+      return list;
+    }
+    const totalDays = Math.max(1, Math.min(14, diffDays + 1));
+    for (let i = totalDays - 1; i >= 0; i--) {
+      const ymd = _shiftLocalYmd(endDt, -i);
+      list.push({ startYmd: ymd, endYmd: ymd, label: ymd, shortLabel: ymd.slice(8) + '/' + ymd.slice(5, 7) });
+    }
+    return list;
+  }
+
   function renderDashboardView() {
     const st = S().AppState;
     const cabId = st.cabangId || 'ONS-01';
     const seeCost = S().canSeeFinancialCost();
+    const curSubRaw = (st.subTabs && st.subTabs.dashboard) || dashSubTab || 'umum';
+    const allowedTabs = ['umum', 'penjualan', 'persediaan'].concat(seeCost ? ['pembelian'] : []);
+    dashSubTab = allowedTabs.includes(curSubRaw) ? curSubRaw : 'umum';
+    if (st.subTabs) st.subTabs.dashboard = dashSubTab;
+
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
@@ -1367,9 +1632,53 @@
     const greetText = hourNow < 11 ? 'Selamat Pagi' : (hourNow < 15 ? 'Selamat Siang' : (hourNow < 19 ? 'Selamat Sore' : 'Selamat Malam'));
     const fullDateLabel = nowDt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const todayIso = toLocalYmd_(nowDt);
+    const range = _getDashDateRange(nowDt);
 
-    const validSales = (st.penjualan || []).filter((p) => String(p.status_trx || '') !== 'RETUR' && sameCabang_(p, cabId));
+    const allBranchSales = (st.penjualan || []).filter((p) => sameCabang_(p, cabId));
+    const validSales = allBranchSales.filter((p) => String(p.status_trx || '') !== 'RETUR');
+    const returSales = allBranchSales.filter((p) => String(p.status_trx || '').toUpperCase().includes('RETUR'));
     const validTrxIds = new Set(validSales.map((p) => p.id_transaksi));
+
+    const canPos = S().canAccessView('pos');
+    const canObat = S().canAccessView('obat');
+    const canPoct = S().canAccessView('pemeriksaan');
+    const canGudang = S().canAccessView('gudang');
+    const canDefecta = S().canAccessView('defecta');
+    const canFaktur = S().canAccessView('faktur');
+    const canShift = S().canAccessView('tutup-shift');
+    const canFin = S().canAccessView('finance');
+    const canErx = S().canAccessView('eresep-prb');
+    const canOnline = S().canAccessView('omnichannel');
+
+    const invStatus = _computeDashInventoryStatus(st, cabId);
+    const activeTabList = [
+      { id: 'umum', label: 'Dashboard Umum' },
+      { id: 'penjualan', label: 'Dashboard Penjualan' },
+      ...(seeCost ? [{ id: 'pembelian', label: 'Dashboard Pembelian' }] : []),
+      { id: 'persediaan', label: 'Dashboard Persediaan' }
+    ];
+
+    const tabBarHtml = `<div class="ons-card p-3 flex flex-wrap items-center justify-between gap-2.5">
+      <div class="ons-tab-bar" role="tablist" aria-label="Sub-Menu Dashboard Apotek">
+        ${activeTabList.map((tb) => `<button type="button" role="tab" aria-selected="${dashSubTab === tb.id ? 'true' : 'false'}" onclick="window.setDashboardTab('${tb.id}')" class="ons-tab-btn ${dashSubTab === tb.id ? 'active' : ''}">${tb.label}</button>`).join('')}
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        ${canFin && seeCost ? `<button type="button" onclick="navigateView('finance','pnl')" class="ons-btn ons-btn-ghost text-xs">Dash. Keuangan &rarr;</button>` : ''}
+        <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
+      </div>
+    </div>`;
+
+    if (dashSubTab === 'penjualan') {
+      return `<div class="space-y-4 ons-view-enter">${tabBarHtml}${renderDashboardPenjualanTab(st, cabId, seeCost, nowDt, range, validSales, returSales, canPos, canObat)}</div>`;
+    }
+    if (dashSubTab === 'pembelian') {
+      return `<div class="space-y-4 ons-view-enter">${tabBarHtml}${renderDashboardPembelianTab(st, cabId, seeCost, nowDt, range, canDefecta, canFaktur, canFin)}</div>`;
+    }
+    if (dashSubTab === 'persediaan') {
+      return `<div class="space-y-4 ons-view-enter">${tabBarHtml}${renderDashboardPersediaanTab(st, cabId, seeCost, nowDt, range, invStatus, canGudang, canDefecta, canFaktur)}</div>`;
+    }
+
+    // === DASHBOARD UMUM (Integrasi Kokpit Eksekutif + Analisis Toko Apotek Digital) ===
     const todaySales = validSales.filter((p) => toLocalYmd_(p.tanggal) === todayIso);
     const omzetHariIni = todaySales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const omzetTotal = validSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
@@ -1379,14 +1688,11 @@
     const marginNum = omzetHariIni > 0 ? (marginHariIni || 0) : (marginTotal || 0);
     const marginPct = seeCost && marginDenom > 0 ? Math.round((marginNum / marginDenom) * 100) : 0;
 
-    const activeBatches = (st.stokBatch || []).filter((b) => sameCabang_(b, cabId) && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0);
-    const expiredBatches = activeBatches.filter((b) => S().daysUntil(b.tgl_kadaluarsa) < 0);
-    const nearEdBatches = activeBatches.filter((b) => {
-      const d = S().daysUntil(b.tgl_kadaluarsa);
-      return d >= 0 && d <= 90;
-    });
+    const expiredBatches = invStatus.expiredBatches;
+    const nearEdBatches = invStatus.nearEdBatches;
     const warningEdCount = expiredBatches.length + nearEdBatches.length;
-    const defectaCount = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).length;
+    const defectaCount = invStatus.defectaProducts.length;
+    const activeBatches = invStatus.activeBatches;
 
     const branchFaktur = seeCost ? (st.fakturPbf || []).filter((f) => sameCabang_(f, cabId)) : [];
     const openFaktur = branchFaktur.filter((f) => Number(f.sisa_hutang || 0) > 0);
@@ -1419,7 +1725,6 @@
     const activeShift = st.activeShift || null;
     const totalPoinMember = validSales.reduce((a, b) => a + Number(b.poin_didapat || 0), 0);
 
-    // Readiness Compliance Score (Checklist Audit + APJ/Kasir, ED, Defecta)
     const auditSys = S().getAuditSystem ? S().getAuditSystem() : { apj_nama: 'apt. Siti Rahma, S.Farm', kasir_nama: 'Budi Santoso (Kasir)', items: [] };
     const auditItems = Array.isArray(auditSys.items) ? auditSys.items : [];
     const auditChecked = auditItems.filter((it) => it.checked).length;
@@ -1428,7 +1733,6 @@
     const readiness = Math.max(55, Math.min(100, Math.round((stockScore * 0.65) + (auditPct * 0.35))));
     const dashArray = Math.round((readiness / 100) * 251.2);
 
-    // Agregasi Penjualan Nyata 7 Hari Terakhir (Zona Waktu Lokal)
     const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     const days = [];
     const omzSeries = [];
@@ -1444,15 +1748,12 @@
     const maxVal = Math.max(...omzSeries, 100000);
     const total7Hari = omzSeries.reduce((a, b) => a + b, 0);
     const avg7Hari = Math.round(total7Hari / 7);
-
-    // SVG smooth trend line across 7 days
     const trendCoords = omzSeries.map((val, idx) => {
       const x = 15 + idx * 45;
       const y = 44 - Math.round((Number(val || 0) / maxVal) * 34);
       return `${x},${y}`;
     }).join(' ');
 
-    // Distribusi Metode Pembayaran & Layanan Kasir
     const payTotals = {};
     validSales.forEach((p) => {
       const mt = String(p.metode_bayar || 'TUNAI').toUpperCase();
@@ -1462,7 +1763,6 @@
     const payDenom = payRows.reduce((s, r) => s + r.total, 0) || 1;
     const payColors = { TUNAI: '#10B981', QRIS: '#0066FE', TRANSFER: '#0284C7', SPLIT: '#F59E0B', TEMPO: '#D97706' };
 
-    // Top-5 Obat Terlaris dari transaksi LUNAS/valid (kecualikan RETUR)
     const soldMap = {};
     (st.detailPenjualan || []).forEach((d) => {
       if (d.id_transaksi && validTrxIds.size && !validTrxIds.has(d.id_transaksi)) return;
@@ -1476,19 +1776,71 @@
       soldMap[key].omz += Number(d.subtotal_item || (Number(d.qty || 1) * Number(d.harga_jual || 0)));
     });
     const topObatList = Object.values(soldMap).sort((a, b) => b.qty - a.qty).slice(0, 5);
-
     const activeUserDisplay = (S().getRole() === 'Pemilik' ? pemilikNama : ((st.user && st.user.nama_lengkap) || pemilikNama));
-    const canPos = S().canAccessView('pos');
-    const canObat = S().canAccessView('obat');
-    const canPoct = S().canAccessView('pemeriksaan');
-    const canGudang = S().canAccessView('gudang');
-    const canShift = S().canAccessView('tutup-shift');
-    const canFin = S().canAccessView('finance');
-    const canErx = S().canAccessView('eresep-prb');
-    const canOnline = S().canAccessView('omnichannel');
-
     const vsAvgPct = avg7Hari > 0 && omzetHariIni > 0 ? Math.round(((omzetHariIni - avg7Hari) / avg7Hari) * 100) : null;
     const topMaxQty = topObatList.length ? Math.max(1, Number(topObatList[0].qty || 1)) : 1;
+
+    // Ringkasan Penjualan Berbasis Rentang Waktu (Apotek Digital)
+    const rangeValidSales = validSales.filter((p) => _inDashRange(p.tanggal, range));
+    const rangeReturSales = returSales.filter((p) => _inDashRange(p.tanggal, range));
+    const rangeSalesSum = rangeValidSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const rangeReturSum = rangeReturSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const rangeLostSales = _getDashLostSales(range);
+    const rangeLostQty = rangeLostSales.reduce((s, l) => s + Number(l.qty || 1), 0);
+
+    // Analisis Toko: Freq Jam (7 hari terakhir) & Freq Hari (4 pekan terakhir)
+    const sevenDaysRange = { startYmd: _shiftLocalYmd(nowDt, -6), endYmd: todayIso };
+    const sales7d = validSales.filter((p) => _inDashRange(p.tanggal, sevenDaysRange));
+    const hourBuckets = [
+      { label: '07-09', shortLabel: '07-09', cnt: 0, hFrom: 0, hTo: 9 },
+      { label: '10-12', shortLabel: '10-12', cnt: 0, hFrom: 10, hTo: 12 },
+      { label: '13-15', shortLabel: '13-15', cnt: 0, hFrom: 13, hTo: 15 },
+      { label: '16-18', shortLabel: '16-18', cnt: 0, hFrom: 16, hTo: 18 },
+      { label: '19-21', shortLabel: '19-21', cnt: 0, hFrom: 19, hTo: 21 },
+      { label: '22+', shortLabel: '22+', cnt: 0, hFrom: 22, hTo: 23 }
+    ];
+    sales7d.forEach((p) => {
+      const m = /T(\d{2}):/.exec(String(p.tanggal || '')) || / (\d{2}):/.exec(String(p.tanggal || ''));
+      const hr = m ? Number(m[1]) : 12;
+      const bk = hourBuckets.find((b) => hr >= b.hFrom && hr <= b.hTo) || hourBuckets[1];
+      bk.cnt += 1;
+    });
+
+    const fourWeeksRange = { startYmd: _shiftLocalYmd(nowDt, -27), endYmd: todayIso };
+    const sales4w = validSales.filter((p) => _inDashRange(p.tanggal, fourWeeksRange));
+    const weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
+    const weekdayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const weekdayBuckets = weekdayOrder.map((wd) => ({ wd, label: weekdayNames[wd], shortLabel: weekdayNames[wd], cnt: 0 }));
+    sales4w.forEach((p) => {
+      const dt = new Date(toLocalYmd_(p.tanggal) + 'T12:00:00');
+      const bk = weekdayBuckets.find((b) => b.wd === dt.getDay());
+      if (bk) bk.cnt += 1;
+    });
+
+    // Performa KPI Karyawan per Tahun
+    const yearSales = validSales.filter((p) => toLocalYmd_(p.tanggal).startsWith(String(dashKpiYear)));
+    const staffMap = {};
+    (st.staffDirectory || []).forEach((u) => {
+      const id = String(u.id_user || u.username || u.nama_lengkap || '');
+      if (id) staffMap[id] = { label: u.nama_lengkap || u.username || id, shortLabel: String(u.nama_lengkap || id).split(' ')[0].slice(0, 10), trx: 0, omz: 0 };
+    });
+    yearSales.forEach((p) => {
+      const key = String(p.kasir_id || p.dibuat_oleh || 'Kasir');
+      if (!staffMap[key]) {
+        staffMap[key] = { label: key, shortLabel: key.split(' ')[0].slice(0, 10), trx: 0, omz: 0 };
+      }
+      staffMap[key].trx += 1;
+      staffMap[key].omz += Number(p.grand_total || 0);
+    });
+    const kpiStaffRows = Object.values(staffMap).sort((a, b) => b.trx - a.trx || b.omz - a.omz);
+
+    // Tipe Produk breakdown
+    const bpomCounts = {};
+    (st.masterObat || []).forEach((o) => {
+      const g = String(o.golongan_bpom || 'BEBAS').toUpperCase();
+      bpomCounts[g] = (bpomCounts[g] || 0) + 1;
+    });
+    const bpomSummary = Object.keys(bpomCounts).slice(0, 4).map((g) => `${g}: ${bpomCounts[g]}`).join(' • ') || 'Belum ada produk';
 
     const opsTiles = [
       canOnline ? {
@@ -1528,7 +1880,7 @@
         badgeCls: seeCost && spOpenCount ? 'bpom-prekursor' : 'bpom-bebas',
         icoBg: 'bg-amber-500/10 text-amber-600',
         ico: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
-        onClick: seeCost && S().canAccessView('defecta') ? `navigateView('defecta','sp')` : (!seeCost && canObat ? `navigateView('obat','obat')` : '')
+        onClick: seeCost && canDefecta ? `navigateView('defecta','sp')` : (!seeCost && canObat ? `navigateView('obat','obat')` : '')
       },
       {
         title: 'Monitor Suhu (2&ndash;8&deg;C)',
@@ -1555,7 +1907,7 @@
         count: defectaCount,
         dotCls: defectaCount ? 'bg-amber-500' : 'bg-emerald-500',
         pillCls: defectaCount ? 'bg-amber-500/15 text-amber-600' : 'bg-slate-500/10 text-slate-500',
-        onClick: seeCost && S().canAccessView('defecta') ? `navigateView('defecta','order')` : (canGudang ? `navigateView('gudang','batch')` : '')
+        onClick: seeCost && canDefecta ? `navigateView('defecta','order')` : (canGudang ? `navigateView('gudang','batch')` : '')
       },
       {
         label: 'Antrean Validasi E-Resep APJ',
@@ -1591,8 +1943,10 @@
       });
     }
 
-    return `<div class="space-y-4 ons-view-enter">
-      <!-- Fluid Hero Greeting Cockpit (2-Tier Non-Truncating Layout) -->
+    return `<div class="space-y-5 ons-view-enter">
+      ${tabBarHtml}
+
+      <!-- Fluid Hero Greeting Cockpit -->
       <div class="ons-hero-welcome p-4 sm:p-6 space-y-4">
         <div class="flex items-start gap-3.5 sm:gap-4 min-w-0">
           <div class="relative shrink-0 pt-0.5">
@@ -1723,6 +2077,37 @@
         </div>`}
       </div>
 
+      <!-- SEKSI APOTEK DIGITAL 1: - Ringkasan Penjualan -->
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title">
+          <span>- Ringkasan Penjualan</span>
+          ${_renderDashFilterBar(range, `<button type="button" onclick="window.setDashboardTab('penjualan')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Detail Penjualan &rarr;</button>`)}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 font-extrabold text-sm">Rp</span>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Penjualan (${S().esc(range.label)})</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5">${rangeValidSales.length} nota &bull; <span class="text-emerald-600">${S().rp(rangeSalesSum)}</span></div>
+            </div>
+          </div>
+          <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
+            <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Retur Penjualan</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5">${rangeReturSales.length} nota retur</div>
+            </div>
+          </div>
+          <div class="ons-dash-stat-tile is-clickable" onclick="window.openDashLostSaleModal()">
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg></span>
+            <div class="min-w-0 flex-1">
+              <div class="text-xs font-semibold flex items-center justify-between gap-1" style="color:var(--ons-text-soft)"><span>Penjualan Tertolak</span><span class="text-[10px] text-rose-600 font-bold">+ Catat</span></div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5">${rangeLostSales.length} kasus (${rangeLostQty} item)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Strip Ringkas Operasional & Klinis Berikon -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
         ${opsTiles.map((tl) => `
@@ -1740,6 +2125,72 @@
           </div>
         `).join('')}
       </div>
+
+      <!-- SEKSI APOTEK DIGITAL 2: - Analisis Toko (Frekuensi Jam & Hari) -->
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title"><span>- Analisis Toko</span></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="ons-card p-5 space-y-2">
+            ${_renderSvgVerticalBars(hourBuckets, [{ key: 'cnt', label: 'Freq. Penjualan 7 Hari Terakhir Berdasarkan Jam', color: '#0EA5E9', suffix: ' transaksi' }], { ariaLabel: 'Frekuensi penjualan berdasarkan jam', emptyMsg: 'Belum ada transaksi dalam 7 hari terakhir.' })}
+          </div>
+          <div class="ons-card p-5 space-y-2">
+            ${_renderSvgVerticalBars(weekdayBuckets, [{ key: 'cnt', label: 'Freq. Penjualan 4 Pekan Terakhir Berdasarkan Hari', color: '#10B981', suffix: ' transaksi' }], { ariaLabel: 'Frekuensi penjualan berdasarkan hari', emptyMsg: 'Belum ada transaksi dalam 4 pekan terakhir.' })}
+          </div>
+        </div>
+      </div>
+
+      <!-- SEKSI APOTEK DIGITAL 3: - Database Apotek -->
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title">
+          <span>- Database Apotek</span>
+          ${canObat ? `<button type="button" onclick="navigateView('obat','obat')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Kelola Master Data &rarr;</button>` : ''}
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 lg:col-span-2">
+            <div class="ons-dash-stat-tile ${canObat ? 'is-clickable' : ''}" ${canObat ? `onclick="navigateView('obat','pelanggan')"` : ''}>
+              <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+              <div>
+                <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Database Pelanggan</div>
+                <div class="text-xl font-extrabold font-mono-num">${(st.members || []).length}</div>
+              </div>
+            </div>
+            <div class="ons-dash-stat-tile ${(canObat && seeCost) ? 'is-clickable' : ''}" ${(canObat && seeCost) ? `onclick="navigateView('obat','supplier')"` : ''}>
+              <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg></span>
+              <div>
+                <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Database Supplier PBF</div>
+                <div class="text-xl font-extrabold font-mono-num">${(st.supplierPbf || []).length}</div>
+              </div>
+            </div>
+            <div class="ons-dash-stat-tile ${canObat ? 'is-clickable' : ''}" ${canObat ? `onclick="navigateView('obat','obat')"` : ''}>
+              <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+              <div>
+                <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Database Produk</div>
+                <div class="text-xl font-extrabold font-mono-num">${(st.masterObat || []).length}</div>
+              </div>
+            </div>
+            <div class="ons-dash-stat-tile ${canObat ? 'is-clickable' : ''}" ${canObat ? `onclick="navigateView('obat','dokter')"` : ''}>
+              <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11v4m-2-2h4"/></svg></span>
+              <div>
+                <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Database Dokter</div>
+                <div class="text-xl font-extrabold font-mono-num">${(st.masterDokter || []).length}</div>
+              </div>
+            </div>
+          </div>
+          <button type="button" onclick="window.openDashTipeProdukModal()" class="ons-dash-status-card justify-start">
+            <div class="ons-dash-status-head" style="background:rgba(16,185,129,0.12);color:#047857">
+              <span>Tipe Produk &amp; Golongan BPOM</span>
+              <span aria-hidden="true">&rsaquo;</span>
+            </div>
+            <div class="p-4 text-left space-y-2 flex-1 flex flex-col justify-between">
+              <div class="text-xs leading-relaxed" style="color:var(--ons-text-soft)">${S().esc(bpomSummary)}</div>
+              <div class="text-[11px] font-bold text-blue-600">Klik untuk rincian komposisi tipe produk &rarr;</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- SEKSI APOTEK DIGITAL 4: - Status Persediaan -->
+      ${_renderDashStatusPersediaanSection(invStatus, seeCost, canGudang, canDefecta, canFaktur)}
 
       <!-- Baris Tengah: Tren 7 Hari + Agenda Prioritas + Kepatuhan BPOM -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -1854,6 +2305,26 @@
         </div>
       </div>
 
+      <!-- SEKSI APOTEK DIGITAL 5: - Performa KPI Karyawan -->
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title">
+          <span>- Performa KPI Karyawan</span>
+          <div class="flex items-center gap-2">
+            <select aria-label="Pilih Tahun KPI Karyawan" onchange="window.setDashKpiYear(this.value)" class="ons-input text-xs py-1 px-2.5 w-auto font-mono-num font-bold">
+              ${[nowDt.getFullYear(), nowDt.getFullYear() - 1].map((yr) => `<option value="${yr}" ${String(dashKpiYear) === String(yr) ? 'selected' : ''}>${yr}</option>`).join('')}
+            </select>
+            <button type="button" onclick="window.openDashUserSalesModal()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Rincian Per User &rsaquo;</button>
+          </div>
+        </div>
+        <div class="ons-card p-5">
+          ${kpiStaffRows.length ? _renderSvgVerticalBars(
+            kpiStaffRows,
+            [{ key: 'trx', label: 'Jumlah Transaksi Selesai', color: '#0066FE', suffix: ' nota' }],
+            { ariaLabel: 'Grafik KPI Transaksi Karyawan', unitHint: `Tahun ${dashKpiYear} (${yearSales.length} total nota)`, barSlotW: 85, emptyMsg: 'Belum ada transaksi karyawan pada tahun ini.' }
+          ) : `<div class="py-6 text-center text-xs" style="color:var(--ons-text-soft)">Belum ada data performa karyawan pada tahun ${S().esc(dashKpiYear)}.</div>`}
+        </div>
+      </div>
+
       <!-- Baris Bawah: Komposisi Pembayaran + Top Obat Terlaris -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="ons-card p-5 lg:col-span-6 space-y-3">
@@ -1953,6 +2424,614 @@
       </div>
     </div>`;
   }
+
+  function renderDashboardPenjualanTab(st, cabId, seeCost, nowDt, range, validSales, returSales, canPos, canObat) {
+    const curMonthPrefix = `${nowDt.getFullYear()}-${String(nowDt.getMonth() + 1).padStart(2, '0')}`;
+    const prevMonthDt = new Date(nowDt.getFullYear(), nowDt.getMonth() - 1, 1);
+    const prevMonthPrefix = `${prevMonthDt.getFullYear()}-${String(prevMonthDt.getMonth() + 1).padStart(2, '0')}`;
+    const curYearPrefix = `${nowDt.getFullYear()}-`;
+    const prevYearPrefix = `${nowDt.getFullYear() - 1}-`;
+
+    const calcNetMetrics = (prefix) => {
+      const vList = validSales.filter((p) => toLocalYmd_(p.tanggal).startsWith(prefix));
+      const rList = returSales.filter((p) => toLocalYmd_(p.tanggal).startsWith(prefix));
+      const gross = vList.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+      const ret = rList.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+      const profit = vList.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0);
+      const retProfit = rList.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0);
+      return {
+        sales: Math.max(0, gross - (dashSalesNetRetur ? ret : 0)),
+        profit: Math.max(0, profit - (dashSalesNetRetur ? retProfit : 0))
+      };
+    };
+    const mNow = calcNetMetrics(curMonthPrefix);
+    const mPrev = calcNetMetrics(prevMonthPrefix);
+    const yNow = calcNetMetrics(curYearPrefix);
+    const yPrev = calcNetMetrics(prevYearPrefix);
+
+    const deltaLabel = (cur, prev, noun) => {
+      if (!prev) return `${noun}: ${S().rp(0)} (${cur > 0 ? 'Naik baru' : 'Belum ada data pembanding'})`;
+      const pct = Math.round(((cur - prev) / prev) * 100);
+      return `${noun}: ${S().rp(prev)} (${pct >= 0 ? '+' : ''}${pct}%)`;
+    };
+
+    const rValid = validSales.filter((p) => _inDashRange(p.tanggal, range));
+    const rRetur = returSales.filter((p) => _inDashRange(p.tanggal, range));
+    const rTotalSales = rValid.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const rTotalRetur = rRetur.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const rTotalProfit = seeCost ? rValid.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : 0;
+    const rLost = _getDashLostSales(range);
+
+    const buckets = _getBucketKeys(range, dashSalesGranularity).map((bk) => {
+      const bSales = rValid.filter((p) => {
+        const y = toLocalYmd_(p.tanggal);
+        return y >= bk.startYmd && y <= bk.endYmd;
+      });
+      return {
+        label: bk.label,
+        shortLabel: bk.shortLabel,
+        nilai: bSales.reduce((s, p) => s + Number(p.grand_total || 0), 0),
+        laba: seeCost ? bSales.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : 0,
+        frek: bSales.length
+      };
+    });
+
+    const rTrxIds = new Set(rValid.map((p) => p.id_transaksi));
+    const prodMap = {};
+    (st.detailPenjualan || []).forEach((d) => {
+      if (d.id_transaksi && !rTrxIds.has(d.id_transaksi)) return;
+      const key = d.id_obat || d.nama_dagang;
+      if (!key) return;
+      if (!prodMap[key]) prodMap[key] = { nama: d.nama_dagang || key, qty: 0, total: 0 };
+      prodMap[key].qty += Number(d.qty || 1);
+      prodMap[key].total += Number(d.subtotal_item || (Number(d.qty || 1) * Number(d.harga_jual || 0)));
+    });
+    const top10Produk = Object.values(prodMap).sort((a, b) => b.qty - a.qty).slice(0, 10);
+
+    const custMap = {};
+    rValid.forEach((p) => {
+      const mid = String(p.id_member || '').trim();
+      const mbr = mid ? (st.members || []).find((m) => m.id_member === mid) : null;
+      const nama = (mbr && mbr.nama_pasien) || (mid ? mid : 'Pelanggan Umum / Walk-in');
+      const key = mid || 'UMUM';
+      if (!custMap[key]) custMap[key] = { nama, nota: 0, total: 0 };
+      custMap[key].nota += 1;
+      custMap[key].total += Number(p.grand_total || 0);
+    });
+    const top10Cust = Object.values(custMap).sort((a, b) => b.total - a.total).slice(0, 10);
+
+    return `<div class="space-y-5">
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title">
+          <span>- Pertumbuhan Penjualan</span>
+          <label class="ons-dash-switch">
+            <input type="checkbox" ${dashSalesNetRetur ? 'checked' : ''} onchange="window.toggleDashNetRetur(this.checked)"/>
+            <span>Kurangi total penjualan dengan retur</span>
+          </label>
+        </div>
+
+        <div class="ons-card p-4 space-y-2.5">
+          <div class="font-bold text-sm">Total Penjualan</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Bulan Ini (${S().esc(curMonthPrefix)})</div>
+              <div class="text-xl font-extrabold font-mono-num text-blue-600 mt-1">${S().rp(mNow.sales)}</div>
+              <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${S().esc(deltaLabel(mNow.sales, mPrev.sales, 'Bulan lalu'))}</div>
+            </div>
+            <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Tahun Ini (${nowDt.getFullYear()})</div>
+              <div class="text-xl font-extrabold font-mono-num text-blue-600 mt-1">${S().rp(yNow.sales)}</div>
+              <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${S().esc(deltaLabel(yNow.sales, yPrev.sales, 'Tahun lalu'))}</div>
+            </div>
+          </div>
+        </div>
+
+        ${seeCost ? `<div class="ons-card p-4 space-y-2.5">
+          <div class="font-bold text-sm">Keuntungan Penjualan</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Bulan Ini (${S().esc(curMonthPrefix)})</div>
+              <div class="text-xl font-extrabold font-mono-num text-emerald-600 mt-1">${S().rp(mNow.profit)}</div>
+              <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${S().esc(deltaLabel(mNow.profit, mPrev.profit, 'Bulan lalu'))}</div>
+            </div>
+            <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Tahun Ini (${nowDt.getFullYear()})</div>
+              <div class="text-xl font-extrabold font-mono-num text-emerald-600 mt-1">${S().rp(yNow.profit)}</div>
+              <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${S().esc(deltaLabel(yNow.profit, yPrev.profit, 'Tahun lalu'))}</div>
+            </div>
+          </div>
+        </div>` : ''}
+      </div>
+
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title">
+          <span>- Riwayat Penjualan</span>
+          ${_renderDashFilterBar(range, `<select aria-label="Granularitas Penjualan" onchange="window.setDashSalesGranularity(this.value)" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+            <option value="harian" ${dashSalesGranularity === 'harian' ? 'selected' : ''}>Harian</option>
+            <option value="mingguan" ${dashSalesGranularity === 'mingguan' ? 'selected' : ''}>Mingguan</option>
+          </select>`)}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 ${seeCost ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5">
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 font-extrabold text-sm">Rp</span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Penjualan</div><div class="text-lg font-extrabold font-mono-num">${S().rp(rTotalSales)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Retur Penjualan</div><div class="text-lg font-extrabold font-mono-num">${S().rp(rTotalRetur)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile is-clickable" onclick="window.openDashLostSaleModal()">
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Penjualan Tertolak</div><div class="text-lg font-extrabold font-mono-num">${rLost.length} kasus</div></div>
+          </div>
+          ${seeCost ? `<div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Keuntungan Penjualan</div><div class="text-lg font-extrabold font-mono-num text-emerald-600">${S().rp(rTotalProfit)}</div></div>
+          </div>` : ''}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="ons-card p-5 lg:col-span-8">
+            ${_renderSvgVerticalBars(
+              buckets,
+              [
+                { key: 'nilai', label: 'Total Nilai Penjualan', color: '#10B981', isCurrency: true },
+                ...(seeCost ? [{ key: 'laba', label: 'Keuntungan Penjualan', color: '#0066FE', isCurrency: true }] : [])
+              ],
+              { isCurrency: true, ariaLabel: 'Grafik Riwayat Penjualan', unitHint: `${rValid.length} transaksi pada rentang ini` }
+            )}
+          </div>
+          <div class="ons-card p-5 lg:col-span-4 flex flex-col justify-between gap-3">
+            <div>
+              <div class="font-bold text-sm">Ringkasan Frekuensi &amp; Kasir</div>
+              <div class="text-xs mt-1" style="color:var(--ons-text-soft)">Total <b>${rValid.length} transaksi</b> selesai pada ${S().esc(range.label)}.</div>
+            </div>
+            <button type="button" onclick="window.openDashUserSalesModal()" class="ons-btn ons-btn-ghost w-full justify-between text-xs py-2.5 px-3 border" style="border-color:var(--ons-border)">
+              <span class="font-bold text-emerald-700 dark:text-emerald-300">Penjualan Per User</span>
+              <span aria-hidden="true">&rsaquo;</span>
+            </button>
+            ${canPos ? `<button type="button" onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-primary w-full text-xs">Buka Riwayat Nota Lengkap &rarr;</button>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="ons-card overflow-hidden">
+          <div class="ons-dash-status-head" style="background:rgba(249,115,22,0.12);color:#c2410c">
+            <span>10 Produk Terlaris</span>
+            ${canObat ? `<button type="button" onclick="navigateView('obat','obat')" class="text-xs font-bold underline">Katalog &rsaquo;</button>` : ''}
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table text-xs">
+              <thead><tr><th>No.</th><th>Nama Produk</th><th class="text-right">Terjual</th><th class="text-right">Nominal</th></tr></thead>
+              <tbody>
+                ${top10Produk.length ? top10Produk.map((p, i) => `<tr>
+                  <td class="font-mono-num">${i + 1}</td>
+                  <td class="font-semibold">${S().esc(p.nama)}</td>
+                  <td class="text-right font-mono-num">${p.qty}</td>
+                  <td class="text-right font-mono-num font-bold">${S().rp(p.total)}</td>
+                </tr>`).join('') : '<tr><td colspan="4" class="text-center py-6" style="color:var(--ons-text-soft)">Data tidak tersedia pada rentang ini.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ons-card overflow-hidden">
+          <div class="ons-dash-status-head" style="background:rgba(14,165,233,0.12);color:#0369a1">
+            <span>10 Pelanggan Terloyal</span>
+            ${canObat ? `<button type="button" onclick="navigateView('obat','pelanggan')" class="text-xs font-bold underline">Pelanggan &rsaquo;</button>` : ''}
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table text-xs">
+              <thead><tr><th>No.</th><th>Nama Pelanggan</th><th class="text-right">Nota</th><th class="text-right">Penjualan</th></tr></thead>
+              <tbody>
+                ${top10Cust.length ? top10Cust.map((c, i) => `<tr>
+                  <td class="font-mono-num">${i + 1}</td>
+                  <td class="font-semibold">${S().esc(c.nama)}</td>
+                  <td class="text-right font-mono-num">${c.nota}</td>
+                  <td class="text-right font-mono-num font-bold">${S().rp(c.total)}</td>
+                </tr>`).join('') : '<tr><td colspan="4" class="text-center py-6" style="color:var(--ons-text-soft)">Data tidak tersedia pada rentang ini.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderDashboardPembelianTab(st, cabId, seeCost, nowDt, range, canDefecta, canFaktur, canFin) {
+    if (!seeCost) {
+      return `<div class="ons-card p-6 text-center space-y-2">
+        <div class="font-bold text-sm">Akses Terbatas — Dashboard Pembelian</div>
+        <p class="text-xs" style="color:var(--ons-text-soft)">Data nilai pembelian, SP PBF, dan hutang faktur hanya tersedia untuk Pemilik dan APJ.</p>
+        <button type="button" onclick="window.setDashboardTab('umum')" class="ons-btn ons-btn-primary text-xs">Kembali ke Dashboard Umum</button>
+      </div>`;
+    }
+    const branchSp = (st.suratPesanan || []).filter((sp) => sameCabang_(sp, cabId));
+    const branchFaktur = (st.fakturPbf || []).filter((f) => sameCabang_(f, cabId));
+
+    const rencanaPembelianRp = (st.masterObat || []).reduce((sum, o) => {
+      const stok = S().getSellableStok(o.id_obat);
+      const min = Number(o.stok_min || 10);
+      const max = Number(o.stok_max || min * 4);
+      if (stok > min) return sum;
+      const qtyOrder = Math.max(1, max - Math.max(0, stok));
+      return sum + qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0);
+    }, 0);
+
+    const openSpList = branchSp.filter((sp) => !['SELESAI_DITERIMA', 'DITERIMA_PENUH', 'BATAL'].includes(String(sp.status_sp || '').toUpperCase()));
+    const pesananAktifRp = openSpList.reduce((s, sp) => s + Number(sp.estimasi_total || 0), 0);
+
+    const openFakturList = branchFaktur
+      .filter((f) => Number(f.sisa_hutang || 0) > 0)
+      .slice()
+      .sort((a, b) => String(a.tgl_jatuh_tempo || '9999-12-31').localeCompare(String(b.tgl_jatuh_tempo || '9999-12-31')));
+    const hutangPembelianRp = openFakturList.reduce((s, f) => s + Number(f.sisa_hutang || 0), 0);
+
+    const rSp = branchSp.filter((sp) => _inDashRange(sp.tanggal, range));
+    const rFaktur = branchFaktur.filter((f) => _inDashRange(f.tgl_faktur, range) && !String(f.status_bar || '').toUpperCase().includes('RETUR'));
+    const rReturFaktur = branchFaktur.filter((f) => _inDashRange(f.tgl_faktur, range) && String(f.status_bar || '').toUpperCase().includes('RETUR'));
+    const rSpRp = rSp.reduce((s, sp) => s + Number(sp.estimasi_total || 0), 0);
+    const rFakturRp = rFaktur.reduce((s, f) => s + Number(f.netto_hutang || f.total_bruto || 0), 0);
+    const rReturRp = rReturFaktur.reduce((s, f) => s + Number(f.netto_hutang || f.total_bruto || 0), 0);
+
+    const buckets = _getBucketKeys(range, dashPurchaseGranularity).map((bk) => {
+      const fList = rFaktur.filter((f) => {
+        const y = toLocalYmd_(f.tgl_faktur);
+        return y >= bk.startYmd && y <= bk.endYmd;
+      });
+      const retList = rReturFaktur.filter((f) => {
+        const y = toLocalYmd_(f.tgl_faktur);
+        return y >= bk.startYmd && y <= bk.endYmd;
+      });
+      return {
+        label: bk.label,
+        shortLabel: bk.shortLabel,
+        faktur: fList.reduce((s, f) => s + Number(f.netto_hutang || f.total_bruto || 0), 0),
+        retur: retList.reduce((s, f) => s + Number(f.netto_hutang || f.total_bruto || 0), 0)
+      };
+    });
+
+    return `<div class="space-y-5">
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title"><span>- Status Pembelian</span></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('defecta','order')"` : ''}>
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Rencana Pembelian (Defecta)</div><div class="text-lg font-extrabold font-mono-num">${S().rp(rencanaPembelianRp)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('defecta','sp')"` : ''}>
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pesanan Aktif (${openSpList.length} SP)</div><div class="text-lg font-extrabold font-mono-num">${S().rp(pesananAktifRp)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile ${canFin ? 'is-clickable' : ''}" ${canFin ? `onclick="navigateView('finance','hutang')"` : ''}>
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Hutang Pembelian (${openFakturList.length} Faktur)</div><div class="text-lg font-extrabold font-mono-num text-amber-600">${S().rp(hutangPembelianRp)}</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="ons-card overflow-hidden">
+          <div class="ons-dash-status-head" style="background:rgba(244,63,94,0.12);color:#be123c">
+            <span>Jatuh Tempo Terdekat</span>
+            ${canFaktur ? `<button type="button" onclick="navigateView('faktur','daftar')" class="text-xs font-bold underline">Daftar Faktur &rsaquo;</button>` : ''}
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table text-xs">
+              <thead><tr><th>No.</th><th>Nama Supplier</th><th>Jatuh Tempo</th><th class="text-right">Nominal</th></tr></thead>
+              <tbody>
+                ${openFakturList.length ? openFakturList.slice(0, 6).map((f, i) => `<tr class="cursor-pointer hover:bg-blue-500/5" onclick="if(window.openFakturDetailModal)window.openFakturDetailModal('${S().esc(f.id_faktur || f.no_faktur_pbf)}')">
+                  <td class="font-mono-num">${i + 1}</td>
+                  <td class="font-semibold">${S().esc(f.id_pbf || f.nama_pbf || '-')}</td>
+                  <td class="font-mono-num">${S().esc(f.tgl_jatuh_tempo || '-')}</td>
+                  <td class="text-right font-mono-num font-bold text-amber-600">${S().rp(f.sisa_hutang)}</td>
+                </tr>`).join('') : '<tr><td colspan="4" class="text-center py-6" style="color:var(--ons-text-soft)">Tidak ada hutang faktur PBF berjalan.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ons-card overflow-hidden">
+          <div class="ons-dash-status-head" style="background:rgba(14,165,233,0.12);color:#0369a1">
+            <span>Pesanan Aktif</span>
+            ${canDefecta ? `<button type="button" onclick="navigateView('defecta','sp')" class="text-xs font-bold underline">Surat Pesanan &rsaquo;</button>` : ''}
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table text-xs">
+              <thead><tr><th>No.</th><th>Nama Supplier</th><th>Tgl. Dibuat</th><th class="text-right">Nominal</th></tr></thead>
+              <tbody>
+                ${openSpList.length ? openSpList.slice(0, 6).map((sp, i) => `<tr class="cursor-pointer hover:bg-blue-500/5" onclick="if(window.openSpA4PreviewModal)window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')">
+                  <td class="font-mono-num">${i + 1}</td>
+                  <td class="font-semibold">${S().esc(sp.nama_pbf || sp.id_pbf || '-')}</td>
+                  <td class="font-mono-num">${S().esc(sp.tanggal || '-')}</td>
+                  <td class="text-right font-mono-num font-bold">${S().rp(sp.estimasi_total || 0)}</td>
+                </tr>`).join('') : '<tr><td colspan="4" class="text-center py-6" style="color:var(--ons-text-soft)">Semua Surat Pesanan sudah selesai diterima.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title">
+          <span>- Riwayat Pembelian</span>
+          ${_renderDashFilterBar(range, `<select aria-label="Granularitas Pembelian" onchange="window.setDashPurchaseGranularity(this.value)" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+            <option value="harian" ${dashPurchaseGranularity === 'harian' ? 'selected' : ''}>Harian</option>
+            <option value="mingguan" ${dashPurchaseGranularity === 'mingguan' ? 'selected' : ''}>Mingguan</option>
+          </select>`)}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pesanan Pembelian (${rSp.length} SP)</div><div class="text-lg font-extrabold font-mono-num">${S().rp(rSpRp)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Faktur Pembelian (${rFaktur.length} Faktur)</div><div class="text-lg font-extrabold font-mono-num">${S().rp(rFakturRp)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Retur Pembelian (${rReturFaktur.length})</div><div class="text-lg font-extrabold font-mono-num">${S().rp(rReturRp)}</div></div>
+          </div>
+        </div>
+        <div class="ons-card p-5">
+          ${_renderSvgVerticalBars(
+            buckets,
+            [
+              { key: 'faktur', label: 'Faktur Pembelian', color: '#38BDF8', isCurrency: true },
+              { key: 'retur', label: 'Retur Pembelian', color: '#F43F5E', isCurrency: true }
+            ],
+            { isCurrency: true, ariaLabel: 'Grafik Riwayat Pembelian', unitHint: `Total faktur ${S().rp(rFakturRp)}` }
+          )}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderDashboardPersediaanTab(st, cabId, seeCost, nowDt, range, invStatus, canGudang, canDefecta, canFaktur) {
+    const obatById = {};
+    (st.masterObat || []).forEach((o) => { obatById[o.id_obat] = o; });
+    const muts = (st.mutasiStok || []).filter((m) => {
+      if (!sameCabang_(m, cabId) || !_inDashRange(m.timestamp, range)) return false;
+      const jm = String(m.jenis_mutasi || '').toUpperCase();
+      if (dashInvJenis !== 'SEMUA' && !jm.includes(dashInvJenis)) return false;
+      if (dashInvSupplier !== 'SEMUA') {
+        const ob = obatById[m.id_obat];
+        if (!ob || String(ob.pbf_utama || '') !== dashInvSupplier) return false;
+      }
+      return true;
+    });
+
+    const getMutVal = (m) => {
+      const ob = obatById[m.id_obat];
+      const hpp = Number((ob && (ob.hpp_avg || ob.hpp_terakhir)) || 0);
+      return Math.abs(Number(m.qty_ubah || 0)) * hpp;
+    };
+
+    let penyesuaianRp = 0; let penyesuaianQty = 0;
+    let mutasiLainRp = 0; let mutasiLainQty = 0;
+    let terjualRp = 0; let terjualQty = 0;
+    let pembelianRp = 0; let pembelianQty = 0;
+    muts.forEach((m) => {
+      const jm = String(m.jenis_mutasi || '').toUpperCase();
+      const q = Number(m.qty_ubah || 0);
+      const val = getMutVal(m);
+      if (jm.includes('OPNAME') || jm.includes('PENYESUAIAN')) {
+        penyesuaianQty += q;
+        penyesuaianRp += (q >= 0 ? val : -val);
+      } else if (jm.includes('PENJUALAN')) {
+        terjualQty += Math.abs(q);
+        terjualRp += val;
+      } else if (jm.includes('PEMBELIAN') || jm.includes('GRN')) {
+        pembelianQty += Math.abs(q);
+        pembelianRp += val;
+      } else {
+        mutasiLainQty += q;
+        mutasiLainRp += (q >= 0 ? val : -val);
+      }
+    });
+
+    const persediaanAkhirRp = invStatus.currentStockVal;
+    const persediaanAwalRp = Math.max(0, persediaanAkhirRp - pembelianRp + terjualRp - penyesuaianRp - mutasiLainRp);
+
+    const buckets = _getBucketKeys(range, 'harian');
+    let runningVal = persediaanAwalRp;
+    let runningUnits = Math.max(0, invStatus.currentStockUnits - pembelianQty + terjualQty - penyesuaianQty - mutasiLainQty);
+    const invTrendPoints = buckets.map((bk) => {
+      const dayMuts = muts.filter((m) => {
+        const y = toLocalYmd_(m.timestamp);
+        return y >= bk.startYmd && y <= bk.endYmd;
+      });
+      dayMuts.forEach((m) => {
+        const q = Number(m.qty_ubah || 0);
+        const ob = obatById[m.id_obat];
+        const hpp = Number((ob && (ob.hpp_avg || ob.hpp_terakhir)) || 0);
+        runningUnits = Math.max(0, runningUnits + q);
+        runningVal = Math.max(0, runningVal + (q * hpp));
+      });
+      return { label: bk.label, shortLabel: bk.shortLabel, val: seeCost ? runningVal : runningUnits };
+    });
+    if (invTrendPoints.length) {
+      invTrendPoints[invTrendPoints.length - 1].val = seeCost ? persediaanAkhirRp : invStatus.currentStockUnits;
+    }
+
+    const fmtCard = (rpVal, qtyVal, prefix) => seeCost ? ((prefix || '') + S().rp(rpVal)) : `${qtyVal} unit`;
+
+    return `<div class="space-y-5">
+      <div class="space-y-3">
+        <div class="ons-dash-sec-title">
+          <span>- Riwayat Persediaan</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <select aria-label="Filter Jenis Mutasi" onchange="window.setDashInvFilter(this.value, '${S().esc(dashInvSupplier)}')" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+              <option value="SEMUA" ${dashInvJenis === 'SEMUA' ? 'selected' : ''}>Semua Mutasi</option>
+              <option value="PENJUALAN" ${dashInvJenis === 'PENJUALAN' ? 'selected' : ''}>Penjualan POS</option>
+              <option value="PEMBELIAN" ${dashInvJenis === 'PEMBELIAN' ? 'selected' : ''}>Pembelian / GRN</option>
+              <option value="OPNAME" ${dashInvJenis === 'OPNAME' ? 'selected' : ''}>Penyesuaian / Opname</option>
+              <option value="RETUR" ${dashInvJenis === 'RETUR' ? 'selected' : ''}>Retur</option>
+            </select>
+            ${seeCost ? `<select aria-label="Filter Supplier Persediaan" onchange="window.setDashInvFilter('${S().esc(dashInvJenis)}', this.value)" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+              <option value="SEMUA" ${dashInvSupplier === 'SEMUA' ? 'selected' : ''}>Semua Supplier</option>
+              ${(st.supplierPbf || []).map((p) => `<option value="${S().esc(p.nama_pbf)}" ${dashInvSupplier === p.nama_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)}</option>`).join('')}
+            </select>` : ''}
+            ${_renderDashFilterBar(range)}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Penyesuaian Stok</div><div class="text-lg font-extrabold font-mono-num">${fmtCard(penyesuaianRp, penyesuaianQty)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 12-3-3m3 3 3-3M17 8v12m0-12 3 3m-3-3-3 3"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Mutasi Keluar/Masuk</div><div class="text-lg font-extrabold font-mono-num">${fmtCard(mutasiLainRp, mutasiLainQty)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Terjual (${terjualQty} unit)</div><div class="text-lg font-extrabold font-mono-num text-emerald-600">${fmtCard(terjualRp, terjualQty, '+')}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-sky-500/12 text-sky-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pembelian (${pembelianQty} unit)</div><div class="text-lg font-extrabold font-mono-num">${fmtCard(pembelianRp, pembelianQty)}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Persediaan Awal</div><div class="text-lg font-extrabold font-mono-num">${seeCost ? S().rp(persediaanAwalRp) : (Math.max(0, invStatus.currentStockUnits - pembelianQty + terjualQty) + ' unit')}</div></div>
+          </div>
+          <div class="ons-dash-stat-tile">
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg></span>
+            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Persediaan Akhir</div><div class="text-lg font-extrabold font-mono-num text-blue-600">${seeCost ? S().rp(persediaanAkhirRp) : (invStatus.currentStockUnits + ' unit')}</div></div>
+          </div>
+        </div>
+
+        <div class="ons-card p-5">
+          ${_renderSvgVerticalBars(
+            invTrendPoints,
+            [{ key: 'val', label: seeCost ? 'Total Nilai Persediaan (HPP)' : 'Total Unit Persediaan', color: '#06B6D4', isCurrency: seeCost, suffix: seeCost ? '' : ' unit' }],
+            { isCurrency: seeCost, ariaLabel: 'Grafik Nilai Persediaan', unitHint: `${invStatus.activeBatches.length} batch aktif` }
+          )}
+        </div>
+      </div>
+
+      ${_renderDashStatusPersediaanSection(invStatus, seeCost, canGudang, canDefecta, canFaktur)}
+    </div>`;
+  }
+
+  global.setDashboardTab = (t) => {
+    const seeCost = S().canSeeFinancialCost();
+    const allowed = ['umum', 'penjualan', 'persediaan'].concat(seeCost ? ['pembelian'] : []);
+    dashSubTab = allowed.includes(t) ? t : 'umum';
+    if (S().AppState.subTabs) S().AppState.subTabs.dashboard = dashSubTab;
+    global.renderActiveView();
+    if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+  };
+  global.setDashPeriodPreset = (p) => { dashPeriodPreset = p || '30d'; global.renderActiveView(); };
+  global.setDashCustomRange = (s, e) => { dashCustomStart = s || ''; dashCustomEnd = e || ''; dashPeriodPreset = 'custom'; global.renderActiveView(); };
+  global.setDashSalesGranularity = (g) => { dashSalesGranularity = g || 'harian'; global.renderActiveView(); };
+  global.toggleDashNetRetur = (chk) => { dashSalesNetRetur = !!chk; global.renderActiveView(); };
+  global.setDashPurchaseGranularity = (g) => { dashPurchaseGranularity = g || 'harian'; global.renderActiveView(); };
+  global.setDashInvFilter = (jenis, sup) => { dashInvJenis = jenis || 'SEMUA'; dashInvSupplier = sup || 'SEMUA'; global.renderActiveView(); };
+  global.setDashKpiYear = (yr) => { dashKpiYear = String(yr || new Date().getFullYear()); global.renderActiveView(); };
+
+  global.openDashUserSalesModal = () => {
+    const st = S().AppState;
+    const cabId = st.cabangId || 'ONS-01';
+    const seeCost = S().canSeeFinancialCost();
+    const range = _getDashDateRange(new Date());
+    const rValid = (st.penjualan || []).filter((p) => sameCabang_(p, cabId) && String(p.status_trx || '') !== 'RETUR' && _inDashRange(p.tanggal, range));
+    const userMap = {};
+    rValid.forEach((p) => {
+      const id = String(p.kasir_id || p.dibuat_oleh || 'Kasir');
+      const uObj = (st.staffDirectory || []).find((u) => u.id_user === id || u.username === id);
+      if (!userMap[id]) userMap[id] = { nama: (uObj && uObj.nama_lengkap) || id, role: (uObj && uObj.role) || 'Kasir', nota: 0, omz: 0, laba: 0 };
+      userMap[id].nota += 1;
+      userMap[id].omz += Number(p.grand_total || 0);
+      userMap[id].laba += Number(p.estimasi_margin || 0);
+    });
+    const rows = Object.values(userMap).sort((a, b) => b.omz - a.omz);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-base">Rincian Penjualan Per User (${S().esc(range.label)})</h3>
+          <div style="color:var(--ons-text-soft)">${S().esc(range.startYmd)} s.d. ${S().esc(range.endYmd)}</div>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table text-xs">
+          <thead><tr><th>Nama Pengguna</th><th>Role</th><th class="text-right">Nota</th><th class="text-right">Total Penjualan</th>${seeCost ? '<th class="text-right">Laba</th>' : ''}</tr></thead>
+          <tbody>
+            ${rows.length ? rows.map((r) => `<tr>
+              <td class="font-semibold">${S().esc(r.nama)}</td>
+              <td><span class="badge-bpom bpom-terbatas">${S().esc(r.role)}</span></td>
+              <td class="text-right font-mono-num">${r.nota}</td>
+              <td class="text-right font-mono-num font-bold">${S().rp(r.omz)}</td>
+              ${seeCost ? `<td class="text-right font-mono-num text-emerald-600">${S().rp(r.laba)}</td>` : ''}
+            </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6">Belum ada transaksi user pada rentang ini.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`, '620px');
+  };
+
+  global.openDashTipeProdukModal = () => {
+    const st = S().AppState;
+    const total = Math.max(1, (st.masterObat || []).length);
+    const map = {};
+    (st.masterObat || []).forEach((o) => {
+      const g = String(o.golongan_bpom || 'BEBAS').toUpperCase();
+      map[g] = (map[g] || 0) + 1;
+    });
+    const rows = Object.keys(map).map((g) => ({ g, count: map[g], pct: Math.round((map[g] / total) * 100) })).sort((a, b) => b.count - a.count);
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Komposisi Tipe Produk &amp; Golongan BPOM</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-2.5">
+        ${rows.length ? rows.map((r) => `<div>
+          <div class="flex justify-between font-semibold mb-1"><span>${S().bpomBadge(r.g)}</span><span class="font-mono-num">${r.count} produk (${r.pct}%)</span></div>
+          <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${r.pct}%;background:#0066FE"></div></div>
+        </div>`).join('') : '<div class="text-center py-4">Belum ada produk pada Master Obat.</div>'}
+      </div>
+      ${S().canAccessView('obat') ? `<button type="button" onclick="ONSStore.closeModal();navigateView('obat','obat')" class="ons-btn ons-btn-primary w-full text-xs">Buka Master Data Obat &rarr;</button>` : ''}
+    </div>`, '480px');
+  };
+
+  global.openDashLostSaleModal = () => {
+    const arr = _getDashLostSales();
+    S().openModal(`<div class="p-6 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">Log Penjualan Tertolak (Lost Sales)</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <p style="color:var(--ons-text-soft)">Catat permintaan obat dari pasien yang belum tersedia / stok kosong sebagai bahan evaluasi pengadaan.</p>
+      <div class="flex gap-2">
+        <input id="dashLsNama" class="ons-input flex-1" placeholder="Nama obat yang dicari pasien..."/>
+        <input id="dashLsQty" type="number" min="1" class="ons-input w-20 font-mono-num" value="1"/>
+        <button type="button" onclick="window.submitDashLostSale()" class="ons-btn ons-btn-primary">Simpan</button>
+      </div>
+      <div class="space-y-1.5 max-h-56 overflow-auto">
+        ${arr.slice().reverse().map((ls) => `<div class="p-2 rounded-lg border flex justify-between items-center" style="border-color:var(--ons-border)">
+          <span><b>${S().esc(ls.nama_obat)}</b> (${Number(ls.qty || 1)}x)</span>
+          <span class="font-mono-num" style="color:var(--ons-text-soft)">${S().esc(ls.tanggal || '-')}</span>
+        </div>`).join('')}
+      </div>
+    </div>`, '500px');
+  };
+
+  global.submitDashLostSale = () => {
+    const nama = ((document.getElementById('dashLsNama') || {}).value || '').trim();
+    const qty = Math.max(1, Number((document.getElementById('dashLsQty') || {}).value || 1));
+    if (!nama) return global.toast('Tulis nama obat yang dicari pasien.', 'warn');
+    const arr = _getDashLostSales();
+    arr.push({ tanggal: toLocalYmd_(new Date()), nama_obat: nama, qty, alasan: 'Tidak tersedia saat diminta' });
+    try { localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr.slice(-50))); } catch (e) {}
+    S().closeModal();
+    global.toast('Penjualan tertolak dicatat!', 'ok');
+    global.renderActiveView();
+  };
 
   /**
    * W-03: Kasir POS Next-Gen v11 (Kasir FEFO, Split Pay, Poin, Riwayat/Retur PIN & Struk Thermal)
