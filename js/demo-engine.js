@@ -86,7 +86,8 @@
         { id_batch: 'BTH-108', cabang_id: 'ONS-01', id_obat: 'OBT-006', no_batch: 'IBU-2603W', tgl_kadaluarsa: addDays(62), qty_sisa: 120, qty_karantina: 0, hpp_beli: 890, no_faktur_pbf: 'FK-ENS-5501', status_batch: 'AKTIF' },
         { id_batch: 'BTH-109', cabang_id: 'ONS-01', id_obat: 'OBT-007', no_batch: 'AML-2607N', tgl_kadaluarsa: addDays(390), qty_sisa: 65, qty_karantina: 0, hpp_beli: 410, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
         { id_batch: 'BTH-110', cabang_id: 'ONS-01', id_obat: 'OBT-008', no_batch: 'COD-2608K', tgl_kadaluarsa: addDays(290), qty_sisa: 42, qty_karantina: 0, hpp_beli: 2300, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-111', cabang_id: 'ONS-01', id_obat: 'OBT-009', no_batch: 'WAR-2610M', tgl_kadaluarsa: addDays(310), qty_sisa: 50, qty_karantina: 0, hpp_beli: 1350, no_faktur_pbf: 'FK-FHR-0081', status_batch: 'AKTIF' }
+        { id_batch: 'BTH-111', cabang_id: 'ONS-01', id_obat: 'OBT-009', no_batch: 'WAR-2610M', tgl_kadaluarsa: addDays(310), qty_sisa: 50, qty_karantina: 0, hpp_beli: 1350, no_faktur_pbf: 'FK-FHR-0081', status_batch: 'AKTIF' },
+        { id_batch: 'BTH-KNS-01', cabang_id: 'ONS-01', id_obat: 'OBT-002', no_batch: 'KNS-PC-26', tgl_kadaluarsa: addDays(400), qty_sisa: 50, qty_karantina: 0, hpp_beli: 320, no_faktur_pbf: 'FK-KNS-01', status_batch: 'AKTIF', is_konsinyasi: 'YA', id_pbf: 'CV Herbal Berkah Alami' }
       ],
       members: [
         { id_member: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_hp: '6281234567801', tgl_lahir: '1965-04-19', alergi_list: 'Penisilin', penyakit_kronis: 'Hipertensi + Jantung', program_prb: 'MEMBER_RUTIN', obat_rutin_ids: 'OBT-007,OBT-009', tgl_habis_obat: addDays(2), tgl_reminder_berikut: isoToday, poin_loyalitas: 245, riwayat_skrining_json: JSON.stringify([{ tgl: addDays(-30), td: '148/92', gds: 112, bmi: 26.4 }, { tgl: isoToday, td: '136/86', gds: 108, bmi: 25.9 }]) },
@@ -106,7 +107,9 @@
       ],
       faktur_pbf: [
         { id_beli: 'BLI-901', no_sp: 'SP/0012/ONS/11/2026', jenis_sp: 'REGULER', no_faktur_pbf: 'FK-BSP-9104', tgl_faktur: addDays(-18), tgl_jatuh_tempo: addDays(12), id_pbf: 'PT Bina San Prima', cabang_id: 'ONS-01', total_bruto: 4850000, diskon_pbf: 242500, ppn_masukan: 506825, netto_hutang: 5114325, sisa_hutang: 5114325, status_bayar: 'BELUM_LUNAS', status_bar: 'AKTIF' },
-        { id_beli: 'BLI-902', no_sp: 'SP/0015/ONS/11/2026', jenis_sp: 'PREKURSOR', no_faktur_pbf: 'FK-AAM-7710', tgl_faktur: addDays(-25), tgl_jatuh_tempo: addDays(5), id_pbf: 'PT Anugrah Argon Medika', cabang_id: 'ONS-01', total_bruto: 3150000, diskon_pbf: 0, ppn_masukan: 346500, netto_hutang: 3496500, sisa_hutang: 3496500, status_bayar: 'JATUH_TEMPO_DEKAT', status_bar: 'AKTIF' }
+        { id_beli: 'BLI-902', no_sp: 'SP/0015/ONS/11/2026', jenis_sp: 'PREKURSOR', no_faktur_pbf: 'FK-AAM-7710', tgl_faktur: addDays(-25), tgl_jatuh_tempo: addDays(5), id_pbf: 'PT Anugrah Argon Medika', cabang_id: 'ONS-01', total_bruto: 3150000, diskon_pbf: 0, ppn_masukan: 346500, netto_hutang: 3496500, sisa_hutang: 3496500, status_bayar: 'JATUH_TEMPO_DEKAT', status_bar: 'AKTIF' },
+        { id_beli: 'BLI-KNS-01', no_sp: 'SP-KNS-01', jenis_sp: 'REGULER', jenis_penerimaan: 'KONSINYASI', no_faktur_pbf: 'FK-KNS-01', tgl_faktur: addDays(-10), tgl_jatuh_tempo: addDays(20), id_pbf: 'CV Herbal Berkah Alami', cabang_id: 'ONS-01', total_bruto: 160000, diskon_pbf: 0, ppn_masukan: 0, netto_hutang: 160000, sisa_hutang: 160000, status_bayar: 'KONSINYASI', status_bar: 'AKTIF', status_konsinyasi: 'AKTIF' },
+        { id_beli: 'BLI-RET-01', no_sp: 'SP/0010/ONS/10/2026', jenis_sp: 'REGULER', no_faktur_pbf: 'FK-ENS-4012', tgl_faktur: addDays(-40), tgl_jatuh_tempo: addDays(-10), id_pbf: 'PT Enseval Putera Megatrading', cabang_id: 'ONS-01', total_bruto: 1200000, diskon_pbf: 0, ppn_masukan: 132000, netto_hutang: 1332000, sisa_hutang: 0, status_bayar: 'RETUR', status_bar: 'AKTIF', retur_pbf: { no_retur: 'RET-PBF-01', tgl_retur: addDays(-5), alasan: 'Kemasan rusak saat pengiriman', nilai_retur: 320000, status: 'SELESAI' } }
       ],
       cold_chain: [
         { id_log_suhu: 'CC-01', timestamp: addDays(-2) + 'T07:30:00', cabang_id: 'ONS-01', id_kulkas: 'CHILLER-VAKSIN-01', suhu_celcius: 4.6, kelembapan: 54, status_alarm: 'NORMAL', petugas_id: 'apt. Siti Rahma, S.Farm', tindakan_korektif: '-' },
@@ -120,11 +123,14 @@
       ],
       penjualan: [
         { id_transaksi: 'TRX-1001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-001', tanggal: isoToday + 'T08:42:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Toko Fisik', id_member: 'MBR-002', metode_bayar: 'QRIS', detail_split: '', subtotal: 296000, diskon_total: 0, pajak_ppn: 0, grand_total: 296000, total_hpp: 236000, estimasi_margin: 60000, poin_didapat: 29, status_trx: 'LUNAS' },
-        { id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', tanggal: isoToday + 'T10:15:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Resep WA', id_member: 'MBR-001', metode_bayar: 'TUNAI', detail_split: '', subtotal: 84000, diskon_total: 4000, pajak_ppn: 0, grand_total: 80000, total_hpp: 51000, estimasi_margin: 29000, poin_didapat: 8, status_trx: 'LUNAS' }
+        { id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', tanggal: isoToday + 'T10:15:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Resep WA', id_member: 'MBR-001', metode_bayar: 'TUNAI', detail_split: '', subtotal: 84000, diskon_total: 4000, pajak_ppn: 0, grand_total: 80000, total_hpp: 51000, estimasi_margin: 29000, poin_didapat: 8, status_trx: 'LUNAS' },
+        { id_transaksi: 'TRX-1003', no_invoice: 'INV-' + addDays(-1).replace(/-/g, '') + '-003', tanggal: addDays(-1) + 'T14:20:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Toko Fisik', id_member: 'MBR-001', pelanggan_nama: 'Tn. Bambang Suryono', metode_bayar: 'TUNAI', detail_split: '', subtotal: 27000, diskon_total: 0, pajak_ppn: 0, grand_total: 27000, total_hpp: 14400, estimasi_margin: 12600, poin_didapat: 2, status_trx: 'RETUR', apj_override_id: 'apt. Siti Rahma, S.Farm', retur_alasan: 'Pasien salah beli kaplet & belum dibuka segel', tgl_retur: addDays(-1) + 'T15:00:00' }
       ],
       detail_penjualan: [
         { id_detail: 'DTL-1', id_transaksi: 'TRX-1001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-001', id_obat: 'OBT-003', id_batch: 'BTH-105', no_batch: 'INS-2604C', tgl_kadaluarsa: addDays(160), qty: 2, satuan: 'Pen', harga_jual: 148000, hpp_unit: 118000, diskon_item: 0, subtotal_item: 296000, aturan_pakai: '1x sehari 14 unit malam s.c.' },
-        { id_detail: 'DTL-2', id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', id_obat: 'OBT-001', id_batch: 'BTH-101', no_batch: 'AMX-2601A', tgl_kadaluarsa: addDays(45), qty: 30, satuan: 'Kaplet', harga_jual: 900, hpp_unit: 480, diskon_item: 0, subtotal_item: 27000, aturan_pakai: '3x sehari 1 kaplet sesudah makan (habiskan)' }
+        { id_detail: 'DTL-2', id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', id_obat: 'OBT-001', id_batch: 'BTH-101', no_batch: 'AMX-2601A', tgl_kadaluarsa: addDays(45), qty: 30, satuan: 'Kaplet', harga_jual: 900, hpp_unit: 480, diskon_item: 0, subtotal_item: 27000, aturan_pakai: '3x sehari 1 kaplet sesudah makan (habiskan)' },
+        { id_detail: 'DTL-3', id_transaksi: 'TRX-1003', no_invoice: 'INV-' + addDays(-1).replace(/-/g, '') + '-003', id_obat: 'OBT-001', id_batch: 'BTH-101', no_batch: 'AMX-2601A', tgl_kadaluarsa: addDays(45), qty: 10, satuan: 'Kaplet', harga_jual: 900, hpp_unit: 480, diskon_item: 0, subtotal_item: 9000, aturan_pakai: '3x1 sesudah makan', qty_retur: 10 },
+        { id_detail: 'DTL-4', id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', id_obat: 'OBT-002', id_batch: 'BTH-KNS-01', no_batch: 'KNS-PC-26', tgl_kadaluarsa: addDays(400), qty: 5, satuan: 'Tablet', harga_jual: 650, hpp_unit: 320, diskon_item: 0, subtotal_item: 3250, aturan_pakai: '3x1 prn demam' }
       ],
       surat_pesanan: [
         {
@@ -147,8 +153,13 @@
       ],
       shift_history: [],
       mutasi_stok: [
+        { id_mutasi: 'MUT-100', timestamp: addDays(-1) + 'T15:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-001', nama_dagang: 'Amoxicillin Trihydrate 500mg', id_batch: 'BTH-101', no_batch: 'AMX-2601A', jenis_mutasi: 'RETUR_PENJUALAN', qty_ubah: 10, stok_akhir: 140, referensi_id: 'INV-' + addDays(-1).replace(/-/g, '') + '-003', user_id: 'USR-003', catatan: 'Retur penjualan dari Tn. Bambang Suryono' },
         { id_mutasi: 'MUT-101', timestamp: isoToday + 'T08:42:00', cabang_id: 'ONS-01', id_obat: 'OBT-003', nama_dagang: 'Lantus SoloStar Insulin Pen', id_batch: 'BTH-105', no_batch: 'INS-2604C', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -2, stok_akhir: 18, referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-001', user_id: 'USR-003', catatan: 'Penjualan POS FEFO' },
-        { id_mutasi: 'MUT-102', timestamp: isoToday + 'T10:15:00', cabang_id: 'ONS-01', id_obat: 'OBT-001', nama_dagang: 'Amoxicillin Trihydrate 500mg', id_batch: 'BTH-101', no_batch: 'AMX-2601A', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -30, stok_akhir: 140, referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-002', user_id: 'USR-003', catatan: 'Penjualan Resep WA' }
+        { id_mutasi: 'MUT-102', timestamp: isoToday + 'T10:15:00', cabang_id: 'ONS-01', id_obat: 'OBT-001', nama_dagang: 'Amoxicillin Trihydrate 500mg', id_batch: 'BTH-101', no_batch: 'AMX-2601A', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -30, stok_akhir: 130, referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-002', user_id: 'USR-003', catatan: 'Penjualan Resep WA' },
+        { id_mutasi: 'MUT-103', timestamp: addDays(-2) + 'T17:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-002', nama_dagang: 'Paracetamol Sanmol 500mg', id_batch: 'BTH-103', no_batch: 'PCM-2512X', jenis_mutasi: 'OPNAME', qty_ubah: 5, stok_akhir: 45, referensi_id: 'OPN-2026-11-01', user_id: 'USR-002', catatan: 'Penyesuaian stok opname bulanan' },
+        { id_mutasi: 'MUT-104', timestamp: addDays(-3) + 'T14:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-006', nama_dagang: 'Ibuprofen Proris 400mg', id_batch: 'BTH-108', no_batch: 'IBU-2603W', jenis_mutasi: 'PENYESUAIAN', qty_ubah: -2, stok_akhir: 120, referensi_id: 'ADJ-2026-11-01', user_id: 'USR-002', catatan: 'Penyesuaian strip sample dokter' },
+        { id_mutasi: 'MUT-105', timestamp: addDays(-5) + 'T11:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-002', nama_dagang: 'Paracetamol Sanmol 500mg', id_batch: 'BTH-103', no_batch: 'PCM-2512X', jenis_mutasi: 'RETUR_PBF', qty_ubah: -10, stok_akhir: 40, referensi_id: 'FK-ENS-4012', user_id: 'USR-002', catatan: 'Retur ke PBF kemasan penyok' },
+        { id_mutasi: 'MUT-KNS-01', timestamp: addDays(-10) + 'T09:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-002', nama_dagang: 'Paracetamol Sanmol 500mg', id_batch: 'BTH-KNS-01', no_batch: 'KNS-PC-26', jenis_mutasi: 'KONSINYASI_MASUK', qty_ubah: 50, stok_akhir: 50, referensi_id: 'FK-KNS-01', user_id: 'USR-002', catatan: 'Penerimaan barang konsinyasi CV Herbal Berkah Alami' }
       ],
       omnichannel_orders: [
         { id_order: 'ORD-901', no_order: 'ONL-' + isoToday.replace(/-/g, '') + '-01', tanggal: isoToday + 'T10:50:00', cabang_id: 'ONS-01', channel: 'E-Apotek Web', nama_pelanggan: 'Ibu Nadia Kusuma', no_wa: '6281234500112', alamat: 'Jl. Boulevard Raya No. 48, Makassar', items_json: JSON.stringify([{ id_obat: 'OBT-002', nama: 'Paracetamol Sanmol 500mg', qty: 20, satuan: 'Tablet', harga: 650 }, { id_obat: 'OBT-006', nama: 'Ibuprofen Proris 400mg', qty: 10, satuan: 'Kaplet', harga: 1600 }]), catatan: 'Antar siang sebelum jam 2, butuh struk PDF/WA', total_estimasi: 29000, ongkir: 10000, status_order: 'BARU', kurir: '', no_invoice_pos: '', petugas_id: 'Web Storefront' },
@@ -176,11 +187,17 @@
         { ID: 'TGH-HC01', Periode: isoToday.slice(0, 7), ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', HP_Pasien: '6281234567801', Program: 'MEMBER_RUTIN', Kategori: 'HOME_PHARMACY_CARE', Deskripsi: 'Paket Home Pharmacy Care & Konseling Hipertensi', Nominal: 175000, Potongan: 25000, Netto: 150000, Terbayar: 0, Status: 'BELUM_BAYAR', JatuhTempo: addDays(3), TglTerbit: isoToday, Catatan: 'Subsidi member senior Rp 25.000', DibuatOleh: 'apt. Siti Rahma, S.Farm' },
         { ID: 'TGH-HC02', Periode: isoToday.slice(0, 7), ID_Pasien: 'MBR-002', Nama_Pasien: 'Ny. Hj. Aminah Kusuma', HP_Pasien: '6281234567802', Program: 'MEMBER_RUTIN', Kategori: 'TERAPI_RUTIN_BULANAN', Deskripsi: 'Antar Paket Insulin + Jarum Pen Novofine', Nominal: 220000, Potongan: 0, Netto: 220000, Terbayar: 0, Status: 'BELUM_BAYAR', JatuhTempo: isoToday, TglTerbit: addDays(-5), Catatan: '', DibuatOleh: 'apt. Siti Rahma, S.Farm' }
       ],
-      pembayaran: [],
+      pembayaran: [
+        { ID: 'PAY-001', GrupBayar: 'GRP-202610-09', ID_Tagihan: 'TGH-HC00', NominalBayar: 175000, Metode: 'QRIS', BuktiURL: '', NoKwitansi: 'KW-2026-0001', TglBayar: addDays(-15), Status: 'TERVERIFIKASI', Verifikator: 'apt. Siti Rahma, S.Farm', TglVerifikasi: addDays(-15) },
+        { ID: 'BYR-001', GrupBayar: 'GRP-202611-01', ID_Tagihan: 'TGH-HC01', NominalBayar: 150000, Metode: 'TRANSFER_BANK', BuktiURL: 'https://placehold.co/400x300?text=Bukti+Transfer+BCA', NoKwitansi: '', TglBayar: isoToday + 'T11:00:00', Status: 'MENUNGGU_VERIFIKASI', Verifikator: '', DibuatOleh: 'Tn. Bambang Suryono', Catatan: 'Sudah ditransfer via BCA Mobile' }
+      ],
       potongan: [
         { ID: 'POT-01', ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', Kategori: 'SEMUA', JenisPotongan: 'SUBSIDI_LANSIA', Nilai: 25000, TipeNilai: 'NOMINAL', BerlakuDari: '2026-01', BerlakuSampai: '2026-12', Keterangan: 'Keringanan biaya antar Home Care Lansia', Aktif: 'YA' }
       ],
-      reminder_log: [],
+      reminder_log: [
+        { ID: 'RMD-001', ID_Tagihan: 'TGH-HC02', HP_Tujuan: '6281234567802', Nama_Pasien: 'Ny. Hj. Aminah Kusuma', JenisReminder: 'H-0', Channel: 'WHATSAPP', TanggalKirim: isoToday + 'T09:30:00', StatusKirim: 'TERKIRIM', Pesan: 'Halo Ny. Hj. Aminah Kusuma, tagihan Home Care Terapi Rutin jatuh tempo hari ini.' }
+      ],
+      mutasi_cabang: [],
       de_templat: [
         { ID: 'TPL-SP', Kode: 'SP_BPOM_5_GOL', Nama: 'Surat Pesanan Obat 5 Golongan (BPOM)', Kategori: 'PENGADAAN', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'GOLONGAN_SP|kapital', 'NAMA_PBF', 'ALAMAT_PBF', 'NAMA_APJ', 'NO_SIPA', 'NAMA_APOTEK']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
         { ID: 'TPL-BAR', Kode: 'BAR_PBF_RETUR', Nama: 'Berita Acara Retur Barang Ke PBF (BAR-PBF)', Kategori: 'GUDANG', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_PBF', 'NO_FAKTUR', 'TOTAL_NILAI|rupiah', 'ALASAN_RETUR', 'NAMA_APJ']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
@@ -401,6 +418,34 @@
     if (!Array.isArray(db.pemeriksaan_pasien)) { db.pemeriksaan_pasien = buildPemeriksaanSeed(isoToday); changed = true; }
     if (!Array.isArray(db.mutasi_cabang)) {
       db.mutasi_cabang = [];
+      changed = true;
+    }
+    if (!Array.isArray(db.faktur_pbf) || !db.faktur_pbf.some(f => f.no_faktur_pbf === 'FK-KNS-01')) {
+      if (!Array.isArray(db.faktur_pbf)) db.faktur_pbf = [];
+      (def.faktur_pbf || []).forEach(f => {
+        if (!db.faktur_pbf.some(x => x.no_faktur_pbf === f.no_faktur_pbf)) db.faktur_pbf.push(f);
+      });
+      changed = true;
+    }
+    if (!Array.isArray(db.stok_batch) || !db.stok_batch.some(b => b.id_batch === 'BTH-KNS-01')) {
+      if (!Array.isArray(db.stok_batch)) db.stok_batch = [];
+      const bKns = (def.stok_batch || []).find(b => b.id_batch === 'BTH-KNS-01');
+      if (bKns) db.stok_batch.push(bKns);
+      changed = true;
+    }
+    if (!Array.isArray(db.mutasi_stok) || !db.mutasi_stok.some(m => m.id_mutasi === 'MUT-100')) {
+      if (!Array.isArray(db.mutasi_stok)) db.mutasi_stok = [];
+      (def.mutasi_stok || []).forEach(m => {
+        if (!db.mutasi_stok.some(x => x.id_mutasi === m.id_mutasi)) db.mutasi_stok.push(m);
+      });
+      changed = true;
+    }
+    if (!Array.isArray(db.pembayaran) || db.pembayaran.length === 0) {
+      db.pembayaran = def.pembayaran || [];
+      changed = true;
+    }
+    if (!Array.isArray(db.reminder_log) || db.reminder_log.length === 0) {
+      db.reminder_log = def.reminder_log || [];
       changed = true;
     }
     if (!db.profil_usaha || typeof db.profil_usaha !== 'object') {

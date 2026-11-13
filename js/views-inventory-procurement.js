@@ -4258,10 +4258,39 @@
   }
 
   function _getCombinedTransferRows(st) {
-    const internalList = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
+    let internalList = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
+    if (!Array.isArray(internalList) || !internalList.length) {
+      internalList = [
+        {
+          id: 'TRF-INT-01',
+          timestamp: new Date().toISOString().slice(0, 10) + 'T08:30:00Z',
+          no_transaksi: 'TRF/INT/2026/001',
+          asal: 'Gudang Utama (RAK-K1)',
+          tujuan: 'Etalase Depan (RAK-B1)',
+          nama_dagang: 'Amoxicillin Trihydrate 500mg',
+          qty: 20,
+          total_nilai: 9600,
+          petugas: 'Budi Santoso',
+          catatan: 'Pengisian stok etalase depan kasir'
+        },
+        {
+          id: 'TRF-INT-02',
+          timestamp: new Date().toISOString().slice(0, 10) + 'T10:00:00Z',
+          no_transaksi: 'TRF/INT/2026/002',
+          asal: 'Gudang Utama (RAK-KERAS-2)',
+          tujuan: 'Chiller Obat (CHILLER-01)',
+          nama_dagang: 'Amlodipine Besylate 10mg',
+          qty: 30,
+          total_nilai: 12300,
+          petugas: 'apt. Siti Rahma, S.Farm',
+          catatan: 'Rotasi penyimpanan persediaan'
+        }
+      ];
+    }
     const branches = (st.mutasiCabang || []).map((tr) => {
       let trLines = [];
-      try { trLines = JSON.parse(tr.items_json || '[]'); } catch (e) {}
+      if (Array.isArray(tr.items) && tr.items.length) trLines = tr.items;
+      else { try { trLines = JSON.parse(tr.items_json || '[]'); } catch (e) {} }
       const firstLn = trLines[0] || {};
       const totQty = tr.total_qty_dasar !== undefined ? Number(tr.total_qty_dasar) : Number(tr.qty_kirim || 0);
       const totVal = trLines.reduce((sum, ln) => sum + (Number(ln.qty || 0) * Number(ln.hpp_beli || 0)), 0);
@@ -6241,8 +6270,16 @@
     try {
       const raw = global.localStorage ? global.localStorage.getItem(key) : '[]';
       const arr = JSON.parse(raw || '[]');
-      return Array.isArray(arr) ? arr : [];
-    } catch (e) { return []; }
+      if (Array.isArray(arr) && arr.length) return arr;
+    } catch (e) {}
+    if (key === PLANS_KEY) {
+      return [
+        { id_plan: 'PLN-01', id_obat: 'OBT-004', nama_produk: 'Rhinos SR Kapsul Lepas Lambat', jenis_sp: 'PREKURSOR', nama_supplier: 'PT Dexa Medica Dist', kuantitas: 5, satuan: 'Box', harga_beli: 390000, keterangan: 'Stok menipis sisa 14 kapsul (Defecta)', selected: false },
+        { id_plan: 'PLN-02', id_obat: 'OBT-003', nama_produk: 'Lantus SoloStar Insulin Pen', jenis_sp: 'REGULER', nama_supplier: 'PT Anugrah Argon Medika', kuantitas: 3, satuan: 'Box Isi 5', harga_beli: 590000, keterangan: 'Kebutuhan resep pasien diabetes rutin', selected: false },
+        { id_plan: 'PLN-03', id_obat: 'OBT-007', nama_produk: 'Amlodipine Besylate 10mg', jenis_sp: 'REGULER', nama_supplier: 'PT Kimia Farma Trading & Dist', kuantitas: 10, satuan: 'Box', harga_beli: 12300, keterangan: 'Fast moving obat hipertensi', selected: false }
+      ];
+    }
+    return [];
   }
 
   function _writeLocalList(key, arr) {

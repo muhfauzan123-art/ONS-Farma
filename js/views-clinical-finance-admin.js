@@ -76,7 +76,23 @@
   let activeDocTab = 'surat'; // surat | pindai
   let settingsTab = 'profil'; // profil | akun | struk | vault | audit
   let profileMediaDraft = { foto: null, logo: null };
-  let billingCache = { tagihan: [], pending: [], history: [], potongan: [] };
+  const _todayIso = new Date().toISOString().slice(0, 10);
+  const _curMonth = _todayIso.slice(0, 7);
+  let billingCache = {
+    tagihan: [
+      { ID: 'TGH-HC01', Periode: _curMonth, ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', HP_Pasien: '6281234567801', Program: 'MEMBER_RUTIN', Kategori: 'HOME_PHARMACY_CARE', Deskripsi: 'Paket Home Pharmacy Care & Konseling Hipertensi', Nominal: 175000, Potongan: 25000, Netto: 150000, Terbayar: 0, Status: 'MENUNGGU_VERIFIKASI', JatuhTempo: _todayIso, TglTerbit: _todayIso, Catatan: 'Subsidi member senior Rp 25.000', DibuatOleh: 'apt. Siti Rahma, S.Farm' },
+      { ID: 'TGH-HC02', Periode: _curMonth, ID_Pasien: 'MBR-002', Nama_Pasien: 'Ny. Hj. Aminah Kusuma', HP_Pasien: '6281234567802', Program: 'MEMBER_RUTIN', Kategori: 'TERAPI_RUTIN_BULANAN', Deskripsi: 'Antar Paket Insulin + Jarum Pen Novofine', Nominal: 220000, Potongan: 0, Netto: 220000, Terbayar: 0, Status: 'BELUM_BAYAR', JatuhTempo: _todayIso, TglTerbit: _todayIso, Catatan: '', DibuatOleh: 'apt. Siti Rahma, S.Farm' }
+    ],
+    pending: [
+      { GrupBayar: 'GRP-202611-01', ID_Tagihan: 'TGH-HC01', NominalBayar: 150000, MetodeBayar: 'TRANSFER_BANK', BuktiUrl: 'https://placehold.co/400x300?text=Bukti+Transfer+BCA', Status: 'MENUNGGU_VERIFIKASI', DibuatOleh: 'Tn. Bambang Suryono' }
+    ],
+    history: [
+      { NoKwitansi: 'KW-2026-0001', GrupBayar: 'GRP-202610-09', ID_Tagihan: 'TGH-HC00', NominalBayar: 175000, MetodeBayar: 'QRIS', DiverifikasiOleh: 'apt. Siti Rahma, S.Farm', TglVerifikasi: _todayIso, Sig: 'KW20260001' }
+    ],
+    potongan: [
+      { ID: 'POT-01', ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', Kategori: 'SEMUA', JenisPotongan: 'SUBSIDI_LANSIA', Nilai: 25000, TipeNilai: 'NOMINAL', BerlakuDari: '2026-01', BerlakuSampai: '2026-12', Keterangan: 'Keringanan biaya antar Home Care Lansia', Aktif: 'YA' }
+    ]
+  };
   let docCache = { templates: [], docs: [], pejabat: [] };
   let mobilePreviewBp = '390px';
   let strukPreviewMode = 'paper'; // paper | text

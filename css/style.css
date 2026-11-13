@@ -2978,6 +2978,24 @@ html.dark .ons-pos-search-pill {
   color: inherit;
   min-height: 36px;
 }
+.ons-pos-search-pill .ons-btn-ghost {
+  background: #F1F5F9;
+  color: #0F172A;
+  border: 1px solid #CBD5E1;
+}
+.ons-pos-search-pill .ons-btn-ghost:hover {
+  background: #E2E8F0;
+  border-color: #94A3B8;
+}
+html.dark .ons-pos-search-pill .ons-btn-ghost {
+  background: #1E293B;
+  color: #F8FAFC;
+  border: 1px solid #475569;
+}
+html.dark .ons-pos-search-pill .ons-btn-ghost:hover {
+  background: #334155;
+  border-color: #64748B;
+}
 .ons-pos-total-hero {
   font-family: 'JetBrains Mono', monospace;
   font-size: clamp(1.5rem, 2.6vw, 2.15rem);

@@ -4249,9 +4249,16 @@
                       </td>
                     </tr>`;
                   }).join('') : `<tr>
-                    <td colspan="8" class="text-center py-14 text-sm" style="color:var(--ons-text-soft)">
+                    <td colspan="8" class="text-center py-10 text-sm" style="color:var(--ons-text-soft)">
+                      <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 mb-2.5">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                      </div>
                       <div class="font-bold text-base mb-1" style="color:var(--ons-text-main)">Silahkan Pilih Produk</div>
-                      <div class="text-xs">Cari nama/kode/zat aktif di kolom atas (<span class="ons-shortcut-kbd">F2</span>) atau klik produk pada katalog cepat di bawah.</div>
+                      <div class="text-xs max-w-md mx-auto mb-3">Ketik nama obat atau barcode di kolom pencarian (<span class="ons-shortcut-kbd">F2</span>), scan barcode kamera, atau klik produk pada katalog di bawah.</div>
+                      <div class="flex flex-wrap items-center justify-center gap-2">
+                        <button type="button" onclick="document.getElementById('posSearchInput')?.focus()" class="ons-btn ons-btn-primary text-xs py-1 px-3">Cari Produk (F2)</button>
+                        <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-ghost text-xs py-1 px-3">Scan Barcode</button>
+                      </div>
                     </td>
                   </tr>`}
                 </tbody>
