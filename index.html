@@ -1818,6 +1818,16 @@
         }, 60 * 1000);
       }
 
+      // Reset Data Pabrik Otomatis untuk Fresh Start Bersih (Transaksional 100% Kosong, Akun, Struk & Log Terjaga)
+      try {
+        if (localStorage.getItem('ons_v18_clean_reset_done') !== '1') {
+          if (window.ONSDemoEngine && typeof window.ONSDemoEngine.cleanFactoryReset === 'function') {
+            window.ONSDemoEngine.cleanFactoryReset(true);
+          }
+          localStorage.setItem('ons_v18_clean_reset_done', '1');
+        }
+      } catch (e) {}
+
       window.renderApp();
       if (ONSApi.getSession()) window.bootLoadState(false);
     })();

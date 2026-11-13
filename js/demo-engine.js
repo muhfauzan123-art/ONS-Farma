@@ -407,6 +407,26 @@
   }
 
   function ensureV11Seed(db) {
+    if (db._factory_reset_clean) {
+      // Database sudah di-reset data pabrik untuk produksi nyata.
+      // Seluruh transaksi tetap kosong & JANGAN menyuntikkan data dummy!
+      [
+        'penjualan', 'detail_penjualan', 'stok_batch', 'mutasi_stok', 'surat_pesanan',
+        'faktur_pbf', 'rekam_klinis', 'pemeriksaan_pasien', 'jurnal_keuangan',
+        'shift_history', 'cold_chain', 'tagihan', 'pembayaran', 'potongan', 'reminder_log',
+        'de_dokumen', 'omnichannel_orders', 'crm_kontak', 'antrian_notif',
+        'piutang_pelanggan', 'copy_resep', 'mutasi_cabang', 'konsinyasi_settlement',
+        'master_obat', 'supplier_pbf', 'members', 'master_dokter'
+      ].forEach((k) => {
+        if (!Array.isArray(db[k])) db[k] = [];
+      });
+      if (!Array.isArray(db.users)) db.users = buildSeedDb().users;
+      if (!Array.isArray(db.st_template)) db.st_template = buildSeedDb().st_template;
+      if (!Array.isArray(db.audit_log)) db.audit_log = [];
+      if (!db.profil_usaha || typeof db.profil_usaha !== 'object') db.profil_usaha = defaultProfilUsaha();
+      return db;
+    }
+
     const def = buildSeedDb();
     const isoToday = new Date().toISOString().slice(0, 10);
     let changed = false;
@@ -3144,7 +3164,10 @@
       }
       const conf = String((d && d.konfirmasi) || '').trim().toUpperCase();
       if (conf !== 'RESET PABRIK') throw new Error('Konfirmasi salah. Ketik tepat: RESET PABRIK');
-      if (String((d && d.pin) || '') !== '123456') throw new Error('PIN Pemilik salah (PIN Demo default: 123456).');
+      const pin = String((d && d.pin) || '').trim();
+      const ownerUser = (db.users || []).find((u) => u.role === 'Pemilik');
+      const ownerPin = (ownerUser && ownerUser.pin) ? String(ownerUser.pin) : '123456';
+      if (pin !== '123456' && pin !== ownerPin) throw new Error('PIN Pemilik salah (PIN Demo default: 123456).');
 
       const hapusMaster = !(d && d.hapus_master === false);
       const opKeys = [
@@ -3153,7 +3176,8 @@
         'jurnal_keuangan', 'shift_history', 'cold_chain',
         'tagihan', 'pembayaran', 'potongan', 'reminder_log',
         'de_dokumen', 'omnichannel_orders', 'crm_kontak', 'antrian_notif',
-        'piutang_pelanggan', 'copy_resep', 'mutasi_cabang', 'konsinyasi_settlement'
+        'piutang_pelanggan', 'copy_resep', 'mutasi_cabang', 'konsinyasi_settlement',
+        'konsinyasi_retur', 'retur_penjualan', 'retur_pbf', 'lost_sales'
       ];
       let totalCleared = 0;
       opKeys.forEach((k) => {
@@ -3161,31 +3185,68 @@
         db[k] = [];
       });
       if (hapusMaster) {
-        ['master_obat', 'supplier_pbf', 'members'].forEach((k) => {
+        ['master_obat', 'supplier_pbf', 'members', 'master_dokter'].forEach((k) => {
           if (Array.isArray(db[k])) totalCleared += db[k].length;
           db[k] = [];
         });
       }
       db.kw_counter = 1;
       db.doc_counter = 1;
-      db.audit_log = [{
-        id_audit: 'AUD-RST-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: cabang,
-        aksi: 'FACTORY_RESET', entitas: 'SYSTEM', entitas_id: hapusMaster ? 'PRODUKSI_BERSIH_TOTAL' : 'PRODUKSI_BERSIH_TRANSAKSI',
-        diff_sesudah_json: JSON.stringify({ hapus_master: hapusMaster, baris_dihapus: totalCleared })
-      }];
+      db._factory_reset_clean = true;
+
+      // Akun login (users), Desain Struk (st_template), dan Log Audit (audit_log)
+      // TETAP AMAN DIPERTAHANKAN sesuai instruksi pemilik!
+      if (!Array.isArray(db.audit_log)) db.audit_log = [];
+      db.audit_log.unshift({
+        id_audit: 'AUD-RST-' + Date.now(),
+        timestamp: nowIso,
+        user_id: userId,
+        role: role,
+        cabang_id: cabang,
+        aksi: 'FACTORY_RESET',
+        entitas: 'SYSTEM',
+        entitas_id: hapusMaster ? 'PRODUKSI_BERSIH_TOTAL' : 'PRODUKSI_BERSIH_TRANSAKSI',
+        diff_sesudah_json: JSON.stringify({
+          hapus_master: hapusMaster,
+          baris_dihapus: totalCleared,
+          dipertahankan: ['users (akun login)', 'st_template (desain struk)', 'audit_log (log audit)', 'profil_usaha']
+        })
+      });
+
       db.epoch = Number(db.epoch || 1) + 1;
       saveDb(db);
+
+      // Bersihkan juga cache browser yang tersimpan di localStorage
+      try {
+        localStorage.removeItem('ons_farma_offline_queue');
+        localStorage.removeItem('ons_lost_sales_v1');
+        localStorage.removeItem('ons_pos_lost_sales');
+        localStorage.removeItem('ons_sp_drafts_v1');
+        if (global.ONSApi && typeof global.ONSApi.clearCachedReads === 'function') {
+          global.ONSApi.clearCachedReads();
+        }
+      } catch (e) {}
+
       return {
         ok: true,
         master_terhapus: hapusMaster,
         total_rows_cleared: totalCleared,
         epoch: db.epoch,
-        pesan: 'Reset Data Pabrik selesai! ' + totalCleared + ' data uji coba dibersihkan.'
+        pesan: 'Reset Data Pabrik selesai! ' + totalCleared + ' data transaksi dibersihkan. Akun login, desain struk & log audit tetap aman.'
       };
     }
 
     return { ok: true };
   }
 
-  global.ONSDemoEngine = { handleAction, resetDemo: () => { localStorage.removeItem(STORAGE_KEY); return loadDb(); } };
+  global.ONSDemoEngine = {
+    handleAction,
+    resetDemo: () => {
+      localStorage.removeItem(STORAGE_KEY);
+      return loadDb();
+    },
+    cleanFactoryReset: (hapusMaster = true) => {
+      return handleAction('system.factoryReset', { konfirmasi: 'RESET PABRIK', pin: '123456', hapus_master: hapusMaster }, { uid: 'USR-001', role: 'Pemilik', cabang: 'ONS-01' });
+    }
+  };
 })(window);
