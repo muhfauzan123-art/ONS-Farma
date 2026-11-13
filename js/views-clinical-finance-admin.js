@@ -944,7 +944,9 @@
   function _getKasAccountsList() {
     let list = _readFinLocalList(KAS_ACCOUNTS_KEY);
     if (!list.length) {
-      list = [{ id_akun: 'KAS-01', nama: 'Kas Utama', deskripsi: 'Akun Kas Utama', kode_kustom: '1-101', catatan: '', jenis: 'other', saldo_awal: 0, status: 'Aktif' }];
+      list = [
+        { id_akun: 'KAS-01', nama: 'Kas Utama', deskripsi: 'Akun Kas Tunai Kasir Utama', kode_kustom: '1-101', catatan: 'Laci Kasir Toko', jenis: 'cash', saldo_awal: 0, status: 'Aktif' }
+      ];
       _writeFinLocalList(KAS_ACCOUNTS_KEY, list);
     }
     return list;
@@ -1099,7 +1101,35 @@
           return true;
         });
         const totalSaldoKas = akFiltered.reduce((s, a) => s + Number(a.saldo_saat_ini || 0), 0);
-        return `<div class="ons-card p-4 space-y-3">
+        const kasTunai = akFiltered.filter((a) => a.jenis === 'cash' || /kasir|utama|tunai/i.test(a.nama)).reduce((s, a) => s + Number(a.saldo_saat_ini || 0), 0);
+        const bankGiro = akFiltered.filter((a) => a.jenis === 'bank' || /bank|bca|mandiri|bni|bri/i.test(a.nama)).reduce((s, a) => s + Number(a.saldo_saat_ini || 0), 0);
+        const qrisAmt = akFiltered.filter((a) => a.jenis === 'ewallet' || /qris|wallet|shopee|gopay/i.test(a.nama)).reduce((s, a) => s + Number(a.saldo_saat_ini || 0), 0);
+
+        return `<div class="space-y-3">
+          <div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card is-emerald">
+              <div class="text-[10.5px] font-semibold text-slate-500">Kas Tunai Kasir</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${S().rp(kasTunai)}</div>
+              <div class="text-[10px] text-slate-400">Kas fisik di laci kasir apotek</div>
+            </div>
+            <div class="ons-cockpit-card is-blue">
+              <div class="text-[10.5px] font-semibold text-slate-500">Rekening Bank (BCA &amp; Mandiri)</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${S().rp(bankGiro)}</div>
+              <div class="text-[10px] text-slate-400">Penerimaan &amp; pembayaran faktur PBF</div>
+            </div>
+            <div class="ons-cockpit-card is-azure">
+              <div class="text-[10.5px] font-semibold text-slate-500">E-Wallet &amp; QRIS</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-sky-600">${S().rp(qrisAmt)}</div>
+              <div class="text-[10px] text-slate-400">Pembayaran non-tunai kasir POS</div>
+            </div>
+            <div class="ons-cockpit-card is-amber">
+              <div class="text-[10.5px] font-semibold text-slate-500">Total Likuiditas Kas</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${S().rp(totalSaldoKas)}</div>
+              <div class="text-[10px] text-slate-400">Total modal lancar kas &amp; bank</div>
+            </div>
+          </div>
+
+          <div class="ons-card p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 class="font-bold text-base">Daftar Akun Kas</h3>
@@ -1143,6 +1173,7 @@
             <span>Total Akun Aktif: <b class="font-mono-num">${akFiltered.length} akun</b></span>
             <span>Total Saldo Kas &amp; Bank: <b class="font-mono-num text-sm text-emerald-600">${S().rp(totalSaldoKas)}</b></span>
           </div>
+        </div>
         </div>`;
       })() : financeTab === 'jurnal' ? (() => {
         // Compute chronological running balance for Buku Kas
@@ -3676,39 +3707,70 @@
       { label: 'Frekuensi / Qty', valHtml: `${totalTrx.toLocaleString('id-ID')} unit/kali` }
     ]);
 
+    const marginPct = totalOmzet > 0 ? Math.round(((totalOmzet - totalHpp) / totalOmzet) * 100) : 0;
+    const basketSize = totalTrx > 0 ? Math.round(totalOmzet / totalTrx) : 0;
+
+    const kpiStrip = `
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-azure">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Omzet Penjualan</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${S().rp(totalOmzet)}</div>
+          <div class="text-[10px] text-slate-400">Total kotor pendapatan kasir</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Keuntungan Bersih (Gross Profit)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${S().rp(totalOmzet - totalHpp)}</div>
+          <div class="text-[10px] text-slate-400">Omzet dikurangi HPP obat</div>
+        </div>
+        <div class="ons-cockpit-card is-amber">
+          <div class="text-[10.5px] font-semibold text-slate-500">Margin Rata-Rata</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${marginPct}% Margin</div>
+          <div class="text-[10px] text-slate-400">Tingkat profitabilitas apotek</div>
+        </div>
+        <div class="ons-cockpit-card is-sky">
+          <div class="text-[10.5px] font-semibold text-slate-500">Frekuensi Transaksi</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-slate-700 dark:text-slate-200">${totalTrx.toLocaleString('id-ID')} Trx</div>
+          <div class="text-[10px] text-slate-400">Rata-rata keranjang: ${S().rp(basketSize)}</div>
+        </div>
+      </div>
+    `;
+
     return `
-      <div class="ons-card p-3 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
-              <select id="lapJualMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapJualMode(this.value)">
-                <option value="hari" ${lapJualMode === 'hari' ? 'selected' : ''}>Hari &amp; Tanggal</option>
-                <option value="produk" ${lapJualMode === 'produk' ? 'selected' : ''}>Per Produk</option>
-                <option value="faktur" ${lapJualMode === 'faktur' ? 'selected' : ''}>Per Faktur / Transaksi</option>
-              </select>
-            </div>
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
-              <input id="lapJualSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapJualSearchQ)}" oninput="window.setLapJualSearch(this.value)"/>
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
-              <div class="flex items-center gap-1">
-                <input id="lapJualDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateFrom)}" onchange="window.setLapJualDateRange(this.value, document.getElementById('lapJualDateTo').value)"/>
-                <span class="text-xs">&ndash;</span>
-                <input id="lapJualDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateTo)}" onchange="window.setLapJualDateRange(document.getElementById('lapJualDateFrom').value, this.value)"/>
+      <div class="space-y-3">
+        ${kpiStrip}
+        <div class="ons-card p-3 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
+                <select id="lapJualMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapJualMode(this.value)">
+                  <option value="hari" ${lapJualMode === 'hari' ? 'selected' : ''}>Hari &amp; Tanggal</option>
+                  <option value="produk" ${lapJualMode === 'produk' ? 'selected' : ''}>Per Produk</option>
+                  <option value="faktur" ${lapJualMode === 'faktur' ? 'selected' : ''}>Per Faktur / Transaksi</option>
+                </select>
+              </div>
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+                <input id="lapJualSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapJualSearchQ)}" oninput="window.setLapJualSearch(this.value)"/>
               </div>
             </div>
-            <div class="self-end">
-              <button type="button" onclick="window.resetLapJualFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
+                <div class="flex items-center gap-1">
+                  <input id="lapJualDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateFrom)}" onchange="window.setLapJualDateRange(this.value, document.getElementById('lapJualDateTo').value)"/>
+                  <span class="text-xs">&ndash;</span>
+                  <input id="lapJualDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateTo)}" onchange="window.setLapJualDateRange(document.getElementById('lapJualDateFrom').value, this.value)"/>
+                </div>
+              </div>
+              <div class="self-end">
+                <button type="button" onclick="window.resetLapJualFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+              </div>
             </div>
           </div>
+          ${tableHtml}
+          ${rekapFooter}
         </div>
-        ${tableHtml}
-        ${rekapFooter}
       </div>
     `;
   }
@@ -4808,39 +4870,62 @@
       { label: 'Total Produk', valHtml: `${rows.length} produk` }
     ]);
 
+    const paretoVisualBar = `
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-azure">
+          <div class="text-[10.5px] font-semibold text-slate-500">Pareto A (Prioritas Utama &bull; 70-80% Omzet)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${countA} Produk &bull; ${S().rp(sumA)}</div>
+          <div class="text-[10px] text-slate-400">Kontributor profit terbesar &bull; Pastikan buffer stock aman</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Pareto B (Moving Menengah &bull; 15-20% Omzet)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${countB} Produk &bull; ${S().rp(sumB)}</div>
+          <div class="text-[10px] text-slate-400">Rotasi stabil &bull; Evaluasi pengadaan berkala</div>
+        </div>
+        <div class="ons-cockpit-card is-amber">
+          <div class="text-[10.5px] font-semibold text-slate-500">Pareto C (Slow Moving &bull; 5-10% Omzet)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${countC} Produk &bull; ${S().rp(sumC)}</div>
+          <div class="text-[10px] text-slate-400">Efisiensi modal &bull; Batasi pembelian &amp; pantau ED</div>
+        </div>
+      </div>
+    `;
+
     return `
-      <div class="ons-card p-3 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
-              <select id="anlParetoMode" class="ons-select text-xs h-8 py-1" onchange="window.setAnlParetoMode(this.value)">
-                <option value="penjualan" ${anlParetoMode === 'penjualan' ? 'selected' : ''}>Nilai Penjualan</option>
-                <option value="keuntungan" ${anlParetoMode === 'keuntungan' ? 'selected' : ''}>Keuntungan</option>
-                <option value="kuantitas" ${anlParetoMode === 'kuantitas' ? 'selected' : ''}>Kuantitas Terjual</option>
-              </select>
-            </div>
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
-              <input id="anlParetoSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlParetoSearchQ)}" oninput="window.setAnlParetoSearch(this.value)"/>
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
-              <div class="flex items-center gap-1">
-                <input id="anlParetoDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateFrom)}" onchange="window.setAnlParetoDateRange(this.value, document.getElementById('anlParetoDateTo').value)"/>
-                <span class="text-xs">&ndash;</span>
-                <input id="anlParetoDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateTo)}" onchange="window.setAnlParetoDateRange(document.getElementById('anlParetoDateFrom').value, this.value)"/>
+      <div class="space-y-3">
+        ${paretoVisualBar}
+        <div class="ons-card p-3 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
+                <select id="anlParetoMode" class="ons-select text-xs h-8 py-1" onchange="window.setAnlParetoMode(this.value)">
+                  <option value="penjualan" ${anlParetoMode === 'penjualan' ? 'selected' : ''}>Nilai Penjualan</option>
+                  <option value="keuntungan" ${anlParetoMode === 'keuntungan' ? 'selected' : ''}>Keuntungan</option>
+                  <option value="kuantitas" ${anlParetoMode === 'kuantitas' ? 'selected' : ''}>Kuantitas Terjual</option>
+                </select>
+              </div>
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+                <input id="anlParetoSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlParetoSearchQ)}" oninput="window.setAnlParetoSearch(this.value)"/>
               </div>
             </div>
-            <div class="self-end">
-              <button type="button" onclick="window.resetAnlParetoFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
+                <div class="flex items-center gap-1">
+                  <input id="anlParetoDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateFrom)}" onchange="window.setAnlParetoDateRange(this.value, document.getElementById('anlParetoDateTo').value)"/>
+                  <span class="text-xs">&ndash;</span>
+                  <input id="anlParetoDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateTo)}" onchange="window.setAnlParetoDateRange(document.getElementById('anlParetoDateFrom').value, this.value)"/>
+                </div>
+              </div>
+              <div class="self-end">
+                <button type="button" onclick="window.resetAnlParetoFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+              </div>
             </div>
           </div>
+          ${tableHtml}
+          ${rekapFooter}
         </div>
-        ${tableHtml}
-        ${rekapFooter}
       </div>
     `;
   }

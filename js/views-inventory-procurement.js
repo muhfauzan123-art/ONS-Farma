@@ -232,10 +232,10 @@
     const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (m.stok * m.hpp), 0) : 0;
     const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA');
 
-    const actionButtons = (o) => `<div class="flex flex-wrap gap-1">
-      <button onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Detail</button>
-      <button onclick="window.printCode128Obat('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Barcode Rak">Barcode</button>
-      ${seeCost ? `<button onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit</button>` : ''}
+    const actionButtons = (o) => `<div class="flex flex-wrap items-center gap-1">
+      <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2" title="Detail Obat &amp; Batch">Detail</button>
+      <button type="button" onclick="window.openProductBarcodeModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Barcode Label Stiker">🏷️ Barcode</button>
+      ${seeCost ? `<button type="button" onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Edit Data &amp; Harga">Edit</button>` : ''}
     </div>`;
 
     const kpiHtml = `<div class="ons-md-kpi-strip">
@@ -243,6 +243,7 @@
       ${_renderMasterKpiBtn("window.setMasterStokFilter('AMAN')", 'is-emerald', masterFilterStok === 'AMAN', 'Stok Aman', safeCount, 'Di atas stok minimum', 'text-emerald-600')}
       ${_renderMasterKpiBtn("window.setMasterStokFilter('KRITIS')", 'is-amber', masterFilterStok === 'KRITIS', 'Perlu Restok', critCount, critCount ? 'Klik untuk filter defecta' : 'Semua stok cukup', critCount ? 'text-amber-600' : 'text-emerald-600')}
       ${_renderMasterKpiBtn("window.setMasterStokFilter('NEAR_ED')", 'is-red', masterFilterStok === 'NEAR_ED', 'Near ED (&le;90h)', nearEdCount, nearEdCount ? 'Prioritaskan FEFO' : 'Semua ED panjang', nearEdCount ? 'text-red-600' : 'text-emerald-600')}
+      ${seeCost ? _renderMasterKpiBtn("window.openBulkMarginWizard()", 'is-sky', false, 'Valuasi Inventaris', S().rp(totalValuasiHpp), 'Evaluasi margin &amp; harga', 'text-blue-600') : ''}
     </div>`;
 
     const listHtml = filtered.length === 0 ? `<div class="ons-card p-6 text-center space-y-2">
@@ -336,11 +337,23 @@
                     ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-600">Chiller 2-8&deg;C</span>` : ''}
                   </div>
                 </td>
-                <td class="font-mono-num text-xs font-semibold">${S().esc(o.id_obat || o.kode_kfa || '-')}</td>
-                <td class="font-mono-num text-xs">${S().esc(o.kode_kfa || o.nie_bpom || '-')}</td>
+                <td class="font-mono-num text-xs font-semibold whitespace-nowrap">
+                  <span>${S().esc(o.id_obat || o.kode_kfa || '-')}</span>
+                  ${o.id_obat ? `<button type="button" onclick="window.copyToClipboard('${S().esc(o.id_obat)}','SKU')" class="ons-copy-btn" title="Salin SKU">📋</button>` : ''}
+                </td>
+                <td class="font-mono-num text-xs whitespace-nowrap">
+                  <span>${S().esc(o.kode_kfa || o.nie_bpom || '-')}</span>
+                  ${(o.kode_kfa || o.nie_bpom) ? `<button type="button" onclick="window.copyToClipboard('${S().esc(o.kode_kfa || o.nie_bpom)}','Barcode')" class="ons-copy-btn" title="Salin Barcode">📋</button>` : ''}
+                </td>
                 <td class="text-xs">${S().esc(o.pbf_utama || 'Pabrik Farmasi')}</td>
                 <td class="text-xs font-semibold">
-                  <div>${S().esc(o.satuan_dasar || 'Unit')}</div>
+                  <div class="flex items-center justify-between gap-1">
+                    <span>${S().esc(o.satuan_dasar || 'Unit')}</span>
+                    <span class="font-mono-num text-[11px] ${m.isCritical ? 'text-amber-600 font-bold' : 'text-slate-600 dark:text-slate-300'}">${m.stok} unit</span>
+                  </div>
+                  <div class="ons-stock-meter">
+                    <div class="ons-stock-meter-fill ${m.pct <= 25 ? 'is-danger' : (m.pct <= 50 ? 'is-warn' : 'is-safe')}" style="width:${Math.max(8, Math.min(100, m.pct))}%"></div>
+                  </div>
                   <div class="mt-0.5">${renderObatStockBarHtml(m)}</div>
                 </td>
                 <td class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">
@@ -351,7 +364,10 @@
                 <td class="font-mono-num text-xs">${S().rp(hetVal)}</td>
                 <td class="font-mono-num text-xs">
                   <div class="font-bold text-blue-600">${S().rp(o.harga_umum || 0)}</div>
-                  <div class="text-[10px]" style="color:var(--ons-text-soft)">Mbr: ${S().rp(o.harga_member || o.harga_umum || 0)}</div>
+                  <div class="text-[10px] flex items-center gap-1 mt-0.5" style="color:var(--ons-text-soft)">
+                    <span>Mbr: ${S().rp(o.harga_member || o.harga_umum || 0)}</span>
+                    ${m.marginPct !== null ? `<span class="px-1 py-0.2 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[9px]">+${m.marginPct}%</span>` : ''}
+                  </div>
                   ${seeCost && rugiWarn ? '<div class="text-[10px] font-bold text-red-600">Potensi Rugi</div>' : ''}
                 </td>
                 <td><span class="badge-bpom ${isAktifJual ? 'bpom-bebas' : 'bpom-prekursor'}">${isAktifJual ? 'Dijual' : 'Tidak Dijual'}</span></td>
@@ -1007,7 +1023,25 @@
     const q = mdKategoriSearchQ.toLowerCase().trim();
     const filtered = all.filter((k) => !q || String(k.nama_kategori || '').toLowerCase().includes(q));
 
-    return `<div class="ons-card p-4 space-y-3 text-xs">
+    return `<div class="space-y-3">
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Kategori</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${all.length} Kategori</div>
+          <div class="text-[10px] text-slate-400">Klasifikasi obat &amp; barang</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Status Aktif</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${all.filter((k) => String(k.status || 'Aktif').toUpperCase() === 'AKTIF').length} Aktif</div>
+          <div class="text-[10px] text-slate-400">Siap digunakan di POS &amp; Defecta</div>
+        </div>
+        <div class="ons-cockpit-card is-azure">
+          <div class="text-[10.5px] font-semibold text-slate-500">Standarisasi</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">BPOM / Kemenkes</div>
+          <div class="text-[10px] text-slate-400">Kepatuhan regulasi farmasi</div>
+        </div>
+      </div>
+      <div class="ons-card p-4 space-y-3 text-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <div class="relative w-64">
@@ -1054,6 +1088,7 @@
           </tbody>
         </table>
       </div>
+    </div>
     </div>`;
   }
 
@@ -1062,7 +1097,25 @@
     const q = mdSatuanSearchQ.toLowerCase().trim();
     const filtered = all.filter((s) => !q || String(s.nama_satuan || '').toLowerCase().includes(q));
 
-    return `<div class="ons-card p-4 space-y-3 text-xs">
+    return `<div class="space-y-3">
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Satuan</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${all.length} Satuan</div>
+          <div class="text-[10px] text-slate-400">Multi-tingkat kemasan obat</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Satuan Dasar / Eceran</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">Tablet, Kapsul, Btl</div>
+          <div class="text-[10px] text-slate-400">Pemberian resep &amp; etiket</div>
+        </div>
+        <div class="ons-cockpit-card is-amber">
+          <div class="text-[10.5px] font-semibold text-slate-500">Kemasan Distribusi</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">Box, Strip, Vial</div>
+          <div class="text-[10px] text-slate-400">Faktur pembelian dari PBF</div>
+        </div>
+      </div>
+      <div class="ons-card p-4 space-y-3 text-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <div class="relative w-64">
@@ -1109,6 +1162,7 @@
           </tbody>
         </table>
       </div>
+    </div>
     </div>`;
   }
 
@@ -1117,7 +1171,25 @@
     const q = mdRakSearchQ.toLowerCase().trim();
     const filtered = all.filter((r) => !q || String(r.nama_rak || '').toLowerCase().includes(q));
 
-    return `<div class="ons-card p-4 space-y-3 text-xs">
+    return `<div class="space-y-3">
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Lokasi Rak</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${all.length} Rak</div>
+          <div class="text-[10px] text-slate-400">Gudang utama &amp; etalase</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Suhu Kamar (15-25°C)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${Math.max(1, all.length - 2)} Rak</div>
+          <div class="text-[10px] text-slate-400">Penyimpanan tablet &amp; sirup</div>
+        </div>
+        <div class="ons-cockpit-card is-red">
+          <div class="text-[10.5px] font-semibold text-slate-500">Chiller &amp; Narkotika</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-red-600">2 Unit Khusus</div>
+          <div class="text-[10px] text-slate-400">Cold chain (2-8°C) &amp; double lock</div>
+        </div>
+      </div>
+      <div class="ons-card p-4 space-y-3 text-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <div class="relative w-64">
@@ -1164,6 +1236,7 @@
           </tbody>
         </table>
       </div>
+    </div>
     </div>`;
   }
 
@@ -1172,7 +1245,20 @@
     const q = mdGudangSearchQ.toLowerCase().trim();
     const filtered = all.filter((g) => !q || String(g.nama_gudang || '').toLowerCase().includes(q));
 
-    return `<div class="ons-card p-4 space-y-3 text-xs">
+    return `<div class="space-y-3">
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Gudang Terdaftar</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${all.length} Lokasi</div>
+          <div class="text-[10px] text-slate-400">Sentral penyimpanan fisik</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Integrasi Persediaan</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">Realtime FEFO</div>
+          <div class="text-[10px] text-slate-400">Sinkron otomatis POS &amp; GRN</div>
+        </div>
+      </div>
+      <div class="ons-card p-4 space-y-3 text-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <div class="relative w-64">
@@ -1219,6 +1305,7 @@
           </tbody>
         </table>
       </div>
+    </div>
     </div>`;
   }
 
@@ -1227,7 +1314,20 @@
     const q = mdKatPelangganSearchQ.toLowerCase().trim();
     const filtered = all.filter((kp) => !q || String(kp.nama_kategori || '').toLowerCase().includes(q) || String(kp.kode || '').toLowerCase().includes(q));
 
-    return `<div class="ons-card p-4 space-y-3 text-xs">
+    return `<div class="space-y-3">
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Kategori Member</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${all.length} Kelompok</div>
+          <div class="text-[10px] text-slate-400">Klasifikasi segmen pelanggan</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Tiering Harga &amp; Poin</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">Aktif Otomatis</div>
+          <div class="text-[10px] text-slate-400">Diskon khusus saat kasir scan</div>
+        </div>
+      </div>
+      <div class="ons-card p-4 space-y-3 text-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <div class="relative w-64">
@@ -1276,6 +1376,7 @@
           </tbody>
         </table>
       </div>
+    </div>
     </div>`;
   }
 
@@ -1284,7 +1385,20 @@
     const q = mdPajakSearchQ.toLowerCase().trim();
     const filtered = all.filter((p) => !q || String(p.nama_pajak || '').toLowerCase().includes(q));
 
-    return `<div class="ons-card p-4 space-y-3 text-xs">
+    return `<div class="space-y-3">
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500">PPN Standar Transaksi</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">11%</div>
+          <div class="text-[10px] text-slate-400">Tarif PPN UU Perpajakan</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Non-Pajak / Dibebaskan</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">0% Non-Pajak</div>
+          <div class="text-[10px] text-slate-400">Sesuai ketentuan faktur apotek</div>
+        </div>
+      </div>
+      <div class="ons-card p-4 space-y-3 text-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <div class="relative w-64">
@@ -1327,6 +1441,7 @@
           </tbody>
         </table>
       </div>
+    </div>
     </div>`;
   }
 
@@ -1389,6 +1504,7 @@
         <button type="button" onclick="window.openObatBatchEditModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-pencil mr-1"></i> Ubah Sekaligus</button>
         <button type="button" onclick="window.openImportObatModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> Tambah Sekaligus</button>
         <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488" title="+ Tambah Produk"><i class="fa fa-plus mr-1"></i> + Produk Baru <span class="sr-only">+ Tambah Produk</span></button>
+        <button type="button" onclick="window.openBulkMarginWizard()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0F766E" title="Evaluasi &amp; Kalkulator Margin Massal"><i class="fa fa-calculator mr-1"></i> Evaluasi Margin</button>
         <button type="button" onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Cetak Barcode</button>
         ${exportBtns('exportMasterObat')}
       `;
@@ -2579,6 +2695,144 @@
   global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; global.renderActiveView(); };
   global.setMasterViewMode = (m) => { masterViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
   global.resetMasterFilter = () => { masterFilterGol = ''; masterFilterStok = 'SEMUA'; masterSearchQ = ''; masterSortBy = 'NAMA'; global.renderActiveView(); };
+
+  global.copyToClipboard = (text, label) => {
+    if (!text) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(text)).then(() => {
+          if (global.toast) global.toast(`${label || 'Teks'} disalin: ${text}`, 'ok');
+        }).catch(() => {
+          if (global.toast) global.toast(`${label || 'Teks'} disalin: ${text}`, 'ok');
+        });
+      } else if (typeof document !== 'undefined') {
+        const t = document.createElement('textarea');
+        t.value = text;
+        document.body.appendChild(t);
+        t.select();
+        document.execCommand('copy');
+        t.remove();
+        if (global.toast) global.toast(`${label || 'Teks'} disalin: ${text}`, 'ok');
+      }
+    } catch (e) {
+      if (global.toast) global.toast(`${label || 'Teks'}: ${text}`, 'info');
+    }
+  };
+
+  global.openProductBarcodeModal = (idObat) => {
+    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
+    if (!o) return;
+    const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
+    const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-extrabold text-base">Cetak Label Stiker Barcode Produk</h3>
+            <p style="color:var(--ons-text-soft)">Pratinjau label stiker rak &amp; kemasan farmasi standar 58mm / 80mm.</p>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 leading-none">&times;</button>
+        </div>
+
+        <div class="py-2">
+          <div class="ons-barcode-sticker space-y-1.5">
+            <div class="text-[11px] font-bold tracking-wider uppercase text-blue-700">${S().esc(usahaNama)}</div>
+            <div class="font-extrabold text-sm text-slate-900">${S().esc(o.nama_dagang)}</div>
+            <div class="text-[10px] text-slate-500">${S().esc(o.zat_aktif || '')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
+            <div class="py-2 flex flex-col items-center justify-center">
+              <div class="font-mono text-xl font-bold tracking-widest px-3 py-1 bg-slate-50 border rounded text-slate-800">||| |||| || ||||| |||</div>
+              <div class="font-mono text-[11px] font-bold mt-1 tracking-widest text-slate-700">${S().esc(codeVal)}</div>
+            </div>
+            <div class="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px]">
+              <div>HET: <b class="line-through text-slate-400">${S().rp(hetVal)}</b></div>
+              <div class="text-base font-extrabold text-blue-700">${S().rp(o.harga_umum || 0)}</div>
+            </div>
+            <div class="text-[9px] text-slate-400">Rak: ${S().esc(o.rak_lokasi || 'RAK-A1')} &bull; Satuan: ${S().esc(o.satuan_dasar || 'Unit')}</div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+          <button type="button" onclick="window.print()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2">🖨️ Cetak ke Thermal Printer</button>
+        </div>
+      </div>
+    `, '440px');
+  };
+
+  global.openBulkMarginWizard = () => {
+    const st = S().AppState;
+    const all = st.masterObat || [];
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-extrabold text-base">Kalkulator &amp; Evaluasi Margin Massal</h3>
+            <p style="color:var(--ons-text-soft)">Sesuaikan persentase markup keuntungan obat secara serentak.</p>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 leading-none">&times;</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold block mb-1">Target Persentase Margin (%)</label>
+            <input id="bulkMarginPct" type="number" min="5" max="100" class="ons-input text-xs font-mono-num font-bold" value="25"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Pembulatan Harga Jual</label>
+            <select id="bulkMarginRound" class="ons-select text-xs">
+              <option value="100">Bulatkan ke Rp 100 terdekat</option>
+              <option value="500">Bulatkan ke Rp 500 terdekat</option>
+              <option value="1000">Bulatkan ke Rp 1.000 terdekat</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl border bg-slate-50 dark:bg-slate-800/50 space-y-2" style="border-color:var(--ons-border)">
+          <div class="font-bold text-slate-700 dark:text-slate-200">Pratinjau Simulasi (Sampel 3 Produk):</div>
+          ${all.slice(0, 3).map((o) => {
+            const hpp = Number(o.hpp_avg || o.hpp_terakhir || 1000);
+            const simJual = Math.round((hpp * 1.25) / 100) * 100;
+            return `<div class="flex justify-between items-center text-[11px] py-1 border-b last:border-0 border-slate-200 dark:border-slate-700">
+              <span class="font-medium">${S().esc(o.nama_dagang)} (HPP ${S().rp(hpp)})</span>
+              <span class="font-mono-num font-bold text-blue-600">${S().rp(o.harga_umum || 0)} &rarr; ${S().rp(simJual)}</span>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <span class="text-[11px] text-slate-500">Total ${all.length} produk akan dievaluasi</span>
+          <div class="flex gap-2">
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+            <button type="button" onclick="window.applyBulkMarginSimulation()" class="ons-btn ons-btn-primary text-xs font-bold px-4 py-2">Terapkan Margin Baru</button>
+          </div>
+        </div>
+      </div>
+    `, '520px');
+  };
+
+  global.applyBulkMarginSimulation = async () => {
+    const pct = Number((document.getElementById('bulkMarginPct') || {}).value || 25);
+    const rnd = Number((document.getElementById('bulkMarginRound') || {}).value || 100);
+    const st = S().AppState;
+    const all = st.masterObat || [];
+    let count = 0;
+    all.forEach((o) => {
+      const hpp = Number(o.hpp_avg || o.hpp_terakhir || 0);
+      if (hpp > 0) {
+        let calc = hpp * (1 + pct / 100);
+        calc = Math.round(calc / rnd) * rnd;
+        o.harga_umum = calc;
+        o.harga_member = Math.round((calc * 0.95) / 100) * 100;
+        count++;
+      }
+    });
+    S().closeModal();
+    if (global.toast) global.toast(`Berhasil menyesuaikan margin ${pct}% untuk ${count} produk obat.`, 'ok');
+    if (global.renderActiveView) global.renderActiveView();
+  };
 
   global.openObatDetailModal = (idObat) => {
     const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);

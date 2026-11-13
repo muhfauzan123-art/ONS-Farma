@@ -8,7 +8,7 @@
   --ons-bg-canvas: #F8FAFC;
   --ons-bg-card: #FFFFFF;
   --ons-bg-subtle: #F1F5F9;
-  --ons-topbar-bg: #1D4ED8;
+  --ons-topbar-bg: linear-gradient(135deg, #0A192F 0%, #1E3A8A 32%, #1D4ED8 72%, #2563EB 100%);
   --ons-topbar-text: #FFFFFF;
   --ons-border: #E2E8F0;
   --ons-border-strong: #CBD5E1;
@@ -60,7 +60,7 @@ html.dark {
   color-scheme: dark;
   --ons-bg-canvas: #0F172A;
   --ons-bg-card: #1E293B;
-  --ons-topbar-bg: #1E3A8A;
+  --ons-topbar-bg: linear-gradient(135deg, #020617 0%, #0F172A 32%, #1E3A8A 72%, #1E40AF 100%);
   --ons-topbar-text: #FFFFFF;
   --ons-nav-start: #0F172A;
   --ons-nav-end: #111827;
@@ -1304,9 +1304,98 @@ html.dark .ons-nav-badge.info {
 .ons-topbar {
   background: var(--ons-topbar-bg);
   color: #FFFFFF;
-  border-color: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 24px -2px rgba(15, 23, 42, 0.22), inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Luxury Clinical Enterprise Components v17.35 */
+.ons-cockpit-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+.ons-cockpit-card {
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  border-radius: 0.875rem;
+  padding: 0.85rem 1.05rem;
+  box-shadow: var(--ons-shadow-card);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+}
+.ons-cockpit-card:hover {
+  border-color: var(--ons-border-strong);
+  box-shadow: var(--ons-shadow-card-hover);
+  transform: translateY(-1.5px);
+}
+.ons-cockpit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #3B82F6;
+}
+.ons-cockpit-card.is-blue::before { background: linear-gradient(90deg, #2563EB, #38BDF8); }
+.ons-cockpit-card.is-emerald::before { background: linear-gradient(90deg, #059669, #34D399); }
+.ons-cockpit-card.is-amber::before { background: linear-gradient(90deg, #D97706, #FBBF24); }
+.ons-cockpit-card.is-red::before { background: linear-gradient(90deg, #DC2626, #F87171); }
+.ons-cockpit-card.is-purple::before { background: linear-gradient(90deg, #7C3AED, #A78BFA); }
+
+.ons-stock-meter {
+  width: 100%;
+  height: 5px;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+.ons-stock-meter-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+.ons-stock-meter-fill.is-safe { background: linear-gradient(90deg, #10B981, #059669); }
+.ons-stock-meter-fill.is-warn { background: linear-gradient(90deg, #F59E0B, #D97706); }
+.ons-stock-meter-fill.is-danger { background: linear-gradient(90deg, #EF4444, #DC2626); }
+
+.ons-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--ons-border);
+  background: var(--ons-bg-subtle);
+  color: var(--ons-text-soft);
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.15s ease;
+}
+.ons-copy-btn:hover {
+  background: var(--ons-primary-tint);
+  color: var(--ons-primary);
+  border-color: var(--ons-primary);
+}
+
+.ons-barcode-sticker {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: 10px;
+  padding: 14px;
+  max-width: 300px;
+  margin: 0 auto;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 .ons-subnav-bar {
   background: var(--ons-bg-card);
