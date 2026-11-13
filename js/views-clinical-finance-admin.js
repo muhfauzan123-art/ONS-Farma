@@ -4310,9 +4310,9 @@
   function _getLostSales() {
     try {
       const arr = JSON.parse(localStorage.getItem(LOST_SALES_KEY) || 'null');
-      if (Array.isArray(arr) && arr.length) return arr;
+      if (Array.isArray(arr)) return arr;
     } catch (e) {}
-    return [{ tanggal: new Date().toISOString().slice(0, 10), nama_obat: 'Salbutamol Nebules 2.5mg', qty: 4, alasan: 'Stok habis sementara' }];
+    return [];
   }
 
   function _buildSipnapRows(st) {
@@ -8898,7 +8898,41 @@
         hapus_master: hapusMaster
       }, { isWrite: true });
 
+      // Bersihkan seluruh cache & storage transaksi lokal
+      [
+        'ons_lost_sales_v10', 'ons_lost_sales_v1', 'ons_pos_lost_sales',
+        'ONS_MANUAL_UTANG_V1', 'ONS_MANUAL_PIUTANG_V1', 'ONS_TTF_PIUTANG_V1',
+        'ONS_PURCHASE_PLANS_V1', 'ONS_FAKTUR_DRAFTS_V1', 'ONS_KONSINYASI_DRAFTS_V1',
+        'ONS_RETUR_DRAFTS_V1', 'ONS_SP_DRAFTS_V1', 'ons_sp_drafts_v1',
+        'ons_farma_offline_queue', 'ons_farma_v10_offline_queue'
+      ].forEach((k) => {
+        try { localStorage.removeItem(k); } catch (_) {}
+      });
+
       const st = S().AppState;
+      st.fakturPbf = [];
+      st.penjualan = [];
+      st.detailPenjualan = [];
+      st.stokBatch = [];
+      st.mutasiStok = [];
+      st.suratPesanan = [];
+      st.jurnalKeuangan = [];
+      st.piutangPelanggan = [];
+      st.pemeriksaanPasien = [];
+      st.rekamKlinis = [];
+      st.coldChain = [];
+      st.shiftHistory = [];
+      st.activeShift = null;
+      st.deDokumen = [];
+      st.omnichannelOrders = [];
+      st.crmKontak = [];
+      st.antrianNotif = [];
+      if (hapusMaster) {
+        st.masterObat = [];
+        st.supplierPbf = [];
+        st.members = [];
+        st.masterDokter = [];
+      }
       st.carts = [{ id: 'K1', label: 'Pelanggan #1', channel: 'Toko Fisik', id_member: 'UMUM', tier_harga: 'UMUM', items: [], diskon_global: 0, held_note: '', held_at: '' }];
       st.activeCartIdx = 0;
       settingsCache = { secrets: settingsCache.secrets || {}, audit: [], users: settingsCache.users || [] };
@@ -8908,6 +8942,8 @@
       global.toast((res && res.pesan) || 'Reset Data Pabrik selesai! Sistem bersih siap produksi.', 'ok');
       await global.bootLoadState(true);
       if (typeof global.loadSettingsBundle === 'function') await global.loadSettingsBundle(true);
+      if (typeof global.renderActiveView === 'function') global.renderActiveView();
+      if (typeof window.renderApp === 'function') window.renderApp();
     } catch (e) {
       global.toast(e.message || 'Gagal melakukan Reset Data Pabrik.', 'err');
     }

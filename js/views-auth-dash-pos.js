@@ -1424,9 +1424,6 @@
       const parsed = JSON.parse(localStorage.getItem(DASH_LOST_SALES_KEY) || 'null');
       if (Array.isArray(parsed)) arr = parsed;
     } catch (e) {}
-    if (!arr.length) {
-      arr = [{ tanggal: toLocalYmd_(new Date()), nama_obat: 'Salbutamol Nebules 2.5mg', qty: 4, alasan: 'Stok habis sementara' }];
-    }
     return range ? arr.filter((ls) => !ls.tanggal || _inDashRange(ls.tanggal, range)) : arr;
   }
 

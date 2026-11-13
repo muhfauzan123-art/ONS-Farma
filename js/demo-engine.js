@@ -48,6 +48,78 @@
   function buildSeedDb() {
     return {
       epoch: 1,
+      _factory_reset_clean: true,
+      profil_usaha: defaultProfilUsaha(),
+      secrets: {
+        FONNTE_TOKEN: 'fnt_••••••89a',
+        SATUSEHAT_CLIENT_ID: 'ss_c••••••210',
+        SATUSEHAT_CLIENT_SECRET: 'ss_s••••••f7c',
+        SATUSEHAT_ORG_ID: '1000••••••982',
+        WA_OWNER_TARGET: '6281••••••990',
+        ADMIN_EMAIL: 'anissa@onsfarma.id',
+        QRIS_MERCHANT_NMID: 'ID10••••••001',
+        DE_VERIFY_URL_BASE: './index.html'
+      },
+      users: [
+        { id_user: 'USR-001', username: 'pemilik', nama_lengkap: 'apt. Anissa Faradifa R. Is Rumi', role: 'Pemilik', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
+        { id_user: 'USR-002', username: 'apj', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
+        { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }
+      ],
+      master_obat: [],
+      stok_batch: [],
+      members: [],
+      supplier_pbf: [],
+      master_dokter: [],
+      faktur_pbf: [],
+      cold_chain: [],
+      rekam_klinis: [],
+      penjualan: [],
+      detail_penjualan: [],
+      surat_pesanan: [],
+      mutasi_stok: [],
+      omnichannel_orders: [],
+      crm_kontak: [],
+      antrian_notif: [],
+      st_template: [
+        { id_tpl: 'TPL-58', kode: 'STRUK_POS_58MM', nama: 'Struk Kasir Standar 58mm (Apotek ONS Farma)', lebar_mm: 58, template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No||{{NOTA}}\n[LR]Total||{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday },
+        { id_tpl: 'TPL-80', kode: 'STRUK_80_RESEP', nama: 'Struk Apotek Thermal 80mm (Detail Klinik & Barcode)', lebar_mm: 80, template_teks: (global.StrukEngine && (global.StrukEngine.PRESET_TEMPLATE_80MM || global.StrukEngine.DEFAULT_STRUK_TEMPLATE)) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No||{{NOTA}}\n[LR]Total||{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday }
+      ],
+      jurnal_keuangan: [],
+      tagihan: [],
+      pembayaran: [],
+      potongan: [],
+      reminder_log: [],
+      mutasi_cabang: [],
+      de_templat: [
+        { ID: 'TPL-SP', Kode: 'SP_BPOM_5_GOL', Nama: 'Surat Pesanan Obat 5 Golongan (BPOM)', Kategori: 'PENGADAAN', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'GOLONGAN_SP|kapital', 'NAMA_PBF', 'ALAMAT_PBF', 'NAMA_APJ', 'NO_SIPA', 'NAMA_APOTEK']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
+        { ID: 'TPL-BAR', Kode: 'BAR_PBF_RETUR', Nama: 'Berita Acara Retur Barang Ke PBF (BAR-PBF)', Kategori: 'GUDANG', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_PBF', 'NO_FAKTUR', 'TOTAL_NILAI|rupiah', 'ALASAN_RETUR', 'NAMA_APJ']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
+        { ID: 'TPL-CR', Kode: 'COPY_RESEP', Nama: 'Salinan Resep (Apograph) Resmi', Kategori: 'KLINIS', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_PASIEN', 'UMUR', 'DOKTER_PENULIS', 'TGL_RESEP', 'ISI_RESEP', 'NAMA_APJ', 'NO_SIPA']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
+        { ID: 'TPL-RECALL', Kode: 'BA_RECALL_BPOM', Nama: 'Berita Acara Penarikan & Karantina Obat (Recall)', Kategori: 'REGULASI', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_OBAT', 'NO_BATCH', 'QTY_KARANTINA', 'SUMBER_INSTRUKSI', 'NAMA_APJ', 'NO_SIPA']), ButuhTtdPejabat: 'YA', Aktif: 'YA' }
+      ],
+      de_dokumen: [],
+      de_pejabat: [
+        { ID: 'PEJ-01', UserId: 'USR-002', Nama: 'apt. Siti Rahma, S.Farm', Jabatan: 'Apoteker Penanggung Jawab', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'apj@onsfarma.id', Aktif: 'YA' },
+        { ID: 'PEJ-02', UserId: 'USR-001', Nama: 'apt. Anissa Faradifa R. Is Rumi', Jabatan: 'Pemilik Sarana Apotek & Apoteker', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'anissa@onsfarma.id', Aktif: 'YA' }
+      ],
+      audit_log: [
+        { id_audit: 'AUD-INIT-001', timestamp: isoToday + 'T08:00:00Z', user_id: 'USR-001', role: 'Pemilik', cabang_id: 'ONS-01', aksi: 'SYSTEM_INIT', entitas: 'SYSTEM', entitas_id: 'v18.0', diff_sebelum_json: '{}', diff_sesudah_json: JSON.stringify({ status: 'Apotek ONS Farma siap operasional bersih' }) }
+      ],
+      piutang_pelanggan: [],
+      copy_resep: [],
+      pemeriksaan_pasien: [],
+      konsinyasi_settlement: [],
+      konsinyasi_retur: [],
+      retur_penjualan: [],
+      retur_pbf: [],
+      lost_sales: [],
+      kw_counter: 1,
+      doc_counter: 1
+    };
+  }
+
+  function buildDemoSampleData() {
+    return {
+      epoch: 1,
       profil_usaha: defaultProfilUsaha(),
       secrets: {
         FONNTE_TOKEN: 'fnt_••••••89a',
@@ -407,78 +479,28 @@
   }
 
   function ensureV11Seed(db) {
-    if (db._factory_reset_clean) {
-      // Database sudah di-reset data pabrik untuk produksi nyata.
-      // Seluruh transaksi tetap kosong & JANGAN menyuntikkan data dummy!
-      [
-        'penjualan', 'detail_penjualan', 'stok_batch', 'mutasi_stok', 'surat_pesanan',
-        'faktur_pbf', 'rekam_klinis', 'pemeriksaan_pasien', 'jurnal_keuangan',
-        'shift_history', 'cold_chain', 'tagihan', 'pembayaran', 'potongan', 'reminder_log',
-        'de_dokumen', 'omnichannel_orders', 'crm_kontak', 'antrian_notif',
-        'piutang_pelanggan', 'copy_resep', 'mutasi_cabang', 'konsinyasi_settlement',
-        'master_obat', 'supplier_pbf', 'members', 'master_dokter'
-      ].forEach((k) => {
-        if (!Array.isArray(db[k])) db[k] = [];
-      });
-      if (!Array.isArray(db.users)) db.users = buildSeedDb().users;
-      if (!Array.isArray(db.st_template)) db.st_template = buildSeedDb().st_template;
-      if (!Array.isArray(db.audit_log)) db.audit_log = [];
-      if (!db.profil_usaha || typeof db.profil_usaha !== 'object') db.profil_usaha = defaultProfilUsaha();
-      return db;
-    }
-
-    const def = buildSeedDb();
-    const isoToday = new Date().toISOString().slice(0, 10);
-    let changed = false;
-    ['mutasi_stok', 'omnichannel_orders', 'crm_kontak', 'antrian_notif', 'st_template', 'surat_pesanan', 'shift_history'].forEach((k) => {
-      if (!Array.isArray(db[k])) { db[k] = def[k]; changed = true; }
+    [
+      'penjualan', 'detail_penjualan', 'stok_batch', 'mutasi_stok', 'surat_pesanan',
+      'faktur_pbf', 'rekam_klinis', 'pemeriksaan_pasien', 'jurnal_keuangan',
+      'shift_history', 'cold_chain', 'tagihan', 'pembayaran', 'potongan', 'reminder_log',
+      'de_dokumen', 'omnichannel_orders', 'crm_kontak', 'antrian_notif',
+      'piutang_pelanggan', 'copy_resep', 'mutasi_cabang', 'konsinyasi_settlement',
+      'konsinyasi_retur', 'retur_penjualan', 'retur_pbf', 'lost_sales',
+      'master_obat', 'supplier_pbf', 'members', 'master_dokter'
+    ].forEach((k) => {
+      if (!Array.isArray(db[k])) db[k] = [];
     });
-    if (!Array.isArray(db.piutang_pelanggan)) { db.piutang_pelanggan = buildOwnerPiutangSeed(isoToday); changed = true; }
-    if (!Array.isArray(db.copy_resep)) { db.copy_resep = buildCopyResepSeed(isoToday); changed = true; }
-    if (!Array.isArray(db.pemeriksaan_pasien)) { db.pemeriksaan_pasien = buildPemeriksaanSeed(isoToday); changed = true; }
-    if (!Array.isArray(db.mutasi_cabang)) {
-      db.mutasi_cabang = [];
-      changed = true;
-    }
-    if (!Array.isArray(db.faktur_pbf) || !db.faktur_pbf.some(f => f.no_faktur_pbf === 'FK-KNS-01')) {
-      if (!Array.isArray(db.faktur_pbf)) db.faktur_pbf = [];
-      (def.faktur_pbf || []).forEach(f => {
-        if (!db.faktur_pbf.some(x => x.no_faktur_pbf === f.no_faktur_pbf)) db.faktur_pbf.push(f);
-      });
-      changed = true;
-    }
-    if (!Array.isArray(db.stok_batch) || !db.stok_batch.some(b => b.id_batch === 'BTH-KNS-01')) {
-      if (!Array.isArray(db.stok_batch)) db.stok_batch = [];
-      const bKns = (def.stok_batch || []).find(b => b.id_batch === 'BTH-KNS-01');
-      if (bKns) db.stok_batch.push(bKns);
-      changed = true;
-    }
-    if (!Array.isArray(db.mutasi_stok) || !db.mutasi_stok.some(m => m.id_mutasi === 'MUT-100')) {
-      if (!Array.isArray(db.mutasi_stok)) db.mutasi_stok = [];
-      (def.mutasi_stok || []).forEach(m => {
-        if (!db.mutasi_stok.some(x => x.id_mutasi === m.id_mutasi)) db.mutasi_stok.push(m);
-      });
-      changed = true;
-    }
-    if (!Array.isArray(db.pembayaran) || db.pembayaran.length === 0) {
-      db.pembayaran = def.pembayaran || [];
-      changed = true;
-    }
-    if (!Array.isArray(db.reminder_log) || db.reminder_log.length === 0) {
-      db.reminder_log = def.reminder_log || [];
-      changed = true;
-    }
+    if (!Array.isArray(db.users) || !db.users.length) db.users = buildSeedDb().users;
+    if (!Array.isArray(db.st_template) || !db.st_template.length) db.st_template = buildSeedDb().st_template;
+    if (!Array.isArray(db.audit_log)) db.audit_log = [];
     if (!db.profil_usaha || typeof db.profil_usaha !== 'object') {
-      db.profil_usaha = def.profil_usaha;
-      changed = true;
+      db.profil_usaha = defaultProfilUsaha();
     } else {
       if (/hendra\s+wijaya/i.test(String(db.profil_usaha.nama_pemilik || ''))) {
         db.profil_usaha.nama_pemilik = 'apt. Anissa Faradifa R. Is Rumi';
-        changed = true;
       }
       if (/hendra\s+wijaya/i.test(String(db.profil_usaha.dikonfirmasi_oleh || ''))) {
         db.profil_usaha.dikonfirmasi_oleh = db.profil_usaha.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
-        changed = true;
       }
     }
     if (Array.isArray(db.users)) {
@@ -3151,7 +3173,7 @@
     if (action === 'system.factoryReset') {
       if (role !== 'Pemilik') throw new Error('Hanya Pemilik yang dapat melakukan Reset Data Pabrik.');
       if (d && d.demo_mode === 'restore_demo') {
-        const fresh = buildSeedDb();
+        const fresh = buildDemoSampleData();
         fresh.profil_usaha = db.profil_usaha || defaultProfilUsaha();
         ensureV11Seed(fresh);
         fresh.audit_log.unshift({
@@ -3216,12 +3238,17 @@
       db.epoch = Number(db.epoch || 1) + 1;
       saveDb(db);
 
-      // Bersihkan juga cache browser yang tersimpan di localStorage
+      // Bersihkan juga cache browser & storage transaksi lokal
       try {
-        localStorage.removeItem('ons_farma_offline_queue');
-        localStorage.removeItem('ons_lost_sales_v1');
-        localStorage.removeItem('ons_pos_lost_sales');
-        localStorage.removeItem('ons_sp_drafts_v1');
+        [
+          'ons_lost_sales_v10', 'ons_lost_sales_v1', 'ons_pos_lost_sales',
+          'ONS_MANUAL_UTANG_V1', 'ONS_MANUAL_PIUTANG_V1', 'ONS_TTF_PIUTANG_V1',
+          'ONS_PURCHASE_PLANS_V1', 'ONS_FAKTUR_DRAFTS_V1', 'ONS_KONSINYASI_DRAFTS_V1',
+          'ONS_RETUR_DRAFTS_V1', 'ONS_SP_DRAFTS_V1', 'ons_sp_drafts_v1',
+          'ons_farma_offline_queue', 'ons_farma_v10_offline_queue'
+        ].forEach((k) => {
+          try { localStorage.removeItem(k); } catch (_) {}
+        });
         if (global.ONSApi && typeof global.ONSApi.clearCachedReads === 'function') {
           global.ONSApi.clearCachedReads();
         }

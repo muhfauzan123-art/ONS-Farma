@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.0.0"/>
+  <meta name="application-version" content="v18.0.1"/>
   <title>Apotek ONS Farma</title>
   <link rel="manifest" href="./manifest.json?v=18.0.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
@@ -31,26 +31,26 @@
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.0.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.0.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.0.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.0.1"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.0.1"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.0.1"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.0.0"></script>
-  <script src="./js/struk-engine.js?v=18.0.0"></script>
-  <script src="./js/demo-engine.js?v=18.0.0"></script>
-  <script src="./js/api-turbo.js?v=18.0.0"></script>
-  <script src="./js/store.js?v=18.0.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.0.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.0.0"></script>
+  <script src="./js/config.js?v=18.0.1"></script>
+  <script src="./js/struk-engine.js?v=18.0.1"></script>
+  <script src="./js/demo-engine.js?v=18.0.1"></script>
+  <script src="./js/api-turbo.js?v=18.0.1"></script>
+  <script src="./js/store.js?v=18.0.1"></script>
+  <script src="./js/invoice-scanner.js?v=18.0.1"></script>
+  <script src="./js/barcode-scanner.js?v=18.0.1"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.0.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.0.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.0.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.0.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.0.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.0.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.0.1"></script>
+  <script src="./js/views-procurement-pro.js?v=18.0.1"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.0.1"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.0.1"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.0.1"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.0.1"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1820,11 +1820,24 @@
 
       // Reset Data Pabrik Otomatis untuk Fresh Start Bersih (Transaksional 100% Kosong, Akun, Struk & Log Terjaga)
       try {
-        if (localStorage.getItem('ons_v18_clean_reset_done') !== '1') {
+        const resetKey = 'ons_v18_1_clean_reset_done';
+        if (localStorage.getItem(resetKey) !== '1') {
           if (window.ONSDemoEngine && typeof window.ONSDemoEngine.cleanFactoryReset === 'function') {
             window.ONSDemoEngine.cleanFactoryReset(true);
           }
-          localStorage.setItem('ons_v18_clean_reset_done', '1');
+          [
+            'ons_lost_sales_v10', 'ons_lost_sales_v1', 'ons_pos_lost_sales',
+            'ONS_MANUAL_UTANG_V1', 'ONS_MANUAL_PIUTANG_V1', 'ONS_TTF_PIUTANG_V1',
+            'ONS_PURCHASE_PLANS_V1', 'ONS_FAKTUR_DRAFTS_V1', 'ONS_KONSINYASI_DRAFTS_V1',
+            'ONS_RETUR_DRAFTS_V1', 'ONS_SP_DRAFTS_V1', 'ons_sp_drafts_v1',
+            'ons_farma_offline_queue', 'ons_farma_v10_offline_queue'
+          ].forEach((k) => {
+            try { localStorage.removeItem(k); } catch (_) {}
+          });
+          if (window.ONSApi && typeof window.ONSApi.clearCachedReads === 'function') {
+            window.ONSApi.clearCachedReads();
+          }
+          localStorage.setItem(resetKey, '1');
         }
       } catch (e) {}
 
