@@ -76,6 +76,7 @@
   let activeDocTab = 'surat'; // surat | pindai
   let settingsTab = 'profil'; // profil | akun | struk | vault | audit
   let profileMediaDraft = { foto: null, logo: null };
+  let profileDocsDraft = {};
   const _todayIso = new Date().toISOString().slice(0, 10);
   const _curMonth = _todayIso.slice(0, 7);
   let billingCache = {
@@ -6787,12 +6788,43 @@
   function renderProfileMediaInner(kind, url, ownerName) {
     const cleanUrl = String(url || '').trim();
     if (cleanUrl) {
-      return `<img src="${S().esc(cleanUrl)}" alt="${kind === 'foto' ? 'Foto Pemilik' : 'Logo Usaha'}"/>`;
+      return `<img src="${S().esc(cleanUrl)}" alt="${kind === 'foto' ? 'Foto Pemilik' : 'Logo Usaha'}" class="w-full h-full object-cover"/>`;
     }
     if (kind === 'foto') {
       return `<span>${S().esc(getOwnerInitials(ownerName))}</span>`;
     }
     return `<span class="text-xs font-extrabold" style="color:var(--ons-primary)">LOGO</span>`;
+  }
+
+  function renderDocUploadRow(docKey, labelText, acceptTypes, currentUrl, currentName) {
+    const draft = profileDocsDraft[docKey];
+    const fileUrl = draft ? draft.dataUrl : currentUrl;
+    const fileName = draft ? draft.name : currentName;
+    const hasFile = !!(fileName || fileUrl);
+
+    return `<div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+      <span class="font-semibold text-slate-700 dark:text-slate-200">${S().esc(labelText)}</span>
+      <div id="profDocStatus_${docKey}" class="flex items-center gap-2">
+        <input type="file" id="profDocInput_${docKey}" accept="${acceptTypes || '.pdf,image/*'}" class="hidden" onchange="window.handleProfileDocUpload('${docKey}', this)"/>
+        <input type="hidden" id="profDocUrl_${docKey}" value="${S().esc(fileUrl || '')}"/>
+        <input type="hidden" id="profDocName_${docKey}" value="${S().esc(fileName || '')}"/>
+        ${hasFile ? `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="${S().esc(fileName || 'Berkas Terlampir')}">
+            <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span class="max-w-[130px] sm:max-w-[180px] truncate">${S().esc(fileName || 'Berkas Terlampir')}</span>
+          </span>
+          <button type="button" onclick="window.viewOrDownloadProfileDoc('${docKey}')" class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800" title="Unduh / Lihat Berkas">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          </button>
+          <button type="button" onclick="window.removeProfileDoc('${docKey}')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" title="Hapus Berkas">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+          <button type="button" onclick="document.getElementById('profDocInput_${docKey}').click()" class="ons-btn text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Ganti File</button>
+        ` : `
+          <button type="button" onclick="document.getElementById('profDocInput_${docKey}').click()" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
+        `}
+      </div>
+    </div>`;
   }
 
   function renderProfileUploadCard(cfg) {
@@ -6832,28 +6864,13 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-xl font-bold">Profil Bisnis</h1>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="ONSStore.toast('Pengajuan verifikasi profil apotek berhasil dikirim ke Kemenkes / Dinkes.', 'ok')" class="ons-btn text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-            Ajukan Verifikasi
-          </button>
           <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-semibold px-5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
             Simpan
           </button>
         </div>
       </div>
-
-      <!-- Toggle Publik & Brand Digikes Store -->
-      <div class="p-4 rounded-xl border bg-white dark:bg-slate-900/40 flex items-center justify-between" style="border-color:var(--ons-border)">
-        <label class="flex items-center gap-3 cursor-pointer text-xs font-semibold select-none text-slate-700 dark:text-slate-200">
-          <input type="checkbox" id="profPublicAccess" ${merged.public_access !== false ? 'checked' : ''} class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"/>
-          <span>Izinkan info outlet diakses publik</span>
-        </label>
-        <div class="flex items-center gap-1.5 text-xs font-bold text-sky-800 dark:text-sky-300">
-          <svg class="w-5 h-5 text-sky-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          <span class="tracking-wide">digikes <span class="font-black text-blue-900 dark:text-blue-100">store</span></span>
-        </div>
-      </div>
+      <input type="hidden" id="profPublicAccess" value="true"/>
 
       <!-- 1. Informasi Dasar -->
       <div class="ons-card p-5 space-y-4">
@@ -6861,10 +6878,14 @@
 
         <!-- Avatar Logo Tengah & Ganti Foto -->
         <div class="flex flex-col items-center justify-center gap-2 py-2">
-          <div class="w-24 h-24 rounded-full flex items-center justify-center text-white shadow-md relative overflow-hidden" style="background:#093554">
+          <div id="profMainAvatarBox" class="w-24 h-24 rounded-full flex items-center justify-center text-white shadow-md relative overflow-hidden text-2xl font-bold" style="background:#093554">
             ${renderProfileMediaInner('foto', fotoUrl, merged.nama_pemilik)}
           </div>
-          <button type="button" onclick="document.getElementById('profFotoUploadInput')?.click()" class="ons-btn text-white text-xs font-semibold px-5 py-1.5 rounded-full shadow-sm" style="background:#0D9488">Ganti Foto</button>
+          <div class="flex items-center gap-2">
+            <input type="file" id="profFotoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('foto', this)"/>
+            <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="ons-btn text-white text-xs font-semibold px-5 py-1.5 rounded-full shadow-sm" style="background:#0D9488">Ganti Foto</button>
+            ${fotoUrl ? `<button type="button" onclick="window.resetProfileMedia('foto')" class="ons-btn text-xs font-semibold px-3 py-1.5 rounded-full border text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/40">Hapus</button>` : ''}
+          </div>
           
           <!-- Hidden Native Upload Cards for Test Compatibility & Logo Sync -->
           <div class="hidden">
@@ -6957,13 +6978,7 @@
             </button>
           </div>
 
-          <div class="flex items-center justify-between pt-2 border-t" style="border-color:var(--ons-border)">
-            <span class="font-semibold text-slate-700 dark:text-slate-200">Foto Depan Outlet :</span>
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="ONSStore.toast('Mengunduh foto outlet...', 'info')" class="text-slate-500 hover:text-slate-700 p-1" title="Unduh"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-              <button type="button" onclick="ONSStore.toast('Pilih berkas foto tampak depan outlet apotek.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-            </div>
-          </div>
+          ${renderDocUploadRow('foto_outlet', 'Foto Depan Outlet :', 'image/*', merged.foto_outlet_url || '', merged.file_foto_outlet_name || '')}
         </div>
       </div>
 
@@ -6993,26 +7008,14 @@
           <input id="profNpwpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_usaha || '85.112.409.1-805.000')}" placeholder="No. NPWP Perusahaan"/>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <span class="font-semibold text-slate-700 dark:text-slate-200">NPWP Perusahaan :</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="ONSStore.toast('Mengunduh berkas NPWP...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-            <button type="button" onclick="ONSStore.toast('Pilih berkas NPWP Perusahaan.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-          </div>
-        </div>
+        ${renderDocUploadRow('npwp_usaha', 'NPWP Perusahaan :', '.pdf,image/*', merged.file_npwp_usaha_url || '', merged.file_npwp_usaha_name || (merged.npwp_usaha ? 'NPWP_Perusahaan.pdf' : ''))}
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. NIB</label>
           <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nib_oss || '9120208142915')}" placeholder="No. NIB OSS"/>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <span class="font-semibold text-slate-700 dark:text-slate-200">NIB :</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="ONSStore.toast('Mengunduh berkas NIB...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-            <button type="button" onclick="ONSStore.toast('Pilih berkas NIB OSS Apotek.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-          </div>
-        </div>
+        ${renderDocUploadRow('nib', 'NIB :', '.pdf,image/*', merged.file_nib_url || '', merged.file_nib_name || (merged.nib_oss ? 'NIB_OSS_Apotek.pdf' : ''))}
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Jenis Badan Usaha</label>
@@ -7040,13 +7043,7 @@
           <input id="profTglSia" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sia || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <span class="font-semibold text-slate-700 dark:text-slate-200">File SIA :</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="ONSStore.toast('Mengunduh berkas SIA...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-            <button type="button" onclick="ONSStore.toast('Pilih berkas SIA DPMPTSP.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-          </div>
-        </div>
+        ${renderDocUploadRow('sia', 'File SIA :', '.pdf,image/*', merged.file_sia_url || '', merged.file_sia_name || (merged.no_sia ? 'SIA_DPMPTSP.pdf' : ''))}
       </div>
 
       <!-- 5. Data Pemilik/PIC -->
@@ -7073,26 +7070,14 @@
           <input id="profKtpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.ktp_pemilik || '7371105408920001')}" placeholder="No. KTP Pemilik"/>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <span class="font-semibold text-slate-700 dark:text-slate-200">KTP Pemilik :</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="ONSStore.toast('Mengunduh foto KTP...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-            <button type="button" onclick="ONSStore.toast('Pilih berkas foto KTP Pemilik.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-          </div>
-        </div>
+        ${renderDocUploadRow('ktp_pemilik', 'KTP Pemilik :', '.pdf,image/*', merged.file_ktp_url || '', merged.file_ktp_name || (merged.ktp_pemilik ? 'KTP_Pemilik.pdf' : ''))}
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. NPWP Pemilik</label>
           <input id="profNpwpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_pemilik || '09.254.294.3-805.000')}" placeholder="No. NPWP Pemilik"/>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <span class="font-semibold text-slate-700 dark:text-slate-200">NPWP Pemilik :</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="ONSStore.toast('Mengunduh berkas NPWP Pemilik...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-            <button type="button" onclick="ONSStore.toast('Pilih berkas NPWP Pemilik.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-          </div>
-        </div>
+        ${renderDocUploadRow('npwp_pemilik', 'NPWP Pemilik :', '.pdf,image/*', merged.file_npwp_pemilik_url || '', merged.file_npwp_pemilik_name || (merged.npwp_pemilik ? 'NPWP_Pemilik.pdf' : ''))}
       </div>
 
       <!-- 6. Apoteker Penanggung Jawab -->
@@ -7129,13 +7114,7 @@
           <input id="profMasaSipa" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sipa || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <span class="font-semibold text-slate-700 dark:text-slate-200">File SIPA :</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="ONSStore.toast('Mengunduh file SIPA...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-            <button type="button" onclick="ONSStore.toast('Pilih berkas SIPA resmi APJ.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-          </div>
-        </div>
+        ${renderDocUploadRow('sipa_pemilik', 'File SIPA :', '.pdf,image/*', merged.file_sipa_url || '', merged.file_sipa_name || (merged.sipa_pemilik ? 'SIPA_APJ.pdf' : ''))}
       </div>
 
       <!-- 7. Apoteker Pendamping -->
@@ -7175,13 +7154,7 @@
               <input ${ro} class="ons-input font-mono-num text-xs w-full" value="13/11/2026" placeholder="DD/MM/YYYY"/>
             </div>
           </div>
-          <div class="flex items-center justify-between pt-1">
-            <span class="font-semibold text-slate-700 dark:text-slate-200">File SIPA :</span>
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="ONSStore.toast('Mengunduh file SIPA pendamping #1...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-              <button type="button" onclick="ONSStore.toast('Pilih berkas SIPA Apoteker Pendamping #1.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-            </div>
-          </div>
+          ${renderDocUploadRow('sipa_pendamping_1', 'File SIPA :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[0] && merged.apoteker_pendamping[0].file_sipa) || merged.file_sipa_pendamping_1_url || '', merged.file_sipa_pendamping_1_name || 'SIPA_Pendamping_1.pdf')}
         </div>
 
         <!-- Pendamping #2 -->
@@ -7217,13 +7190,7 @@
               <input ${ro} class="ons-input font-mono-num text-xs w-full" value="13/11/2026" placeholder="DD/MM/YYYY"/>
             </div>
           </div>
-          <div class="flex items-center justify-between pt-1">
-            <span class="font-semibold text-slate-700 dark:text-slate-200">File SIPA :</span>
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="ONSStore.toast('Mengunduh file SIPA pendamping #2...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-              <button type="button" onclick="ONSStore.toast('Pilih berkas SIPA Apoteker Pendamping #2.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-            </div>
-          </div>
+          ${renderDocUploadRow('sipa_pendamping_2', 'File SIPA :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[1] && merged.apoteker_pendamping[1].file_sipa) || merged.file_sipa_pendamping_2_url || '', merged.file_sipa_pendamping_2_name || 'SIPA_Pendamping_2.pdf')}
         </div>
       </div>
 
@@ -7251,13 +7218,7 @@
           <input id="profBankNo" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.bank_nomor_rekening || '152001928374')}" placeholder="Nomor Rekening"/>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <span class="font-semibold text-slate-700 dark:text-slate-200">Foto Buku Rekening :</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="ONSStore.toast('Mengunduh foto buku rekening...', 'info')" class="text-slate-500 hover:text-slate-700 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-            <button type="button" onclick="ONSStore.toast('Pilih berkas foto buku rekening bank.', 'info')" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
-          </div>
-        </div>
+        ${renderDocUploadRow('buku_rekening', 'Foto Buku Rekening :', '.pdf,image/*', merged.file_buku_rekening_url || '', merged.file_buku_rekening_name || (merged.bank_nomor_rekening ? 'Buku_Rekening_Bank.pdf' : ''))}
       </div>
 
       <!-- 9. Pratinjau Kop Resmi & Konfirmasi Data -->
@@ -8069,6 +8030,12 @@
     if (box) {
       box.innerHTML = renderProfileMediaInner(kind, clean, kind === 'foto' ? ((ownerEl && ownerEl.value) || '') : ((usahaEl && usahaEl.value) || ''));
     }
+    if (kind === 'foto') {
+      const mainBox = document.getElementById('profMainAvatarBox');
+      if (mainBox) {
+        mainBox.innerHTML = renderProfileMediaInner('foto', clean, (ownerEl && ownerEl.value) || 'apt. Anissa Faradifa R. Is Rumi');
+      }
+    }
     if (typeof global.refreshProfileKopPreview === 'function') global.refreshProfileKopPreview();
   };
 
@@ -8108,11 +8075,30 @@
     const file = inputEl && inputEl.files && inputEl.files[0];
     if (!file) return;
     try {
-      const dataUrl = await S().compressImageFile(file, kind === 'foto' ? 220 : 240, 0.82);
+      let dataUrl;
+      if (file.type && file.type.startsWith('image/')) {
+        try {
+          dataUrl = await S().compressImageFile(file, 240, 0.85);
+        } catch (_) {
+          dataUrl = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+          });
+        }
+      } else {
+        dataUrl = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = rej;
+          r.readAsDataURL(file);
+        });
+      }
       const urlInput = document.getElementById(kind === 'foto' ? 'profFotoUrl' : 'profLogoUrl');
       if (urlInput) urlInput.value = dataUrl;
       global.refreshProfileLivePreview(kind, dataUrl);
-      global.toast((kind === 'foto' ? 'Foto pemilik' : 'Logo usaha') + ' siap — klik Konfirmasi & Simpan untuk menyimpan permanen.', 'ok');
+      global.toast((kind === 'foto' ? 'Foto profil' : 'Logo usaha') + ' berhasil dipilih! Klik Simpan di sudut kanan atas untuk menyimpan permanen.', 'ok');
     } catch (e) {
       global.toast(e.message || 'Gagal memproses gambar.', 'err');
     }
@@ -8123,6 +8109,99 @@
     const urlInput = document.getElementById(kind === 'foto' ? 'profFotoUrl' : 'profLogoUrl');
     if (urlInput) urlInput.value = val;
     global.refreshProfileLivePreview(kind, val);
+    if (kind === 'foto') {
+      const fileInp = document.getElementById('profFotoUploadInput');
+      if (fileInp) fileInp.value = '';
+    }
+    global.toast((kind === 'foto' ? 'Foto profil' : 'Logo usaha') + ' dihapus. Klik Simpan untuk memperbarui profil.', 'ok');
+  };
+
+  global.handleProfileDocUpload = (docKey, inputEl) => {
+    const file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const fileName = file.name;
+      profileDocsDraft[docKey] = { dataUrl, name: fileName, size: file.size, type: file.type };
+      const urlEl = document.getElementById('profDocUrl_' + docKey);
+      const nameEl = document.getElementById('profDocName_' + docKey);
+      if (urlEl) urlEl.value = dataUrl;
+      if (nameEl) nameEl.value = fileName;
+      global.refreshProfileDocStatus(docKey, dataUrl, fileName);
+      ONSStore.toast(`Berkas "${fileName}" siap disimpan! Klik Simpan di sudut kanan atas.`, 'ok');
+    };
+    reader.onerror = () => {
+      ONSStore.toast('Gagal membaca berkas.', 'err');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  global.viewOrDownloadProfileDoc = (docKey) => {
+    const urlEl = document.getElementById('profDocUrl_' + docKey);
+    const nameEl = document.getElementById('profDocName_' + docKey);
+    let url = (urlEl && urlEl.value) || (profileDocsDraft[docKey] && profileDocsDraft[docKey].dataUrl) || '';
+    const name = (nameEl && nameEl.value) || (profileDocsDraft[docKey] && profileDocsDraft[docKey].name) || `${docKey}.pdf`;
+
+    if (!url) {
+      url = 'data:text/plain;charset=utf-8,' + encodeURIComponent('Dokumen Resmi ' + name + '\nApotek ONS Farma\nTerverifikasi Sistem Digital.');
+    }
+
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      ONSStore.toast(`Mengunduh berkas "${name}"...`, 'info');
+    } catch (err) {
+      window.open(url, '_blank');
+    }
+  };
+
+  global.removeProfileDoc = (docKey) => {
+    delete profileDocsDraft[docKey];
+    const urlEl = document.getElementById('profDocUrl_' + docKey);
+    const nameEl = document.getElementById('profDocName_' + docKey);
+    if (urlEl) urlEl.value = '';
+    if (nameEl) nameEl.value = '';
+    const fileInp = document.getElementById('profDocInput_' + docKey);
+    if (fileInp) fileInp.value = '';
+    global.refreshProfileDocStatus(docKey, '', '');
+    ONSStore.toast('Berkas berhasil dihapus. Klik Simpan untuk memperbarui profil.', 'ok');
+  };
+
+  global.refreshProfileDocStatus = (docKey, dataUrl, fileName) => {
+    const container = document.getElementById('profDocStatus_' + docKey);
+    if (!container) return;
+    const hasFile = !!(fileName || dataUrl);
+    if (hasFile) {
+      container.innerHTML = `
+        <input type="file" id="profDocInput_${docKey}" accept=".pdf,image/*" class="hidden" onchange="window.handleProfileDocUpload('${docKey}', this)"/>
+        <input type="hidden" id="profDocUrl_${docKey}" value="${S().esc(dataUrl || '')}"/>
+        <input type="hidden" id="profDocName_${docKey}" value="${S().esc(fileName || '')}"/>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="${S().esc(fileName || 'Berkas Terlampir')}">
+          <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <span class="max-w-[130px] sm:max-w-[180px] truncate">${S().esc(fileName || 'Berkas Terlampir')}</span>
+        </span>
+        <button type="button" onclick="window.viewOrDownloadProfileDoc('${docKey}')" class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800" title="Unduh / Lihat Berkas">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        </button>
+        <button type="button" onclick="window.removeProfileDoc('${docKey}')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" title="Hapus Berkas">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <button type="button" onclick="document.getElementById('profDocInput_${docKey}').click()" class="ons-btn text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Ganti File</button>
+      `;
+    } else {
+      container.innerHTML = `
+        <input type="file" id="profDocInput_${docKey}" accept=".pdf,image/*" class="hidden" onchange="window.handleProfileDocUpload('${docKey}', this)"/>
+        <input type="hidden" id="profDocUrl_${docKey}" value=""/>
+        <input type="hidden" id="profDocName_${docKey}" value=""/>
+        <button type="button" onclick="document.getElementById('profDocInput_${docKey}').click()" class="ons-btn text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm" style="background:#0D9488">Upload File</button>
+      `;
+    }
   };
 
   global.submitStoreProfileForm = async () => {
@@ -8136,6 +8215,40 @@
       const el = document.getElementById(id);
       return el ? String(el.value || '').trim() : '';
     };
+
+    const docFotoOutlet = v('profDocUrl_foto_outlet') || (profileDocsDraft.foto_outlet && profileDocsDraft.foto_outlet.dataUrl) || cur.foto_outlet_url || '';
+    const docFotoOutletName = v('profDocName_foto_outlet') || (profileDocsDraft.foto_outlet && profileDocsDraft.foto_outlet.name) || cur.file_foto_outlet_name || '';
+
+    const docNpwpUsaha = v('profDocUrl_npwp_usaha') || (profileDocsDraft.npwp_usaha && profileDocsDraft.npwp_usaha.dataUrl) || cur.file_npwp_usaha_url || '';
+    const docNpwpUsahaName = v('profDocName_npwp_usaha') || (profileDocsDraft.npwp_usaha && profileDocsDraft.npwp_usaha.name) || cur.file_npwp_usaha_name || '';
+
+    const docNib = v('profDocUrl_nib') || (profileDocsDraft.nib && profileDocsDraft.nib.dataUrl) || cur.file_nib_url || '';
+    const docNibName = v('profDocName_nib') || (profileDocsDraft.nib && profileDocsDraft.nib.name) || cur.file_nib_name || '';
+
+    const docSia = v('profDocUrl_sia') || (profileDocsDraft.sia && profileDocsDraft.sia.dataUrl) || cur.file_sia_url || '';
+    const docSiaName = v('profDocName_sia') || (profileDocsDraft.sia && profileDocsDraft.sia.name) || cur.file_sia_name || '';
+
+    const docKtpPemilik = v('profDocUrl_ktp_pemilik') || (profileDocsDraft.ktp_pemilik && profileDocsDraft.ktp_pemilik.dataUrl) || cur.file_ktp_url || '';
+    const docKtpPemilikName = v('profDocName_ktp_pemilik') || (profileDocsDraft.ktp_pemilik && profileDocsDraft.ktp_pemilik.name) || cur.file_ktp_name || '';
+
+    const docNpwpPemilik = v('profDocUrl_npwp_pemilik') || (profileDocsDraft.npwp_pemilik && profileDocsDraft.npwp_pemilik.dataUrl) || cur.file_npwp_pemilik_url || '';
+    const docNpwpPemilikName = v('profDocName_npwp_pemilik') || (profileDocsDraft.npwp_pemilik && profileDocsDraft.npwp_pemilik.name) || cur.file_npwp_pemilik_name || '';
+
+    const docSipaPemilik = v('profDocUrl_sipa_pemilik') || (profileDocsDraft.sipa_pemilik && profileDocsDraft.sipa_pemilik.dataUrl) || cur.file_sipa_url || '';
+    const docSipaPemilikName = v('profDocName_sipa_pemilik') || (profileDocsDraft.sipa_pemilik && profileDocsDraft.sipa_pemilik.name) || cur.file_sipa_name || '';
+
+    const docSipaP1 = v('profDocUrl_sipa_pendamping_1') || (profileDocsDraft.sipa_pendamping_1 && profileDocsDraft.sipa_pendamping_1.dataUrl) || (cur.apoteker_pendamping && cur.apoteker_pendamping[0] && cur.apoteker_pendamping[0].file_sipa) || cur.file_sipa_pendamping_1_url || '';
+    const docSipaP1Name = v('profDocName_sipa_pendamping_1') || (profileDocsDraft.sipa_pendamping_1 && profileDocsDraft.sipa_pendamping_1.name) || cur.file_sipa_pendamping_1_name || '';
+
+    const docSipaP2 = v('profDocUrl_sipa_pendamping_2') || (profileDocsDraft.sipa_pendamping_2 && profileDocsDraft.sipa_pendamping_2.dataUrl) || (cur.apoteker_pendamping && cur.apoteker_pendamping[1] && cur.apoteker_pendamping[1].file_sipa) || cur.file_sipa_pendamping_2_url || '';
+    const docSipaP2Name = v('profDocName_sipa_pendamping_2') || (profileDocsDraft.sipa_pendamping_2 && profileDocsDraft.sipa_pendamping_2.name) || cur.file_sipa_pendamping_2_name || '';
+
+    const docBukuRekening = v('profDocUrl_buku_rekening') || (profileDocsDraft.buku_rekening && profileDocsDraft.buku_rekening.dataUrl) || cur.file_buku_rekening_url || '';
+    const docBukuRekeningName = v('profDocName_buku_rekening') || (profileDocsDraft.buku_rekening && profileDocsDraft.buku_rekening.name) || cur.file_buku_rekening_name || '';
+
+    const pubAccEl = document.getElementById('profPublicAccess');
+    const pubAccVal = pubAccEl ? (pubAccEl.type === 'checkbox' ? pubAccEl.checked : (pubAccEl.value === 'true' || pubAccEl.value === '1')) : true;
+
     const payload = {
       nama_pemilik: v('profNamaPemilik') || cur.nama_pemilik,
       jabatan_pemilik: v('profJabatanPemilik') || cur.jabatan_pemilik,
@@ -8174,7 +8287,31 @@
       bank_cabang: v('profBankCabang') || cur.bank_cabang || 'KCP Panakkukang',
       bank_akun_nama: v('profBankAkun') || cur.bank_akun_nama || 'Apotek ONS Farma',
       bank_nomor_rekening: v('profBankNo') || cur.bank_nomor_rekening || '152001928374',
-      public_access: !!(document.getElementById('profPublicAccess') ? document.getElementById('profPublicAccess').checked : true),
+      public_access: pubAccVal,
+      foto_outlet_url: docFotoOutlet,
+      file_foto_outlet_name: docFotoOutletName,
+      file_npwp_usaha_url: docNpwpUsaha,
+      file_npwp_usaha_name: docNpwpUsahaName,
+      file_nib_url: docNib,
+      file_nib_name: docNibName,
+      file_sia_url: docSia,
+      file_sia_name: docSiaName,
+      file_ktp_url: docKtpPemilik,
+      file_ktp_name: docKtpPemilikName,
+      file_npwp_pemilik_url: docNpwpPemilik,
+      file_npwp_pemilik_name: docNpwpPemilikName,
+      file_sipa_url: docSipaPemilik,
+      file_sipa_name: docSipaPemilikName,
+      file_sipa_pendamping_1_url: docSipaP1,
+      file_sipa_pendamping_1_name: docSipaP1Name,
+      file_sipa_pendamping_2_url: docSipaP2,
+      file_sipa_pendamping_2_name: docSipaP2Name,
+      file_buku_rekening_url: docBukuRekening,
+      file_buku_rekening_name: docBukuRekeningName,
+      apoteker_pendamping: [
+        Object.assign({}, (cur.apoteker_pendamping && cur.apoteker_pendamping[0]) || {}, { file_sipa: docSipaP1 }),
+        Object.assign({}, (cur.apoteker_pendamping && cur.apoteker_pendamping[1]) || {}, { file_sipa: docSipaP2 })
+      ],
       terkonfirmasi: 'YA',
       dikonfirmasi_oleh: (document.getElementById('profNamaPemilik') || {}).value || (cur.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')
     };
@@ -8199,10 +8336,11 @@
         }
       }
       profileMediaDraft = { foto: null, logo: null };
+      profileDocsDraft = {};
       settingsCache.users = [];
       settingsCache.audit = [];
       if (typeof global.renderApp === 'function') global.renderApp();
-      global.toast('Data Pemilik, Foto/Logo & Tempat Usaha berhasil dikonfirmasi dan disimpan!', 'ok');
+      global.toast('Profil Bisnis, Foto & Seluruh Berkas Legalitas berhasil disimpan!', 'ok');
     } catch (e) {
       global.toast(e.message || 'Gagal menyimpan profil apotek.', 'err');
     }
