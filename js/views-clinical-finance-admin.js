@@ -5828,7 +5828,7 @@
       return true;
     });
 
-    const loginHost = (window.location && window.location.host) || 'onsfarma1011.apotekdigital.id';
+    const loginHost = (window.location && window.location.host) || 'onsfarma.vercel.app';
 
     return `
       <div class="ons-page-header">
@@ -6273,7 +6273,7 @@
   };
 
   global.copyLoginUrl = () => {
-    const loginHost = (window.location && window.location.host) || 'onsfarma1011.apotekdigital.id';
+    const loginHost = (window.location && window.location.host) || 'onsfarma.vercel.app';
     const url = `https://${loginHost}/login`;
     if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url);

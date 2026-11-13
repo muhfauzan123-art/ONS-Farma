@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <title>Apotek ONS Farma Enterprise v16.0</title>
+  <meta name="application-version" content="v16.0"/>
+  <title>ONS Farma</title>
   <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
@@ -590,7 +591,7 @@
         const st = ONSStore.AppState;
         const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
         const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
-        const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+        const usahaNama = 'ONS Farma';
         const dr = document.createElement('div');
         dr.id = 'mobileNavDrawer';
         dr.className = 'ons-drawer-backdrop md:hidden';
@@ -1345,7 +1346,7 @@
         const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
         syncOwnerIdentityFromProfile(prof);
         const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
-        const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+        const usahaNama = 'ONS Farma';
         const fotoPem = prof.foto_pemilik_url || '';
         const alertsCount = buildOperationalAlerts().length;
         const cleanWords = String((st.user && st.user.nama_lengkap) || 'OF')
@@ -1406,19 +1407,17 @@
               <header class="ons-topbar h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:var(--ons-topbar-bg);color:#FFFFFF;border-color:rgba(255,255,255,0.18)">
                 <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 text-white">
                   <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-btn ons-btn-ghost p-1.5 w-9 h-9 rounded-lg text-white hover:bg-white/25 border-0 flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
-                  <div class="hidden sm:flex items-center gap-3 text-xs font-medium text-white/90">
-                    <div class="px-2 py-0.5 rounded bg-white/10 border border-white/10"><span class="text-white/70">Kode Sesi</span> <span class="font-mono-num font-bold text-white ml-1">B261112-01</span></div>
-                    <div><span class="text-white/70">Pengguna</span> <span class="font-bold text-white ml-1">${ONSStore.esc(st.user.nama_lengkap || 'Anissa Faradifa R. Is. Rumi')}</span></div>
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 text-white border border-white/25 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="font-bold tracking-wide">ONS Farma</span>
                   </div>
-                  <div class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 shadow-sm"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span class="font-mono tracking-wide">ONS Farma Enterprise</span></div>
-                  <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'} hidden xl:inline-block">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden 2xl:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-white/10 text-white/80">v17.35 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                  <div class="hidden md:flex items-center gap-1.5 text-xs font-medium text-white/90">
+                    <span class="text-white/60">Pengguna:</span>
+                    <span class="font-bold text-white">${ONSStore.esc(st.user.nama_lengkap || 'apt. Anissa Faradifa R. Is. Rumi')}</span>
+                  </div>
+                  <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'} hidden lg:inline-block">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2 text-white">
-                  <button type="button" class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 text-white transition shadow-sm border border-white/20">
-                    <span>🚀 ONBOARDING</span>
-                    <span class="px-1.5 py-0.2 rounded-full bg-orange-500 text-white text-[10px] font-bold">7</span>
-                  </button>
                   <button onclick="window.openCommandPalette()" aria-label="Tanya AI dan Cari Fitur" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1.5 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Tanya AI / Cari Fitur (Ctrl+K)">
                     <span class="font-semibold text-white">✨ Tanya AI</span>
                     <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">Ctrl+K</kbd>
