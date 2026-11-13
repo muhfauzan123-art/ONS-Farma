@@ -6,7 +6,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
   <meta name="application-version" content="v16.0"/>
-  <title>ONS Farma</title>
+  <title>Apotek ONS Farma</title>
   <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
@@ -591,7 +591,7 @@
         const st = ONSStore.AppState;
         const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
         const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
-        const usahaNama = 'ONS Farma';
+        const usahaNama = 'Apotek ONS Farma';
         const dr = document.createElement('div');
         dr.id = 'mobileNavDrawer';
         dr.className = 'ons-drawer-backdrop md:hidden';
@@ -1346,7 +1346,7 @@
         const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
         syncOwnerIdentityFromProfile(prof);
         const logoSrc = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
-        const usahaNama = 'ONS Farma';
+        const usahaNama = 'Apotek ONS Farma';
         const fotoPem = prof.foto_pemilik_url || '';
         const alertsCount = buildOperationalAlerts().length;
         const cleanWords = String((st.user && st.user.nama_lengkap) || 'OF')
@@ -1368,7 +1368,6 @@
                     <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-8 h-8 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
                     <div class="min-w-0 ons-hide-collapsed">
                       <div class="font-bold text-[13px] ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
-                      <div class="text-[10px] text-slate-400 font-mono-num truncate">id onsfarma1011 &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
                     </div>
                   </div>
                   <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1 rounded-lg ons-nav-icon-btn shrink-0">
@@ -1409,7 +1408,7 @@
                   <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-btn ons-btn-ghost p-1.5 w-9 h-9 rounded-lg text-white hover:bg-white/25 border-0 md:hidden flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
                   <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 text-white border border-white/25 shadow-sm">
                     <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span class="font-bold tracking-wide">ONS Farma</span>
+                    <span class="font-bold tracking-wide">Apotek ONS Farma</span>
                   </div>
                   <div class="hidden md:flex items-center gap-1.5 text-xs font-medium text-white/90">
                     <span class="text-white/60">Pengguna:</span>
