@@ -450,7 +450,7 @@
                 const curSub = (st.subTabs && st.subTabs[item.viewId]) || defSub;
                 const isOpen = hasTabs && openSubmenus.has(item.viewId);
 
-                return `<div class="ons-nav-group">
+                return `<div class="ons-nav-group" data-nav-group-id="${item.viewId}">
                   <div data-nav-row-id="${item.viewId}" class="ons-nav-row ${isAct ? 'active' : ''}">
                     <button type="button"
                       data-nav-id="${item.viewId}"
@@ -567,24 +567,281 @@
         if (side) side.classList.toggle('collapsed', sidebarCollapsed);
       };
 
-      window.filterSidebarMenu = function (q) {
-        const query = String(q || '').toLowerCase().trim();
-        const items = document.querySelectorAll('#sidebarMenuMount .ons-nav-item, #sidebarMenuMount .ons-nav-sub-btn');
-        if (!query) {
-          items.forEach((it) => { it.style.display = ''; });
-          document.querySelectorAll('#sidebarMenuMount .ons-menu-section').forEach((s) => { s.style.display = ''; });
+      function getSearchableFeatures() {
+        const tree = getAllowedMenuTree();
+        const list = [];
+        tree.forEach((sect) => {
+          (sect.items || []).forEach((item) => {
+            const tabs = item.tabs || [];
+            if (tabs.length > 0) {
+              tabs.forEach((t) => {
+                const isKasirPos = item.viewId === 'pos' && t.subTab === 'kasir';
+                list.push({
+                  viewId: item.viewId,
+                  subTab: t.subTab,
+                  title: isKasirPos ? 'Kasir POS' : t.label,
+                  parentLabel: item.label,
+                  sectLabel: sect.label,
+                  icon: item.icon,
+                  kw: `${item.label} ${item.kw || ''} ${t.label} ${t.kw || ''} ${item.desc || ''}`.toLowerCase(),
+                  shortcut: isKasirPos ? 'F2' : (t.badge || '')
+                });
+              });
+            } else {
+              list.push({
+                viewId: item.viewId,
+                subTab: '',
+                title: item.label,
+                parentLabel: sect.label,
+                sectLabel: sect.label,
+                icon: item.icon,
+                kw: `${item.label} ${item.kw || ''} ${item.desc || ''}`.toLowerCase(),
+                shortcut: ''
+              });
+            }
+          });
+        });
+        return list;
+      }
+
+      function scoreFeatureMatch(f, q) {
+        let score = 0;
+        const t = (f.title || '').toLowerCase();
+        const p = (f.parentLabel || '').toLowerCase();
+        const vid = (f.viewId || '').toLowerCase();
+        const sub = (f.subTab || '').toLowerCase();
+
+        // High priority intent keywords
+        if (q.includes('kasir')) {
+          if (vid === 'pos' && sub === 'kasir') return 10000;
+          if (vid === 'pos') return 5000;
+        }
+        if (q === 'pos') {
+          if (vid === 'pos' && sub === 'kasir') return 10000;
+          if (vid === 'pos') return 5000;
+        }
+        if (q.includes('obat')) {
+          if (vid === 'obat' && (sub === 'obat' || !sub)) return 10000;
+          if (vid === 'obat') return 5000;
+        }
+        if (q.includes('laporan')) {
+          if (vid === 'sipnap') return 10000;
+          if (vid === 'finance') return 6000;
+        }
+        if (q.includes('profil')) {
+          if (vid === 'settings' && sub === 'profil') return 10000;
+        }
+        if (q === 'stok' || q === 'gudang') {
+          if (vid === 'gudang') return 10000;
+        }
+        if (q.includes('penjualan') || q === 'jual') {
+          if (vid === 'pos' && sub === 'kasir') return 10000;
+          if (vid === 'pos') return 8000;
+        }
+
+        // Exact matches
+        if (t === q) score += 500;
+        if (p === q) score += 300;
+        if (sub === q) score += 400;
+        if (vid === q) score += 300;
+
+        // Starts with
+        if (t.startsWith(q)) score += 200;
+        if (p.startsWith(q)) score += 150;
+
+        // Includes
+        if (t.includes(q)) score += 80;
+        if (p.includes(q)) score += 60;
+        if (f.kw.includes(q)) score += 10;
+
+        return score;
+      }
+
+      window.filterSidebarMenu = function (rawQ, mountId) {
+        const q = String(rawQ || '').toLowerCase().trim();
+        const targetMount = mountId ? document.getElementById(mountId) : null;
+        const mounts = targetMount ? [targetMount] : [
+          document.getElementById('sidebarMenuMount'),
+          document.getElementById('drawerMenuMount')
+        ].filter(Boolean);
+
+        const clearBtn = document.getElementById('sidebarSearchClearBtn');
+        const resBox = document.getElementById('sidebarSearchResults');
+
+        if (!q) {
+          if (clearBtn) clearBtn.classList.add('hidden');
+          if (resBox) { resBox.classList.add('hidden'); resBox.innerHTML = ''; }
+          mounts.forEach((m) => {
+            m.querySelectorAll('.ons-menu-section').forEach((s) => { s.style.display = ''; });
+            m.querySelectorAll('.ons-nav-group').forEach((g) => { g.style.display = ''; });
+            m.querySelectorAll('.ons-submenu-btn').forEach((b) => { b.style.display = ''; });
+            m.querySelectorAll('[data-subwrap-id]').forEach((w) => {
+              const vid = w.getAttribute('data-subwrap-id');
+              w.classList.toggle('is-open', openSubmenus.has(vid));
+            });
+            m.querySelectorAll('[data-subcaret-id]').forEach((c) => {
+              const vid = c.getAttribute('data-subcaret-id');
+              c.setAttribute('aria-expanded', openSubmenus.has(vid) ? 'true' : 'false');
+            });
+          });
           return;
         }
-        items.forEach((it) => {
-          const txt = (it.textContent || '').toLowerCase();
-          const match = txt.includes(query);
-          it.style.display = match ? '' : 'none';
-        });
-        document.querySelectorAll('#sidebarMenuMount .ons-menu-section').forEach((s) => {
-          const visible = Array.from(s.querySelectorAll('.ons-nav-item, .ons-nav-sub-btn')).some((el) => el.style.display !== 'none');
-          s.style.display = visible ? '' : 'none';
+
+        if (clearBtn) clearBtn.classList.remove('hidden');
+
+        const allFeatures = getSearchableFeatures();
+        const matches = allFeatures.filter((f) => {
+          return f.title.toLowerCase().includes(q) ||
+                 f.parentLabel.toLowerCase().includes(q) ||
+                 f.kw.includes(q);
+        }).sort((a, b) => scoreFeatureMatch(b, q) - scoreFeatureMatch(a, q));
+
+        // Floating quick results popover (desktop sidebar)
+        if (resBox && !mountId) {
+          if (matches.length === 0) {
+            resBox.innerHTML = `<div class="p-3 text-center text-xs text-slate-500 dark:text-slate-400">Tidak ada fitur yang cocok dengan "<b>${ONSStore.esc(q)}</b>"</div>`;
+            resBox.classList.remove('hidden');
+          } else {
+            resBox.innerHTML = `
+              <div class="p-1.5 space-y-0.5">
+                <div class="flex items-center justify-between px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <span>Hasil (${matches.length})</span>
+                  <span class="text-blue-600 dark:text-blue-400 font-semibold lowercase">tekan Enter untuk buka</span>
+                </div>
+                ${matches.slice(0, 6).map((m, idx) => `
+                  <button type="button"
+                    onclick="window.selectSidebarSearchResult('${m.viewId}','${m.subTab}','${ONSStore.esc(m.title)}')"
+                    class="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors ${idx === 0 ? 'bg-blue-50/80 dark:bg-slate-800/80 font-semibold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : 'text-slate-700 dark:text-slate-200'}">
+                    <span class="p-1 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shrink-0">${svgIcon(m.icon, 'w-3.5 h-3.5')}</span>
+                    <div class="min-w-0 flex-1">
+                      <div class="text-xs font-semibold truncate">${ONSStore.esc(m.title)}</div>
+                      <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate">${ONSStore.esc(m.parentLabel)}</div>
+                    </div>
+                    ${m.shortcut ? `<span class="text-[9px] px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-mono font-bold shrink-0">${ONSStore.esc(m.shortcut)}</span>` : ''}
+                  </button>
+                `).join('')}
+              </div>`;
+            resBox.classList.remove('hidden');
+          }
+        }
+
+        // Live DOM filtering & auto-expanding matching submenus
+        mounts.forEach((mount) => {
+          mount.querySelectorAll('.ons-menu-section').forEach((sectEl) => {
+            let sectHasVisible = false;
+            sectEl.querySelectorAll('.ons-nav-group').forEach((grpEl) => {
+              const vid = grpEl.getAttribute('data-nav-group-id') || grpEl.querySelector('[data-nav-id]')?.getAttribute('data-nav-id');
+              const parentBtn = grpEl.querySelector('.ons-nav-row-btn');
+              const parentTxt = (parentBtn?.textContent || '').toLowerCase();
+              const treeMatch = allFeatures.filter((f) => f.viewId === vid);
+              const parentKwMatch = treeMatch.some((f) => f.kw.includes(q) || f.parentLabel.toLowerCase().includes(q));
+              const isParentDirectMatch = parentTxt.includes(q) || parentKwMatch;
+
+              const subBtns = Array.from(grpEl.querySelectorAll('.ons-submenu-btn'));
+              let anySubMatch = false;
+
+              subBtns.forEach((sb) => {
+                const subTxt = (sb.textContent || '').toLowerCase();
+                const subNavId = sb.getAttribute('data-subnav-id') || '';
+                const subTab = subNavId.split(':')[1] || '';
+                const feat = treeMatch.find((f) => f.subTab === subTab);
+                const isSubMatch = subTxt.includes(q) || (feat && feat.kw.includes(q));
+                if (isSubMatch) anySubMatch = true;
+                sb.style.display = (isSubMatch || isParentDirectMatch) ? '' : 'none';
+              });
+
+              if (isParentDirectMatch || anySubMatch) {
+                grpEl.style.display = '';
+                sectHasVisible = true;
+                const subwrap = grpEl.querySelector('.ons-nav-subwrap');
+                if (subwrap) subwrap.classList.add('is-open');
+                const caret = grpEl.querySelector('.ons-nav-caret');
+                if (caret) caret.setAttribute('aria-expanded', 'true');
+              } else {
+                grpEl.style.display = 'none';
+              }
+            });
+            sectEl.style.display = sectHasVisible ? '' : 'none';
+          });
         });
       };
+
+      window.handleSidebarSearchKey = function (e, rawQ, mountId) {
+        if (!e) return;
+        if (e.key === 'Escape') {
+          window.clearSidebarSearch();
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const q = String(rawQ || '').toLowerCase().trim();
+          if (!q) return;
+          const allFeatures = getSearchableFeatures();
+          const matches = allFeatures.filter((f) => {
+            return f.title.toLowerCase().includes(q) ||
+                   f.parentLabel.toLowerCase().includes(q) ||
+                   f.kw.includes(q);
+          }).sort((a, b) => scoreFeatureMatch(b, q) - scoreFeatureMatch(a, q));
+
+          const target = matches[0];
+          if (target) {
+            window.selectSidebarSearchResult(target.viewId, target.subTab, target.title);
+          } else {
+            toast('Fitur tidak ditemukan: ' + q, 'warn');
+          }
+        }
+      };
+
+      window.selectSidebarSearchResult = function (viewId, subTab, optTitle) {
+        const resBox = document.getElementById('sidebarSearchResults');
+        if (resBox) { resBox.classList.add('hidden'); resBox.innerHTML = ''; }
+        const inp = document.getElementById('sidebarSearchInp');
+        if (inp) inp.value = '';
+        const dinp = document.getElementById('drawerSearchInp');
+        if (dinp) dinp.value = '';
+        const clearBtn = document.getElementById('sidebarSearchClearBtn');
+        if (clearBtn) clearBtn.classList.add('hidden');
+
+        window.filterSidebarMenu('');
+
+        if (viewId) {
+          openSubmenus.add(viewId);
+          persistOpenSubmenus();
+        }
+
+        navigateView(viewId, subTab || '');
+        if (window.closeMobileDrawer) window.closeMobileDrawer();
+
+        if (viewId === 'pos' && (subTab === 'kasir' || !subTab)) {
+          setTimeout(() => {
+            const pInp = document.getElementById('posSearchInput');
+            if (pInp) pInp.focus();
+          }, 120);
+        }
+
+        const label = optTitle || (viewId === 'pos' ? 'Kasir POS' : viewId);
+        toast('Membuka ' + label, 'ok');
+      };
+
+      window.clearSidebarSearch = function () {
+        const inp = document.getElementById('sidebarSearchInp');
+        if (inp) { inp.value = ''; inp.focus(); }
+        const dinp = document.getElementById('drawerSearchInp');
+        if (dinp) { dinp.value = ''; dinp.focus(); }
+        window.filterSidebarMenu('');
+      };
+
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('click', (e) => {
+          const resBox = document.getElementById('sidebarSearchResults');
+          const searchWrap = document.getElementById('sidebarSearchInp')?.closest ? document.getElementById('sidebarSearchInp')?.closest('.relative') : null;
+          if (resBox && resBox.classList && !resBox.classList.contains('hidden')) {
+            if (searchWrap && searchWrap.contains && !searchWrap.contains(e.target)) {
+              resBox.classList.add('hidden');
+            }
+          }
+        });
+      }
 
       window.openMobileDrawer = function () {
         if (document.getElementById('mobileNavDrawer')) return;
@@ -606,7 +863,13 @@
             </div>
             <button onclick="window.closeMobileDrawer()" aria-label="Tutup Menu" class="p-2 rounded-lg ons-nav-icon-btn min-w-[44px] min-h-[44px] flex items-center justify-center">${svgIcon('close')}</button>
           </div>
-          <div id="drawerMenuMount" class="flex-1 space-y-1">${renderMenuTreeHtml()}</div>
+          <div class="px-1 py-1.5 mb-2">
+            <div class="relative">
+              <input type="text" id="drawerSearchInp" oninput="window.filterSidebarMenu(this.value, 'drawerMenuMount')" onkeydown="window.handleSidebarSearchKey(event, this.value, 'drawerMenuMount')" placeholder="Cari fitur disini" autocomplete="off" class="ons-input text-xs pl-8 pr-7 py-2 rounded-full w-full bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500"/>
+              <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+          </div>
+          <div id="drawerMenuMount" class="flex-1 space-y-1 overflow-y-auto">${renderMenuTreeHtml()}</div>
           <div class="pt-3 mt-3 border-t ons-nav-divider space-y-2 text-xs">
             <div class="px-2 ons-nav-profile-name font-medium truncate"><b>${ONSStore.esc((st.user && st.user.nama_lengkap) || '')}</b></div>
             <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn ons-nav-logout-btn">${svgIcon('logout')}<span>Keluar Sesi</span></button>
@@ -1376,8 +1639,12 @@
                 </div>
                 <div class="px-1 py-1.5 ons-hide-collapsed">
                   <div class="relative">
-                    <input type="text" id="sidebarSearchInp" oninput="window.filterSidebarMenu(this.value)" placeholder="Cari fitur disini" class="ons-input text-xs pl-8 pr-3 py-1.5 rounded-full w-full bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500"/>
-                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="sidebarSearchInp" oninput="window.filterSidebarMenu(this.value)" onkeydown="window.handleSidebarSearchKey(event, this.value)" placeholder="Cari fitur disini" autocomplete="off" class="ons-input text-xs pl-8 pr-7 py-1.5 rounded-full w-full bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500"/>
+                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <button type="button" id="sidebarSearchClearBtn" onclick="window.clearSidebarSearch()" aria-label="Bersihkan pencarian" class="hidden absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full" title="Bersihkan">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                    <div id="sidebarSearchResults" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200/90 dark:border-slate-700/90 z-50 overflow-hidden max-h-72 overflow-y-auto"></div>
                   </div>
                 </div>
                 <nav id="sidebarMenuMount" aria-label="Menu Utama Apotek" class="space-y-0.5">
