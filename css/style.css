@@ -1310,6 +1310,61 @@ html.dark .ons-nav-badge.info {
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* Topbar Action Buttons: High-contrast translucent glass pills, never solid white on white */
+.ons-topbar .ons-btn-ghost,
+.ons-topbar button.ons-btn-ghost,
+.ons-topbar a.ons-btn-ghost {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.ons-topbar .ons-btn-ghost:hover,
+.ons-topbar button.ons-btn-ghost:hover,
+.ons-topbar a.ons-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.26) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.ons-topbar .ons-btn-ghost:active,
+.ons-topbar button.ons-btn-ghost:active,
+.ons-topbar a.ons-btn-ghost:active {
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Ensure all SVG icons in topbar buttons are always crisp white */
+.ons-topbar .ons-btn-ghost svg,
+.ons-topbar button.ons-btn-ghost svg,
+.ons-topbar a.ons-btn-ghost svg,
+.ons-topbar .ons-nav-svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+.ons-topbar svg[fill="currentColor"],
+.ons-topbar a.ons-btn-ghost svg[fill="currentColor"],
+.ons-topbar svg.fill-current {
+  fill: #FFFFFF !important;
+}
+
+/* Install PWA Button in Topbar: Distinct High-Contrast Solid White Badge with Bold Royal Blue Text */
+.ons-topbar #pwaInstallBtn,
+.ons-topbar .ons-btn-primary#pwaInstallBtn {
+  background: #FFFFFF !important;
+  color: #1E3A8A !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.ons-topbar #pwaInstallBtn:hover,
+.ons-topbar .ons-btn-primary#pwaInstallBtn:hover {
+  background: #F1F5F9 !important;
+  color: #1D4ED8 !important;
+}
+
 /* Luxury Clinical Enterprise Components v17.35 */
 .ons-cockpit-strip {
   display: grid;
