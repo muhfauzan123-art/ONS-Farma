@@ -4082,6 +4082,11 @@
     const box = document.getElementById('impObatPreview');
     if (!file || !box) return;
     try {
+      // Validasi Batas Ukuran File (Audit #13): Maksimal 10 MB untuk mencegah browser freeze
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('Ukuran file (' + (file.size / (1024 * 1024)).toFixed(1) + ' MB) melebihi batas maksimal 10 MB.');
+      }
+
       let rows = [];
       if (file.name.toLowerCase().endsWith('.xlsx') && global.ONSXlsxLite) {
         const buf = await file.arrayBuffer();
@@ -4101,7 +4106,11 @@
           break;
         }
       }
-      if (headerIdx < 0) headerIdx = 0;
+      // Validasi Kolom Wajib (Audit #13): Beri peringatan jelas jika header nama_dagang tidak ditemukan
+      if (headerIdx < 0) {
+        const detectedCols = (rows[0] || []).map(_normalizeImportHeader).filter(Boolean).slice(0, 8).join(', ');
+        throw new Error('Kolom wajib "nama_dagang" (atau "Nama Obat") tidak ditemukan dalam file. Kolom yang terdeteksi: [' + detectedCols + ']. Pastikan menggunakan file template yang sesuai.');
+      }
       const headers = rows[headerIdx].map(_normalizeImportHeader);
       const VALID_GOL = new Set(['BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA', 'HERBAL', 'ALKES']);
       importObatBuffer = rows.slice(headerIdx + 1)

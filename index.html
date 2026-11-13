@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v16.0"/>
+  <meta name="application-version" content="v18.0.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json"/>
+  <link rel="manifest" href="./manifest.json?v=18.0.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.0.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js"></script>
-  <script src="./vendor/ons-xlsx-export.js"></script>
-  <script src="./vendor/ons-xlsx-lite.js"></script>
+  <script src="./vendor/ons-code128.js?v=18.0.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.0.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.0.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js"></script>
-  <script src="./js/struk-engine.js"></script>
-  <script src="./js/demo-engine.js"></script>
-  <script src="./js/api-turbo.js"></script>
-  <script src="./js/store.js"></script>
-  <script src="./js/invoice-scanner.js"></script>
-  <script src="./js/barcode-scanner.js"></script>
+  <script src="./js/config.js?v=18.0.0"></script>
+  <script src="./js/struk-engine.js?v=18.0.0"></script>
+  <script src="./js/demo-engine.js?v=18.0.0"></script>
+  <script src="./js/api-turbo.js?v=18.0.0"></script>
+  <script src="./js/store.js?v=18.0.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.0.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.0.0"></script>
 
-  <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v15.0 -->
-  <script src="./js/views-auth-dash-pos.js"></script>
-  <script src="./js/views-procurement-pro.js"></script>
-  <script src="./js/views-inventory-procurement.js"></script>
-  <script src="./js/views-clinical-finance-admin.js"></script>
-  <script src="./js/views-pemeriksaan.js"></script>
-  <script src="./js/views-omnichannel-crm.js"></script>
+  <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
+  <script src="./js/views-auth-dash-pos.js?v=18.0.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.0.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.0.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.0.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.0.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.0.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1793,9 +1793,9 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v17_24') === '1') return;
+          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v18_0') === '1') return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v17_24', '1');
+          sessionStorage.setItem('ons_sw_reloaded_v18_0', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {

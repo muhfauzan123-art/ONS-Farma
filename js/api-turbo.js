@@ -36,20 +36,38 @@
 
   function getSession() {
     try {
+      const sessRaw = sessionStorage.getItem(SESSION_KEY);
+      if (sessRaw) return JSON.parse(sessRaw);
       const raw = localStorage.getItem(SESSION_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }
   }
 
   function setSession(ses) {
-    if (!ses) localStorage.removeItem(SESSION_KEY);
-    else localStorage.setItem(SESSION_KEY, JSON.stringify(ses));
+    if (!ses) {
+      try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+      try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+      clearCachedReads();
+    } else {
+      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(ses)); } catch (e) {}
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify(ses)); } catch (e) {}
+    }
   }
 
   let _lastWarmupTs = 0;
 
+  function _hashStr(str) {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return (hash >>> 0).toString(36);
+  }
+
   function _cacheKey(action, data) {
-    return 'ons_swr_' + action + '_e' + _writeEpoch + '_' + JSON.stringify(data || {}).slice(0, 64);
+    const raw = JSON.stringify(data || {});
+    return 'ons_swr_' + action + '_e' + _writeEpoch + '_' + _hashStr(raw);
   }
 
   function getCachedReadEntry(action, data) {
@@ -118,9 +136,25 @@
   function bumpClientEpoch() {
     _writeEpoch++;
     try { localStorage.setItem('ons_v10_epoch', String(_writeEpoch)); } catch (e) {}
+    _pruneOldEpochCache();
     if (global.ONSStore && typeof global.ONSStore.invalidateStockIndex === 'function') {
       global.ONSStore.invalidateStockIndex();
     }
+  }
+
+  function _pruneOldEpochCache() {
+    try {
+      const prefix = 'ons_swr_';
+      const keepToken = '_e' + _writeEpoch + '_';
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf(prefix) === 0 && k.indexOf(keepToken) === -1) {
+          toRemove.push(k);
+        }
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
   }
 
   async function callApi(action, data, opts) {
@@ -175,8 +209,12 @@
 
           const json = await resp.json();
           _lastLatencyMs = Math.round(performance.now() - t0);
-          const badge = document.getElementById('apiLatencyBadge');
-          if (badge) badge.textContent = 'v16.0 • ' + _lastLatencyMs + 'ms';
+          const doc = typeof document !== 'undefined' ? document : (global.document || null);
+          const badge = doc && typeof doc.getElementById === 'function' ? doc.getElementById('apiLatencyBadge') : null;
+          if (badge) {
+            const verStr = (global.ONS_CONFIG && global.ONS_CONFIG.APP_VERSION) ? ('v' + global.ONS_CONFIG.APP_VERSION) : 'v18.0.0';
+            badge.textContent = verStr + ' • ' + _lastLatencyMs + 'ms';
+          }
 
           if (!json.ok) {
             if (json.code === 401) {
@@ -265,15 +303,25 @@
     return item;
   }
 
+  let _isFlushingOfflineQueue = false;
+
   async function flushOfflineQueue() {
-    const q = getOfflineQueue();
-    if (!q.length || !navigator.onLine) return { synced: 0 };
+    if (_isFlushingOfflineQueue) return { synced: 0, busy: true };
+    const snapshot = getOfflineQueue();
+    if (!snapshot.length || !navigator.onLine) return { synced: 0 };
+    _isFlushingOfflineQueue = true;
     try {
-      await callApi('pos.syncOfflineQueue', { items: q }, { isWrite: true });
-      localStorage.setItem(OFFLINE_Q_KEY, '[]');
-      return { synced: q.length };
+      const syncIds = new Set(snapshot.map((it) => it.offline_sync_id));
+      await callApi('pos.syncOfflineQueue', { items: snapshot }, { isWrite: true });
+      // CRITICAL FIX (Audit #1): Prune hanya item yang sukses disinkronkan. Transaksi baru yang masuk saat callApi tetap utuh di antrean!
+      const freshQ = getOfflineQueue();
+      const remainingQ = freshQ.filter((it) => !syncIds.has(it.offline_sync_id));
+      localStorage.setItem(OFFLINE_Q_KEY, JSON.stringify(remainingQ));
+      return { synced: snapshot.length };
     } catch (e) {
       return { synced: 0, error: e.message };
+    } finally {
+      _isFlushingOfflineQueue = false;
     }
   }
 

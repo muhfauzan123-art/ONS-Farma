@@ -1,12 +1,12 @@
 /**
- * Service Worker PWA - Apotek ONS Farma Enterprise v10.0
+ * Service Worker PWA - Apotek ONS Farma Enterprise v18.0.0
  * Aturan Emas /gas-pwa-github:
  * - Path aset selalu relatif (./)
  * - Jangan pernah cache endpoint Google Apps Script (script.google.com / script.googleusercontent.com)
  * - Selalu sajikan UI instan dari cache untuk pengalaman bebas lag (<50ms)
  */
 
-const CACHE_NAME = 'ons-farma-pwa-v17.34.0'; // elevated to v17.35.0
+const CACHE_NAME = 'ons-farma-pwa-v18.0.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -31,12 +31,22 @@ const CORE_ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/ons-farma-app-icon.png',
-  './icons/apotek-ons-logo.png'
+  './icons/apotek-ons-logo.png',
+  'https://cdn.tailwindcss.com'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      // CRITICAL FIX (Audit #6): Gunakan allSettled agar aset opsional/flat folder yang belum ada tidak membatalkan instalasi PWA!
+      return Promise.allSettled(
+        CORE_ASSETS.map((asset) =>
+          cache.add(asset).catch((err) => {
+            console.warn('[SW] Aset dilewati:', asset, err && err.message);
+          })
+        )
+      );
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -58,6 +68,24 @@ self.addEventListener('fetch', (event) => {
     url.includes('api.fonnte.com') ||
     url.includes('satusehat')
   ) {
+    return;
+  }
+
+  // Tailwind CDN Cache (Audit #12): Cache runtime CDN tailwind agar tampilan offline tetap rapi
+  if (url.includes('cdn.tailwindcss.com')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          if (cached) return cached;
+          return fetch(event.request).then((resp) => {
+            if (resp && (resp.status === 200 || resp.type === 'opaque')) {
+              cache.put(event.request, resp.clone());
+            }
+            return resp;
+          }).catch(() => cached);
+        })
+      )
+    );
     return;
   }
 
@@ -86,13 +114,17 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) =>
       cache.match(event.request).then((cached) => {
-        const networkFetch = fetch(event.request).then((resp) => {
-          if (resp && resp.status === 200 && url.startsWith(self.location.origin)) {
-            cache.put(event.request, resp.clone());
-          }
-          return resp;
-        }).catch(() => cached);
-        return cached || networkFetch;
+        const cleanUrl = url.split('?')[0];
+        const matchPromise = cached ? Promise.resolve(cached) : cache.match(cleanUrl);
+        return matchPromise.then((matched) => {
+          const networkFetch = fetch(event.request).then((resp) => {
+            if (resp && resp.status === 200 && url.startsWith(self.location.origin)) {
+              cache.put(event.request, resp.clone());
+            }
+            return resp;
+          }).catch(() => matched);
+          return matched || networkFetch;
+        });
       })
     )
   );

@@ -5075,7 +5075,9 @@
   global.confirmClearPosCart = () => {
     const cart = getPosActiveCart();
     if (cart) {
+      cart._activeCheckoutId = null;
       cart.items = [];
+      cart._activeCheckoutId = null;
       cart.diskon_global = 0;
       cart.diskon_input = 0;
       cart.biaya_servis = 0;
@@ -5956,6 +5958,14 @@
       items: cart.items
     };
 
+    // Idempotency: Pin ID checkout ke sesi pembayaran modal yang stabil
+    // Jika timeout dan kasir menekan tombol lagi, ID yang sama dikirim ke backend sehingga dicegah tercatat dua kali!
+    if (!cart._activeCheckoutId) {
+      cart._activeCheckoutId = 'POS-TX-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    }
+    payload.offline_sync_id = cart._activeCheckoutId;
+    payload.client_tx_id = cart._activeCheckoutId;
+
     try {
       let res;
       if (!navigator.onLine && !API().isDemoMode()) {
@@ -5963,7 +5973,7 @@
         global.toast('Mode Offline Aktif: Transaksi tersimpan di Antrean Darurat (' + queued.offline_sync_id + ').', 'warn');
         res = { no_invoice: queued.offline_sync_id, penjualan: payload };
       } else {
-        res = await API().callApi('pos.checkout', payload, { isWrite: true });
+        res = await API().callApi('pos.checkout', payload, { isWrite: true, requestId: cart._activeCheckoutId });
       }
       playPosBeep('ok');
       S().closeModal();
@@ -6003,6 +6013,7 @@
       }, 58, waTarget, itemsCopy);
 
       cart.items = [];
+      cart._activeCheckoutId = null;
       cart.diskon_global = 0;
       cart.diskon_input = 0;
       cart.biaya_servis = 0;
