@@ -306,12 +306,15 @@
           <thead>
             <tr>
               <th>No.</th>
-              <th>Nama Produk &amp; Kode KFA</th>
-              <th>Rak</th>
-              <th>Stok &amp; ED</th>
-              ${seeCost ? '<th>Harga Pokok</th>' : ''}
-              <th>Harga Jual</th>
-              ${seeCost ? '<th>Min. Markup</th>' : ''}
+              <th>Nama</th>
+              <th>Kode Produk (SKU)</th>
+              <th>Barcode</th>
+              <th>Nama Pabrik</th>
+              <th>Satuan Utama</th>
+              <th>Semua Satuan</th>
+              ${seeCost ? '<th title="Referensi Harga Beli / Harga Pokok (HPP)">Referensi Harga Beli<div class="text-[10px] text-slate-400 font-normal">Harga Pokok</div></th>' : ''}
+              <th>Harga Eceran Tertinggi (HET)</th>
+              <th>Harga Jual Utama<div class="text-[10px] text-slate-400 font-normal">Min. Markup</div></th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -321,6 +324,7 @@
               const o = m.o;
               const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
               const rugiWarn = seeCost && m.hpp > 0 && m.harga <= m.hpp;
+              const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
               return `<tr>
                 <td class="font-mono-num text-xs">${idx + 1}.</td>
                 <td>
@@ -328,23 +332,28 @@
                   <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
                   <div class="flex flex-wrap items-center gap-1 mt-0.5">
                     ${S().bpomBadge(o.golongan_bpom)}
-                    <span class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">KFA ${S().esc(o.kode_kfa || o.id_obat)}</span>
+                    <span class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Rak: ${S().esc(o.rak_lokasi || 'RAK-A1')}</span>
                     ${m.isCold ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-600">Chiller 2-8&deg;C</span>` : ''}
                   </div>
                 </td>
-                <td class="font-mono-num text-xs">${S().esc(o.rak_lokasi || 'RAK-A1')}</td>
-                <td>${renderObatStockBarHtml(m)}</td>
-                ${seeCost ? `<td class="font-mono-num text-xs">${S().rp(o.hpp_avg)}</td>` : ''}
-                <td class="font-mono-num text-xs">
-                  <div class="font-bold text-blue-600">${S().rp(o.harga_umum)}</div>
-                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Mbr: ${S().rp(o.harga_member || o.harga_umum)}</div>
+                <td class="font-mono-num text-xs font-semibold">${S().esc(o.id_obat || o.kode_kfa || '-')}</td>
+                <td class="font-mono-num text-xs">${S().esc(o.kode_kfa || o.nie_bpom || '-')}</td>
+                <td class="text-xs">${S().esc(o.pbf_utama || 'Pabrik Farmasi')}</td>
+                <td class="text-xs font-semibold">
+                  <div>${S().esc(o.satuan_dasar || 'Unit')}</div>
+                  <div class="mt-0.5">${renderObatStockBarHtml(m)}</div>
                 </td>
-                ${seeCost ? `<td class="font-mono-num text-xs">
-                  ${m.marginPct !== null
-                    ? `<span class="font-bold ${rugiWarn ? 'text-red-600' : 'text-emerald-600'}">${m.marginPct >= 0 ? '+' : ''}${m.marginPct}%</span>`
-                    : '<span style="color:var(--ons-text-soft)">-</span>'}
-                  ${rugiWarn ? '<div class="text-[10px] font-bold text-red-600">Potensi Rugi</div>' : ''}
-                </td>` : ''}
+                <td class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">
+                  1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar || 'Unit')}<br>
+                  1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar || 'Unit')}
+                </td>
+                ${seeCost ? `<td class="font-mono-num text-xs">${S().rp(o.hpp_avg || o.hpp_terakhir || 0)}</td>` : ''}
+                <td class="font-mono-num text-xs">${S().rp(hetVal)}</td>
+                <td class="font-mono-num text-xs">
+                  <div class="font-bold text-blue-600">${S().rp(o.harga_umum || 0)}</div>
+                  <div class="text-[10px]" style="color:var(--ons-text-soft)">Mbr: ${S().rp(o.harga_member || o.harga_umum || 0)}</div>
+                  ${seeCost && rugiWarn ? '<div class="text-[10px] font-bold text-red-600">Potensi Rugi</div>' : ''}
+                </td>
                 <td><span class="badge-bpom ${isAktifJual ? 'bpom-bebas' : 'bpom-prekursor'}">${isAktifJual ? 'Dijual' : 'Tidak Dijual'}</span></td>
                 <td>${actionButtons(o)}</td>
               </tr>`;
@@ -880,6 +889,447 @@
     return `<div class="space-y-3">${kpiHtml}${bodyHtml}</div>`;
   }
 
+  const MASTER_KATEGORI_KEY = 'ons_master_kategori_v1';
+  const MASTER_SATUAN_KEY = 'ons_master_satuan_v1';
+  const MASTER_RAK_KEY = 'ons_master_rak_v1';
+  const MASTER_GUDANG_KEY = 'ons_master_gudang_v1';
+  const MASTER_KAT_PELANGGAN_KEY = 'ons_master_kat_pelanggan_v1';
+  const MASTER_PAJAK_KEY = 'ons_master_pajak_v1';
+
+  let mdKategoriSearchQ = '';
+  let mdSatuanSearchQ = '';
+  let mdRakSearchQ = '';
+  let mdGudangSearchQ = '';
+  let mdKatPelangganSearchQ = '';
+  let mdPajakSearchQ = '';
+
+  function _getMasterKategoriList() {
+    const list = _readLocalList(MASTER_KATEGORI_KEY);
+    if (list && list.length) return list;
+    const def = (S().DEFAULT_MASTER_KATEGORI ? S().DEFAULT_MASTER_KATEGORI.slice() : [
+      { id_kategori: 'KAT-001', nama_kategori: 'Obat Bebas', status: 'Aktif' },
+      { id_kategori: 'KAT-002', nama_kategori: 'Obat Bebas Terbatas', status: 'Aktif' },
+      { id_kategori: 'KAT-003', nama_kategori: 'Obat Keras', status: 'Aktif' },
+      { id_kategori: 'KAT-004', nama_kategori: 'Prekursor Farmasi', status: 'Aktif' },
+      { id_kategori: 'KAT-005', nama_kategori: 'Obat-Obat Tertentu (OOT)', status: 'Aktif' },
+      { id_kategori: 'KAT-006', nama_kategori: 'Psikotropika', status: 'Aktif' },
+      { id_kategori: 'KAT-007', nama_kategori: 'Narkotika', status: 'Aktif' },
+      { id_kategori: 'KAT-008', nama_kategori: 'Herbal & Fitofarmaka', status: 'Aktif' },
+      { id_kategori: 'KAT-009', nama_kategori: 'Suplemen & Vitamin', status: 'Aktif' },
+      { id_kategori: 'KAT-010', nama_kategori: 'Alat Kesehatan', status: 'Aktif' },
+      { id_kategori: 'KAT-011', nama_kategori: 'Perlengkapan Bayi & Ibu', status: 'Aktif' },
+      { id_kategori: 'KAT-012', nama_kategori: 'Produk Konsumsi & Lainnya', status: 'Aktif' }
+    ]);
+    _writeLocalList(MASTER_KATEGORI_KEY, def);
+    return def;
+  }
+
+  function _getMasterSatuanList() {
+    const list = _readLocalList(MASTER_SATUAN_KEY);
+    if (list && list.length) return list;
+    const def = (S().DEFAULT_MASTER_SATUAN ? S().DEFAULT_MASTER_SATUAN.slice() : [
+      { id_satuan: 'SAT-001', nama_satuan: 'Ampul', status: 'Aktif' },
+      { id_satuan: 'SAT-002', nama_satuan: 'Batang', status: 'Aktif' },
+      { id_satuan: 'SAT-003', nama_satuan: 'Biji', status: 'Aktif' },
+      { id_satuan: 'SAT-004', nama_satuan: 'Botol', status: 'Aktif' },
+      { id_satuan: 'SAT-005', nama_satuan: 'Box', status: 'Aktif' },
+      { id_satuan: 'SAT-006', nama_satuan: 'Buah', status: 'Aktif' },
+      { id_satuan: 'SAT-007', nama_satuan: 'Bungkus', status: 'Aktif' },
+      { id_satuan: 'SAT-008', nama_satuan: 'Butir', status: 'Aktif' },
+      { id_satuan: 'SAT-009', nama_satuan: 'cc', status: 'Aktif' },
+      { id_satuan: 'SAT-010', nama_satuan: 'cm', status: 'Aktif' },
+      { id_satuan: 'SAT-011', nama_satuan: 'Tablet', status: 'Aktif' },
+      { id_satuan: 'SAT-012', nama_satuan: 'Kapsul', status: 'Aktif' },
+      { id_satuan: 'SAT-013', nama_satuan: 'Strip', status: 'Aktif' },
+      { id_satuan: 'SAT-014', nama_satuan: 'Tube', status: 'Aktif' },
+      { id_satuan: 'SAT-015', nama_satuan: 'Sachet', status: 'Aktif' },
+      { id_satuan: 'SAT-016', nama_satuan: 'Vial', status: 'Aktif' },
+      { id_satuan: 'SAT-017', nama_satuan: 'Pot', status: 'Aktif' },
+      { id_satuan: 'SAT-018', nama_satuan: 'Pcs', status: 'Aktif' }
+    ]);
+    _writeLocalList(MASTER_SATUAN_KEY, def);
+    return def;
+  }
+
+  function _getMasterRakList() {
+    const list = _readLocalList(MASTER_RAK_KEY);
+    if (list && list.length) return list;
+    const def = (S().DEFAULT_MASTER_RAK ? S().DEFAULT_MASTER_RAK.slice() : [
+      { id_rak: 'RAK-001', nama_rak: 'Gudang Utama - Rak 1', status: 'Aktif' },
+      { id_rak: 'RAK-002', nama_rak: 'Gudang Utama - Rak 2', status: 'Aktif' },
+      { id_rak: 'RAK-003', nama_rak: 'Gudang Utama - Rak 3', status: 'Aktif' },
+      { id_rak: 'RAK-004', nama_rak: 'Etalase Depan - Rak A (OTC)', status: 'Aktif' },
+      { id_rak: 'RAK-005', nama_rak: 'Etalase Depan - Rak B (Suplemen)', status: 'Aktif' },
+      { id_rak: 'RAK-006', nama_rak: 'Chiller Kulkas (2-8°C Vaksin & Insulin)', status: 'Aktif' },
+      { id_rak: 'RAK-007', nama_rak: 'Lemari Narkotika & Psikotropika (Double Lock)', status: 'Aktif' }
+    ]);
+    _writeLocalList(MASTER_RAK_KEY, def);
+    return def;
+  }
+
+  function _getMasterGudangList() {
+    const list = _readLocalList(MASTER_GUDANG_KEY);
+    if (list && list.length) return list;
+    const def = (S().DEFAULT_MASTER_GUDANG ? S().DEFAULT_MASTER_GUDANG.slice() : [
+      { id_gudang: 'GDG-001', nama_gudang: 'Gudang Utama', status: 'Aktif' }
+    ]);
+    _writeLocalList(MASTER_GUDANG_KEY, def);
+    return def;
+  }
+
+  function _getMasterKatPelangganList() {
+    const list = _readLocalList(MASTER_KAT_PELANGGAN_KEY);
+    if (list && list.length) return list;
+    const def = (S().DEFAULT_MASTER_KAT_PELANGGAN ? S().DEFAULT_MASTER_KAT_PELANGGAN.slice() : [
+      { id_kat_pelanggan: 'MKP-001', nama_kategori: 'Umum / Reguler', kode: 'REG', status: 'Aktif' },
+      { id_kat_pelanggan: 'MKP-002', nama_kategori: 'Member Terapi Rutin', kode: 'RUTIN', status: 'Aktif' },
+      { id_kat_pelanggan: 'MKP-003', nama_kategori: 'Pasien Klinik Mitra', kode: 'KLINIK', status: 'Aktif' },
+      { id_kat_pelanggan: 'MKP-004', nama_kategori: 'Karyawan / Staf Apotek', kode: 'STAF', status: 'Aktif' },
+      { id_kat_pelanggan: 'MKP-005', nama_kategori: 'VIP / Prioritas', kode: 'VIP', status: 'Aktif' }
+    ]);
+    _writeLocalList(MASTER_KAT_PELANGGAN_KEY, def);
+    return def;
+  }
+
+  function _getMasterPajakList() {
+    const list = _readLocalList(MASTER_PAJAK_KEY);
+    if (list && list.length) return list;
+    const def = (S().DEFAULT_MASTER_PAJAK ? S().DEFAULT_MASTER_PAJAK.slice() : [
+      { id_pajak: 'TAX-001', nama_pajak: 'PPN', nilai_pajak: 11, status: 'Aktif' },
+      { id_pajak: 'TAX-002', nama_pajak: 'Tanpa Pajak', nilai_pajak: 0, status: 'Aktif' }
+    ]);
+    _writeLocalList(MASTER_PAJAK_KEY, def);
+    return def;
+  }
+
+  function _renderMasterKategoriSubTab() {
+    const all = _getMasterKategoriList();
+    const q = mdKategoriSearchQ.toLowerCase().trim();
+    const filtered = all.filter((k) => !q || String(k.nama_kategori || '').toLowerCase().includes(q));
+
+    return `<div class="ons-card p-4 space-y-3 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="relative w-64">
+            <input type="text" value="${S().esc(mdKategoriSearchQ)}" oninput="window.setKategoriSearch(this.value)" placeholder="Cari data" class="ons-input text-xs pl-8 w-full"/>
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button type="button" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span>Filter 0</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+          <button type="button" onclick="window.exportMasterKategoriExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+        </div>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table">
+          <thead>
+            <tr>
+              <th style="width:50px">No.</th>
+              <th>Nama Kategori</th>
+              <th style="width:120px">Status</th>
+              <th style="width:120px;text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((k, idx) => `<tr>
+              <td class="font-mono-num">${idx + 1}</td>
+              <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(k.nama_kategori)}</td>
+              <td>
+                <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${String(k.status || 'Aktif').toUpperCase() === 'AKTIF' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}">
+                  ${S().esc(k.status || 'Aktif')}
+                </span>
+              </td>
+              <td style="text-align:center">
+                <div class="inline-flex items-center justify-center gap-2">
+                  <button type="button" onclick="window.openAddKategoriModal('${S().esc(k.id_kategori)}')" class="px-3 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium">Edit</button>
+                  <button type="button" onclick="window.deleteKategoriConfirm('${S().esc(k.id_kategori)}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="4" class="text-center py-8 text-xs text-slate-400">Data tidak ditemukan</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  function _renderMasterSatuanSubTab() {
+    const all = _getMasterSatuanList();
+    const q = mdSatuanSearchQ.toLowerCase().trim();
+    const filtered = all.filter((s) => !q || String(s.nama_satuan || '').toLowerCase().includes(q));
+
+    return `<div class="ons-card p-4 space-y-3 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="relative w-64">
+            <input type="text" value="${S().esc(mdSatuanSearchQ)}" oninput="window.setSatuanSearch(this.value)" placeholder="Cari data" class="ons-input text-xs pl-8 w-full"/>
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button type="button" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span>Filter 0</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+          <button type="button" onclick="window.exportMasterSatuanExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+        </div>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table">
+          <thead>
+            <tr>
+              <th style="width:50px">No.</th>
+              <th>Nama Satuan</th>
+              <th style="width:120px">Status</th>
+              <th style="width:120px;text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((s, idx) => `<tr>
+              <td class="font-mono-num">${idx + 1}</td>
+              <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(s.nama_satuan)}</td>
+              <td>
+                <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${String(s.status || 'Aktif').toUpperCase() === 'AKTIF' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}">
+                  ${S().esc(s.status || 'Aktif')}
+                </span>
+              </td>
+              <td style="text-align:center">
+                <div class="inline-flex items-center justify-center gap-2">
+                  <button type="button" onclick="window.openAddSatuanModal('${S().esc(s.id_satuan)}')" class="px-3 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium">Edit</button>
+                  <button type="button" onclick="window.deleteSatuanConfirm('${S().esc(s.id_satuan)}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="4" class="text-center py-8 text-xs text-slate-400">Data tidak ditemukan</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  function _renderMasterRakSubTab() {
+    const all = _getMasterRakList();
+    const q = mdRakSearchQ.toLowerCase().trim();
+    const filtered = all.filter((r) => !q || String(r.nama_rak || '').toLowerCase().includes(q));
+
+    return `<div class="ons-card p-4 space-y-3 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="relative w-64">
+            <input type="text" value="${S().esc(mdRakSearchQ)}" oninput="window.setRakSearch(this.value)" placeholder="Cari data" class="ons-input text-xs pl-8 w-full"/>
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button type="button" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span>Filter 0</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+          <button type="button" onclick="window.exportMasterRakExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+        </div>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table">
+          <thead>
+            <tr>
+              <th style="width:50px">No.</th>
+              <th>Nama Rak</th>
+              <th style="width:120px">Status</th>
+              <th style="width:120px;text-align:center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((r, idx) => `<tr>
+              <td class="font-mono-num">${idx + 1}</td>
+              <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(r.nama_rak)}</td>
+              <td>
+                <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${String(r.status || 'Aktif').toUpperCase() === 'AKTIF' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}">
+                  ${S().esc(r.status || 'Aktif')}
+                </span>
+              </td>
+              <td style="text-align:center">
+                <div class="inline-flex items-center justify-center gap-2">
+                  <button type="button" onclick="window.openAddRakModal('${S().esc(r.id_rak)}')" class="px-3 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium">Edit</button>
+                  <button type="button" onclick="window.deleteRakConfirm('${S().esc(r.id_rak)}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="4" class="text-center py-8 text-xs text-slate-400">Data tidak ditemukan</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  function _renderMasterGudangSubTab() {
+    const all = _getMasterGudangList();
+    const q = mdGudangSearchQ.toLowerCase().trim();
+    const filtered = all.filter((g) => !q || String(g.nama_gudang || '').toLowerCase().includes(q));
+
+    return `<div class="ons-card p-4 space-y-3 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="relative w-64">
+            <input type="text" value="${S().esc(mdGudangSearchQ)}" oninput="window.setGudangSearch(this.value)" placeholder="Cari data" class="ons-input text-xs pl-8 w-full"/>
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button type="button" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span>Filter 0</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+          <button type="button" onclick="window.exportMasterGudangExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+        </div>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table">
+          <thead>
+            <tr>
+              <th style="width:50px">No.</th>
+              <th>Nama Gudang</th>
+              <th style="width:120px">Status</th>
+              <th style="width:120px;text-align:center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((g, idx) => `<tr>
+              <td class="font-mono-num">${idx + 1}</td>
+              <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(g.nama_gudang)}</td>
+              <td>
+                <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${String(g.status || 'Aktif').toUpperCase() === 'AKTIF' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}">
+                  ${S().esc(g.status || 'Aktif')}
+                </span>
+              </td>
+              <td style="text-align:center">
+                <div class="inline-flex items-center justify-center gap-2">
+                  <button type="button" onclick="window.openAddGudangModal('${S().esc(g.id_gudang)}')" class="px-3 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium">Edit</button>
+                  <button type="button" onclick="window.deleteGudangConfirm('${S().esc(g.id_gudang)}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="4" class="text-center py-8 text-xs text-slate-400">Data tidak ditemukan</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  function _renderMasterKategoriPelangganSubTab() {
+    const all = _getMasterKatPelangganList();
+    const q = mdKatPelangganSearchQ.toLowerCase().trim();
+    const filtered = all.filter((kp) => !q || String(kp.nama_kategori || '').toLowerCase().includes(q) || String(kp.kode || '').toLowerCase().includes(q));
+
+    return `<div class="ons-card p-4 space-y-3 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="relative w-64">
+            <input type="text" value="${S().esc(mdKatPelangganSearchQ)}" oninput="window.setKatPelangganSearch(this.value)" placeholder="Cari data" class="ons-input text-xs pl-8 w-full"/>
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button type="button" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span>Filter 0</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+          <button type="button" onclick="window.exportMasterKatPelangganExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+        </div>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table">
+          <thead>
+            <tr>
+              <th style="width:50px">No.</th>
+              <th>Nama Kategori</th>
+              <th style="width:120px">Kode</th>
+              <th style="width:120px">Status</th>
+              <th style="width:120px;text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((kp, idx) => `<tr>
+              <td class="font-mono-num">${idx + 1}</td>
+              <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(kp.nama_kategori)}</td>
+              <td class="font-mono-num font-semibold text-blue-600">${S().esc(kp.kode)}</td>
+              <td>
+                <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${String(kp.status || 'Aktif').toUpperCase() === 'AKTIF' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}">
+                  ${S().esc(kp.status || 'Aktif')}
+                </span>
+              </td>
+              <td style="text-align:center">
+                <div class="inline-flex items-center justify-center gap-2">
+                  <button type="button" onclick="window.openAddKatPelangganModal('${S().esc(kp.id_kat_pelanggan)}')" class="px-3 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium">Edit</button>
+                  <button type="button" onclick="window.deleteKatPelangganConfirm('${S().esc(kp.id_kat_pelanggan)}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="5" class="text-center py-8 text-xs text-slate-400">Data tidak ditemukan</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  function _renderMasterPajakSubTab() {
+    const all = _getMasterPajakList();
+    const q = mdPajakSearchQ.toLowerCase().trim();
+    const filtered = all.filter((p) => !q || String(p.nama_pajak || '').toLowerCase().includes(q));
+
+    return `<div class="ons-card p-4 space-y-3 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="relative w-64">
+            <input type="text" value="${S().esc(mdPajakSearchQ)}" oninput="window.setPajakSearch(this.value)" placeholder="Cari data" class="ons-input text-xs pl-8 w-full"/>
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button type="button" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span>Filter 0</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+          <button type="button" onclick="window.exportMasterPajakExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+        </div>
+      </div>
+      <div class="ons-table-wrap">
+        <table class="ons-table">
+          <thead>
+            <tr>
+              <th style="width:50px">No.</th>
+              <th>Nama Pajak</th>
+              <th class="text-right" style="width:140px">Nilai Pajak</th>
+              <th style="width:120px;text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((p, idx) => `<tr>
+              <td class="font-mono-num">${idx + 1}</td>
+              <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(p.nama_pajak)}</td>
+              <td class="text-right font-mono-num font-semibold text-slate-700 dark:text-slate-200">${Number(p.nilai_pajak || 0)}%</td>
+              <td style="text-align:center">
+                <div class="inline-flex items-center justify-center gap-2">
+                  <button type="button" onclick="window.openAddPajakModal('${S().esc(p.id_pajak)}')" class="px-3 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium">Edit</button>
+                  <button type="button" onclick="window.deletePajakConfirm('${S().esc(p.id_pajak)}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="4" class="text-center py-8 text-xs text-slate-400">Data tidak ditemukan</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
   function _renderMasterSalesSubTab() {
     return `<div class="space-y-3">
       <div class="ons-card p-2.5">
@@ -896,9 +1346,10 @@
     const st = S().AppState;
     const seeCost = S().canSeeFinancialCost();
     const canSupplier = S().canAccessSubTab ? S().canAccessSubTab('obat', 'supplier') : seeCost;
+    const allowedTabs = ['obat', 'kategori', 'satuan', 'rak', 'gudang', 'kategori-pelanggan', 'pajak', 'supplier', 'pelanggan', 'dokter', 'sales'];
     masterTab = (st.subTabs && st.subTabs.obat) || masterTab || 'obat';
     if (masterTab === 'supplier' && !canSupplier) masterTab = 'obat';
-    if (!['obat', 'supplier', 'pelanggan', 'dokter', 'sales'].includes(masterTab)) masterTab = 'obat';
+    if (!allowedTabs.includes(masterTab)) masterTab = 'obat';
 
     const { allMeta, filtered } = _getFilteredMasterObatMeta();
     const obatCount = (st.masterObat || []).length;
@@ -908,7 +1359,13 @@
     const salesCount = _getSalesStaffList().length;
 
     const tabs = [
-      { id: 'obat', label: 'Obat', count: obatCount },
+      { id: 'obat', label: 'Master Produk', count: obatCount },
+      { id: 'kategori', label: 'Master Kategori', count: _getMasterKategoriList().length },
+      { id: 'satuan', label: 'Master Satuan', count: _getMasterSatuanList().length },
+      { id: 'rak', label: 'Master Rak', count: _getMasterRakList().length },
+      { id: 'gudang', label: 'Master Gudang', count: _getMasterGudangList().length },
+      { id: 'kategori-pelanggan', label: 'Master Kategori Pelanggan', count: _getMasterKatPelangganList().length },
+      { id: 'pajak', label: 'Master Pajak', count: _getMasterPajakList().length },
       ...(canSupplier ? [{ id: 'supplier', label: 'Supplier', count: supCount }] : []),
       { id: 'pelanggan', label: 'Pelanggan', count: pelCount },
       { id: 'dokter', label: 'Dokter', count: dokCount },
@@ -921,15 +1378,59 @@
       <button onclick="window.${fnName}('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
     `;
 
+    let pageTitle = 'Master Data Apotek';
+    let pageDesc = 'Kelola terpusat katalog Obat KFA, Supplier PBF, Pelanggan Apotek, Dokter Mitra & Sales/Pelayan.';
     let headerActions = '';
+
     if (masterTab === 'obat') {
+      pageTitle = 'Master Produk';
+      pageDesc = 'Kelola terpusat katalog Obat KFA, satuan multi-kemasan, referensi harga & rak penyimpanan.';
       headerActions = `
-        <button onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Cetak Barcode</button>
-        ${seeCost ? `<button onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Tambah Produk</button>
-        <button onclick="window.openImportObatModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>` : ''}
+        <button type="button" onclick="window.openObatBatchEditModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-pencil mr-1"></i> Ubah Sekaligus</button>
+        <button type="button" onclick="window.openImportObatModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> Tambah Sekaligus</button>
+        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488" title="+ Tambah Produk"><i class="fa fa-plus mr-1"></i> + Produk Baru <span class="sr-only">+ Tambah Produk</span></button>
+        <button type="button" onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Cetak Barcode</button>
         ${exportBtns('exportMasterObat')}
       `;
+    } else if (masterTab === 'kategori') {
+      pageTitle = 'Daftar Kategori';
+      pageDesc = 'Katalog kategori produk/obat untuk mempermudah klasifikasi dan filter.';
+      headerActions = `
+        <button type="button" onclick="window.openAddKategoriModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Kategori</button>
+      `;
+    } else if (masterTab === 'satuan') {
+      pageTitle = 'Daftar Satuan';
+      pageDesc = 'Daftar satuan kemasan dasar dan multi-tingkat (Box, Strip, Tablet, dsb.).';
+      headerActions = `
+        <button type="button" onclick="window.openAddSatuanModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Satuan Kemasan</button>
+      `;
+    } else if (masterTab === 'rak') {
+      pageTitle = 'Daftar Rak Penyimpanan';
+      pageDesc = 'Lokasi penyimpanan fisik obat dan barang di apotek/gudang.';
+      headerActions = `
+        <button type="button" onclick="window.openAddRakModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Rak</button>
+      `;
+    } else if (masterTab === 'gudang') {
+      pageTitle = 'Daftar Gudang';
+      pageDesc = 'Gudang utama, instalasi farmasi, dan cabang penyimpanan stok.';
+      headerActions = `
+        <button type="button" onclick="window.openAddGudangModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Gudang</button>
+      `;
+    } else if (masterTab === 'kategori-pelanggan') {
+      pageTitle = 'Daftar Kategori Pelanggan';
+      pageDesc = 'Klasifikasi keanggotaan pelanggan (Umum, Terapi Rutin, Pasien Mitra, Karyawan, VIP).';
+      headerActions = `
+        <button type="button" onclick="window.openAddKatPelangganModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Kategori</button>
+      `;
+    } else if (masterTab === 'pajak') {
+      pageTitle = 'Pajak';
+      pageDesc = 'Konfigurasi tarif pajak pertambahan nilai (PPN) atau non-pajak untuk transaksi.';
+      headerActions = `
+        <button type="button" onclick="window.openAddPajakModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Pajak</button>
+      `;
     } else if (masterTab === 'supplier') {
+      pageTitle = 'Daftar Supplier PBF';
+      pageDesc = 'Direktori pedagang besar farmasi (PBF) resmi dengan izin CDOB & kontak WhatsApp.';
       headerActions = `
         <button onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Supplier</button>
         <button onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
@@ -937,6 +1438,8 @@
         ${exportBtns('exportMasterSupplier')}
       `;
     } else if (masterTab === 'pelanggan') {
+      pageTitle = 'Daftar Pelanggan';
+      pageDesc = 'Buku kontak pelanggan apotek, data rekam medis, status keanggotaan & pantauan terapi.';
       headerActions = `
         <button onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Pelanggan</button>
         <button onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
@@ -944,6 +1447,8 @@
         ${exportBtns('exportMasterPelanggan')}
       `;
     } else if (masterTab === 'dokter') {
+      pageTitle = 'Daftar Dokter Mitra';
+      pageDesc = 'Direktori dokter penulis resep, nomor SIP, klinik mitra & integrasi SatuSehat.';
       headerActions = `
         <button onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Dokter</button>
         <button onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
@@ -951,28 +1456,42 @@
         ${exportBtns('exportMasterDokter')}
       `;
     } else {
+      pageTitle = 'Daftar Sales & Pelayan';
+      pageDesc = 'Daftar tenaga kasir & sales pelayan apotek untuk komisi dan pencatatan transaksi.';
       headerActions = `
         <button onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Sales/Pelayan</button>
         ${exportBtns('exportMasterSales')}
       `;
     }
 
-    const bodyHtml = masterTab === 'supplier'
-      ? _renderMasterSupplierSubTab()
-      : (masterTab === 'pelanggan'
-        ? _renderMasterPelangganSubTab()
-        : (masterTab === 'dokter'
-          ? _renderMasterDokterSubTab()
-          : (masterTab === 'sales'
-            ? _renderMasterSalesSubTab()
-            : _renderMasterObatSubTab(seeCost, allMeta, filtered))));
+    const bodyHtml = masterTab === 'kategori'
+      ? _renderMasterKategoriSubTab()
+      : (masterTab === 'satuan'
+        ? _renderMasterSatuanSubTab()
+        : (masterTab === 'rak'
+          ? _renderMasterRakSubTab()
+          : (masterTab === 'gudang'
+            ? _renderMasterGudangSubTab()
+            : (masterTab === 'kategori-pelanggan'
+              ? _renderMasterKategoriPelangganSubTab()
+              : (masterTab === 'pajak'
+                ? _renderMasterPajakSubTab()
+                : (masterTab === 'supplier'
+                  ? _renderMasterSupplierSubTab()
+                  : (masterTab === 'pelanggan'
+                    ? _renderMasterPelangganSubTab()
+                    : (masterTab === 'dokter'
+                      ? _renderMasterDokterSubTab()
+                      : (masterTab === 'sales'
+                        ? _renderMasterSalesSubTab()
+                        : _renderMasterObatSubTab(seeCost, allMeta, filtered))))))))));
 
     return `<div class="space-y-3 ons-view-enter">
       <div class="ons-md-shell space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="min-w-0">
-            <h1 class="text-base sm:text-lg font-extrabold tracking-tight">Master Data Apotek</h1>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Kelola terpusat katalog Obat KFA, Supplier PBF, Pelanggan Apotek, Dokter Mitra &amp; Sales/Pelayan.</p>
+            <h1 class="text-base sm:text-lg font-extrabold tracking-tight">${S().esc(pageTitle)}</h1>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
           </div>
           <div class="flex flex-wrap items-center gap-1.5">${headerActions}</div>
         </div>
@@ -990,11 +1509,486 @@
   global.setMasterTab = (t) => {
     const req = String(t || 'obat');
     const canSupplier = S().canAccessSubTab ? S().canAccessSubTab('obat', 'supplier') : S().canSeeFinancialCost();
-    masterTab = (req === 'supplier' && !canSupplier) ? 'obat' : (['obat', 'supplier', 'pelanggan', 'dokter', 'sales'].includes(req) ? req : 'obat');
+    const allowed = ['obat', 'kategori', 'satuan', 'rak', 'gudang', 'kategori-pelanggan', 'pajak', 'supplier', 'pelanggan', 'dokter', 'sales'];
+    masterTab = (req === 'supplier' && !canSupplier) ? 'obat' : (allowed.includes(req) ? req : 'obat');
     if (S().AppState.subTabs) S().AppState.subTabs.obat = masterTab;
     S().AppState.activeSubTab = masterTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+  };
+
+  /* ==========================================================================
+     MASTER DATA: KATEGORI, SATUAN, RAK, GUDANG, KATEGORI PELANGGAN & PAJAK CRUD
+     ========================================================================== */
+  global.setKategoriSearch = (v) => { mdKategoriSearchQ = v || ''; global.renderActiveView(); };
+  global.openAddKategoriModal = (id) => {
+    const list = _getMasterKategoriList();
+    const existing = list.find((k) => k.id_kategori === id);
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">${existing ? 'Edit Kategori' : 'Tambah Kategori'}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-semibold block mb-1">Nama Kategori *</label>
+          <input id="kategoriNamaInp" class="ons-input" value="${S().esc(existing ? existing.nama_kategori : '')}" placeholder="Contoh: Obat Bebas, Herbal, Kosmetik"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Status</label>
+          <select id="kategoriStatusInp" class="ons-select">
+            <option value="Aktif" ${!existing || existing.status === 'Aktif' ? 'selected' : ''}>Aktif</option>
+            <option value="Nonaktif" ${existing && existing.status === 'Nonaktif' ? 'selected' : ''}>Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.saveKategoriFromModal('${S().esc(id || '')}')" class="ons-btn text-xs text-white" style="background:#0D9488">Simpan</button>
+      </div>
+    </div>`, '440px');
+  };
+  global.saveKategoriFromModal = (id) => {
+    const nama = ((document.getElementById('kategoriNamaInp') || {}).value || '').trim();
+    const status = ((document.getElementById('kategoriStatusInp') || {}).value || 'Aktif').trim();
+    if (!nama) return global.toast('Nama kategori wajib diisi!', 'warn');
+    const list = _getMasterKategoriList().slice();
+    if (id) {
+      const idx = list.findIndex((k) => k.id_kategori === id);
+      if (idx >= 0) list[idx] = { ...list[idx], nama_kategori: nama, status };
+    } else {
+      const newId = 'KAT-' + String(list.length + 1).padStart(3, '0');
+      list.push({ id_kategori: newId, nama_kategori: nama, status });
+    }
+    _writeLocalList(MASTER_KATEGORI_KEY, list);
+    S().AppState.masterKategori = list;
+    S().closeModal();
+    global.toast('Kategori berhasil disimpan', 'ok');
+    global.renderActiveView();
+  };
+  global.deleteKategoriConfirm = (id) => {
+    const list = _getMasterKategoriList();
+    const item = list.find((k) => k.id_kategori === id);
+    if (!item) return;
+    _openDeleteConfirmModal({
+      title: 'Hapus Kategori?',
+      name: item.nama_kategori,
+      id: item.id_kategori,
+      entityLabel: 'Master Kategori',
+      confirmFnName: 'window.confirmDeleteKategori'
+    });
+  };
+  global.confirmDeleteKategori = (id) => {
+    const list = _getMasterKategoriList().filter((k) => k.id_kategori !== id);
+    _writeLocalList(MASTER_KATEGORI_KEY, list);
+    S().AppState.masterKategori = list;
+    S().closeModal();
+    global.toast('Kategori berhasil dihapus', 'ok');
+    global.renderActiveView();
+  };
+  global.exportMasterKategoriExcel = () => {
+    const list = _getMasterKategoriList();
+    const dateTag = new Date().toISOString().slice(0, 10);
+    const headers = [
+      { key: 'no', label: 'No.', type: 'int', width: 6 },
+      { key: 'nama_kategori', label: 'Nama Kategori', width: 28 },
+      { key: 'status', label: 'Status', width: 14 }
+    ];
+    const rows = list.map((k, i) => ({ no: i + 1, nama_kategori: k.nama_kategori, status: k.status || 'Aktif' }));
+    return S().exportDataset('xlsx', 'Daftar Kategori Produk', 'Master_Kategori_ONS_' + dateTag, headers, rows, { sheetName: 'Kategori' });
+  };
+
+  global.setSatuanSearch = (v) => { mdSatuanSearchQ = v || ''; global.renderActiveView(); };
+  global.openAddSatuanModal = (id) => {
+    const list = _getMasterSatuanList();
+    const existing = list.find((s) => s.id_satuan === id);
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">${existing ? 'Edit Satuan Kemasan' : 'Tambah Satuan Kemasan'}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-semibold block mb-1">Nama Satuan Kemasan *</label>
+          <input id="satuanNamaInp" class="ons-input" value="${S().esc(existing ? existing.nama_satuan : '')}" placeholder="Contoh: Box, Strip, Botol, Vial"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Status</label>
+          <select id="satuanStatusInp" class="ons-select">
+            <option value="Aktif" ${!existing || existing.status === 'Aktif' ? 'selected' : ''}>Aktif</option>
+            <option value="Nonaktif" ${existing && existing.status === 'Nonaktif' ? 'selected' : ''}>Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.saveSatuanFromModal('${S().esc(id || '')}')" class="ons-btn text-xs text-white" style="background:#0D9488">Simpan</button>
+      </div>
+    </div>`, '440px');
+  };
+  global.saveSatuanFromModal = (id) => {
+    const nama = ((document.getElementById('satuanNamaInp') || {}).value || '').trim();
+    const status = ((document.getElementById('satuanStatusInp') || {}).value || 'Aktif').trim();
+    if (!nama) return global.toast('Nama satuan kemasan wajib diisi!', 'warn');
+    const list = _getMasterSatuanList().slice();
+    if (id) {
+      const idx = list.findIndex((s) => s.id_satuan === id);
+      if (idx >= 0) list[idx] = { ...list[idx], nama_satuan: nama, status };
+    } else {
+      const newId = 'SAT-' + String(list.length + 1).padStart(3, '0');
+      list.push({ id_satuan: newId, nama_satuan: nama, status });
+    }
+    _writeLocalList(MASTER_SATUAN_KEY, list);
+    S().AppState.masterSatuan = list;
+    S().closeModal();
+    global.toast('Satuan kemasan berhasil disimpan', 'ok');
+    global.renderActiveView();
+  };
+  global.deleteSatuanConfirm = (id) => {
+    const list = _getMasterSatuanList();
+    const item = list.find((s) => s.id_satuan === id);
+    if (!item) return;
+    _openDeleteConfirmModal({
+      title: 'Hapus Satuan Kemasan?',
+      name: item.nama_satuan,
+      id: item.id_satuan,
+      entityLabel: 'Master Satuan',
+      confirmFnName: 'window.confirmDeleteSatuan'
+    });
+  };
+  global.confirmDeleteSatuan = (id) => {
+    const list = _getMasterSatuanList().filter((s) => s.id_satuan !== id);
+    _writeLocalList(MASTER_SATUAN_KEY, list);
+    S().AppState.masterSatuan = list;
+    S().closeModal();
+    global.toast('Satuan kemasan berhasil dihapus', 'ok');
+    global.renderActiveView();
+  };
+  global.exportMasterSatuanExcel = () => {
+    const list = _getMasterSatuanList();
+    const dateTag = new Date().toISOString().slice(0, 10);
+    const headers = [
+      { key: 'no', label: 'No.', type: 'int', width: 6 },
+      { key: 'nama_satuan', label: 'Nama Satuan', width: 24 },
+      { key: 'status', label: 'Status', width: 14 }
+    ];
+    const rows = list.map((s, i) => ({ no: i + 1, nama_satuan: s.nama_satuan, status: s.status || 'Aktif' }));
+    return S().exportDataset('xlsx', 'Daftar Satuan Kemasan', 'Master_Satuan_ONS_' + dateTag, headers, rows, { sheetName: 'Satuan' });
+  };
+
+  global.setRakSearch = (v) => { mdRakSearchQ = v || ''; global.renderActiveView(); };
+  global.openAddRakModal = (id) => {
+    const list = _getMasterRakList();
+    const existing = list.find((r) => r.id_rak === id);
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">${existing ? 'Edit Rak' : 'Tambah Rak'}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-semibold block mb-1">Nama Rak *</label>
+          <input id="rakNamaInp" class="ons-input" value="${S().esc(existing ? existing.nama_rak : '')}" placeholder="Contoh: Gudang Utama - Rak 1, Rak Chiller"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Status</label>
+          <select id="rakStatusInp" class="ons-select">
+            <option value="Aktif" ${!existing || existing.status === 'Aktif' ? 'selected' : ''}>Aktif</option>
+            <option value="Nonaktif" ${existing && existing.status === 'Nonaktif' ? 'selected' : ''}>Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.saveRakFromModal('${S().esc(id || '')}')" class="ons-btn text-xs text-white" style="background:#0D9488">Simpan</button>
+      </div>
+    </div>`, '440px');
+  };
+  global.saveRakFromModal = (id) => {
+    const nama = ((document.getElementById('rakNamaInp') || {}).value || '').trim();
+    const status = ((document.getElementById('rakStatusInp') || {}).value || 'Aktif').trim();
+    if (!nama) return global.toast('Nama rak wajib diisi!', 'warn');
+    const list = _getMasterRakList().slice();
+    if (id) {
+      const idx = list.findIndex((r) => r.id_rak === id);
+      if (idx >= 0) list[idx] = { ...list[idx], nama_rak: nama, status };
+    } else {
+      const newId = 'RAK-' + String(list.length + 1).padStart(3, '0');
+      list.push({ id_rak: newId, nama_rak: nama, status });
+    }
+    _writeLocalList(MASTER_RAK_KEY, list);
+    S().AppState.masterRak = list;
+    S().closeModal();
+    global.toast('Rak berhasil disimpan', 'ok');
+    global.renderActiveView();
+  };
+  global.deleteRakConfirm = (id) => {
+    const list = _getMasterRakList();
+    const item = list.find((r) => r.id_rak === id);
+    if (!item) return;
+    _openDeleteConfirmModal({
+      title: 'Hapus Rak?',
+      name: item.nama_rak,
+      id: item.id_rak,
+      entityLabel: 'Master Rak',
+      confirmFnName: 'window.confirmDeleteRak'
+    });
+  };
+  global.confirmDeleteRak = (id) => {
+    const list = _getMasterRakList().filter((r) => r.id_rak !== id);
+    _writeLocalList(MASTER_RAK_KEY, list);
+    S().AppState.masterRak = list;
+    S().closeModal();
+    global.toast('Rak berhasil dihapus', 'ok');
+    global.renderActiveView();
+  };
+  global.exportMasterRakExcel = () => {
+    const list = _getMasterRakList();
+    const dateTag = new Date().toISOString().slice(0, 10);
+    const headers = [
+      { key: 'no', label: 'No.', type: 'int', width: 6 },
+      { key: 'nama_rak', label: 'Nama Rak', width: 28 },
+      { key: 'status', label: 'Status', width: 14 }
+    ];
+    const rows = list.map((r, i) => ({ no: i + 1, nama_rak: r.nama_rak, status: r.status || 'Aktif' }));
+    return S().exportDataset('xlsx', 'Daftar Rak Penyimpanan', 'Master_Rak_ONS_' + dateTag, headers, rows, { sheetName: 'Rak' });
+  };
+
+  global.setGudangSearch = (v) => { mdGudangSearchQ = v || ''; global.renderActiveView(); };
+  global.openAddGudangModal = (id) => {
+    const list = _getMasterGudangList();
+    const existing = list.find((g) => g.id_gudang === id);
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">${existing ? 'Edit Gudang' : 'Tambah Gudang'}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-semibold block mb-1">Nama Gudang *</label>
+          <input id="gudangNamaInp" class="ons-input" value="${S().esc(existing ? existing.nama_gudang : '')}" placeholder="Contoh: Gudang Utama, Gudang Depo"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Status</label>
+          <select id="gudangStatusInp" class="ons-select">
+            <option value="Aktif" ${!existing || existing.status === 'Aktif' ? 'selected' : ''}>Aktif</option>
+            <option value="Nonaktif" ${existing && existing.status === 'Nonaktif' ? 'selected' : ''}>Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.saveGudangFromModal('${S().esc(id || '')}')" class="ons-btn text-xs text-white" style="background:#0D9488">Simpan</button>
+      </div>
+    </div>`, '440px');
+  };
+  global.saveGudangFromModal = (id) => {
+    const nama = ((document.getElementById('gudangNamaInp') || {}).value || '').trim();
+    const status = ((document.getElementById('gudangStatusInp') || {}).value || 'Aktif').trim();
+    if (!nama) return global.toast('Nama gudang wajib diisi!', 'warn');
+    const list = _getMasterGudangList().slice();
+    if (id) {
+      const idx = list.findIndex((g) => g.id_gudang === id);
+      if (idx >= 0) list[idx] = { ...list[idx], nama_gudang: nama, status };
+    } else {
+      const newId = 'GDG-' + String(list.length + 1).padStart(3, '0');
+      list.push({ id_gudang: newId, nama_gudang: nama, status });
+    }
+    _writeLocalList(MASTER_GUDANG_KEY, list);
+    S().AppState.masterGudang = list;
+    S().closeModal();
+    global.toast('Gudang berhasil disimpan', 'ok');
+    global.renderActiveView();
+  };
+  global.deleteGudangConfirm = (id) => {
+    const list = _getMasterGudangList();
+    const item = list.find((g) => g.id_gudang === id);
+    if (!item) return;
+    _openDeleteConfirmModal({
+      title: 'Hapus Gudang?',
+      name: item.nama_gudang,
+      id: item.id_gudang,
+      entityLabel: 'Master Gudang',
+      confirmFnName: 'window.confirmDeleteGudang'
+    });
+  };
+  global.confirmDeleteGudang = (id) => {
+    const list = _getMasterGudangList().filter((g) => g.id_gudang !== id);
+    _writeLocalList(MASTER_GUDANG_KEY, list);
+    S().AppState.masterGudang = list;
+    S().closeModal();
+    global.toast('Gudang berhasil dihapus', 'ok');
+    global.renderActiveView();
+  };
+  global.exportMasterGudangExcel = () => {
+    const list = _getMasterGudangList();
+    const dateTag = new Date().toISOString().slice(0, 10);
+    const headers = [
+      { key: 'no', label: 'No.', type: 'int', width: 6 },
+      { key: 'nama_gudang', label: 'Nama Gudang', width: 28 },
+      { key: 'status', label: 'Status', width: 14 }
+    ];
+    const rows = list.map((g, i) => ({ no: i + 1, nama_gudang: g.nama_gudang, status: g.status || 'Aktif' }));
+    return S().exportDataset('xlsx', 'Daftar Gudang', 'Master_Gudang_ONS_' + dateTag, headers, rows, { sheetName: 'Gudang' });
+  };
+
+  global.setKatPelangganSearch = (v) => { mdKatPelangganSearchQ = v || ''; global.renderActiveView(); };
+  global.openAddKatPelangganModal = (id) => {
+    const list = _getMasterKatPelangganList();
+    const existing = list.find((kp) => kp.id_kat_pelanggan === id);
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">${existing ? 'Edit Kategori Pelanggan' : 'Tambah Kategori Pelanggan'}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-semibold block mb-1">Nama Kategori *</label>
+          <input id="katPelangganNamaInp" class="ons-input" value="${S().esc(existing ? existing.nama_kategori : '')}" placeholder="Contoh: Umum / Reguler, Member VIP"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Kode *</label>
+          <input id="katPelangganKodeInp" class="ons-input uppercase font-mono-num" value="${S().esc(existing ? existing.kode : '')}" placeholder="REG / VIP / RUTIN"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Status</label>
+          <select id="katPelangganStatusInp" class="ons-select">
+            <option value="Aktif" ${!existing || existing.status === 'Aktif' ? 'selected' : ''}>Aktif</option>
+            <option value="Nonaktif" ${existing && existing.status === 'Nonaktif' ? 'selected' : ''}>Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.saveKatPelangganFromModal('${S().esc(id || '')}')" class="ons-btn text-xs text-white" style="background:#0D9488">Simpan</button>
+      </div>
+    </div>`, '440px');
+  };
+  global.saveKatPelangganFromModal = (id) => {
+    const nama = ((document.getElementById('katPelangganNamaInp') || {}).value || '').trim();
+    const kode = (((document.getElementById('katPelangganKodeInp') || {}).value || '').trim() || 'REG').toUpperCase();
+    const status = ((document.getElementById('katPelangganStatusInp') || {}).value || 'Aktif').trim();
+    if (!nama) return global.toast('Nama kategori pelanggan wajib diisi!', 'warn');
+    const list = _getMasterKatPelangganList().slice();
+    if (id) {
+      const idx = list.findIndex((kp) => kp.id_kat_pelanggan === id);
+      if (idx >= 0) list[idx] = { ...list[idx], nama_kategori: nama, kode, status };
+    } else {
+      const newId = 'KPEL-' + String(list.length + 1).padStart(3, '0');
+      list.push({ id_kat_pelanggan: newId, nama_kategori: nama, kode, status });
+    }
+    _writeLocalList(MASTER_KAT_PELANGGAN_KEY, list);
+    S().AppState.masterKategoriPelanggan = list;
+    S().closeModal();
+    global.toast('Kategori pelanggan berhasil disimpan', 'ok');
+    global.renderActiveView();
+  };
+  global.deleteKatPelangganConfirm = (id) => {
+    const list = _getMasterKatPelangganList();
+    const item = list.find((kp) => kp.id_kat_pelanggan === id);
+    if (!item) return;
+    _openDeleteConfirmModal({
+      title: 'Hapus Kategori Pelanggan?',
+      name: item.nama_kategori,
+      id: item.id_kat_pelanggan,
+      entityLabel: 'Master Kategori Pelanggan',
+      confirmFnName: 'window.confirmDeleteKatPelanggan'
+    });
+  };
+  global.confirmDeleteKatPelanggan = (id) => {
+    const list = _getMasterKatPelangganList().filter((kp) => kp.id_kat_pelanggan !== id);
+    _writeLocalList(MASTER_KAT_PELANGGAN_KEY, list);
+    S().AppState.masterKategoriPelanggan = list;
+    S().closeModal();
+    global.toast('Kategori pelanggan berhasil dihapus', 'ok');
+    global.renderActiveView();
+  };
+  global.exportMasterKatPelangganExcel = () => {
+    const list = _getMasterKatPelangganList();
+    const dateTag = new Date().toISOString().slice(0, 10);
+    const headers = [
+      { key: 'no', label: 'No.', type: 'int', width: 6 },
+      { key: 'nama_kategori', label: 'Nama Kategori', width: 28 },
+      { key: 'kode', label: 'Kode', width: 14 },
+      { key: 'status', label: 'Status', width: 14 }
+    ];
+    const rows = list.map((kp, i) => ({ no: i + 1, nama_kategori: kp.nama_kategori, kode: kp.kode, status: kp.status || 'Aktif' }));
+    return S().exportDataset('xlsx', 'Daftar Kategori Pelanggan', 'Master_Kategori_Pelanggan_ONS_' + dateTag, headers, rows, { sheetName: 'KategoriPelanggan' });
+  };
+
+  global.setPajakSearch = (v) => { mdPajakSearchQ = v || ''; global.renderActiveView(); };
+  global.openAddPajakModal = (id) => {
+    const list = _getMasterPajakList();
+    const existing = list.find((p) => p.id_pajak === id);
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">${existing ? 'Edit Pajak' : 'Tambah Pajak'}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-semibold block mb-1">Nama Pajak *</label>
+          <input id="pajakNamaInp" class="ons-input" value="${S().esc(existing ? existing.nama_pajak : '')}" placeholder="Contoh: PPN 11%, Pajak Ekspor"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Nilai Pajak (%) *</label>
+          <input id="pajakNilaiInp" type="number" step="0.1" min="0" max="100" class="ons-input font-mono-num" value="${existing ? Number(existing.nilai_pajak || 0) : 11}"/>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.savePajakFromModal('${S().esc(id || '')}')" class="ons-btn text-xs text-white" style="background:#0D9488">Simpan</button>
+      </div>
+    </div>`, '440px');
+  };
+  global.savePajakFromModal = (id) => {
+    const nama = ((document.getElementById('pajakNamaInp') || {}).value || '').trim();
+    const nilai = Number((document.getElementById('pajakNilaiInp') || {}).value || 0);
+    if (!nama) return global.toast('Nama pajak wajib diisi!', 'warn');
+    const list = _getMasterPajakList().slice();
+    if (id) {
+      const idx = list.findIndex((p) => p.id_pajak === id);
+      if (idx >= 0) list[idx] = { ...list[idx], nama_pajak: nama, nilai_pajak: nilai };
+    } else {
+      const newId = 'TAX-' + String(list.length + 1).padStart(3, '0');
+      list.push({ id_pajak: newId, nama_pajak: nama, nilai_pajak: nilai });
+    }
+    _writeLocalList(MASTER_PAJAK_KEY, list);
+    S().AppState.masterPajak = list;
+    S().closeModal();
+    global.toast('Pajak berhasil disimpan', 'ok');
+    global.renderActiveView();
+  };
+  global.deletePajakConfirm = (id) => {
+    const list = _getMasterPajakList();
+    const item = list.find((p) => p.id_pajak === id);
+    if (!item) return;
+    _openDeleteConfirmModal({
+      title: 'Hapus Pajak?',
+      name: item.nama_pajak,
+      id: item.id_pajak,
+      entityLabel: 'Master Pajak',
+      confirmFnName: 'window.confirmDeletePajak'
+    });
+  };
+  global.confirmDeletePajak = (id) => {
+    const list = _getMasterPajakList().filter((p) => p.id_pajak !== id);
+    _writeLocalList(MASTER_PAJAK_KEY, list);
+    S().AppState.masterPajak = list;
+    S().closeModal();
+    global.toast('Pajak berhasil dihapus', 'ok');
+    global.renderActiveView();
+  };
+  global.exportMasterPajakExcel = () => {
+    const list = _getMasterPajakList();
+    const dateTag = new Date().toISOString().slice(0, 10);
+    const headers = [
+      { key: 'no', label: 'No.', type: 'int', width: 6 },
+      { key: 'nama_pajak', label: 'Nama Pajak', width: 28 },
+      { key: 'nilai_pajak', label: 'Nilai Pajak (%)', type: 'int', width: 16 }
+    ];
+    const rows = list.map((p, i) => ({ no: i + 1, nama_pajak: p.nama_pajak, nilai_pajak: Number(p.nilai_pajak || 0) }));
+    return S().exportDataset('xlsx', 'Master Pajak', 'Master_Pajak_ONS_' + dateTag, headers, rows, { sheetName: 'Pajak' });
   };
   global.setMasterSupplierSearch = (v) => {
     supplierSearchQ = v || '';
@@ -1896,6 +2890,10 @@
       substitusi_ids: val('wSubstitusi', baseObj.substitusi_ids)
     };
   }
+
+  global.openObatBatchEditModal = () => {
+    global.openObatWizardModal();
+  };
 
   global.openObatWizardModal = (editId, stepOverride, draftObj) => {
     if (stepOverride) wizardStep = Math.max(1, Math.min(5, stepOverride));

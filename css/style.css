@@ -8,7 +8,8 @@
   --ons-bg-canvas: #F8FAFC;
   --ons-bg-card: #FFFFFF;
   --ons-bg-subtle: #F1F5F9;
-  --ons-topbar-bg: rgba(255, 255, 255, 0.88);
+  --ons-topbar-bg: #1D4ED8;
+  --ons-topbar-text: #FFFFFF;
   --ons-border: #E2E8F0;
   --ons-border-strong: #CBD5E1;
   --ons-text-main: #0B1C30;
@@ -59,7 +60,8 @@ html.dark {
   color-scheme: dark;
   --ons-bg-canvas: #0F172A;
   --ons-bg-card: #1E293B;
-  --ons-topbar-bg: rgba(30, 41, 59, 0.88);
+  --ons-topbar-bg: #1E3A8A;
+  --ons-topbar-text: #FFFFFF;
   --ons-nav-start: #0F172A;
   --ons-nav-end: #111827;
   --ons-nav-border: #1E293B;
@@ -1301,7 +1303,8 @@ html.dark .ons-nav-badge.info {
 /* Breadcrumb & Sub-Menu Horizontal Ribbon di Workspace Utama */
 .ons-topbar {
   background: var(--ons-topbar-bg);
-  border-color: var(--ons-border);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }

@@ -86,7 +86,8 @@
         clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
         activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
         smartphone: '<rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
-        rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>'
+        rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+        users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
       };
 
       function svgIcon(name, extraClass) {
@@ -130,10 +131,16 @@
           items: [
             {
               viewId: 'obat', label: 'Master Data', icon: 'pill',
-              desc: 'Database terpadu Obat KFA, Supplier PBF, Pelanggan Apotek, Dokter Mitra & Sales/Pelayan.',
-              kw: 'master data obat kfa nie bpom supplier pbf cdob pelanggan member pasien dokter sip str sales pelayan',
+              desc: 'Database terpadu Master Produk, Kategori, Satuan, Rak, Gudang, Kategori Pelanggan, Pajak, Supplier, Pelanggan, Dokter & Sales.',
+              kw: 'master data produk obat kfa nie bpom kategori satuan kemasan rak gudang kategori pelanggan pajak ppn supplier pelanggan dokter sales',
               tabs: [
-                { subTab: 'obat', label: 'Obat', kw: 'master data obat kfa nie bpom harga jual beli margin code128' },
+                { subTab: 'obat', label: 'Master Produk', kw: 'master data produk obat kfa nie bpom harga jual beli margin code128 sku het' },
+                { subTab: 'kategori', label: 'Master Kategori', kw: 'master kategori produk obat bebas terbatas keras herbal alat kesehatan' },
+                { subTab: 'satuan', label: 'Master Satuan', kw: 'master satuan kemasan botol box strip tablet ampul vial bungkus' },
+                { subTab: 'rak', label: 'Master Rak', kw: 'master rak penyimpanan gudang utama rak 1 2 3 etalase chiller' },
+                { subTab: 'gudang', label: 'Master Gudang', kw: 'master gudang lokasi penyimpanan utama cabang transit' },
+                { subTab: 'kategori-pelanggan', label: 'Master Kategori Pelanggan', kw: 'master kategori pelanggan member umum vip instansi harga khusus' },
+                { subTab: 'pajak', label: 'Master Pajak', kw: 'master pajak ppn 11 persen tarif tanpa pajak faktur' },
                 { subTab: 'supplier', label: 'Supplier', kw: 'supplier pbf cdob termin sla kontak vendor minimal order', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'pelanggan', label: 'Pelanggan', kw: 'pelanggan member pasien terapi rutin alergi poin rekam medis' },
                 { subTab: 'dokter', label: 'Dokter', kw: 'dokter mitra penulis resep sip str ktp satusehat klinik faskes' },
@@ -290,11 +297,25 @@
           label: 'Pengaturan Sistem',
           items: [
             {
-              viewId: 'settings', label: 'Pengaturan Apotek', icon: 'settings',
-              desc: 'Konfirmasi profil pemilik & tempat usaha, pengguna, struk thermal, reset pabrik & log audit.',
-              kw: 'pengaturan profil pemilik usaha foto logo sia sipa akun sandi pin struk thermal script properties reset pabrik audit',
+              viewId: 'users', label: 'Manajemen Pengguna', icon: 'users',
+              desc: 'Daftar pengguna apotek, peran & hak akses RBAC, jadwal kerja, riwayat presensi, shift & log aktivitas.',
+              kw: 'manajemen pengguna daftar akun kasir apj peran hak akses rbac jadwal kerja presensi shift sesi log aktivitas staf',
               tabs: [
-                { subTab: 'profil', label: 'Profil Pemilik & Usaha', kw: 'profil pemilik anissa tempat usaha foto logo sia sipa konfirmasi' },
+                { subTab: 'daftar', label: 'Daftar Pengguna', kw: 'daftar pengguna akun user admin apj kasir nama role no hp status' },
+                { subTab: 'peran', label: 'Peran & Hak Akses', kw: 'peran hak akses rbac permission role admin apoteker penanggung jawab cashier' },
+                { subTab: 'jadwal', label: 'Jadwal Kerja', kw: 'jadwal kerja shift kalender jam kerja staf pro', badge: 'PRO' },
+                { subTab: 'presensi', label: 'Riwayat Presensi', kw: 'riwayat presensi absensi staf jam masuk pulang pro', badge: 'PRO' },
+                { subTab: 'shift', label: 'Riwayat Shift/Sesi', kw: 'riwayat shift sesi kasir daftar buka tutup selisih anggota status' },
+                { subTab: 'log', label: 'Log Aktivitas', kw: 'log aktivitas audit jejak rekam aktivitas staf beta', badge: 'BETA' }
+              ]
+            },
+            {
+              viewId: 'settings', label: 'Pengaturan Apotek', icon: 'settings',
+              desc: 'Konfirmasi profil pemilik & tempat usaha, metode pembayaran, pengguna, struk thermal, reset pabrik & log audit.',
+              kw: 'pengaturan profil bisnis pemilik anissa tempat usaha foto logo sia sipa metode pembayaran akun sandi pin struk thermal script properties reset pabrik audit',
+              tabs: [
+                { subTab: 'profil', label: 'Profil Bisnis (Profil Pemilik & Usaha)', kw: 'profil bisnis pemilik anissa tempat usaha foto logo sia sipa konfirmasi' },
+                { subTab: 'metode-bayar', label: 'Metode Pembayaran', kw: 'metode pembayaran kas non tunai mdr qris transfer debit edc asuransi' },
                 { subTab: 'akun', label: 'Pengguna & Akses', kw: 'akun user kasir apj sipa ganti sandi pin' },
                 { subTab: 'struk', label: 'Desain Struk Thermal', kw: 'desain struk thermal 58mm 80mm escpos qr' },
                 { subTab: 'vault', label: 'Audit DB, Brankas & Reset', kw: 'script properties fonnte vault migrasi backup drive reset data pabrik audit db' },
@@ -462,6 +483,7 @@
                               <span class="ons-submenu-dot"></span>
                               <span class="truncate">${ONSStore.esc(t.label)}</span>
                             </span>
+                            ${t.badge ? `<span class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded ${t.badge === 'BETA' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'}">${t.badge}</span>` : ''}
                           </button>`;
                         }).join('')}
                       </div>
@@ -544,6 +566,25 @@
         if (side) side.classList.toggle('collapsed', sidebarCollapsed);
       };
 
+      window.filterSidebarMenu = function (q) {
+        const query = String(q || '').toLowerCase().trim();
+        const items = document.querySelectorAll('#sidebarMenuMount .ons-nav-item, #sidebarMenuMount .ons-nav-sub-btn');
+        if (!query) {
+          items.forEach((it) => { it.style.display = ''; });
+          document.querySelectorAll('#sidebarMenuMount .ons-menu-section').forEach((s) => { s.style.display = ''; });
+          return;
+        }
+        items.forEach((it) => {
+          const txt = (it.textContent || '').toLowerCase();
+          const match = txt.includes(query);
+          it.style.display = match ? '' : 'none';
+        });
+        document.querySelectorAll('#sidebarMenuMount .ons-menu-section').forEach((s) => {
+          const visible = Array.from(s.querySelectorAll('.ons-nav-item, .ons-nav-sub-btn')).some((el) => el.style.display !== 'none');
+          s.style.display = visible ? '' : 'none';
+        });
+      };
+
       window.openMobileDrawer = function () {
         if (document.getElementById('mobileNavDrawer')) return;
         const st = ONSStore.AppState;
@@ -610,6 +651,8 @@
             finance: window.setFinanceTab,
             sipnap: window.setSipnapTab,
             billing: window.setBillingTab,
+            analisis: window.setAnalisisTab,
+            users: window.setUsersTab,
             settings: window.setSettingsTab
           };
           if (typeof setterMap[viewId] === 'function') {
@@ -733,6 +776,12 @@
         if (data.store_profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(data.store_profile);
         syncOwnerIdentityFromProfile(data.store_profile);
         st.masterObat = data.master_obat || [];
+        st.masterKategori = data.master_kategori || (ONSStore.DEFAULT_MASTER_KATEGORI ? ONSStore.DEFAULT_MASTER_KATEGORI.slice() : []);
+        st.masterSatuan = data.master_satuan || (ONSStore.DEFAULT_MASTER_SATUAN ? ONSStore.DEFAULT_MASTER_SATUAN.slice() : []);
+        st.masterRak = data.master_rak || (ONSStore.DEFAULT_MASTER_RAK ? ONSStore.DEFAULT_MASTER_RAK.slice() : []);
+        st.masterGudang = data.master_gudang || (ONSStore.DEFAULT_MASTER_GUDANG ? ONSStore.DEFAULT_MASTER_GUDANG.slice() : []);
+        st.masterKategoriPelanggan = data.master_kategori_pelanggan || (ONSStore.DEFAULT_MASTER_KAT_PELANGGAN ? ONSStore.DEFAULT_MASTER_KAT_PELANGGAN.slice() : []);
+        st.masterPajak = data.master_pajak || (ONSStore.DEFAULT_MASTER_PAJAK ? ONSStore.DEFAULT_MASTER_PAJAK.slice() : []);
         st.stokBatch = data.stok_batch || [];
         st.members = data.members || [];
         st.supplierPbf = data.supplier_pbf || [];
@@ -820,6 +869,7 @@
           case 'tutup-shift': slot.innerHTML = v3.renderTutupShiftView(); break;
           case 'sipnap': slot.innerHTML = v3.renderSipnapParetoView(); break;
           case 'analisis': slot.innerHTML = v3.renderAnalisisView(); break;
+          case 'users': slot.innerHTML = v3.renderUsersView(); break;
           case 'settings': slot.innerHTML = v3.renderSettingsView(); break;
           case 'mobile-preview': slot.innerHTML = v3.renderMobilePreviewView(); break;
           default: slot.innerHTML = v1.renderDashboardView();
@@ -1317,12 +1367,18 @@
                     <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-8 h-8 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
                     <div class="min-w-0 ons-hide-collapsed">
                       <div class="font-bold text-[13px] ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
-                      <div class="text-[10.5px] ons-nav-brand-sub font-medium truncate">${ONSStore.esc((ONSStore.isMultiBranchEnabled && ONSStore.isMultiBranchEnabled()) ? st.cabangId : 'Outlet Utama')} &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
+                      <div class="text-[10px] text-slate-400 font-mono-num truncate">id onsfarma1011 &bull; ${ONSStore.esc(ONSStore.getRole())}</div>
                     </div>
                   </div>
                   <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1 rounded-lg ons-nav-icon-btn shrink-0">
                     ${svgIcon('collapse', 'ons-collapse-ico')}
                   </button>
+                </div>
+                <div class="px-1 py-1.5 ons-hide-collapsed">
+                  <div class="relative">
+                    <input type="text" id="sidebarSearchInp" oninput="window.filterSidebarMenu(this.value)" placeholder="Cari fitur disini" class="ons-input text-xs pl-8 pr-3 py-1.5 rounded-full w-full bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500"/>
+                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  </div>
                 </div>
                 <nav id="sidebarMenuMount" aria-label="Menu Utama Apotek" class="space-y-0.5">
                   ${renderMenuTreeHtml()}
@@ -1347,21 +1403,45 @@
 
             <!-- Konten Utama -->
             <div class="flex-1 flex flex-col min-w-0">
-              <header class="ons-topbar h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30">
-                <div class="flex items-center gap-2 min-w-0">
-                  <button onclick="window.openMobileDrawer()" aria-label="Buka Daftar Menu Apotek" class="md:hidden ons-btn ons-btn-ghost p-0 w-11 h-11 rounded-lg">${svgIcon('menu')}</button>
-                  <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded object-cover bg-white md:hidden"/>
-                  <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'}">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
-                  <span id="apiLatencyBadge" class="hidden sm:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-slate-500/10" style="color:var(--ons-text-soft)">v17.24 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
-                </div>
-                <div class="flex items-center gap-1.5 sm:gap-2">
-                  <button onclick="window.openCommandPalette()" aria-label="Cari Menu dan Obat" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Cari Sub-Menu / Obat (Ctrl+K)">${svgIcon('search', 'w-4 h-4')}<span class="hidden sm:inline">Cari</span> <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded border opacity-70">Ctrl+K</kbd></button>
-                  <div id="headerAlertHost" class="relative">
-                    <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-btn ons-btn-ghost text-xs px-2.5" title="Radar Notifikasi Apotek">${svgIcon('bell', 'w-4 h-4')} ${alertsCount ? `<span class="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[10px] font-bold">${alertsCount}</span>` : ''}</button>
+              <header class="ons-topbar h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:#1D4ED8;color:#FFFFFF;border-color:rgba(255,255,255,0.15)">
+                <div class="flex items-center gap-3 min-w-0 text-white">
+                  <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-btn ons-btn-ghost p-1.5 w-9 h-9 rounded-lg text-white hover:bg-white/20 border-0 flex items-center justify-center">${svgIcon('menu', 'w-5 h-5')}</button>
+                  <div class="hidden sm:flex items-center gap-4 text-xs font-medium text-white/90">
+                    <div><span class="text-white/70">Kode Sesi</span> <span class="font-mono-num font-bold text-white ml-1">B261112-01</span></div>
+                    <div><span class="text-white/70">Pengguna</span> <span class="font-bold text-white ml-1">${ONSStore.esc(st.user.nama_lengkap || 'Anissa Faradifa R. Is. Rumi')}</span></div>
                   </div>
+                  <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'} hidden lg:inline-block">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE GAS /EXEC'}</span>
+                  <span id="apiLatencyBadge" class="hidden xl:inline-block font-mono-num text-[11px] px-2 py-0.5 rounded bg-white/10 text-white/80">v17.34 &bull; ${ONSApi.getLastLatency ? ONSApi.getLastLatency() + 'ms' : 'Siap'}</span>
+                </div>
+                <div class="flex items-center gap-1.5 sm:gap-2 text-white">
+                  <button type="button" class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 text-white transition">
+                    <span>🚀 ONBOARDING</span>
+                    <span class="px-1.5 py-0.2 rounded-full bg-orange-500 text-white text-[10px] font-bold">7</span>
+                  </button>
+                  <button onclick="window.openCommandPalette()" aria-label="Tanya AI dan Cari Fitur" class="ons-btn ons-btn-ghost text-xs px-2.5 text-white hover:bg-white/20 border-0 flex items-center gap-1.5" title="Tanya AI / Cari Fitur (Ctrl+K)">
+                    <span>✨ Tanya AI</span>
+                    <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border-0 text-white/90">Ctrl+K</kbd>
+                  </button>
+                  <div id="headerAlertHost" class="relative">
+                    <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-btn ons-btn-ghost text-xs p-2 text-white hover:bg-white/20 border-0 flex items-center justify-center relative" title="Radar Notifikasi Apotek">
+                      ${svgIcon('bell', 'w-4 h-4')}
+                      ${alertsCount ? `<span class="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[10px] font-bold absolute -top-1 -right-1">${alertsCount}</span>` : ''}
+                    </button>
+                  </div>
+                  <a href="https://wa.me/6282136973990" target="_blank" rel="noopener" class="ons-btn ons-btn-ghost text-xs p-2 text-white hover:bg-white/20 border-0 flex items-center justify-center" title="WhatsApp Bantuan">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.97.54 1.761.835 2.796.835 3.181 0 5.768-2.586 5.768-5.766 0-3.18-2.587-5.768-5.768-5.768zm0 10.37c-.896 0-1.614-.23-2.348-.687l-.168-.105-1.577.413.421-1.538-.117-.186c-.496-.789-.789-1.636-.788-2.502.001-2.544 2.07-4.613 4.614-4.613 2.544 0 4.613 2.069 4.613 4.613 0 2.545-2.069 4.614-4.613 4.614z"/></svg>
+                  </a>
+                  <button type="button" onclick="window.renderApp();window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-btn ons-btn-ghost text-xs p-2 text-white hover:bg-white/20 border-0 flex items-center justify-center" title="Segarkan Data">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  </button>
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden">Install</button>
-                  <button onclick="window.lockScreenNow()" aria-label="Kunci Layar dan Hapus Cache Sesi" title="Kunci Layar Segera" class="ons-btn ons-btn-ghost text-xs px-2.5">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline">Kunci</span></button>
-                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-2.5">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}<span class="hidden lg:inline">${st.darkMode ? 'Terang' : 'Malam'}</span></button>
+                  <button onclick="window.lockScreenNow()" aria-label="Kunci Layar dan Hapus Cache Sesi" title="Kunci Layar Segera" class="ons-btn ons-btn-ghost text-xs px-2 text-white hover:bg-white/20 border-0 flex items-center gap-1">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline">Kunci</span></button>
+                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs p-2 text-white hover:bg-white/20 border-0 flex items-center justify-center" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
+                  <button type="button" onclick="navigateView('settings','profil')" class="w-7 h-7 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 ml-1 shadow-sm" title="Profil Anissa Faradifa">
+                    ${(fotoPem && ONSStore.getRole() === 'Pemilik')
+                      ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-full h-full rounded-full object-cover"/>`
+                      : 'AF'}
+                  </button>
                 </div>
               </header>
 

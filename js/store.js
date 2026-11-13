@@ -37,6 +37,7 @@
     { key: 'billing', label: 'Tagihan & Kwitansi QR', group: 'Keuangan & Laporan' },
     { key: 'sipnap', label: 'Laporan & SIPNAP Kemenkes', group: 'Keuangan & Laporan' },
     { key: 'analisis', label: 'Analisis (Pareto, Pembelian & Harga)', group: 'Keuangan & Laporan' },
+    { key: 'users', label: 'Manajemen Pengguna (User, Peran, Presensi, Shift)', group: 'Sistem' },
     { key: 'settings', label: 'Pengaturan Apotek & Akun', group: 'Sistem' },
     { key: 'settings:audit', label: 'Edit Sistem Audit & Log Audit', group: 'Sistem' },
     { key: 'mobile-preview', label: 'Tampilan Mode HP', group: 'Sistem' }
@@ -90,8 +91,8 @@
       jabatan_pemilik: 'Pemilik Sarana Apotek & Apoteker',
       sipa_pemilik: '19920412/SIPA_35.78/2025/1042',
       stra_pemilik: '19920412/STRA-14102029/1042',
-      wa_pemilik: '0811-0000-990',
-      email_pemilik: 'anissa@onsfarma.id',
+      wa_pemilik: '6282136973990',
+      email_pemilik: 'icafaradiva@gmail.com',
       npwp_pemilik: '09.254.294.3-805.000',
       foto_pemilik_url: '',
       nama_usaha: 'Apotek ONS Farma',
@@ -107,6 +108,34 @@
       email_usaha: 'halo@onsfarma.id',
       jam_operasional: 'Setiap Hari 07:30 - 22:00 WITA',
       zona_waktu: 'Asia/Makassar (WITA)',
+      slogan: '',
+      provinsi: 'Sulawesi Selatan',
+      kecamatan: 'Panakkukang',
+      kelurahan: 'Masale',
+      latitude: '-5.147665',
+      longitude: '119.432732',
+      foto_outlet_url: '',
+      nitku: '8511240918050000',
+      jenis_badan_usaha: 'Perorangan',
+      tgl_berlaku_sia: '13/11/2026',
+      file_sia_url: '',
+      ktp_pemilik: '7371105408920001',
+      file_ktp_url: '',
+      file_npwp_pemilik_url: '',
+      file_npwp_usaha_url: '',
+      file_nib_url: '',
+      tgl_berlaku_sipa: '13/11/2026',
+      file_sipa_url: '',
+      apoteker_pendamping: [
+        { nama: 'apt. Siti Rahma, S.Farm', hp: '0812-3456-7890', email: 'siti.rahma@onsfarma.id', stra: '19950817/STRA-010203/2024', sipa: '19950817/SIPA_35.78/2025/1043', masa_berlaku: '13/11/2026', file_sipa: '' },
+        { nama: 'apt. Dewi Kartika, S.Farm', hp: '0813-9876-5432', email: 'dewi.kartika@onsfarma.id', stra: '19961120/STRA-040506/2025', sipa: '19961120/SIPA_35.78/2026/1044', masa_berlaku: '13/11/2026', file_sipa: '' }
+      ],
+      bank_nama: 'Bank Mandiri',
+      bank_cabang: 'KCP Panakkukang',
+      bank_akun_nama: 'Apotek ONS Farma',
+      bank_nomor_rekening: '152001928374',
+      file_buku_rekening_url: '',
+      public_access: true,
       logo_usaha_url: './icons/ons-farma-app-icon.png',
       terkonfirmasi: 'YA',
       dikonfirmasi_oleh: 'apt. Anissa Faradifa R. Is Rumi',
@@ -155,6 +184,7 @@
       billing: 'tagihan',
       sipnap: 'narkotika',
       analisis: 'pareto',
+      users: 'daftar',
       'doc-engine': 'surat',
       settings: 'profil'
     },
@@ -168,6 +198,12 @@
     rbacPermissions: {},
     auditSystem: loadCachedAuditSystem(),
     masterObat: [],
+    masterKategori: [],
+    masterSatuan: [],
+    masterRak: [],
+    masterGudang: [],
+    masterKategoriPelanggan: [],
+    masterPajak: [],
     stokBatch: [],
     members: [],
     supplierPbf: [],
@@ -1359,9 +1395,78 @@
     return `<datalist id="${esc(id)}">${docs.map((d) => `<option value="${esc(d.nama_dokter)}">${esc([d.spesialisasi, d.faskes_klinik, d.no_sip].filter(Boolean).join(' • '))}</option>`).join('')}</datalist>`;
   }
 
+  const DEFAULT_MASTER_KATEGORI = [
+    { id_kategori: 'KAT-001', nama_kategori: 'Obat Bebas', status: 'Aktif' },
+    { id_kategori: 'KAT-002', nama_kategori: 'Obat Bebas Terbatas', status: 'Aktif' },
+    { id_kategori: 'KAT-003', nama_kategori: 'Obat Keras', status: 'Aktif' },
+    { id_kategori: 'KAT-004', nama_kategori: 'Prekursor Farmasi', status: 'Aktif' },
+    { id_kategori: 'KAT-005', nama_kategori: 'Obat-Obat Tertentu (OOT)', status: 'Aktif' },
+    { id_kategori: 'KAT-006', nama_kategori: 'Psikotropika', status: 'Aktif' },
+    { id_kategori: 'KAT-007', nama_kategori: 'Narkotika', status: 'Aktif' },
+    { id_kategori: 'KAT-008', nama_kategori: 'Herbal & Fitofarmaka', status: 'Aktif' },
+    { id_kategori: 'KAT-009', nama_kategori: 'Suplemen & Vitamin', status: 'Aktif' },
+    { id_kategori: 'KAT-010', nama_kategori: 'Alat Kesehatan', status: 'Aktif' },
+    { id_kategori: 'KAT-011', nama_kategori: 'Perlengkapan Bayi & Ibu', status: 'Aktif' },
+    { id_kategori: 'KAT-012', nama_kategori: 'Produk Konsumsi & Lainnya', status: 'Aktif' }
+  ];
+
+  const DEFAULT_MASTER_SATUAN = [
+    { id_satuan: 'SAT-001', nama_satuan: 'Ampul', status: 'Aktif' },
+    { id_satuan: 'SAT-002', nama_satuan: 'Batang', status: 'Aktif' },
+    { id_satuan: 'SAT-003', nama_satuan: 'Biji', status: 'Aktif' },
+    { id_satuan: 'SAT-004', nama_satuan: 'Botol', status: 'Aktif' },
+    { id_satuan: 'SAT-005', nama_satuan: 'Box', status: 'Aktif' },
+    { id_satuan: 'SAT-006', nama_satuan: 'Buah', status: 'Aktif' },
+    { id_satuan: 'SAT-007', nama_satuan: 'Bungkus', status: 'Aktif' },
+    { id_satuan: 'SAT-008', nama_satuan: 'Butir', status: 'Aktif' },
+    { id_satuan: 'SAT-009', nama_satuan: 'cc', status: 'Aktif' },
+    { id_satuan: 'SAT-010', nama_satuan: 'cm', status: 'Aktif' },
+    { id_satuan: 'SAT-011', nama_satuan: 'Tablet', status: 'Aktif' },
+    { id_satuan: 'SAT-012', nama_satuan: 'Kapsul', status: 'Aktif' },
+    { id_satuan: 'SAT-013', nama_satuan: 'Strip', status: 'Aktif' },
+    { id_satuan: 'SAT-014', nama_satuan: 'Tube', status: 'Aktif' },
+    { id_satuan: 'SAT-015', nama_satuan: 'Sachet', status: 'Aktif' },
+    { id_satuan: 'SAT-016', nama_satuan: 'Vial', status: 'Aktif' },
+    { id_satuan: 'SAT-017', nama_satuan: 'Pot', status: 'Aktif' },
+    { id_satuan: 'SAT-018', nama_satuan: 'Pcs', status: 'Aktif' }
+  ];
+
+  const DEFAULT_MASTER_RAK = [
+    { id_rak: 'RAK-001', nama_rak: 'Gudang Utama - Rak 1', status: 'Aktif' },
+    { id_rak: 'RAK-002', nama_rak: 'Gudang Utama - Rak 2', status: 'Aktif' },
+    { id_rak: 'RAK-003', nama_rak: 'Gudang Utama - Rak 3', status: 'Aktif' },
+    { id_rak: 'RAK-004', nama_rak: 'Etalase Depan - Rak A (OTC)', status: 'Aktif' },
+    { id_rak: 'RAK-005', nama_rak: 'Etalase Depan - Rak B (Suplemen)', status: 'Aktif' },
+    { id_rak: 'RAK-006', nama_rak: 'Chiller Kulkas (2-8°C Vaksin & Insulin)', status: 'Aktif' },
+    { id_rak: 'RAK-007', nama_rak: 'Lemari Narkotika & Psikotropika (Double Lock)', status: 'Aktif' }
+  ];
+
+  const DEFAULT_MASTER_GUDANG = [
+    { id_gudang: 'GDG-001', nama_gudang: 'Gudang Utama', status: 'Aktif' }
+  ];
+
+  const DEFAULT_MASTER_KAT_PELANGGAN = [
+    { id_kat_pelanggan: 'MKP-001', nama_kategori: 'Umum / Reguler', kode: 'REG', status: 'Aktif' },
+    { id_kat_pelanggan: 'MKP-002', nama_kategori: 'Member Terapi Rutin', kode: 'RUTIN', status: 'Aktif' },
+    { id_kat_pelanggan: 'MKP-003', nama_kategori: 'Pasien Klinik Mitra', kode: 'KLINIK', status: 'Aktif' },
+    { id_kat_pelanggan: 'MKP-004', nama_kategori: 'Karyawan / Staf Apotek', kode: 'STAF', status: 'Aktif' },
+    { id_kat_pelanggan: 'MKP-005', nama_kategori: 'VIP / Prioritas', kode: 'VIP', status: 'Aktif' }
+  ];
+
+  const DEFAULT_MASTER_PAJAK = [
+    { id_pajak: 'TAX-001', nama_pajak: 'PPN', nilai_pajak: 11, status: 'Aktif' },
+    { id_pajak: 'TAX-002', nama_pajak: 'Tanpa Pajak', nilai_pajak: 0, status: 'Aktif' }
+  ];
+
   global.ONSStore = {
     AppState,
     defaultStoreProfile,
+    DEFAULT_MASTER_KATEGORI,
+    DEFAULT_MASTER_SATUAN,
+    DEFAULT_MASTER_RAK,
+    DEFAULT_MASTER_GUDANG,
+    DEFAULT_MASTER_KAT_PELANGGAN,
+    DEFAULT_MASTER_PAJAK,
     sanitizeLegacyOwnerName,
     getStoreProfile,
     setStoreProfile,
@@ -1402,6 +1507,7 @@
     formatMemberProgram,
     buildPioScheduleWaText,
     renderDokterDatalistHtml,
+    toast: showToast,
     openModal,
     closeModal,
     onModalClose,
