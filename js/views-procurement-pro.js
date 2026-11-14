@@ -36,10 +36,10 @@
 
   let spEditingId = '';
   let spActiveDraftLocalId = '';
-  let spDraftNoSp = generateSpNumber(golSp);
   let spDraftTanggal = '';
   let spDraftPbfId = '';
   let spDraftGol = 'REGULER';
+  let spDraftNoSp = generateSpNumber('REGULER');
   let spDraftPayMethod = 'KREDIT';
   let spDraftDueDate = '';
   let spDraftPemesan = '';
