@@ -257,17 +257,7 @@
                 { subTab: 'pajak', label: 'Pajak & Slip Gaji', kw: 'pajak ppn pph slip gaji karyawan a4' }
               ]
             },
-            {
-              viewId: 'billing', label: 'Tagihan & Kwitansi', icon: 'receipt',
-              desc: 'Terbit tagihan multi-bulan, verifikasi transfer, potongan & pengingat WA.',
-              kw: 'tagihan pembayaran piutang kwitansi qr hmac verifikasi potongan reminder',
-              tabs: [
-                { subTab: 'tagihan', label: 'Daftar Tagihan', kw: 'tagihan home care piutang terbit multi bulan' },
-                { subTab: 'verifikasi', label: 'Verifikasi Bayar', kw: 'verifikasi bukti transfer qris grupbayar' },
-                { subTab: 'potongan', label: 'Potongan & Subsidi', kw: 'potongan diskon beasiswa subsidi' },
-                { subTab: 'reminder', label: 'Pengingat WA', kw: 'reminder wa jatuh tempo' }
-              ]
-            },
+
             {
               viewId: 'sipnap', label: 'Laporan', icon: 'report',
               desc: 'Laporan Penjualan, Pembelian, Persediaan, Keuangan Terstruktur, SIPNAP Kemenkes & Analisis Pareto.',
@@ -1720,8 +1710,9 @@
               ${[
                 { id: 'dashboard', l: 'Beranda', i: 'home' },
                 { id: 'pos', l: 'Kasir', i: 'pos' },
-                { id: 'gudang', l: 'Gudang', i: 'inventory' },
-                { id: 'billing', l: 'Tagihan', i: 'receipt' }
+                { id: 'gudang', l: 'Stok', i: 'inventory' },
+                { id: 'klinis', l: 'Klinis', i: 'clinical' },
+                { id: 'keuangan', l: 'Keuangan', i: 'finance' }
               ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold ${st.activeView === b.id ? 'is-active' : ''}">
                 ${svgIcon(b.i, 'w-5 h-5')}<span class="mt-0.5">${b.l}</span>
               </button>`).join('')}
