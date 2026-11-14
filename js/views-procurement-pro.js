@@ -1,3 +1,11 @@
+
+  function generateSpNumber(gol) {
+    const dStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    const g = String(gol || 'REGULER').toUpperCase();
+    const pfx = g === 'NARKOTIKA' ? 'SP-NARK' : (g === 'PSIKOTROPIKA' ? 'SP-PSI' : (g === 'PREKURSOR' ? 'SP-PREK' : (g === 'OOT' ? 'SP-OOT' : 'SP-REG')));
+    return pfx + '/' + dStr + '/' + String(Math.floor(100 + Math.random() * 900));
+  }
+
 /**
  * ONS Farma Enterprise v16.3 - Procurement Pro, Surat Pesanan A4, Stock Flow & Price Decision Analyzer
  * Ekstensi modular untuk Surat Pesanan (Manual + Preview/Cetak A4), Alur Obat Masuk/Keluar,
@@ -22,7 +30,7 @@
 
   let spEditingId = '';
   let spActiveDraftLocalId = '';
-  let spDraftNoSp = '';
+  let spDraftNoSp = generateSpNumber(golSp);
   let spDraftTanggal = '';
   let spDraftPbfId = '';
   let spDraftGol = 'REGULER';
@@ -422,7 +430,8 @@
             <div>Yang bertanda tangan di bawah ini:</div>
             <table style="width:100%;margin-top:4px">
               <tr><td style="width:110px;color:#475569">Nama Apoteker</td><td>: <b>${S().esc(apjName)}</b></td></tr>
-              <tr><td style="color:#475569">No. SIPA</td><td>: ${S().esc(apjSipa)}</td></tr>
+              <tr><td style="color:#475569">No. SIPA</td><td>: ${S().esc(apjSipa || '19920412/SIPA_35.78/2025/1042')}</td></tr>
+              <tr><td style="color:#475569">No. STRA</td><td>: ${S().esc(prof.no_stra || '19920412/STRA-UAD/2016/242135')}</td></tr>
               <tr><td style="color:#475569">Jabatan</td><td>: Apoteker Penanggung Jawab (APJ)</td></tr>
             </table>
           </td>
@@ -1068,10 +1077,10 @@
     const pbfs = S().AppState.supplierPbf || [];
     spEditingId = '';
     spActiveDraftLocalId = '';
-    spDraftNoSp = '';
+    spDraftGol = 'REGULER';
+    spDraftNoSp = generateSpNumber('REGULER');
     spDraftTanggal = new Date().toISOString().slice(0, 10);
     spDraftPbfId = (pbfs[0] && pbfs[0].id_pbf) || '';
-    spDraftGol = 'REGULER';
     spDraftPayMethod = 'KREDIT';
     spDraftDueDate = computeSpDueFromPbf(spDraftPbfId, spDraftTanggal);
     spDraftPemesan = '';

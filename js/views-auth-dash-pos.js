@@ -2005,6 +2005,33 @@
       </div>` : ''}
 
       <!-- 4 Kartu KPI Utama Executive dengan Aksen Semantik & Emblim Rp -->
+      <!-- Row Tambahan: Database & Status Persediaan Standar Apotek Digital -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-blue-500 transition-colors" onclick="navigateView('gudang','batch')">
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Total Nilai Aset Stok</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-blue-700 dark:text-blue-300">${S().rp(invStatus.totalNilaiAset || 0)}</div>
+          <div class="text-[10px] text-slate-500 truncate">${st.masterObat.length} SKU &bull; ${activeBatches.length} batch fisik</div>
+        </div>
+        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-amber-500 transition-colors" onclick="setPosSubTab('tertolak');navigateView('pos','kasir');">
+          <div class="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide flex items-center justify-between">
+            <span>Penjualan Tertolak</span>
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          </div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-amber-600">${_getDashLostSales().length} Item</div>
+          <div class="text-[10px] text-slate-500 truncate">Permintaan obat batal &rarr; Defecta</div>
+        </div>
+        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-emerald-500 transition-colors" onclick="navigateView('obat','pelanggan')">
+          <div class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Pelanggan / CRM</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-emerald-700 dark:text-emerald-300">${st.members.length} Member</div>
+          <div class="text-[10px] text-slate-500 truncate">${totalPoinMember} poin loyalitas aktif</div>
+        </div>
+        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-purple-500 transition-colors" onclick="navigateView('faktur','pbf')">
+          <div class="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Distributor &amp; Mitra</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-purple-700 dark:text-purple-300">${st.supplierPbf.length} PBF &bull; ${(st.dokterPerujuk || st.masterDokter || []).length || 5} Dokter</div>
+          <div class="text-[10px] text-slate-500 truncate">Jaringan pengadaan apotek</div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
         <div class="ons-kpi-card is-blue" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
           <div class="flex items-start justify-between gap-2">
@@ -7123,6 +7150,35 @@
       </div>
     </div>`);
   };
+
+  
+  // Inisialisasi Shortcut Keyboard Kasir POS Standar Apotek Digital
+  if (typeof window !== 'undefined' && !window._posShortcutsAttached) {
+    window._posShortcutsAttached = true;
+    window.addEventListener('keydown', (e) => {
+      // Abaikan jika fokus di modal terbuka
+      const activeModal = document.querySelector('.ons-modal-box, .ons-ws-modal');
+      if (activeModal && e.key !== 'Escape') return;
+
+      if (e.key === 'F1') {
+        const inp = document.getElementById('posSearchInput');
+        if (inp) { e.preventDefault(); inp.focus(); inp.select(); }
+      } else if (e.key === 'F2') {
+        e.preventDefault();
+        const bayarBtn = document.getElementById('posBayarPrimaryBtn');
+        if (bayarBtn) bayarBtn.click();
+        else if (window.posQuickCheckoutShortcut) window.posQuickCheckoutShortcut('TUNAI');
+      } else if (e.key === 'F4') {
+        e.preventDefault();
+        const tundaBtn = document.getElementById('posTundaPrimaryBtn');
+        if (tundaBtn) tundaBtn.click();
+        else if (window.openHoldCartModal) window.openHoldCartModal();
+      } else if (e.key === 'F8') {
+        e.preventDefault();
+        if (window.openRacikanModalFromPos) window.openRacikanModalFromPos();
+      }
+    });
+  }
 
   global.ONSViewsAuthDashPos = { renderPublicStandaloneIfApplicable, renderLoginView, renderDashboardView, renderPosView };
 })(window);
