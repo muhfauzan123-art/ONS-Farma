@@ -28,7 +28,9 @@
 [-]
 [LR]Subtotal||{{SUBTOTAL|rp}}
 {{?DISKON}}[LR]Diskon||-{{DISKON|rp}}
-{{/DISKON}}{{?PPN}}[LR]PPN/Pajak||{{PPN|rp}}
+{{/DISKON}}{{?TUSLAH}}[LR]Jasa Racik/Tuslah||{{TUSLAH|rp}}
+{{/TUSLAH}}{{?EMBALASE}}[LR]Embalase/Kemasan||{{EMBALASE|rp}}
+{{/EMBALASE}}{{?PPN}}[LR]PPN/Pajak||{{PPN|rp}}
 {{/PPN}}[LR][B]TOTAL BAYAR||{{TOTAL|rp}}[/B]
 [LR]Dibayar||{{DIBAYAR|rp}}
 {{?KEMBALI}}[LR]Kembali||{{KEMBALI|rp}}
@@ -214,6 +216,8 @@
     out.METODE = src.METODE || 'TUNAI';
     out.CHANNEL = src.CHANNEL || 'Toko Fisik';
     out.STATUS = src.STATUS || (Number(src.KEMBALI || 0) >= 0 ? 'LUNAS' : 'TEMPO');
+    out.TUSLAH = Number(src.TUSLAH !== undefined ? src.TUSLAH : (src.biaya_servis !== undefined ? src.biaya_servis : (src.tuslah !== undefined ? src.tuslah : 0)));
+    out.EMBALASE = Number(src.EMBALASE !== undefined ? src.EMBALASE : (src.biaya_embalase !== undefined ? src.biaya_embalase : (src.embalase !== undefined ? src.embalase : 0)));
 
     const rawItems = Array.isArray(src.ITEM) ? src.ITEM : (Array.isArray(src.items) ? src.items : []);
     out.ITEM = rawItems.map((it) => {

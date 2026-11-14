@@ -5826,6 +5826,8 @@
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="window.openAddOpnameNewBatchModal()" class="ons-btn ons-btn-ghost text-xs text-blue-600 font-bold" title="Input batch fisik yang belum terdaftar di sistem">+ Batch Baru Fisik</button>
+            <button type="button" onclick="window.printBeritaAcaraOpname()" class="ons-btn ons-btn-ghost text-xs font-semibold" title="Cetak Berita Acara Stock Opname">&#128438; Berita Acara (BA)</button>
             <button type="button" onclick="window.openRiwayatOpnameModal()" class="ons-btn ons-btn-ghost text-xs">Riwayat Opname</button>
             <button type="button" onclick="window.closeOpnameSession()" class="ons-btn ons-btn-ghost text-xs">Tutup Sesi</button>
             <input id="opnameWorkspaceReason" class="ons-input text-xs w-48" placeholder="Catatan/Alasan SO..." value="${S().esc(opnameDraftReason || 'Stock Opname Rutin Gudang')}" oninput="window.setOpnameDraftReason(this.value)"/>
@@ -6198,18 +6200,32 @@
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
-              <thead><tr><th>Waktu</th><th>Produk Obat</th><th>No Batch</th><th>Arah &amp; Jenis Mutasi</th><th>Qty Perubahan</th><th>Stok Akhir</th><th>Referensi</th><th>Catatan</th></tr></thead>
+              <thead><tr><th class="w-8">No.</th><th>Tanggal &amp; Jam</th><th>Dokumen &amp; Transaksi</th><th>Produk Obat</th><th>Gudang / Lokasi</th><th>No. Batch</th><th>Expired Date</th><th class="text-right">HPP</th><th class="text-right text-emerald-600">Masuk (+)</th><th class="text-right text-red-600">Keluar (-)</th><th class="text-right font-extrabold">Sisa Saldo</th></tr></thead>
               <tbody>
-                ${mutasiRows.length === 0 ? `<tr><td colspan="8" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada histori mutasi pada filter ini.</td></tr>` : mutasiRows.slice(0, 120).map((m) => `<tr>
-                  <td class="text-xs whitespace-nowrap font-mono-num">${S().formatTgl(m.timestamp, true)}</td>
-                  <td class="font-semibold text-xs">${S().esc(m.nama_dagang || m.id_obat)}</td>
-                  <td class="font-mono-num text-xs">${S().esc(m.no_batch || m.id_batch)}</td>
-                  <td><span class="badge-bpom ${Number(m.qty_ubah) >= 0 ? 'bpom-bebas' : 'bpom-prekursor'}">${Number(m.qty_ubah) >= 0 ? 'MASUK' : 'KELUAR'} &bull; ${S().esc(m.jenis_mutasi)}</span></td>
-                  <td class="font-mono-num font-bold ${Number(m.qty_ubah) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${Number(m.qty_ubah) > 0 ? '+' : ''}${m.qty_ubah}</td>
-                  <td class="font-mono-num font-bold">${m.stok_akhir}</td>
-                  <td class="font-mono-num text-xs">${S().esc(m.referensi_id || '-')}</td>
-                  <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(m.catatan || '-')}</td>
-                </tr>`).join('')}
+                ${mutasiRows.length === 0 ? `<tr><td colspan="11" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada histori mutasi pada filter ini.</td></tr>` : mutasiRows.slice(0, 150).map((m, idx) => {
+                  const q = Number(m.qty_ubah || 0);
+                  const ob = st.masterObat.find((o) => o.id_obat === m.id_obat);
+                  const hppVal = Number(m.hpp_beli || (ob && ob.hpp_avg) || 0);
+                  return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td class="text-xs font-mono-num text-slate-400">${idx + 1}</td>
+                    <td class="text-xs whitespace-nowrap font-mono-num font-medium">${S().formatTgl(m.timestamp, true)}</td>
+                    <td class="text-xs">
+                      <div class="font-bold text-slate-800 dark:text-slate-100">${S().esc(m.referensi_id || '-')}</div>
+                      <div class="text-[10px] text-slate-500">${S().esc(m.jenis_mutasi || '')} ${m.catatan ? `&bull; ${S().esc(m.catatan)}` : ''}</div>
+                    </td>
+                    <td class="font-semibold text-xs">
+                      <div>${S().esc(m.nama_dagang || m.id_obat)}</div>
+                      <div class="text-[10px] text-slate-400 font-mono">${S().esc(m.id_obat)}</div>
+                    </td>
+                    <td class="text-xs text-slate-600 dark:text-slate-300">${S().esc(m.gudang || m.cabang_id || 'Gudang Utama')}</td>
+                    <td class="font-mono-num text-xs font-semibold">${S().esc(m.no_batch || m.id_batch || '-')}</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap ${m.tgl_kadaluarsa && m.tgl_kadaluarsa < new Date().toISOString().slice(0, 10) ? 'text-red-600 font-bold' : 'text-slate-500'}">${m.tgl_kadaluarsa ? S().formatTgl(m.tgl_kadaluarsa) : '-'}</td>
+                    <td class="font-mono-num text-xs text-right">${hppVal > 0 ? S().rp(hppVal) : '-'}</td>
+                    <td class="font-mono-num font-extrabold text-xs text-right text-emerald-600">${q > 0 ? ('+' + q) : '-'}</td>
+                    <td class="font-mono-num font-extrabold text-xs text-right text-red-600">${q < 0 ? Math.abs(q) : '-'}</td>
+                    <td class="font-mono-num font-extrabold text-xs text-right text-blue-600 bg-blue-50/50 dark:bg-blue-900/20">${m.stok_akhir}</td>
+                  </tr>`;
+                }).join('')}
               </tbody>
             </table>
           </div>
@@ -9270,10 +9286,13 @@
                     const hppBelowJual = obRef && hargaPokokPreview > 0 && Number(obRef.harga_umum || 0) > 0 && hargaPokokPreview >= Number(obRef.harga_umum || 0);
                     return `<tr>
                     <td>
-                      <select class="ons-select text-xs min-w-[180px]" onchange="window.updateGrnItem(${idx}, 'id_obat', this.value)">
+                      <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                        <select class="ons-select text-xs flex-1 min-w-[170px]" onchange="window.updateGrnItem(${idx}, 'id_obat', this.value)">
                         ${st.masterObat.map((o) => `<option value="${o.id_obat}" ${it.id_obat === o.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)}</option>`).join('')}
                       </select>
-                      ${oldHpp > 0 ? `<div class="text-[10px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">HPP Lama: ${S().rp(oldHpp)}${hppDiffPct > 0 ? ` &bull; <span class="text-red-600 font-bold">Naik +${hppDiffPct}%</span>` : ''}${hppBelowJual ? ` &bull; <span class="text-red-600 font-bold">RUGI (&ge; Harga Umum!)</span>` : ''}</div>` : ''}
+                        <button type="button" onclick="window.toggleGrnItemBonus(${idx})" class="ons-btn text-[10px] py-0.5 px-2 rounded-lg border min-h-0 h-6 font-bold ${it.is_bonus ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 border-slate-300'}" title="Tandai barang bonus / promo ekstra cuma-cuma">${it.is_bonus ? '&#127873; BONUS (Rp 0)' : '+ Bonus'}</button>
+                      </div>
+                      ${it.is_bonus ? '<span class="badge-bpom bpom-bebas text-[9px] font-bold">BARANG BONUS PBF &bull; HPP Rp 0</span>' : (oldHpp > 0 ? `<div class="text-[10px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">HPP Lama: ${S().rp(oldHpp)}${hppDiffPct > 0 ? ` &bull; <span class="text-red-600 font-bold">Naik +${hppDiffPct}%</span>` : ''}${hppBelowJual ? ` &bull; <span class="text-red-600 font-bold">RUGI (&ge; Harga Umum!)</span>` : ''}</div>` : '')}
                     </td>
                     <td><input class="ons-input font-mono-num text-xs w-28" value="${S().esc(it.no_batch)}" onchange="window.updateGrnItem(${idx}, 'no_batch', this.value)"/></td>
                     <td><input type="date" class="ons-input text-xs w-32" value="${S().esc(it.tgl_kadaluarsa)}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
@@ -10662,17 +10681,39 @@
         jenis_penerimaan: jenisPenerimaan,
         status_bayar: jenisPenerimaan === 'KONSINYASI' ? 'KONSINYASI' : (grnHeader.status_bayar || 'BELUM_LUNAS'),
         catatan: grnHeader.catatan || '',
-        items: grnItems.map((it) => {
-          const q = Math.max(1, Number(it.qty_dasar || 1));
-          const netRowUnit = Math.max(0, Number(it.hpp_unit || 0) - (Number(it.diskon_item || 0) / q));
-          return {
-            id_obat: it.id_obat,
-            no_batch: String(it.no_batch || '').trim(),
-            tgl_kadaluarsa: it.tgl_kadaluarsa,
-            qty_dasar: q,
-            hpp_unit: Math.round(netRowUnit)
-          };
-        })
+        items: (() => {
+          const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+          const isNonPkp = String(prof.status_pkp || 'NON_PKP').toUpperCase() !== 'PKP';
+          const ppnVal = Number(grnHeader.ppn_masukan || 0);
+          const taxFactor = (isNonPkp && ppnVal > 0 && totalBruto > 0)
+            ? (1 + (ppnVal / totalBruto))
+            : 1;
+
+          return grnItems.map((it) => {
+            const q = Math.max(1, Number(it.qty_dasar || 1));
+            const isBonus = Boolean(it.is_bonus || Number(it.hpp_unit || 0) === 0);
+            if (isBonus) {
+              return {
+                id_obat: it.id_obat,
+                no_batch: String(it.no_batch || '').trim(),
+                tgl_kadaluarsa: it.tgl_kadaluarsa,
+                qty_dasar: q,
+                hpp_unit: 0,
+                is_bonus: true
+              };
+            }
+            const netRowUnit = Math.max(0, Number(it.hpp_unit || 0) - (Number(it.diskon_item || 0) / q));
+            const finalHpp = Math.round(netRowUnit * taxFactor);
+            return {
+              id_obat: it.id_obat,
+              no_batch: String(it.no_batch || '').trim(),
+              tgl_kadaluarsa: it.tgl_kadaluarsa,
+              qty_dasar: q,
+              hpp_unit: finalHpp,
+              is_bonus: false
+            };
+          });
+        })()
       }, { isWrite: true });
       if (grnActiveDraftId) {
         _writeLocalList(FAKTUR_DRAFTS_KEY, _readLocalList(FAKTUR_DRAFTS_KEY).filter((x) => x.id_draft !== grnActiveDraftId));
@@ -11555,6 +11596,520 @@
       { key: 'sisa', label: 'Sisa', type: 'int', width: 8 },
       { key: 'belum_disetor', label: 'Belum Disetor', type: 'currency', sum: true, width: 18 }
     ], rows, { sheetName: 'StatusKonsinyasi' });
+  };
+
+  
+  // ==========================================================================
+  // KARTU STOK PRODUK 11 KOLOM STANDAR APOTEK DIGITAL (BPOM AUDIT READY)
+  // ==========================================================================
+  let modalKartuStokState = {
+    idObat: '',
+    startDate: '',
+    endDate: '',
+    batchFilter: '',
+    gudangFilter: ''
+  };
+
+  global.openObatKartuStok = (idObat) => {
+    global.openObatKartuStokModal(idObat);
+  };
+
+  global.openObatKartuStokModal = (idObat) => {
+    const st = S().AppState;
+    const ob = (st.masterObat || []).find((o) => o.id_obat === idObat) || st.masterObat[0];
+    if (!ob) {
+      global.toast('Data obat tidak ditemukan.', 'warn');
+      return;
+    }
+
+    modalKartuStokState.idObat = ob.id_obat;
+    if (!modalKartuStokState.startDate) {
+      // Default 30 hari terakhir
+      const d30 = new Date(Date.now() - 30 * 86400000);
+      modalKartuStokState.startDate = d30.toISOString().slice(0, 10);
+      modalKartuStokState.endDate = new Date().toISOString().slice(0, 10);
+    }
+
+    renderObatKartuStokModalDialog();
+  };
+
+  function renderObatKartuStokModalDialog() {
+    const st = S().AppState;
+    const ob = (st.masterObat || []).find((o) => o.id_obat === modalKartuStokState.idObat);
+    if (!ob) return;
+
+    const s = modalKartuStokState;
+    const allMutasi = (st.mutasiStok || []).filter((m) => m.id_obat === ob.id_obat);
+
+    // Kumpulkan seluruh batch yang ada untuk obat ini
+    const availableBatches = Array.from(new Set(
+      allMutasi.map((m) => m.no_batch || m.id_batch).concat(
+        (st.stokBatch || []).filter((b) => b.id_obat === ob.id_obat).map((b) => b.no_batch)
+      ).filter(Boolean)
+    ));
+
+    // Filter mutasi berdasarkan kriteria
+    const filteredMutasi = allMutasi.filter((m) => {
+      const dt = String(m.timestamp || '').slice(0, 10);
+      if (s.startDate && dt < s.startDate) return false;
+      if (s.endDate && dt > s.endDate) return false;
+      if (s.batchFilter && (m.no_batch || m.id_batch) !== s.batchFilter) return false;
+      if (s.gudangFilter && (m.gudang || m.cabang_id || 'Gudang Utama') !== s.gudangFilter) return false;
+      return true;
+    });
+
+    const totalMasuk = filteredMutasi.filter((m) => Number(m.qty_ubah || 0) > 0).reduce((sum, m) => sum + Number(m.qty_ubah || 0), 0);
+    const totalKeluar = filteredMutasi.filter((m) => Number(m.qty_ubah || 0) < 0).reduce((sum, m) => sum + Math.abs(Number(m.qty_ubah || 0)), 0);
+    const stokSekarang = S().getSellableStok(ob.id_obat);
+    const hppSatuan = Number(ob.hpp_avg || ob.harga_pokok || 0);
+    const nilaiAset = stokSekarang * hppSatuan;
+
+    const modalHtml = `
+      <div class="p-5 space-y-4 text-xs">
+        <!-- Header Info Produk -->
+        <div class="flex flex-wrap items-start justify-between gap-3 border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="badge-bpom bpom-bebas">KARTU STOK AUDIT BPOM</span>
+              <span class="font-mono text-xs text-blue-600 font-bold">${S().esc(ob.id_obat)}</span>
+              <span class="badge-bpom bpom-prekursor">${S().esc(ob.kategori_obat || 'OBAT')}</span>
+            </div>
+            <h2 class="text-lg font-extrabold text-slate-800 dark:text-slate-100 mt-1">${S().esc(ob.nama_dagang)}</h2>
+            <div class="text-[11px] text-slate-500 mt-0.5">
+              Zat Aktif: <b>${S().esc(ob.zat_aktif || '-')}</b> &bull; Pabrik/PBF: <b>${S().esc(ob.produsen || ob.supplier_utama || '-')}</b> &bull; Satuan: <b>${S().esc(ob.satuan_dasar || 'Unit')}</b>
+            </div>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 text-slate-400 hover:text-slate-700">&times;</button>
+        </div>
+
+        <!-- KPI Ringkasan Kartu Stok -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="p-3 rounded-xl border bg-blue-50/60 dark:bg-slate-800/60 border-blue-200 dark:border-blue-800">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">Stok Siap Jual (Fisik)</div>
+            <div class="text-xl font-extrabold font-mono-num text-blue-700 dark:text-blue-300 mt-0.5">${stokSekarang} <span class="text-xs font-normal">${S().esc(ob.satuan_dasar)}</span></div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Saldo fisik saat ini</div>
+          </div>
+          <div class="p-3 rounded-xl border bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">Total Mutasi Masuk (+)</div>
+            <div class="text-xl font-extrabold font-mono-num text-emerald-600 mt-0.5">+${totalMasuk} <span class="text-xs font-normal">${S().esc(ob.satuan_dasar)}</span></div>
+            <div class="text-[10px] text-slate-500 mt-0.5">PBF, retur &amp; opname lebih</div>
+          </div>
+          <div class="p-3 rounded-xl border bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">Total Mutasi Keluar (-)</div>
+            <div class="text-xl font-extrabold font-mono-num text-rose-600 mt-0.5">-${totalKeluar} <span class="text-xs font-normal">${S().esc(ob.satuan_dasar)}</span></div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Penjualan kasir &amp; racikan</div>
+          </div>
+          <div class="p-3 rounded-xl border bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">Nilai Aset Stok (HPP)</div>
+            <div class="text-xl font-extrabold font-mono-num text-amber-700 dark:text-amber-400 mt-0.5">${S().rp(nilaiAset)}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">HPP: ${S().rp(hppSatuan)} / ${S().esc(ob.satuan_dasar)}</div>
+          </div>
+        </div>
+
+        <!-- Filter Bar Interaktif -->
+        <div class="p-3 rounded-xl border grid grid-cols-1 sm:grid-cols-4 gap-2 items-center" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div>
+            <label class="font-bold text-[10px] text-slate-500 block mb-0.5">Tanggal Dari</label>
+            <input type="date" class="ons-input text-xs font-mono py-1" value="${s.startDate}" onchange="modalKartuStokState.startDate=this.value;renderObatKartuStokModalDialog();"/>
+          </div>
+          <div>
+            <label class="font-bold text-[10px] text-slate-500 block mb-0.5">Sampai Tanggal</label>
+            <input type="date" class="ons-input text-xs font-mono py-1" value="${s.endDate}" onchange="modalKartuStokState.endDate=this.value;renderObatKartuStokModalDialog();"/>
+          </div>
+          <div>
+            <label class="font-bold text-[10px] text-slate-500 block mb-0.5">Filter Batch</label>
+            <select class="ons-select text-xs py-1" onchange="modalKartuStokState.batchFilter=this.value;renderObatKartuStokModalDialog();">
+              <option value="">-- Semua Batch (${availableBatches.length}) --</option>
+              ${availableBatches.map((b) => `<option value="${S().esc(b)}" ${s.batchFilter === b ? 'selected' : ''}>${S().esc(b)}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-[10px] text-slate-500 block mb-0.5">Gudang / Lokasi</label>
+            <select class="ons-select text-xs py-1" onchange="modalKartuStokState.gudangFilter=this.value;renderObatKartuStokModalDialog();">
+              <option value="">-- Semua Lokasi --</option>
+              <option value="Gudang Utama" ${s.gudangFilter === 'Gudang Utama' ? 'selected' : ''}>Gudang Utama</option>
+              <option value="Etalase Depan" ${s.gudangFilter === 'Etalase Depan' ? 'selected' : ''}>Etalase Depan</option>
+              <option value="Kulkas 2-8 C" ${s.gudangFilter === 'Kulkas 2-8 C' ? 'selected' : ''}>Kulkas 2-8 C</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabel 11 Kolom Audit Kartu Stok -->
+        <div class="ons-table-wrap max-h-[380px] overflow-y-auto border rounded-xl" style="border-color:var(--ons-border)">
+          <table class="ons-table">
+            <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800">
+              <tr>
+                <th class="w-8">No.</th>
+                <th>Tanggal &amp; Jam</th>
+                <th>Catatan &amp; No. Dokumen</th>
+                <th>Gudang</th>
+                <th>Kode Batch</th>
+                <th>Expired Date</th>
+                <th class="text-right">Harga Pokok</th>
+                <th>Petugas</th>
+                <th class="text-right text-emerald-600">Masuk (+)</th>
+                <th class="text-right text-red-600">Keluar (-)</th>
+                <th class="text-right font-extrabold">Sisa Stok</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredMutasi.length === 0 ? `
+                <tr>
+                  <td colspan="11" class="text-center py-8 text-slate-400">
+                    Belum ada catatan mutasi kartu stok untuk produk ini pada filter yang dipilih.
+                  </td>
+                </tr>
+              ` : filteredMutasi.map((m, idx) => {
+                const q = Number(m.qty_ubah || 0);
+                const hppLine = Number(m.hpp_beli || ob.hpp_avg || 0);
+                return `
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td class="font-mono text-slate-400 text-xs">${idx + 1}</td>
+                    <td class="font-mono text-xs whitespace-nowrap">${S().formatTgl(m.timestamp, true)}</td>
+                    <td class="text-xs">
+                      <div class="font-bold text-slate-800 dark:text-slate-100">${S().esc(m.referensi_id || '-')}</div>
+                      <div class="text-[10px] text-slate-500">${S().esc(m.jenis_mutasi || '')} ${m.catatan ? `&bull; ${S().esc(m.catatan)}` : ''}</div>
+                    </td>
+                    <td class="text-xs text-slate-600 dark:text-slate-300">${S().esc(m.gudang || m.cabang_id || 'Gudang Utama')}</td>
+                    <td class="font-mono text-xs font-semibold">${S().esc(m.no_batch || m.id_batch || '-')}</td>
+                    <td class="font-mono text-xs whitespace-nowrap ${m.tgl_kadaluarsa && m.tgl_kadaluarsa < new Date().toISOString().slice(0, 10) ? 'text-red-600 font-bold' : 'text-slate-500'}">${m.tgl_kadaluarsa ? S().formatTgl(m.tgl_kadaluarsa) : '-'}</td>
+                    <td class="font-mono text-xs text-right">${hppLine > 0 ? S().rp(hppLine) : '-'}</td>
+                    <td class="text-xs text-slate-600 dark:text-slate-300">${S().esc(m.user_id || 'Apoteker')}</td>
+                    <td class="font-mono font-bold text-xs text-right text-emerald-600">${q > 0 ? ('+' + q) : '-'}</td>
+                    <td class="font-mono font-bold text-xs text-right text-red-600">${q < 0 ? Math.abs(q) : '-'}</td>
+                    <td class="font-mono font-extrabold text-xs text-right text-blue-600 bg-blue-50/50 dark:bg-blue-900/20">${m.stok_akhir}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer Modal & Tombol Cetak / Export -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <div class="text-[11px] text-slate-500">
+            Total tercatat: <b>${filteredMutasi.length} mutasi</b> &bull; Standar Pelaporan Resmi BPOM &amp; Dinkes
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.printObatKartuStokDirect('${S().esc(ob.id_obat)}')" class="ons-btn ons-btn-ghost text-xs font-semibold">&#128438; Cetak PDF Kartu Stok</button>
+            <button type="button" onclick="window.exportObatKartuStokExcel('${S().esc(ob.id_obat)}')" class="ons-btn ons-btn-emerald text-xs font-bold">&#128196; Export Excel (.xlsx)</button>
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    S().openModal(modalHtml, '840px');
+  }
+
+  global.printObatKartuStokDirect = (idObat) => {
+    const st = S().AppState;
+    const ob = (st.masterObat || []).find((o) => o.id_obat === idObat);
+    if (!ob) return;
+    const s = modalKartuStokState;
+    const allMutasi = (st.mutasiStok || []).filter((m) => m.id_obat === ob.id_obat);
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+
+    const rowsHtml = allMutasi.map((m, idx) => {
+      const q = Number(m.qty_ubah || 0);
+      return `<tr>
+        <td style="border:1px solid #333;padding:4px;text-align:center;">${idx + 1}</td>
+        <td style="border:1px solid #333;padding:4px;white-space:nowrap;">${S().formatTgl(m.timestamp, true)}</td>
+        <td style="border:1px solid #333;padding:4px;">${S().esc(m.referensi_id || '-')} (${S().esc(m.jenis_mutasi)})</td>
+        <td style="border:1px solid #333;padding:4px;text-align:center;">${S().esc(m.no_batch || '-')}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:center;">${m.tgl_kadaluarsa ? S().formatTgl(m.tgl_kadaluarsa) : '-'}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;">${q > 0 ? ('+' + q) : '-'}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;">${q < 0 ? Math.abs(q) : '-'}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;">${m.stok_akhir}</td>
+        <td style="border:1px solid #333;padding:4px;">${S().esc(m.catatan || '-')}</td>
+      </tr>`;
+    }).join('');
+
+    S().printHtmlZone(`<div style="font-family:Arial,sans-serif;font-size:10px;padding:12px;color:#000;">
+      <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px;">
+        <h2 style="margin:0;font-size:14px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</h2>
+        <div>SIA: ${S().esc(prof.sia_toko || '445/1042/SIA/2024')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>
+        <div style="font-size:12px;font-weight:bold;margin-top:4px;">KARTU STOK INDUK FARMASI (STANDAR BPOM RI)</div>
+      </div>
+      <div style="margin-bottom:8px;display:flex;justify-content:space-between;">
+        <div>
+          <div><b>Nama Obat:</b> ${S().esc(ob.nama_dagang)}</div>
+          <div><b>Kode SKU:</b> ${S().esc(ob.id_obat)} &bull; <b>Satuan:</b> ${S().esc(ob.satuan_dasar)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div><b>Sisa Saldo Fisik:</b> ${S().getSellableStok(ob.id_obat)} ${S().esc(ob.satuan_dasar)}</div>
+          <div><b>Tanggal Cetak:</b> ${new Date().toLocaleDateString('id-ID')}</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:9.5px;">
+        <thead>
+          <tr style="background:#E2E8F0;">
+            <th style="border:1px solid #333;padding:4px;">No</th>
+            <th style="border:1px solid #333;padding:4px;">Waktu</th>
+            <th style="border:1px solid #333;padding:4px;">No. Dokumen / Mutasi</th>
+            <th style="border:1px solid #333;padding:4px;">Batch</th>
+            <th style="border:1px solid #333;padding:4px;">ED</th>
+            <th style="border:1px solid #333;padding:4px;">Masuk (+)</th>
+            <th style="border:1px solid #333;padding:4px;">Keluar (-)</th>
+            <th style="border:1px solid #333;padding:4px;">Sisa</th>
+            <th style="border:1px solid #333;padding:4px;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`);
+  };
+
+  global.exportObatKartuStokExcel = (idObat) => {
+    if (global.setMutasiFilterObat) global.setMutasiFilterObat(idObat);
+    if (global.exportKartuStok) global.exportKartuStok('xlsx');
+  };
+
+  
+  // ==========================================================================
+  // STOK OPNAME ENHANCED ENGINE & BERITA ACARA (STANDAR APOTEK DIGITAL)
+  // ==========================================================================
+  global.openAddOpnameNewBatchModal = () => {
+    const st = S().AppState;
+    if (!st.masterObat.length) {
+      global.toast('Master obat belum tersedia.', 'warn');
+      return;
+    }
+
+    const defaultObat = st.masterObat[0];
+    const defaultEd = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
+
+    const modalHtml = `
+      <div class="p-5 space-y-4 text-xs">
+        <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <span class="badge-bpom bpom-bebas">STOK OPNAME FISIK</span>
+            <h3 class="text-base font-extrabold mt-1 text-slate-800 dark:text-slate-100">+ Tambah Batch Baru Fisik ke Sesi Opname</h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Gunakan form ini jika di rak fisik ditemukan nomor batch obat yang belum terdaftar di sistem.</p>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 text-slate-400 hover:text-slate-700">&times;</button>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="font-bold block mb-1">Pilih Produk Obat *</label>
+            <select id="opnameNewBatchIdObat" class="ons-select text-xs font-semibold w-full" onchange="window.onOpnameNewBatchObatChange(this.value)">
+              ${st.masterObat.map((o) => `<option value="${o.id_obat}">${S().esc(o.nama_dagang)} (${S().esc(o.id_obat)}) - Satuan: ${S().esc(o.satuan_dasar)}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="font-bold block mb-1">Nomor Batch Fisik *</label>
+              <input id="opnameNewBatchNo" type="text" class="ons-input font-mono text-xs font-bold" placeholder="Contoh: BTH-2026-X1" value="BATCH-${Date.now().toString().slice(-4)}"/>
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Expired Date (ED) Fisik *</label>
+              <input id="opnameNewBatchEd" type="date" class="ons-input font-mono text-xs" value="${defaultEd}"/>
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Hitungan Fisik Riil *</label>
+              <input id="opnameNewBatchQty" type="number" min="1" class="ons-input font-mono-num text-xs font-extrabold text-blue-600" value="10"/>
+            </div>
+            <div>
+              <label class="font-bold block mb-1">HPP Beli Estimasi (Rp)</label>
+              <input id="opnameNewBatchHpp" type="number" min="0" class="ons-input font-mono-num text-xs" value="${Number(defaultObat.hpp_avg || defaultObat.harga_pokok || 0)}"/>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-bold block mb-1">Gudang / Lokasi Rak</label>
+            <input id="opnameNewBatchRak" type="text" class="ons-input text-xs" value="${S().esc(defaultObat.rak_lokasi || 'Gudang Utama')}"/>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.submitAddOpnameNewBatch()" class="ons-btn ons-btn-emerald text-xs font-bold py-2.5 px-4">
+            &#10003; Simpan &amp; Masukkan ke Hitungan Opname &rarr;
+          </button>
+        </div>
+      </div>
+    `;
+
+    S().openModal(modalHtml, '540px');
+  };
+
+  global.onOpnameNewBatchObatChange = (idObat) => {
+    const ob = S().AppState.masterObat.find((o) => o.id_obat === idObat);
+    if (!ob) return;
+    const hppEl = document.getElementById('opnameNewBatchHpp');
+    if (hppEl) hppEl.value = Number(ob.hpp_avg || ob.harga_pokok || 0);
+    const rakEl = document.getElementById('opnameNewBatchRak');
+    if (rakEl) rakEl.value = ob.rak_lokasi || 'Gudang Utama';
+  };
+
+  global.submitAddOpnameNewBatch = async () => {
+    const idObat = (document.getElementById('opnameNewBatchIdObat') || {}).value;
+    const noBatch = String((document.getElementById('opnameNewBatchNo') || {}).value || '').trim();
+    const tglEd = (document.getElementById('opnameNewBatchEd') || {}).value;
+    const qtyFisik = Math.max(1, Number((document.getElementById('opnameNewBatchQty') || {}).value || 1));
+    const hppBeli = Math.max(0, Number((document.getElementById('opnameNewBatchHpp') || {}).value || 0));
+    const rak = String((document.getElementById('opnameNewBatchRak') || {}).value || 'Gudang Utama').trim();
+
+    if (!idObat || !noBatch || !tglEd) {
+      global.toast('Semua field bertanda * wajib diisi!', 'warn');
+      return;
+    }
+
+    const st = S().AppState;
+    const newBatchId = 'BTH-' + Date.now().toString().slice(-6);
+
+    const newBatchObj = {
+      id_batch: newBatchId,
+      cabang_id: st.cabangId || 'ONS-01',
+      id_obat: idObat,
+      no_batch: noBatch,
+      tgl_kadaluarsa: tglEd,
+      qty_masuk: qtyFisik,
+      qty_sisa: 0,
+      hpp_beli: hppBeli,
+      rak_lokasi: rak,
+      status_batch: 'AKTIF'
+    };
+
+    if (!Array.isArray(st.stokBatch)) st.stokBatch = [];
+    st.stokBatch.unshift(newBatchObj);
+
+    if (typeof opnameDraftQty === 'object') {
+      opnameDraftQty[newBatchId] = qtyFisik;
+    }
+
+    ONSStore.closeModal();
+    global.toast('Batch ' + noBatch + ' berhasil didaftarkan ke sesi opname dengan hitungan ' + qtyFisik + ' unit!', 'ok');
+    global.renderActiveView();
+  };
+
+  global.printBeritaAcaraOpname = () => {
+    const st = S().AppState;
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const sessionRef = 'SO-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-01';
+    const activeEntries = Object.keys(opnameDraftQty || {}).map((idBatch) => {
+      const b = (st.stokBatch || []).find((x) => x.id_batch === idBatch);
+      const o = b ? (st.masterObat || []).find((m) => m.id_obat === b.id_obat) : null;
+      const fisik = Number(opnameDraftQty[idBatch] || 0);
+      const sistem = b ? Number(b.qty_sisa || 0) : 0;
+      const selisih = fisik - sistem;
+      const hpp = b ? Number(b.hpp_beli || (o && o.hpp_avg) || 0) : 0;
+      return {
+        nama: o ? o.nama_dagang : idBatch,
+        batch: b ? b.no_batch : '-',
+        ed: b ? b.tgl_kadaluarsa : '-',
+        satuan: o ? o.satuan_dasar : 'Unit',
+        sistem,
+        fisik,
+        selisih,
+        hpp,
+        nilaiSelisih: selisih * hpp
+      };
+    });
+
+    const totalSurplusUnit = activeEntries.filter((e) => e.selisih > 0).reduce((s, e) => s + e.selisih, 0);
+    const totalDefisitUnit = activeEntries.filter((e) => e.selisih < 0).reduce((s, e) => s + Math.abs(e.selisih), 0);
+    const netDampakRp = activeEntries.reduce((s, e) => s + e.nilaiSelisih, 0);
+
+    const rowsHtml = activeEntries.length ? activeEntries.map((e, idx) => `
+      <tr>
+        <td style="border:1px solid #333;padding:4px;text-align:center;">${idx + 1}</td>
+        <td style="border:1px solid #333;padding:4px;font-weight:bold;">${S().esc(e.nama)}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:center;">${S().esc(e.batch)}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:center;">${S().esc(e.ed)}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;">${e.sistem} ${S().esc(e.satuan)}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;">${e.fisik} ${S().esc(e.satuan)}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;color:${e.selisih >= 0 ? '#059669' : '#DC2626'};">${e.selisih > 0 ? '+' : ''}${e.selisih}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;">${S().rp(e.hpp)}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;color:${e.nilaiSelisih >= 0 ? '#059669' : '#DC2626'};">${S().rp(e.nilaiSelisih)}</td>
+      </tr>
+    `).join('') : `<tr><td colspan="9" style="border:1px solid #333;padding:8px;text-align:center;">Belum ada item yang diinput hitungan fisiknya pada sesi aktif ini.</td></tr>`;
+
+    S().printHtmlZone(`
+      <div style="font-family:Arial,sans-serif;font-size:10px;padding:12px;color:#000;line-height:1.35;">
+        <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px;">
+          <h2 style="margin:0;font-size:15px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</h2>
+          <div>SIA: ${S().esc(prof.sia_toko || '445/1042/SIA/2024')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>
+          <div>${S().esc(prof.alamat_usaha || 'Jl. Raya Apotek No. 10')}</div>
+          <div style="font-size:12px;font-weight:bold;margin-top:6px;letter-spacing:0.5px;">BERITA ACARA REKONSILIASI STOCK OPNAME FISIK PERSEDIAAN OBAT</div>
+          <div style="font-size:10px;">Nomor Dokumen: <b>${sessionRef}</b></div>
+        </div>
+
+        <div style="margin-bottom:10px;display:flex;justify-content:space-between;font-size:9.5px;">
+          <div>
+            <div><b>Hari / Tanggal:</b> ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            <div><b>Lokasi Gudang:</b> Gudang Utama Apotek ONS Farma</div>
+          </div>
+          <div style="text-align:right;">
+            <div><b>Total Item Dihitung:</b> ${activeEntries.length} Batch</div>
+            <div><b>Status Pelaksanaan:</b> LENGKAP &amp; TERVERIFIKASI</div>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:10px;">
+          <thead>
+            <tr style="background:#E2E8F0;">
+              <th style="border:1px solid #333;padding:4px;">No</th>
+              <th style="border:1px solid #333;padding:4px;">Nama Produk</th>
+              <th style="border:1px solid #333;padding:4px;">No. Batch</th>
+              <th style="border:1px solid #333;padding:4px;">ED</th>
+              <th style="border:1px solid #333;padding:4px;">Sistem</th>
+              <th style="border:1px solid #333;padding:4px;">Fisik</th>
+              <th style="border:1px solid #333;padding:4px;">Selisih (&Delta;)</th>
+              <th style="border:1px solid #333;padding:4px;">HPP Satuan</th>
+              <th style="border:1px solid #333;padding:4px;">Dampak Nilai (Rp)</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+          <tfoot>
+            <tr style="background:#F1F5F9;font-weight:bold;">
+              <td colspan="6" style="border:1px solid #333;padding:4px;text-align:right;">TOTAL REKAPITULASI SELISIH OPNAME:</td>
+              <td style="border:1px solid #333;padding:4px;text-align:right;">+${totalSurplusUnit} / -${totalDefisitUnit} unit</td>
+              <td style="border:1px solid #333;padding:4px;text-align:right;">NET IMPACT:</td>
+              <td style="border:1px solid #333;padding:4px;text-align:right;color:${netDampakRp >= 0 ? '#059669' : '#DC2626'};">${S().rp(netDampakRp)}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div style="margin-top:20px;display:flex;justify-content:space-between;text-align:center;font-size:9.5px;">
+          <div style="width:28%;">
+            <div>Petugas Pelaksana Opname,</div>
+            <div style="height:45px;"></div>
+            <div style="font-weight:bold;text-decoration:underline;">( .................................... )</div>
+            <div>Staf Farmasi</div>
+          </div>
+          <div style="width:28%;">
+            <div>Saksi Pemeriksa Fisik,</div>
+            <div style="height:45px;"></div>
+            <div style="font-weight:bold;text-decoration:underline;">( .................................... )</div>
+            <div>Asisten Apoteker (TTK)</div>
+          </div>
+          <div style="width:38%;">
+            <div>Mengetahui &amp; Menyetujui,<br/>Apoteker Penanggung Jawab (APJ)</div>
+            <div style="height:35px;"></div>
+            <div style="font-weight:bold;text-decoration:underline;">apt. Anissa Faradifa R. Is. Rumi, S.Farm</div>
+            <div>SIPA: 19920412/SIPA_35.78/2025/1042</div>
+          </div>
+        </div>
+      </div>
+    `);
+  };
+
+  
+  global.toggleGrnItemBonus = (idx) => {
+    if (!grnItems[idx]) return;
+    grnItems[idx].is_bonus = !grnItems[idx].is_bonus;
+    if (grnItems[idx].is_bonus) {
+      grnItems[idx].prev_hpp = grnItems[idx].hpp_unit;
+      grnItems[idx].hpp_unit = 0;
+      grnItems[idx].diskon_item = 0;
+      global.toast('Item #' + (idx + 1) + ' ditandai sebagai BARANG BONUS PBF (HPP Rp 0 & margin 100%).', 'ok');
+    } else {
+      grnItems[idx].hpp_unit = grnItems[idx].prev_hpp || 5000;
+    }
+    global.renderActiveView();
   };
 
   global.ONSViewsInventoryProcurement = { renderMasterObatView, renderGudangView, renderDefectaView, renderFakturView };

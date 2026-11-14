@@ -4460,6 +4460,7 @@
           <div id="posSearchDropdown" class="ons-pos-search-menu ${String(st.posSearchQ || '').trim() ? '' : 'hidden'}">${String(st.posSearchQ || '').trim() ? renderPosSearchDropdownHtml(catalog) : ''}</div>
         </div>
         <div class="flex items-center gap-3 ml-auto">
+          <button type="button" onclick="window.openRacikanModalFromPos && window.openRacikanModalFromPos()" class="ons-pos-bar-tool font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800" title="Resep Dokter &amp; Obat Racikan (Compound)">&#128138; + Racikan / Resep</button>
           <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool" title="Kalkulator Dosis &amp; Aturan Pakai">&#129658; Hitung Dosis</button>
           <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
           <div class="text-right">
@@ -4518,6 +4519,7 @@
                       <td class="text-xs font-mono-num align-top">${idx + 1}</td>
                       <td class="text-xs align-top min-w-[180px]">
                         <div class="font-bold leading-snug">${S().esc(it.nama_dagang)} ${it.tier_applied === 'GROSIR_AUTO' ? '<span class="badge-bpom bpom-bebas text-[9px]">GROSIR AUTO</span>' : ''}</div>
+                        ${it.racikan_nama ? `<div class="mt-0.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 inline-flex items-center gap-1">&#128138; ${S().esc(it.racikan_nama)}</span></div>` : ''}
                         <div class="flex flex-wrap items-center gap-1 mt-1">
                           <select aria-label="Aturan Pakai" onchange="window.posSetAturanPakai(${idx}, this.value);renderActiveView();" class="ons-select text-[10px] py-0.5 px-1.5 min-h-0 h-6 max-w-[175px]">
                             ${['', '3 x 1 Sesudah Makan', '3 x 1 Sebelum Makan', '2 x 1 Sesudah Makan', '1 x 1 Malam Hari', '1 x 1 Pagi Hari', 'Oles Tipis 2x Sehari (Obat Luar)'].map((opt) => `<option value="${S().esc(opt)}" ${(it.aturan_pakai || '') === opt ? 'selected' : ''}>${opt || 'Signa / Etiket...'}</option>`).join('')}
@@ -6774,6 +6776,352 @@
       navigator.clipboard.writeText(txt).catch(() => {});
     }
     global.toast('Teks Rekap Malam Harian berhasil disalin ke clipboard!', 'ok');
+  };
+
+  
+  // ==========================================================================
+  // ONS FARMA COMPOUND & PRESCRIPTION ENGINE (APOTEK DIGITAL STANDARD V18.5)
+  // ==========================================================================
+  let posModalRacikanState = {
+    noResep: '',
+    tglResep: '',
+    dokterNama: '',
+    pasienNama: '',
+    namaRacikan: 'Racikan Batuk Flu / Demam Anak',
+    bentukSediaan: 'Bungkus', // Bungkus, Kapsul, Botol, Pot, Salep
+    jumlahBungkus: 10,
+    aturanPakai: '3 x 1 Bungkus Sesudah Makan',
+    jasaRacik: 5000,
+    embalase: 2500,
+    ingredients: []
+  };
+
+  global.openRacikanModalFromPos = () => {
+    const st = S().AppState;
+    const cart = st.carts[st.activeCartIdx] || st.carts[0];
+    const member = st.members.find((m) => m.id_member === cart.id_member);
+
+    if (!posModalRacikanState.noResep) {
+      const todayNum = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+      posModalRacikanState.noResep = 'R/' + todayNum + '-' + String(Math.floor(100 + Math.random() * 900));
+    }
+    posModalRacikanState.tglResep = new Date().toISOString().slice(0, 10);
+    posModalRacikanState.pasienNama = cart.pelanggan_nama || (member ? member.nama_pasien : '') || 'Pasien Umum';
+    posModalRacikanState.dokterNama = cart.dokter_nama || '';
+
+    if (!posModalRacikanState.ingredients.length && st.masterObat.length) {
+      const o1 = st.masterObat.find((o) => (o.nama_dagang || '').toLowerCase().includes('paracetamol') || (o.nama_dagang || '').toLowerCase().includes('sanmol')) || st.masterObat[0];
+      const o2 = st.masterObat.find((o) => (o.nama_dagang || '').toLowerCase().includes('cetirizine') || (o.nama_dagang || '').toLowerCase().includes('ctm')) || (st.masterObat[1] || st.masterObat[0]);
+      posModalRacikanState.ingredients = [
+        { id_obat: o1.id_obat, dosis_mg: 250, kekuatan_mg: 500, satuan_pakai: 'Tablet' },
+        { id_obat: o2.id_obat, dosis_mg: 2, kekuatan_mg: 4, satuan_pakai: 'Tablet' }
+      ];
+    }
+
+    renderPosModalRacikanDialog();
+  };
+
+  function renderPosModalRacikanDialog() {
+    const st = S().AppState;
+    const s = posModalRacikanState;
+
+    // Hitung pemakaian bahan & subtotal harga
+    let totalBahanRp = 0;
+    const calculatedIngs = s.ingredients.map((ing, idx) => {
+      const ob = st.masterObat.find((o) => o.id_obat === ing.id_obat) || {};
+      const dosis = Math.max(0.1, Number(ing.dosis_mg || 1));
+      const kekuatan = Math.max(0.1, Number(ing.kekuatan_mg || 1));
+      const exactNeed = (Number(s.jumlahBungkus || 1) * dosis) / kekuatan;
+      const roundedQty = Math.max(1, Math.ceil(exactNeed));
+      const hargaSatuan = Number(ob.harga_umum || 0);
+      const subHarga = roundedQty * hargaSatuan;
+      totalBahanRp += subHarga;
+      return {
+        idx,
+        id_obat: ing.id_obat,
+        nama_dagang: ob.nama_dagang || 'Obat',
+        satuan_dasar: ob.satuan_dasar || 'Tablet',
+        dosis_mg: dosis,
+        kekuatan_mg: kekuatan,
+        exactNeed,
+        roundedQty,
+        hargaSatuan,
+        subHarga,
+        stokAda: S().getSellableStok(ing.id_obat)
+      };
+    });
+
+    const totalJasaEmbalase = Number(s.jasaRacik || 0) + Number(s.embalase || 0);
+    const totalGrandRacikan = totalBahanRp + totalJasaEmbalase;
+    const estPerBungkus = Math.round(totalGrandRacikan / Math.max(1, Number(s.jumlahBungkus || 1)));
+
+    const bodyHtml = `
+      <div class="p-5 space-y-4 text-xs">
+        <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="badge-bpom bpom-keras">PELAYANAN APOTEK</span>
+              <span class="text-xs font-mono font-bold text-blue-600">${S().esc(s.noResep)}</span>
+            </div>
+            <h3 class="text-base font-extrabold mt-1 text-slate-800 dark:text-slate-100">&#128138; Penebusan Resep Racikan (Compound Engine)</h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Multi-bahan sediaan, konversi dosis presisi, tuslah/embalase farmasi, &amp; pemotongan stok atomik FEFO.</p>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 text-slate-400 hover:text-slate-700">&times;</button>
+        </div>
+
+        <!-- Header Resep & Identitas Pasien / Dokter -->
+        <div class="p-3.5 rounded-xl border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div>
+            <label class="font-bold block mb-1">No. Resep Dokter *</label>
+            <input type="text" class="ons-input font-mono text-xs" value="${S().esc(s.noResep)}" onchange="posModalRacikanState.noResep=this.value"/>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Tgl Resep</label>
+            <input type="date" class="ons-input font-mono text-xs" value="${S().esc(s.tglResep)}" onchange="posModalRacikanState.tglResep=this.value"/>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Dokter Penulis Resep</label>
+            <input type="text" class="ons-input text-xs" placeholder="dr. Spesialis / Umum" value="${S().esc(s.dokterNama)}" onchange="posModalRacikanState.dokterNama=this.value"/>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Nama Pasien *</label>
+            <input type="text" class="ons-input text-xs" placeholder="Nama Pasien" value="${S().esc(s.pasienNama)}" onchange="posModalRacikanState.pasienNama=this.value"/>
+          </div>
+        </div>
+
+        <!-- Spesifikasi Racikan -->
+        <div class="p-3.5 rounded-xl border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5" style="border-color:var(--ons-border)">
+          <div class="sm:col-span-2">
+            <label class="font-bold block mb-1">Nama Racikan / Formula *</label>
+            <input type="text" class="ons-input text-xs font-semibold" value="${S().esc(s.namaRacikan)}" onchange="posModalRacikanState.namaRacikan=this.value"/>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Bentuk Sediaan</label>
+            <select class="ons-select text-xs font-bold" onchange="posModalRacikanState.bentukSediaan=this.value;renderPosModalRacikanDialog();">
+              ${['Bungkus', 'Kapsul', 'Botol Sirup', 'Pot Salep', 'Sachet'].map((b) => `<option value="${b}" ${s.bentukSediaan === b ? 'selected' : ''}>${b}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Jumlah Jadi (${S().esc(s.bentukSediaan)}) *</label>
+            <input type="number" min="1" max="100" class="ons-input font-mono-num text-xs font-extrabold text-blue-600" value="${s.jumlahBungkus}" onchange="posModalRacikanState.jumlahBungkus=Math.max(1, Number(this.value||1));renderPosModalRacikanDialog();"/>
+          </div>
+          <div class="sm:col-span-4">
+            <label class="font-bold block mb-1">Signa / Aturan Pakai</label>
+            <div class="flex gap-2">
+              <input type="text" class="ons-input text-xs flex-1" value="${S().esc(s.aturanPakai)}" onchange="posModalRacikanState.aturanPakai=this.value"/>
+              <select class="ons-select text-xs max-w-[200px]" onchange="if(this.value){posModalRacikanState.aturanPakai=this.value;renderPosModalRacikanDialog();}">
+                <option value="">-- Preset Signa --</option>
+                <option value="3 x 1 Bungkus Sesudah Makan">3 x 1 Sesudah Makan</option>
+                <option value="3 x 1 Bungkus Sebelum Makan">3 x 1 Sebelum Makan</option>
+                <option value="2 x 1 Bungkus Sesudah Makan">2 x 1 Sesudah Makan</option>
+                <option value="1 x 1 Bungkus Malam Hari">1 x 1 Malam Hari</option>
+                <option value="P.R.N (Bila Demam / Sakit)">P.R.N (Bila Demam)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Komposisi Bahan Racikan (Multi-Ingredient) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="font-extrabold text-xs flex items-center gap-1.5 text-slate-800 dark:text-slate-100">
+              <span>Komposisi Bahan Aktif (${calculatedIngs.length} Bahan)</span>
+              <span class="text-[10px] text-slate-500 font-normal">&bull; Potong otomatis FEFO saat bayar</span>
+            </div>
+            <button type="button" onclick="window.addPosModalRacikanIng()" class="ons-btn ons-btn-ghost text-xs text-blue-600 font-bold">+ Tambah Bahan</button>
+          </div>
+
+          <div class="space-y-2">
+            ${calculatedIngs.map((ing) => `
+              <div class="p-3 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <div class="flex items-center gap-2">
+                  <select class="ons-select text-xs font-semibold flex-1 min-w-[220px]" onchange="window.updatePosModalRacikanIng(${ing.idx}, 'id_obat', this.value)">
+                    ${st.masterObat.map((o) => `<option value="${o.id_obat}" ${o.id_obat === ing.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)} (${S().rp(o.harga_umum)}/${S().esc(o.satuan_dasar)}) - Stok: ${S().getSellableStok(o.id_obat)}</option>`).join('')}
+                  </select>
+                  <button type="button" onclick="window.removePosModalRacikanIng(${ing.idx})" ${calculatedIngs.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-7" title="Hapus bahan">&times;</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                  <div>
+                    <label class="text-[10px] font-semibold block text-slate-500">Dosis / ${S().esc(s.bentukSediaan)} (mg)</label>
+                    <input type="number" min="0.1" step="any" class="ons-input font-mono-num text-xs py-1" value="${ing.dosis_mg}" onchange="window.updatePosModalRacikanIng(${ing.idx}, 'dosis_mg', this.value)"/>
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-semibold block text-slate-500">Kekuatan Sediaan (mg)</label>
+                    <input type="number" min="0.1" step="any" class="ons-input font-mono-num text-xs py-1" value="${ing.kekuatan_mg}" onchange="window.updatePosModalRacikanIng(${ing.idx}, 'kekuatan_mg', this.value)"/>
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-semibold block text-slate-500">Kebutuhan Bahan</label>
+                    <div class="font-mono-num font-bold text-blue-700 dark:text-blue-300 text-xs mt-1">
+                      ${ing.exactNeed.toFixed(2)} &rarr; <b>${ing.roundedQty} ${S().esc(ing.satuan_dasar)}</b>
+                    </div>
+                  </div>
+                  <div class="text-right sm:text-right">
+                    <label class="text-[10px] font-semibold block text-slate-500">Subtotal Bahan</label>
+                    <div class="font-mono-num font-extrabold text-xs text-slate-800 dark:text-slate-100 mt-1">${S().rp(ing.subHarga)}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Biaya Layanan Farmasi (Tuslah & Embalase) -->
+        <div class="p-3.5 rounded-xl border grid grid-cols-1 sm:grid-cols-3 gap-3" style="border-color:var(--ons-border)">
+          <div>
+            <label class="font-bold block mb-1">Jasa Racik / Tuslah (Rp)</label>
+            <input type="number" min="0" step="500" class="ons-input font-mono-num text-xs" value="${s.jasaRacik}" onchange="posModalRacikanState.jasaRacik=Number(this.value||0);renderPosModalRacikanDialog();"/>
+            <div class="text-[10px] text-slate-500 mt-0.5">Jasa keahlian peracikan farmasi</div>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Embalase / Kemasan (Rp)</label>
+            <input type="number" min="0" step="500" class="ons-input font-mono-num text-xs" value="${s.embalase}" onchange="posModalRacikanState.embalase=Number(this.value||0);renderPosModalRacikanDialog();"/>
+            <div class="text-[10px] text-slate-500 mt-0.5">Bahan kemasan (${S().esc(s.bentukSediaan)}, kapsul/kertas)</div>
+          </div>
+          <div class="bg-blue-50/60 dark:bg-slate-800/60 p-2.5 rounded-lg border border-blue-200 dark:border-blue-800 flex flex-col justify-center">
+            <div class="text-[11px] text-slate-600 dark:text-slate-300">Estimasi Total Resep Racikan:</div>
+            <div class="text-lg font-extrabold font-mono-num text-emerald-600 mt-0.5">${S().rp(totalGrandRacikan)}</div>
+            <div class="text-[10px] font-mono-num text-slate-500">(${S().rp(estPerBungkus)} / ${S().esc(s.bentukSediaan)})</div>
+          </div>
+        </div>
+
+        <!-- Tombol Aksi Eksekusi -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.printRacikanEtiketDirect('PUTIH')" class="ons-btn ons-btn-ghost text-xs">Cetak Etiket Putih</button>
+            <button type="button" onclick="window.printRacikanEtiketDirect('BIRU')" class="ons-btn ons-btn-ghost text-xs text-blue-600">Cetak Etiket Biru</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+            <button type="button" onclick="window.submitRacikanToPosCart()" class="ons-btn ons-btn-emerald text-xs font-bold py-2.5 px-4 shadow-sm">
+              &#10003; Masukkan ke Keranjang Kasir (${calculatedIngs.length} Bahan) &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    S().openModal(bodyHtml, '680px');
+  }
+
+  global.addPosModalRacikanIng = () => {
+    const st = S().AppState;
+    const ob = st.masterObat[0] || {};
+    posModalRacikanState.ingredients.push({
+      id_obat: ob.id_obat || '',
+      dosis_mg: 100,
+      kekuatan_mg: 500,
+      satuan_pakai: 'Tablet'
+    });
+    renderPosModalRacikanDialog();
+  };
+
+  global.removePosModalRacikanIng = (idx) => {
+    if (posModalRacikanState.ingredients.length > 1) {
+      posModalRacikanState.ingredients.splice(idx, 1);
+      renderPosModalRacikanDialog();
+    }
+  };
+
+  global.updatePosModalRacikanIng = (idx, field, val) => {
+    if (posModalRacikanState.ingredients[idx]) {
+      posModalRacikanState.ingredients[idx][field] = (field === 'dosis_mg' || field === 'kekuatan_mg') ? Number(val || 1) : val;
+      renderPosModalRacikanDialog();
+    }
+  };
+
+  global.submitRacikanToPosCart = () => {
+    const st = S().AppState;
+    const cart = st.carts[st.activeCartIdx] || st.carts[0];
+    const s = posModalRacikanState;
+
+    if (!s.ingredients.length) {
+      global.toast('Komposisi bahan racikan belum ada!', 'warn');
+      return;
+    }
+
+    const racikanLabel = s.namaRacikan + ' (' + s.jumlahBungkus + ' ' + s.bentukSediaan + ')';
+    let addedCount = 0;
+
+    s.ingredients.forEach((ing) => {
+      const ob = st.masterObat.find((o) => o.id_obat === ing.id_obat);
+      if (!ob) return;
+      const dosis = Math.max(0.1, Number(ing.dosis_mg || 1));
+      const kekuatan = Math.max(0.1, Number(ing.kekuatan_mg || 1));
+      const qtyButir = Math.max(1, Math.ceil((Number(s.jumlahBungkus || 1) * dosis) / kekuatan));
+
+      // Cek apakah item sudah ada di keranjang untuk racikan ini
+      const existing = cart.items.find((it) => it.id_obat === ing.id_obat && it.racikan_nama === racikanLabel);
+      if (existing) {
+        existing.qty = Number(existing.qty || 0) + qtyButir;
+      } else {
+        const hrg = Number(ob.harga_umum || 0);
+        cart.items.push({
+          id_obat: ing.id_obat,
+          nama_dagang: ob.nama_dagang,
+          satuan: ob.satuan_dasar || 'Tablet',
+          qty: qtyButir,
+          faktor_konversi: 1,
+          harga_jual: hrg,
+          diskon_item: 0,
+          aturan_pakai: s.aturanPakai,
+          racikan_nama: racikanLabel,
+          golongan_bpom: ob.golongan_bpom || 'BEBAS',
+          unitOptions: [{ label: ob.satuan_dasar || 'Tablet', ratio: 1, displayText: ob.satuan_dasar || 'Tablet' }]
+        });
+      }
+      addedCount++;
+    });
+
+    // Pasang Tuslah, Embalase, Dokter & Identitas ke Keranjang
+    cart.biaya_servis = (Number(cart.biaya_servis || 0)) + Number(s.jasaRacik || 0);
+    cart.biaya_embalase = (Number(cart.biaya_embalase || 0)) + Number(s.embalase || 0);
+    if (s.dokterNama) cart.dokter_nama = s.dokterNama;
+    if (s.pasienNama && (!cart.pelanggan_nama || cart.pelanggan_nama === 'Pasien Umum')) cart.pelanggan_nama = s.pasienNama;
+    if (s.noResep) cart.kode_eksternal = s.noResep;
+
+    ONSStore.closeModal();
+    global.toast('Racikan ' + racikanLabel + ' berhasil dimasukkan ke Keranjang Kasir (+ ' + addedCount + ' bahan FEFO, Tuslah & Embalase)!', 'ok');
+    global.renderActiveView();
+  };
+
+  global.printRacikanEtiketDirect = (jenis) => {
+    const s = posModalRacikanState;
+    const bg = jenis === 'BIRU' ? '#E0F2FE' : '#FFFFFF';
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const budDate = new Date(Date.now() + 30 * 86400000).toLocaleDateString('id-ID');
+
+    // Rangkum komposisi bahan
+    const bahanList = s.ingredients.map((ing) => {
+      const ob = S().AppState.masterObat.find((o) => o.id_obat === ing.id_obat);
+      return (ob ? ob.nama_dagang : ing.id_obat) + ' ' + ing.dosis_mg + 'mg';
+    }).join(', ');
+
+    S().printHtmlZone(`<div style="width:60mm;border:2px solid #000;background:${bg};padding:8px;font-family:Arial,sans-serif;font-size:10px;line-height:1.3;">
+      <div style="text-align:center;border-bottom:1.5px solid #000;padding-bottom:4px;font-weight:bold;">
+        ${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/>
+        <span style="font-size:8px;font-weight:normal;">SIA: ${S().esc(prof.sia_toko || '445/1042/SIA/2024')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span><br/>
+        <span style="font-size:8px;font-weight:normal;">${S().esc(prof.alamat_usaha || 'Jl. Raya Apotek No. 10')}</span>
+      </div>
+      <div style="margin:5px 0;display:flex;justify-content:space-between;border-bottom:1px dashed #000;padding-bottom:3px;font-size:9px;">
+        <span>No: <b>${S().esc(s.noResep)}</b></span>
+        <span>Tgl: ${new Date().toLocaleDateString('id-ID')}</span>
+      </div>
+      <div style="margin:4px 0;font-size:10px;">
+        <div><b>Pasien:</b> ${S().esc(s.pasienNama)}</div>
+        ${s.dokterNama ? `<div><b>Dokter:</b> ${S().esc(s.dokterNama)}</div>` : ''}
+        <div><b>Obat:</b> ${S().esc(s.namaRacikan)} (${s.jumlahBungkus} ${S().esc(s.bentukSediaan)})</div>
+        <div style="font-size:8.5px;color:#333;margin-top:2px;"><b>Komposisi:</b> ${S().esc(bahanList)}</div>
+      </div>
+      <div style="border:1.5px solid #000;border-radius:4px;padding:6px;font-weight:bold;text-align:center;font-size:11.5px;margin:6px 0;background:#F8FAFC;">
+        ${S().esc(s.aturanPakai)}
+      </div>
+      <div style="font-size:8.5px;text-align:center;margin-top:3px;font-weight:bold;">
+        BUD (Beyond Use Date): ${budDate} (30 Hari)
+      </div>
+      <div style="text-align:center;font-size:8px;margin-top:4px;border-top:1px dashed #000;padding-top:3px;">
+        ${jenis === 'BIRU' ? '*** OBAT LUAR / TIDAK UNTUK DITELAN ***' : 'Semoga Lekas Sembuh &bull; Simpan di Tempat Kering &amp; Sejuk'}
+      </div>
+    </div>`);
   };
 
   global.ONSViewsAuthDashPos = { renderPublicStandaloneIfApplicable, renderLoginView, renderDashboardView, renderPosView };
