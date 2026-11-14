@@ -528,25 +528,40 @@
 
     return `<div class="space-y-4">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <button type="button" onclick="window.setSpFilterStatus('SEMUA')" class="ons-card p-3.5 text-left cursor-pointer ${spFilterStatus === 'SEMUA' ? 'ring-2 ring-blue-500' : ''}">
-          <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Pesanan Pembelian (SP)</div>
-          <div class="text-2xl font-extrabold font-mono-num mt-0.5">${allSp.length}</div>
-          <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Semua golongan BPOM</div>
+        <button type="button" onclick="window.setSpFilterStatus('SEMUA')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">TOTAL PESANAN (SP)</span>
+            <span class="text-sm">📋</span>
+          </div>
+          <div class="text-2xl font-extrabold font-mono-num mt-1 text-slate-900 dark:text-white">${allSp.length} <span class="text-xs font-normal text-slate-500">SP</span></div>
+          <div class="text-[10.5px] text-slate-500 mt-0.5">Semua golongan BPOM CDOB</div>
         </button>
-        <button type="button" onclick="window.setSpFilterStatus('MENUNGGU')" class="ons-card p-3.5 text-left cursor-pointer ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-blue-500' : ''}">
-          <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Menunggu Pengiriman PBF</div>
-          <div class="text-2xl font-extrabold font-mono-num mt-0.5 text-amber-600">${waitingCnt}</div>
-          <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Siap cetak A4 / kirim WA PBF</div>
+
+        <button type="button" onclick="window.setSpFilterStatus('MENUNGGU')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400">MENUNGGU PENGIRIMAN</span>
+            <span class="text-sm">⏳</span>
+          </div>
+          <div class="text-2xl font-extrabold font-mono-num mt-1 text-amber-600">${waitingCnt} <span class="text-xs font-normal text-amber-500">SP</span></div>
+          <div class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-0.5">Siap cetak A4 / kirim WA PBF</div>
         </button>
-        <button type="button" onclick="window.setSpFilterStatus('SEBAGIAN')" class="ons-card p-3.5 text-left cursor-pointer ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-blue-500' : ''}">
-          <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Diterima Sebagian (Parsial)</div>
-          <div class="text-2xl font-extrabold font-mono-num mt-0.5 text-blue-600">${partialCnt}</div>
-          <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Masih ada sisa kiriman susulan</div>
+
+        <button type="button" onclick="window.setSpFilterStatus('SEBAGIAN')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400">DITERIMA SEBAGIAN</span>
+            <span class="text-sm">📦</span>
+          </div>
+          <div class="text-2xl font-extrabold font-mono-num mt-1 text-blue-600">${partialCnt} <span class="text-xs font-normal text-blue-500">SP</span></div>
+          <div class="text-[10.5px] text-blue-600 dark:text-blue-400 mt-0.5">Ada sisa kiriman susulan</div>
         </button>
-        <button type="button" onclick="window.setSpFilterStatus('SELESAI')" class="ons-card p-3.5 text-left cursor-pointer ${spFilterStatus === 'SEBAGIAN' ? '' : ''}${spFilterStatus === 'SELESAI' ? 'ring-2 ring-blue-500' : ''}">
-          <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Selesai Diterima (GRN)</div>
-          <div class="text-2xl font-extrabold font-mono-num mt-0.5 text-emerald-600">${doneCnt}</div>
-          <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Sinkron faktur &amp; kartu stok</div>
+
+        <button type="button" onclick="window.setSpFilterStatus('SELESAI')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'SELESAI' ? 'ring-2 ring-emerald-500 shadow-sm' : 'hover:border-emerald-400'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">SELESAI DITERIMA</span>
+            <span class="text-sm">✅</span>
+          </div>
+          <div class="text-2xl font-extrabold font-mono-num mt-1 text-emerald-600">${doneCnt} <span class="text-xs font-normal text-emerald-500">SP</span></div>
+          <div class="text-[10.5px] text-emerald-600 dark:text-emerald-400 mt-0.5">Faktur &amp; kartu stok sinkron</div>
         </button>
       </div>
 

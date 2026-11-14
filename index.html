@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.0.1"/>
+  <meta name="application-version" content="v18.1.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.0.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.1.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.0.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.1.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" style="display:none!important;" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.0.1"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.0.1"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.0.1"></script>
+  <script src="./vendor/ons-code128.js?v=18.1.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.1.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.1.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.0.1"></script>
-  <script src="./js/struk-engine.js?v=18.0.1"></script>
-  <script src="./js/demo-engine.js?v=18.0.1"></script>
-  <script src="./js/api-turbo.js?v=18.0.1"></script>
-  <script src="./js/store.js?v=18.0.1"></script>
-  <script src="./js/invoice-scanner.js?v=18.0.1"></script>
-  <script src="./js/barcode-scanner.js?v=18.0.1"></script>
+  <script src="./js/config.js?v=18.1.0"></script>
+  <script src="./js/struk-engine.js?v=18.1.0"></script>
+  <script src="./js/demo-engine.js?v=18.1.0"></script>
+  <script src="./js/api-turbo.js?v=18.1.0"></script>
+  <script src="./js/store.js?v=18.1.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.1.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.1.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.0.1"></script>
-  <script src="./js/views-procurement-pro.js?v=18.0.1"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.0.1"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.0.1"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.0.1"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.0.1"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.1.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.1.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.1.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.1.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.1.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.1.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -172,7 +172,7 @@
               desc: 'Analisis stok minimum, pesanan otomatis & buat Surat Pesanan (SP A4) ke PBF CDOB.',
               kw: 'defecta pesanan otomatis surat pesanan sp print preview a4 pbf cdob sla',
               tabs: [
-                { subTab: 'order', label: 'Defecta', kw: 'defecta stok minimal maksimal jenis sp pesanan otomatis rekomendasi pbf' },
+                { subTab: 'order', label: 'Defecta & Restok', kw: 'defecta stok minimal maksimal jenis sp pesanan otomatis rekomendasi pbf' },
                 { subTab: 'sp', label: 'Surat Pesanan (A4)', kw: 'surat pesanan sp a4 print preview pbf kirim wa' }
               ]
             },
@@ -186,7 +186,7 @@
                 { subTab: 'input', label: 'Terima Faktur (GRN / Scan)', kw: 'terima faktur grn sp multi item ocr scan batch masuk' },
                 { subTab: 'harga', label: 'Analisa Harga & Margin', kw: 'analisa harga margin hpp naik keputusan harga jual' },
                 { subTab: 'retur', label: 'Retur BAR-PBF', kw: 'retur barang pbf near ed kadaluarsa rusak recall' },
-                { subTab: 'konsinyasi', label: 'Konsinyasi', kw: 'konsinyasi titip jual distributor settlement laku bayar' }
+                { subTab: 'konsinyasi', label: 'Konsinyasi Distributor', kw: 'konsinyasi titip jual distributor settlement laku bayar' }
               ]
             }
           ]
@@ -1786,9 +1786,8 @@
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         let swReloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (swReloading || sessionStorage.getItem('ons_sw_reloaded_v18_0') === '1') return;
+          if (swReloading) return;
           swReloading = true;
-          sessionStorage.setItem('ons_sw_reloaded_v18_0', '1');
           location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then((reg) => {
