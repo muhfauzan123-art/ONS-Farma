@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.1.5"/>
+  <meta name="application-version" content="v18.1.6"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.1.5"/>
+  <link rel="manifest" href="./manifest.json?v=18.1.6"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.1.5"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.1.6"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" style="display:none!important;" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.1.5"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.1.5"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.1.5"></script>
+  <script src="./vendor/ons-code128.js?v=18.1.6"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.1.6"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.1.6"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.1.5"></script>
-  <script src="./js/struk-engine.js?v=18.1.5"></script>
-  <script src="./js/demo-engine.js?v=18.1.5"></script>
-  <script src="./js/api-turbo.js?v=18.1.5"></script>
-  <script src="./js/store.js?v=18.1.5"></script>
-  <script src="./js/invoice-scanner.js?v=18.1.5"></script>
-  <script src="./js/barcode-scanner.js?v=18.1.5"></script>
+  <script src="./js/config.js?v=18.1.6"></script>
+  <script src="./js/struk-engine.js?v=18.1.6"></script>
+  <script src="./js/demo-engine.js?v=18.1.6"></script>
+  <script src="./js/api-turbo.js?v=18.1.6"></script>
+  <script src="./js/store.js?v=18.1.6"></script>
+  <script src="./js/invoice-scanner.js?v=18.1.6"></script>
+  <script src="./js/barcode-scanner.js?v=18.1.6"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.1.5"></script>
-  <script src="./js/views-procurement-pro.js?v=18.1.5"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.1.5"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.1.5"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.1.5"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.1.5"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.1.6"></script>
+  <script src="./js/views-procurement-pro.js?v=18.1.6"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.1.6"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.1.6"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.1.6"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.1.6"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1029,7 +1029,15 @@
         if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
         if (data.store_profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(data.store_profile);
         syncOwnerIdentityFromProfile(data.store_profile);
-        st.masterObat = data.master_obat || [];
+        st.masterObat = (data.master_obat || []).map((o) => {
+          if (Number(o.harga_umum) === 5 && (Number(o.hpp_avg) >= 100 || /emturnas/i.test(String(o.nama_dagang || '')))) {
+            o.harga_umum = 5000;
+            if (Number(o.harga_member) === 5) o.harga_member = 5000;
+            if (Number(o.harga_grosir) === 5) o.harga_grosir = 5000;
+            if (Number(o.harga_faskes) === 5) o.harga_faskes = 5000;
+          }
+          return o;
+        });
         st.masterKategori = data.master_kategori || (ONSStore.DEFAULT_MASTER_KATEGORI ? ONSStore.DEFAULT_MASTER_KATEGORI.slice() : []);
         st.masterSatuan = data.master_satuan || (ONSStore.DEFAULT_MASTER_SATUAN ? ONSStore.DEFAULT_MASTER_SATUAN.slice() : []);
         st.masterRak = data.master_rak || (ONSStore.DEFAULT_MASTER_RAK ? ONSStore.DEFAULT_MASTER_RAK.slice() : []);

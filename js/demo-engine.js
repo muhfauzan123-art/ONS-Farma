@@ -618,6 +618,18 @@
       };
       changed = true;
     }
+    if (Array.isArray(db.master_obat)) {
+      db.master_obat.forEach((o) => {
+        // Auto-heal produk yang sempat tersimpan harga 5 akibat bug Number("5.000")
+        if (Number(o.harga_umum) === 5 && (Number(o.hpp_avg) >= 100 || /emturnas/i.test(String(o.nama_dagang || '')))) {
+          o.harga_umum = 5000;
+          if (Number(o.harga_member) === 5) o.harga_member = 5000;
+          if (Number(o.harga_grosir) === 5) o.harga_grosir = 5000;
+          if (Number(o.harga_faskes) === 5) o.harga_faskes = 5000;
+          changed = true;
+        }
+      });
+    }
     if (!Array.isArray(db.master_dokter)) {
       db.master_dokter = [
         { id_dokter: 'DOK-001', nama_dokter: 'dr. Andi Pratama, Sp.PD', spesialisasi: 'Penyakit Dalam', no_sip: '446/109/SIP-DOK/2024', no_str: '3111100220145120', faskes_klinik: 'Klinik Pratama Sehat Sentosa', no_wa: '628119900101', email: 'andi.pratama@kliniksehat.id', alamat: 'Jl. Diponegoro No. 45', catatan: 'Dokter mitra utama pasien hipertensi & dislipidemia', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
@@ -1094,14 +1106,30 @@
     }
 
     if (action === 'obat.save') {
+      const sanitizeNum = (v, def = 0) => {
+        if (typeof v === 'number') return isNaN(v) ? def : v;
+        if (!v) return def;
+        const cleaned = String(v).replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.-]/g, '');
+        const n = parseFloat(cleaned);
+        return isNaN(n) ? def : n;
+      };
       const existingIdx = db.master_obat.findIndex((o) => o.id_obat === d.id_obat);
       const item = Object.assign({
         id_obat: d.id_obat || ('OBT-' + String(db.master_obat.length + 1).padStart(3, '0')),
-        min_qty_grosir: Number(d.min_qty_grosir || 10),
-        harga_faskes: Number(d.harga_faskes || d.harga_grosir || d.harga_member || 0),
         status_aktif: 'AKTIF',
         updated_at: nowIso
       }, d);
+      item.hpp_avg = sanitizeNum(item.hpp_avg, 0);
+      item.harga_umum = sanitizeNum(item.harga_umum, 0);
+      item.harga_member = sanitizeNum(item.harga_member, item.harga_umum);
+      item.harga_grosir = sanitizeNum(item.harga_grosir, item.harga_umum);
+      item.min_qty_grosir = Math.max(2, sanitizeNum(item.min_qty_grosir, 10));
+      item.harga_faskes = sanitizeNum(item.harga_faskes, item.harga_grosir || item.harga_member || item.harga_umum);
+      item.rasio_sedang = Math.max(1, sanitizeNum(item.rasio_sedang, 10));
+      item.rasio_besar = Math.max(1, sanitizeNum(item.rasio_besar, 100));
+      item.stok_min = Math.max(0, sanitizeNum(item.stok_min, 10));
+      item.stok_max = Math.max(1, sanitizeNum(item.stok_max, 100));
+
       if (existingIdx >= 0) db.master_obat[existingIdx] = Object.assign(db.master_obat[existingIdx], item);
       else db.master_obat.push(item);
       db.epoch++;
