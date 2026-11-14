@@ -7969,7 +7969,7 @@
     const estTotalPo = lowStock.reduce((acc, o) => acc + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0);
     let lostSalesList = [];
     try {
-      const rawLs = localStorage.getItem('ons_dash_lost_sales_v1');
+      const rawLs = localStorage.getItem('ons_lost_sales_v10') || localStorage.getItem('ons_dash_lost_sales_v1');
       if (rawLs) lostSalesList = JSON.parse(rawLs) || [];
     } catch (e) {}
 
@@ -8032,6 +8032,7 @@
               <span class="font-bold text-slate-800 dark:text-slate-100">${S().esc(ls.nama_obat)}</span>
               <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold font-mono-num">${ls.qty || 1}x dicari</span>
               <span class="text-[10px] text-slate-400 font-mono-num">${S().esc(ls.tanggal || '')}</span>
+              <button type="button" onclick="window.addLostSaleToPurchasePlan('${S().esc(ls.nama_obat)}', ${Number(ls.qty || 1)})" class="ons-btn ons-btn-emerald text-[10px] py-0.5 px-1.5 font-bold shadow-sm" title="Tambahkan langsung ke Rencana Pembelian SP">+ Rencana SP</button>
             </span>
           `).join('')}
         </div>
@@ -10042,6 +10043,43 @@
     });
     _writeLocalList(PLANS_KEY, plans);
     global.toast(added ? `${added} item rekomendasi Defecta ditambahkan ke Rencana Pembelian.` : 'Semua item Defecta sudah ada di Rencana Pembelian.', added ? 'ok' : 'info');
+    global.renderActiveView();
+  };
+
+  global.addLostSaleToPurchasePlan = (namaObat, qty) => {
+    const st = S().AppState;
+    const plans = _readLocalList(PLANS_KEY);
+    const cleanName = String(namaObat || '').trim();
+    if (!cleanName) return;
+    const ob = (st.masterObat || []).find((m) => (m.nama_dagang || '').toLowerCase() === cleanName.toLowerCase()) ||
+               (st.masterObat || []).find((m) => (m.nama_dagang || '').toLowerCase().includes(cleanName.toLowerCase()));
+    const pbfName = (ob && ob.pbf_utama) || ((st.supplierPbf && st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PBF Rekanan');
+    const q = Math.max(1, Number(qty || 1));
+    const hpp = Number((ob && (ob.hpp_terakhir || ob.hpp_avg)) || 10000);
+    const jenisSp = ob ? _resolvePlanJenisSp(ob.golongan_bpom) : 'REGULER';
+
+    const existing = plans.find((p) => (p.nama_produk || '').toLowerCase() === cleanName.toLowerCase());
+    if (existing) {
+      existing.kuantitas = Number(existing.kuantitas || 0) + (q * 5);
+      existing.selected = true;
+    } else {
+      plans.push({
+        id_plan: 'PLN-LOST-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5).toUpperCase(),
+        id_obat: ob ? ob.id_obat : ('CUSTOM-' + Math.random().toString(36).slice(2, 6).toUpperCase()),
+        nama_produk: ob ? ob.nama_dagang : cleanName,
+        jenis_sp: jenisSp,
+        nama_supplier: pbfName,
+        kuantitas: Math.max(5, q * 5),
+        satuan: (ob && ob.satuan_dasar) || 'Unit',
+        harga_beli: hpp,
+        keterangan: 'Kebutuhan Pasien dari Penjualan Tertolak (Lost Sales)',
+        selected: true
+      });
+    }
+    _writeLocalList(PLANS_KEY, plans);
+    global.toast('"' + cleanName + '" berhasil ditambahkan ke Rencana Pembelian SP!', 'ok');
+    fakturTab = 'rencana';
+    rencanaSubMode = 'RENCANA';
     global.renderActiveView();
   };
 

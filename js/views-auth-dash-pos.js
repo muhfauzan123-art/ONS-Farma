@@ -3560,14 +3560,16 @@
               <div class="text-[10px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok}</div>
             </div>
             ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[10px] px-2 py-1 min-h-0 h-7">Cabang</button>` : ''}
-            <button type="button" onclick="event.stopPropagation();window.posAddToCart('${S().esc(o.id_obat)}')" ${isEmpty ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs px-2.5 py-1 min-h-0 h-7">+</button>
+            ${isEmpty ? `
+              <button type="button" onclick="event.stopPropagation();window.openSubstitusiModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-amber text-[10px] px-2 py-1 min-h-0 h-7 font-bold" title="Cari Alternatif Obat Sejenis">Substitusi</button>
+            ` : `
+              <button type="button" onclick="event.stopPropagation();window.posAddToCart('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-xs px-2.5 py-1 min-h-0 h-7">+</button>
+            `}
           </div>
         </div>`;
       }
 
-      const emptyAction = (S().isMultiBranchEnabled && S().isMultiBranchEnabled())
-        ? `window.openBranchCompareDrawer('${S().esc(o.id_obat)}')`
-        : `window.toast('Stok habis — periksa Batch FEFO atau input Faktur PBF untuk restok.','warn')`;
+      const emptyAction = `window.openSubstitusiModal('${S().esc(o.id_obat)}')`;
 
       return `<div onclick="${isEmpty ? emptyAction : `window.posAddToCart('${S().esc(o.id_obat)}')`}" class="ons-pos-card gap-2 ${qtyInCart ? 'is-incart' : ''} ${isEmpty ? 'is-empty' : ''}">
         <div>
@@ -3595,8 +3597,12 @@
           </div>
           <div class="flex gap-1 shrink-0">
             ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8" title="Cek Stok Antar-Cabang">Cabang</button>` : ''}
-            ${o.substitusi_ids ? `<button type="button" onclick="event.stopPropagation();window.openSubstitusiModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8" title="Alternatif Substitusi">Sub</button>` : ''}
-            <button type="button" onclick="event.stopPropagation();window.posAddToCart('${S().esc(o.id_obat)}')" ${isEmpty ? 'disabled' : ''} class="ons-btn ons-btn-primary text-xs px-2.5 py-1 min-h-0 h-8">+ Keranjang</button>
+            <button type="button" onclick="event.stopPropagation();window.openSubstitusiModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8 font-semibold" title="Alternatif Substitusi Sejenis">Sub</button>
+            ${isEmpty ? `
+              <button type="button" onclick="event.stopPropagation();window.openSubstitusiModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-amber text-xs px-2.5 py-1 min-h-0 h-8 font-bold" title="Stok habis — Cari alternatif dengan zat aktif sejenis">Cari Pengganti</button>
+            ` : `
+              <button type="button" onclick="event.stopPropagation();window.posAddToCart('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-xs px-2.5 py-1 min-h-0 h-8">+ Keranjang</button>
+            `}
           </div>
         </div>
       </div>`;
@@ -4463,7 +4469,8 @@
               ${st.carts.length > 1 ? `<button type="button" onclick="window.closePosCartTab(${idx})" title="Tutup antrean" class="px-1.5 py-1 text-xs hover:bg-red-500/20 text-red-500 font-bold">&times;</button>` : ''}
             </div>`;
           }).join('')}
-          <button type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">+ Hold Antrean</button>
+          <button type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7" title="Tahan transaksi pelanggan saat ini">+ Hold Antrean</button>
+          <button type="button" onclick="window.openDaftarAntreanTertahanModal()" class="ons-btn ${st.carts.length > 1 ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7" title="Lihat semua antrean pelanggan tertahan">📋 Antrean (${st.carts.length})</button>
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
@@ -4762,7 +4769,10 @@
     if (!nama) return global.toast('Tulis nama produk yang ditanyakan pasien.', 'warn');
     const arr = _getDashLostSales();
     arr.push({ tanggal: toLocalYmd_(new Date()), nama_obat: nama, qty, est_harga: estHarga, alasan });
-    try { localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr.slice(-100))); } catch (e) {}
+    try {
+      localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr.slice(-100)));
+      localStorage.setItem('ons_dash_lost_sales_v1', JSON.stringify(arr.slice(-100)));
+    } catch (e) {}
     global.toast('Penjualan tertolak berhasil dicatat!', 'ok');
     global.renderActiveView();
   };
@@ -4771,7 +4781,10 @@
     const arr = _getDashLostSales();
     if (idx < 0 || idx >= arr.length) return;
     arr.splice(idx, 1);
-    try { localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr)); } catch (e) {}
+    try {
+      localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr));
+      localStorage.setItem('ons_dash_lost_sales_v1', JSON.stringify(arr));
+    } catch (e) {}
     global.toast('Catatan penjualan tertolak dihapus.', 'info');
     global.renderActiveView();
   };
@@ -5783,20 +5796,177 @@
     global.renderActiveView();
   };
 
+  global.recordLostSaleQuick = (namaObat, idObat, estHarga) => {
+    const arr = _getDashLostSales();
+    const clean = String(namaObat || 'Obat').trim();
+    arr.push({
+      tanggal: toLocalYmd_(new Date()),
+      id_obat: idObat || '',
+      nama_obat: clean,
+      qty: 1,
+      est_harga: Number(estHarga || 0),
+      alasan: 'Stok kosong di apotek (Pasien tolak alternatif)'
+    });
+    try {
+      localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr.slice(-100)));
+      localStorage.setItem('ons_dash_lost_sales_v1', JSON.stringify(arr.slice(-100)));
+    } catch (e) {}
+    S().closeModal();
+    global.toast('Permintaan "' + clean + '" dicatat ke Penjualan Tertolak & Defecta!', 'ok');
+    global.renderActiveView();
+  };
+
   global.openSubstitusiModal = (idObat) => {
-    const o = S().AppState.masterObat.find((x) => x.id_obat === idObat);
-    const subIds = String((o && o.substitusi_ids) || '').split(',').map((s) => s.trim()).filter(Boolean);
-    const subs = S().AppState.masterObat.filter((x) => subIds.includes(x.id_obat));
-    S().openModal(`<div class="p-6 space-y-4">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Alternatif Substitusi Generik / Terapeutik</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
-      <p class="text-xs" style="color:var(--ons-text-soft)">Rekomendasi pengganti aman untuk <b>${S().esc(o ? o.nama_dagang : idObat)}</b>:</p>
-      <div class="space-y-2">
-        ${subs.length ? subs.map((s) => `<div class="p-3 rounded-lg border flex justify-between items-center">
-          <div><div class="font-bold text-sm">${S().esc(s.nama_dagang)}</div><div class="text-xs">Stok Jual: ${S().getSellableStok(s.id_obat)} | Harga: ${S().rp(s.harga_umum)}</div></div>
-          <button onclick="posAddToCart('${s.id_obat}');ONSStore.closeModal();" class="ons-btn ons-btn-primary text-xs">Pilih Obat Ini</button>
-        </div>`).join('') : '<div class="text-xs">Belum ada alternatif yang ditautkan pada produk ini.</div>'}
+    const st = S().AppState;
+    const o = (st.masterObat || []).find((x) => x.id_obat === idObat);
+    if (!o) return global.toast('Data obat tidak ditemukan.', 'warn');
+
+    const subIds = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const explicitSubs = (st.masterObat || []).filter((x) => subIds.includes(x.id_obat));
+
+    // Dynamic search: Active ingredient (zat_aktif)
+    const zatClean = String(o.zat_aktif || '').trim().toLowerCase();
+    const dynamicZat = zatClean ? (st.masterObat || []).filter((x) => {
+      if (x.id_obat === idObat || subIds.includes(x.id_obat)) return false;
+      const xz = String(x.zat_aktif || '').trim().toLowerCase();
+      return xz && (xz.includes(zatClean) || zatClean.includes(xz));
+    }) : [];
+
+    // Dynamic search: Therapeutic class / category
+    const katClean = String(o.kategori || '').trim().toLowerCase();
+    const dynamicKat = katClean ? (st.masterObat || []).filter((x) => {
+      if (x.id_obat === idObat || subIds.includes(x.id_obat) || dynamicZat.some((d) => d.id_obat === x.id_obat)) return false;
+      return String(x.kategori || '').trim().toLowerCase() === katClean;
+    }) : [];
+
+    const allSubs = [
+      ...explicitSubs.map((s) => ({ ...s, matchType: 'Eksplisit Terdaftar', matchScore: 3 })),
+      ...dynamicZat.map((s) => ({ ...s, matchType: 'Zat Aktif Ekuivalen', matchScore: 2 })),
+      ...dynamicKat.map((s) => ({ ...s, matchType: 'Kategori / Terapi Serupa', matchScore: 1 }))
+    ].sort((a, b) => {
+      const sa = S().getSellableStok(a.id_obat) > 0 ? 1 : 0;
+      const sb = S().getSellableStok(b.id_obat) > 0 ? 1 : 0;
+      if (sa !== sb) return sb - sa;
+      return b.matchScore - a.matchScore;
+    });
+
+    const sellStokO = S().getSellableStok(o.id_obat);
+
+    S().openModal(`<div class="p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
+        <div>
+          <h3 class="font-extrabold text-base flex items-center gap-2">
+            <span>🔄 Rekomendasi Substitusi Generik &amp; Terapeutik</span>
+          </h3>
+          <p class="text-xs" style="color:var(--ons-text-soft)">
+            Obat dicari: <b>${S().esc(o.nama_dagang)}</b> &bull; Zat Aktif: <span class="font-semibold text-blue-600">${S().esc(o.zat_aktif || '-')}</span> &bull; Stok Apotek: <b class="${sellStokO > 0 ? 'text-emerald-600' : 'text-red-600'}">${sellStokO} ${S().esc(o.satuan_dasar || 'Unit')}</b>
+          </p>
+        </div>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl font-bold">&times;</button>
       </div>
-    </div>`);
+
+      <div class="space-y-2.5 max-h-[55vh] overflow-y-auto">
+        ${allSubs.length ? allSubs.map((s) => {
+          const sStok = S().getSellableStok(s.id_obat);
+          const hasStok = sStok > 0;
+          return `<div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 transition-all ${hasStok ? 'hover:border-blue-400 bg-white dark:bg-slate-900 shadow-xs' : 'opacity-65 bg-slate-50 dark:bg-slate-800/50'}" style="border-color:var(--ons-border)">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-sm text-slate-900 dark:text-white">${S().esc(s.nama_dagang)}</span>
+                ${S().bpomBadge(s.golongan_bpom)}
+                <span class="badge-bpom ${s.matchScore === 2 ? 'bpom-bebas' : (s.matchScore === 3 ? 'bpom-terbatas' : 'bpom-prekursor')} text-[10px]">${s.matchType}</span>
+                ${s.pabrik ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">${S().esc(s.pabrik)}</span>` : ''}
+              </div>
+              <div class="text-xs mt-1" style="color:var(--ons-text-soft)">
+                Zat Aktif: <b>${S().esc(s.zat_aktif || '-')}</b> &bull; Rak: <b>${S().esc(s.rak_lokasi || '-')}</b> &bull; Kategori: ${S().esc(s.kategori || '-')}
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <div class="text-right">
+                <div class="text-xs font-mono-num font-bold text-blue-600">${S().rp(s.harga_umum)} <span class="text-[10px] font-normal" style="color:var(--ons-text-soft)">/${S().esc(s.satuan_dasar || 'Unit')}</span></div>
+                <div class="text-[11px] font-mono-num ${hasStok ? 'text-emerald-600 font-bold' : 'text-red-500 font-semibold'}">
+                  ${hasStok ? `Stok Jual: ${sStok} ${S().esc(s.satuan_dasar || 'Unit')}` : 'Stok Kosong'}
+                </div>
+              </div>
+              <button type="button" onclick="window.posAddToCart('${S().esc(s.id_obat)}'); ONSStore.closeModal();" ${hasStok ? '' : 'disabled'} class="ons-btn ${hasStok ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost opacity-50 cursor-not-allowed'} text-xs py-1.5 px-3">
+                ${hasStok ? '+ Pilih Obat Ini' : 'Stok Habis'}
+              </button>
+            </div>
+          </div>`;
+        }).join('') : `
+          <div class="p-6 rounded-xl border text-center space-y-2" style="border-color:var(--ons-border)">
+            <div class="text-2xl">🔍</div>
+            <div class="font-bold text-sm">Belum ada alternatif substitusi di katalog apotek.</div>
+            <div class="text-xs" style="color:var(--ons-text-soft)">Tidak ditemukan produk lain dengan kandungan zat aktif <i>"${S().esc(o.zat_aktif || '-')}"</i> atau kategori <i>"${S().esc(o.kategori || '-')}"</i>.</div>
+          </div>
+        `}
+      </div>
+
+      <div class="p-3 rounded-xl border bg-amber-500/10 border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="space-y-0.5">
+          <div class="font-bold text-amber-900 dark:text-amber-200">Pasien tidak menginginkan obat pengganti?</div>
+          <div class="text-[11px] text-amber-800/80 dark:text-amber-300/80">Catat sebagai Penjualan Tertolak agar otomatis tersinkron ke Rencana Pembelian (Defecta).</div>
+        </div>
+        <button type="button" onclick="window.recordLostSaleQuick('${S().esc(o.nama_dagang)}', '${S().esc(o.id_obat)}', ${Number(o.harga_umum || 0)})" class="ons-btn ons-btn-amber text-xs py-1.5 px-3 font-bold shadow-sm">⚡ Catat Penjualan Tertolak</button>
+      </div>
+    </div>`, '640px');
+  };
+
+  global.openDaftarAntreanTertahanModal = () => {
+    const st = S().AppState;
+    S().openModal(`<div class="p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
+        <div>
+          <h3 class="font-extrabold text-base flex items-center gap-2">
+            <span>📋 Daftar Antrean / Transaksi Tertahan</span>
+            <span class="ons-badge ons-badge-blue text-xs">${st.carts.length} Antrean</span>
+          </h3>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Pilih antrean pelanggan untuk dilanjutkan atau buka antrean baru.</p>
+        </div>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-2.5 max-h-[60vh] overflow-y-auto">
+        ${st.carts.map((c, idx) => {
+          const isAct = idx === st.activeCartIdx;
+          const itemsCount = (c.items || []).length;
+          const tot = (c.items || []).reduce((s, it) => s + Math.max(0, Number(it.harga_jual || 0) * Number(it.qty || 0) - Number(it.diskon_item || 0)), 0);
+          return `<div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 transition-all ${isAct ? 'bg-blue-500/10 border-blue-500 shadow-sm' : 'hover:border-blue-300'}" style="border-color:${isAct ? '#0066FE' : 'var(--ons-border)'}">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-sm text-slate-800 dark:text-slate-100">${S().esc(c.label || ('Antrean #' + (idx + 1)))}</span>
+                ${isAct ? '<span class="badge-bpom bpom-bebas text-[10px]">SEDANG DILAYANI</span>' : '<span class="badge-bpom bpom-prekursor text-[10px]">TERTAHAN</span>'}
+                ${c.held_at ? `<span class="text-[11px] font-mono-num text-slate-400">Jam: ${S().esc(c.held_at)}</span>` : ''}
+              </div>
+              <div class="text-xs mt-1" style="color:var(--ons-text-soft)">
+                <b>${itemsCount} item</b> ${c.pelanggan_nama ? `&bull; Pasien: <b>${S().esc(c.pelanggan_nama)}</b>` : ''} ${c.held_note ? `&bull; Catatan: <i>${S().esc(c.held_note)}</i>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <div class="text-right">
+                <div class="text-[10px] uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Tagihan</div>
+                <div class="font-mono-num font-extrabold text-sm text-blue-600">${S().rp(tot)}</div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                ${isAct ? `
+                  <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Tutup Dialog</button>
+                ` : `
+                  <button type="button" onclick="window.switchPosCart(${idx}); ONSStore.closeModal();" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold shadow-sm">Buka Transaksi Ini &rarr;</button>
+                `}
+                ${st.carts.length > 1 ? `
+                  <button type="button" onclick="window.closePosCartTab(${idx}); window.openDaftarAntreanTertahanModal();" class="ons-btn ons-btn-danger text-xs py-1.5 px-2" title="Hapus antrean ini">&times;</button>
+                ` : ''}
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t gap-2" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal(); window.openHoldCartModal();" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">+ Beri Nama / Tahan Aktif</button>
+        <button type="button" onclick="ONSStore.closeModal(); window.addPosCartTab('Antrean #' + (S().AppState.carts.length + 1));" class="ons-btn ons-btn-primary text-xs py-1.5 px-4 font-bold shadow-sm">+ Buat Antrean Baru</button>
+      </div>
+    </div>`, '580px');
   };
 
   /**
