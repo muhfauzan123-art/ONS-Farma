@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.4.0"/>
+  <meta name="application-version" content="v18.5.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.4.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.5.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.4.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.5.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" style="display:none!important;" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.4.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.4.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.4.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.5.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.5.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.5.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.4.0"></script>
-  <script src="./js/struk-engine.js?v=18.4.0"></script>
-  <script src="./js/demo-engine.js?v=18.4.0"></script>
-  <script src="./js/api-turbo.js?v=18.4.0"></script>
-  <script src="./js/store.js?v=18.4.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.4.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.4.0"></script>
+  <script src="./js/config.js?v=18.5.0"></script>
+  <script src="./js/struk-engine.js?v=18.5.0"></script>
+  <script src="./js/demo-engine.js?v=18.5.0"></script>
+  <script src="./js/api-turbo.js?v=18.5.0"></script>
+  <script src="./js/store.js?v=18.5.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.5.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.5.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.4.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.4.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.4.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.4.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.4.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.4.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.5.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.5.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.5.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.5.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.5.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.5.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -96,211 +96,196 @@
       }
 
       // Arsitektur Menu Apotek Digital v18.4: 6 Seksi Operasional Rapi, 17 Modul Utama + 100% Sub-Tab Terintegrasi
+      // Arsitektur Peletakan Menu Apotek Digital (100% Mengikuti Urutan & Struktur Apotek Digital)
       const MENU_TREE = [
         {
-          id: 'sect-main',
-          label: 'Dasbor & Kasir POS',
+          id: 'sect-transaksi',
+          label: 'Dasbor & Kasir',
           items: [
             {
               viewId: 'dashboard', label: 'Dashboard', icon: 'home',
-              desc: 'Dashboard Ringkasan Eksekutif, Analisis Penjualan, Pengadaan Pembelian & Status Persediaan realtime.',
-              kw: 'beranda pusat komando dashboard umum penjualan pembelian persediaan kpi ringkasan kepatuhan',
+              desc: 'Ringkasan Omzet, Penjualan, Pembelian & Persediaan.',
+              kw: 'dashboard beranda omzet penjualan pembelian persediaan',
               tabs: [
-                { subTab: 'umum', label: 'Dashboard Umum', kw: 'dashboard umum ringkasan penjualan analisis toko database apotek status persediaan kpi karyawan' },
-                { subTab: 'penjualan', label: 'Dashboard Penjualan', kw: 'dashboard penjualan pertumbuhan keuntungan riwayat terlaris pelanggan terloyal' },
-                { subTab: 'pembelian', label: 'Dashboard Pembelian', kw: 'dashboard pembelian rencana pesanan aktif hutang jatuh tempo faktur retur pbf', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'persediaan', label: 'Dashboard Persediaan', kw: 'dashboard persediaan riwayat mutasi nilai persediaan berpotensi rugi kadaluarsa' }
+                { subTab: 'umum', label: 'Dashboard Umum', kw: 'dashboard umum toko kpi omzet laba' },
+                { subTab: 'penjualan', label: 'Dashboard Penjualan', kw: 'dashboard penjualan omzet margin kasir' },
+                { subTab: 'pembelian', label: 'Dashboard Pembelian', kw: 'dashboard pembelian pesanan aktif jatuh tempo sp', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'persediaan', label: 'Dashboard Persediaan', kw: 'dashboard persediaan mutasi stok valuasi dead stock' }
               ]
             },
             {
-              viewId: 'pos', label: 'Kasir & Penjualan', icon: 'pos',
-              desc: 'Workstation kasir FEFO, cetak etiket, kas masuk/keluar laci kasir, penjualan tertolak & tutup shift kas.',
-              kw: 'kasir pos fefo penjualan jual barcode f2 f4 f9 daftar penjualan retur tertolak obat kosong tutup shift z-report kas masuk kas keluar laci',
+              viewId: 'pos', label: 'Penjualan', icon: 'pos',
+              desc: 'Kasir POS FEFO, daftar penjualan, retur, penjualan tertolak & tutup shift kasir.',
+              kw: 'penjualan kasir pos fefo barcode multi satuan retur tertolak obat kosong tutup shift',
               tabs: [
-                { subTab: 'kasir', label: 'Kasir POS (FEFO)', kw: 'kasir jual scan barcode f2 f4 f9 multi satuan box strip tablet split poin diskon etiket fefo kas masuk keluar laci' },
-                { subTab: 'riwayat', label: 'Riwayat & Nota Penjualan', kw: 'daftar penjualan riwayat transaksi nota cetak ulang rincian faktur draft salinan resep' },
-                { subTab: 'retur', label: 'Retur Penjualan (Void)', kw: 'retur penjualan void pin nota pengembalian barang kasir' },
-                { subTab: 'tertolak', label: 'Obat Kosong (Lost Sales)', kw: 'penjualan tertolak lost sale barang kosong permintaan pasien defecta', badge: 'DEFECTA' },
-                { subTab: 'tutup-shift', label: 'Tutup Shift & Z-Report', kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi laci kas kas masuk kas keluar float setoran' }
+                { subTab: 'kasir', label: 'Kasir POS (FEFO)', kw: 'kasir pos jual barcode multi satuan box strip tablet etiket kas masuk keluar laci' },
+                { subTab: 'riwayat', label: 'Daftar Penjualan', kw: 'daftar penjualan riwayat transaksi nota faktur draft salinan resep' },
+                { subTab: 'retur', label: 'Retur Penjualan', kw: 'retur penjualan void nota pengembalian barang' },
+                { subTab: 'tertolak', label: 'Penjualan Tertolak', kw: 'penjualan tertolak obat kosong permintaan pasien defecta', badge: 'DEFECTA' },
+                { subTab: 'tutup-shift', label: 'Tutup Shift Kasir', kw: 'tutup shift z-report kasir pecahan uang rekonsiliasi laci kas masuk keluar' }
               ]
             }
           ]
         },
         {
-          id: 'sect-inv',
-          label: 'Master Data & Gudang',
+          id: 'sect-pelayanan',
+          label: 'Pelayanan Apotek & Klinik',
           items: [
             {
-              viewId: 'obat', label: 'Master Data Farmasi', icon: 'pill',
-              desc: 'Database terpadu Master Produk, Kategori, Satuan Kemasan, Rak, Gudang, Kategori Pelanggan, Pajak, Supplier, Pelanggan, Dokter & Sales.',
-              kw: 'master data produk obat kfa nie bpom kategori satuan kemasan rak gudang kategori pelanggan pajak ppn supplier pelanggan dokter sales',
-              tabs: [
-                { subTab: 'obat', label: 'Master Produk & Obat', kw: 'master data produk obat kfa nie bpom harga jual beli margin code128 sku het' },
-                { subTab: 'kategori', label: 'Kategori Produk', kw: 'master kategori produk obat bebas terbatas keras herbal alat kesehatan' },
-                { subTab: 'satuan', label: 'Satuan & Konversi Kemasan', kw: 'master satuan kemasan botol box strip tablet ampul vial bungkus konversi' },
-                { subTab: 'rak', label: 'Rak & Etalase', kw: 'master rak penyimpanan gudang utama rak 1 2 3 etalase chiller display' },
-                { subTab: 'gudang', label: 'Lokasi Gudang Farmasi', kw: 'master gudang lokasi penyimpanan utama cabang transit' },
-                { subTab: 'kategori-pelanggan', label: 'Kategori Pelanggan', kw: 'master kategori pelanggan member umum vip instansi harga khusus diskon' },
-                { subTab: 'pajak', label: 'Tarif Pajak (PPN)', kw: 'master pajak ppn 11 persen tarif tanpa pajak faktur' },
-                { subTab: 'supplier', label: 'Supplier PBF Resmi', kw: 'supplier pbf cdob termin sla kontak vendor minimal order', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'pelanggan', label: 'Data Pelanggan & Pasien', kw: 'pelanggan member pasien terapi rutin alergi poin rekam medis' },
-                { subTab: 'dokter', label: 'Dokter Mitra Penulis Resep', kw: 'dokter mitra penulis resep sip str ktp satusehat klinik faskes' },
-                { subTab: 'sales', label: 'Sales & Tenaga Pelayan', kw: 'sales pelayan pegawai kasir kode sales telepon' }
-              ]
-            },
-            {
-              viewId: 'gudang', label: 'Persediaan & Stok', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
-              desc: 'Stok kadaluarsa FEFO, stok opname fisik, penyesuaian stok, perpindahan rak/gudang, kartu stok BPOM & monitor suhu.',
-              kw: 'persediaan gudang stok kadaluarsa batch fefo batas retur stok opname penyesuaian stok perpindahan stok kartu stok monitor suhu ruangan kulkas cold chain chiller',
-              tabs: [
-                { subTab: 'batch', label: 'Stok Kadaluarsa (ED)', kw: 'stok kadaluarsa batch fefo batas retur karantina recall ed 90 hari' },
-                { subTab: 'opname', label: 'Stok Opname Fisik', kw: 'stok opname cycle count riwayat opname selisih fisik', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'penyesuaian', label: 'Penyesuaian Stok (Koreksi)', kw: 'penyesuaian stok selisih opname rusak expired rekap nilai koreksi', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'transfer', label: 'Perpindahan Stok (Mutasi)', kw: 'perpindahan stok mutasi rak gudang antar cabang draft import', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'kartu-stok', label: 'Kartu Stok Digital (BPOM)', kw: 'alur obat masuk keluar kartu stok mutasi bpom cdob xlsx' },
-                { subTab: 'coldchain', label: 'Monitor Suhu (Ruang & Kulkas)', kw: 'monitor suhu ruangan kulkas chiller cold chain vaksin insulin kelembapan rh grafik laporan a4 cdob' }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'sect-buy',
-          label: 'Pengadaan & Pembelian (PBF)',
-          items: [
-            {
-              viewId: 'faktur', label: 'Pengadaan & Faktur', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
-              desc: 'Siklus pengadaan apotek terpadu: Defecta ambang stok, rencana pembelian, SP resmi BPOM, terima barang GRN/Scan, daftar faktur PBF, analisa harga & margin, retur BAR-PBF & konsinyasi.',
-              kw: 'pengadaan pembelian faktur pbf defecta ambang stok rencana pembelian surat pesanan sp bpom terima faktur grn scan ocr analisa harga margin naik hutang jatuh tempo retur bar konsinyasi',
-              tabs: [
-                { subTab: 'defecta', label: 'Defecta & Ambang ROP', kw: 'defecta stok minimal maksimal rop ambang buffer pesanan otomatis pbf oos' },
-                { subTab: 'rencana', label: 'Rencana Pembelian (PO)', kw: 'rencana pembelian penawaran sales usulan staf kalkulasi kebutuhan sp po draft' },
-                { subTab: 'sp', label: 'Surat Pesanan (SP BPOM)', kw: 'surat pesanan sp bpom resmi reguler prekursor psikotropika narkotika oot a4 print preview', badge: 'RESMI' },
-                { subTab: 'input', label: 'Terima Barang / Faktur', kw: 'terima faktur grn sp multi item ocr scan batch masuk gudang fefo' },
-                { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf tempo termin jatuh tempo status lunas' },
-                { subTab: 'harga', label: 'Analisa Harga & Margin', kw: 'analisa harga margin hpp riwayat beli pbf keputusan harga jual margin tipis naik' },
-                { subTab: 'retur', label: 'Retur Pembelian (BAR-PBF)', kw: 'retur barang pbf near ed kadaluarsa rusak recall surat bar' },
-                { subTab: 'konsinyasi', label: 'Konsinyasi Distributor', kw: 'konsinyasi titip jual distributor settlement laku bayar rekap' }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'sect-clin',
-          label: 'Pelayanan Apotek & Pasien',
-          items: [
-            {
-              viewId: 'klinis', label: 'Pelayanan Klinis', icon: 'clinical', badgeKey: 'erxPending', badgeTone: 'info',
-              desc: 'Kajian resep dokter, antrean E-Resep, SOAP SATUSEHAT, racikan & etiket, Kalkulator Dosis 41 preset, Kartu PIO & MESO.',
-              kw: 'klinis apoteker soap pio satusehat racikan etiket meso naranjo copy resep e-resep erx antrean dokter kalkulator dosis obat anak dewasa bsa infus gfr',
+              viewId: 'klinis', label: 'Pelayanan Apotek', icon: 'clinical', badgeKey: 'erxPending', badgeTone: 'info',
+              desc: 'Resep dokter, skrining SOAP, racikan, etiket BUD, PIO, kalkulator dosis & MESO BPOM.',
+              kw: 'pelayanan apotek klinis resep dokter skrining soap racikan etiket bud kalkulator dosis pio meso',
               tabs: [
                 { subTab: 'soap', label: 'Kajian Resep & SOAP', kw: 'soap pio pto kajian skrining resep satusehat' },
-                { subTab: 'erx', label: 'Antrean E-Resep Dokter', kw: 'antrean e-resep dokter mitra pin apj validasi pos' },
+                { subTab: 'erx', label: 'Antrean E-Resep', kw: 'antrean e-resep dokter mitra pin apj validasi pos' },
                 { subTab: 'racikan', label: 'Racikan & Etiket BUD', kw: 'racikan puyer multi bahan etiket putih biru beyond use date bud', badge: 'BUD' },
-                { subTab: 'kalkulator', label: 'Kalkulator Dosis (41 Preset)', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa sirup tetes tetesan infus gfr aturan minum template' },
-                { subTab: 'pio', label: 'Kartu PIO & Edukasi WA', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
+                { subTab: 'kalkulator', label: 'Kalkulator Dosis (41 Preset)', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa infus gfr' },
+                { subTab: 'pio', label: 'Pel. Informasi Obat (PIO)', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
                 { subTab: 'meso', label: 'MESO BPOM (Farmakovigilans)', kw: 'meso naranjo efek samping rotd bpom farmakovigilans' }
               ]
             },
             {
-              viewId: 'pemeriksaan', label: 'Pemeriksaan Pasien', icon: 'activity',
-              desc: 'Pemeriksaan Point-of-Care Tensi, Gula Darah, Kolesterol & Asam Urat tersimpan + kirim laporan via WhatsApp.',
-              kw: 'pemeriksaan pasien cek kesehatan tensi darah gula darah kolesterol asam urat wa',
+              viewId: 'pemeriksaan', label: 'Pelayanan Klinik', icon: 'activity',
+              desc: 'Pemeriksaan Point-of-Care Tensi, Gula Darah, Kolesterol & Asam Urat.',
+              kw: 'pelayanan klinik pemeriksaan pasien cek kesehatan tensi gula kolesterol asam urat wa',
               tabs: [
                 { subTab: 'semua', label: 'Semua Pemeriksaan', kw: 'ringkasan paket cek kesehatan lengkap input riwayat wa' },
-                { subTab: 'tensi', label: 'Cek Tekanan Darah', kw: 'tensi tekanan darah sistol diastol nadi mmhg hipertensi' },
-                { subTab: 'gula', label: 'Cek Gula Darah', kw: 'gula darah glukosa gds gdp 2jpp diabetes' },
-                { subTab: 'kolesterol', label: 'Cek Kolesterol Total', kw: 'kolesterol total lemak darah mg/dl' },
-                { subTab: 'asam_urat', label: 'Cek Asam Urat', kw: 'asam urat uric acid gout nyeri sendi pria wanita' }
-              ]
-            },
-            {
-              viewId: 'crm-wa', label: 'CRM & WhatsApp Gateway', icon: 'chat',
-              desc: 'Database kontak pasien, broadcast pengingat minum obat / edukasi terjadwal & monitor antrean Fonnte.',
-              kw: 'crm kontak whatsapp broadcast blast fonnte opt out reminder pengingat minum obat',
-              tabs: [
-                { subTab: 'kontak', label: 'Database Pasien & Kontak', kw: 'kontak crm pasien wa 08 62 opt out riwayat' },
-                { subTab: 'blast', label: 'Broadcast Pesan WA', kw: 'broadcast blast wa reminder pengingat edukasi' },
-                { subTab: 'antrean', label: 'Antrean Notifikasi Fonnte', kw: 'antrean log wa fonnte email status antrean' }
+                { subTab: 'tensi', label: 'Pemeriksaan Tensi Darah', kw: 'tensi tekanan darah sistol diastol nadi mmhg hipertensi' },
+                { subTab: 'gula', label: 'Pemeriksaan Gula Darah', kw: 'gula darah glukosa gds gdp diabetes' },
+                { subTab: 'kolesterol', label: 'Pemeriksaan Kolesterol', kw: 'kolesterol total lemak darah mg/dl' },
+                { subTab: 'asam_urat', label: 'Pemeriksaan Asam Urat', kw: 'asam urat uric acid gout nyeri sendi' }
               ]
             }
           ]
         },
         {
-          id: 'sect-fin',
-          label: 'Keuangan & Analitik Bisnis',
+          id: 'sect-logistik',
+          label: 'Persediaan & Pengadaan',
           items: [
             {
-              viewId: 'finance', label: 'Keuangan & Buku Kas', icon: 'finance',
-              desc: 'Laba-Rugi P&L, buku kas & kunci periode, piutang pelanggan, hutang PBF, pajak & slip gaji A4.',
-              kw: 'keuangan laba rugi pnl jurnal kas lock piutang hutang pajak ppn slip gaji',
+              viewId: 'gudang', label: 'Persediaan', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
+              desc: 'Stok kadaluarsa FEFO, stok opname, penyesuaian, mutasi perpindahan & kartu stok BPOM.',
+              kw: 'persediaan stok gudang kadaluarsa batch fefo batas retur opname penyesuaian perpindahan kartu stok monitor suhu',
               tabs: [
-                { subTab: 'pnl', label: 'Laba-Rugi (P&L)', kw: 'laba rugi pnl omzet hpp margin valuasi aset xlsx' },
-                { subTab: 'akun-kas', label: 'Daftar Rekening & Kas', kw: 'akun kas bank ewallet saldo transfer kas utama' },
-                { subTab: 'jurnal', label: 'Buku Kas & Jurnal', kw: 'jurnal petty cash kunci periode tutup buku transaksi baru' },
-                { subTab: 'piutang', label: 'Piutang Usaha Pelanggan', kw: 'piutang usaha tempo pelanggan klinik tanda terima faktur ttf' },
-                { subTab: 'hutang', label: 'Hutang Faktur PBF', kw: 'utang usaha pbf cicil bayar faktur catat utang riwayat' },
+                { subTab: 'batch', label: 'Stok Kadaluarsa (ED)', kw: 'stok kadaluarsa batch fefo batas retur karantina recall ed 90 hari' },
+                { subTab: 'opname', label: 'Stok Opname', kw: 'stok opname cycle count riwayat opname selisih fisik', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'penyesuaian', label: 'Penyesuaian Stok', kw: 'penyesuaian stok koreksi selisih rusak expired rekap nilai', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'transfer', label: 'Perpindahan Stok', kw: 'perpindahan stok mutasi rak gudang antar cabang draft import', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'alur obat masuk keluar kartu stok mutasi bpom cdob xlsx' },
+                { subTab: 'coldchain', label: 'Monitor Suhu (Ruang & Kulkas)', kw: 'monitor suhu ruangan kulkas chiller cold chain vaksin insulin kelembapan rh' }
+              ]
+            },
+            {
+              viewId: 'faktur', label: 'Pembelian', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
+              desc: 'Defecta saran order, SP resmi BPOM, terima barang faktur GRN/OCR, analisa margin & retur PBF.',
+              kw: 'pembelian pengadaan faktur defecta rencana surat pesanan sp bpom terima grn scan analisa harga retur konsinyasi',
+              tabs: [
+                { subTab: 'defecta', label: 'Defecta & Ambang ROP', kw: 'defecta stok minimal maksimal rop buffer order otomatis pbf oos' },
+                { subTab: 'rencana', label: 'Rencana Pengadaan', kw: 'rencana pengadaan pembelian penawaran sales usulan kebutuhan sp po' },
+                { subTab: 'sp', label: 'Surat Pesanan (SP)', kw: 'surat pesanan sp resmi bpom reguler prekursor psikotropika narkotika oot', badge: 'RESMI' },
+                { subTab: 'input', label: 'Faktur Pembelian (GRN)', kw: 'faktur pembelian grn sp ocr scan batch masuk gudang fefo' },
+                { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf tempo termin jatuh tempo lunas' },
+                { subTab: 'harga', label: 'Analisa Harga & Margin', kw: 'analisa harga margin hpp riwayat beli pbf keputusan harga jual' },
+                { subTab: 'retur', label: 'Retur Pembelian (BAR)', kw: 'retur pembelian barang pbf near ed rusak recall surat bar' },
+                { subTab: 'konsinyasi', label: 'Konsinyasi Masuk', kw: 'konsinyasi masuk titip jual distributor settlement laku bayar' }
+              ]
+            },
+            {
+              viewId: 'obat', label: 'Master Data', icon: 'pill',
+              desc: 'Master Produk, Kategori, Satuan Kemasan, Rak, Gudang, Kategori Pelanggan, Pajak, Supplier & Dokter.',
+              kw: 'master data produk obat kfa nie bpom kategori satuan kemasan rak gudang pelanggan pajak supplier dokter sales',
+              tabs: [
+                { subTab: 'obat', label: 'Daftar Produk', kw: 'master data produk obat kfa nie bpom harga jual beli margin barcode sku het' },
+                { subTab: 'kategori', label: 'Kategori Produk', kw: 'master kategori produk obat bebas terbatas keras herbal alat kesehatan' },
+                { subTab: 'satuan', label: 'Satuan & Konversi', kw: 'master satuan kemasan botol box strip tablet ampul vial bungkus konversi' },
+                { subTab: 'rak', label: 'Rak Penyimpanan', kw: 'master rak penyimpanan gudang utama rak 1 2 3 etalase chiller display' },
+                { subTab: 'gudang', label: 'Gudang', kw: 'master gudang lokasi penyimpanan utama cabang transit' },
+                { subTab: 'kategori-pelanggan', label: 'Kategori Pelanggan', kw: 'master kategori pelanggan member umum vip instansi harga khusus diskon' },
+                { subTab: 'pajak', label: 'Pajak (PPN)', kw: 'master pajak ppn 11 persen tarif tanpa pajak faktur' },
+                { subTab: 'supplier', label: 'Supplier / PBF', kw: 'supplier pbf cdob termin sla kontak vendor minimal order', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'pelanggan', label: 'Pelanggan / Pasien', kw: 'pelanggan member pasien terapi rutin alergi poin rekam medis' },
+                { subTab: 'dokter', label: 'Dokter Mitra', kw: 'dokter mitra penulis resep sip str ktp satusehat klinik faskes' },
+                { subTab: 'sales', label: 'Sales / Pelayan', kw: 'sales pelayan pegawai kasir kode sales telepon' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'sect-finansial',
+          label: 'Keuangan & Laporan',
+          items: [
+            {
+              viewId: 'finance', label: 'Keuangan', icon: 'finance',
+              desc: 'Daftar Akun Kas, Buku Kas, Utang Usaha PBF, Piutang Pelanggan & Laba Rugi.',
+              kw: 'keuangan daftar akun kas buku kas utang usaha piutang laba rugi pnl pajak slip gaji',
+              tabs: [
+                { subTab: 'pnl', label: 'Laporan Laba Rugi', kw: 'laba rugi pnl omzet hpp margin valuasi aset xlsx' },
+                { subTab: 'akun-kas', label: 'Daftar Akun Kas', kw: 'akun kas bank ewallet saldo transfer kas utama' },
+                { subTab: 'jurnal', label: 'Buku Kas', kw: 'buku kas petty cash kunci periode tutup buku transaksi baru' },
+                { subTab: 'piutang', label: 'Piutang Usaha', kw: 'piutang usaha tempo pelanggan klinik tanda terima faktur ttf' },
+                { subTab: 'hutang', label: 'Utang Usaha', kw: 'utang usaha pbf cicil bayar faktur catat utang riwayat jatuh tempo' },
                 { subTab: 'pajak', label: 'Pajak & Slip Gaji', kw: 'pajak ppn pph slip gaji karyawan a4' }
               ]
             },
             {
-              viewId: 'sipnap', label: 'Laporan & SIPNAP', icon: 'report',
-              desc: 'Laporan Penjualan, Pembelian, Persediaan, Keuangan Terstruktur, SIPNAP Kemenkes & Analisis Pareto.',
-              kw: 'laporan penjualan pembelian persediaan keuangan laba rugi sipnap kemenkes pareto dead stock',
+              viewId: 'sipnap', label: 'Laporan', icon: 'report',
+              desc: 'Laporan Penjualan, Pembelian, Persediaan, Keuangan, SIPNAP Kemenkes & Analisis Pareto.',
+              kw: 'laporan penjualan pembelian persediaan keuangan sipnap kemenkes pareto analisis',
               tabs: [
                 { subTab: 'penjualan', label: 'Laporan Penjualan', kw: 'laporan penjualan harian per produk transaksi pelanggan sales omzet keuntungan' },
                 { subTab: 'pembelian', label: 'Laporan Pembelian', kw: 'laporan pembelian produk faktur pbf kuantitas nilai beli' },
                 { subTab: 'persediaan', label: 'Laporan Persediaan', kw: 'laporan persediaan mutasi stok awal beli retur jual pindah opname akhir saldo' },
                 { subTab: 'keuangan', label: 'Laporan Keuangan', kw: 'laporan keuangan laba rugi neraca arus kas bulanan tahunan persentase' },
                 { subTab: 'narkotika', label: 'SIPNAP Kemenkes', kw: 'sipnap narkotika psikotropika oot resmi kemenkes' },
-                { subTab: 'pareto', label: 'Pareto ABC & WHO', kw: 'pareto abc fast slow moving who' },
+                { subTab: 'pareto', label: 'Analisis Pareto ABC', kw: 'pareto abc fast slow moving omzet keuntungan kontribusi' },
                 { subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock permintaan tertolak lost sales barang kosong' }
               ]
             },
             {
-              viewId: 'analisis', label: 'Analisis Bisnis', icon: 'rocket',
-              desc: 'Analisis Pareto A-B-C, Analisis Pembelian Stok Buffer, & Analisis Rekomendasi Harga Jual Produk.',
-              kw: 'analisis pareto abc analisis pembelian pesanan otomatis buffer stock deadstock understock overstock analisis harga produk markup update sekaligus',
+              viewId: 'crm-wa', label: 'Kontak & CRM', icon: 'chat',
+              desc: 'Kontak Pasien, Broadcast WhatsApp Edukasi & Antrean Notifikasi Fonnte.',
+              kw: 'kontak crm pasien whatsapp broadcast blast fonnte opt out reminder pengingat minum obat',
               tabs: [
-                { subTab: 'pareto', label: 'Analisis Pareto ABC', kw: 'analisis pareto abc fast slow moving omzet keuntungan' },
-                { subTab: 'pembelian', label: 'Analisis Pembelian Buffer', kw: 'analisis pembelian buffer stock po otomatis lead time target pemenuhan deadstock understock' },
-                { subTab: 'harga', label: 'Rekomendasi Harga Jual', kw: 'analisis harga produk markup rekomendasi harga jual update sekaligus' }
+                { subTab: 'kontak', label: 'Daftar Kontak Pasien', kw: 'kontak crm pasien wa 08 62 opt out riwayat' },
+                { subTab: 'blast', label: 'Broadcast WhatsApp', kw: 'broadcast blast wa reminder pengingat edukasi' },
+                { subTab: 'antrean', label: 'Antrean Notifikasi', kw: 'antrean log wa fonnte email status antrean' }
               ]
             }
           ]
         },
         {
-          id: 'sect-sys',
-          label: 'Sistem & Pengaturan',
+          id: 'sect-pengaturan',
+          label: 'Manajemen & Pengaturan',
           items: [
             {
               viewId: 'users', label: 'Manajemen Pengguna', icon: 'users',
-              desc: 'Daftar pengguna apotek, peran & hak akses RBAC, jadwal kerja, riwayat presensi, shift & log aktivitas.',
-              kw: 'manajemen pengguna daftar akun kasir apj peran hak akses rbac jadwal kerja presensi shift sesi log aktivitas staf',
+              desc: 'Daftar pengguna, peran RBAC, jadwal kerja, presensi staf, riwayat shift & log aktivitas.',
+              kw: 'manajemen pengguna akun kasir apj peran hak akses rbac jadwal kerja presensi shift log staf',
               tabs: [
                 { subTab: 'daftar', label: 'Daftar Pengguna', kw: 'daftar pengguna akun user admin apj kasir nama role no hp status' },
                 { subTab: 'peran', label: 'Peran & Hak Akses', kw: 'peran hak akses rbac permission role admin apoteker penanggung jawab cashier' },
-                { subTab: 'jadwal', label: 'Jadwal Kerja Shift', kw: 'jadwal kerja shift kalender jam kerja staf pro', badge: 'PRO' },
-                { subTab: 'presensi', label: 'Riwayat Presensi Staf', kw: 'riwayat presensi absensi staf jam masuk pulang pro', badge: 'PRO' },
-                { subTab: 'shift', label: 'Riwayat Sesi Shift', kw: 'riwayat shift sesi kasir daftar buka tutup selisih anggota status' },
-                { subTab: 'log', label: 'Log Aktivitas Staf', kw: 'log aktivitas audit jejak rekam aktivitas staf audit', badge: 'AUDIT' }
+                { subTab: 'jadwal', label: 'Jadwal Kerja', kw: 'jadwal kerja shift kalender jam kerja staf pro', badge: 'PRO' },
+                { subTab: 'presensi', label: 'Riwayat Presensi', kw: 'riwayat presensi absensi staf jam masuk pulang pro', badge: 'PRO' },
+                { subTab: 'shift', label: 'Riwayat Shift', kw: 'riwayat shift sesi kasir daftar buka tutup selisih anggota status' },
+                { subTab: 'log', label: 'Log Aktivitas', kw: 'log aktivitas audit jejak rekam aktivitas staf audit', badge: 'AUDIT' }
               ]
             },
             {
-              viewId: 'settings', label: 'Pengaturan Apotek', icon: 'settings',
-              desc: 'Konfirmasi profil pemilik & tempat usaha, metode pembayaran, pengguna, struk thermal, reset pabrik & log audit.',
+              viewId: 'settings', label: 'Pengaturan', icon: 'settings',
+              desc: 'Profil bisnis SIA/SIPA, metode bayar, struk thermal, brankas script properties & log audit.',
               kw: 'pengaturan profil bisnis pemilik anissa tempat usaha foto logo sia sipa metode pembayaran akun sandi pin struk thermal script properties reset pabrik audit',
               tabs: [
-                { subTab: 'profil', label: 'Profil Usaha & SIA/SIPA', kw: 'profil bisnis pemilik anissa tempat usaha foto logo sia sipa konfirmasi legalitas' },
-                { subTab: 'metode-bayar', label: 'Metode Bayar & QRIS/EDC', kw: 'metode pembayaran kas non tunai mdr qris transfer debit edc asuransi' },
-                { subTab: 'akun', label: 'Pengguna & PIN Otorisasi', kw: 'akun user kasir apj sipa ganti sandi pin otorisasi' },
-                { subTab: 'struk', label: 'Desain Struk Thermal', kw: 'desain struk thermal 58mm 80mm escpos qr bluetooth' },
+                { subTab: 'profil', label: 'Profil Bisnis', kw: 'profil bisnis pemilik anissa tempat usaha foto logo sia sipa konfirmasi legalitas' },
+                { subTab: 'metode-bayar', label: 'Metode Pembayaran', kw: 'metode pembayaran kas non tunai mdr qris transfer debit edc asuransi' },
+                { subTab: 'akun', label: 'Pengguna & PIN', kw: 'akun user kasir apj sipa ganti sandi pin otorisasi' },
+                { subTab: 'struk', label: 'Konfigurasi Struk', kw: 'desain struk thermal 58mm 80mm escpos qr bluetooth' },
                 { subTab: 'vault', label: 'Brankas & Reset Data', kw: 'script properties fonnte vault migrasi backup drive reset data pabrik audit db' },
                 { subTab: 'audit', label: 'Log Audit Keamanan', kw: 'log audit aktivitas keamanan riwayat ubah' }
               ]
             },
             {
               viewId: 'mobile-preview', label: 'Tampilan Mode HP', icon: 'smartphone',
-              desc: 'Pratinjau & simulasi tampilan aplikasi apotek di layar smartphone kasir/opname.',
+              desc: 'Pratinjau antarmuka aplikasi apotek di layar smartphone kasir/mobile.',
               kw: 'mode hp mobile preview simulasi pwa android responsive'
             }
           ]
@@ -404,77 +389,69 @@
         const badges = getMenuBadges();
         const st = ONSStore.AppState;
         const curView = st.activeView;
-        const allTabViewsCount = tree.reduce((n, s) => n + s.items.filter((i) => (i.tabs || []).length > 1).length, 0);
-        const topToggle = allTabViewsCount > 0 ? `<div class="flex items-center justify-between px-2 pb-1 text-[10px] ons-nav-muted ons-hide-collapsed">
-          <span class="uppercase tracking-wider font-bold">Navigasi Modul</span>
-          <button type="button" onclick="window.toggleAllSubmenus()" class="px-1.5 py-0.5 rounded ons-nav-all-btn font-semibold" title="Buka atau tutup semua sub-menu">${openSubmenus.size > 0 ? 'Tutup Sub' : 'Buka Semua'}</button>
-        </div>` : '';
 
-        return topToggle + tree.map((sect) => `
-          <div class="ons-menu-section">
-            <div class="ons-nav-section-title">
-              <span>${ONSStore.esc(sect.label)}</span>
+        const allItems = [];
+        tree.forEach((sect) => {
+          (sect.items || []).forEach((item) => allItems.push(item));
+        });
+
+        return allItems.map((item) => {
+          const isAct = curView === item.viewId;
+          const bVal = item.badgeKey ? Number(badges[item.badgeKey] || 0) : 0;
+          const tabs = item.tabs || [];
+          const hasTabs = tabs.length > 1;
+          const defSub = tabs.length ? tabs[0].subTab : '';
+          const curSub = (st.subTabs && st.subTabs[item.viewId]) || defSub;
+          const isOpen = hasTabs && openSubmenus.has(item.viewId);
+
+          return `<div class="ons-nav-group ${isOpen ? 'is-open' : ''} ${isAct ? 'has-active' : ''}" data-nav-group-id="${item.viewId}">
+            <div data-nav-row-id="${item.viewId}" class="ons-nav-row ${isAct ? 'active' : ''}">
+              <button type="button"
+                data-nav-id="${item.viewId}"
+                title="${ONSStore.esc(item.label)}"
+                onclick="window.onSelectMenuItem('${item.viewId}','${defSub}',${hasTabs})"
+                class="ons-nav-row-btn">
+                ${svgIcon(item.icon, 'ons-menu-icon')}
+                <span class="truncate ons-hide-collapsed font-semibold">${ONSStore.esc(item.label)}</span>
+              </button>
+              ${bVal > 0 ? `<span class="ons-nav-badge ons-hide-collapsed ${item.badgeTone || ''}">${bVal}</span>` : ''}
+              ${hasTabs ? `<button type="button"
+                data-subcaret-id="${item.viewId}"
+                aria-label="Buka atau tutup sub-menu ${ONSStore.esc(item.label)}"
+                aria-expanded="${isOpen ? 'true' : 'false'}"
+                onclick="window.toggleMenuSub('${item.viewId}')"
+                class="ons-nav-caret ons-hide-collapsed"
+                title="${isOpen ? 'Tutup sub-menu' : 'Buka sub-menu'} (${tabs.length})">
+                ${svgIcon('chevron', 'ons-chevron-sub')}
+              </button>` : ''}
             </div>
-            <div class="space-y-0.5">
-              ${sect.items.map((item) => {
-                const isAct = curView === item.viewId;
-                const bVal = item.badgeKey ? Number(badges[item.badgeKey] || 0) : 0;
-                const tabs = item.tabs || [];
-                const hasTabs = tabs.length > 1;
-                const defSub = tabs.length ? tabs[0].subTab : '';
-                const curSub = (st.subTabs && st.subTabs[item.viewId]) || defSub;
-                const isOpen = hasTabs && openSubmenus.has(item.viewId);
-
-                return `<div class="ons-nav-group" data-nav-group-id="${item.viewId}">
-                  <div data-nav-row-id="${item.viewId}" class="ons-nav-row ${isAct ? 'active' : ''}">
-                    <button type="button"
-                      data-nav-id="${item.viewId}"
-                      title="${ONSStore.esc(item.label)}"
-                      onclick="window.onSelectMenuItem('${item.viewId}','${defSub}',${hasTabs})"
-                      class="ons-nav-row-btn">
-                      ${svgIcon(item.icon)}
-                      <span class="truncate ons-hide-collapsed">${ONSStore.esc(item.label)}</span>
-                    </button>
-                    ${bVal > 0 ? `<span class="ons-nav-badge ons-hide-collapsed ${item.badgeTone || ''}">${bVal}</span>` : ''}
-                    ${hasTabs ? `<button type="button"
-                      data-subcaret-id="${item.viewId}"
-                      aria-label="Buka atau tutup sub-menu ${ONSStore.esc(item.label)}"
-                      aria-expanded="${isOpen ? 'true' : 'false'}"
-                      onclick="window.toggleMenuSub('${item.viewId}')"
-                      class="ons-nav-caret ons-hide-collapsed"
-                      title="${isOpen ? 'Tutup sub-menu' : 'Buka sub-menu'} (${tabs.length})">
-                      ${svgIcon('chevron', 'ons-chevron-sub')}
-                    </button>` : ''}
-                  </div>
-                  ${hasTabs ? `<div data-subwrap-id="${item.viewId}" class="ons-nav-subwrap ${isOpen ? 'is-open' : ''}">
-                    <div class="ons-nav-subinner">
-                      <div class="ons-submenu-list">
-                        ${tabs.map((t) => {
-                          const subAct = isAct && curSub === t.subTab;
-                          return `<button type="button"
-                            data-subnav-id="${item.viewId}:${t.subTab}"
-                            onclick="navigateView('${item.viewId}','${t.subTab}')"
-                            class="ons-submenu-btn ${subAct ? 'active' : ''}">
-                            <span class="flex items-center gap-2 min-w-0">
-                              <span class="ons-submenu-dot"></span>
-                              <span class="truncate">${ONSStore.esc(t.label)}</span>
-                            </span>
-                            ${t.badge ? `<span class="ml-auto text-[9px] font-extrabold px-1.5 py-0.2 rounded ${subAct ? 'bg-white/20 text-white' : (
-  t.badge === 'DEFECTA' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300' :
-  t.badge === 'BUD' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300' :
-  t.badge === 'RESMI' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300' :
-  t.badge === 'PRO' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300' :
-  'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300'
+            ${hasTabs ? `<div data-subwrap-id="${item.viewId}" class="ons-nav-subwrap ${isOpen ? 'is-open' : ''}">
+              <div class="ons-nav-subinner">
+                <div class="ons-submenu-list">
+                  ${tabs.map((t) => {
+                    const subAct = isAct && curSub === t.subTab;
+                    return `<button type="button"
+                      data-subnav-id="${item.viewId}:${t.subTab}"
+                      onclick="navigateView('${item.viewId}','${t.subTab}')"
+                      class="ons-submenu-btn ${subAct ? 'active' : ''}">
+                      <span class="flex items-center gap-2 min-w-0">
+                        <span class="ons-submenu-dot"></span>
+                        <span class="truncate">${ONSStore.esc(t.label)}</span>
+                      </span>
+                      ${t.badge ? `<span class="ml-auto text-[9px] font-extrabold px-1.5 py-0.2 rounded ${subAct ? 'bg-blue-600 text-white' : (
+  t.badge === 'DEFECTA' ? 'bg-amber-100 text-amber-800' :
+  t.badge === 'BUD' ? 'bg-rose-100 text-rose-800' :
+  t.badge === 'RESMI' ? 'bg-emerald-100 text-emerald-800' :
+  t.badge === 'PRO' ? 'bg-indigo-100 text-indigo-800' :
+  'bg-cyan-100 text-cyan-800'
 )}">${t.badge}</span>` : ''}
-                          </button>`;
-                        }).join('')}
-                      </div>
-                    </div>
-                  </div>` : ''}
-                </div>`;
-              }).join('')}
-            </div>
-          </div>`).join('');
+                    </button>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>` : ''}
+          </div>`;
+        }).join('');
       }
 
       function renderSubnavBarHtml() {
@@ -518,6 +495,11 @@
           document.querySelectorAll('[data-subwrap-id]').forEach((el) => {
             const vid = el.getAttribute('data-subwrap-id');
             el.classList.toggle('is-open', openSubmenus.has(vid));
+          });
+          document.querySelectorAll('.ons-nav-group').forEach((grp) => {
+            const vid = grp.getAttribute('data-nav-group-id');
+            grp.classList.toggle('is-open', openSubmenus.has(vid));
+            grp.classList.toggle('has-active', vid === curView);
           });
           document.querySelectorAll('[data-subcaret-id]').forEach((el) => {
             const vid = el.getAttribute('data-subcaret-id');
@@ -1633,20 +1615,23 @@
             <!-- Sidebar Desktop Menu Terstruktur v17.7 -->
             <aside id="desktopSidebar" class="ons-sidebar ${sidebarCollapsed ? 'collapsed' : ''} shrink-0 p-2.5 flex flex-col justify-between ons-desktop-only sticky top-0 h-screen overflow-y-auto">
               <div>
-                <div class="ons-sb-brand-row flex items-center justify-between gap-2 px-1 py-1.5 mb-1 border-b ons-nav-divider">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-8 h-8 rounded-lg object-cover ons-nav-logo-box p-0.5 shrink-0"/>
+                <div class="ons-sb-brand-row flex items-center justify-between gap-2 px-1 py-2 mb-1.5 border-b border-white/20">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-full bg-white p-1 shrink-0 flex items-center justify-center shadow-md">
+                      <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded-full object-cover"/>
+                    </div>
                     <div class="min-w-0 ons-hide-collapsed">
-                      <div class="font-bold text-[13px] ons-nav-brand-title truncate">${ONSStore.esc(usahaNama)}</div>
+                      <div class="font-extrabold text-[13.5px] text-white tracking-wide truncate">Apotek ONS Farma</div>
+                      <div class="text-[11px] text-blue-100/90 font-medium truncate">id onsfarma1011</div>
                     </div>
                   </div>
-                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1 rounded-lg ons-nav-icon-btn shrink-0">
+                  <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1 rounded-lg text-white/80 hover:bg-white/15 hover:text-white shrink-0">
                     ${svgIcon('collapse', 'ons-collapse-ico')}
                   </button>
                 </div>
                 <div class="px-1 py-1.5 ons-hide-collapsed">
                   <div class="relative">
-                    <input type="text" id="sidebarSearchInp" oninput="window.filterSidebarMenu(this.value)" onkeydown="window.handleSidebarSearchKey(event, this.value)" placeholder="Cari fitur disini" autocomplete="off" class="ons-input text-xs pl-8 pr-7 py-1.5 rounded-full w-full bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500"/>
+                    <input type="text" id="sidebarSearchInp" oninput="window.filterSidebarMenu(this.value)" onkeydown="window.handleSidebarSearchKey(event, this.value)" placeholder="Cari fitur disini" autocomplete="off" class="ons-sb-search-pill ons-input text-xs pl-8 pr-7 py-2 rounded-full w-full text-slate-900 focus:outline-none"/>
                     <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <button type="button" id="sidebarSearchClearBtn" onclick="window.clearSidebarSearch()" aria-label="Bersihkan pencarian" class="hidden absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full" title="Bersihkan">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1677,20 +1662,25 @@
 
             <!-- Konten Utama -->
             <div class="flex-1 flex flex-col min-w-0">
-              <header class="ons-topbar h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30" style="background:var(--ons-topbar-bg);color:#FFFFFF;border-color:rgba(255,255,255,0.18)">
-                <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 text-white">
-                  <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-btn ons-btn-ghost p-1.5 w-9 h-9 rounded-lg text-white hover:bg-white/25 border-0 md:hidden flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
-                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 text-white border border-white/25 shadow-sm">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span class="font-bold tracking-wide">Apotek ONS Farma</span>
+              <header class="ons-topbar h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30 shadow-sm" style="background:#0066D6;color:#FFFFFF;border-color:rgba(255,255,255,0.18)">
+                <div class="flex items-center gap-2.5 sm:gap-4 min-w-0 text-white">
+                  <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-btn ons-btn-ghost p-1.5 w-9 h-9 rounded-lg text-white hover:bg-white/20 border-0 md:hidden flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.15);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
+                  <div class="hidden sm:flex flex-col text-left">
+                    <span class="text-[9.5px] uppercase tracking-wider text-blue-100/80 font-bold leading-tight">Kode Sesi</span>
+                    <span class="text-xs font-mono font-extrabold text-white leading-tight">B261114-01</span>
                   </div>
-                  <div class="hidden md:flex items-center gap-1.5 text-xs font-medium text-white/90">
-                    <span class="text-white/60">Pengguna:</span>
-                    <span class="font-bold text-white">${ONSStore.esc(st.user.nama_lengkap || 'apt. Anissa Faradifa R. Is. Rumi')}</span>
+                  <div class="flex flex-col text-left">
+                    <span class="text-[9.5px] uppercase tracking-wider text-blue-100/80 font-bold leading-tight">Pengguna</span>
+                    <span class="text-xs font-bold text-white leading-tight truncate max-w-[220px]">${ONSStore.esc(st.user.nama_lengkap || 'Anissa Faradifa R. Is. Rumi')}</span>
                   </div>
-                  <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'} hidden lg:inline-block">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2 text-white">
+                  <button type="button" onclick="window.navigateView('dashboard', 'umum')" class="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold bg-white/20 hover:bg-white/30 text-white shadow-sm transition-colors" title="Panduan Onboarding">
+                    <span>🚀</span><span>ONBOARDING</span><span class="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center ml-0.5">7</span>
+                  </button>
+                  <button type="button" onclick="window.openCommandPalette()" class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold bg-white/20 hover:bg-white/30 text-white shadow-sm transition-colors" title="Asisten AI">
+                    <span>🤖</span><span>Tanya AI</span>
+                  </button>
                   <button onclick="window.openCommandPalette()" aria-label="Pencarian Cepat dan Pintasan Navigasi" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1.5 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Pencarian Cepat &amp; Pintasan Fitur (Ctrl+K)">
                     ${svgIcon('search', 'w-3.5 h-3.5 text-white')}
                     <span class="font-semibold text-white">Cari Cepat</span>

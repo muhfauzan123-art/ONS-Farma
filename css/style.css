@@ -3101,3 +3101,197 @@ html.dark .ons-pos-search-pill .ons-btn-ghost:hover {
     animation: none !important;
   }
 }
+
+/* =========================================================
+   APOTEK DIGITAL SIGNATURE ROYAL BLUE SIDEBAR & WHITE ISLAND CARDS
+   ========================================================= */
+:root {
+  --ons-nav-start: #0066D6;
+  --ons-nav-end: #0050CA;
+  --ons-nav-border: #004BA3;
+  --ons-nav-divider: rgba(255, 255, 255, 0.18);
+  --ons-nav-text: #FFFFFF;
+  --ons-nav-text-strong: #FFFFFF;
+  --ons-nav-muted: rgba(255, 255, 255, 0.82);
+  --ons-nav-hover-bg: rgba(255, 255, 255, 0.14);
+  --ons-nav-hover-text: #FFFFFF;
+  --ons-nav-active-bg: #FFFFFF;
+  --ons-nav-active-border: #FFFFFF;
+  --ons-nav-active-text: #0066D6;
+  --ons-nav-accent: #F59E0B;
+  --ons-nav-brand-sub: #E0F2FE;
+  --ons-nav-subline: rgba(255, 255, 255, 0.25);
+  --ons-topbar-bg: #0066D6;
+}
+
+.ons-sidebar {
+  background: linear-gradient(180deg, #0066D6 0%, #0050CA 100%) !important;
+  color: #FFFFFF !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Yellow border search pill */
+.ons-sb-search-pill {
+  border: 2.5px solid #F59E0B !important;
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+}
+.ons-sb-search-pill::placeholder {
+  color: #64748B !important;
+}
+
+/* Normal Inactive Menu Row on Blue Sidebar */
+.ons-nav-group {
+  margin-bottom: 0.16rem;
+  border-radius: 0.85rem;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ons-nav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 36px;
+  padding: 0.28rem 0.55rem 0.28rem 0.65rem;
+  border-radius: 0.65rem;
+  color: #FFFFFF !important;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.ons-nav-row:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}
+.ons-nav-row-btn {
+  color: #FFFFFF !important;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.ons-nav-caret {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* THE SIGNATURE WHITE-ISLAND CARD (When Active or Open) */
+.ons-nav-group.is-open,
+.ons-nav-group.has-active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border-radius: 0.85rem !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14) !important;
+  margin: 0.35rem 0.15rem !important;
+  padding: 0.25rem 0.35rem 0.45rem 0.35rem !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+html.dark .ons-nav-group.is-open,
+html.dark .ons-nav-group.has-active {
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+  border-color: rgba(51, 65, 85, 0.9) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.ons-nav-group.is-open .ons-nav-row,
+.ons-nav-group.has-active .ons-nav-row {
+  color: #0F172A !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html.dark .ons-nav-group.is-open .ons-nav-row,
+html.dark .ons-nav-group.has-active .ons-nav-row {
+  color: #F8FAFC !important;
+}
+
+.ons-nav-group.is-open .ons-nav-row-btn,
+.ons-nav-group.has-active .ons-nav-row-btn {
+  color: #0F172A !important;
+  font-weight: 750 !important;
+}
+
+html.dark .ons-nav-group.is-open .ons-nav-row-btn,
+html.dark .ons-nav-group.has-active .ons-nav-row-btn {
+  color: #F8FAFC !important;
+}
+
+.ons-nav-group.is-open .ons-nav-row-btn .ons-nav-svg,
+.ons-nav-group.has-active .ons-nav-row-btn .ons-nav-svg {
+  color: #0066D6 !important;
+}
+
+html.dark .ons-nav-group.is-open .ons-nav-row-btn .ons-nav-svg,
+html.dark .ons-nav-group.has-active .ons-nav-row-btn .ons-nav-svg {
+  color: #38BDF8 !important;
+}
+
+.ons-nav-group.is-open .ons-nav-caret,
+.ons-nav-group.has-active .ons-nav-caret {
+  color: #64748B !important;
+}
+.ons-nav-group.is-open .ons-nav-caret[aria-expanded="true"],
+.ons-nav-group.has-active .ons-nav-caret[aria-expanded="true"] {
+  color: #0066D6 !important;
+}
+html.dark .ons-nav-group.is-open .ons-nav-caret[aria-expanded="true"],
+html.dark .ons-nav-group.has-active .ons-nav-caret[aria-expanded="true"] {
+  color: #38BDF8 !important;
+}
+
+/* Submenu List inside White Island Card */
+.ons-nav-group.is-open .ons-nav-subinner {
+  padding-left: 0.15rem;
+}
+.ons-nav-group.is-open .ons-submenu-list {
+  border-left: none !important;
+  padding-left: 0.35rem;
+  margin-top: 0.2rem;
+  gap: 0.12rem;
+}
+
+.ons-nav-group.is-open .ons-submenu-btn {
+  color: #334155 !important;
+  font-size: 0.74rem !important;
+  font-weight: 500 !important;
+  padding: 0.34rem 0.65rem !important;
+  border-radius: 0.5rem !important;
+  margin: 1px 0 !important;
+  transition: all 0.12s ease;
+}
+
+html.dark .ons-nav-group.is-open .ons-submenu-btn {
+  color: #CBD5E1 !important;
+}
+
+.ons-nav-group.is-open .ons-submenu-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0066D6 !important;
+}
+
+html.dark .ons-nav-group.is-open .ons-submenu-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #38BDF8 !important;
+}
+
+.ons-nav-group.is-open .ons-submenu-btn.active {
+  background: #EFF6FF !important;
+  color: #0066D6 !important;
+  font-weight: 750 !important;
+  box-shadow: none !important;
+}
+
+html.dark .ons-nav-group.is-open .ons-submenu-btn.active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #38BDF8 !important;
+}
+
+.ons-nav-group.is-open .ons-submenu-btn.active .ons-submenu-dot {
+  background: #0066D6 !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 0 2px rgba(0, 102, 214, 0.25) !important;
+}
