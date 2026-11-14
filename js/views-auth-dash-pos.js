@@ -4129,7 +4129,7 @@
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
-          <button type="button" onclick="window.togglePosBeepSetting()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">Suara: ${posBeepEnabled ? 'ON' : 'OFF'}</button>
+          
           <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">Printer BT</button>
           ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold">Tutup Shift &rarr;</button>` : ''}
         </div>
@@ -4143,7 +4143,7 @@
             <input id="posSearchInput" placeholder="[F2] Tulis nama, kode, zat aktif, atau kategori produk..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
             <button id="posSearchClearBtn" type="button" onclick="window.clearPosSearchInput()" class="${String(st.posSearchQ || '').trim() ? '' : 'hidden'} px-2 py-0.5 rounded text-sm font-bold text-red-500 hover:bg-red-500/10" title="Bersihkan pencarian">&times;</button>
             <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 min-h-0 h-8 rounded-full" title="Scan Barcode Kamera">Scan</button>
-            <button type="button" onclick="window.startPosVoiceCashier()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-8 rounded-full" title="Kasir Suara">Suara</button>
+            
           </div>
           <div id="posSearchDropdown" class="ons-pos-search-menu ${String(st.posSearchQ || '').trim() ? '' : 'hidden'}">${String(st.posSearchQ || '').trim() ? renderPosSearchDropdownHtml(catalog) : ''}</div>
         </div>
