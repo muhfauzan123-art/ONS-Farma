@@ -11045,7 +11045,94 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     }
   };
 
-  global.printDosageEtiket = (warna) => {
+  global.openDosageEtiketModal = (warna) => {
+    const curPreset = DOSAGE_PRESETS.find((p) => p.id === dosageState.presetId) || null;
+    const res = computeDosageCalculation(dosageState, curPreset);
+    const pasien = dosageState.pasienNama || 'Pasien Umum';
+    const obat = dosageState.namaObat;
+    const aturan = res.aturanText;
+    const jenis = (warna || (curPreset && curPreset.warna_etiket) || 'putih').toLowerCase();
+    const isBiru = jenis === 'biru';
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const tglStr = new Date().toLocaleDateString('id-ID');
+    const noResep = 'ETK-' + Date.now().toString().slice(-6);
+
+    S().openModal(`<div class="ons-ws-modal max-w-lg mx-auto" data-ws-custom="1">
+      <div class="ons-ws-topbar border-b pb-2.5">
+        <div>
+          <h3 class="font-extrabold text-base flex items-center gap-1.5" style="color:var(--ons-primary)">
+            <span>🏷️</span> Pratinjau &amp; Cetak Etiket Thermal (58mm)
+          </h3>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Format resmi etiket farmasi siap cetak ke printer kasir 58mm.</p>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-sm font-bold">&times;</button>
+      </div>
+
+      <div class="p-4 space-y-4">
+        <!-- Pilihan Tipe Etiket (Putih / Biru) -->
+        <div class="flex items-center justify-between p-2 rounded-xl border bg-slate-50 dark:bg-slate-900/50" style="border-color:var(--ons-border)">
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Jenis Etiket:</span>
+          <div class="flex gap-1.5">
+            <button type="button" onclick="window.openDosageEtiketModal('putih')" class="px-3 py-1 rounded-lg text-xs font-bold transition-all ${!isBiru ? 'bg-white text-slate-900 border-2 border-slate-800 shadow-sm' : 'border border-slate-300 text-slate-600 hover:bg-white'}">
+              ⚪ Etiket Putih (Obat Dalam)
+            </button>
+            <button type="button" onclick="window.openDosageEtiketModal('biru')" class="px-3 py-1 rounded-lg text-xs font-bold transition-all ${isBiru ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400' : 'border border-blue-300 text-blue-700 hover:bg-blue-50'}">
+              🔵 Etiket Biru (Obat Luar)
+            </button>
+          </div>
+        </div>
+
+        <!-- Kartu Etiket Thermal Realistis (Berada di Tengah Layar) -->
+        <div class="flex justify-center my-2">
+          <div id="dosageEtiketCardPreview" class="ons-etiket-box ${isBiru ? 'biru' : 'putih'} w-[270px] shadow-lg rounded-xl text-left text-[11px] p-3 space-y-2 border-2 ${isBiru ? 'border-blue-600 bg-blue-50' : 'border-slate-800 bg-white text-slate-900'}">
+            <!-- Header Apotek -->
+            <div class="text-center border-b pb-1.5" style="border-color:${isBiru ? '#2563eb' : '#0f172a'};">
+              <div class="font-black text-xs tracking-wider">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+              <div class="text-[9px] opacity-85 mt-0.5">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>
+            </div>
+
+            <!-- Identitas Pasien & Obat -->
+            <div class="space-y-0.5 text-[10px]">
+              <div class="flex justify-between">
+                <span><b>No. Resep:</b> ${noResep}</span>
+                <span class="font-mono-num">${tglStr}</span>
+              </div>
+              <div><b>Pasien:</b> ${S().esc(pasien)} (${dosageState.beratKg ? dosageState.beratKg + ' kg' : ''}${dosageState.usiaTahun ? ', ' + dosageState.usiaTahun + ' th' : ''})</div>
+              <div><b>Obat:</b> <span class="font-extrabold">${S().esc(obat)}</span></div>
+            </div>
+
+            <!-- Aturan Pakai Resmi Terhitung (Border Putus-putus) -->
+            <div class="p-2 text-center font-extrabold text-xs leading-snug rounded-lg border-2 border-dashed my-1.5" style="border-color:${isBiru ? '#2563eb' : '#0f172a'}; background:${isBiru ? '#eff6ff' : '#f8fafc'};">
+              ${S().esc(aturan)}
+            </div>
+
+            <!-- Catatan Apoteker & Tanda Tangan -->
+            <div class="pt-1 text-[9px] flex justify-between items-end border-t" style="border-color:${isBiru ? '#93c5fd' : '#cbd5e1'};">
+              <div class="max-w-[150px] leading-tight italic opacity-90">
+                ${isBiru ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA CEPAT SEMBUH'}
+              </div>
+              <div class="text-right">
+                <div class="text-[8px] opacity-75">Apoteker (APJ)</div>
+                <div class="font-bold text-[9px] mt-0.5">TTD / Paraf</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Aksi Cetak & Tutup -->
+        <div class="pt-2 border-t flex flex-wrap gap-2" style="border-color:var(--ons-border)">
+          <button type="button" onclick="window.confirmPrintDosageEtiket('${isBiru ? 'biru' : 'putih'}')" class="ons-btn ons-btn-primary flex-1 py-2.5 font-extrabold text-xs shadow-md flex items-center justify-center gap-2">
+            <span>🖨️</span> Cetak ke Printer Sekarang (58mm)
+          </button>
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost px-4 py-2.5 text-xs font-semibold">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>`, '520px');
+  };
+
+  global.confirmPrintDosageEtiket = (warna) => {
     const curPreset = DOSAGE_PRESETS.find((p) => p.id === dosageState.presetId) || null;
     const res = computeDosageCalculation(dosageState, curPreset);
     const pasien = dosageState.pasienNama || 'Pasien Umum';
@@ -11054,32 +11141,36 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const jenis = (warna || (curPreset && curPreset.warna_etiket) || 'putih').toUpperCase();
     const bg = jenis === 'BIRU' ? '#E0F2FE' : '#FFFFFF';
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    
+    const tglStr = new Date().toLocaleDateString('id-ID');
+    const noResep = 'ETK-' + Date.now().toString().slice(-6);
+
+    const html = `<div style="width:55mm;border:2px solid #000;background:${bg};padding:6px;font-family:Arial,sans-serif;font-size:10px;box-sizing:border-box;">
+      <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">
+        ${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/>
+        <span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span>
+      </div>
+      <div style="margin:4px 0;font-size:9px;">
+        <div><b>No. Resep/Tgl:</b> ${noResep} / ${tglStr}</div>
+        <div><b>Pasien:</b> ${S().esc(pasien)} (${dosageState.beratKg ? dosageState.beratKg + ' kg' : ''}${dosageState.usiaTahun ? ', ' + dosageState.usiaTahun + ' th' : ''})</div>
+        <div><b>Obat:</b> ${S().esc(obat)}</div>
+      </div>
+      <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px 0;text-align:center;font-weight:bold;font-size:11px;line-height:1.3;">
+        ${S().esc(aturan)}
+      </div>
+      <div style="margin-top:4px;font-size:8px;color:#333;">
+        <div><i>${jenis === 'BIRU' ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA CEPAT SEMBUH'}</i></div>
+        <div style="text-align:right;margin-top:2px;">Apoteker Penanggung Jawab</div>
+      </div>
+    </div>`;
+
     if (typeof S().printHtmlZone === 'function') {
-      const tglStr = new Date().toLocaleDateString('id-ID');
-      const html = `<div style="width:55mm;border:2px solid #000;background:${bg};padding:6px;font-family:Arial,sans-serif;font-size:10px;box-sizing:border-box;">
-        <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">
-          ${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/>
-          <span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span>
-        </div>
-        <div style="margin:4px 0;font-size:9px;">
-          <div><b>No. Resep/Tgl:</b> ETK-${Date.now().toString().slice(-6)} / ${tglStr}</div>
-          <div><b>Pasien:</b> ${S().esc(pasien)} (${dosageState.beratKg ? dosageState.beratKg + ' kg' : ''}${dosageState.usiaTahun ? ', ' + dosageState.usiaTahun + ' th' : ''})</div>
-          <div><b>Obat:</b> ${S().esc(obat)}</div>
-        </div>
-        <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px 0;text-align:center;font-weight:bold;font-size:11px;line-height:1.3;">
-          ${S().esc(aturan)}
-        </div>
-        <div style="margin-top:4px;font-size:8px;color:#333;">
-          <div><i>Catatan: ${S().esc(res.peringatan.slice(0, 100))}</i></div>
-          <div style="text-align:right;margin-top:2px;">Apoteker Penanggung Jawab</div>
-        </div>
-      </div>`;
       S().printHtmlZone(html, { widthMm: 58 });
-      global.toast('Mencetak etiket ' + jenis + ' untuk ' + obat + '...', 'ok');
-    } else {
-      global.toast('Modul cetak etiket siap. Hubungkan printer thermal.', 'info');
+      global.toast('Mengirim etiket ' + jenis + ' ke printer thermal...', 'ok');
     }
+  };
+
+  global.printDosageEtiket = (warna) => {
+    global.openDosageEtiketModal(warna);
   };
 
   global.addDosageToPosCart = (presetId, isModal) => {

@@ -793,6 +793,11 @@ html.dark .ons-wiz-chip:hover {
   .ons-mobile-only { display: none !important; }
 }
 
+/* Hidden print zone on screen: MUST NEVER BE DISPLAYED IN BROWSER VIEW */
+#onsPrintZone {
+  display: none !important;
+}
+
 /* Print Layout (A4 Laporan / Kwitansi / Etiket Putih & Biru 50x30mm / Thermal Struk) */
 @media print {
   body * { visibility: hidden !important; }

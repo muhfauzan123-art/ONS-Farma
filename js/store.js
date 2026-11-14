@@ -1176,8 +1176,18 @@
     }
     zone.innerHTML = htmlContent;
     setTimeout(() => {
-      if (typeof window !== 'undefined' && typeof window.print === 'function') window.print();
+      if (typeof window !== 'undefined' && typeof window.print === 'function') {
+        window.print();
+        setTimeout(() => {
+          if (zone) zone.innerHTML = '';
+        }, 800);
+      }
     }, 150);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('afterprint', () => {
+        if (zone) zone.innerHTML = '';
+      }, { once: true });
+    }
   }
 
   /**
