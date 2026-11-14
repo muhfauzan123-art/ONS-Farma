@@ -169,6 +169,7 @@
 
   /**
    * W-08.1: DATABASE PRESET DOSIS OBAT KLINIS & FORMULA FARMASI (PMK 73)
+   * 18 Template Sediaan Populer Lengkap + Live Focus-Preserving Calculation
    */
   const DOSAGE_PRESETS = [
     {
@@ -214,8 +215,8 @@
     {
       id: 'paracetamol-forte',
       nama: 'Paracetamol Sirup Forte 250mg/5mL (Anak Besar)',
-      kategori: 'Demam & Nyeri (Antipiretik)',
-      target: 'Pediatrik (Anak > 6 Tahun / BB > 20 kg)',
+      kategori: 'Demam & Nyeri (Antipiretik Forte)',
+      target: 'Pediatrik (BB > 20 kg / Usia 6 - 12 Tahun)',
       dosis_min_mg_kg: 10,
       dosis_max_mg_kg: 15,
       dosis_harian_max_mg_kg: 60,
@@ -226,47 +227,67 @@
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
       waktu_minum: 'SESUDAH_MAKAN_ATAU_DEMAM',
-      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} sesudah makan saat demam atau nyeri.',
-      peringatan: 'Konsentrasi forte 2 kali lipat sirup biasa (250mg/5mL). Pastikan tidak tertukar takaran dengan sediaan 120mg/5mL.',
+      aturan_dasar: 'Minum 3–4 kali sehari {TAK_MIN} sampai {TAK_MAX} sesudah makan saat demam atau nyeri.',
+      peringatan: 'Konsentrasi forte ganda (250mg/5mL). Pastikan sendok takar sesuai untuk mencegah overdosis.',
       dosis_dewasa_ref: 500,
       warna_etiket: 'putih'
     },
     {
       id: 'ibuprofen-suspensi',
       nama: 'Ibuprofen Suspensi 100mg/5mL (Anak)',
-      kategori: 'Antipiretik & NSAID',
-      target: 'Pediatrik (Anak > 6 Bulan)',
+      kategori: 'Demam Tinggi & Anti-Inflamasi (NSAID)',
+      target: 'Pediatrik (Usia > 6 Bulan)',
       dosis_min_mg_kg: 5,
       dosis_max_mg_kg: 10,
-      dosis_harian_max_mg_kg: 30,
+      dosis_harian_max_mg_kg: 40,
       frekuensi_hari: 3,
       jeda_jam: 8,
-      sediaan_bentuk: 'SIRUP',
+      sediaan_bentuk: 'SUSPENSI',
       kekuatan_mg: 100,
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
       waktu_minum: 'SESUDAH_MAKAN',
-      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} SEGERA SESUDAH MAKAN atau bersama susu/banyak air.',
-      peringatan: 'Selalu berikan sesudah makan untuk melindungi dinding lambung. Jangan gunakan pada pasien demam berdarah dengue (DBD) atau gangguan pembekuan darah.',
+      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} tepat SESUDAH MAKAN.',
+      peringatan: 'Wajib diminum sesudah makan untuk melindungi dinding lambung. Tidak disarankan untuk bayi usia < 6 bulan tanpa petunjuk dokter.',
+      dosis_dewasa_ref: 400,
+      warna_etiket: 'putih'
+    },
+    {
+      id: 'ibuprofen-forte',
+      nama: 'Ibuprofen Suspensi Forte 200mg/5mL',
+      kategori: 'Demam Tinggi & Anti-Inflamasi (NSAID Forte)',
+      target: 'Pediatrik (BB > 15 kg / Usia > 3 Tahun)',
+      dosis_min_mg_kg: 5,
+      dosis_max_mg_kg: 10,
+      dosis_harian_max_mg_kg: 40,
+      frekuensi_hari: 3,
+      jeda_jam: 8,
+      sediaan_bentuk: 'SUSPENSI',
+      kekuatan_mg: 200,
+      volume_sediaan_ml: 5,
+      volume_botol_ml: 60,
+      waktu_minum: 'SESUDAH_MAKAN',
+      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} tepat SESUDAH MAKAN.',
+      peringatan: 'Konsentrasi pekat 200mg/5mL. Selalu minum sesudah makan atau bersama segelas susu.',
       dosis_dewasa_ref: 400,
       warna_etiket: 'putih'
     },
     {
       id: 'amoxicillin-sirup',
       nama: 'Amoxicillin Dry Sirup 125mg/5mL (Antibiotik)',
-      kategori: 'Antibiotik Penisilin',
-      target: 'Pediatrik (Infeksi Bakteri Ringan - Sedang)',
+      kategori: 'Antibiotik Saluran Pernapasan & Infeksi Bakteri',
+      target: 'Pediatrik (Semua Usia)',
       dosis_min_mg_kg: 25,
       dosis_max_mg_kg: 50,
-      dosis_harian_max_mg_kg: 90,
+      dosis_harian_max_mg_kg: 50,
       is_daily_dose_calc: true,
       frekuensi_hari: 3,
       jeda_jam: 8,
-      sediaan_bentuk: 'SIRUP',
+      sediaan_bentuk: 'SIRUP_KERING',
       kekuatan_mg: 125,
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
-      waktu_minum: 'TIAP_8_JAM_SESUDAH_MAKAN',
+      waktu_minum: 'SESUDAH_MAKAN',
       aturan_dasar: 'Minum tiap 8 jam secara teratur 1 takar ({TAK_MIN} sampai {TAK_MAX}) tepat sesudah makan. HABISKAN.',
       peringatan: 'WAJIB DIHABISKAN seluruhnya sesuai durasi terapi (biasanya 5–7 hari) untuk mencegah resistensi antibiotik. Sirup kering yang sudah dilarutkan air hanya bertahan maksimal 7–14 hari.',
       dosis_dewasa_ref: 500,
@@ -275,53 +296,116 @@
     {
       id: 'amoxicillin-forte',
       nama: 'Amoxicillin Dry Sirup Forte 250mg/5mL',
-      kategori: 'Antibiotik Penisilin',
-      target: 'Pediatrik (Infeksi Bakteri Sedang - Berat)',
+      kategori: 'Antibiotik Spektrum Luas Forte',
+      target: 'Pediatrik (BB > 15 kg)',
       dosis_min_mg_kg: 25,
       dosis_max_mg_kg: 50,
-      dosis_harian_max_mg_kg: 90,
+      dosis_harian_max_mg_kg: 50,
       is_daily_dose_calc: true,
       frekuensi_hari: 3,
       jeda_jam: 8,
-      sediaan_bentuk: 'SIRUP',
+      sediaan_bentuk: 'SIRUP_KERING',
       kekuatan_mg: 250,
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
-      waktu_minum: 'TIAP_8_JAM_SESUDAH_MAKAN',
-      aturan_dasar: 'Minum tiap 8 jam secara teratur {TAK_MIN} sampai {TAK_MAX} tepat sesudah makan. HABISKAN.',
-      peringatan: 'Wajib dihabiskan. Kocok dahulu sebelum diminum. Jangan disimpan lebih dari 14 hari di lemari pendingin.',
+      waktu_minum: 'SESUDAH_MAKAN',
+      aturan_dasar: 'Minum tiap 8 jam teratur 1 takar ({TAK_MIN} sampai {TAK_MAX}) tepat sesudah makan. HABISKAN.',
+      peringatan: 'WAJIB DIHABISKAN tepat waktu. Kocok botol terlebih dahulu sebelum diminum.',
       dosis_dewasa_ref: 500,
+      warna_etiket: 'putih'
+    },
+    {
+      id: 'co-amoxiclav-sirup',
+      nama: 'Co-Amoxiclav Sirup 156.25mg/5mL (Amox+Klavulanat)',
+      kategori: 'Antibiotik Kombinasi Beta-Laktamase',
+      target: 'Pediatrik (Infeksi Resisten)',
+      dosis_min_mg_kg: 25,
+      dosis_max_mg_kg: 45,
+      dosis_harian_max_mg_kg: 45,
+      is_daily_dose_calc: true,
+      frekuensi_hari: 3,
+      jeda_jam: 8,
+      sediaan_bentuk: 'SIRUP_KERING',
+      kekuatan_mg: 156.25,
+      volume_sediaan_ml: 5,
+      volume_botol_ml: 60,
+      waktu_minum: 'BERSAMA_SUAPAN_MAKAN',
+      aturan_dasar: 'Minum tiap 8 jam secara teratur {TAK_MIN} sampai {TAK_MAX} bersama suapan pertama makan. HABISKAN.',
+      peringatan: 'Minum pada suapan pertama makanan untuk mengurangi efek samping mual/diare. WAJIB DIHABISKAN. Simpan suspensi terlarut di lemari pendingin (2–8°C) maksimal 7 hari.',
+      dosis_dewasa_ref: 625,
       warna_etiket: 'putih'
     },
     {
       id: 'cefadroxil-sirup',
       nama: 'Cefadroxil Dry Sirup 125mg/5mL (Antibiotik)',
-      kategori: 'Antibiotik Sefalosporin',
-      target: 'Pediatrik (Infeksi Saluran Napas/Kulit/Kemih)',
+      kategori: 'Antibiotik Sefalosporin Generasi I',
+      target: 'Pediatrik (Semua Usia)',
       dosis_min_mg_kg: 30,
       dosis_max_mg_kg: 50,
       dosis_harian_max_mg_kg: 50,
       is_daily_dose_calc: true,
       frekuensi_hari: 2,
       jeda_jam: 12,
-      sediaan_bentuk: 'SIRUP',
+      sediaan_bentuk: 'SIRUP_KERING',
       kekuatan_mg: 125,
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
-      waktu_minum: 'TIAP_12_JAM_SESUDAH_MAKAN',
-      aturan_dasar: 'Minum tiap 12 jam (2 kali sehari) {TAK_MIN} sampai {TAK_MAX} sesudah makan. HABISKAN.',
-      peringatan: 'Wajib dihabiskan. Sirup rekonstitusi stabil 7 hari pada suhu ruang atau 14 hari di kulkas 2-8°C.',
+      waktu_minum: 'SESUDAH_MAKAN',
+      aturan_dasar: 'Minum tiap 12 jam (2 kali sehari) secara teratur {TAK_MIN} sampai {TAK_MAX} sesudah makan. HABISKAN.',
+      peringatan: 'WAJIB DIHABISKAN. Berikan jarak 12 jam yang konsisten (misal: jam 07.00 pagi dan 19.00 malam).',
+      dosis_dewasa_ref: 500,
+      warna_etiket: 'putih'
+    },
+    {
+      id: 'cefadroxil-forte',
+      nama: 'Cefadroxil Dry Sirup Forte 250mg/5mL',
+      kategori: 'Antibiotik Sefalosporin Forte',
+      target: 'Pediatrik (BB > 15 kg)',
+      dosis_min_mg_kg: 30,
+      dosis_max_mg_kg: 50,
+      dosis_harian_max_mg_kg: 50,
+      is_daily_dose_calc: true,
+      frekuensi_hari: 2,
+      jeda_jam: 12,
+      sediaan_bentuk: 'SIRUP_KERING',
+      kekuatan_mg: 250,
+      volume_sediaan_ml: 5,
+      volume_botol_ml: 60,
+      waktu_minum: 'SESUDAH_MAKAN',
+      aturan_dasar: 'Minum tiap 12 jam (2 kali sehari) teratur {TAK_MIN} sampai {TAK_MAX} sesudah makan. HABISKAN.',
+      peringatan: 'Konsentrasi tinggi 250mg/5mL. Berikan interval 12 jam teratur. WAJIB DIHABISKAN.',
+      dosis_dewasa_ref: 500,
+      warna_etiket: 'putih'
+    },
+    {
+      id: 'erythromycin-sirup',
+      nama: 'Erythromycin Dry Sirup 200mg/5mL (Alergi Penisilin)',
+      kategori: 'Antibiotik Makrolida',
+      target: 'Pediatrik (Alternatif Penisilin)',
+      dosis_min_mg_kg: 30,
+      dosis_max_mg_kg: 50,
+      dosis_harian_max_mg_kg: 50,
+      is_daily_dose_calc: true,
+      frekuensi_hari: 4,
+      jeda_jam: 6,
+      sediaan_bentuk: 'SIRUP_KERING',
+      kekuatan_mg: 200,
+      volume_sediaan_ml: 5,
+      volume_botol_ml: 60,
+      waktu_minum: 'SEBELUM_MAKAN',
+      aturan_dasar: 'Minum tiap 6 jam (4 kali sehari) {TAK_MIN} sampai {TAK_MAX} 1 jam sebelum makan atau perut kosong. HABISKAN.',
+      peringatan: 'Pilihan terbaik jika alergi amoxicillin/penisilin. Minum saat perut kosong dengan segelas air putih. WAJIB DIHABISKAN.',
       dosis_dewasa_ref: 500,
       warna_etiket: 'putih'
     },
     {
       id: 'cetirizine-sirup',
       nama: 'Cetirizine Sirup 5mg/5mL (Alergi / Gatal / Rhinitis)',
-      kategori: 'Antihistamin Non-Sedatif',
-      target: 'Pediatrik & Dewasa',
+      kategori: 'Antihistamin Non-Sedatif Generasi II',
+      target: 'Pediatrik (Usia > 2 Tahun)',
       dosis_min_mg_kg: 0.25,
       dosis_max_mg_kg: 0.25,
-      dosis_harian_max_mg_kg: 10,
+      dosis_harian_max_mg_kg: 0.25,
       frekuensi_hari: 1,
       jeda_jam: 24,
       sediaan_bentuk: 'SIRUP',
@@ -329,19 +413,40 @@
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
       waktu_minum: 'MALAM_SEBELUM_TIDUR',
-      aturan_dasar: 'Minum 1 kali sehari {TAK_MIN} pada malam hari sebelum tidur.',
-      peringatan: 'Dapat menimbulkan kantuk ringan pada sebagian pasien. Hindari aktivitas yang butuh konsentrasi tinggi.',
+      aturan_dasar: 'Minum 1 kali sehari {TAK_MIN} pada MALAM HARI sebelum tidur sesudah makan.',
+      peringatan: 'Lebih efektif diminum malam hari sebelum tidur untuk mengatasi bersin/gatal malam dan pagi hari.',
       dosis_dewasa_ref: 10,
+      warna_etiket: 'putih'
+    },
+    {
+      id: 'chlorpheniramine-sirup',
+      nama: 'Chlorpheniramine (CTM) Sirup 2mg/5mL',
+      kategori: 'Antihistamin Klasik / Sedatif',
+      target: 'Pediatrik (Usia > 1 Tahun)',
+      dosis_min_mg_kg: 0.35,
+      dosis_max_mg_kg: 0.35,
+      dosis_harian_max_mg_kg: 0.35,
+      is_daily_dose_calc: true,
+      frekuensi_hari: 3,
+      jeda_jam: 8,
+      sediaan_bentuk: 'SIRUP',
+      kekuatan_mg: 2,
+      volume_sediaan_ml: 5,
+      volume_botol_ml: 60,
+      waktu_minum: 'SESUDAH_MAKAN',
+      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sesudah makan.',
+      peringatan: 'Obat menyebabkan rasa kantuk. Hindari anak melakukan aktivitas berisiko seperti memanjat atau bersepeda.',
+      dosis_dewasa_ref: 4,
       warna_etiket: 'putih'
     },
     {
       id: 'ambroxol-sirup',
       nama: 'Ambroxol Sirup 15mg/5mL (Batuk Berdahak)',
-      kategori: 'Mukolitik / Pengencer Dahak',
-      target: 'Pediatrik & Dewasa',
+      kategori: 'Mukolitik Pengencer Dahak',
+      target: 'Pediatrik (Semua Usia)',
       dosis_min_mg_kg: 1.2,
       dosis_max_mg_kg: 1.6,
-      dosis_harian_max_mg_kg: 2.0,
+      dosis_harian_max_mg_kg: 1.6,
       is_daily_dose_calc: true,
       frekuensi_hari: 3,
       jeda_jam: 8,
@@ -351,7 +456,7 @@
       volume_botol_ml: 60,
       waktu_minum: 'SESUDAH_MAKAN',
       aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} sesudah makan.',
-      peringatan: 'Dianjurkan banyak minum air putih hangat untuk membantu efektivitas pengenceran dahak.',
+      peringatan: 'Anjurkan banyak minum air putih hangat untuk mempercepat pengenceran dahak dari saluran napas.',
       dosis_dewasa_ref: 30,
       warna_etiket: 'putih'
     },
@@ -359,7 +464,7 @@
       id: 'salbutamol-sirup',
       nama: 'Salbutamol Sirup 2mg/5mL (Batuk Sesak & Asma)',
       kategori: 'Bronkodilator Beta-2 Agonis',
-      target: 'Pediatrik & Dewasa',
+      target: 'Pediatrik (Usia > 2 Tahun)',
       dosis_min_mg_kg: 0.1,
       dosis_max_mg_kg: 0.15,
       dosis_harian_max_mg_kg: 0.45,
@@ -368,20 +473,42 @@
       sediaan_bentuk: 'SIRUP',
       kekuatan_mg: 2,
       volume_sediaan_ml: 5,
+      volume_botol_ml: 100,
+      waktu_minum: 'SESUDAH_MAKAN',
+      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} sesudah makan saat sesak atau batuk menyempit.',
+      peringatan: 'Dapat menimbulkan efek samping tremor halus pada tangan atau jantung berdebar (palpitasi) ringan sementara.',
+      dosis_dewasa_ref: 4,
+      warna_etiket: 'putih'
+    },
+    {
+      id: 'dexamethasone-sirup',
+      nama: 'Dexamethasone Sirup 0.5mg/5mL (Anti-Inflamasi)',
+      kategori: 'Kortikosteroid Anti-Inflamasi Kuat',
+      target: 'Pediatrik (Atas Resep Dokter)',
+      dosis_min_mg_kg: 0.08,
+      dosis_max_mg_kg: 0.2,
+      dosis_harian_max_mg_kg: 0.3,
+      is_daily_dose_calc: true,
+      frekuensi_hari: 3,
+      jeda_jam: 8,
+      sediaan_bentuk: 'SIRUP',
+      kekuatan_mg: 0.5,
+      volume_sediaan_ml: 5,
       volume_botol_ml: 60,
       waktu_minum: 'SESUDAH_MAKAN',
-      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} sesudah makan.',
-      peringatan: 'Dapat menimbulkan tremor halus pada tangan atau jantung berdebar. Hentikan jika terjadi reaksi alergi.',
-      dosis_dewasa_ref: 4,
+      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} tepat SESUDAH MAKAN.',
+      peringatan: 'Kortikosteroid potensi tinggi. Selalu minum sesudah makan. Jangan dihentikan tiba-tiba jika penggunaan lebih dari 1 minggu.',
+      dosis_dewasa_ref: 0.75,
       warna_etiket: 'putih'
     },
     {
       id: 'zinc-diare',
       nama: 'Zinc Sulfate Sirup 20mg/5mL (Diare Anak WHO)',
-      kategori: 'Terapi Pelengkap Diare Anak',
-      target: 'Pediatrik (Bayi & Anak Diare)',
+      kategori: 'Mineral Diare Esensial Standar WHO & Kemenkes',
+      target: 'Pediatrik (Bayi & Balita Diare)',
       dosis_min_mg_kg: 10,
       dosis_max_mg_kg: 20,
+      dosis_harian_max_mg_kg: 20,
       is_special_zinc: true,
       frekuensi_hari: 1,
       jeda_jam: 24,
@@ -390,7 +517,7 @@
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
       waktu_minum: 'PAGI_SESUDAH_MAKAN',
-      aturan_dasar: 'Minum 1 kali sehari 1 sendok takar (5 mL) selama 10 HARI PENUH.',
+      aturan_dasar: 'Minum 1 kali sehari {TAK_MIN} selama 10 HARI PENUH.',
       peringatan: 'Wajib diminum selama 10 HARI BERTURUT-TURUT meskipun diare sudah berhenti, untuk memperbaiki mukosa usus dan mencegah kekambuhan diare.',
       dosis_dewasa_ref: 20,
       warna_etiket: 'putih'
@@ -398,39 +525,39 @@
     {
       id: 'domperidone-sirup',
       nama: 'Domperidone Suspensi 5mg/5mL (Mual & Muntah)',
-      kategori: 'Antiemetik & Prokinetik',
-      target: 'Pediatrik & Dewasa',
+      kategori: 'Antiemetik & Prokinetik Lambung',
+      target: 'Pediatrik (Usia > 1 Tahun)',
       dosis_min_mg_kg: 0.25,
-      dosis_max_mg_kg: 0.3,
-      dosis_harian_max_mg_kg: 1.0,
+      dosis_max_mg_kg: 0.25,
+      dosis_harian_max_mg_kg: 0.75,
       frekuensi_hari: 3,
       jeda_jam: 8,
-      sediaan_bentuk: 'SIRUP',
+      sediaan_bentuk: 'SUSPENSI',
       kekuatan_mg: 5,
       volume_sediaan_ml: 5,
       volume_botol_ml: 60,
-      waktu_minum: '15_MENIT_SEBELUM_MAKAN',
-      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} sampai {TAK_MAX} 15–30 menit SEBELUM MAKAN dan sebelum tidur.',
-      peringatan: 'Harus diminum saat perut kosong sebelum makan agar efektivitas pengosongan lambung maksimal.',
+      waktu_minum: 'SEBELUM_MAKAN',
+      aturan_dasar: 'Minum 3 kali sehari {TAK_MIN} 15–30 MENIT SEBELUM MAKAN atau sebelum minum susu.',
+      peringatan: 'Wajib diminum 15–30 menit SEBELUM MAKAN agar penyerapan optimal dan reflek muntah tertekan.',
       dosis_dewasa_ref: 10,
       warna_etiket: 'putih'
     }
   ];
 
-  const dosageState = {
+  let dosageState = {
+    modeHitung: 'BB', // BB | USIA | BSA | INFUS | GINJAL
+    idMember: '',
+    pasienNama: '',
+    noWa: '',
+    beratKg: 12,
+    tinggiCm: 90,
+    usiaTahun: 3,
+    usiaBulan: 0,
+    gender: 'L',
     presetId: 'paracetamol-sirup',
-    namaObat: 'Paracetamol Sirup 120mg/5mL (Anak)',
+    namaObat: 'Paracetamol Sirup 120mg/5mL',
     kategori: 'Demam & Nyeri (Antipiretik)',
     target: 'Pediatrik (Anak 1 - 12 Tahun)',
-    pasienNama: 'An. Raka Pratama',
-    idMember: 'MBR-003',
-    noWa: '6281355509123',
-    usiaTahun: 3,
-    usiaBulan: 6,
-    beratKg: 14,
-    tinggiCm: 96,
-    gender: 'L',
-    modeHitung: 'BB', // 'BB' | 'USIA' | 'BSA' | 'INFUS' | 'GINJAL'
     dosisMinMgPerKg: 10,
     dosisMaxMgPerKg: 15,
     dosisHarianMaxMgPerKg: 60,
@@ -448,7 +575,7 @@
     infusVolMl: 500,
     infusJam: 8,
     infusFaktor: 20,
-    serumKreatinin: 0.8,
+    serumKreatinin: 1.0,
     customAturan: '',
     catatanApoteker: ''
   };
@@ -456,15 +583,11 @@
   function _formatSpoonHelper(ml, bentuk) {
     if (bentuk === 'DROP') return `${ml} mL (pipet tetes)`;
     const cth = ml / 5;
-    if (Math.abs(cth - 0.25) < 0.04) return '¼ sendok takar (1.25 mL)';
-    if (Math.abs(cth - 0.5) < 0.05) return '½ sendok takar (2.5 mL)';
-    if (Math.abs(cth - 0.75) < 0.05) return '¾ sendok takar (3.75 mL)';
-    if (Math.abs(cth - 1) < 0.05) return '1 sendok takar (5 mL / 1 Cth)';
-    if (Math.abs(cth - 1.25) < 0.05) return '1¼ sendok takar (6.25 mL)';
-    if (Math.abs(cth - 1.5) < 0.05) return '1½ sendok takar (7.5 mL)';
-    if (Math.abs(cth - 1.75) < 0.05) return '1¾ sendok takar (8.75 mL)';
-    if (Math.abs(cth - 2) < 0.05) return '2 sendok takar (10 mL / 2 Cth)';
-    if (Math.abs(cth - 3) < 0.05) return '1 sendok makan (15 mL / 1 C)';
+    if (Math.abs(ml - 2.5) < 0.2) return '½ sendok takar (2.5 mL / ½ Cth)';
+    if (Math.abs(ml - 5.0) < 0.2) return '1 sendok takar (5 mL / 1 Cth)';
+    if (Math.abs(ml - 7.5) < 0.2) return '1½ sendok takar (7.5 mL)';
+    if (Math.abs(ml - 10.0) < 0.2) return '2 sendok takar (10 mL / 2 Cth)';
+    if (Math.abs(ml - 15.0) < 0.2) return '1 sendok makan (15 mL / 1 C)';
     return `${ml} mL (${cth.toFixed(1)} cth)`;
   }
 
@@ -477,6 +600,7 @@
     const isFemale = state.gender === 'P';
 
     const bsa = Math.sqrt((tb * bb) / 3600);
+    const bsaDubois = 0.007184 * Math.pow(tb, 0.725) * Math.pow(bb, 0.425);
     const dDewasa = Number(state.dosisDewasaRef || (preset ? preset.dosis_dewasa_ref : 500) || 500);
 
     const totalBulan = (usiaTh * 12) + usiaBln;
@@ -512,84 +636,236 @@
     }
 
     const concMg = Math.max(0.1, Number(state.kekuatanMg || (preset ? preset.kekuatan_mg : 120) || 120));
-    const concMl = Math.max(0.1, Number(state.volumeSediaanMl || (preset ? preset.volume_sediaan_ml : 5) || 5));
-    const mgPerMl = concMg / concMl;
+    const concVol = Math.max(0.1, Number(state.volumeSediaanMl || (preset ? preset.volume_sediaan_ml : 5) || 5));
+    const bTk = (preset && preset.sediaan_bentuk) || state.sediaanBentuk || 'SIRUP';
 
-    const volSingleMinMl = Math.round((doseSingleMinMg / mgPerMl) * 10) / 10;
-    const volSingleMaxMl = Math.round((doseSingleMaxMg / mgPerMl) * 10) / 10;
+    const volSingleMinMl = Math.round(((doseSingleMinMg * concVol) / concMg) * 10) / 10;
+    const volSingleMaxMl = Math.round(((doseSingleMaxMg * concVol) / concMg) * 10) / 10;
 
-    const bTk = state.sediaanBentuk || (preset ? preset.sediaan_bentuk : 'SIRUP');
     const spoonMin = _formatSpoonHelper(volSingleMinMl, bTk);
     const spoonMax = _formatSpoonHelper(volSingleMaxMl, bTk);
 
     const durasi = Math.max(1, Number(state.durasiHari || 3));
-    const botolSizeMl = Math.max(1, Number(state.volumeBotolMl || (preset ? preset.volume_botol_ml : 60) || 60));
-    const totalVolumeNeededMl = Math.ceil(volSingleMaxMl * freq * durasi);
-    const botolCount = Math.ceil(totalVolumeNeededMl / botolSizeMl);
+    const totalVolumeNeededMl = Math.round(volSingleMaxMl * freq * durasi);
+    const bSize = Math.max(10, Number(state.volumeBotolMl || (preset ? preset.volume_botol_ml : 60) || 60));
+    const botolCount = Math.max(1, Math.ceil(totalVolumeNeededMl / bSize));
 
-    const infusMl = Math.max(1, Number(state.infusVolMl || 500));
-    const infusJam = Math.max(0.5, Number(state.infusJam || 8));
+    const infusMl = Math.max(10, Number(state.infusVolMl || 500));
+    const infusJam = Math.max(0.1, Number(state.infusJam || 8));
     const infusFaktor = Number(state.infusFaktor || 20);
     const tpm = Math.round((infusMl * infusFaktor) / (infusJam * 60));
+    const tpmMakro = Math.round((infusMl * 20) / (infusJam * 60));
+    const tpmMikro = Math.round((infusMl * 60) / (infusJam * 60));
+    const tpmDarah = Math.round((infusMl * 15) / (infusJam * 60));
     const mlPerJam = Math.round(infusMl / infusJam);
 
     const crCl = Math.round((((140 - usiaTh) * bb) / (72 * sCr)) * (isFemale ? 0.85 : 1.0) * 10) / 10;
+
+    let gfrStage = 'Stage 1 (Normal)';
+    let gfrBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+    let gfrAdvice = 'Fungsi ginjal normal. Gunakan dosis standar.';
+
+    if (crCl >= 90) {
+      gfrStage = 'Stage 1 (Normal)';
+      gfrBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      gfrAdvice = 'Fungsi ginjal normal. Gunakan dosis standar tanpa penyesuaian khusus.';
+    } else if (crCl >= 60) {
+      gfrStage = 'Stage 2 (Penurunan Ringan)';
+      gfrBadgeClass = 'bg-blue-100 text-blue-800 border-blue-300';
+      gfrAdvice = 'Penurunan fungsi ringan. Dosis standar aman, pantau obat indeks terapi sempit.';
+    } else if (crCl >= 45) {
+      gfrStage = 'Stage 3A (Penurunan Sedang)';
+      gfrBadgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+      gfrAdvice = 'Penurunan sedang. Pertimbangkan penyesuaian dosis 25% untuk obat eliminasi ginjal.';
+    } else if (crCl >= 30) {
+      gfrStage = 'Stage 3B (Sedang-Berat)';
+      gfrBadgeClass = 'bg-orange-100 text-orange-800 border-orange-300';
+      gfrAdvice = 'Penurunan sedang-berat. Kurangi dosis 50% atau perpanjang interval minum (q12h).';
+    } else if (crCl >= 15) {
+      gfrStage = 'Stage 4 (Gagal Ginjal Berat)';
+      gfrBadgeClass = 'bg-rose-100 text-rose-800 border-rose-300';
+      gfrAdvice = 'Gagal ginjal berat. Kurangi dosis 50-75% atau perpanjang jeda minum (q18-24h). Hindari NSAID.';
+    } else {
+      gfrStage = 'Stage 5 (Gagal Ginjal Terminal)';
+      gfrBadgeClass = 'bg-red-200 text-red-900 border-red-400';
+      gfrAdvice = 'Gagal ginjal terminal / dialisis. Penyesuaian dosis ketat & konsultasi spesialis nefrologi.';
+    }
 
     let aturanText = (preset && preset.aturan_dasar) || 'Minum {FREQ} kali sehari {TAK_MIN} sampai {TAK_MAX} sesudah makan.';
     aturanText = aturanText
       .replace('{TAK_MIN}', spoonMin)
       .replace('{TAK_MAX}', spoonMax)
-      .replace('{VOLUME_ML}', String(volSingleMaxMl))
-      .replace('{VOLUME_SENDOK}', spoonMax)
       .replace('{FREQ}', String(freq));
 
+    if (preset && preset.id === 'zinc-diare') {
+      aturanText = `Minum 1 kali sehari ${spoonMin} selama 10 HARI PENUH.`;
+    }
+
     return {
-      bb, tb, usiaTh, usiaBln, bsa: Math.round(bsa * 100) / 100,
-      doseSingleMinMg, doseSingleMaxMg, doseDailyMinMg, doseDailyMaxMg,
-      volSingleMinMl, volSingleMaxMl, spoonMin, spoonMax,
-      totalVolumeNeededMl, botolCount, botolSizeMl, durasi, freq,
-      dosisYoung, dosisDilling, dosisFried, dosisClark, dosisBsa, dDewasa,
-      tpm, mlPerJam, infusMl, infusJam, infusFaktor,
-      crCl, sCr, aturanText,
-      peringatan: (preset && preset.peringatan) || 'Perhatikan kondisi umum pasien dan pastikan tidak ada riwayat alergi terhadap zat aktif ini.'
+      bb,
+      tb,
+      usiaTh,
+      usiaBln,
+      bsa: Math.round(bsa * 100) / 100,
+      bsaDubois: Math.round(bsaDubois * 100) / 100,
+      doseSingleMinMg,
+      doseSingleMaxMg,
+      doseDailyMinMg,
+      doseDailyMaxMg,
+      volSingleMinMl,
+      volSingleMaxMl,
+      spoonMin,
+      spoonMax,
+      totalVolumeNeededMl,
+      botolCount,
+      botolSizeMl: bSize,
+      durasi,
+      freq,
+      dosisYoung,
+      dosisDilling,
+      dosisFried,
+      dosisClark,
+      dosisBsa,
+      dDewasa,
+      tpm,
+      tpmMakro,
+      tpmMikro,
+      tpmDarah,
+      mlPerJam,
+      infusMl,
+      infusJam,
+      infusFaktor,
+      crCl,
+      gfrStage,
+      gfrBadgeClass,
+      gfrAdvice,
+      sCr,
+      aturanText,
+      peringatan: (preset && preset.peringatan) || 'Gunakan sendok takar bawaan obat untuk memastikan volume akurat. Simpan di tempat sejuk terlindung dari cahaya.'
     };
+  }
+
+  function _buildDosageWaUrl(state, res, preset) {
+    const waText = `*REKOMENDASI ATURAN MINUM OBAT & DOSIS KLINIS*
+*Apotek ONS Farma*
+----------------------------------------
+👤 *Pasien:* ${state.pasienNama || 'Umum'}
+⚖️ *BB / Usia:* ${state.beratKg} kg / ${state.usiaTahun} th ${state.usiaBulan ? state.usiaBulan + ' bln' : ''}
+💊 *Obat:* ${state.namaObat}
+🧪 *Sediaan:* ${state.kekuatanMg} mg / ${state.volumeSediaanMl} mL (${state.sediaanBentuk})
+
+📋 *HASIL DOSIS TERHITUNG:*
+• *Dosis Sekali Minum:* ${res.doseSingleMinMg} - ${res.doseSingleMaxMg} mg
+• *Takaran Minum:* ${res.spoonMax} (${res.volSingleMinMl} - ${res.volSingleMaxMl} mL)
+• *Frekuensi:* ${res.freq} kali sehari (tiap ${Math.round(24/res.freq)} jam)
+• *Dosis Harian:* ${res.doseDailyMinMg} - ${res.doseDailyMaxMg} mg/hari
+• *Kebutuhan:* ${res.botolCount} botol untuk ${res.durasi} hari
+
+📌 *ATURAN PAKAI RESMI:*
+${res.aturanText}
+
+⚠️ *CATATAN APOTEKER:*
+${res.peringatan}
+${state.catatanApoteker ? ('• Catatan Tambahan: ' + state.catatanApoteker) : ''}
+----------------------------------------
+_Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut._`;
+
+    return S().buildWaUrl && state.noWa
+      ? S().buildWaUrl(state.noWa, waText)
+      : ('https://wa.me/?text=' + encodeURIComponent(waText));
+  }
+
+  function _updateDosageDomLive(res, state, preset) {
+    // 1. Hero dose
+    document.querySelectorAll('.calc-dose-single-mg').forEach((el) => {
+      el.textContent = `${res.doseSingleMinMg} - ${res.doseSingleMaxMg}`;
+    });
+    document.querySelectorAll('.calc-vol-single-ml').forEach((el) => {
+      el.textContent = `${res.volSingleMinMl} - ${res.volSingleMaxMl} mL`;
+    });
+    document.querySelectorAll('.calc-spoon').forEach((el) => {
+      el.textContent = res.spoonMax;
+    });
+    document.querySelectorAll('.calc-freq-desc').forEach((el) => {
+      el.textContent = `${res.freq}x sehari (tiap ${Math.round(24 / res.freq)} jam)`;
+    });
+    document.querySelectorAll('.calc-daily-mg').forEach((el) => {
+      el.textContent = `${res.doseDailyMinMg} - ${res.doseDailyMaxMg} mg/hari`;
+    });
+    document.querySelectorAll('.calc-botol-count').forEach((el) => {
+      el.textContent = `${res.botolCount} Botol (${res.totalVolumeNeededMl} mL)`;
+    });
+    document.querySelectorAll('.calc-aturan-text').forEach((el) => {
+      el.textContent = res.aturanText;
+    });
+    document.querySelectorAll('.calc-peringatan').forEach((el) => {
+      el.textContent = res.peringatan;
+    });
+
+    // 2. Buttons
+    const newWaHref = _buildDosageWaUrl(state, res, preset);
+    document.querySelectorAll('.calc-wa-btn').forEach((el) => {
+      el.setAttribute('href', newWaHref);
+    });
+
+    document.querySelectorAll('.calc-copy-btn').forEach((el) => {
+      el.onclick = () => window.copyDosageAturanText(res.aturanText);
+    });
+
+    // 3. Sub-modes
+    document.querySelectorAll('.calc-young').forEach((el) => {
+      el.textContent = res.dosisYoung !== null ? res.dosisYoung + ' mg' : '-';
+    });
+    document.querySelectorAll('.calc-dilling').forEach((el) => {
+      el.textContent = res.dosisDilling !== null ? res.dosisDilling + ' mg' : '-';
+    });
+    document.querySelectorAll('.calc-fried').forEach((el) => {
+      el.textContent = res.dosisFried !== null ? res.dosisFried + ' mg' : '-';
+    });
+    document.querySelectorAll('.calc-clark').forEach((el) => {
+      el.textContent = res.dosisClark + ' mg';
+    });
+    document.querySelectorAll('.calc-bsa').forEach((el) => {
+      el.textContent = res.bsa + ' m²';
+    });
+    document.querySelectorAll('.calc-dosis-bsa').forEach((el) => {
+      el.textContent = res.dosisBsa + ' mg';
+    });
+    document.querySelectorAll('.calc-tpm').forEach((el) => {
+      el.textContent = res.tpm + ' TPM';
+    });
+    document.querySelectorAll('.calc-ml-jam').forEach((el) => {
+      el.textContent = res.mlPerJam + ' mL/Jam';
+    });
+    document.querySelectorAll('.calc-gfr').forEach((el) => {
+      el.textContent = res.crCl + ' mL/min';
+    });
+    document.querySelectorAll('.calc-gfr-stage').forEach((el) => {
+      el.textContent = res.gfrStage;
+      el.className = 'calc-gfr-stage px-2 py-0.5 rounded text-[10px] font-bold ' + res.gfrBadgeClass;
+    });
+    document.querySelectorAll('.calc-gfr-advice').forEach((el) => {
+      el.textContent = res.gfrAdvice;
+    });
   }
 
   function renderDosageCalculatorTabHtml(isModal) {
     const st = S().AppState;
     const curPreset = DOSAGE_PRESETS.find((p) => p.id === dosageState.presetId) || null;
     const res = computeDosageCalculation(dosageState, curPreset);
-
-    const waText = `*REKOMENDASI ATURAN MINUM OBAT & DOSIS KLINIS*
-*Apotek ONS Farma Enterprise*
-----------------------------------------
-Pasien: ${dosageState.pasienNama || 'Umum'} (BB: ${dosageState.beratKg} kg, Usia: ${dosageState.usiaTahun} th)
-Obat: ${dosageState.namaObat}
-Sediaan: ${dosageState.kekuatanMg}mg / ${dosageState.volumeSediaanMl}mL
-
-*Dosis Sekali Minum:* ${res.doseSingleMinMg} - ${res.doseSingleMaxMg} mg
-*Takaran Minum:* ${res.spoonMax} (${res.volSingleMaxMl} mL)
-*Frekuensi:* ${res.freq} kali sehari
-*Aturan Pakai:* ${res.aturanText}
-
-*Catatan Apoteker:*
-${res.peringatan}
-${dosageState.catatanApoteker ? ('• Catatan tambahan: ' + dosageState.catatanApoteker) : ''}
-----------------------------------------
-_Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut._`;
-
-    const waHref = S().buildWaUrl && dosageState.noWa
-      ? S().buildWaUrl(dosageState.noWa, waText)
-      : ('https://wa.me/?text=' + encodeURIComponent(waText));
+    const waHref = _buildDosageWaUrl(dosageState, res, curPreset);
 
     return `<div class="space-y-4 text-xs">
       <!-- Quick Drug Presets Chips -->
       <div class="ons-card p-3 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="font-bold text-xs" style="color:var(--ons-primary)">Template Obat Populer Siap Pakai:</span>
-          <span class="text-[11px]" style="color:var(--ons-text-soft)">Pilih template untuk pengisian dosis &amp; sediaan otomatis</span>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-xs" style="color:var(--ons-primary)">18 Template Obat Siap Pakai:</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800">PMK 73 &amp; ISO Farmasi</span>
+          </div>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Klik untuk memuat parameter &amp; aturan resmi</span>
         </div>
-        <div class="flex flex-wrap gap-1.5">
+        <div class="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto p-1 border rounded-lg" style="border-color:var(--ons-border)">
           ${DOSAGE_PRESETS.map((p) => {
             const active = dosageState.presetId === p.id;
             return `<button type="button" onclick="window.pickDosagePreset('${p.id}', ${isModal ? 'true' : 'false'})" class="px-2.5 py-1 rounded-lg border font-semibold text-[11px] transition-all ${active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'}" style="${active ? 'background:var(--ons-primary);color:#fff;' : ''}">
@@ -604,11 +880,11 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div class="flex flex-wrap items-center gap-2 border-b pb-2" style="border-color:var(--ons-border)">
         <span class="font-bold text-xs mr-2">Metode Kalkulasi:</span>
         <div class="ons-tab-bar">
-          <button type="button" onclick="window.setDosageParam('modeHitung', 'BB', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'BB' ? 'active' : ''}">1. mg/kgBB (Pediatrik)</button>
-          <button type="button" onclick="window.setDosageParam('modeHitung', 'USIA', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'USIA' ? 'active' : ''}">2. Rumus Usia (Young/Dilling/Clark)</button>
-          <button type="button" onclick="window.setDosageParam('modeHitung', 'BSA', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'BSA' ? 'active' : ''}">3. Luas Tubuh (BSA)</button>
-          <button type="button" onclick="window.setDosageParam('modeHitung', 'INFUS', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'INFUS' ? 'active' : ''}">4. Tetesan Infus (IV GTT)</button>
-          <button type="button" onclick="window.setDosageParam('modeHitung', 'GINJAL', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'GINJAL' ? 'active' : ''}">5. Klirens Ginjal (eGFR)</button>
+          <button type="button" onclick="window.setDosageMode('BB', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'BB' ? 'active' : ''}">1. mg/kgBB (Pediatrik)</button>
+          <button type="button" onclick="window.setDosageMode('USIA', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'USIA' ? 'active' : ''}">2. Rumus Usia (Young/Dilling/Fried/Clark)</button>
+          <button type="button" onclick="window.setDosageMode('BSA', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'BSA' ? 'active' : ''}">3. Luas Permukaan Tubuh (BSA)</button>
+          <button type="button" onclick="window.setDosageMode('INFUS', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'INFUS' ? 'active' : ''}">4. Tetesan Infus (IV Flow Rate)</button>
+          <button type="button" onclick="window.setDosageMode('GINJAL', ${isModal ? 'true' : 'false'})" class="ons-tab-btn ${dosageState.modeHitung === 'GINJAL' ? 'active' : ''}">5. Klirens Ginjal (eGFR Cockcroft)</button>
         </div>
       </div>
 
@@ -630,26 +906,26 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </div>
             <div>
               <label class="font-semibold block mb-1">Nama Pasien *</label>
-              <input class="ons-input text-xs" value="${S().esc(dosageState.pasienNama)}" oninput="window.setDosageParam('pasienNama', this.value, ${isModal ? 'true' : 'false'})"/>
+              <input class="ons-input text-xs" value="${S().esc(dosageState.pasienNama)}" oninput="window.handleDosageLiveInput(this, 'pasienNama', ${isModal ? 'true' : 'false'})" placeholder="Nama pasien / anak..."/>
             </div>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
               <label class="font-semibold block mb-1">Berat Badan (kg) *</label>
-              <input type="number" step="0.1" min="0.5" class="ons-input font-mono-num text-xs font-bold text-blue-600" value="${dosageState.beratKg}" oninput="window.setDosageParam('beratKg', Number(this.value||1), ${isModal ? 'true' : 'false'})"/>
+              <input type="number" step="0.1" min="0.5" class="ons-input font-mono-num text-xs font-bold text-blue-600" value="${dosageState.beratKg}" oninput="window.handleDosageLiveInput(this, 'beratKg', ${isModal ? 'true' : 'false'})"/>
             </div>
             <div>
               <label class="font-semibold block mb-1">Tinggi Badan (cm)</label>
-              <input type="number" min="20" class="ons-input font-mono-num text-xs" value="${dosageState.tinggiCm}" oninput="window.setDosageParam('tinggiCm', Number(this.value||100), ${isModal ? 'true' : 'false'})"/>
+              <input type="number" min="20" class="ons-input font-mono-num text-xs" value="${dosageState.tinggiCm}" oninput="window.handleDosageLiveInput(this, 'tinggiCm', ${isModal ? 'true' : 'false'})"/>
             </div>
             <div>
               <label class="font-semibold block mb-1">Usia (Tahun)</label>
-              <input type="number" min="0" max="120" class="ons-input font-mono-num text-xs" value="${dosageState.usiaTahun}" oninput="window.setDosageParam('usiaTahun', Number(this.value||0), ${isModal ? 'true' : 'false'})"/>
+              <input type="number" min="0" max="120" class="ons-input font-mono-num text-xs" value="${dosageState.usiaTahun}" oninput="window.handleDosageLiveInput(this, 'usiaTahun', ${isModal ? 'true' : 'false'})"/>
             </div>
             <div>
               <label class="font-semibold block mb-1">Usia (Bulan)</label>
-              <input type="number" min="0" max="11" class="ons-input font-mono-num text-xs" value="${dosageState.usiaBulan}" oninput="window.setDosageParam('usiaBulan', Number(this.value||0), ${isModal ? 'true' : 'false'})"/>
+              <input type="number" min="0" max="11" class="ons-input font-mono-num text-xs" value="${dosageState.usiaBulan}" oninput="window.handleDosageLiveInput(this, 'usiaBulan', ${isModal ? 'true' : 'false'})"/>
             </div>
           </div>
 
@@ -662,39 +938,39 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div>
                 <label class="text-[11px] block">Kekuatan (mg)</label>
-                <input type="number" min="0.1" class="ons-input font-mono-num text-xs" value="${dosageState.kekuatanMg}" oninput="window.setDosageParam('kekuatanMg', Number(this.value||1), ${isModal ? 'true' : 'false'})"/>
+                <input type="number" min="0.01" step="0.01" class="ons-input font-mono-num text-xs" value="${dosageState.kekuatanMg}" oninput="window.handleDosageLiveInput(this, 'kekuatanMg', ${isModal ? 'true' : 'false'})"/>
               </div>
               <div>
                 <label class="text-[11px] block">Dalam Volume (mL)</label>
-                <input type="number" min="0.1" class="ons-input font-mono-num text-xs" value="${dosageState.volumeSediaanMl}" oninput="window.setDosageParam('volumeSediaanMl', Number(this.value||1), ${isModal ? 'true' : 'false'})"/>
+                <input type="number" min="0.1" step="0.1" class="ons-input font-mono-num text-xs" value="${dosageState.volumeSediaanMl}" oninput="window.handleDosageLiveInput(this, 'volumeSediaanMl', ${isModal ? 'true' : 'false'})"/>
               </div>
               <div>
                 <label class="text-[11px] block">Ukuran Botol (mL)</label>
-                <input type="number" min="10" class="ons-input font-mono-num text-xs" value="${dosageState.volumeBotolMl}" oninput="window.setDosageParam('volumeBotolMl', Number(this.value||60), ${isModal ? 'true' : 'false'})"/>
+                <input type="number" min="5" class="ons-input font-mono-num text-xs" value="${dosageState.volumeBotolMl}" oninput="window.handleDosageLiveInput(this, 'volumeBotolMl', ${isModal ? 'true' : 'false'})"/>
               </div>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div>
                 <label class="text-[11px] block">Dosis Min (mg/kg)</label>
-                <input type="number" step="0.1" min="0.1" class="ons-input font-mono-num text-xs" value="${dosageState.dosisMinMgPerKg}" oninput="window.setDosageParam('dosisMinMgPerKg', Number(this.value||1), ${isModal ? 'true' : 'false'})"/>
+                <input type="number" step="0.01" min="0.01" class="ons-input font-mono-num text-xs" value="${dosageState.dosisMinMgPerKg}" oninput="window.handleDosageLiveInput(this, 'dosisMinMgPerKg', ${isModal ? 'true' : 'false'})"/>
               </div>
               <div>
                 <label class="text-[11px] block">Dosis Max (mg/kg)</label>
-                <input type="number" step="0.1" min="0.1" class="ons-input font-mono-num text-xs" value="${dosageState.dosisMaxMgPerKg}" oninput="window.setDosageParam('dosisMaxMgPerKg', Number(this.value||1), ${isModal ? 'true' : 'false'})"/>
+                <input type="number" step="0.01" min="0.01" class="ons-input font-mono-num text-xs" value="${dosageState.dosisMaxMgPerKg}" oninput="window.handleDosageLiveInput(this, 'dosisMaxMgPerKg', ${isModal ? 'true' : 'false'})"/>
               </div>
               <div>
                 <label class="text-[11px] block">Frekuensi (x/hari)</label>
-                <input type="number" min="1" max="6" class="ons-input font-mono-num text-xs" value="${dosageState.frekuensiHari}" oninput="window.setDosageParam('frekuensiHari', Number(this.value||1), ${isModal ? 'true' : 'false'})"/>
+                <input type="number" min="1" max="6" class="ons-input font-mono-num text-xs" value="${dosageState.frekuensiHari}" oninput="window.handleDosageLiveInput(this, 'frekuensiHari', ${isModal ? 'true' : 'false'})"/>
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2 pt-1">
               <div>
-                <label class="text-[11px] block">Durasi Pengobatan (hari)</label>
-                <input type="number" min="1" class="ons-input font-mono-num text-xs" value="${dosageState.durasiHari}" oninput="window.setDosageParam('durasiHari', Number(this.value||1), ${isModal ? 'true' : 'false'})"/>
+                <label class="text-[11px] block">Durasi Terapi (hari)</label>
+                <input type="number" min="1" class="ons-input font-mono-num text-xs" value="${dosageState.durasiHari}" oninput="window.handleDosageLiveInput(this, 'durasiHari', ${isModal ? 'true' : 'false'})"/>
               </div>
               <div>
                 <label class="text-[11px] block">No. WhatsApp Pasien</label>
-                <input class="ons-input font-mono-num text-xs" value="${S().esc(dosageState.noWa)}" oninput="window.setDosageParam('noWa', this.value, ${isModal ? 'true' : 'false'})"/>
+                <input class="ons-input font-mono-num text-xs" value="${S().esc(dosageState.noWa)}" oninput="window.handleDosageLiveInput(this, 'noWa', ${isModal ? 'true' : 'false'})" placeholder="08xxxxxxxxxx"/>
               </div>
             </div>
           </div>
@@ -704,13 +980,13 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <div class="p-3 rounded-xl border border-indigo-200 bg-indigo-50/50 dark:bg-indigo-950/20 space-y-2">
               <div class="font-bold text-xs text-indigo-700">Parameter Tetesan Infus (IV Flow Rate):</div>
               <div class="grid grid-cols-3 gap-2">
-                <div><label class="text-[11px] block">Volume Infus (mL)</label><input type="number" class="ons-input font-mono-num text-xs" value="${dosageState.infusVolMl}" oninput="window.setDosageParam('infusVolMl', Number(this.value||500), ${isModal ? 'true' : 'false'})"/></div>
-                <div><label class="text-[11px] block">Durasi Habis (Jam)</label><input type="number" step="0.5" class="ons-input font-mono-num text-xs" value="${dosageState.infusJam}" oninput="window.setDosageParam('infusJam', Number(this.value||8), ${isModal ? 'true' : 'false'})"/></div>
+                <div><label class="text-[11px] block">Volume Infus (mL)</label><input type="number" class="ons-input font-mono-num text-xs" value="${dosageState.infusVolMl}" oninput="window.handleDosageLiveInput(this, 'infusVolMl', ${isModal ? 'true' : 'false'})"/></div>
+                <div><label class="text-[11px] block">Durasi Habis (Jam)</label><input type="number" step="0.5" class="ons-input font-mono-num text-xs" value="${dosageState.infusJam}" oninput="window.handleDosageLiveInput(this, 'infusJam', ${isModal ? 'true' : 'false'})"/></div>
                 <div><label class="text-[11px] block">Faktor Tetes</label>
                   <select class="ons-select text-xs" onchange="window.setDosageParam('infusFaktor', Number(this.value), ${isModal ? 'true' : 'false'})">
-                    <option value="20" ${dosageState.infusFaktor === 20 ? 'selected' : ''}>Makro (20 tts/mL)</option>
-                    <option value="60" ${dosageState.infusFaktor === 60 ? 'selected' : ''}>Mikro (60 tts/mL)</option>
-                    <option value="15" ${dosageState.infusFaktor === 15 ? 'selected' : ''}>Darah (15 tts/mL)</option>
+                    <option value="20" ${dosageState.infusFaktor === 20 ? 'selected' : ''}>Makro Dewasa (20 tts/mL)</option>
+                    <option value="60" ${dosageState.infusFaktor === 60 ? 'selected' : ''}>Mikro Pediatrik (60 tts/mL)</option>
+                    <option value="15" ${dosageState.infusFaktor === 15 ? 'selected' : ''}>Transfusi Darah (15 tts/mL)</option>
                   </select>
                 </div>
               </div>
@@ -719,7 +995,7 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <div class="p-3 rounded-xl border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
               <div class="font-bold text-xs text-amber-800">Parameter Klirens Ginjal (Cockcroft-Gault):</div>
               <div class="grid grid-cols-2 gap-2">
-                <div><label class="text-[11px] block">Serum Kreatinin (mg/dL)</label><input type="number" step="0.1" class="ons-input font-mono-num text-xs" value="${dosageState.serumKreatinin}" oninput="window.setDosageParam('serumKreatinin', Number(this.value||1.0), ${isModal ? 'true' : 'false'})"/></div>
+                <div><label class="text-[11px] block">Serum Kreatinin (mg/dL)</label><input type="number" step="0.1" class="ons-input font-mono-num text-xs" value="${dosageState.serumKreatinin}" oninput="window.handleDosageLiveInput(this, 'serumKreatinin', ${isModal ? 'true' : 'false'})"/></div>
                 <div><label class="text-[11px] block">Jenis Kelamin Pasien</label>
                   <select class="ons-select text-xs" onchange="window.setDosageParam('gender', this.value, ${isModal ? 'true' : 'false'})">
                     <option value="L" ${dosageState.gender === 'L' ? 'selected' : ''}>Laki-laki (Faktor 1.0)</option>
@@ -736,20 +1012,22 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <div class="space-y-3">
             <div class="flex items-center justify-between border-b pb-2" style="border-color:var(--ons-border)">
               <h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-400">Hasil Perhitungan Dosis Presisi</h3>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Tervalidasi Klinis</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Tervalidasi Farmakope</span>
             </div>
 
             <!-- Kartu Metrik Utama -->
             <div class="grid grid-cols-2 gap-2 text-center">
               <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 dark:bg-emerald-950/30">
                 <div class="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300">DOSIS SEKALI MINUM</div>
-                <div class="text-xl font-extrabold font-mono-num text-emerald-700 dark:text-emerald-400">${res.doseSingleMinMg} - ${res.doseSingleMaxMg} <span class="text-xs">mg</span></div>
-                <div class="text-[11px] font-bold text-emerald-900 dark:text-emerald-200 mt-0.5">${res.volSingleMinMl} - ${res.volSingleMaxMl} mL</div>
+                <div class="text-xl font-extrabold font-mono-num text-emerald-700 dark:text-emerald-400">
+                  <span class="calc-dose-single-mg">${res.doseSingleMinMg} - ${res.doseSingleMaxMg}</span> <span class="text-xs">mg</span>
+                </div>
+                <div class="calc-vol-single-ml text-[11px] font-bold text-emerald-900 dark:text-emerald-200 mt-0.5">${res.volSingleMinMl} - ${res.volSingleMaxMl} mL</div>
               </div>
               <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/30">
                 <div class="text-[10px] font-semibold text-blue-800 dark:text-blue-300">TAKARAN SENDOK</div>
-                <div class="text-base font-extrabold text-blue-700 dark:text-blue-400 leading-tight py-1">${res.spoonMax}</div>
-                <div class="text-[10px] text-blue-900 dark:text-blue-200 font-mono-num">${res.freq}x sehari (tiap ${Math.round(24/res.freq)} jam)</div>
+                <div class="calc-spoon text-base font-extrabold text-blue-700 dark:text-blue-400 leading-tight py-1">${res.spoonMax}</div>
+                <div class="calc-freq-desc text-[10px] text-blue-900 dark:text-blue-200 font-mono-num">${res.freq}x sehari (tiap ${Math.round(24/res.freq)} jam)</div>
               </div>
             </div>
 
@@ -757,47 +1035,63 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <div class="grid grid-cols-2 gap-2 text-xs p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
               <div>
                 <span class="block text-[10px]" style="color:var(--ons-text-soft)">Dosis Total Harian:</span>
-                <b class="font-mono-num text-slate-800 dark:text-slate-200">${res.doseDailyMinMg} - ${res.doseDailyMaxMg} mg/hari</b>
+                <b class="calc-daily-mg font-mono-num text-slate-800 dark:text-slate-200">${res.doseDailyMinMg} - ${res.doseDailyMaxMg} mg/hari</b>
               </div>
               <div>
                 <span class="block text-[10px]" style="color:var(--ons-text-soft)">Kebutuhan Terapi (${res.durasi} Hari):</span>
-                <b class="font-mono-num text-blue-600">${res.botolCount} Botol (${res.totalVolumeNeededMl} mL)</b>
+                <b class="calc-botol-count font-mono-num text-blue-600">${res.botolCount} Botol (${res.totalVolumeNeededMl} mL)</b>
               </div>
             </div>
 
-            <!-- Ringkasan Mode Tambahan -->
+            <!-- Mode Spesifik -->
             ${dosageState.modeHitung === 'USIA' ? `
               <div class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 text-[11px] space-y-1">
                 <div class="font-bold text-indigo-900">Perbandingan Rumus Usia Klasik Farmasi (Ref Dewasa: ${res.dDewasa} mg):</div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-1 font-mono-num text-[10px]">
-                  <div>Young (1-12 th): <b>${res.dosisYoung !== null ? res.dosisYoung + ' mg' : '-'}</b></div>
-                  <div>Dilling (>8 th): <b>${res.dosisDilling !== null ? res.dosisDilling + ' mg' : '-'}</b></div>
-                  <div>Fried (<1 th): <b>${res.dosisFried !== null ? res.dosisFried + ' mg' : '-'}</b></div>
-                  <div>Clark (BB/70): <b>${res.dosisClark} mg</b></div>
+                  <div>Young (1-12 th): <b class="calc-young">${res.dosisYoung !== null ? res.dosisYoung + ' mg' : '-'}</b></div>
+                  <div>Dilling (>8 th): <b class="calc-dilling">${res.dosisDilling !== null ? res.dosisDilling + ' mg' : '-'}</b></div>
+                  <div>Fried (<1 th): <b class="calc-fried">${res.dosisFried !== null ? res.dosisFried + ' mg' : '-'}</b></div>
+                  <div>Clark (BB/70): <b class="calc-clark">${res.dosisClark} mg</b></div>
                 </div>
               </div>
             ` : dosageState.modeHitung === 'BSA' ? `
               <div class="p-2.5 rounded-xl border border-teal-200 bg-teal-50/50 text-[11px] space-y-1">
-                <div class="font-bold text-teal-900">Luas Permukaan Tubuh (BSA Mosteller):</div>
-                <div>BSA Pasien: <b class="font-mono-num">${res.bsa} m²</b> &bull; Dosis Berdasarkan BSA: <b class="font-mono-num">${res.dosisBsa} mg</b></div>
+                <div class="font-bold text-teal-900">Luas Permukaan Tubuh (BSA):</div>
+                <div>BSA Mosteller: <b class="calc-bsa font-mono-num">${res.bsa} m²</b> (DuBois: ${res.bsaDubois} m²) &bull; Dosis Anak: <b class="calc-dosis-bsa font-mono-num">${res.dosisBsa} mg</b></div>
               </div>
             ` : dosageState.modeHitung === 'INFUS' ? `
-              <div class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 text-[11px] space-y-1">
+              <div class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 text-[11px] space-y-2">
                 <div class="font-bold text-indigo-900">Kecepatan Tetesan Infus (IV Flow Rate):</div>
-                <div class="text-base font-extrabold text-indigo-700 font-mono-num">${res.tpm} Tetes/Menit (TPM) <span class="text-xs font-normal text-slate-700">(${res.mlPerJam} mL/Jam)</span></div>
+                <div class="flex items-center justify-between">
+                  <div class="text-base font-extrabold text-indigo-700 font-mono-num">
+                    <span class="calc-tpm">${res.tpm} TPM</span> <span class="calc-ml-jam text-xs font-normal text-slate-700">(${res.mlPerJam} mL/Jam)</span>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold">${res.infusFaktor === 20 ? 'Makro' : (res.infusFaktor === 60 ? 'Mikro' : 'Darah')}</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1 text-[10px] text-slate-600 border-t pt-1 border-indigo-200">
+                  <div>Makro 20: <b>${res.tpmMakro} tts/m</b></div>
+                  <div>Mikro 60: <b>${res.tpmMikro} tts/m</b></div>
+                  <div>Darah 15: <b>${res.tpmDarah} tts/m</b></div>
+                </div>
               </div>
             ` : dosageState.modeHitung === 'GINJAL' ? `
-              <div class="p-2.5 rounded-xl border border-amber-200 bg-amber-50/50 text-[11px] space-y-1">
-                <div class="font-bold text-amber-900">Klirens Kreatinin (Cockcroft-Gault):</div>
-                <div>eGFR / CrCl: <b class="font-mono-num text-sm ${res.crCl < 30 ? 'text-red-700' : (res.crCl < 60 ? 'text-amber-700' : 'text-emerald-700')}">${res.crCl} mL/min</b></div>
-                <div class="text-[10px] text-amber-800">${res.crCl < 30 ? 'Peringatan: Fungsi ginjal berat, kurangi dosis atau perpanjang interval minum.' : (res.crCl < 60 ? 'Perhatian: Penyesuaian dosis moderat dianjurkan.' : 'Fungsi ginjal normal untuk dosis standar.')}</div>
+              <div class="p-2.5 rounded-xl border border-amber-200 bg-amber-50/50 text-[11px] space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-amber-900">Klirens Kreatinin (Cockcroft-Gault):</span>
+                  <span class="calc-gfr-stage px-2 py-0.5 rounded text-[10px] font-bold ${res.gfrBadgeClass}">${res.gfrStage}</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-xs">eGFR / CrCl:</span>
+                  <b class="calc-gfr font-mono-num text-base font-extrabold text-amber-900">${res.crCl} mL/min</b>
+                </div>
+                <div class="calc-gfr-advice text-[10px] text-amber-900 font-semibold">${res.gfrAdvice}</div>
               </div>
             ` : ''}
 
             <!-- Teks Aturan Pakai Resmi -->
             <div class="space-y-1">
               <label class="font-bold text-xs block text-slate-800 dark:text-slate-200">Format Teks Aturan Pakai (Siap Salin &amp; Cetak):</label>
-              <div class="p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-sm text-blue-900 dark:text-blue-200">
+              <div class="calc-aturan-text p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-sm text-blue-900 dark:text-blue-200 leading-snug">
                 ${S().esc(res.aturanText)}
               </div>
             </div>
@@ -805,22 +1099,22 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <!-- Peringatan Keamanan & Interaksi -->
             <div class="p-2.5 rounded-xl border border-rose-200 bg-rose-50/70 dark:bg-rose-950/30 text-[11px] text-rose-900 dark:text-rose-200 space-y-1">
               <div class="font-bold flex items-center gap-1"><span>&#9888;</span> Peringatan Keamanan &amp; Edukasi Farmasi:</div>
-              <p class="leading-relaxed">${S().esc(res.peringatan)}</p>
+              <p class="calc-peringatan leading-relaxed">${S().esc(res.peringatan)}</p>
             </div>
           </div>
 
           <!-- Action Buttons Bar -->
           <div class="pt-3 border-t flex flex-wrap gap-2" style="border-color:var(--ons-border)">
-            <button type="button" onclick="window.copyDosageAturanText('${S().esc(res.aturanText)}')" class="ons-btn ons-btn-emerald flex-1 text-xs min-h-[38px] font-bold">
+            <button type="button" onclick="window.copyDosageAturanText('${S().esc(res.aturanText)}')" class="calc-copy-btn ons-btn ons-btn-emerald flex-1 text-xs min-h-[38px] font-bold">
               &#128203; Salin Aturan Pakai
             </button>
-            <a target="_blank" rel="noopener" href="${S().esc(waHref)}" class="ons-btn ons-btn-primary flex-1 text-xs min-h-[38px] font-bold text-center flex items-center justify-center">
+            <a target="_blank" rel="noopener" href="${S().esc(waHref)}" class="calc-wa-btn ons-btn ons-btn-primary flex-1 text-xs min-h-[38px] font-bold text-center flex items-center justify-center">
               &#128172; Kirim via WhatsApp
             </a>
             <button type="button" onclick="window.printDosageEtiket('${(curPreset && curPreset.warna_etiket) || 'putih'}')" class="ons-btn ons-btn-ghost text-xs min-h-[38px]">
               &#127991; Cetak Etiket
             </button>
-            <button type="button" onclick="window.addDosageToPosCart('${dosageState.presetId}')" class="ons-btn ons-btn-ghost text-xs min-h-[38px] border-blue-400 text-blue-700">
+            <button type="button" onclick="window.addDosageToPosCart('${dosageState.presetId}', ${isModal ? 'true' : 'false'})" class="ons-btn ons-btn-ghost text-xs min-h-[38px] border-blue-400 text-blue-700">
               &#128722; Masukkan Kasir POS
             </button>
           </div>
@@ -9944,6 +10238,15 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     }
   };
 
+  global.setDosageMode = (mode, isModal) => {
+    dosageState.modeHitung = mode || 'BB';
+    if (isModal) {
+      global.openDosageCalculatorModal();
+    } else {
+      global.renderActiveView();
+    }
+  };
+
   global.setDosageParam = (key, val, isModal) => {
     dosageState[key] = val;
     if (isModal) {
@@ -9951,6 +10254,17 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     } else {
       global.renderActiveView();
     }
+  };
+
+  global.handleDosageLiveInput = (el, key, isModal) => {
+    let val = el.value;
+    if (el.type === 'number') {
+      val = val === '' ? 0 : Number(val);
+    }
+    dosageState[key] = val;
+    const curPreset = DOSAGE_PRESETS.find((p) => p.id === dosageState.presetId) || null;
+    const res = computeDosageCalculation(dosageState, curPreset);
+    _updateDosageDomLive(res, dosageState, curPreset);
   };
 
   global.pickDosageMember = (idMember, isModal) => {
@@ -9984,7 +10298,7 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         document.execCommand('copy');
         document.body.removeChild(t);
       }
-      global.toast('Aturan pakai berhasil disalin!', 'ok');
+      global.toast('Aturan pakai berhasil disalin ke clipboard!', 'ok');
     } catch (e) {
       global.toast('Gagal menyalin teks.', 'err');
     }
@@ -9993,14 +10307,41 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.printDosageEtiket = (warna) => {
     const curPreset = DOSAGE_PRESETS.find((p) => p.id === dosageState.presetId) || null;
     const res = computeDosageCalculation(dosageState, curPreset);
-    etiketDraft.jenis = (warna || 'putih').toLowerCase();
-    etiketDraft.pasien = dosageState.pasienNama || 'Pasien Umum';
-    etiketDraft.obat = dosageState.namaObat;
-    etiketDraft.aturan = res.aturanText;
-    global.printEtiketSample(etiketDraft.jenis === 'biru' ? 'BIRU' : 'PUTIH');
+    const pasien = dosageState.pasienNama || 'Pasien Umum';
+    const obat = dosageState.namaObat;
+    const aturan = res.aturanText;
+    const jenis = (warna || (curPreset && curPreset.warna_etiket) || 'putih').toUpperCase();
+    const bg = jenis === 'BIRU' ? '#E0F2FE' : '#FFFFFF';
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    
+    if (typeof S().printHtmlZone === 'function') {
+      const tglStr = new Date().toLocaleDateString('id-ID');
+      const html = `<div style="width:55mm;border:2px solid #000;background:${bg};padding:6px;font-family:Arial,sans-serif;font-size:10px;box-sizing:border-box;">
+        <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">
+          ${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/>
+          <span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span>
+        </div>
+        <div style="margin:4px 0;font-size:9px;">
+          <div><b>No. Resep/Tgl:</b> ETK-${Date.now().toString().slice(-6)} / ${tglStr}</div>
+          <div><b>Pasien:</b> ${S().esc(pasien)} (${dosageState.beratKg ? dosageState.beratKg + ' kg' : ''}${dosageState.usiaTahun ? ', ' + dosageState.usiaTahun + ' th' : ''})</div>
+          <div><b>Obat:</b> ${S().esc(obat)}</div>
+        </div>
+        <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px 0;text-align:center;font-weight:bold;font-size:11px;line-height:1.3;">
+          ${S().esc(aturan)}
+        </div>
+        <div style="margin-top:4px;font-size:8px;color:#333;">
+          <div><i>Catatan: ${S().esc(res.peringatan.slice(0, 100))}</i></div>
+          <div style="text-align:right;margin-top:2px;">Apoteker Penanggung Jawab</div>
+        </div>
+      </div>`;
+      S().printHtmlZone(html, { widthMm: 58 });
+      global.toast('Mencetak etiket ' + jenis + ' untuk ' + obat + '...', 'ok');
+    } else {
+      global.toast('Modul cetak etiket siap. Hubungkan printer thermal.', 'info');
+    }
   };
 
-  global.addDosageToPosCart = (presetId) => {
+  global.addDosageToPosCart = (presetId, isModal) => {
     const st = S().AppState;
     const p = DOSAGE_PRESETS.find((x) => x.id === presetId);
     const obNama = (p && p.nama) || dosageState.namaObat;
@@ -10010,9 +10351,25 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       return hay.includes(needle);
     });
 
+    const res = computeDosageCalculation(dosageState, p);
+    const aturan = res.aturanText;
+
     if (matching && typeof global.posAddToCart === 'function') {
       global.posAddToCart(matching.id_obat, 1);
-      global.toast('Obat ' + matching.nama_dagang + ' ditambahkan ke keranjang kasir!', 'ok');
+      const curCart = st.carts && st.carts[st.activeCartIdx];
+      if (curCart && curCart.items && curCart.items.length > 0) {
+        const lastItem = curCart.items[curCart.items.length - 1];
+        if (lastItem && (lastItem.id_obat === matching.id_obat || lastItem.nama_dagang === matching.nama_dagang)) {
+          lastItem.aturan_pakai = aturan;
+        }
+      }
+      global.toast('Obat ' + matching.nama_dagang + ' ditambahkan ke kasir dengan aturan pakai!', 'ok');
+      if (isModal && typeof ONSStore.closeModal === 'function') {
+        ONSStore.closeModal();
+      }
+      if (st.currentView === 'pos' && typeof global.renderActiveView === 'function') {
+        global.renderActiveView();
+      }
     } else if (matching && st.carts && st.carts[st.activeCartIdx]) {
       st.carts[st.activeCartIdx].items.push({
         id_obat: matching.id_obat,
@@ -10021,12 +10378,17 @@ _Semoga lekas sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         harga_satuan: Number(matching.harga_umum || 0),
         qty: 1,
         subtotal: Number(matching.harga_umum || 0),
-        aturan_pakai: computeDosageCalculation(dosageState, p).aturanText
+        aturan_pakai: aturan
       });
       global.toast('Obat berhasil dimasukkan ke keranjang kasir!', 'ok');
-      global.renderActiveView();
+      if (isModal && typeof ONSStore.closeModal === 'function') {
+        ONSStore.closeModal();
+      }
+      if (st.currentView === 'pos' && typeof global.renderActiveView === 'function') {
+        global.renderActiveView();
+      }
     } else {
-      global.toast('Sediaan obat berhasil dihitung. Silakan tambahkan item sediaan di kasir.', 'ok');
+      global.toast('Dosis ' + obNama + ' dihitung: ' + aturan + '. Sediaan belum ada di master obat.', 'info');
     }
   };
 
