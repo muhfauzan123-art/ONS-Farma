@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.1.6"/>
+  <meta name="application-version" content="v18.2.0"/>
   <title>Apotek ONS Farma</title>
   <link rel="manifest" href="./manifest.json?v=18.1.6"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
@@ -60,7 +60,7 @@
       const OPEN_GROUPS_KEY = 'ons_menu_open_v11';
       const SIDEBAR_MINI_KEY = 'ons_sidebar_mini_v11';
 
-      // Set Ikon SVG Terpadu (Lucide-style 2px stroke — UI/UX Pro Max)
+      // Set Ikon SVG Terpadu (Lucide-style 2px stroke â€” UI/UX Pro Max)
       const SVG_ICONS = {
         home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>',
         pos: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M7 15h4"/>',
@@ -1030,11 +1030,15 @@
         if (data.store_profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(data.store_profile);
         syncOwnerIdentityFromProfile(data.store_profile);
         st.masterObat = (data.master_obat || []).map((o) => {
-          if (Number(o.harga_umum) === 5 && (Number(o.hpp_avg) >= 100 || /emturnas/i.test(String(o.nama_dagang || '')))) {
-            o.harga_umum = 5000;
-            if (Number(o.harga_member) === 5) o.harga_member = 5000;
-            if (Number(o.harga_grosir) === 5) o.harga_grosir = 5000;
-            if (Number(o.harga_faskes) === 5) o.harga_faskes = 5000;
+          // Auto-heal: harga_umum sangat kecil tapi HPP jauh lebih besar → parsing bug
+          const _hu = Number(o.harga_umum || 0);
+          const _hpp = Number(o.hpp_avg || 0);
+          if (_hu > 0 && _hu <= 10 && _hpp > _hu * 5) {
+            const _fac = Math.round(_hpp / _hu) >= 500 ? 1000 : 100;
+            o.harga_umum = _hu * _fac;
+            if (Number(o.harga_member || 0) <= 10) o.harga_member = Number(o.harga_member || _hu) * _fac;
+            if (Number(o.harga_grosir || 0) <= 10) o.harga_grosir = Number(o.harga_grosir || _hu) * _fac;
+            if (Number(o.harga_faskes || 0) <= 10) o.harga_faskes = Number(o.harga_faskes || _hu) * _fac;
           }
           return o;
         });
@@ -1150,7 +1154,7 @@
         const coldLogs = (st.coldChain || []).slice().sort((a, b) => String(a.timestamp || '').localeCompare(String(b.timestamp || '')));
         const latestCold = coldLogs.length ? coldLogs[coldLogs.length - 1] : null;
         if (latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL') {
-          alerts.push({ view: 'gudang', sub: 'coldchain', tone: 'text-red-600', title: `Alarm Suhu Kulkas ${Number(latestCold.suhu_celcius || 0).toFixed(1)}°C`, desc: 'Suhu di luar rentang CDOB 2–8°C. Segera periksa & catat ulang.' });
+          alerts.push({ view: 'gudang', sub: 'coldchain', tone: 'text-red-600', title: `Alarm Suhu Kulkas ${Number(latestCold.suhu_celcius || 0).toFixed(1)}°C`, desc: 'Suhu di luar rentang CDOB 2â€“8°C. Segera periksa & catat ulang.' });
         }
         return alerts;
       }
@@ -1385,14 +1389,14 @@
           const canPos = ONSStore.canAccessView('pos');
           const txPool = [];
           if (canPos) {
-            (st.penjualan || []).forEach((p) => txPool.push({ kind: 'NOTA POS', id: p.no_invoice, title: p.no_invoice, sub: `${p.channel || 'Toko'} • ${p.metode_bayar || 'TUNAI'}`, nominal: p.grand_total, tone: 'bpom-bebas', viewId: 'pos', subTab: 'riwayat' }));
+            (st.penjualan || []).forEach((p) => txPool.push({ kind: 'NOTA POS', id: p.no_invoice, title: p.no_invoice, sub: `${p.channel || 'Toko'} â€¢ ${p.metode_bayar || 'TUNAI'}`, nominal: p.grand_total, tone: 'bpom-bebas', viewId: 'pos', subTab: 'riwayat' }));
           }
           if (seeCost && ONSStore.canAccessView('faktur')) {
             (st.suratPesanan || []).forEach((sp) => txPool.push({ kind: 'SURAT PESANAN', id: sp.no_sp, title: sp.no_sp, sub: `${sp.nama_pbf} (${sp.golongan_sp || 'REGULER'})`, nominal: sp.estimasi_total, tone: 'bpom-terbatas', viewId: 'faktur', subTab: 'sp' }));
-            (st.fakturPbf || []).forEach((fk) => txPool.push({ kind: 'FAKTUR PBF', id: fk.no_faktur_pbf, title: fk.no_faktur_pbf, sub: `${fk.id_pbf} • ${fk.status_bayar || ''}`, nominal: fk.netto_hutang, tone: 'bpom-prekursor', viewId: 'faktur', subTab: 'daftar' }));
+            (st.fakturPbf || []).forEach((fk) => txPool.push({ kind: 'FAKTUR PBF', id: fk.no_faktur_pbf, title: fk.no_faktur_pbf, sub: `${fk.id_pbf} â€¢ ${fk.status_bayar || ''}`, nominal: fk.netto_hutang, tone: 'bpom-prekursor', viewId: 'faktur', subTab: 'daftar' }));
           }
           if (ONSStore.canAccessView('omnichannel')) {
-            (st.omnichannelOrders || []).forEach((o) => txPool.push({ kind: 'ORDER ONLINE', id: o.no_order, title: `${o.no_order} — ${o.nama_pelanggan}`, sub: `${o.channel} • ${o.status_order}`, nominal: o.total_estimasi, tone: 'bpom-terbatas', viewId: 'pos', subTab: 'kasir' }));
+            (st.omnichannelOrders || []).forEach((o) => txPool.push({ kind: 'ORDER ONLINE', id: o.no_order, title: `${o.no_order} â€” ${o.nama_pelanggan}`, sub: `${o.channel} â€¢ ${o.status_order}`, nominal: o.total_estimasi, tone: 'bpom-terbatas', viewId: 'pos', subTab: 'kasir' }));
           }
           const txMatches = q ? txPool.filter((t) => `${t.kind} ${t.title} ${t.sub}`.toLowerCase().includes(q)).slice(0, 6) : [];
 
@@ -1454,7 +1458,7 @@
                 kindLabel: canPos ? 'Produk Obat -> Tambah ke Kasir' : 'Produk Master Obat',
                 title: o.nama_dagang,
                 sub: `${o.zat_aktif || '-'} (${o.rak_lokasi || 'RAK'})`,
-                desc: `Kode KFA ${o.kode_kfa || o.id_obat} • NIE ${o.nie_bpom || '-'}. ${canPos ? 'Klik untuk langsung memasukkan item ke keranjang Kasir POS.' : 'Klik untuk membuka Master Data Obat.'}`,
+                desc: `Kode KFA ${o.kode_kfa || o.id_obat} â€¢ NIE ${o.nie_bpom || '-'}. ${canPos ? 'Klik untuk langsung memasukkan item ke keranjang Kasir POS.' : 'Klik untuk membuka Master Data Obat.'}`,
                 badgeHtml: ONSStore.bpomBadge(o.golongan_bpom),
                 metaHtml: `<div class="flex justify-between"><span>Stok Layak Jual</span><b class="font-mono-num">${stok} ${ONSStore.esc(o.satuan_dasar)}</b></div>
                   <div class="flex justify-between"><span>Harga Umum</span><b class="font-mono-num text-blue-600">${ONSStore.rp(o.harga_umum)}</b></div>
@@ -1493,8 +1497,8 @@
               const idx = addEntry({
                 kindLabel: 'Pasien & Member Apotek',
                 title: m.nama_pasien,
-                sub: `${progLbl} • ${m.penyakit_kronis || '-'}`,
-                desc: `Alergi tercatat: ${m.alergi_list || 'Tidak ada'} • Poin loyalitas: ${Number(m.poin_loyalitas || 0)}.`,
+                sub: `${progLbl} â€¢ ${m.penyakit_kronis || '-'}`,
+                desc: `Alergi tercatat: ${m.alergi_list || 'Tidak ada'} â€¢ Poin loyalitas: ${Number(m.poin_loyalitas || 0)}.`,
                 badgeHtml: `<span class="badge-bpom bpom-bebas">${ONSStore.esc(progLbl)}</span>`,
                 metaHtml: `<div><b>No. WA:</b> <span class="font-mono-num">${ONSStore.esc(m.no_hp || '-')}</span></div>`,
                 run: () => { ONSStore.closeModal(); navigateView(targetView, targetSub); }
@@ -1515,8 +1519,8 @@
                 const idx = addEntry({
                   kindLabel: 'Master Supplier PBF',
                   title: p.nama_pbf,
-                  sub: `${p.kode_cdob || '-'} • TOP ${p.termin_hari}h`,
-                  desc: `Lead time ${p.lead_time_hari} hari • SLA ${p.skor_sla}% • WA ${p.kontak_wa || '-'}`,
+                  sub: `${p.kode_cdob || '-'} â€¢ TOP ${p.termin_hari}h`,
+                  desc: `Lead time ${p.lead_time_hari} hari â€¢ SLA ${p.skor_sla}% â€¢ WA ${p.kontak_wa || '-'}`,
                   badgeHtml: `<span class="badge-bpom bpom-terbatas">SUPPLIER</span>`,
                   run: () => { ONSStore.closeModal(); navigateView('obat', 'supplier'); }
                 });
@@ -1532,8 +1536,8 @@
                 const idx = addEntry({
                   kindLabel: 'Master Dokter Mitra',
                   title: dk.nama_dokter,
-                  sub: `${dk.spesialisasi || 'Dokter'} • ${dk.faskes_klinik || '-'}`,
-                  desc: `No. SIP: ${dk.no_sip || '-'} • WA ${dk.no_wa || '-'}`,
+                  sub: `${dk.spesialisasi || 'Dokter'} â€¢ ${dk.faskes_klinik || '-'}`,
+                  desc: `No. SIP: ${dk.no_sip || '-'} â€¢ WA ${dk.no_wa || '-'}`,
                   badgeHtml: `<span class="badge-bpom bpom-bebas">DOKTER</span>`,
                   run: () => { ONSStore.closeModal(); navigateView('obat', 'dokter'); }
                 });
@@ -1840,9 +1844,37 @@
         }
       } catch (e) {}
 
+      // ── Patch harga rusak di localStorage demo (bug Number("5.000")) ──────
+      try {
+        const _DEMO_KEY = 'ons_farma_v10_demo_db';
+        const _raw = localStorage.getItem(_DEMO_KEY);
+        if (_raw) {
+          const _db = JSON.parse(_raw);
+          let _healChanged = false;
+          if (Array.isArray(_db.master_obat)) {
+            _db.master_obat.forEach(function(_o) {
+              const _hu = Number(_o.harga_umum || 0);
+              const _hpp = Number(_o.hpp_avg || 0);
+              if (_hu > 0 && _hu <= 10 && _hpp > _hu * 5) {
+                const _fac = Math.round(_hpp / _hu) >= 500 ? 1000 : 100;
+                _o.harga_umum = _hu * _fac;
+                if (Number(_o.harga_member || 0) <= 10) _o.harga_member = Number(_o.harga_member || _hu) * _fac;
+                if (Number(_o.harga_grosir || 0) <= 10) _o.harga_grosir = Number(_o.harga_grosir || _hu) * _fac;
+                if (Number(_o.harga_faskes || 0) <= 10) _o.harga_faskes = Number(_o.harga_faskes || _hu) * _fac;
+                _healChanged = true;
+              }
+            });
+          }
+          if (_healChanged) localStorage.setItem(_DEMO_KEY, JSON.stringify(_db));
+        }
+      } catch (_e) {}
+      // ─────────────────────────────────────────────────────────────────────
+
       window.renderApp();
       if (ONSApi.getSession()) window.bootLoadState(false);
     })();
   </script>
 </body>
 </html>
+
+

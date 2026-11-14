@@ -1896,7 +1896,7 @@
         onClick: seeCost && canDefecta ? `navigateView('faktur','sp')` : (!seeCost && canObat ? `navigateView('obat','obat')` : '')
       },
       {
-        title: 'Monitor Suhu (2&ndash;8&deg;C)',
+        title: 'Monitor Suhu (Ruang &amp; Kulkas)',
         value: latestCold ? (Number(latestCold.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat',
         valCls: latestCold ? (String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL' ? 'text-red-600' : 'text-emerald-600') : 'text-amber-600',
         badge: latestCold ? S().esc(latestCold.status_alarm || 'NORMAL') : 'Catat Suhu',
