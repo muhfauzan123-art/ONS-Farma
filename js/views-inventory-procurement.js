@@ -1659,7 +1659,7 @@
       headerActions = `
         <button onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Pelanggan</button>
         <button onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.navigateView('eresep-prb','prb')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Pantau Terapi</button>
+        <button onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Pantau Terapi Rutin</button>
         ${exportBtns('exportMasterPelanggan')}
       `;
     } else if (masterTab === 'dokter') {
@@ -1668,7 +1668,7 @@
       headerActions = `
         <button onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Dokter</button>
         <button onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.navigateView('eresep-prb','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">E-Resep</button>
+        <button onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Antrean E-Resep</button>
         ${exportBtns('exportMasterDokter')}
       `;
     } else {

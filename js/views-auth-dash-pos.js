@@ -1927,14 +1927,14 @@
         count: erxAntre,
         dotCls: 'bg-blue-500',
         pillCls: 'bg-blue-500/15 text-blue-600',
-        onClick: canErx ? `navigateView('eresep-prb','erx')` : ''
+        onClick: canErx ? `navigateView('klinis','erx')` : ''
       },
       {
         label: 'Pasien Kontrol Refill (&le;5 hari)',
         count: prbUrgentCount,
         dotCls: prbUrgentCount ? 'bg-blue-500' : 'bg-slate-400',
         pillCls: 'bg-blue-500/15 text-blue-600',
-        onClick: canErx ? `navigateView('eresep-prb','prb')` : ''
+        onClick: canErx ? `navigateView('obat','pelanggan')` : ''
       }
     ];
     if (canOnline) {

@@ -27,11 +27,10 @@
     { key: 'gudang:opname', label: 'Stok Opname', group: 'Produk & Gudang' },
     { key: 'gudang:penyesuaian', label: 'Penyesuaian Stok', group: 'Produk & Gudang' },
     { key: 'gudang:transfer', label: 'Perpindahan Stok', group: 'Produk & Gudang' },
-    { key: 'defecta', label: 'Defecta & Surat Pesanan (A4)', group: 'Pengadaan & PBF' },
-    { key: 'faktur', label: 'Pembelian & Faktur PBF (GRN / Scan / Retur)', group: 'Pengadaan & PBF' },
-    { key: 'eresep-prb', label: 'E-Resep Dokter & Pasien Rutin', group: 'Klinis & Pasien' },
+    { key: 'defecta', label: 'Pengadaan & Faktur PBF (Defecta/SP/GRN/Retur)', group: 'Pengadaan & PBF' },
+    { key: 'faktur', label: 'Pengadaan & Faktur PBF (Defecta/SP/GRN/Retur)', group: 'Pengadaan & PBF' },
     { key: 'pemeriksaan', label: 'Pemeriksaan Pasien (POCT)', group: 'Klinis & Pasien' },
-    { key: 'klinis', label: 'Pelayanan Klinis (SOAP/Racikan/PIO/MESO)', group: 'Klinis & Pasien' },
+    { key: 'klinis', label: 'Pelayanan Klinis & E-Resep (SOAP/Racikan/PIO/MESO)', group: 'Klinis & Pasien' },
     { key: 'crm-wa', label: 'CRM & Broadcast WA', group: 'Klinis & Pasien' },
     { key: 'finance', label: 'Keuangan & Kas (P&L, Piutang, Hutang, Pajak)', group: 'Keuangan & Laporan' },
     { key: 'billing', label: 'Tagihan & Kwitansi QR', group: 'Keuangan & Laporan' },
@@ -409,6 +408,7 @@
     if (viewId === 'settings' && perms.includes('settings:audit')) return true;
     if (viewId === 'faktur' && perms.includes('defecta')) return true;
     if (viewId === 'defecta' && perms.includes('faktur')) return true;
+    if (viewId === 'eresep-prb') return perms.includes('klinis') || perms.includes('obat');
     return perms.includes(viewId);
   }
 

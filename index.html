@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.1.4"/>
+  <meta name="application-version" content="v18.1.5"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.1.4"/>
+  <link rel="manifest" href="./manifest.json?v=18.1.5"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.1.4"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.1.5"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" style="display:none!important;" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.1.4"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.1.4"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.1.4"></script>
+  <script src="./vendor/ons-code128.js?v=18.1.5"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.1.5"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.1.5"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.1.4"></script>
-  <script src="./js/struk-engine.js?v=18.1.4"></script>
-  <script src="./js/demo-engine.js?v=18.1.4"></script>
-  <script src="./js/api-turbo.js?v=18.1.4"></script>
-  <script src="./js/store.js?v=18.1.4"></script>
-  <script src="./js/invoice-scanner.js?v=18.1.4"></script>
-  <script src="./js/barcode-scanner.js?v=18.1.4"></script>
+  <script src="./js/config.js?v=18.1.5"></script>
+  <script src="./js/struk-engine.js?v=18.1.5"></script>
+  <script src="./js/demo-engine.js?v=18.1.5"></script>
+  <script src="./js/api-turbo.js?v=18.1.5"></script>
+  <script src="./js/store.js?v=18.1.5"></script>
+  <script src="./js/invoice-scanner.js?v=18.1.5"></script>
+  <script src="./js/barcode-scanner.js?v=18.1.5"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.1.4"></script>
-  <script src="./js/views-procurement-pro.js?v=18.1.4"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.1.4"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.1.4"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.1.4"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.1.4"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.1.5"></script>
+  <script src="./js/views-procurement-pro.js?v=18.1.5"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.1.5"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.1.5"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.1.5"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.1.5"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -189,15 +189,6 @@
           label: 'Klinis & Pasien',
           items: [
             {
-              viewId: 'eresep-prb', label: 'Pasien &amp; Terapi Rutin', icon: 'shield', badgeKey: 'erxPending', badgeTone: 'info',
-              desc: 'Database pasien, terapi rutin kronis (PRB), riwayat alergi, & antrean e-resep dokter.',
-              kw: 'pasien rutin kronis terapi prb member profil alergi e-resep erx pin apj refill',
-              tabs: [
-                { subTab: 'prb', label: 'Pasien Terapi Rutin (PRB)', kw: 'pasien rutin kronis terapi prb member profil alergi refill' },
-                { subTab: 'erx', label: 'Antrean E-Resep', kw: 'e-resep dokter mitra pin apj validasi pos' }
-              ]
-            },
-            {
               viewId: 'pemeriksaan', label: 'Pemeriksaan Pasien', icon: 'activity',
               desc: 'Pemeriksaan Tensi, Gula Darah, Kolesterol & Asam Urat tersimpan + kirim laporan via WhatsApp.',
               kw: 'pemeriksaan pasien cek kesehatan tensi darah gula darah kolesterol asam urat wa',
@@ -210,11 +201,12 @@
               ]
             },
             {
-              viewId: 'klinis', label: 'Pelayanan Klinis', icon: 'clinical',
-              desc: 'Kajian resep dokter, SOAP SATUSEHAT, racikan & etiket, Kalkulator Dosis 41 preset, Kartu PIO & MESO.',
-              kw: 'klinis apoteker soap pio satusehat racikan etiket meso naranjo copy resep kalkulator dosis obat anak dewasa bsa infus gfr',
+              viewId: 'klinis', label: 'Pelayanan Klinis', icon: 'clinical', badgeKey: 'erxPending', badgeTone: 'info',
+              desc: 'Kajian resep dokter, antrean E-Resep, SOAP SATUSEHAT, racikan & etiket, Kalkulator Dosis 41 preset, Kartu PIO & MESO.',
+              kw: 'klinis apoteker soap pio satusehat racikan etiket meso naranjo copy resep e-resep erx antrean dokter kalkulator dosis obat anak dewasa bsa infus gfr',
               tabs: [
                 { subTab: 'soap', label: 'Kajian Resep & SOAP', kw: 'soap pio pto kajian skrining resep satusehat' },
+                { subTab: 'erx', label: 'Antrean E-Resep', kw: 'antrean e-resep dokter mitra pin apj validasi pos' },
                 { subTab: 'racikan', label: 'Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru' },
                 { subTab: 'kalkulator', label: 'Kalkulator Dosis & Template', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa sirup tetes tetesan infus gfr aturan minum template' },
                 { subTab: 'pio', label: 'Kartu PIO & Edukasi WA', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
@@ -879,6 +871,15 @@
           if (!subTab || subTab === 'order') subTab = 'defecta';
         }
         if (viewId === 'faktur' && subTab === 'order') subTab = 'defecta';
+        if (viewId === 'eresep-prb') {
+          if (subTab === 'prb') {
+            viewId = 'obat';
+            subTab = 'pelanggan';
+          } else {
+            viewId = 'klinis';
+            subTab = 'erx';
+          }
+        }
         if (!ONSStore.canAccessView(viewId)) {
           toast('Akses dibatasi untuk peran ' + ONSStore.getRole(), 'warn');
           return;
@@ -1113,7 +1114,7 @@
           case 'defecta': slot.innerHTML = v2.renderFakturView(); break;
           case 'faktur': slot.innerHTML = v2.renderFakturView(); break;
           case 'klinis': slot.innerHTML = v3.renderKlinisView(); break;
-          case 'eresep-prb': slot.innerHTML = v3.renderEresepPrbView(); break;
+          case 'eresep-prb': slot.innerHTML = v3.renderKlinisView(); break;
           case 'pemeriksaan': slot.innerHTML = (window.ONSViewsPemeriksaan ? window.ONSViewsPemeriksaan.renderPemeriksaanView() : v3.renderKlinisView()); break;
           case 'crm-wa': slot.innerHTML = v4.renderCrmWaView(); break;
           case 'finance': slot.innerHTML = v3.renderFinanceView(); break;
@@ -1135,9 +1136,9 @@
         const nearEdCount = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && ONSStore.daysUntil(b.tgl_kadaluarsa) <= 90).length;
         if (nearEdCount > 0) alerts.push({ view: 'gudang', sub: 'batch', tone: 'text-red-600', title: `${nearEdCount} Batch Kritis Near-ED (<=90 hari)`, desc: 'Prioritaskan FEFO atau Retur BAR-PBF.' });
         const lowCount = (st.masterObat || []).filter((o) => ONSStore.getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length;
-        if (lowCount > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'defecta', sub: 'order', tone: 'text-amber-600', title: `${lowCount} Obat di Bawah Stok Minimum`, desc: 'Buat SP BPOM otomatis dari menu Defecta.' });
+        if (lowCount > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'faktur', sub: 'defecta', tone: 'text-amber-600', title: `${lowCount} Obat di Bawah Stok Minimum`, desc: 'Buat SP BPOM otomatis dari menu Defecta.' });
         const erxPend = (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
-        if (erxPend > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'eresep-prb', sub: 'erx', tone: 'text-blue-600', title: `${erxPend} E-Resep Menunggu PIN APJ`, desc: 'Periksa interaksi obat & verifikasi SIPA.' });
+        if (erxPend > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'klinis', sub: 'erx', tone: 'text-blue-600', title: `${erxPend} E-Resep Menunggu PIN APJ`, desc: 'Periksa interaksi obat & verifikasi SIPA.' });
         const coldLogs = (st.coldChain || []).slice().sort((a, b) => String(a.timestamp || '').localeCompare(String(b.timestamp || '')));
         const latestCold = coldLogs.length ? coldLogs[coldLogs.length - 1] : null;
         if (latestCold && String(latestCold.status_alarm || 'NORMAL') !== 'NORMAL') {
@@ -1368,7 +1369,7 @@
           const navMatches = flatNav.filter((n) => !q || `${n.label} ${n.grp} ${n.sect} ${n.kw}`.toLowerCase().includes(q)).slice(0, q ? 14 : 10);
           const canSeeObat = ONSStore.canAccessView('pos') || ONSStore.canAccessView('obat');
           const obatMatches = canSeeObat ? (st.masterObat || []).filter((o) => !q || `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi}`.toLowerCase().includes(q)).slice(0, q ? 10 : 6) : [];
-          const canSeePasien = ONSStore.canAccessView('eresep-prb') || ONSStore.canAccessView('pemeriksaan') || ONSStore.canAccessView('crm-wa') || ONSStore.canAccessView('obat');
+          const canSeePasien = ONSStore.canAccessView('obat') || ONSStore.canAccessView('pemeriksaan') || ONSStore.canAccessView('crm-wa') || ONSStore.canAccessView('klinis');
           const pasienMatches = (canSeePasien && q) ? (st.members || []).filter((m) => `${m.nama_pasien} ${m.no_hp} ${m.penyakit_kronis} ${m.program_prb}`.toLowerCase().includes(q)).slice(0, 6) : [];
           const canSeeMaster = ONSStore.canAccessView('obat');
           const supplierMatches = (canSeeMaster && seeCost && q) ? (st.supplierPbf || []).filter((p) => `${p.nama_pbf} ${p.kode_cdob} ${p.kontak_wa} ${p.email_pbf}`.toLowerCase().includes(q)).slice(0, 4) : [];
@@ -1478,8 +1479,8 @@
 
           if ((cmdkScope === 'SEMUA' || cmdkScope === 'PASIEN') && pasienMatches.length) {
             sectionsHtml.push(`<div class="ons-sidebar-group-label">Pasien &amp; Member (${pasienMatches.length})</div>` + pasienMatches.map((m) => {
-              const targetView = ONSStore.canAccessView('eresep-prb') ? 'eresep-prb' : (ONSStore.canAccessView('pemeriksaan') ? 'pemeriksaan' : 'crm-wa');
-              const targetSub = targetView === 'eresep-prb' ? 'prb' : (targetView === 'pemeriksaan' ? 'semua' : 'kontak');
+              const targetView = ONSStore.canAccessView('obat') ? 'obat' : (ONSStore.canAccessView('pemeriksaan') ? 'pemeriksaan' : 'crm-wa');
+              const targetSub = targetView === 'obat' ? 'pelanggan' : (targetView === 'pemeriksaan' ? 'semua' : 'kontak');
               const progLbl = ONSStore.formatMemberProgram ? ONSStore.formatMemberProgram(m.program_prb) : (m.program_prb || 'MEMBER');
               const idx = addEntry({
                 kindLabel: 'Pasien & Member Apotek',

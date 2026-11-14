@@ -1860,6 +1860,13 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const naranjoCat = naranjoScore >= 9 ? 'SANGAT PASTI (Definite)' : (naranjoScore >= 5 ? 'MUNGKIN BESAR (Probable)' : (naranjoScore >= 1 ? 'MUNGKIN (Possible)' : 'MERAGUKAN (Doubtful)'));
     const mesoList = (st.rekamKlinis || []).filter((k) => String(k.layanan_jenis || '').toUpperCase() === 'MESO');
 
+    // Data Antrean E-Resep Terpadu
+    const erxUrl = `${global.location.origin}${global.location.pathname}?erx=DR-MITRA-${new Date().getFullYear()}`;
+    const erxAll = (st.rekamKlinis || []).filter((k) => String(k.status_klinis || '') === 'ANTRIAN_VALIDASI_APJ' || String(k.layanan_jenis || '') === 'ERX_DOKTER');
+    const eq = erxSearchQ.trim().toLowerCase();
+    const erxQueue = erxAll.filter((rx) => !eq || `${rx.id_klinis} ${rx.nama_pasien} ${rx.dokter_asal} ${rx.soap_notes}`.toLowerCase().includes(eq));
+    const antreCount = erxAll.filter((x) => x.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
+
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
@@ -1869,6 +1876,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
             <button onclick="window.setKlinisTab('soap')" class="ons-tab-btn ${klinisTab === 'soap' ? 'active' : ''}">Kajian Resep &amp; SOAP (${(st.rekamKlinis || []).length})</button>
+            <button onclick="window.setKlinisTab('erx')" class="ons-tab-btn ${klinisTab === 'erx' ? 'active' : ''}">Antrean E-Resep (${antreCount}/${erxAll.length})</button>
             <button onclick="window.setKlinisTab('racikan')" class="ons-tab-btn ${klinisTab === 'racikan' ? 'active' : ''}">Racikan &amp; Etiket</button>
             <button onclick="window.setKlinisTab('kalkulator')" class="ons-tab-btn ${klinisTab === 'kalkulator' ? 'active' : ''}">Kalkulator Dosis &amp; Template</button>
             <button onclick="window.setKlinisTab('pio')" class="ons-tab-btn ${klinisTab === 'pio' ? 'active' : ''}">Kartu PIO &amp; Jadwal</button>
@@ -1879,7 +1887,47 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
       </div>
 
-      ${klinisTab === 'pio' ? (() => {
+      ${klinisTab === 'erx' ? `
+        <div class="space-y-4">
+          <div class="ons-card p-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs">
+              <div class="font-bold text-sm">Tautan Khusus Mini-Portal Dokter Mitra (E-Resep):</div>
+              <code class="font-mono-num text-blue-600 break-all">${S().esc(erxUrl)}</code>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="navigator.clipboard?.writeText('${S().esc(erxUrl)}');toast('Tautan E-Resep Dokter Mitra disalin!','ok')" class="ons-btn ons-btn-ghost text-xs">Salin Tautan</button>
+            </div>
+          </div>
+
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-bold text-sm">Antrean E-Resep Dokter Masuk (Verifikasi PIN APJ &rarr; Kasir POS)</h3>
+              <div class="flex items-center gap-2">
+                <input class="ons-input text-xs w-56" placeholder="Cari dokter, pasien, resep..." value="${S().esc(erxSearchQ)}" oninput="window.setErxSearchQ(this.value)"/>
+                <span class="badge-bpom bpom-prekursor">${antreCount} Menunggu PIN APJ</span>
+              </div>
+            </div>
+            <div class="space-y-2">
+              ${erxQueue.length === 0 ? '<div class="text-xs py-6 text-center" style="color:var(--ons-text-soft)">Belum ada E-Resep masuk dari dokter mitra. Resep offline dapat langsung di-input melalui tombol <b>+ Input SOAP Klinis</b> di atas.</div>' : erxQueue.map((rx) => `
+                <div class="p-3.5 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                  <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="font-mono-num font-bold">${S().esc(rx.id_klinis)}</span>
+                      <span class="badge-bpom ${rx.status_klinis === 'TERVERIFIKASI_APJ' ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(rx.status_klinis)}</span>
+                      <b>${S().esc(rx.nama_pasien)}</b> &bull; <span>${S().esc(rx.dokter_asal)} (${S().esc(rx.no_sip_dokter || '-')})</span>
+                    </div>
+                    <div class="font-mono-num whitespace-pre-line p-2.5 rounded-lg border text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(rx.soap_notes || '-')}</div>
+                    ${rx.cdss_warning ? `<div class="text-amber-600 font-semibold">${S().esc(rx.cdss_warning)}</div>` : ''}
+                  </div>
+                  <div class="flex flex-wrap gap-2 shrink-0">
+                    ${rx.status_klinis === 'ANTRIAN_VALIDASI_APJ' ? `<button onclick="window.approveErxWithPinModal('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3">Verifikasi PIN APJ</button>` : ''}
+                    <button onclick="window.loadErxToPosCart('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">Muat ke POS &rarr;</button>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      ` : klinisTab === 'pio' ? (() => {
         const jKeys = pioState.jadwalKeys || [];
         const pioItems = String(pioState.itemsText || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
           const m = l.match(/^(.*?)\((.*?)\)\s*$/);
@@ -2552,8 +2600,15 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   }
 
   global.setEresepTab = (t) => {
-    eresepTab = t || 'erx';
-    if (S().AppState.subTabs) S().AppState.subTabs['eresep-prb'] = eresepTab;
+    if (t === 'prb') {
+      if (typeof global.navigateView === 'function') return global.navigateView('obat', 'pelanggan');
+    }
+    klinisTab = 'erx';
+    if (S().AppState.subTabs) {
+      S().AppState.subTabs.klinis = 'erx';
+      S().AppState.subTabs['eresep-prb'] = 'erx';
+    }
+    if (typeof global.navigateView === 'function') return global.navigateView('klinis', 'erx');
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
