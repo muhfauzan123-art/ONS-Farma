@@ -260,10 +260,87 @@
   document.documentElement.classList.toggle('dark', AppState.darkMode);
 
   /**
+   * Helper Universal Format Titik Pemisah Ribuan (Indonesian Currency / Number Formatting)
+   * Mengubah 1000000 -> "1.000.000", aman untuk input teks, live typing, dan parsing.
+   */
+  function parseNumber(val) {
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (val === null || val === undefined || val === '') return 0;
+    const str = String(val).trim();
+    const cleaned = str.replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.-]/g, '');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatNumberWithDots(val, fallback = '') {
+    if (val === null || val === undefined || val === '') return fallback;
+    const n = typeof val === 'number' ? val : parseNumber(val);
+    if (isNaN(n)) return fallback;
+    return Math.round(n).toLocaleString('id-ID');
+  }
+
+  function maskNumberInput(inputEl) {
+    if (!inputEl) return;
+    const oldVal = inputEl.value;
+    const selStart = inputEl.selectionStart !== null ? inputEl.selectionStart : oldVal.length;
+    const digitsBeforeCursor = (oldVal.slice(0, selStart).match(/\d/g) || []).length;
+
+    const rawDigits = (oldVal.match(/\d/g) || []).join('');
+    if (!rawDigits) {
+      inputEl.value = '';
+      inputEl.dataset.rawNumber = '0';
+      return;
+    }
+
+    const numVal = parseInt(rawDigits, 10);
+    const formatted = numVal.toLocaleString('id-ID');
+    inputEl.value = formatted;
+    inputEl.dataset.rawNumber = String(numVal);
+
+    // Kembalikan posisi kursor secara logis agar tidak melompat ke akhir input
+    let newCursor = formatted.length;
+    let countedDigits = 0;
+    for (let i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) {
+        countedDigits++;
+      }
+      if (countedDigits >= digitsBeforeCursor) {
+        newCursor = i + 1;
+        break;
+      }
+    }
+    try {
+      inputEl.setSelectionRange(newCursor, newCursor);
+    } catch (_) {}
+  }
+
+  global.parseNumber = parseNumber;
+  global.parseNum = parseNumber;
+  global.formatNumberWithDots = formatNumberWithDots;
+  global.formatDots = formatNumberWithDots;
+  global.maskNumberInput = maskNumberInput;
+
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('input', (e) => {
+      const t = e.target;
+      if (!t || t.tagName !== 'INPUT') return;
+      if (
+        t.classList.contains('ons-currency-input') ||
+        t.classList.contains('ons-input-currency') ||
+        t.getAttribute('data-format') === 'dots' ||
+        t.getAttribute('data-type') === 'currency'
+      ) {
+        maskNumberInput(t);
+      }
+    }, true);
+  }
+
+  /**
    * Formatter Uang & Tanggal Indonesia + Escape HTML
    */
   function rp(n) {
-    return 'Rp ' + Math.round(Number(n || 0)).toLocaleString('id-ID');
+    const num = typeof n === 'number' ? n : parseNumber(n);
+    return 'Rp ' + Math.round(Number(num || 0)).toLocaleString('id-ID');
   }
 
   function esc(s) {
@@ -1502,6 +1579,11 @@
     buildOwnerDailyDigestText,
     toggleDarkMode,
     rp,
+    parseNumber,
+    parseNum: parseNumber,
+    formatNumberWithDots,
+    formatDots: formatNumberWithDots,
+    maskNumberInput,
     esc,
     formatTgl,
     daysUntil,

@@ -6015,8 +6015,8 @@
           <button type="button" onclick="window.setPosSplitHalf(${total})" class="ons-quick-denom text-[11px]">Bagi 50:50</button>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <div><label class="font-semibold block mb-1">Tunai (Rp)</label><input id="posSplitTunai" type="number" min="0" value="${Math.floor(total / 2)}" oninput="window.syncSplitOther(${total})" class="ons-input font-mono-num"/></div>
-          <div><label class="font-semibold block mb-1">QRIS / Transfer (Rp)</label><input id="posSplitNonTunai" type="number" min="0" value="${total - Math.floor(total / 2)}" oninput="window.updateSplitCheck(${total})" class="ons-input font-mono-num"/></div>
+          <div><label class="font-semibold block mb-1">Tunai (Rp)</label><input id="posSplitTunai" type="text" inputmode="numeric" value="${S().formatDots(Math.floor(total / 2))}" oninput="window.maskNumberInput(this); window.syncSplitOther(${total});" class="ons-input ons-currency-input font-mono-num"/></div>
+          <div><label class="font-semibold block mb-1">QRIS / Transfer (Rp)</label><input id="posSplitNonTunai" type="text" inputmode="numeric" value="${S().formatDots(total - Math.floor(total / 2))}" oninput="window.maskNumberInput(this); window.updateSplitCheck(${total});" class="ons-input ons-currency-input font-mono-num"/></div>
         </div>
         <div id="posSplitStatusSpan" class="text-[11px] font-bold text-emerald-600">Total Split seimbang (${S().rp(total)})</div>
       </div>` : ''}
@@ -6026,7 +6026,7 @@
           <label class="text-xs font-semibold">Uang Tunai Diterima (Rp)</label>
           <span class="text-[11px]" style="color:var(--ons-text-soft)">Tekan Enter untuk langsung terbit struk</span>
         </div>
-        <input id="posTunaiBayar" type="number" min="0" class="ons-input font-mono-num text-lg font-extrabold" value="${total}" oninput="window.updatePosTunaiChange(${total})" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
+        <input id="posTunaiBayar" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-lg font-extrabold" value="${S().formatDots(total)}" oninput="window.maskNumberInput(this); window.updatePosTunaiChange(${total});" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
         <div class="flex gap-1.5 flex-wrap">
           <button type="button" onclick="window.setPosTunaiExact(${total})" class="ons-quick-denom">Uang Pas</button>
           ${smartDenoms.map((v) => `<button type="button" onclick="window.setPosTunaiVal(${v}, ${total})" class="ons-quick-denom">${S().rp(v)}</button>`).join('')}
@@ -6047,8 +6047,8 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div><label class="font-semibold block mb-1">Nama Penanggung Jawab *</label><input id="posPiutangNama" class="ons-input text-xs" value="${S().esc(cart.pelanggan_nama || (member && member.nama_pasien) || '')}" placeholder="Nama pasien / klinik mitra"/></div>
           <div><label class="font-semibold block mb-1">Tgl Jatuh Tempo *</label><input id="posPiutangJt" type="date" class="ons-input font-mono-num text-xs" value="${new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10)}"/></div>
-          <div><label class="font-semibold block mb-1">DP / Uang Muka Sekarang (Rp)</label><input id="posPiutangDp" type="number" min="0" value="0" oninput="window.updatePosPiutangSisa(${total})" class="ons-input font-mono-num text-xs"/></div>
-          <div><label class="font-semibold block mb-1">Batas Plafon Kredit (Rp)</label><input id="posPiutangPlafon" type="number" class="ons-input font-mono-num text-xs" value="2000000"/></div>
+          <div><label class="font-semibold block mb-1">DP / Uang Muka Sekarang (Rp)</label><input id="posPiutangDp" type="text" inputmode="numeric" value="${S().formatDots(0)}" oninput="window.maskNumberInput(this); window.updatePosPiutangSisa(${total});" class="ons-input ons-currency-input font-mono-num text-xs"/></div>
+          <div><label class="font-semibold block mb-1">Batas Plafon Kredit (Rp)</label><input id="posPiutangPlafon" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-xs" value="${S().formatDots(2000000)}" oninput="window.maskNumberInput(this)"/></div>
         </div>
         <div><label class="font-semibold block mb-1">Catatan Tempo</label><input id="posPiutangNote" class="ons-input text-xs" placeholder="Tagihan akhir bulan / resep kronis"/></div>
         <div class="flex justify-between items-center font-bold pt-1">
@@ -6082,7 +6082,7 @@
     const lbl = document.getElementById('posKembalianLabel');
     const sp = document.getElementById('posKembalianSpan');
     if (!inp || !sp) return;
-    const paid = Number(inp.value || 0);
+    const paid = window.parseNumber ? window.parseNumber(inp.value || 0) : Number(inp.value || 0);
     const diff = paid - net;
     if (diff < 0) {
       if (lbl) lbl.textContent = 'Uang Kurang:';
@@ -6098,17 +6098,17 @@
   global.setPosTunaiExact = (baseTotal) => {
     const net = _getModalNetTotal(baseTotal);
     const inp = document.getElementById('posTunaiBayar');
-    if (inp) { inp.value = net; global.updatePosTunaiChange(baseTotal); }
+    if (inp) { inp.value = S().formatDots(net); global.updatePosTunaiChange(baseTotal); }
   };
 
   global.setPosTunaiVal = (val, baseTotal) => {
     const inp = document.getElementById('posTunaiBayar');
-    if (inp) { inp.value = val; global.updatePosTunaiChange(baseTotal); }
+    if (inp) { inp.value = S().formatDots(val); global.updatePosTunaiChange(baseTotal); }
   };
 
   global.updatePosPiutangSisa = (baseTotal) => {
     const net = _getModalNetTotal(baseTotal);
-    const dp = Math.min(net, Math.max(0, Number((document.getElementById('posPiutangDp') || {}).value || 0)));
+    const dp = Math.min(net, Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('posPiutangDp') || {}).value || 0) : Number((document.getElementById('posPiutangDp') || {}).value || 0)));
     const sp = document.getElementById('posPiutangSisaSpan');
     if (sp) sp.textContent = S().rp(Math.max(0, net - dp));
   };
@@ -6117,15 +6117,15 @@
     const net = _getModalNetTotal(baseTotal);
     const tInp = document.getElementById('posSplitTunai');
     const ntInp = document.getElementById('posSplitNonTunai');
-    if (tInp) tInp.value = Math.floor(net / 2);
-    if (ntInp) ntInp.value = net - Math.floor(net / 2);
+    if (tInp) tInp.value = S().formatDots(Math.floor(net / 2));
+    if (ntInp) ntInp.value = S().formatDots(net - Math.floor(net / 2));
     global.updateSplitCheck(baseTotal);
   };
 
   global.updateSplitCheck = (baseTotal) => {
     const net = _getModalNetTotal(baseTotal);
-    const sT = Math.max(0, Number((document.getElementById('posSplitTunai') || {}).value || 0));
-    const sN = Math.max(0, Number((document.getElementById('posSplitNonTunai') || {}).value || 0));
+    const sT = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('posSplitTunai') || {}).value || 0) : Number((document.getElementById('posSplitTunai') || {}).value || 0));
+    const sN = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('posSplitNonTunai') || {}).value || 0) : Number((document.getElementById('posSplitNonTunai') || {}).value || 0));
     const sp = document.getElementById('posSplitStatusSpan');
     if (!sp) return;
     const sum = sT + sN;
@@ -6158,9 +6158,9 @@
 
   global.syncSplitOther = (baseTotal) => {
     const net = _getModalNetTotal(baseTotal);
-    const t = Math.max(0, Number((document.getElementById('posSplitTunai') || {}).value || 0));
+    const t = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('posSplitTunai') || {}).value || 0) : Number((document.getElementById('posSplitTunai') || {}).value || 0));
     const ntInp = document.getElementById('posSplitNonTunai');
-    if (ntInp) ntInp.value = Math.max(0, net - t);
+    if (ntInp) ntInp.value = S().formatDots(Math.max(0, net - t));
     global.updateSplitCheck(baseTotal);
   };
 
@@ -6190,8 +6190,8 @@
     if (metode === 'SPLIT') {
       const tEl = document.getElementById('posSplitTunai');
       const ntEl = document.getElementById('posSplitNonTunai');
-      const sT = Number((tEl || {}).value || 0);
-      const sN = Number((ntEl || {}).value || 0);
+      const sT = Math.max(0, window.parseNumber ? window.parseNumber((tEl || {}).value || 0) : Number((tEl || {}).value || 0));
+      const sN = Math.max(0, window.parseNumber ? window.parseNumber((ntEl || {}).value || 0) : Number((ntEl || {}).value || 0));
       if (tEl && ntEl && (sT + sN) < grandTotal) {
         global.toast('Total pembayaran Split kurang dari tagihan (' + S().rp(grandTotal) + ').', 'err');
         return;
@@ -6204,7 +6204,7 @@
     }
 
     const tunaiEl = document.getElementById('posTunaiBayar');
-    const tunaiBayar = metode === 'TUNAI' ? Number(tunaiEl ? tunaiEl.value : grandTotal) : (metode === 'PIUTANG' ? 0 : grandTotal);
+    const tunaiBayar = metode === 'TUNAI' ? (tunaiEl ? (window.parseNumber ? window.parseNumber(tunaiEl.value) : Number(tunaiEl.value)) : grandTotal) : (metode === 'PIUTANG' ? 0 : grandTotal);
     if (metode === 'TUNAI' && tunaiEl && tunaiBayar < grandTotal) {
       playPosBeep('err');
       global.toast('Uang tunai diterima kurang dari total tagihan!', 'err');
@@ -6213,8 +6213,8 @@
     const kembaliRp = metode === 'TUNAI' ? Math.max(0, tunaiBayar - grandTotal) : 0;
     const piutangNama = ((document.getElementById('posPiutangNama') || {}).value || '').trim();
     const piutangJt = ((document.getElementById('posPiutangJt') || {}).value || '').trim();
-    const piutangDp = Math.min(grandTotal, Math.max(0, Number((document.getElementById('posPiutangDp') || {}).value || 0)));
-    const piutangPlafon = Number((document.getElementById('posPiutangPlafon') || {}).value || 2000000);
+    const piutangDp = Math.min(grandTotal, Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('posPiutangDp') || {}).value || 0) : Number((document.getElementById('posPiutangDp') || {}).value || 0)));
+    const piutangPlafon = window.parseNumber ? window.parseNumber((document.getElementById('posPiutangPlafon') || {}).value || 2000000) : Number((document.getElementById('posPiutangPlafon') || {}).value || 2000000);
     const piutangNote = ((document.getElementById('posPiutangNote') || {}).value || '').trim();
 
     if (metode === 'PIUTANG' && (!cart.id_member || cart.id_member === 'UMUM') && !piutangNama) {

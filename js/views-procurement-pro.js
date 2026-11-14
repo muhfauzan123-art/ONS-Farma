@@ -339,16 +339,16 @@
                   <td>
                     <div class="grid grid-cols-2 gap-1 min-w-[200px]">
                       <label class="text-[10px]" style="color:var(--ons-text-soft)">Umum
-                        <input type="number" min="0" step="100" class="ons-input text-xs font-mono-num font-bold py-1 min-h-0 mt-0.5" value="${curUmum}" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_umum',this.value)"/>
+                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num font-bold py-1 min-h-0 mt-0.5" value="${S().formatDots(curUmum)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_umum',this.value)"/>
                       </label>
                       <label class="text-[10px]" style="color:var(--ons-text-soft)">Member
-                        <input type="number" min="0" step="100" class="ons-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${curMember}" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_member',this.value)"/>
+                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${S().formatDots(curMember)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_member',this.value)"/>
                       </label>
                       <label class="text-[10px]" style="color:var(--ons-text-soft)">Grosir
-                        <input type="number" min="0" step="100" class="ons-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${curGrosir}" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_grosir',this.value)"/>
+                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${S().formatDots(curGrosir)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_grosir',this.value)"/>
                       </label>
                       <label class="text-[10px]" style="color:var(--ons-text-soft)">Faskes
-                        <input type="number" min="0" step="100" class="ons-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${curFaskes}" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_faskes',this.value)"/>
+                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${S().formatDots(curFaskes)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_faskes',this.value)"/>
                       </label>
                     </div>
                   </td>
@@ -1334,7 +1334,7 @@
 
   global.setPriceDraftField = (idObat, field, val) => {
     if (!priceDraftEdits[idObat]) priceDraftEdits[idObat] = {};
-    priceDraftEdits[idObat][field] = Math.max(0, Number(val || 0));
+    priceDraftEdits[idObat][field] = Math.max(0, window.parseNumber ? window.parseNumber(val || 0) : Number(val || 0));
     global.renderActiveView();
   };
 

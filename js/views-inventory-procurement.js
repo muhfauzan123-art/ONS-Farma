@@ -4049,7 +4049,7 @@
     };
     const num = (id, def) => {
       const el = document.getElementById(id);
-      return el ? Number(el.value || 0) : Number(def || 0);
+      return el ? (window.parseNumber ? window.parseNumber(el.value || 0) : Number(el.value || 0)) : Number(def || 0);
     };
     return {
       ...baseObj,
@@ -4328,22 +4328,22 @@
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1">HPP Beli Rata-Rata (Rp)</label>
-                      <input id="wHpp" type="number" min="0" class="${inpCls} font-mono-num font-bold" value="${o.hpp_avg}"/>
+                      <input id="wHpp" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold" value="${S().formatDots(o.hpp_avg)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
                       <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Harga pokok modal per satuan dasar.</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1">Harga Umum / Reguler (Rp)</label>
-                      <input id="wHrgUmum" type="number" min="0" class="${inpCls} font-mono-num font-bold text-blue-600" value="${o.harga_umum}"/>
+                      <input id="wHrgUmum" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-blue-600" value="${S().formatDots(o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
                       <div id="wizMarginUmumTxt" class="text-[11px] mt-1 font-semibold text-emerald-600">Margin: -</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1">Harga Member (Rp)</label>
-                      <input id="wHrgMem" type="number" min="0" class="${inpCls} font-mono-num font-bold" value="${o.harga_member}"/>
+                      <input id="wHrgMem" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold" value="${S().formatDots(o.harga_member)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
                       <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Aktif otomatis untuk pelanggan member terdaftar.</div>
                     </div>
                     <div>
                       <label class="font-bold block mb-1.5">Harga Grosir / B2B (Rp)</label>
-                      <input id="wHrgGrosir" type="number" min="0" class="${inpCls} font-mono-num" value="${o.harga_grosir || o.harga_member}"/>
+                      <input id="wHrgGrosir" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num" value="${S().formatDots(o.harga_grosir || o.harga_member)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
                     </div>
                     <div>
                       <label class="font-bold block mb-1.5">Minimal Qty Grosir</label>
@@ -4351,7 +4351,7 @@
                     </div>
                     <div>
                       <label class="font-bold block mb-1.5">Harga Faskes / Klinik Mitra (Rp)</label>
-                      <input id="wHrgFaskes" type="number" min="0" class="${inpCls} font-mono-num" value="${o.harga_faskes || o.harga_grosir || o.harga_member || o.harga_umum}"/>
+                      <input id="wHrgFaskes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num" value="${S().formatDots(o.harga_faskes || o.harga_grosir || o.harga_member || o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
                     </div>
                   </div>
                   <div id="wizStep4MarginHint" class="hidden p-3 rounded-xl border border-red-400 bg-red-500/10 text-red-600 font-semibold text-xs"></div>
@@ -4485,7 +4485,7 @@
     };
     const num = (id) => {
       const el = document.getElementById(id);
-      return el ? Number(el.value || 0) : 0;
+      return el ? (window.parseNumber ? window.parseNumber(el.value || 0) : Number(el.value || 0)) : 0;
     };
     const nama = val('wNamaDagang') || 'Nama Obat Belum Diisi';
     const zat = val('wZatAktif') || 'Zat aktif & kekuatan belum diisi';
@@ -4601,7 +4601,7 @@
   };
 
   global.applyObatMarkupHelper = (pct) => {
-    const hpp = Number((document.getElementById('wHpp') || {}).value || 0);
+    const hpp = window.parseNumber ? window.parseNumber((document.getElementById('wHpp') || {}).value || 0) : Number((document.getElementById('wHpp') || {}).value || 0);
     if (hpp <= 0) {
       global.toast('Masukkan nilai HPP Beli terlebih dahulu agar markup bisa dihitung.', 'warn');
       return;
@@ -4611,7 +4611,7 @@
     const mem = rnd(Math.max(hpp, umum * 0.94));
     const grosir = rnd(Math.max(hpp, umum * 0.88));
     const faskes = rnd(Math.max(hpp, umum * 0.90));
-    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = S().formatDots(v); };
     set('wHrgUmum', umum);
     set('wHrgMem', mem);
     set('wHrgGrosir', grosir);
@@ -8390,7 +8390,7 @@
                       </td>
                       <td><input type="number" min="1" class="ons-input text-xs font-mono-num text-right w-20 py-1 min-h-0" value="${Number(p.kuantitas || 1)}" onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'kuantitas', Number(this.value||1))"/></td>
                       <td class="text-right font-mono-num text-xs font-bold ${sisaStok <= 0 ? 'text-red-600' : ''}">${sisaStok}</td>
-                      <td><input type="number" min="0" class="ons-input text-xs font-mono-num text-right w-28 py-1 min-h-0" value="${Number(p.harga_beli || 0)}" onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'harga_beli', Number(this.value||0))"/></td>
+                      <td><input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num text-right w-28 py-1 min-h-0" value="${S().formatDots(p.harga_beli || 0)}" oninput="window.maskNumberInput(this)" onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'harga_beli', window.parseNumber(this.value))"/></td>
                       <td><input class="ons-input text-xs w-36 py-1 min-h-0" value="${S().esc(p.keterangan || '')}" placeholder="Catatan..." onchange="window.updatePurchasePlanField('${S().esc(p.id_plan)}', 'keterangan', this.value)"/></td>
                       <td>
                         <div class="flex gap-1.5">
@@ -8611,7 +8611,7 @@
                 </div>
                 ${grnHeader.diskon_mode === 'PCT'
                   ? `<input type="number" min="0" max="100" step="0.5" class="ons-input font-mono-num" value="${Number(grnHeader.diskon_pct || 0)}" oninput="window.setGrnField('diskon_pct', Number(this.value||0), true)"/>`
-                  : `<input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.diskon_pbf}" oninput="window.setGrnField('diskon_pbf', Number(this.value||0), true)"/>`}
+                  : `<input type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(grnHeader.diskon_pbf)}" oninput="window.maskNumberInput(this); window.setGrnField('diskon_pbf', window.parseNumber(this.value), true)"/>`}
               </div>
               <div>
                 <div class="flex items-center justify-between mb-1">
@@ -8621,10 +8621,10 @@
                     ${Number(grnHeader.ppn_masukan || 0) > 0 ? `<button type="button" onclick="window.applyGrnPpn11(false)" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-500/15" style="color:var(--ons-text-soft)">0</button>` : ''}
                   </span>
                 </div>
-                <input type="number" min="0" class="ons-input font-mono-num" value="${grnHeader.ppn_masukan}" oninput="window.setGrnField('ppn_masukan', Number(this.value||0), true)"/>
+                <input type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(grnHeader.ppn_masukan)}" oninput="window.maskNumberInput(this); window.setGrnField('ppn_masukan', window.parseNumber(this.value), true)"/>
               </div>
-              <div><label class="font-semibold block mb-1">Cashback / Potongan (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${Number(grnHeader.cashback || 0)}" oninput="window.setGrnField('cashback', Number(this.value||0), true)"/></div>
-              <div><label class="font-semibold block mb-1">Biaya Lainnya / Ongkir (Rp)</label><input type="number" min="0" class="ons-input font-mono-num" value="${Number(grnHeader.biaya_lainnya || 0)}" oninput="window.setGrnField('biaya_lainnya', Number(this.value||0), true)"/></div>
+              <div><label class="font-semibold block mb-1">Cashback / Potongan (Rp)</label><input type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(grnHeader.cashback)}" oninput="window.maskNumberInput(this); window.setGrnField('cashback', window.parseNumber(this.value), true)"/></div>
+              <div><label class="font-semibold block mb-1">Biaya Lainnya / Ongkir (Rp)</label><input type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(grnHeader.biaya_lainnya)}" oninput="window.maskNumberInput(this); window.setGrnField('biaya_lainnya', window.parseNumber(this.value), true)"/></div>
               ${grnHeader.jenis_penerimaan === 'KONSINYASI' ? `
               <div class="sm:col-span-2"><label class="font-semibold block mb-1">Status Hutang Konsinyasi</label>
                 <div class="ons-input text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 border-blue-500/30">Rp 0 Hutang Awal (Settlement saat Laku)</div>
@@ -8671,8 +8671,8 @@
                       <input type="number" min="1" class="ons-input font-mono-num text-xs w-18 text-right" value="${it.qty_dasar}" onchange="window.updateGrnItem(${idx}, 'qty_dasar', Number(this.value||1))"/>
                       ${Number(it.qty_sp || 0) > 0 ? `<div class="text-[10px] font-mono-num mt-0.5 ${Number(it.qty_dasar) === Number(it.qty_sp) ? 'text-emerald-600' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'text-amber-600 font-bold' : 'text-blue-600 font-bold')}">SP: ${it.qty_sp} (${Number(it.qty_dasar) === Number(it.qty_sp) ? 'Cocok' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'Kurang' : '+' + (Number(it.qty_dasar) - Number(it.qty_sp)))})</div>` : ''}
                     </td>
-                    <td><input type="number" min="0" class="ons-input font-mono-num text-xs w-24 text-right" value="${it.hpp_unit}" onchange="window.updateGrnItem(${idx}, 'hpp_unit', Number(this.value||0))"/></td>
-                    <td><input type="number" min="0" class="ons-input font-mono-num text-xs w-20 text-right" value="${dItem}" onchange="window.updateGrnItem(${idx}, 'diskon_item', Number(this.value||0))"/></td>
+                    <td><input type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-xs w-24 text-right" value="${S().formatDots(it.hpp_unit)}" oninput="window.maskNumberInput(this)" onchange="window.updateGrnItem(${idx}, 'hpp_unit', window.parseNumber(this.value))"/></td>
+                    <td><input type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-xs w-20 text-right" value="${S().formatDots(dItem)}" oninput="window.maskNumberInput(this)" onchange="window.updateGrnItem(${idx}, 'diskon_item', window.parseNumber(this.value))"/></td>
                     <td class="font-mono-num text-xs font-semibold">${S().rp(hargaPokokPreview)}</td>
                     <td class="font-mono-num font-bold text-xs">${S().rp(rowNet)}</td>
                     <td><button type="button" onclick="window.removeGrnItemRow(${idx})" ${grnItems.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button></td>
@@ -9004,7 +9004,7 @@
     const plans = _readLocalList(PLANS_KEY);
     const target = plans.find((p) => p.id_plan === idPlan);
     if (!target) return;
-    target[field] = val;
+    target[field] = (field === 'harga_beli' || field === 'kuantitas') ? (window.parseNumber ? window.parseNumber(val) : Number(val || 0)) : val;
     _writeLocalList(PLANS_KEY, plans);
     global.renderActiveView();
   };
@@ -9056,7 +9056,7 @@
         </div>
         <div><label class="font-semibold block mb-1">Satuan</label><input id="psSatuanInp" class="ons-input text-xs" value="Box"/></div>
         <div><label class="font-semibold block mb-1">Kuantitas *</label><input id="psQtyInp" type="number" min="1" class="ons-input font-mono-num text-xs" value="20"/></div>
-        <div><label class="font-semibold block mb-1">Harga Beli Satuan (Rp)</label><input id="psHargaInp" type="number" min="0" class="ons-input font-mono-num text-xs" value="0"/></div>
+        <div><label class="font-semibold block mb-1">Harga Beli Satuan (Rp)</label><input id="psHargaInp" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-xs" value="0" oninput="window.maskNumberInput(this)"/></div>
       </div>
       <div><label class="font-semibold block mb-1">Keterangan Penawaran Sales</label><input id="psKetInp" class="ons-input text-xs" value="Penawaran Sales PBF (Harga Promo)"/></div>
       <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
@@ -9073,7 +9073,7 @@
     const jenis = (document.getElementById('psJenisSel') || {}).value || 'REGULER';
     const satuan = (document.getElementById('psSatuanInp') || {}).value || 'Unit';
     const qty = Math.max(1, Number((document.getElementById('psQtyInp') || {}).value || 1));
-    const harga = Math.max(0, Number((document.getElementById('psHargaInp') || {}).value || 0));
+    const harga = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('psHargaInp') || {}).value || 0) : Number((document.getElementById('psHargaInp') || {}).value || 0));
     const ket = (document.getElementById('psKetInp') || {}).value || 'Penawaran Sales';
     if (!nama) return global.toast('Nama produk penawaran sales wajib diisi.', 'warn');
     const plans = _readLocalList(PLANS_KEY);
@@ -9265,7 +9265,9 @@
     global.renderActiveView();
   };
   global.setGrnField = (k, v, rerender) => {
-    grnHeader[k] = v;
+    grnHeader[k] = ['diskon_pbf', 'ppn_masukan', 'cashback', 'biaya_lainnya', 'tempo_hari', 'diskon_pct'].includes(k)
+      ? (window.parseNumber ? window.parseNumber(v) : Number(v || 0))
+      : v;
     if (k === 'id_pbf') {
       const term = _getPbfTerminDays(v);
       grnHeader.tempo_hari = term;
@@ -9332,7 +9334,9 @@
   };
   global.updateGrnItem = (idx, key, val) => {
     if (!grnItems[idx]) return;
-    grnItems[idx][key] = val;
+    grnItems[idx][key] = ['hpp_unit', 'diskon_item', 'qty_dasar'].includes(key)
+      ? (window.parseNumber ? window.parseNumber(val) : Number(val || 0))
+      : val;
     if (key === 'id_obat') {
       const o = S().AppState.masterObat.find((m) => m.id_obat === val);
       if (o) grnItems[idx].hpp_unit = Number(o.hpp_terakhir || o.hpp_avg || grnItems[idx].hpp_unit);

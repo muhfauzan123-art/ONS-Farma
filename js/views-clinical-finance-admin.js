@@ -2941,7 +2941,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 <option value="MASUK_LAINNYA">MASUK_LAINNYA (Pemasukan Lain)</option>
               </select>
               <input id="jrInlineKat" class="ons-input sm:col-span-5" placeholder="Input cepat: keterangan biaya / pemasukan (cth. Beli kertas struk 58mm)"/>
-              <input id="jrInlineNom" type="number" min="1" class="ons-input font-mono-num sm:col-span-2" placeholder="Nominal (Rp)"/>
+              <input id="jrInlineNom" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num sm:col-span-2" placeholder="Nominal (Rp)" oninput="window.maskNumberInput(this)"/>
               <button onclick="window.saveInlineJurnal()" class="ons-btn ons-btn-primary sm:col-span-2">+ Catat Jurnal</button>
             </div>
           </div>
@@ -3317,9 +3317,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <div class="grid grid-cols-2 gap-3">
               <div><label class="font-semibold block mb-1">Nama Pegawai</label><input id="sgNama" class="ons-input" value="apt. Siti Rahma, S.Farm"/></div>
               <div><label class="font-semibold block mb-1">Jabatan</label><input id="sgJab" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
-              <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="number" class="ons-input font-mono-num" value="4800000"/></div>
-              <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="number" class="ons-input font-mono-num" value="1500000"/></div>
-              <div><label class="font-semibold block mb-1">Potongan Kasbon / Lainnya</label><input id="sgPot" type="number" class="ons-input font-mono-num" value="150000"/></div>
+              <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(4800000)}" oninput="window.maskNumberInput(this)"/></div>
+              <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(1500000)}" oninput="window.maskNumberInput(this)"/></div>
+              <div><label class="font-semibold block mb-1">Potongan Kasbon / Lainnya</label><input id="sgPot" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(150000)}" oninput="window.maskNumberInput(this)"/></div>
               <div><label class="font-semibold block mb-1">Periode Bulan</label><input id="sgPer" class="ons-input font-mono-num" value="${new Date().toISOString().slice(0, 7)}"/></div>
             </div>
             <button onclick="window.printSlipGajiPdf()" class="ons-btn ons-btn-primary w-full">Pratinjau &amp; Cetak Slip Gaji Resmi (A4)</button>
@@ -3645,7 +3645,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
       </div>
       <div class="grid grid-cols-3 gap-3">
-        <div><label class="font-semibold block mb-1">Jumlah Utang (Rp) *</label><input id="cuJumlah" type="number" min="1" class="ons-input font-mono-num" value="0" oninput="window.refreshUtangJurnalPreview()"/></div>
+        <div><label class="font-semibold block mb-1">Jumlah Utang (Rp) *</label><input id="cuJumlah" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="0" oninput="window.maskNumberInput(this); window.refreshUtangJurnalPreview();"/></div>
         <div><label class="font-semibold block mb-1">Waktu Transaksi</label><input id="cuWaktu" type="date" class="ons-input" value="${today}"/></div>
         <div><label class="font-semibold block mb-1">Tanggal Jatuh Tempo</label><input id="cuTempo" type="date" class="ons-input" value="${dueDef}"/></div>
       </div>
@@ -3674,13 +3674,13 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     </div>`, '560px');
   };
   global.refreshUtangJurnalPreview = () => {
-    const val = Math.max(0, Number((document.getElementById('cuJumlah') || {}).value || 0));
+    const val = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('cuJumlah') || {}).value || 0) : Number((document.getElementById('cuJumlah') || {}).value || 0));
     const akun = (document.getElementById('cuAkunLawan') || {}).value || 'Persediaan Obat & Alkes';
     const tb = document.getElementById('cuJurnalPrev');
     if (tb) tb.innerHTML = `<tr><td>1</td><td>Hutang Usaha</td><td class="text-right">-</td><td class="text-right font-mono-num">${S().rp(val)}</td></tr><tr><td>2</td><td>${S().esc(akun)}</td><td class="text-right font-mono-num">${S().rp(val)}</td><td class="text-right">-</td></tr>`;
   };
   global.submitCatatUtangModal = () => {
-    const amt = Math.max(0, Number((document.getElementById('cuJumlah') || {}).value || 0));
+    const amt = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('cuJumlah') || {}).value || 0) : Number((document.getElementById('cuJumlah') || {}).value || 0));
     if (amt <= 0) return global.toast('Jumlah Utang harus lebih dari 0.', 'warn');
     const list = _readFinLocalList(MANUAL_UTANG_KEY);
     list.unshift({
@@ -3772,7 +3772,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <datalist id="cpCustList">${members.map((m) => `<option value="${S().esc(m.nama_lengkap || m.nama || '')}">`).join('')}</datalist>
       </div>
       <div class="grid grid-cols-3 gap-3">
-        <div><label class="font-semibold block mb-1">Jumlah Piutang (Rp) *</label><input id="cpJumlah" type="number" min="1" class="ons-input font-mono-num" value="0" oninput="window.refreshPiutangJurnalPreview()"/></div>
+        <div><label class="font-semibold block mb-1">Jumlah Piutang (Rp) *</label><input id="cpJumlah" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="0" oninput="window.maskNumberInput(this); window.refreshPiutangJurnalPreview();"/></div>
         <div><label class="font-semibold block mb-1">Waktu Transaksi</label><input id="cpWaktu" type="date" class="ons-input" value="${today}"/></div>
         <div><label class="font-semibold block mb-1">Tanggal Jatuh Tempo</label><input id="cpTempo" type="date" class="ons-input" value="${dueDef}"/></div>
       </div>
@@ -3800,14 +3800,14 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     </div>`, '560px');
   };
   global.refreshPiutangJurnalPreview = () => {
-    const val = Math.max(0, Number((document.getElementById('cpJumlah') || {}).value || 0));
+    const val = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('cpJumlah') || {}).value || 0) : Number((document.getElementById('cpJumlah') || {}).value || 0));
     const akun = (document.getElementById('cpAkunLawan') || {}).value || 'Pendapatan Penjualan Obat';
     const tb = document.getElementById('cpJurnalPrev');
     if (tb) tb.innerHTML = `<tr><td>1</td><td>Piutang Usaha</td><td class="text-right font-mono-num">${S().rp(val)}</td><td class="text-right">-</td></tr><tr><td>2</td><td>${S().esc(akun)}</td><td class="text-right">-</td><td class="text-right font-mono-num">${S().rp(val)}</td></tr>`;
   };
   global.submitCatatPiutangModal = () => {
     const cust = String((document.getElementById('cpCustomer') || {}).value || '').trim();
-    const amt = Math.max(0, Number((document.getElementById('cpJumlah') || {}).value || 0));
+    const amt = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('cpJumlah') || {}).value || 0) : Number((document.getElementById('cpJumlah') || {}).value || 0));
     if (!cust) return global.toast('Customer wajib diisi.', 'warn');
     if (amt <= 0) return global.toast('Jumlah Piutang harus lebih dari 0.', 'warn');
     const list = _readFinLocalList(MANUAL_PIUTANG_KEY);
@@ -3921,7 +3921,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.saveInlineJurnal = async () => {
     try {
       const kat = (document.getElementById('jrInlineKat') || {}).value || '';
-      const nom = Number((document.getElementById('jrInlineNom') || {}).value || 0);
+      const nom = window.parseNumber ? window.parseNumber((document.getElementById('jrInlineNom') || {}).value || 0) : Number((document.getElementById('jrInlineNom') || {}).value || 0);
       if (!kat.trim() || nom <= 0) throw new Error('Isi keterangan & nominal kas valid (>0).');
       await API().callApi('finance.saveJurnal', {
         jenis_trx: (document.getElementById('jrInlineJenis') || {}).value || 'KELUAR_OPERASIONAL',
@@ -3969,7 +3969,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center"><h3 class="font-bold text-base">Bayar / Cicil Hutang Faktur ${S().esc(noFak)}</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
       <div class="p-3 rounded-lg" style="background:var(--ons-bg-subtle)">Sisa hutang saat ini: <b class="font-mono-num text-amber-600">${S().rp(sisaMax)}</b></div>
-      <div><label class="font-semibold block mb-1">Nominal Pembayaran (Rp) *</label><input id="payHutangAmt" type="number" min="1" max="${sisaMax}" class="ons-input font-mono-num" value="${sisaMax}"/></div>
+      <div><label class="font-semibold block mb-1">Nominal Pembayaran (Rp) *</label><input id="payHutangAmt" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(sisaMax)}" oninput="window.maskNumberInput(this)"/></div>
       <div><label class="font-semibold block mb-1">Metode Transfer</label><select id="payHutangMetode" class="ons-select"><option value="TRANSFER_BANK">TRANSFER_BANK</option><option value="KAS_TUNAI">KAS_TUNAI</option><option value="GIRO">GIRO / CEK</option></select></div>
       <button onclick="window.submitPayHutangPartial('${S().esc(idBeli)}')" class="ons-btn ons-btn-emerald w-full">Catat Pembayaran PBF ke Jurnal Kas</button>
     </div>`, '440px');
@@ -3977,7 +3977,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
   global.submitPayHutangPartial = async (idBeli) => {
     try {
-      const amt = Number(document.getElementById('payHutangAmt').value || 0);
+      const amt = window.parseNumber ? window.parseNumber(document.getElementById('payHutangAmt').value || 0) : Number(document.getElementById('payHutangAmt').value || 0);
       const met = document.getElementById('payHutangMetode').value || 'TRANSFER_BANK';
       if (amt <= 0) throw new Error('Nominal bayar harus > 0.');
       await API().callApi('finance.payHutangPbf', { id_beli: idBeli, nominal_bayar: amt, metode: met }, { isWrite: true });
@@ -4002,9 +4002,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div class="grid grid-cols-2 gap-3">
         <div><label class="font-semibold block mb-1">Nama Pegawai</label><input id="sgNama" class="ons-input" value="apt. Siti Rahma, S.Farm"/></div>
         <div><label class="font-semibold block mb-1">Jabatan</label><input id="sgJab" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
-        <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="number" class="ons-input font-mono-num" value="4800000"/></div>
-        <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="number" class="ons-input font-mono-num" value="1500000"/></div>
-        <div><label class="font-semibold block mb-1">Potongan Kasbon / Lainnya</label><input id="sgPot" type="number" class="ons-input font-mono-num" value="150000"/></div>
+        <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(4800000)}" oninput="window.maskNumberInput(this)"/></div>
+        <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(1500000)}" oninput="window.maskNumberInput(this)"/></div>
+        <div><label class="font-semibold block mb-1">Potongan Kasbon / Lainnya</label><input id="sgPot" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(150000)}" oninput="window.maskNumberInput(this)"/></div>
         <div><label class="font-semibold block mb-1">Periode Bulan</label><input id="sgPer" class="ons-input font-mono-num" value="${new Date().toISOString().slice(0, 7)}"/></div>
       </div>
       <button onclick="window.printSlipGajiPdf()" class="ons-btn ons-btn-primary w-full">Pratinjau &amp; Cetak Slip Gaji A4</button>
@@ -4014,9 +4014,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.printSlipGajiPdf = () => {
     const nama = document.getElementById('sgNama').value;
     const jab = document.getElementById('sgJab').value;
-    const pokok = Number(document.getElementById('sgPokok').value || 0);
-    const tunj = Number(document.getElementById('sgTunj').value || 0);
-    const pot = Number(document.getElementById('sgPot').value || 0);
+    const pokok = window.parseNumber ? window.parseNumber(document.getElementById('sgPokok').value || 0) : Number(document.getElementById('sgPokok').value || 0);
+    const tunj = window.parseNumber ? window.parseNumber(document.getElementById('sgTunj').value || 0) : Number(document.getElementById('sgTunj').value || 0);
+    const pot = window.parseNumber ? window.parseNumber(document.getElementById('sgPot').value || 0) : Number(document.getElementById('sgPot').value || 0);
     const per = document.getElementById('sgPer').value;
     const bersih = Math.max(0, pokok + tunj - pot);
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
@@ -4044,7 +4044,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div class="flex justify-between items-center"><h3 class="font-bold text-base">Catat Jurnal Kas / Petty Cash</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
       <select id="jrJenis" class="ons-select"><option value="KELUAR_OPERASIONAL">KELUAR_OPERASIONAL (Petty Cash / Listrik / Plastik)</option><option value="MASUK_LAINNYA">MASUK_LAINNYA</option></select>
       <input id="jrKat" class="ons-input" placeholder="Keterangan biaya (mis. Beli kertas struk 58mm)"/>
-      <input id="jrNom" type="number" class="ons-input font-mono-num" placeholder="Nominal (Rp)"/>
+      <input id="jrNom" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" placeholder="Nominal (Rp)" oninput="window.maskNumberInput(this)"/>
       <button onclick="window.saveJurnalSubmit()" class="ons-btn ons-btn-primary w-full">Simpan ke Jurnal Keuangan</button>
     </div>`, '460px');
   };
@@ -4054,7 +4054,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       await API().callApi('finance.saveJurnal', {
         jenis_trx: document.getElementById('jrJenis').value,
         kategori: document.getElementById('jrKat').value,
-        nominal: Number(document.getElementById('jrNom').value || 0),
+        nominal: window.parseNumber ? window.parseNumber(document.getElementById('jrNom').value || 0) : Number(document.getElementById('jrNom').value || 0),
         periode_bulan: new Date().toISOString().slice(0, 7)
       }, { isWrite: true });
       S().closeModal();
@@ -5152,7 +5152,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         Pelanggan: <b>${S().esc(namaPel)}</b><br/>
         Sisa Tagihan: <b class="font-mono-num text-amber-600">${S().rp(sisaMax)}</b>
       </div>
-      <div><label class="font-semibold block mb-1">Nominal Diterima (Rp) *</label><input id="payPiutangAmt" type="number" min="1" max="${sisaMax}" class="ons-input font-mono-num" value="${sisaMax}"/></div>
+      <div><label class="font-semibold block mb-1">Nominal Diterima (Rp) *</label><input id="payPiutangAmt" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(sisaMax)}" oninput="window.maskNumberInput(this)"/></div>
       <div><label class="font-semibold block mb-1">Akun Kas / Metode Penerimaan</label>
         <select id="payPiutangMetode" class="ons-select">
           ${kasAccounts.map((a) => `<option value="${S().esc(a.nama)}">${S().esc(a.nama)}</option>`).join('')}
@@ -5168,7 +5168,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
   global.submitPayPiutang = async (idPiutang, isManual) => {
     try {
-      const nom = Number((document.getElementById('payPiutangAmt') || {}).value || 0);
+      const nom = window.parseNumber ? window.parseNumber((document.getElementById('payPiutangAmt') || {}).value || 0) : Number((document.getElementById('payPiutangAmt') || {}).value || 0);
       const met = (document.getElementById('payPiutangMetode') || {}).value || 'TRANSFER_BANK';
       const cat = (document.getElementById('payPiutangNote') || {}).value || '';
       if (nom <= 0) throw new Error('Nominal bayar harus lebih dari 0.');
