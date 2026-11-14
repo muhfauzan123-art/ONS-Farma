@@ -2050,7 +2050,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               ${(() => {
                 const prof = S().getStoreProfile ? S().getStoreProfile() : {};
                 return `<div class="font-extrabold tracking-wide">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
-                  <div class="text-[10px]">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>`;
+                  <div class="text-[10px]">${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>`;
               })()}
               <div class="border-y border-slate-800 py-1 font-bold">${S().esc(etiketDraft.pasien)} &bull; ${new Date().toLocaleDateString('id-ID')}</div>
               <div class="font-bold text-sm">${S().esc(etiketDraft.obat)}</div>
@@ -2215,7 +2215,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div style="text-align:center;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:10px;">
         <div style="font-size:15px;font-weight:bold;">KARTU INFORMASI OBAT (PIO)</div>
         <div style="font-size:12px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
-        <div style="font-size:10px;">Apoteker: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
+        <div style="font-size:10px;">Apoteker: ${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
       </div>
       <div style="margin-bottom:10px;"><b>Nama Pasien:</b> ${S().esc(pioState.pasien)} &bull; <b>Jadwal Utama:</b> ${S().esc((pioState.jadwalKeys || []).join(', ') || 'Sesuai etiket')}</div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
@@ -2307,7 +2307,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const bg = jenis === 'BIRU' ? '#E0F2FE' : '#FFFFFF';
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     S().printHtmlZone(`<div style="width:55mm;border:2px solid #000;background:${bg};padding:6px;font-family:Arial,sans-serif;font-size:10px;">
-      <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/><span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span></div>
+      <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/><span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '-')}</span></div>
       <div style="margin:4px 0;"><b>Pasien:</b> ${S().esc(p)}<br/><b>Obat:</b> ${S().esc(o)}</div>
       <div style="border:1px dashed #000;padding:4px;font-weight:bold;text-align:center;font-size:11px;">${S().esc(a)}</div>
       <div style="text-align:center;font-size:8px;margin-top:4px;">${jenis === 'BIRU' ? '*** OBAT LUAR / TIDAK UNTUK DITELAN ***' : 'Semoga Lekas Sembuh'}</div>
@@ -2542,7 +2542,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                             'Jadwal habis obat: *' + (m.tgl_habis_obat || 'minggu ini') + '*.',
                             'Pemeriksaan terakhir: ' + (pemSummary !== '-' ? pemSummary : 'Terpantau baik') + '.',
                             'Pesan ulang online langsung: ' + eApotekUrl,
-                            'Apoteker: ' + (profPrb.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')
+                            'Apoteker: ' + (profPrb.nama_pemilik || 'Apoteker Penanggung Jawab')
                           ].join('\n');
                           const hrefWa = S().buildWaUrl ? S().buildWaUrl(m.no_hp, waBody) : ('https://wa.me/' + m.no_hp + '?text=' + encodeURIComponent(waBody));
                           return `<a target="_blank" rel="noopener" href="${S().esc(hrefWa)}" class="ons-btn ons-btn-emerald text-xs py-1 px-2">WA Refill</a>`;
@@ -4150,7 +4150,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <tr><td>Potongan Kasbon / Lainnya</td><td style="text-align:right;color:#DC2626;">-${S().rp(pot)}</td></tr>
         <tr style="background:#f1f5f9;font-weight:bold;font-size:14px;"><td>THP / Gaji Bersih Diterima</td><td style="text-align:right;">${S().rp(bersih)}</td></tr>
       </table>
-      <div style="margin-top:28px;display:flex;justify-content:space-between;"><div>Diterima Oleh,<br/><br/><br/>(${S().esc(nama)})</div><div>Pemilik ${S().esc(prof.nama_usaha || 'Apotek ONS Farma')},<br/><br/><br/><b>${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</b></div></div>
+      <div style="margin-top:28px;display:flex;justify-content:space-between;"><div>Diterima Oleh,<br/><br/><br/>(${S().esc(nama)})</div><div>Pemilik ${S().esc(prof.nama_usaha || 'Apotek ONS Farma')},<br/><br/><br/><b>${S().esc(prof.nama_pemilik || 'Pemilik Apotek')}</b></div></div>
     </div>`);
   };
 
@@ -4564,7 +4564,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       const prof = S().getStoreProfile();
       return tags.map((tg) => {
         const clean = String(tg).replace(/^\{+|\}+$/g, '').split('|')[0];
-        const defVal = clean.includes('APJ') ? (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi') : (clean.includes('SIPA') ? (prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042') : (clean.includes('APOTEK') ? (prof.nama_usaha || 'Apotek ONS Farma') : (clean.includes('PBF') ? 'PT Bina San Prima' : '')));
+        const defVal = clean.includes('APJ') ? (prof.nama_pemilik || 'Apoteker Penanggung Jawab') : (clean.includes('SIPA') ? (prof.sipa_pemilik || '-') : (clean.includes('APOTEK') ? (prof.nama_usaha || 'Apotek ONS Farma') : (clean.includes('PBF') ? 'PT Bina San Prima' : '')));
         return `<div><label class="font-semibold block mb-1">${S().esc(clean)}</label><input data-doc-tag="${S().esc(clean)}" class="ons-input" value="${S().esc(defVal)}" placeholder="Isi ${S().esc(clean)}..."/></div>`;
       }).join('');
     };
@@ -7711,7 +7711,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const staffList = (settingsCache.users && settingsCache.users.length)
       ? settingsCache.users
       : (Array.isArray(st.staffDirectory) && st.staffDirectory.length ? st.staffDirectory : [
-        { id_user: 'USR-001', username: 'admin', nama_lengkap: 'Anissa Faradifa R. Is. Rumi', role: 'admin', no_hp: '-', status_aktif: 'AKTIF' }
+        { id_user: 'USR-001', username: 'admin', nama_lengkap: 'Administrator', role: 'admin', no_hp: '-', status_aktif: 'AKTIF' }
       ]);
 
     const q = usersSearchQ.toLowerCase().trim();
@@ -7951,10 +7951,10 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const staffList = (settingsCache.users && settingsCache.users.length) ? settingsCache.users : (st.staffDirectory || []);
 
     const logs = [
-      { tgl: '13-11-2026', nama: 'Anissa Faradifa R. Is. Rumi', role: 'admin', shift: 'Pagi', masuk: '06:55', pulang: '15:05', status: 'Tepat Waktu' },
+      { tgl: '13-11-2026', nama: 'Administrator', role: 'admin', shift: 'Pagi', masuk: '06:55', pulang: '15:05', status: 'Tepat Waktu' },
       { tgl: '13-11-2026', nama: 'apt. Siti Rahma, S.Farm', role: 'apoteker penanggung jawab', shift: 'Pagi', masuk: '06:58', pulang: '-', status: 'Hadir Aktif' },
       { tgl: '13-11-2026', nama: 'Budi Santoso (Kasir)', role: 'cashier', shift: 'Siang', masuk: '14:20', pulang: '-', status: 'Hadir Aktif' },
-      { tgl: '12-11-2026', nama: 'Anissa Faradifa R. Is. Rumi', role: 'admin', shift: 'Pagi', masuk: '06:52', pulang: '15:10', status: 'Tepat Waktu' },
+      { tgl: '12-11-2026', nama: 'Administrator', role: 'admin', shift: 'Pagi', masuk: '06:52', pulang: '15:10', status: 'Tepat Waktu' },
       { tgl: '12-11-2026', nama: 'Budi Santoso (Kasir)', role: 'cashier', shift: 'Pagi', masuk: '07:02', pulang: '15:00', status: 'Tepat Waktu' }
     ];
 
@@ -8006,7 +8006,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const st = S().AppState;
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const staffList = (settingsCache.users && settingsCache.users.length) ? settingsCache.users : (st.staffDirectory || []);
-    const adminUser = staffList.find((u) => u.role === 'Pemilik' || u.role === 'admin') || { nama_lengkap: prof.nama_pemilik || 'Anissa Faradifa R. Is. Rumi' };
+    const adminUser = staffList.find((u) => u.role === 'Pemilik' || u.role === 'admin') || { nama_lengkap: prof.nama_pemilik || 'Administrator' };
     const adminName = (S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(adminUser.nama_lengkap, prof.nama_pemilik) : adminUser.nama_lengkap;
 
     const currentShift = {
@@ -8205,7 +8205,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.exportShiftHistory = (fmt) => {
     const st = S().AppState;
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    const adminUser = (st.staffDirectory || []).find((u) => u.role === 'Pemilik' || u.role === 'admin') || { nama_lengkap: prof.nama_pemilik || 'Anissa Faradifa R. Is. Rumi' };
+    const adminUser = (st.staffDirectory || []).find((u) => u.role === 'Pemilik' || u.role === 'admin') || { nama_lengkap: prof.nama_pemilik || 'Administrator' };
     const adminName = (S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(adminUser.nama_lengkap, prof.nama_pemilik) : adminUser.nama_lengkap;
     const currentShift = {
       kode: 'B261112-01 (-)',
@@ -8246,7 +8246,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.exportAttendanceHistory = (fmt) => {
     const dTag = new Date().toISOString().slice(0, 10);
     const rows = [
-      { no: 1, tgl: '13-11-2026', nama: 'Anissa Faradifa R. Is. Rumi', role: 'admin', shift: 'Pagi', masuk: '06:55', pulang: '15:05', status: 'Tepat Waktu' },
+      { no: 1, tgl: '13-11-2026', nama: 'Administrator', role: 'admin', shift: 'Pagi', masuk: '06:55', pulang: '15:05', status: 'Tepat Waktu' },
       { no: 2, tgl: '13-11-2026', nama: 'apt. Siti Rahma, S.Farm', role: 'apoteker penanggung jawab', shift: 'Pagi', masuk: '06:58', pulang: '-', status: 'Hadir Aktif' },
       { no: 3, tgl: '13-11-2026', nama: 'Budi Santoso (Kasir)', role: 'cashier', shift: 'Siang', masuk: '14:20', pulang: '-', status: 'Hadir Aktif' }
     ];
@@ -8265,7 +8265,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.viewShiftDetail = (kode) => {
     const st = S().AppState;
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    const adminUser = (st.staffDirectory || []).find((u) => u.role === 'Pemilik' || u.role === 'admin') || { nama_lengkap: prof.nama_pemilik || 'Anissa Faradifa R. Is. Rumi' };
+    const adminUser = (st.staffDirectory || []).find((u) => u.role === 'Pemilik' || u.role === 'admin') || { nama_lengkap: prof.nama_pemilik || 'Administrator' };
     const adminName = (S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(adminUser.nama_lengkap, prof.nama_pemilik) : adminUser.nama_lengkap;
 
     S().openModal(`
@@ -8895,7 +8895,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. NIB</label>
-          <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nib_oss || '9120208142915')}" placeholder="No. NIB OSS"/>
+          <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nib_oss || '')}" placeholder="No. NIB OSS"/>
         </div>
 
         ${renderDocUploadRow('nib', 'NIB :', '.pdf,image/*', merged.file_nib_url || '', merged.file_nib_name || (merged.nib_oss ? 'NIB_OSS_Apotek.pdf' : ''))}
@@ -8918,7 +8918,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. Surat Izin Apotek</label>
-          <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.no_sia || '449/SIA-DPMPTSP/2025/0088')}" placeholder="No. Surat Izin Apotek" oninput="window.refreshProfileKopPreview()"/>
+          <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.no_sia || '')}" placeholder="No. Surat Izin Apotek" oninput="window.refreshProfileKopPreview()"/>
         </div>
 
         <div>
@@ -8935,17 +8935,17 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nama Pemilik</label>
-          <input id="profNamaPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}" placeholder="Nama Pemilik" oninput="window.refreshProfileKopPreview()"/>
+          <input id="profNamaPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.nama_pemilik || '')}" placeholder="Nama Pemilik" oninput="window.refreshProfileKopPreview()"/>
         </div>
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. Handphone</label>
-          <input id="profWaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.wa_pemilik || '6282136973990')}" placeholder="No. Handphone" oninput="window.refreshProfileKopPreview()"/>
+          <input id="profWaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.wa_pemilik || '')}" placeholder="No. Handphone" oninput="window.refreshProfileKopPreview()"/>
         </div>
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Alamat Email</label>
-          <input id="profEmailPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.email_pemilik || 'icafaradiva@gmail.com')}" placeholder="Alamat Email"/>
+          <input id="profEmailPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.email_pemilik || '')}" placeholder="Alamat Email"/>
         </div>
 
         <div>
@@ -8957,7 +8957,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. NPWP Pemilik</label>
-          <input id="profNpwpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_pemilik || '09.254.294.3-805.000')}" placeholder="No. NPWP Pemilik"/>
+          <input id="profNpwpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_pemilik || '')}" placeholder="No. NPWP Pemilik"/>
         </div>
 
         ${renderDocUploadRow('npwp_pemilik', 'NPWP Pemilik :', '.pdf,image/*', merged.file_npwp_pemilik_url || '', merged.file_npwp_pemilik_name || (merged.npwp_pemilik ? 'NPWP_Pemilik.pdf' : ''))}
@@ -8969,27 +8969,27 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nama</label>
-          <input class="ons-input text-xs w-full" ${ro} value="${S().esc(merged.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}" placeholder="Nama APJ"/>
+          <input class="ons-input text-xs w-full" ${ro} value="${S().esc(merged.nama_pemilik || '')}" placeholder="Nama APJ"/>
         </div>
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. Handphone</label>
-          <input class="ons-input font-mono-num text-xs w-full" ${ro} value="${S().esc(merged.wa_pemilik || '6282136973990')}" placeholder="No. Handphone APJ"/>
+          <input class="ons-input font-mono-num text-xs w-full" ${ro} value="${S().esc(merged.wa_pemilik || '')}" placeholder="No. Handphone APJ"/>
         </div>
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Alamat Email</label>
-          <input class="ons-input text-xs w-full" ${ro} value="${S().esc(merged.email_pemilik || 'icafaradiva@gmail.com')}" placeholder="Alamat Email APJ"/>
+          <input class="ons-input text-xs w-full" ${ro} value="${S().esc(merged.email_pemilik || '')}" placeholder="Alamat Email APJ"/>
         </div>
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. STRA</label>
-          <input id="profStraPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.stra_pemilik || '19920412/STRA-14102029/1042')}" placeholder="No. STRA APJ"/>
+          <input id="profStraPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.stra_pemilik || '')}" placeholder="No. STRA APJ"/>
         </div>
 
         <div>
           <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. SIPA</label>
-          <input id="profSipaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}" placeholder="No. SIPA APJ" oninput="window.refreshProfileKopPreview()"/>
+          <input id="profSipaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.sipa_pemilik || '')}" placeholder="No. SIPA APJ" oninput="window.refreshProfileKopPreview()"/>
         </div>
 
         <div>
@@ -9121,7 +9121,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </div>
           <div class="text-left sm:text-right">
             <div class="text-[10px] font-bold uppercase" style="color:var(--ons-text-soft)">Pemilik &amp; Apoteker Penanggung Jawab</div>
-            <div class="font-bold text-xs">${S().esc(merged.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+            <div class="font-bold text-xs">${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</div>
             <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">SIPA: ${S().esc(merged.sipa_pemilik || '-')}</div>
           </div>
         </div>
@@ -9541,7 +9541,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
       ${settingsTab === 'akun' ? (isOwner ? (() => {
         const staffList = users.length ? users : (S().AppState.staffDirectory || []);
-        const apjAcc = staffList.find((u) => u.role === 'APJ' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'APJ') || { id_user: 'USR-002', username: 'apj', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ', no_sipa: '19920412/SIPA_35.78/2025/1042' };
+        const apjAcc = staffList.find((u) => u.role === 'APJ' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'APJ') || { id_user: 'USR-002', username: 'apj', nama_lengkap: 'Apoteker Penanggung Jawab', role: 'APJ', no_sipa: '-' };
         const kasirAcc = staffList.find((u) => u.role === 'Kasir' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'Kasir') || { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', status_aktif: 'AKTIF' };
         return `<div class="space-y-4 text-xs">
           <!-- Panel Edit Cepat Identitas APJ & Kasir Aktif -->
@@ -9916,7 +9916,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     if (kind === 'foto') {
       const mainBox = document.getElementById('profMainAvatarBox');
       if (mainBox) {
-        mainBox.innerHTML = renderProfileMediaInner('foto', clean, (ownerEl && ownerEl.value) || 'apt. Anissa Faradifa R. Is Rumi');
+        mainBox.innerHTML = renderProfileMediaInner('foto', clean, (ownerEl && ownerEl.value) || 'Apoteker Penanggung Jawab');
       }
     }
     if (typeof global.refreshProfileKopPreview === 'function') global.refreshProfileKopPreview();
@@ -9949,7 +9949,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     </div>
     <div class="text-left sm:text-right">
       <div class="text-[10px] font-bold uppercase" style="color:var(--ons-text-soft)">Pemilik &amp; Apoteker Penanggung Jawab</div>
-      <div class="font-bold text-xs">${S().esc(namaPemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+      <div class="font-bold text-xs">${S().esc(namaPemilik || 'Apoteker Penanggung Jawab')}</div>
       <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">SIPA: ${S().esc(sipa || '-')}</div>
     </div>`;
   };
@@ -10196,7 +10196,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         Object.assign({}, (cur.apoteker_pendamping && cur.apoteker_pendamping[1]) || {}, { file_sipa: docSipaP2 })
       ],
       terkonfirmasi: 'YA',
-      dikonfirmasi_oleh: (document.getElementById('profNamaPemilik') || {}).value || (cur.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')
+      dikonfirmasi_oleh: (document.getElementById('profNamaPemilik') || {}).value || (cur.nama_pemilik || 'Apoteker Penanggung Jawab')
     };
     if (!payload.nama_pemilik || !payload.nama_usaha) {
       ONSStore.toast('Nama Pemilik dan Nama Tempat Usaha wajib diisi.', 'err');
@@ -10977,10 +10977,10 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     return {
       NAMA_TOKO: (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase(),
       ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Kesehatan Raya No. 88',
-      SIA_TOKO: prof.no_sia || '449/SIA-DPMPTSP/2025/0088',
+      SIA_TOKO: prof.no_sia || '',
       WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
-      APJ_NAMA: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
-      APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
+      APJ_NAMA: prof.nama_pemilik || 'Apoteker Penanggung Jawab',
+      APJ_SIPA: prof.sipa_pemilik || '-',
       LOGO_URL: prof.logo_url || '',
       NOTA: 'INV-PREVIEW-001',
       TANGGAL: new Date().toLocaleDateString('id-ID'),
@@ -11308,7 +11308,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <!-- Header Apotek -->
             <div class="text-center border-b pb-1.5" style="border-color:${isBiru ? '#2563eb' : '#0f172a'};">
               <div class="font-black text-xs tracking-wider">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
-              <div class="text-[9px] opacity-85 mt-0.5">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>
+              <div class="text-[9px] opacity-85 mt-0.5">SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
             </div>
 
             <!-- Identitas Pasien & Obat -->
@@ -11367,7 +11367,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const html = `<div style="width:55mm;border:2px solid #000;background:${bg};padding:6px;font-family:Arial,sans-serif;font-size:10px;box-sizing:border-box;">
       <div style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;font-weight:bold;">
         ${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/>
-        <span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span>
+        <span style="font-size:8px;font-weight:normal;">SIPA: ${S().esc(prof.sipa_pemilik || '-')}</span>
       </div>
       <div style="margin:4px 0;font-size:9px;">
         <div><b>No. Resep/Tgl:</b> ${noResep} / ${tglStr}</div>

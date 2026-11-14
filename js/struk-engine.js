@@ -677,7 +677,7 @@
     const nowStr = new Date().toLocaleDateString('id-ID');
     const prof = (global.ONSStore && typeof global.ONSStore.getStoreProfile === 'function') ? global.ONSStore.getStoreProfile() : {};
     const storeName = (prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase();
-    const apjText = apjInfo || [prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi', prof.sipa_pemilik ? ('SIPA: ' + prof.sipa_pemilik) : ''].filter(Boolean).join(' • ');
+    const apjText = apjInfo || [prof.nama_pemilik || 'Apoteker Penanggung Jawab', prof.sipa_pemilik ? ('SIPA: ' + prof.sipa_pemilik) : ''].filter(Boolean).join(' • ');
     const rule = (item && (item.ATURAN_PAKAI || item.aturan_pakai)) || aturanPakai || '3 x 1 Sesudah Makan';
     const isLuar = String(labelColor || ((item && item.etiket_warna) || '')).toLowerCase() === 'biru' || /luar|oles|tetes|salep|krim|injeksi/i.test(rule);
     const accent = isLuar ? '#1d4ed8' : '#0f766e';

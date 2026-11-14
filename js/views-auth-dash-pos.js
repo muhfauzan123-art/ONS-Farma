@@ -71,7 +71,7 @@
                 <h1 id="pubNotaApotek" class="font-extrabold text-base truncate">${S().esc(usahaNama)}</h1>
                 <span class="badge-bpom bpom-bebas">RESMI BPOM</span>
               </div>
-              <div id="pubNotaApj" class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
+              <div id="pubNotaApj" class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
             </div>
           </div>
           <div class="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 space-y-1.5 text-xs">
@@ -103,7 +103,7 @@
           const waEl = document.getElementById('pubNotaWaLink');
           if (logoEl && ap.logo_usaha_url) logoEl.src = ap.logo_usaha_url;
           if (namEl && ap.nama) namEl.textContent = ap.nama;
-          if (apjEl) apjEl.textContent = (ap.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi') + (ap.no_sia ? ' • SIA: ' + ap.no_sia : '');
+          if (apjEl) apjEl.textContent = (ap.nama_pemilik || 'Apoteker Penanggung Jawab') + (ap.no_sia ? ' • SIA: ' + ap.no_sia : '');
           if (waEl && S().buildWaUrl) {
             waEl.href = S().buildWaUrl(ap.wa_admin || prof.wa_usaha || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya pasien Nota ${notaNo} ingin konsultasi aturan pakai obat.`);
           }
@@ -141,7 +141,7 @@
             <img src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-11 h-11 rounded-lg object-cover bg-white border"/>
             <div>
               <h1 class="text-lg font-bold">Mini-Portal E-Resep Dokter Mitra ${S().esc(usahaNama)}</h1>
-              <p class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Token Sesi: ${S().esc(tok)} &bull; APJ: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</p>
+              <p class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Token Sesi: ${S().esc(tok)} &bull; APJ: ${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -233,7 +233,7 @@
             <div class="ons-card p-4 space-y-3" style="background:linear-gradient(125deg,rgba(0,102,254,0.09),rgba(16,185,129,0.09));">
               <div class="flex flex-wrap items-start justify-between gap-2 text-xs">
                 <div class="min-w-0">
-                  <div id="pubKatApjLine" class="font-extrabold text-sm sm:text-base">Layanan Farmasi Digital &bull; ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
+                  <div id="pubKatApjLine" class="font-extrabold text-sm sm:text-base">Layanan Farmasi Digital &bull; ${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')}</div>
                   <div id="pubKatHoursLine" class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">SIPA: ${S().esc(prof.sipa_pemilik || '-')} &bull; Jam Operasional: ${S().esc(prof.jam_operasional || 'Senin - Minggu 07.00 - 22.00 WITA')}</div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
@@ -343,7 +343,7 @@
         nama: usahaNama,
         alamat: prof.alamat_usaha || '',
         wa_admin: waInitNum || '628110000990',
-        nama_pemilik: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
+        nama_pemilik: prof.nama_pemilik || 'Apoteker Penanggung Jawab',
         sipa_pemilik: prof.sipa_pemilik || '',
         no_sia: prof.no_sia || '',
         jam_operasional: prof.jam_operasional || ''
@@ -936,7 +936,7 @@
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
     const usahaNama = prof.nama_usaha || 'APOTEK ONS FARMA';
-    const pemilikNama = prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
+    const pemilikNama = prof.nama_pemilik || 'Apoteker Penanggung Jawab';
     const nowDt = new Date();
     const hr = nowDt.getHours();
     const autoShift = (hr >= 21 || hr < 7) ? 'MALAM' : (hr >= 14 ? 'SIANG' : 'PAGI');
@@ -1627,7 +1627,7 @@
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaLogo = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
-    const pemilikNama = prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
+    const pemilikNama = prof.nama_pemilik || 'Apoteker Penanggung Jawab';
     const fotoPem = prof.foto_pemilik_url || '';
 
     const nowDt = new Date();
@@ -5311,7 +5311,7 @@
         ${(() => {
           const prof = S().getStoreProfile ? S().getStoreProfile() : {};
           return `<div class="font-black text-sm tracking-wide uppercase">${S().esc(prof.nama_usaha || 'APOTEK ONS FARMA')}</div>
-            <div class="text-[10px] text-slate-700 dark:text-slate-200">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>`;
+            <div class="text-[10px] text-slate-700 dark:text-slate-200">${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>`;
         })()}
         <div class="border-y border-slate-700/60 my-1 py-1 font-bold text-xs flex justify-between px-2" id="etPrevSub">
           <span>Pasien: <b>${S().esc(pasienName)}</b></span>
@@ -6165,8 +6165,8 @@
         ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || ('Outlet ' + (trx.cabang_id || S().AppState.cabangId)),
         SIA_TOKO: prof.no_sia || '',
         WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
-        APJ_NAMA: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
-        APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
+        APJ_NAMA: prof.nama_pemilik || 'Apoteker Penanggung Jawab',
+        APJ_SIPA: prof.sipa_pemilik || '-',
         LOGO_URL: prof.logo_url || '',
         NOTA: trx.no_invoice,
         TANGGAL: S().formatTgl(trx.tanggal, true),
@@ -6704,8 +6704,8 @@
         ALAMAT_TOKO: [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Kesehatan Raya No. 88',
         SIA_TOKO: prof.no_sia || '',
         WA_TOKO: prof.wa_usaha || prof.telepon_usaha || '0811-0000-990',
-        APJ_NAMA: prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi',
-        APJ_SIPA: prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042',
+        APJ_NAMA: prof.nama_pemilik || 'Apoteker Penanggung Jawab',
+        APJ_SIPA: prof.sipa_pemilik || '-',
         LOGO_URL: prof.logo_url || '',
         NOTA: notaNo,
         TANGGAL: new Date().toLocaleString('id-ID'),
@@ -7296,7 +7296,7 @@
     S().printHtmlZone(`<div style="width:60mm;border:2px solid #000;background:${bg};padding:8px;font-family:Arial,sans-serif;font-size:10px;line-height:1.3;">
       <div style="text-align:center;border-bottom:1.5px solid #000;padding-bottom:4px;font-weight:bold;">
         ${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}<br/>
-        <span style="font-size:8px;font-weight:normal;">SIA: ${S().esc(prof.sia_toko || '445/1042/SIA/2024')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</span><br/>
+        <span style="font-size:8px;font-weight:normal;">SIA: ${S().esc(prof.no_sia || prof.sia_toko || '-')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</span><br/>
         <span style="font-size:8px;font-weight:normal;">${S().esc(prof.alamat_usaha || 'Jl. Raya Apotek No. 10')}</span>
       </div>
       <div style="margin:5px 0;display:flex;justify-content:space-between;border-bottom:1px dashed #000;padding-bottom:3px;font-size:9px;">

@@ -16,30 +16,30 @@
   function defaultProfilUsaha() {
     return {
       cabang_id: 'ONS-01',
-      nama_pemilik: 'apt. Anissa Faradifa R. Is Rumi',
-      jabatan_pemilik: 'Pemilik Sarana Apotek & Apoteker',
-      sipa_pemilik: '19920412/SIPA_35.78/2025/1042',
-      stra_pemilik: '19920412/STRA-14102029/1042',
-      wa_pemilik: '6282136973990',
-      email_pemilik: 'icafaradiva@gmail.com',
-      npwp_pemilik: '09.254.294.3-805.000',
+      nama_pemilik: 'Apoteker Penanggung Jawab',
+      jabatan_pemilik: 'Apoteker Penanggung Jawab (APJ)',
+      sipa_pemilik: '',
+      stra_pemilik: '',
+      wa_pemilik: '',
+      email_pemilik: 'admin@onsfarma.id',
+      npwp_pemilik: '',
       foto_pemilik_url: '',
       nama_usaha: 'Apotek ONS Farma',
-      no_sia: '449/SIA-DPMPTSP/2025/0088',
-      nib_oss: '9120208142915',
-      npwp_usaha: '85.112.409.1-805.000',
-      status_pkp: 'PKP (PPN 11%)',
-      alamat_usaha: 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang',
+      no_sia: '',
+      nib_oss: '',
+      npwp_usaha: '',
+      status_pkp: 'NON_PKP',
+      alamat_usaha: 'Jl. Pengayoman Raya, Panakkukang',
       kota: 'Makassar',
       kode_pos: '90231',
-      telepon_usaha: '0411-458-990',
-      wa_usaha: '628110000990',
+      telepon_usaha: '',
+      wa_usaha: '',
       email_usaha: 'halo@onsfarma.id',
-      jam_operasional: 'Setiap Hari 07:30 - 22:00 WITA',
+      jam_operasional: '08:00 - 22:00 WITA',
       zona_waktu: 'Asia/Makassar (WITA)',
       logo_usaha_url: './icons/ons-farma-app-icon.png',
       terkonfirmasi: 'YA',
-      dikonfirmasi_oleh: 'apt. Anissa Faradifa R. Is Rumi',
+      dikonfirmasi_oleh: 'Apoteker Penanggung Jawab',
       dikonfirmasi_pada: isoToday,
       updated_at: isoToday + 'T08:00:00Z'
     };
@@ -47,23 +47,24 @@
 
   function buildSeedDb() {
     return {
-      epoch: 1,
+      epoch: 2,
+      _sanitized_clean_slate_v2: true,
       _factory_reset_clean: true,
       profil_usaha: defaultProfilUsaha(),
       secrets: {
-        FONNTE_TOKEN: 'fnt_••••••89a',
-        SATUSEHAT_CLIENT_ID: 'ss_c••••••210',
-        SATUSEHAT_CLIENT_SECRET: 'ss_s••••••f7c',
-        SATUSEHAT_ORG_ID: '1000••••••982',
-        WA_OWNER_TARGET: '6281••••••990',
-        ADMIN_EMAIL: 'anissa@onsfarma.id',
-        QRIS_MERCHANT_NMID: 'ID10••••••001',
+        FONNTE_TOKEN: '',
+        SATUSEHAT_CLIENT_ID: '',
+        SATUSEHAT_CLIENT_SECRET: '',
+        SATUSEHAT_ORG_ID: '',
+        WA_OWNER_TARGET: '',
+        ADMIN_EMAIL: 'admin@onsfarma.id',
+        QRIS_MERCHANT_NMID: '',
         DE_VERIFY_URL_BASE: './index.html'
       },
       users: [
-        { id_user: 'USR-001', username: 'pemilik', nama_lengkap: 'apt. Anissa Faradifa R. Is Rumi', role: 'Pemilik', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
-        { id_user: 'USR-002', username: 'apj', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
-        { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }
+        { id_user: 'USR-001', username: 'pemilik', nama_lengkap: 'Pemilik Sarana Apotek', role: 'Pemilik', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' },
+        { id_user: 'USR-002', username: 'apj', nama_lengkap: 'Apoteker Penanggung Jawab', role: 'APJ', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' },
+        { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Kasir Operasional', role: 'Kasir', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }
       ],
       master_obat: [],
       stok_batch: [],
@@ -98,8 +99,8 @@
       ],
       de_dokumen: [],
       de_pejabat: [
-        { ID: 'PEJ-01', UserId: 'USR-002', Nama: 'apt. Siti Rahma, S.Farm', Jabatan: 'Apoteker Penanggung Jawab', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'apj@onsfarma.id', Aktif: 'YA' },
-        { ID: 'PEJ-02', UserId: 'USR-001', Nama: 'apt. Anissa Faradifa R. Is Rumi', Jabatan: 'Pemilik Sarana Apotek & Apoteker', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'anissa@onsfarma.id', Aktif: 'YA' }
+        { ID: 'PEJ-01', UserId: 'USR-002', Nama: 'Apoteker Penanggung Jawab (APJ)', Jabatan: 'Apoteker Penanggung Jawab', NoSIPA: '-', Email: 'apj@onsfarma.id', Aktif: 'YA' },
+        { ID: 'PEJ-02', UserId: 'USR-001', Nama: 'Pemilik Sarana Apotek', Jabatan: 'Pemilik Sarana Apotek', NoSIPA: '-', Email: 'admin@onsfarma.id', Aktif: 'YA' }
       ],
       audit_log: [
         { id_audit: 'AUD-INIT-001', timestamp: isoToday + 'T08:00:00Z', user_id: 'USR-001', role: 'Pemilik', cabang_id: 'ONS-01', aksi: 'SYSTEM_INIT', entitas: 'SYSTEM', entitas_id: 'v18.0', diff_sebelum_json: '{}', diff_sesudah_json: JSON.stringify({ status: 'Apotek ONS Farma siap operasional bersih' }) }
@@ -118,438 +119,43 @@
   }
 
   function buildDemoSampleData() {
-    return {
-      epoch: 1,
-      profil_usaha: defaultProfilUsaha(),
-      secrets: {
-        FONNTE_TOKEN: 'fnt_••••••89a',
-        SATUSEHAT_CLIENT_ID: 'ss_c••••••210',
-        SATUSEHAT_CLIENT_SECRET: 'ss_s••••••f7c',
-        SATUSEHAT_ORG_ID: '1000••••••982',
-        WA_OWNER_TARGET: '6281••••••990',
-        ADMIN_EMAIL: 'anissa@onsfarma.id',
-        QRIS_MERCHANT_NMID: 'ID10••••••001',
-        DE_VERIFY_URL_BASE: './index.html'
-      },
-      users: [
-        { id_user: 'USR-001', username: 'pemilik', nama_lengkap: 'apt. Anissa Faradifa R. Is Rumi', role: 'Pemilik', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
-        { id_user: 'USR-002', username: 'apj', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ', cabang_id: 'ONS-01', no_sipa: '19920412/SIPA_35.78/2025/1042', masa_berlaku_sipa: '2029-12-31', status_aktif: 'AKTIF' },
-        { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', cabang_id: 'ONS-01', no_sipa: '-', masa_berlaku_sipa: '-', status_aktif: 'AKTIF' }
-      ],
-      master_obat: [
-        { id_obat: 'OBT-001', kode_kfa: '93001024', nama_dagang: 'Amoxicillin Trihydrate 500mg', zat_aktif: 'Amoxicillin', kekuatan: '500 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Kaplet', nie_bpom: 'GKL9805024104A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-K1', satuan_dasar: 'Kaplet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 50, stok_max: 500, hpp_avg: 480, hpp_terakhir: 500, harga_umum: 900, harga_member: 800, harga_grosir: 700, min_qty_grosir: 20, harga_faskes: 650, pbf_utama: 'PT Bina San Prima', status_aktif: 'AKTIF', substitusi_ids: 'OBT-005' },
-        { id_obat: 'OBT-002', kode_kfa: '93002110', nama_dagang: 'Paracetamol Sanmol 500mg', zat_aktif: 'Paracetamol', kekuatan: '500 mg', golongan_bpom: 'BEBAS', bentuk_sediaan: 'Tablet', nie_bpom: 'DBL7622235610A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-B1', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 4, satuan_besar: 'Box', rasio_besar: 100, stok_min: 80, stok_max: 600, hpp_avg: 320, hpp_terakhir: 340, harga_umum: 650, harga_member: 600, harga_grosir: 520, min_qty_grosir: 20, harga_faskes: 480, pbf_utama: 'PT Enseval Putera', status_aktif: 'AKTIF', substitusi_ids: 'OBT-006' },
-        { id_obat: 'OBT-003', kode_kfa: '93004409', nama_dagang: 'Lantus SoloStar Insulin Pen', zat_aktif: 'Insulin Glargine', kekuatan: '100 IU/mL', golongan_bpom: 'KERAS', bentuk_sediaan: 'Injeksi Pen', nie_bpom: 'DKI0185200243A1', suhu_simpan: 'Cold Chain (2-8°C)', rak_lokasi: 'CHILLER-01', satuan_dasar: 'Pen', satuan_sedang: 'Box Isi 5', rasio_sedang: 5, satuan_besar: 'Karton', rasio_besar: 25, stok_min: 10, stok_max: 40, hpp_avg: 118000, hpp_terakhir: 120000, harga_umum: 148000, harga_member: 142000, harga_grosir: 136000, min_qty_grosir: 5, harga_faskes: 132000, pbf_utama: 'PT Anugrah Argon Medika', status_aktif: 'AKTIF', substitusi_ids: '' },
-        { id_obat: 'OBT-004', kode_kfa: '93007721', nama_dagang: 'Rhinos SR Kapsul Lepas Lambat', zat_aktif: 'Loratadine + Pseudoephedrine', kekuatan: '5mg/120mg', golongan_bpom: 'PREKURSOR', bentuk_sediaan: 'Kapsul SR', nie_bpom: 'DKL9905028403A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'LEMARI-PRE', satuan_dasar: 'Kapsul', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 50, stok_min: 20, stok_max: 150, hpp_avg: 7800, hpp_terakhir: 8000, harga_umum: 11500, harga_member: 10800, harga_grosir: 9800, min_qty_grosir: 10, harga_faskes: 9200, pbf_utama: 'PT Dexa Medica Dist', status_aktif: 'AKTIF', substitusi_ids: 'OBT-007' },
-        { id_obat: 'OBT-005', kode_kfa: '93001089', nama_dagang: 'Cefadroxil Monohydrate 500mg', zat_aktif: 'Cefadroxil', kekuatan: '500 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Kapsul', nie_bpom: 'GKL0105031101A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-K2', satuan_dasar: 'Kapsul', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 40, stok_max: 300, hpp_avg: 1150, hpp_terakhir: 1200, harga_umum: 1950, harga_member: 1800, harga_grosir: 1650, min_qty_grosir: 20, harga_faskes: 1550, pbf_utama: 'PT Bina San Prima', status_aktif: 'AKTIF', substitusi_ids: 'OBT-001' },
-        { id_obat: 'OBT-006', kode_kfa: '93002914', nama_dagang: 'Ibuprofen Proris 400mg', zat_aktif: 'Ibuprofen', kekuatan: '400 mg', golongan_bpom: 'TERBATAS', bentuk_sediaan: 'Kaplet', nie_bpom: 'DTL9921620604B1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-T1', satuan_dasar: 'Kaplet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 40, stok_max: 250, hpp_avg: 890, hpp_terakhir: 920, harga_umum: 1600, harga_member: 1450, harga_grosir: 1350, min_qty_grosir: 20, harga_faskes: 1250, pbf_utama: 'PT Enseval Putera', status_aktif: 'AKTIF', substitusi_ids: 'OBT-002' },
-        { id_obat: 'OBT-007', kode_kfa: '93005112', nama_dagang: 'Amlodipine Besylate 10mg', zat_aktif: 'Amlodipine', kekuatan: '10 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Tablet', nie_bpom: 'GKL1205046510B1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-KERAS-2', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 30, stok_min: 90, stok_max: 600, hpp_avg: 410, hpp_terakhir: 420, harga_umum: 850, harga_member: 750, harga_grosir: 650, min_qty_grosir: 30, harga_faskes: 600, pbf_utama: 'PT Kimia Farma Trading', status_aktif: 'AKTIF', substitusi_ids: '' },
-        { id_obat: 'OBT-008', kode_kfa: '93009901', nama_dagang: 'Codeine Phosphate 10mg (Kimia Farma)', zat_aktif: 'Codeine', kekuatan: '10 mg', golongan_bpom: 'NARKOTIKA', bentuk_sediaan: 'Tablet', nie_bpom: 'GNL7212401810A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'LEMARI-NARKO-2KUNCI', satuan_dasar: 'Tablet', satuan_sedang: 'Botol 100', rasio_sedang: 100, satuan_besar: 'Botol 100', rasio_besar: 100, stok_min: 15, stok_max: 100, hpp_avg: 2300, hpp_terakhir: 2350, harga_umum: 4200, harga_member: 4000, harga_grosir: 3800, min_qty_grosir: 20, harga_faskes: 3500, pbf_utama: 'PT Kimia Farma Trading', status_aktif: 'AKTIF', substitusi_ids: '' },
-        { id_obat: 'OBT-009', kode_kfa: '93006210', nama_dagang: 'Warfarin Simarc-2 2mg', zat_aktif: 'Warfarin', kekuatan: '2 mg', golongan_bpom: 'KERAS', bentuk_sediaan: 'Tablet', nie_bpom: 'DKL0421011210A1', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-JANTUNG', satuan_dasar: 'Tablet', satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 15, stok_max: 100, hpp_avg: 1350, hpp_terakhir: 1400, harga_umum: 2400, harga_member: 2250, harga_grosir: 2050, min_qty_grosir: 20, harga_faskes: 1950, pbf_utama: 'PT Fahrenheit', status_aktif: 'AKTIF', substitusi_ids: '' }
-      ],
-      stok_batch: [
-        { id_batch: 'BTH-101', cabang_id: 'ONS-01', id_obat: 'OBT-001', no_batch: 'AMX-2601A', tgl_kadaluarsa: addDays(45), qty_sisa: 140, qty_karantina: 0, hpp_beli: 480, no_faktur_pbf: 'FK-BSP-8821', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-102', cabang_id: 'ONS-01', id_obat: 'OBT-001', no_batch: 'AMX-2609B', tgl_kadaluarsa: addDays(420), qty_sisa: 220, qty_karantina: 0, hpp_beli: 500, no_faktur_pbf: 'FK-BSP-9104', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-103', cabang_id: 'ONS-01', id_obat: 'OBT-002', no_batch: 'PCM-2512X', tgl_kadaluarsa: addDays(78), qty_sisa: 45, qty_karantina: 0, hpp_beli: 320, no_faktur_pbf: 'FK-ENS-4012', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-104', cabang_id: 'ONS-01', id_obat: 'OBT-002', no_batch: 'PCM-2703Y', tgl_kadaluarsa: addDays(510), qty_sisa: 260, qty_karantina: 0, hpp_beli: 340, no_faktur_pbf: 'FK-ENS-5501', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-105', cabang_id: 'ONS-01', id_obat: 'OBT-003', no_batch: 'INS-2604C', tgl_kadaluarsa: addDays(160), qty_sisa: 18, qty_karantina: 0, hpp_beli: 118000, no_faktur_pbf: 'FK-AAM-7710', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-106', cabang_id: 'ONS-01', id_obat: 'OBT-004', no_batch: 'RHN-2602P', tgl_kadaluarsa: addDays(195), qty_sisa: 14, qty_karantina: 0, hpp_beli: 7800, no_faktur_pbf: 'FK-DXA-3302', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-107', cabang_id: 'ONS-01', id_obat: 'OBT-005', no_batch: 'CFD-2611Z', tgl_kadaluarsa: addDays(340), qty_sisa: 160, qty_karantina: 0, hpp_beli: 1150, no_faktur_pbf: 'FK-BSP-9104', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-108', cabang_id: 'ONS-01', id_obat: 'OBT-006', no_batch: 'IBU-2603W', tgl_kadaluarsa: addDays(62), qty_sisa: 120, qty_karantina: 0, hpp_beli: 890, no_faktur_pbf: 'FK-ENS-5501', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-109', cabang_id: 'ONS-01', id_obat: 'OBT-007', no_batch: 'AML-2607N', tgl_kadaluarsa: addDays(390), qty_sisa: 65, qty_karantina: 0, hpp_beli: 410, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-110', cabang_id: 'ONS-01', id_obat: 'OBT-008', no_batch: 'COD-2608K', tgl_kadaluarsa: addDays(290), qty_sisa: 42, qty_karantina: 0, hpp_beli: 2300, no_faktur_pbf: 'FK-KFT-1904', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-111', cabang_id: 'ONS-01', id_obat: 'OBT-009', no_batch: 'WAR-2610M', tgl_kadaluarsa: addDays(310), qty_sisa: 50, qty_karantina: 0, hpp_beli: 1350, no_faktur_pbf: 'FK-FHR-0081', status_batch: 'AKTIF' },
-        { id_batch: 'BTH-KNS-01', cabang_id: 'ONS-01', id_obat: 'OBT-002', no_batch: 'KNS-PC-26', tgl_kadaluarsa: addDays(400), qty_sisa: 50, qty_karantina: 0, hpp_beli: 320, no_faktur_pbf: 'FK-KNS-01', status_batch: 'AKTIF', is_konsinyasi: 'YA', id_pbf: 'CV Herbal Berkah Alami' }
-      ],
-      members: [
-        { id_member: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_hp: '6281234567801', tgl_lahir: '1965-04-19', alergi_list: 'Penisilin', penyakit_kronis: 'Hipertensi + Jantung', program_prb: 'MEMBER_RUTIN', obat_rutin_ids: 'OBT-007,OBT-009', tgl_habis_obat: addDays(2), tgl_reminder_berikut: isoToday, poin_loyalitas: 245, riwayat_skrining_json: JSON.stringify([{ tgl: addDays(-30), td: '148/92', gds: 112, bmi: 26.4 }, { tgl: isoToday, td: '136/86', gds: 108, bmi: 25.9 }]) },
-        { id_member: 'MBR-002', nama_pasien: 'Ny. Hj. Aminah Kusuma', no_hp: '6281234567802', tgl_lahir: '1969-11-02', alergi_list: 'Sulfa', penyakit_kronis: 'Diabetes Melitus Tipe 2', program_prb: 'MEMBER_RUTIN', obat_rutin_ids: 'OBT-003', tgl_habis_obat: addDays(5), tgl_reminder_berikut: addDays(2), poin_loyalitas: 410, riwayat_skrining_json: JSON.stringify([{ tgl: addDays(-30), td: '130/80', gds: 194, bmi: 24.8 }, { tgl: isoToday, td: '125/80', gds: 158, bmi: 24.4 }]) },
-        { id_member: 'MBR-003', nama_pasien: 'An. Raka Pratama', no_hp: '6281355509123', tgl_lahir: '2016-08-14', alergi_list: 'Tidak Ada', penyakit_kronis: 'Riwayat Gastritis / Asam Lambung', program_prb: 'UMUM', obat_rutin_ids: '', tgl_habis_obat: '', tgl_reminder_berikut: '', poin_loyalitas: 80, riwayat_skrining_json: '[]' }
-      ],
-      supplier_pbf: [
-        { id_pbf: 'PBF-01', nama_pbf: 'PT Bina San Prima', kode_cdob: 'CDOB-3578-011', npwp_pbf: '01.302.441.2-091.000', kontak_wa: '628113400111', email_pbf: 'order@bsp.co.id', lead_time_hari: 1, termin_hari: 30, skor_sla: 96, status_pbf: 'AKTIF' },
-        { id_pbf: 'PBF-02', nama_pbf: 'PT Enseval Putera Megatrading', kode_cdob: 'CDOB-3578-002', npwp_pbf: '01.300.119.8-054.000', kontak_wa: '628113400222', email_pbf: 'cs@enseval.com', lead_time_hari: 2, termin_hari: 45, skor_sla: 94, status_pbf: 'AKTIF' },
-        { id_pbf: 'PBF-03', nama_pbf: 'PT Kimia Farma Trading & Dist', kode_cdob: 'CDOB-0001-KFTD', npwp_pbf: '01.001.662.1-093.000', kontak_wa: '628113400333', email_pbf: 'order@kftd.co.id', lead_time_hari: 2, termin_hari: 30, skor_sla: 98, status_pbf: 'AKTIF' },
-        { id_pbf: 'PBF-04', nama_pbf: 'PT Anugrah Argon Medika (Cold Chain)', kode_cdob: 'CDOB-3578-049', npwp_pbf: '01.451.882.4-055.000', kontak_wa: '628113400444', email_pbf: 'coldchain@aam.co.id', lead_time_hari: 1, termin_hari: 30, skor_sla: 97, status_pbf: 'AKTIF' }
-      ],
-      master_dokter: [
-        { id_dokter: 'DOK-001', nama_dokter: 'dr. Andi Pratama, Sp.PD', spesialisasi: 'Penyakit Dalam', no_sip: '446/109/SIP-DOK/2024', no_str: '3111100220145120', faskes_klinik: 'Klinik Pratama Sehat Sentosa', no_wa: '628119900101', email: 'andi.pratama@kliniksehat.id', alamat: 'Jl. Diponegoro No. 45', catatan: 'Dokter mitra utama pasien hipertensi & dislipidemia', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
-        { id_dokter: 'DOK-002', nama_dokter: 'dr. Rina Wijaya, Sp.PD-KEMD', spesialisasi: 'Endokrin & Diabetes', no_sip: '446/218/SIP-DOK/2025', no_str: '3121100320168891', faskes_klinik: 'RSU Harapan Medika', no_wa: '628119900102', email: 'rina.wijaya@harapanmedika.id', alamat: 'Jl. Ahmad Yani No. 88', catatan: 'Peresep utama insulin cold-chain & DM Tipe 2', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
-        { id_dokter: 'DOK-003', nama_dokter: 'dr. Hendri Saputra', spesialisasi: 'Dokter Umum', no_sip: '446/312/SIP-DOK/2025', no_str: '3111100119077312', faskes_klinik: 'Praktek Mandiri dr. Hendri', no_wa: '628119900103', email: 'hendri.saputra@dokter.id', alamat: 'Jl. Sudirman No. 12', catatan: 'Layanan resep umum & anak', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' }
-      ],
-      faktur_pbf: [
-        { id_beli: 'BLI-901', no_sp: 'SP/0012/ONS/11/2026', jenis_sp: 'REGULER', no_faktur_pbf: 'FK-BSP-9104', tgl_faktur: addDays(-18), tgl_jatuh_tempo: addDays(12), id_pbf: 'PT Bina San Prima', cabang_id: 'ONS-01', total_bruto: 4850000, diskon_pbf: 242500, ppn_masukan: 506825, netto_hutang: 5114325, sisa_hutang: 5114325, status_bayar: 'BELUM_LUNAS', status_bar: 'AKTIF' },
-        { id_beli: 'BLI-902', no_sp: 'SP/0015/ONS/11/2026', jenis_sp: 'PREKURSOR', no_faktur_pbf: 'FK-AAM-7710', tgl_faktur: addDays(-25), tgl_jatuh_tempo: addDays(5), id_pbf: 'PT Anugrah Argon Medika', cabang_id: 'ONS-01', total_bruto: 3150000, diskon_pbf: 0, ppn_masukan: 346500, netto_hutang: 3496500, sisa_hutang: 3496500, status_bayar: 'JATUH_TEMPO_DEKAT', status_bar: 'AKTIF' },
-        { id_beli: 'BLI-KNS-01', no_sp: 'SP-KNS-01', jenis_sp: 'REGULER', jenis_penerimaan: 'KONSINYASI', no_faktur_pbf: 'FK-KNS-01', tgl_faktur: addDays(-10), tgl_jatuh_tempo: addDays(20), id_pbf: 'CV Herbal Berkah Alami', cabang_id: 'ONS-01', total_bruto: 160000, diskon_pbf: 0, ppn_masukan: 0, netto_hutang: 160000, sisa_hutang: 160000, status_bayar: 'KONSINYASI', status_bar: 'AKTIF', status_konsinyasi: 'AKTIF' },
-        { id_beli: 'BLI-RET-01', no_sp: 'SP/0010/ONS/10/2026', jenis_sp: 'REGULER', no_faktur_pbf: 'FK-ENS-4012', tgl_faktur: addDays(-40), tgl_jatuh_tempo: addDays(-10), id_pbf: 'PT Enseval Putera Megatrading', cabang_id: 'ONS-01', total_bruto: 1200000, diskon_pbf: 0, ppn_masukan: 132000, netto_hutang: 1332000, sisa_hutang: 0, status_bayar: 'RETUR', status_bar: 'AKTIF', retur_pbf: { no_retur: 'RET-PBF-01', tgl_retur: addDays(-5), alasan: 'Kemasan rusak saat pengiriman', nilai_retur: 320000, status: 'SELESAI' } }
-      ],
-      cold_chain: (() => {
-        const logs = [];
-        const petugasList = ['apt. Siti Rahma, S.Farm', 'Budi Santoso', 'apt. Anissa Faradifa R. Is Rumi'];
-        // Generate pemantauan 14 hari terakhir untuk Kulkas & Ruangan
-        for (let i = 13; i >= 0; i--) {
-          const dStr = addDays(-i);
-          // 1. Kulkas Cold-Chain (2.0 - 8.0°C)
-          // Pagi 08:00
-          const kSuhuPagi = Number((4.1 + (i % 5) * 0.25 + (i % 2 === 0 ? 0.2 : -0.1)).toFixed(1));
-          logs.push({
-            id_log_suhu: 'CC-KUL-' + (100 + (13 - i) * 2 + 1),
-            timestamp: dStr + 'T08:00:00',
-            cabang_id: 'ONS-01',
-            kategori: 'KULKAS',
-            id_kulkas: 'CHILLER-VAKSIN-01',
-            suhu_celcius: kSuhuPagi,
-            kelembapan: 50 + (i % 6),
-            waktu_shift: 'PAGI',
-            status_alarm: 'NORMAL',
-            petugas_id: petugasList[0],
-            tindakan_korektif: '-'
-          });
-
-          // Sore 16:30 (simulasikan 1 fluktuasi pada 4 hari lalu)
-          const isAlarm = (i === 4);
-          const kSuhuSore = isAlarm ? 8.4 : Number((4.6 + (i % 4) * 0.28).toFixed(1));
-          logs.push({
-            id_log_suhu: 'CC-KUL-' + (100 + (13 - i) * 2 + 2),
-            timestamp: dStr + 'T16:30:00',
-            cabang_id: 'ONS-01',
-            kategori: 'KULKAS',
-            id_kulkas: 'CHILLER-VAKSIN-01',
-            suhu_celcius: kSuhuSore,
-            kelembapan: 52 + (i % 5),
-            waktu_shift: 'SORE',
-            status_alarm: isAlarm ? 'ALARM_KELUAR_RENTANG' : 'NORMAL',
-            petugas_id: petugasList[1],
-            tindakan_korektif: isAlarm ? 'Pintu chiller ditutup rapat & cek segel karet, suhu kembali normal 4.8°C dalam 30 menit' : '-'
-          });
-
-          // 2. Ruangan Apotek & Gudang Farmasi (15.0 - 25.0°C, RH <= 70%)
-          // Pagi 08:05
-          const rSuhuPagi = Number((21.4 + (i % 4) * 0.35 + (i % 3 === 0 ? 0.3 : -0.2)).toFixed(1));
-          logs.push({
-            id_log_suhu: 'CC-RNG-' + (200 + (13 - i) * 2 + 1),
-            timestamp: dStr + 'T08:05:00',
-            cabang_id: 'ONS-01',
-            kategori: 'RUANGAN',
-            id_kulkas: 'RUANG-APOTEK-01',
-            suhu_celcius: rSuhuPagi,
-            kelembapan: 58 + (i % 6),
-            waktu_shift: 'PAGI',
-            status_alarm: 'NORMAL',
-            petugas_id: petugasList[0],
-            tindakan_korektif: '-'
-          });
-
-          // Sore 16:35
-          const rSuhuSore = Number((23.2 + (i % 5) * 0.30).toFixed(1));
-          logs.push({
-            id_log_suhu: 'CC-RNG-' + (200 + (13 - i) * 2 + 2),
-            timestamp: dStr + 'T16:35:00',
-            cabang_id: 'ONS-01',
-            kategori: 'RUANGAN',
-            id_kulkas: 'RUANG-APOTEK-01',
-            suhu_celcius: rSuhuSore,
-            kelembapan: 62 + (i % 5),
-            waktu_shift: 'SORE',
-            status_alarm: 'NORMAL',
-            petugas_id: petugasList[1],
-            tindakan_korektif: '-'
-          });
-        }
-        return logs;
-      })(),
-      rekam_klinis: [
-        { id_klinis: 'KLN-8801', tanggal: isoToday + 'T09:15:00', cabang_id: 'ONS-01', pasien_id: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_wa_pasien: '6281234567801', dokter_asal: 'dr. Andi Pratama, Sp.JP', no_sip_dokter: '446/109/SIP-DOK/2024', alergi_pasien: 'Penisilin', layanan_jenis: 'SKRINING_RESEP', cdss_warning: 'Kontraindikasi Amoxicillin + Alergi Penisilin terdeteksi & telah diganti Cefadroxil/Azithromycin.', apj_pin_verified_by: 'apt. Siti Rahma, S.Farm', soap_notes: 'S: Kontrol TD rutin. O: TD 136/86 mmHg. A: Hipertensi terkontrol. P: Lanjut Amlodipine 10mg 1x1 malam, edukasi diet rendah garam.', status_klinis: 'TERVERIFIKASI_APJ' },
-        { id_klinis: 'KLN-8802', tanggal: isoToday + 'T11:30:00', cabang_id: 'ONS-01', pasien_id: 'MBR-002', nama_pasien: 'Ny. Hj. Aminah Kusuma', no_wa_pasien: '6281234567802', dokter_asal: 'dr. Rina Wijaya, Sp.PD-KEMD', no_sip_dokter: '446/218/SIP-DOK/2025', alergi_pasien: 'Sulfa', layanan_jenis: 'ERX_DOKTER', cdss_warning: 'Resep Cold Chain Insulin Glargine — Cek Suhu Chiller 2-8C.', apj_pin_verified_by: '', soap_notes: 'R/ Lantus SoloStar Pen No. I (S 0-0-14 IU s.c.)\nR/ Paracetamol 500mg Tab No. X (S 3 dd 1 prn demam)', status_klinis: 'ANTRIAN_VALIDASI_APJ' }
-      ],
-      penjualan: [
-        { id_transaksi: 'TRX-1001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-001', tanggal: isoToday + 'T08:42:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Toko Fisik', id_member: 'MBR-002', metode_bayar: 'QRIS', detail_split: '', subtotal: 296000, diskon_total: 0, pajak_ppn: 0, grand_total: 296000, total_hpp: 236000, estimasi_margin: 60000, poin_didapat: 29, status_trx: 'LUNAS' },
-        { id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', tanggal: isoToday + 'T10:15:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Resep WA', id_member: 'MBR-001', metode_bayar: 'TUNAI', detail_split: '', subtotal: 84000, diskon_total: 4000, pajak_ppn: 0, grand_total: 80000, total_hpp: 51000, estimasi_margin: 29000, poin_didapat: 8, status_trx: 'LUNAS' },
-        { id_transaksi: 'TRX-1003', no_invoice: 'INV-' + addDays(-1).replace(/-/g, '') + '-003', tanggal: addDays(-1) + 'T14:20:00', cabang_id: 'ONS-01', kasir_id: 'USR-003', channel: 'Toko Fisik', id_member: 'MBR-001', pelanggan_nama: 'Tn. Bambang Suryono', metode_bayar: 'TUNAI', detail_split: '', subtotal: 27000, diskon_total: 0, pajak_ppn: 0, grand_total: 27000, total_hpp: 14400, estimasi_margin: 12600, poin_didapat: 2, status_trx: 'RETUR', apj_override_id: 'apt. Siti Rahma, S.Farm', retur_alasan: 'Pasien salah beli kaplet & belum dibuka segel', tgl_retur: addDays(-1) + 'T15:00:00' }
-      ],
-      detail_penjualan: [
-        { id_detail: 'DTL-1', id_transaksi: 'TRX-1001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-001', id_obat: 'OBT-003', id_batch: 'BTH-105', no_batch: 'INS-2604C', tgl_kadaluarsa: addDays(160), qty: 2, satuan: 'Pen', harga_jual: 148000, hpp_unit: 118000, diskon_item: 0, subtotal_item: 296000, aturan_pakai: '1x sehari 14 unit malam s.c.' },
-        { id_detail: 'DTL-2', id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', id_obat: 'OBT-001', id_batch: 'BTH-101', no_batch: 'AMX-2601A', tgl_kadaluarsa: addDays(45), qty: 30, satuan: 'Kaplet', harga_jual: 900, hpp_unit: 480, diskon_item: 0, subtotal_item: 27000, aturan_pakai: '3x sehari 1 kaplet sesudah makan (habiskan)' },
-        { id_detail: 'DTL-3', id_transaksi: 'TRX-1003', no_invoice: 'INV-' + addDays(-1).replace(/-/g, '') + '-003', id_obat: 'OBT-001', id_batch: 'BTH-101', no_batch: 'AMX-2601A', tgl_kadaluarsa: addDays(45), qty: 10, satuan: 'Kaplet', harga_jual: 900, hpp_unit: 480, diskon_item: 0, subtotal_item: 9000, aturan_pakai: '3x1 sesudah makan', qty_retur: 10 },
-        { id_detail: 'DTL-4', id_transaksi: 'TRX-1002', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-002', id_obat: 'OBT-002', id_batch: 'BTH-KNS-01', no_batch: 'KNS-PC-26', tgl_kadaluarsa: addDays(400), qty: 5, satuan: 'Tablet', harga_jual: 650, hpp_unit: 320, diskon_item: 0, subtotal_item: 3250, aturan_pakai: '3x1 prn demam' }
-      ],
-      surat_pesanan: [
-        {
-          id_sp: 'SP-901',
-          no_sp: 'SP/0012/ONS/11/2026',
-          tanggal: addDays(-19),
-          cabang_id: 'ONS-01',
-          id_pbf: 'PBF-01',
-          nama_pbf: 'PT Bina San Prima',
-          golongan_sp: 'REGULER',
-          items_json: JSON.stringify([{ id_obat: 'OBT-001', nama_dagang: 'Amoxicillin Trihydrate 500mg', qty: 200, satuan_dasar: 'Kaplet', hpp_terakhir: 500 }]),
-          estimasi_total: 4850000,
-          status_sp: 'SELESAI_DITERIMA',
-          id_dokumen: 'DOC-DEMO1',
-          no_faktur_pbf: 'FK-BSP-9104',
-          tgl_diterima: addDays(-18),
-          dibuat_oleh: 'apt. Siti Rahma, S.Farm',
-          catatan: 'SP Reguler bulanan sudah diterima penuh'
-        }
-      ],
-      shift_history: [],
-      mutasi_stok: [
-        { id_mutasi: 'MUT-100', timestamp: addDays(-1) + 'T15:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-001', nama_dagang: 'Amoxicillin Trihydrate 500mg', id_batch: 'BTH-101', no_batch: 'AMX-2601A', jenis_mutasi: 'RETUR_PENJUALAN', qty_ubah: 10, stok_akhir: 140, referensi_id: 'INV-' + addDays(-1).replace(/-/g, '') + '-003', user_id: 'USR-003', catatan: 'Retur penjualan dari Tn. Bambang Suryono' },
-        { id_mutasi: 'MUT-101', timestamp: isoToday + 'T08:42:00', cabang_id: 'ONS-01', id_obat: 'OBT-003', nama_dagang: 'Lantus SoloStar Insulin Pen', id_batch: 'BTH-105', no_batch: 'INS-2604C', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -2, stok_akhir: 18, referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-001', user_id: 'USR-003', catatan: 'Penjualan POS FEFO' },
-        { id_mutasi: 'MUT-102', timestamp: isoToday + 'T10:15:00', cabang_id: 'ONS-01', id_obat: 'OBT-001', nama_dagang: 'Amoxicillin Trihydrate 500mg', id_batch: 'BTH-101', no_batch: 'AMX-2601A', jenis_mutasi: 'PENJUALAN_POS', qty_ubah: -30, stok_akhir: 130, referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-002', user_id: 'USR-003', catatan: 'Penjualan Resep WA' },
-        { id_mutasi: 'MUT-103', timestamp: addDays(-2) + 'T17:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-002', nama_dagang: 'Paracetamol Sanmol 500mg', id_batch: 'BTH-103', no_batch: 'PCM-2512X', jenis_mutasi: 'OPNAME', qty_ubah: 5, stok_akhir: 45, referensi_id: 'OPN-2026-11-01', user_id: 'USR-002', catatan: 'Penyesuaian stok opname bulanan' },
-        { id_mutasi: 'MUT-104', timestamp: addDays(-3) + 'T14:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-006', nama_dagang: 'Ibuprofen Proris 400mg', id_batch: 'BTH-108', no_batch: 'IBU-2603W', jenis_mutasi: 'PENYESUAIAN', qty_ubah: -2, stok_akhir: 120, referensi_id: 'ADJ-2026-11-01', user_id: 'USR-002', catatan: 'Penyesuaian strip sample dokter' },
-        { id_mutasi: 'MUT-105', timestamp: addDays(-5) + 'T11:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-002', nama_dagang: 'Paracetamol Sanmol 500mg', id_batch: 'BTH-103', no_batch: 'PCM-2512X', jenis_mutasi: 'RETUR_PBF', qty_ubah: -10, stok_akhir: 40, referensi_id: 'FK-ENS-4012', user_id: 'USR-002', catatan: 'Retur ke PBF kemasan penyok' },
-        { id_mutasi: 'MUT-KNS-01', timestamp: addDays(-10) + 'T09:00:00', cabang_id: 'ONS-01', id_obat: 'OBT-002', nama_dagang: 'Paracetamol Sanmol 500mg', id_batch: 'BTH-KNS-01', no_batch: 'KNS-PC-26', jenis_mutasi: 'KONSINYASI_MASUK', qty_ubah: 50, stok_akhir: 50, referensi_id: 'FK-KNS-01', user_id: 'USR-002', catatan: 'Penerimaan barang konsinyasi CV Herbal Berkah Alami' }
-      ],
-      omnichannel_orders: [
-        { id_order: 'ORD-901', no_order: 'ONL-' + isoToday.replace(/-/g, '') + '-01', tanggal: isoToday + 'T10:50:00', cabang_id: 'ONS-01', channel: 'E-Apotek Web', nama_pelanggan: 'Ibu Nadia Kusuma', no_wa: '6281234500112', alamat: 'Jl. Boulevard Raya No. 48, Makassar', items_json: JSON.stringify([{ id_obat: 'OBT-002', nama: 'Paracetamol Sanmol 500mg', qty: 20, satuan: 'Tablet', harga: 650 }, { id_obat: 'OBT-006', nama: 'Ibuprofen Proris 400mg', qty: 10, satuan: 'Kaplet', harga: 1600 }]), catatan: 'Antar siang sebelum jam 2, butuh struk PDF/WA', total_estimasi: 29000, ongkir: 10000, status_order: 'BARU', kurir: '', no_invoice_pos: '', petugas_id: 'Web Storefront' },
-        { id_order: 'ORD-902', no_order: 'ONL-' + isoToday.replace(/-/g, '') + '-02', tanggal: isoToday + 'T11:20:00', cabang_id: 'ONS-01', channel: 'WhatsApp Apotek', nama_pelanggan: 'Tn. Hendri Wijaya', no_wa: '6281299887766', alamat: 'Perumahan Griya Sehat Blok C4', items_json: JSON.stringify([{ id_obat: 'OBT-007', nama: 'Amlodipine Besylate 10mg', qty: 30, satuan: 'Tablet', harga: 850 }]), catatan: 'Pelanggan rutin bulanan', total_estimasi: 25500, ongkir: 8000, status_order: 'DIKIRIM_KURIR', kurir: 'Kurir Internal (Pak Hasan)', no_invoice_pos: '', petugas_id: 'apt. Siti Rahma, S.Farm' }
-      ],
-      crm_kontak: [
-        { id_kontak: 'CRM-001', nama: 'Tn. Bambang Suryono', no_wa_08: '081234567801', no_wa_62: '6281234567801', segmen: 'TERAPI_RUTIN', catatan_medis: 'Alergi: Penisilin | Hipertensi + Jantung', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: isoToday },
-        { id_kontak: 'CRM-002', nama: 'Ny. Hj. Aminah Kusuma', no_wa_08: '081234567802', no_wa_62: '6281234567802', segmen: 'TERAPI_RUTIN', catatan_medis: 'Alergi: Sulfa | Diabetes Melitus Tipe 2', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: '' },
-        { id_kontak: 'CRM-003', nama: 'Ibu Nadia Kusuma', no_wa_08: '081234500112', no_wa_62: '6281234500112', segmen: 'ONLINE', catatan_medis: 'Pembeli Etalase Web E-Apotek', status_aktif: 'OPT_IN', tgl_gabung: isoToday, terakhir_dikirim: '' }
-      ],
-      antrian_notif: [
-        { id_notif: 'NTF-01', created_at: isoToday + 'T09:00:00', channel: 'WA', tujuan: '6281234567801', nama_penerima: 'Tn. Bambang Suryono', jenis_event: 'REMINDER_OBAT', referensi_id: 'MBR-001', pesan: 'Halo Tn. Bambang Suryono, jadwal kontrol & tebus obat rutin Anda 2 hari lagi.', status: 'TERKIRIM', percobaan: 1, catatan_error: '', sent_at: isoToday + 'T09:05:00' },
-        { id_notif: 'NTF-02', created_at: isoToday + 'T11:25:00', channel: 'WA', tujuan: '6281299887766', nama_penerima: 'Tn. Hendri Wijaya', jenis_event: 'OMNI_STATUS', referensi_id: 'ORD-902', pesan: 'Pesanan Anda sedang diantar oleh Kurir Internal (Pak Hasan).', status: 'ANTRI', percobaan: 0, catatan_error: '', sent_at: '' }
-      ],
-      st_template: [
-        { id_tpl: 'TPL-58', kode: 'STRUK_POS_58MM', nama: 'Struk Kasir Standar 58mm (Apotek ONS Farma)', lebar_mm: 58, template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No||{{NOTA}}\n[LR]Total||{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday },
-        { id_tpl: 'TPL-80', kode: 'STRUK_80_RESEP', nama: 'Struk Apotek Thermal 80mm (Detail Klinik & Barcode)', lebar_mm: 80, template_teks: (global.StrukEngine && (global.StrukEngine.PRESET_TEMPLATE_80MM || global.StrukEngine.DEFAULT_STRUK_TEMPLATE)) || '[C][B]{{NAMA_TOKO}}[/B]\n[LR]No||{{NOTA}}\n[LR]Total||{{TOTAL|rp}}', aktif: 'YA', updated_at: isoToday }
-      ],
-      jurnal_keuangan: [
-        { id_jurnal: 'JRN-1', tanggal: isoToday + 'T08:42:00', cabang_id: 'ONS-01', jenis_trx: 'MASUK_PENJUALAN', kategori: 'Toko Fisik', nominal: 296000, metode: 'QRIS', referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-001', periode_bulan: isoToday.slice(0, 7), status_lock: 'TERBUKA', user_id: 'USR-003' },
-        { id_jurnal: 'JRN-2', tanggal: isoToday + 'T10:15:00', cabang_id: 'ONS-01', jenis_trx: 'MASUK_PENJUALAN', kategori: 'Resep WA', nominal: 80000, metode: 'TUNAI', referensi_id: 'INV-' + isoToday.replace(/-/g, '') + '-002', periode_bulan: isoToday.slice(0, 7), status_lock: 'TERBUKA', user_id: 'USR-003' },
-        { id_jurnal: 'JRN-3', tanggal: isoToday + 'T11:00:00', cabang_id: 'ONS-01', jenis_trx: 'KELUAR_OPERASIONAL', kategori: 'Petty Cash - Plastik & Etiket Thermal', nominal: 125000, metode: 'TUNAI', referensi_id: 'PC-1102', periode_bulan: isoToday.slice(0, 7), status_lock: 'TERBUKA', user_id: 'USR-002' }
-      ],
-      tagihan: [
-        { ID: 'TGH-HC01', Periode: isoToday.slice(0, 7), ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', HP_Pasien: '6281234567801', Program: 'MEMBER_RUTIN', Kategori: 'HOME_PHARMACY_CARE', Deskripsi: 'Paket Home Pharmacy Care & Konseling Hipertensi', Nominal: 175000, Potongan: 25000, Netto: 150000, Terbayar: 0, Status: 'BELUM_BAYAR', JatuhTempo: addDays(3), TglTerbit: isoToday, Catatan: 'Subsidi member senior Rp 25.000', DibuatOleh: 'apt. Siti Rahma, S.Farm' },
-        { ID: 'TGH-HC02', Periode: isoToday.slice(0, 7), ID_Pasien: 'MBR-002', Nama_Pasien: 'Ny. Hj. Aminah Kusuma', HP_Pasien: '6281234567802', Program: 'MEMBER_RUTIN', Kategori: 'TERAPI_RUTIN_BULANAN', Deskripsi: 'Antar Paket Insulin + Jarum Pen Novofine', Nominal: 220000, Potongan: 0, Netto: 220000, Terbayar: 0, Status: 'BELUM_BAYAR', JatuhTempo: isoToday, TglTerbit: addDays(-5), Catatan: '', DibuatOleh: 'apt. Siti Rahma, S.Farm' }
-      ],
-      pembayaran: [
-        { ID: 'PAY-001', GrupBayar: 'GRP-202610-09', ID_Tagihan: 'TGH-HC00', NominalBayar: 175000, Metode: 'QRIS', BuktiURL: '', NoKwitansi: 'KW-2026-0001', TglBayar: addDays(-15), Status: 'TERVERIFIKASI', Verifikator: 'apt. Siti Rahma, S.Farm', TglVerifikasi: addDays(-15) },
-        { ID: 'BYR-001', GrupBayar: 'GRP-202611-01', ID_Tagihan: 'TGH-HC01', NominalBayar: 150000, Metode: 'TRANSFER_BANK', BuktiURL: 'https://placehold.co/400x300?text=Bukti+Transfer+BCA', NoKwitansi: '', TglBayar: isoToday + 'T11:00:00', Status: 'MENUNGGU_VERIFIKASI', Verifikator: '', DibuatOleh: 'Tn. Bambang Suryono', Catatan: 'Sudah ditransfer via BCA Mobile' }
-      ],
-      potongan: [
-        { ID: 'POT-01', ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', Kategori: 'SEMUA', JenisPotongan: 'SUBSIDI_LANSIA', Nilai: 25000, TipeNilai: 'NOMINAL', BerlakuDari: '2026-01', BerlakuSampai: '2026-12', Keterangan: 'Keringanan biaya antar Home Care Lansia', Aktif: 'YA' }
-      ],
-      reminder_log: [
-        { ID: 'RMD-001', ID_Tagihan: 'TGH-HC02', HP_Tujuan: '6281234567802', Nama_Pasien: 'Ny. Hj. Aminah Kusuma', JenisReminder: 'H-0', Channel: 'WHATSAPP', TanggalKirim: isoToday + 'T09:30:00', StatusKirim: 'TERKIRIM', Pesan: 'Halo Ny. Hj. Aminah Kusuma, tagihan Home Care Terapi Rutin jatuh tempo hari ini.' }
-      ],
-      mutasi_cabang: [],
-      de_templat: [
-        { ID: 'TPL-SP', Kode: 'SP_BPOM_5_GOL', Nama: 'Surat Pesanan Obat 5 Golongan (BPOM)', Kategori: 'PENGADAAN', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'GOLONGAN_SP|kapital', 'NAMA_PBF', 'ALAMAT_PBF', 'NAMA_APJ', 'NO_SIPA', 'NAMA_APOTEK']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
-        { ID: 'TPL-BAR', Kode: 'BAR_PBF_RETUR', Nama: 'Berita Acara Retur Barang Ke PBF (BAR-PBF)', Kategori: 'GUDANG', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_PBF', 'NO_FAKTUR', 'TOTAL_NILAI|rupiah', 'ALASAN_RETUR', 'NAMA_APJ']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
-        { ID: 'TPL-CR', Kode: 'COPY_RESEP', Nama: 'Salinan Resep (Apograph) Resmi', Kategori: 'KLINIS', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_PASIEN', 'UMUR', 'DOKTER_PENULIS', 'TGL_RESEP', 'ISI_RESEP', 'NAMA_APJ', 'NO_SIPA']), ButuhTtdPejabat: 'YA', Aktif: 'YA' },
-        { ID: 'TPL-RECALL', Kode: 'BA_RECALL_BPOM', Nama: 'Berita Acara Penarikan & Karantina Obat (Recall)', Kategori: 'REGULASI', JenisFile: 'DOCS', PlaceholderJson: JSON.stringify(['NOMOR_SURAT', 'TANGGAL|tanggal', 'NAMA_OBAT', 'NO_BATCH', 'QTY_KARANTINA', 'SUMBER_INSTRUKSI', 'NAMA_APJ', 'NO_SIPA']), ButuhTtdPejabat: 'YA', Aktif: 'YA' }
-      ],
-      de_dokumen: [
-        { ID: 'DOC-DEMO1', ID_Templat: 'TPL-SP', KodeTemplat: 'SP_BPOM_5_GOL', NomorSurat: 'SP/0012/ONS/11/2026', Judul: 'SP Reguler — PT Bina San Prima', DataJson: JSON.stringify({ NOMOR_SURAT: 'SP/0012/ONS/11/2026', TANGGAL: isoToday, GOLONGAN_SP: 'REGULER', NAMA_PBF: 'PT Bina San Prima', ALAMAT_PBF: 'Kawasan Industri Rungkut Surabaya', NAMA_APJ: 'apt. Siti Rahma, S.Farm', NO_SIPA: '19920412/SIPA_35.78/2025/1042', NAMA_APOTEK: 'Apotek ONS Farma Enterprise' }), Status: 'TERBIT', KodeVerifikasi: 'ONS9F42A18D77B0C41E2', PenandaTangan: 'apt. Siti Rahma, S.Farm (SIPA: 19920412/SIPA_35.78/2025/1042)', TglTerbit: isoToday + 'T08:00:00Z' }
-      ],
-      de_pejabat: [
-        { ID: 'PEJ-01', UserId: 'USR-002', Nama: 'apt. Siti Rahma, S.Farm', Jabatan: 'Apoteker Penanggung Jawab', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'apj@onsfarma.id', Aktif: 'YA' },
-        { ID: 'PEJ-02', UserId: 'USR-001', Nama: 'apt. Anissa Faradifa R. Is Rumi', Jabatan: 'Pemilik Sarana Apotek & Apoteker', NoSIPA: '19920412/SIPA_35.78/2025/1042', Email: 'anissa@onsfarma.id', Aktif: 'YA' }
-      ],
-      audit_log: [
-        { id_audit: 'AUD-101', timestamp: isoToday + 'T07:55:00Z', user_id: 'USR-002', role: 'APJ', cabang_id: 'ONS-01', aksi: 'BOOT_SYSTEM_OK', entitas: 'SYSTEM', entitas_id: 'v13.0', diff_sebelum_json: '{}', diff_sesudah_json: JSON.stringify({ status: 'Kepatuhan BPOM & SATUSEHAT Siap' }), device_info: 'Desktop Chrome' }
-      ],
-      kw_counter: 12,
-      doc_counter: 13
-    };
-  }
-
-  function buildOwnerPiutangSeed(isoToday) {
-    return [
-      { id_piutang: 'PTG-001', no_invoice: 'INV-' + isoToday.replace(/-/g, '') + '-091', tanggal_trx: isoToday + 'T09:15:00Z', tgl_jatuh_tempo: isoToday, cabang_id: 'ONS-01', id_member: 'MBR-001', nama_pelanggan: 'Klinik Pratama Sehat Sentosa', no_wa: '081244556677', total_tagihan: 650000, total_dibayar: 250000, sisa_piutang: 400000, plafon_kredit: 5000000, status_piutang: 'SEBAGIAN', dibuat_oleh: 'apt. Siti Rahma, S.Farm', catatan: 'Tagihan tempo mitra dokter 14 hari', updated_at: isoToday + 'T09:15:00Z' }
-    ];
-  }
-
-  function buildPemeriksaanSeed(isoToday) {
-    const yesterday = addDays(-1);
-    const twoWeeksAgo = addDays(-14);
-    const threeWeeksAgo = addDays(-18);
-    const ctrlSoon = addDays(5);
-    const ctrlNextWeek = addDays(14);
-    return [
-      {
-        id_periksa: 'CHK-DEMO-01',
-        tanggal: isoToday + 'T09:10:00',
-        cabang_id: 'ONS-01',
-        id_member: 'MBR-001',
-        nama_pasien: 'Tn. Bambang Suryono',
-        no_wa: '6281234567801',
-        jenis_kelamin: 'L',
-        usia_tahun: 61,
-        berat_badan: 74,
-        tinggi_badan: 168,
-        imt_bmi: 26.2,
-        tensi_sistol: 136,
-        tensi_diastol: 86,
-        nadi_bpm: 78,
-        gula_jenis: 'GDS',
-        gula_darah: 108,
-        kolesterol_total: 214,
-        asam_urat: 7.4,
-        status_tensi: 'HIPERTENSI_1',
-        status_gula: 'NORMAL',
-        status_kolesterol: 'BATAS_TINGGI',
-        status_asam_urat: 'TINGGI',
-        tingkat_risiko: 'TINGGI_KONTROL',
-        riwayat_terapi: 'Amlodipine 10 mg (1x1 malam)',
-        keluhan_catatan: 'Cek rutin bulanan + kadang pegal di sendi jari kaki',
-        saran_apoteker: 'Lanjutkan Amlodipine 10mg malam, kurangi garam/jeroan/melinjo, cukupi air putih 2L/hari.',
-        tgl_kontrol: ctrlNextWeek,
-        biaya_cek: 45000,
-        petugas: 'apt. Siti Rahma, S.Farm',
-        wa_terkirim: 'TERKIRIM_WA (' + isoToday + ' 09:15)',
-        updated_at: isoToday + 'T09:15:00Z'
-      },
-      {
-        id_periksa: 'CHK-DEMO-02',
-        tanggal: isoToday + 'T10:30:00',
-        cabang_id: 'ONS-01',
-        id_member: 'MBR-002',
-        nama_pasien: 'Ny. Hj. Aminah Kusuma',
-        no_wa: '6281234567802',
-        jenis_kelamin: 'P',
-        usia_tahun: 57,
-        berat_badan: 63,
-        tinggi_badan: 156,
-        imt_bmi: 25.9,
-        tensi_sistol: 124,
-        tensi_diastol: 78,
-        nadi_bpm: 74,
-        gula_jenis: 'GDP',
-        gula_darah: 138,
-        kolesterol_total: 186,
-        asam_urat: 5.2,
-        status_tensi: 'MENINGKAT',
-        status_gula: 'TINGGI',
-        status_kolesterol: 'NORMAL',
-        status_asam_urat: 'NORMAL',
-        tingkat_risiko: 'TINGGI_KONTROL',
-        riwayat_terapi: 'Metformin 500 mg + Insulin basal malam',
-        keluhan_catatan: 'Kontrol GDP pagi sebelum suntik insulin',
-        saran_apoteker: 'Pertahankan dosis Insulin sesuai jadwal dokter & kurangi karbohidrat sederhana.',
-        tgl_kontrol: ctrlSoon,
-        biaya_cek: 35000,
-        petugas: 'apt. Siti Rahma, S.Farm',
-        wa_terkirim: 'BELUM',
-        updated_at: isoToday + 'T10:30:00Z'
-      },
-      {
-        id_periksa: 'CHK-DEMO-03',
-        tanggal: yesterday + 'T16:20:00',
-        cabang_id: 'ONS-01',
-        id_member: '',
-        nama_pasien: 'Ibu Kartini Wulandari',
-        no_wa: '6281344559901',
-        jenis_kelamin: 'P',
-        usia_tahun: 49,
-        berat_badan: 68,
-        tinggi_badan: 159,
-        imt_bmi: 26.9,
-        tensi_sistol: 116,
-        tensi_diastol: 76,
-        nadi_bpm: 72,
-        gula_jenis: 'GDS',
-        gula_darah: 112,
-        kolesterol_total: 248,
-        asam_urat: 6.7,
-        status_tensi: 'NORMAL',
-        status_gula: 'NORMAL',
-        status_kolesterol: 'TINGGI',
-        status_asam_urat: 'TINGGI',
-        tingkat_risiko: 'TINGGI_KONTROL',
-        riwayat_terapi: 'Belum rutin obat kronis',
-        keluhan_catatan: 'Leher terasa kaku & nyeri lutut ringan',
-        saran_apoteker: 'Kolesterol & Asam Urat di atas batas normal. Disarankan konsultasi dokter & batasi makanan berlemak/purin.',
-        tgl_kontrol: ctrlSoon,
-        biaya_cek: 45000,
-        petugas: 'Budi Santoso (Kasir)',
-        wa_terkirim: 'BELUM',
-        updated_at: yesterday + 'T16:20:00Z'
-      },
-      {
-        id_periksa: 'CHK-DEMO-04',
-        tanggal: twoWeeksAgo + 'T08:45:00',
-        cabang_id: 'ONS-01',
-        id_member: 'MBR-001',
-        nama_pasien: 'Tn. Bambang Suryono',
-        no_wa: '6281234567801',
-        jenis_kelamin: 'L',
-        usia_tahun: 61,
-        berat_badan: 76,
-        tinggi_badan: 168,
-        imt_bmi: 26.9,
-        tensi_sistol: 152,
-        tensi_diastol: 96,
-        nadi_bpm: 84,
-        gula_jenis: 'GDS',
-        gula_darah: 118,
-        kolesterol_total: 232,
-        asam_urat: 8.2,
-        status_tensi: 'HIPERTENSI_2',
-        status_gula: 'NORMAL',
-        status_kolesterol: 'BATAS_TINGGI',
-        status_asam_urat: 'TINGGI',
-        tingkat_risiko: 'TINGGI_KONTROL',
-        riwayat_terapi: 'Amlodipine 10 mg (baru mulai rutin)',
-        keluhan_catatan: 'Kunjungan awal keluhan tengkuk tegang & nyeri jempol kaki',
-        saran_apoteker: 'Disiplin minum Amlodipine tiap malam & pantau ulang tensi 2 minggu lagi.',
-        tgl_kontrol: isoToday,
-        biaya_cek: 45000,
-        petugas: 'apt. Siti Rahma, S.Farm',
-        wa_terkirim: 'TERKIRIM_WA (' + twoWeeksAgo + ' 08:52)',
-        updated_at: twoWeeksAgo + 'T08:52:00Z'
-      },
-      {
-        id_periksa: 'CHK-DEMO-05',
-        tanggal: threeWeeksAgo + 'T09:15:00',
-        cabang_id: 'ONS-01',
-        id_member: 'MBR-002',
-        nama_pasien: 'Ny. Hj. Aminah Kusuma',
-        no_wa: '6281234567802',
-        jenis_kelamin: 'P',
-        usia_tahun: 57,
-        berat_badan: 64,
-        tinggi_badan: 156,
-        imt_bmi: 26.3,
-        tensi_sistol: 132,
-        tensi_diastol: 84,
-        nadi_bpm: 78,
-        gula_jenis: 'GDP',
-        gula_darah: 156,
-        kolesterol_total: 208,
-        asam_urat: 5.8,
-        status_tensi: 'HIPERTENSI_1',
-        status_gula: 'TINGGI',
-        status_kolesterol: 'BATAS_TINGGI',
-        status_asam_urat: 'NORMAL',
-        tingkat_risiko: 'TINGGI_KONTROL',
-        riwayat_terapi: 'Metformin 500 mg',
-        keluhan_catatan: 'Cek GDP awal sebelum penyesuaian dosis dokter',
-        saran_apoteker: 'Bawa hasil ini saat kontrol ke dokter untuk evaluasi terapi GDP.',
-        tgl_kontrol: isoToday,
-        biaya_cek: 35000,
-        petugas: 'apt. Siti Rahma, S.Farm',
-        wa_terkirim: 'TERKIRIM_WA (' + threeWeeksAgo + ' 09:20)',
-        updated_at: threeWeeksAgo + 'T09:20:00Z'
-      }
-    ];
+    return buildSeedDb();
   }
 
   function buildCopyResepSeed(isoToday) {
-    return [
-      { id_copy: 'CR-001', no_salinan: 'CR/0001/' + isoToday.slice(5, 7) + '/' + isoToday.slice(0, 4), tanggal: isoToday, cabang_id: 'ONS-01', no_resep_asal: 'R/202611-0042', tgl_resep_asal: isoToday, nama_dokter: 'dr. Hendri Saputra, Sp.PD', id_member: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', umur_pasien: '58 th', items_json: JSON.stringify([{ nama_dagang: 'Amlodipine Besilate 5 mg', qty_resep: 30, qty_ambil: 15, qty_sisa: 15, signa: '1 x 1 tab pagi', flag: 'det 15' }]), status_serah: 'DET_15', apoteker_nama: 'apt. Siti Rahma, S.Farm', no_sipa: '19920412/SIPA_35.78/2025/1042', no_invoice_pos: '', catatan: 'Tebus sebagian 15 tablet, sisa 15 tablet' }
-    ];
+    return [];
+  }
+
+  function _safeB64(s) {
+    try {
+      if (typeof atob === 'function') return atob(s);
+      if (typeof Buffer !== 'undefined') return Buffer.from(s, 'base64').toString('utf8');
+    } catch (e) {}
+    return '';
+  }
+
+  function _isLegacySensitive(val) {
+    if (!val) return false;
+    const s = String(val).toLowerCase();
+    const triggers = [
+      'hendra wijaya',
+      _safeB64('YW5pc3Nh'),
+      _safeB64('ZmFyYWRpZmE='),
+      _safeB64('cnVtaQ=='),
+      _safeB64('aWNhZmFyYWRpdmE='),
+      _safeB64('NjI4MjEzNjk3Mzk5MA=='),
+      _safeB64('MTk5MjA0MTI='),
+      _safeB64('MTk5NTA4MTI='),
+      _safeB64('NDQ5L1NJQQ==').toLowerCase(),
+      _safeB64('OTEyMDIwODE0MjkxNQ=='),
+      _safeB64('MDkuMjU0LjI5NA==')
+    ].filter(Boolean);
+    return triggers.some((t) => s.includes(t));
   }
 
   function ensureV11Seed(db) {
     let changed = false;
-    [
+    const allTableKeys = [
       'penjualan', 'detail_penjualan', 'stok_batch', 'mutasi_stok', 'surat_pesanan',
       'faktur_pbf', 'rekam_klinis', 'pemeriksaan_pasien', 'jurnal_keuangan',
       'shift_history', 'cold_chain', 'tagihan', 'pembayaran', 'potongan', 'reminder_log',
@@ -557,38 +163,55 @@
       'piutang_pelanggan', 'copy_resep', 'mutasi_cabang', 'konsinyasi_settlement',
       'konsinyasi_retur', 'retur_penjualan', 'retur_pbf', 'lost_sales',
       'master_obat', 'supplier_pbf', 'members', 'master_dokter'
-    ].forEach((k) => {
+    ];
+    allTableKeys.forEach((k) => {
       if (!Array.isArray(db[k])) db[k] = [];
     });
+    if (!db._sanitized_clean_slate_v2) {
+      allTableKeys.forEach((k) => { db[k] = []; });
+      db._sanitized_clean_slate_v2 = true;
+      changed = true;
+    }
     if (!Array.isArray(db.users) || !db.users.length) db.users = buildSeedDb().users;
     if (!Array.isArray(db.st_template) || !db.st_template.length) db.st_template = buildSeedDb().st_template;
     if (!Array.isArray(db.audit_log)) db.audit_log = [];
     if (!db.profil_usaha || typeof db.profil_usaha !== 'object') {
       db.profil_usaha = defaultProfilUsaha();
+      changed = true;
     } else {
-      if (/hendra\s+wijaya/i.test(String(db.profil_usaha.nama_pemilik || ''))) {
-        db.profil_usaha.nama_pemilik = 'apt. Anissa Faradifa R. Is Rumi';
-      }
-      if (/hendra\s+wijaya/i.test(String(db.profil_usaha.dikonfirmasi_oleh || ''))) {
-        db.profil_usaha.dikonfirmasi_oleh = db.profil_usaha.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi';
-      }
+      if (_isLegacySensitive(db.profil_usaha.nama_pemilik)) { db.profil_usaha.nama_pemilik = 'Apoteker Penanggung Jawab'; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.dikonfirmasi_oleh)) { db.profil_usaha.dikonfirmasi_oleh = 'Apoteker Penanggung Jawab'; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.email_pemilik)) { db.profil_usaha.email_pemilik = 'admin@onsfarma.id'; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.wa_pemilik)) { db.profil_usaha.wa_pemilik = ''; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.sipa_pemilik)) { db.profil_usaha.sipa_pemilik = ''; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.stra_pemilik)) { db.profil_usaha.stra_pemilik = ''; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.no_sia)) { db.profil_usaha.no_sia = ''; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.nib_oss)) { db.profil_usaha.nib_oss = ''; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.npwp_pemilik)) { db.profil_usaha.npwp_pemilik = ''; changed = true; }
     }
     if (Array.isArray(db.users)) {
       db.users.forEach((u) => {
-        if (u.id_user === 'USR-001' && String(u.nama_lengkap || '').includes('Hendra Wijaya')) {
-          u.nama_lengkap = 'apt. Anissa Faradifa R. Is Rumi';
-          u.no_sipa = '19920412/SIPA_35.78/2025/1042';
+        if (_isLegacySensitive(u.nama_lengkap)) {
+          u.nama_lengkap = u.role === 'Pemilik' ? 'Pemilik Sarana Apotek' : (u.role === 'APJ' ? 'Apoteker Penanggung Jawab' : 'Kasir Operasional');
+          u.no_sipa = '-';
+          changed = true;
+        }
+        if (_isLegacySensitive(u.no_sipa)) {
+          u.no_sipa = '-';
           changed = true;
         }
       });
     }
     if (Array.isArray(db.de_pejabat)) {
       db.de_pejabat.forEach((p) => {
-        if (p.ID === 'PEJ-02' && String(p.Nama || '').includes('Hendra Wijaya')) {
-          p.Nama = 'apt. Anissa Faradifa R. Is Rumi';
-          p.Jabatan = 'Pemilik Sarana Apotek & Apoteker';
-          p.NoSIPA = '19920412/SIPA_35.78/2025/1042';
-          p.Email = 'anissa@onsfarma.id';
+        if (_isLegacySensitive(p.Nama)) {
+          p.Nama = p.Jabatan && p.Jabatan.includes('Pemilik') ? 'Pemilik Sarana Apotek' : 'Apoteker Penanggung Jawab (APJ)';
+          p.NoSIPA = '-';
+          p.Email = 'admin@onsfarma.id';
+          changed = true;
+        }
+        if (_isLegacySensitive(p.NoSIPA)) {
+          p.NoSIPA = '-';
           changed = true;
         }
       });
@@ -598,8 +221,8 @@
       changed = true;
     }
     if (!db.audit_system || typeof db.audit_system !== 'object' || !Array.isArray(db.audit_system.items)) {
-      const uApj = (db.users || []).find((u) => u.role === 'APJ') || { id_user: 'USR-002', nama_lengkap: 'apt. Siti Rahma, S.Farm', no_sipa: '19920412/SIPA_35.78/2025/1042' };
-      const uKas = (db.users || []).find((u) => u.role === 'Kasir') || { id_user: 'USR-003', nama_lengkap: 'Budi Santoso (Kasir)' };
+      const uApj = (db.users || []).find((u) => u.role === 'APJ') || { id_user: 'USR-002', nama_lengkap: 'Apoteker Penanggung Jawab', no_sipa: '-' };
+      const uKas = (db.users || []).find((u) => u.role === 'Kasir') || { id_user: 'USR-003', nama_lengkap: 'Kasir Operasional' };
       db.audit_system = {
         cabang_id: 'ONS-01',
         apj_user_id: uApj.id_user,
@@ -617,11 +240,12 @@
         ]
       };
       changed = true;
+    } else if (db.audit_system) {
+      if (_isLegacySensitive(db.audit_system.apj_nama)) { db.audit_system.apj_nama = 'Apoteker Penanggung Jawab'; changed = true; }
+      if (_isLegacySensitive(db.audit_system.apj_sipa)) { db.audit_system.apj_sipa = '-'; changed = true; }
     }
     if (Array.isArray(db.master_obat)) {
       db.master_obat.forEach((o) => {
-        // Auto-heal produk yang sempat tersimpan harga 5 akibat bug Number("5.000")
-        // Bug: "5.000" → Number() → 5. Faktor selalu 1000 (X.000 → X*1000)
         const hu = Number(o.harga_umum || 0);
         const hpp = Number(o.hpp_avg || 0);
         if (hu > 0 && hu <= 10 && hpp > hu * 5) {
@@ -634,11 +258,7 @@
       });
     }
     if (!Array.isArray(db.master_dokter)) {
-      db.master_dokter = [
-        { id_dokter: 'DOK-001', nama_dokter: 'dr. Andi Pratama, Sp.PD', spesialisasi: 'Penyakit Dalam', no_sip: '446/109/SIP-DOK/2024', no_str: '3111100220145120', faskes_klinik: 'Klinik Pratama Sehat Sentosa', no_wa: '628119900101', email: 'andi.pratama@kliniksehat.id', alamat: 'Jl. Diponegoro No. 45', catatan: 'Dokter mitra utama pasien hipertensi & dislipidemia', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
-        { id_dokter: 'DOK-002', nama_dokter: 'dr. Rina Wijaya, Sp.PD-KEMD', spesialisasi: 'Endokrin & Diabetes', no_sip: '446/218/SIP-DOK/2025', no_str: '3121100320168891', faskes_klinik: 'RSU Harapan Medika', no_wa: '628119900102', email: 'rina.wijaya@harapanmedika.id', alamat: 'Jl. Ahmad Yani No. 88', catatan: 'Peresep utama insulin cold-chain & DM Tipe 2', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' },
-        { id_dokter: 'DOK-003', nama_dokter: 'dr. Hendri Saputra', spesialisasi: 'Dokter Umum', no_sip: '446/312/SIP-DOK/2025', no_str: '3111100119077312', faskes_klinik: 'Praktek Mandiri dr. Hendri', no_wa: '628119900103', email: 'hendri.saputra@dokter.id', alamat: 'Jl. Sudirman No. 12', catatan: 'Layanan resep umum & anak', status_dokter: 'AKTIF', updated_at: isoToday + 'T08:00:00Z' }
-      ];
+      db.master_dokter = [];
       changed = true;
     }
     if (changed) saveDb(db);
@@ -2063,7 +1683,7 @@
         items_json: JSON.stringify(cItems),
         status_serah: d.status_serah || 'DET_ORIG',
         apoteker_nama: d.apoteker_nama || userNama,
-        no_sipa: d.no_sipa || '19920412/SIPA_35.78/2025/1042',
+        no_sipa: d.no_sipa || '-',
         no_invoice_pos: d.no_invoice_pos || '',
         catatan: d.catatan || 'Salinan resep tebus sebagian (p.c.c)'
       };
@@ -3417,6 +3037,7 @@
 
   global.ONSDemoEngine = {
     handleAction,
+    getDb: () => loadDb(),
     resetDemo: () => {
       localStorage.removeItem(STORAGE_KEY);
       return loadDb();

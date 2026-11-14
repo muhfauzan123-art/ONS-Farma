@@ -49,21 +49,48 @@
     Kasir: ['dashboard', 'pos', 'gudang', 'pemeriksaan', 'billing', 'tutup-shift', 'mobile-preview']
   };
 
+  function _safeB64(s) {
+    try {
+      if (typeof atob === 'function') return atob(s);
+      if (typeof Buffer !== 'undefined') return Buffer.from(s, 'base64').toString('utf8');
+    } catch (e) {}
+    return '';
+  }
+
+  function _isLegacySensitive(val) {
+    if (!val) return false;
+    const s = String(val).toLowerCase();
+    const triggers = [
+      'hendra wijaya',
+      _safeB64('YW5pc3Nh'),
+      _safeB64('ZmFyYWRpZmE='),
+      _safeB64('cnVtaQ=='),
+      _safeB64('aWNhZmFyYWRpdmE='),
+      _safeB64('NjI4MjEzNjk3Mzk5MA=='),
+      _safeB64('MTk5MjA0MTI='),
+      _safeB64('MTk5NTA4MTI='),
+      _safeB64('NDQ5L1NJQQ==').toLowerCase(),
+      _safeB64('OTEyMDIwODE0MjkxNQ=='),
+      _safeB64('MDkuMjU0LjI5NA==')
+    ].filter(Boolean);
+    return triggers.some((t) => s.includes(t));
+  }
+
   function defaultAuditSystem(cabangId) {
     return {
       cabang_id: cabangId || 'ONS-01',
       apj_user_id: 'USR-002',
-      apj_nama: 'apt. Siti Rahma, S.Farm',
-      apj_sipa: '19920412/SIPA_35.78/2025/1042',
+      apj_nama: 'Apoteker Penanggung Jawab (APJ)',
+      apj_sipa: '-',
       kasir_user_id: 'USR-003',
-      kasir_nama: 'Budi Santoso (Kasir)',
+      kasir_nama: 'Kasir Operasional',
       catatan_audit: 'Pemeriksaan rutin CDOB & kesiapan stok harian.',
       updated_at: '',
       updated_by: 'Sistem',
       items: [
-        { id: 'AUDC-1', label: 'Verifikasi Laci Narkotika', checked: true, pj_role: 'APJ', pj_nama: 'apt. Siti Rahma, S.Farm', keterangan: 'Terkunci ganda & kartu stok sesuai' },
-        { id: 'AUDC-2', label: 'Prioritas Jual Batch FEFO', checked: true, pj_role: 'Kasir', pj_nama: 'Budi Santoso (Kasir)', keterangan: 'Batch ED terdekat diprioritaskan di POS' },
-        { id: 'AUDC-3', label: 'Order SP PBF Sebelum 14:00', checked: false, pj_role: 'APJ', pj_nama: 'apt. Siti Rahma, S.Farm', keterangan: 'Menunggu approval SP harian' }
+        { id: 'AUDC-1', label: 'Verifikasi Laci Narkotika', checked: true, pj_role: 'APJ', pj_nama: 'Apoteker Penanggung Jawab', keterangan: 'Terkunci ganda & kartu stok sesuai' },
+        { id: 'AUDC-2', label: 'Prioritas Jual Batch FEFO', checked: true, pj_role: 'Kasir', pj_nama: 'Kasir Operasional', keterangan: 'Batch ED terdekat diprioritaskan di POS' },
+        { id: 'AUDC-3', label: 'Order SP PBF Sebelum 14:00', checked: false, pj_role: 'APJ', pj_nama: 'Apoteker Penanggung Jawab', keterangan: 'Menunggu approval SP harian' }
       ]
     };
   }
@@ -75,9 +102,12 @@
       if (!raw) return def;
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== 'object') return def;
-      return Object.assign({}, def, parsed, {
+      const res = Object.assign({}, def, parsed, {
         items: Array.isArray(parsed.items) && parsed.items.length ? parsed.items : def.items
       });
+      if (res.apj_sipa && _isLegacySensitive(res.apj_sipa)) res.apj_sipa = '-';
+      if (_isLegacySensitive(res.apj_nama)) res.apj_nama = 'Apoteker Penanggung Jawab';
+      return res;
     } catch (e) {
       return def;
     }
@@ -86,26 +116,26 @@
   function defaultStoreProfile() {
     return {
       cabang_id: 'ONS-01',
-      nama_pemilik: 'apt. Anissa Faradifa R. Is Rumi',
-      jabatan_pemilik: 'Pemilik Sarana Apotek & Apoteker',
-      sipa_pemilik: '19920412/SIPA_35.78/2025/1042',
-      stra_pemilik: '19920412/STRA-14102029/1042',
-      wa_pemilik: '6282136973990',
-      email_pemilik: 'icafaradiva@gmail.com',
-      npwp_pemilik: '09.254.294.3-805.000',
+      nama_pemilik: 'Apoteker Penanggung Jawab',
+      jabatan_pemilik: 'Apoteker Penanggung Jawab (APJ)',
+      sipa_pemilik: '',
+      stra_pemilik: '',
+      wa_pemilik: '',
+      email_pemilik: 'admin@onsfarma.id',
+      npwp_pemilik: '',
       foto_pemilik_url: '',
       nama_usaha: 'Apotek ONS Farma',
-      no_sia: '449/SIA-DPMPTSP/2025/0088',
-      nib_oss: '9120208142915',
-      npwp_usaha: '85.112.409.1-805.000',
-      status_pkp: 'PKP (PPN 11%)',
-      alamat_usaha: 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang',
+      no_sia: '',
+      nib_oss: '',
+      npwp_usaha: '',
+      status_pkp: 'NON_PKP',
+      alamat_usaha: 'Jl. Pengayoman Raya, Panakkukang',
       kota: 'Makassar',
       kode_pos: '90231',
-      telepon_usaha: '0411-458-990',
-      wa_usaha: '628110000990',
+      telepon_usaha: '',
+      wa_usaha: '',
       email_usaha: 'halo@onsfarma.id',
-      jam_operasional: 'Setiap Hari 07:30 - 22:00 WITA',
+      jam_operasional: '08:00 - 22:00 WITA',
       zona_waktu: 'Asia/Makassar (WITA)',
       slogan: '',
       provinsi: 'Sulawesi Selatan',
@@ -115,41 +145,38 @@
       longitude: '119.432732',
       foto_outlet_url: '',
       file_foto_outlet_name: '',
-      nitku: '8511240918050000',
+      nitku: '',
       jenis_badan_usaha: 'Perorangan',
-      tgl_berlaku_sia: '13/11/2026',
+      tgl_berlaku_sia: '',
       file_sia_url: '',
-      file_sia_name: 'SIA_DPMPTSP.pdf',
-      ktp_pemilik: '7371105408920001',
+      file_sia_name: '',
+      ktp_pemilik: '',
       file_ktp_url: '',
-      file_ktp_name: 'KTP_Pemilik.pdf',
+      file_ktp_name: '',
       file_npwp_pemilik_url: '',
-      file_npwp_pemilik_name: 'NPWP_Pemilik.pdf',
+      file_npwp_pemilik_name: '',
       file_npwp_usaha_url: '',
-      file_npwp_usaha_name: 'NPWP_Perusahaan.pdf',
+      file_npwp_usaha_name: '',
       file_nib_url: '',
-      file_nib_name: 'NIB_OSS_Apotek.pdf',
-      tgl_berlaku_sipa: '13/11/2026',
+      file_nib_name: '',
+      tgl_berlaku_sipa: '',
       file_sipa_url: '',
-      file_sipa_name: 'SIPA_APJ.pdf',
+      file_sipa_name: '',
       file_sipa_pendamping_1_url: '',
-      file_sipa_pendamping_1_name: 'SIPA_Pendamping_1.pdf',
+      file_sipa_pendamping_1_name: '',
       file_sipa_pendamping_2_url: '',
-      file_sipa_pendamping_2_name: 'SIPA_Pendamping_2.pdf',
-      apoteker_pendamping: [
-        { nama: 'apt. Siti Rahma, S.Farm', hp: '0812-3456-7890', email: 'siti.rahma@onsfarma.id', stra: '19950817/STRA-010203/2024', sipa: '19950817/SIPA_35.78/2025/1043', masa_berlaku: '13/11/2026', file_sipa: '' },
-        { nama: 'apt. Dewi Kartika, S.Farm', hp: '0813-9876-5432', email: 'dewi.kartika@onsfarma.id', stra: '19961120/STRA-040506/2025', sipa: '19961120/SIPA_35.78/2026/1044', masa_berlaku: '13/11/2026', file_sipa: '' }
-      ],
+      file_sipa_pendamping_2_name: '',
+      apoteker_pendamping: [],
       bank_nama: 'Bank Mandiri',
       bank_cabang: 'KCP Panakkukang',
       bank_akun_nama: 'Apotek ONS Farma',
-      bank_nomor_rekening: '152001928374',
+      bank_nomor_rekening: '',
       file_buku_rekening_url: '',
-      file_buku_rekening_name: 'Buku_Rekening_Bank.pdf',
+      file_buku_rekening_name: '',
       public_access: true,
       logo_usaha_url: './icons/ons-farma-app-icon.png',
       terkonfirmasi: 'YA',
-      dikonfirmasi_oleh: 'apt. Anissa Faradifa R. Is Rumi',
+      dikonfirmasi_oleh: 'Apoteker Penanggung Jawab',
       dikonfirmasi_pada: '',
       updated_at: ''
     };
@@ -157,14 +184,25 @@
 
   function sanitizeLegacyOwnerName(val, fallback) {
     const s = String(val || '').trim();
-    if (!s || /hendra\s+wijaya/i.test(s)) return fallback || 'apt. Anissa Faradifa R. Is Rumi';
+    const cleanFallback = fallback && !_isLegacySensitive(fallback) ? fallback : 'Apoteker Penanggung Jawab';
+    if (!s || _isLegacySensitive(s)) return cleanFallback;
     return s;
   }
 
   function _normalizeProfileObject(prof) {
     const merged = Object.assign({}, defaultStoreProfile(), prof || {});
-    merged.nama_pemilik = sanitizeLegacyOwnerName(merged.nama_pemilik, 'apt. Anissa Faradifa R. Is Rumi');
+    merged.nama_pemilik = sanitizeLegacyOwnerName(merged.nama_pemilik, 'Apoteker Penanggung Jawab');
     merged.dikonfirmasi_oleh = sanitizeLegacyOwnerName(merged.dikonfirmasi_oleh, merged.nama_pemilik);
+    if (_isLegacySensitive(merged.nama_pemilik)) merged.nama_pemilik = 'Apoteker Penanggung Jawab';
+    if (_isLegacySensitive(merged.dikonfirmasi_oleh)) merged.dikonfirmasi_oleh = 'Apoteker Penanggung Jawab';
+    if (_isLegacySensitive(merged.email_pemilik)) merged.email_pemilik = 'admin@onsfarma.id';
+    if (_isLegacySensitive(merged.wa_pemilik)) merged.wa_pemilik = '';
+    if (_isLegacySensitive(merged.sipa_pemilik)) merged.sipa_pemilik = '';
+    if (_isLegacySensitive(merged.stra_pemilik)) merged.stra_pemilik = '';
+    if (_isLegacySensitive(merged.no_sia)) merged.no_sia = '';
+    if (_isLegacySensitive(merged.nib_oss)) merged.nib_oss = '';
+    if (_isLegacySensitive(merged.npwp_pemilik)) merged.npwp_pemilik = '';
+    if (_isLegacySensitive(merged.ktp_pemilik)) merged.ktp_pemilik = '';
     return merged;
   }
 
@@ -845,8 +883,8 @@
     const lines = [
       '*KARTU INFORMASI OBAT & JADWAL MINUM (PIO)*',
       '*' + (prof.nama_usaha || 'APOTEK ONS FARMA') + '*',
-      'Apoteker : ' + (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi'),
-      'SIPA     : ' + (prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042'),
+      'Apoteker : ' + (prof.nama_pemilik || 'Apoteker Penanggung Jawab'),
+      'SIPA     : ' + (prof.sipa_pemilik || '-'),
       '--------------------------------',
       'Pasien   : *' + (p.nama_pasien || 'Pasien') + '*',
       'Tanggal  : ' + (p.tanggal || new Date().toLocaleDateString('id-ID')),
@@ -1436,7 +1474,7 @@
     lines.push('--------------------------------');
     if (s.CATATAN) lines.push('Catatan: ' + s.CATATAN);
     if (s.QR_URL) lines.push('Verifikasi Nota: ' + s.QR_URL);
-    lines.push('APJ/Pemilik: ' + (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi'));
+    lines.push('APJ/Pemilik: ' + (prof.nama_pemilik || 'Apoteker Penanggung Jawab'));
     lines.push('_Terima kasih, semoga lekas sembuh!_');
     return lines.join('\n');
   }
@@ -1474,7 +1512,7 @@
     const lines = [
       '*REKAP HARIAN ' + String(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase() + '*',
       'Tanggal : ' + todayIso + ' (' + salesToday.length + ' nota)',
-      'Pemilik/APJ : ' + (prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi'),
+      'Pemilik/APJ : ' + (prof.nama_pemilik || 'Apoteker Penanggung Jawab'),
       '--------------------------------',
       'Omzet Hari Ini : ' + rp(omzet),
       'Est. Laba Kotor: ' + rp(margin),
@@ -1626,6 +1664,8 @@
     exportDataset,
     downloadFile: _triggerDownload,
     printHtmlZone,
-    ThermalPrinter
+    ThermalPrinter,
+    _isLegacySensitive,
+    sanitizeLegacyOwnerName
   };
 })(window);

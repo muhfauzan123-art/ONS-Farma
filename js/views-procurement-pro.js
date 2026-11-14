@@ -404,11 +404,11 @@
     const apotekName = prof.nama_usaha || prof.nama_apotek || 'APOTEK ONS FARMA';
     const apotekAddr = [prof.alamat_usaha || prof.alamat || '', prof.kota || '', prof.kode_pos || ''].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10, Makassar';
     const apotekTelp = prof.wa_usaha || prof.telepon_usaha || prof.telp_wa || '0812-3456-7890';
-    const apotekEmail = prof.email_usaha || 'apotekonsfarma@gmail.com';
+    const apotekEmail = prof.email_usaha || 'admin@onsfarma.id';
     const apotekLogo = prof.logo_usaha_url || '';
-    const apjName = prof.nama_pemilik || prof.nama_apj || sp.dibuat_oleh || 'apt. Anissa Faradifa R. Is. Rumi, S.Farm';
-    const apjSipa = prof.sipa_pemilik || prof.no_sipa || '19920412/SIPA_35.78/2025/1042';
-    const apjStra = prof.no_stra || '19920412/STRA-UAD/2016/242135';
+    const apjName = prof.nama_pemilik || prof.nama_apj || sp.dibuat_oleh || 'Apoteker Penanggung Jawab';
+    const apjSipa = prof.sipa_pemilik || prof.no_sipa || '-';
+    const apjStra = prof.no_stra || '-';
     const spTanggalFormatted = S().formatTgl(sp.tanggal || sp.tgl_sp || new Date().toISOString().slice(0, 10));
 
     // Rangkap Text for Narkotika / BPOM
@@ -1703,7 +1703,7 @@
     const prof = S().getStoreProfile();
     const items = parseSpItems(sp);
     const lines = items.map((it, i) => `${i + 1}. ${it.nama_dagang || it.id_obat} — ${it.qty || it.qty_pesan} ${it.satuan_dasar || it.satuan || 'Unit'}`).join('\n');
-    const msg = `Halo tim *${sp.nama_pbf}*,\nBerikut pemesanan resmi dari *${prof.nama_apotek || 'Apotek ONS Farma'}* (SIA: ${prof.no_sia || '503/001/SIA/DPMPTSP/2025'}):\n\n*No. SP:* ${sp.no_sp} (${sp.golongan_sp || 'REGULER'})\n*Daftar Item:*\n${lines}\n\nMohon konfirmasi ketersediaan & estimasi pengiriman. Terima kasih.\n_${prof.nama_apj || 'apt. Anissa Faradifa R. Is. Rumi, S.Farm'} (APJ)_`;
+    const msg = `Halo tim *${sp.nama_pbf}*,\nBerikut pemesanan resmi dari *${prof.nama_apotek || 'Apotek ONS Farma'}* (SIA: ${prof.no_sia || '503/001/SIA/DPMPTSP/2025'}):\n\n*No. SP:* ${sp.no_sp} (${sp.golongan_sp || 'REGULER'})\n*Daftar Item:*\n${lines}\n\nMohon konfirmasi ketersediaan & estimasi pengiriman. Terima kasih.\n_${prof.nama_apj || prof.nama_pemilik || 'Apoteker Penanggung Jawab'} (APJ)_`;
     const url = S().buildWaUrl(phone, msg);
     if (url) window.open(url, '_blank', 'noopener');
   };

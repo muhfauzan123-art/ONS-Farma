@@ -6939,7 +6939,7 @@
           <div>
             <div style="font-size:17px;font-weight:900;letter-spacing:0.5px;color:#0F172A;">${(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase()}</div>
             <div style="font-size:11px;color:#334155;">${prof.alamat || 'Jl. Kesehatan Raya No. 45, Kota Semarang'} &bull; Telp: (024) 8412345</div>
-            <div style="font-size:11px;color:#334155;"><b>No. SIA:</b> ${prof.no_sia || 'SIA.503/0021/DPMPTSP/2024'} &bull; <b>APJ:</b> ${prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi, S.Farm'} (<b>SIPA:</b> ${prof.sipa_pemilik || '19950812/SIPA_33.74/2023/2048'})</div>
+            <div style="font-size:11px;color:#334155;"><b>No. SIA:</b> ${prof.no_sia || '-'} &bull; <b>APJ:</b> ${prof.nama_pemilik || 'Apoteker Penanggung Jawab'} (<b>SIPA:</b> ${prof.sipa_pemilik || '-'})</div>
           </div>
         </div>
         <div style="text-align:right;">
@@ -7015,8 +7015,8 @@
         <div style="text-align:center;padding:8px;">
           <div>Mengetahui &amp; Memvalidasi:</div>
           <div style="height:48px;"></div>
-          <div style="font-weight:bold;text-decoration:underline;">${prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi, S.Farm'}</div>
-          <div style="font-size:10px;color:#64748B;">Apoteker Penanggung Jawab (APJ)<br/>SIPA: ${prof.sipa_pemilik || '19950812/SIPA_33.74/2023/2048'}</div>
+          <div style="font-weight:bold;text-decoration:underline;">${prof.nama_pemilik || 'Apoteker Penanggung Jawab'}</div>
+          <div style="font-size:10px;color:#64748B;">Apoteker Penanggung Jawab (APJ)<br/>SIPA: ${prof.sipa_pemilik || '-'}</div>
         </div>
       </div>
     </div>`;
@@ -7138,7 +7138,7 @@
       <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:10px;margin-bottom:12px;">
         <div>
           <div style="font-size:16px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
-          <div style="font-size:11px;">APJ: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
+          <div style="font-size:11px;">APJ: ${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:14px;font-weight:bold;">SURAT JALAN MUTASI STOK</div>
@@ -12293,7 +12293,7 @@
     S().printHtmlZone(`<div style="font-family:Arial,sans-serif;font-size:10px;padding:12px;color:#000;">
       <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px;">
         <h2 style="margin:0;font-size:14px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</h2>
-        <div>SIA: ${S().esc(prof.sia_toko || '445/1042/SIA/2024')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>
+        <div>SIA: ${S().esc(prof.no_sia || prof.sia_toko || '-')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
         <div style="font-size:12px;font-weight:bold;margin-top:4px;">KARTU STOK INDUK FARMASI (STANDAR BPOM RI)</div>
       </div>
       <div style="margin-bottom:8px;display:flex;justify-content:space-between;">
@@ -12496,7 +12496,7 @@
       <div style="font-family:Arial,sans-serif;font-size:10px;padding:12px;color:#000;line-height:1.35;">
         <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px;">
           <h2 style="margin:0;font-size:15px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</h2>
-          <div>SIA: ${S().esc(prof.sia_toko || '445/1042/SIA/2024')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>
+          <div>SIA: ${S().esc(prof.no_sia || prof.sia_toko || '-')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>
           <div>${S().esc(prof.alamat_usaha || 'Jl. Raya Apotek No. 10')}</div>
           <div style="font-size:12px;font-weight:bold;margin-top:6px;letter-spacing:0.5px;">BERITA ACARA REKONSILIASI STOCK OPNAME FISIK PERSEDIAAN OBAT</div>
           <div style="font-size:10px;">Nomor Dokumen: <b>${sessionRef}</b></div>
@@ -12554,8 +12554,8 @@
           <div style="width:38%;">
             <div>Mengetahui &amp; Menyetujui,<br/>Apoteker Penanggung Jawab (APJ)</div>
             <div style="height:35px;"></div>
-            <div style="font-weight:bold;text-decoration:underline;">apt. Anissa Faradifa R. Is. Rumi, S.Farm</div>
-            <div>SIPA: 19920412/SIPA_35.78/2025/1042</div>
+            <div style="font-weight:bold;text-decoration:underline;">${prof.nama_pemilik || 'Apoteker Penanggung Jawab'}</div>
+            <div>SIPA: ${prof.sipa_pemilik || '-'}</div>
           </div>
         </div>
       </div>

@@ -272,9 +272,9 @@
             {
               viewId: 'settings', label: 'Pengaturan', icon: 'settings',
               desc: 'Profil bisnis SIA/SIPA, metode bayar, struk thermal, brankas script properties & log audit.',
-              kw: 'pengaturan profil bisnis pemilik anissa tempat usaha foto logo sia sipa metode pembayaran akun sandi pin struk thermal script properties reset pabrik audit',
+              kw: 'pengaturan profil bisnis pemilik apj tempat usaha foto logo sia sipa metode pembayaran akun sandi pin struk thermal script properties reset pabrik audit',
               tabs: [
-                { subTab: 'profil', label: 'Profil Bisnis', kw: 'profil bisnis pemilik anissa tempat usaha foto logo sia sipa konfirmasi legalitas' },
+                { subTab: 'profil', label: 'Profil Bisnis', kw: 'profil bisnis pemilik apj tempat usaha foto logo sia sipa konfirmasi legalitas' },
                 { subTab: 'metode-bayar', label: 'Metode Pembayaran', kw: 'metode pembayaran kas non tunai mdr qris transfer debit edc asuransi' },
                 { subTab: 'akun', label: 'Pengguna & PIN', kw: 'akun user kasir apj sipa ganti sandi pin otorisasi' },
                 { subTab: 'struk', label: 'Konfigurasi Struk', kw: 'desain struk thermal 58mm 80mm escpos qr bluetooth' },
@@ -985,8 +985,9 @@
         const p = prof || (ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {});
         const st = ONSStore.AppState;
         if (!p || !p.nama_pemilik) return;
-        const cleanOwner = (ONSStore.sanitizeLegacyOwnerName ? ONSStore.sanitizeLegacyOwnerName(p.nama_pemilik, 'apt. Anissa Faradifa R. Is Rumi') : p.nama_pemilik);
-        if (/hendra\s+wijaya/i.test(String(p.nama_pemilik || '')) || /hendra\s+wijaya/i.test(String(p.dikonfirmasi_oleh || ''))) {
+        const cleanOwner = (ONSStore.sanitizeLegacyOwnerName ? ONSStore.sanitizeLegacyOwnerName(p.nama_pemilik, 'Apoteker Penanggung Jawab') : (p.nama_pemilik || 'Apoteker Penanggung Jawab'));
+        const isStaleName = (s) => (window.ONSStore && typeof window.ONSStore._isLegacySensitive === 'function' ? window.ONSStore._isLegacySensitive(s) : /hendra\s+wijaya/i.test(String(s || '')));
+        if (isStaleName(p.nama_pemilik) || isStaleName(p.dikonfirmasi_oleh)) {
           p.nama_pemilik = cleanOwner;
           p.dikonfirmasi_oleh = cleanOwner;
           if (ONSStore.setStoreProfile) ONSStore.setStoreProfile(p);
@@ -994,7 +995,7 @@
         if (!st.user) return;
         const isPemilik = st.user.role === 'Pemilik' || String(st.user.id_user || '') === 'USR-001' || String(st.user.username || '').toLowerCase() === 'pemilik';
         if (!isPemilik) return;
-        const stale = /hendra\s+wijaya/i.test(String(st.user.nama_lengkap || '')) || p.terkonfirmasi === 'YA';
+        const stale = isStaleName(st.user.nama_lengkap) || p.terkonfirmasi === 'YA';
         if (!stale || st.user.nama_lengkap === cleanOwner) return;
         st.user.nama_lengkap = cleanOwner;
         if (p.sipa_pemilik) st.user.no_sipa = p.sipa_pemilik;
@@ -1691,10 +1692,10 @@
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden font-bold">Install</button>
                   <button onclick="window.lockScreenNow()" aria-label="Kunci Layar dan Hapus Cache Sesi" title="Kunci Layar Segera" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline text-white font-medium">Kunci</span></button>
                   <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs p-2 rounded-lg text-white hover:bg-white/25 flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
-                  <button type="button" onclick="navigateView('settings','profil')" class="w-7 h-7 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 ml-1 shadow-sm" title="Profil Anissa Faradifa">
+                  <button type="button" onclick="navigateView('settings','profil')" class="w-7 h-7 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 ml-1 shadow-sm" title="Profil Pengguna">
                     ${(fotoPem && ONSStore.getRole() === 'Pemilik')
                       ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-full h-full rounded-full object-cover"/>`
-                      : 'AF'}
+                      : 'AP'}
                   </button>
                 </div>
               </header>
