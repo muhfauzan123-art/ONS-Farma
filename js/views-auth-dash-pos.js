@@ -939,7 +939,7 @@
     const pemilikNama = prof.nama_pemilik || 'Apoteker Penanggung Jawab';
     const nowDt = new Date();
     const hr = nowDt.getHours();
-    const autoShift = (hr >= 21 || hr < 7) ? 'MALAM' : (hr >= 14 ? 'SIANG' : 'PAGI');
+    const autoShift = (hr >= 15 && hr < 22) ? 'SORE' : 'PAGI';
     const timeStr = nowDt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     const dateStr = nowDt.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     const isDark = !!(S().AppState && S().AppState.darkMode);
@@ -1065,9 +1065,8 @@
                   <span>Shift Operasional</span>
                 </label>
                 <select id="loginShift" class="ons-select text-[13px] font-medium">
-                  <option value="PAGI" ${autoShift === 'PAGI' ? 'selected' : ''}>Shift Pagi (07:30&ndash;14:30)</option>
-                  <option value="SIANG" ${autoShift === 'SIANG' ? 'selected' : ''}>Shift Siang (14:00&ndash;21:30)</option>
-                  <option value="MALAM" ${autoShift === 'MALAM' ? 'selected' : ''}>Shift Malam (24 Jam)</option>
+                  <option value="PAGI" ${autoShift === 'PAGI' ? 'selected' : ''}>Shift Pagi (08:00 - 15:00)</option>
+                  <option value="SORE" ${autoShift === 'SORE' ? 'selected' : ''}>Shift Sore (15:00 - 22:00)</option>
                 </select>
               </div>
             </div>
@@ -2597,10 +2596,15 @@
       }
     }
 
-    const shiftPagi = [8, 9, 10, 11].reduce((s, h) => s + hourlyCounts[h], 0);
-    const shiftSiang = [12, 13, 14, 15].reduce((s, h) => s + hourlyCounts[h], 0);
-    const shiftSore = [16, 17, 18].reduce((s, h) => s + hourlyCounts[h], 0);
-    const shiftMalam = [19, 20, 21, 22].reduce((s, h) => s + hourlyCounts[h], 0);
+    // Pembagian 2 Shift Operasional: Pagi (08:00 - 15:00) & Sore (15:00 - 22:00)
+    const pagiHours = [8, 9, 10, 11, 12, 13, 14];
+    const soreHours = [15, 16, 17, 18, 19, 20, 21, 22];
+
+    const shiftPagi = pagiHours.reduce((s, h) => s + hourlyCounts[h], 0);
+    const shiftPagiOmzet = pagiHours.reduce((s, h) => s + hourlyOmzets[h], 0);
+
+    const shiftSore = soreHours.reduce((s, h) => s + hourlyCounts[h], 0);
+    const shiftSoreOmzet = soreHours.reduce((s, h) => s + hourlyOmzets[h], 0);
 
     return `<div class="space-y-5">
       <!-- Sub-Hero Executive Banner Penjualan -->
@@ -2791,39 +2795,33 @@
           </div>
         </div>
 
-        <!-- Shift Breakdown Badges -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <!-- Shift Breakdown Badges (2 Shift Operasional Apotek) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="p-3.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
             <div>
-              <div class="text-[10px] font-bold text-sky-600">🌅 Pagi (08:00 - 11:59)</div>
-              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftPagi} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
+              <div class="flex items-center gap-1.5 font-bold text-sky-600 dark:text-sky-400">
+                <span>🌅 Shift Pagi (08:00 &ndash; 15:00)</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-sky-500/10 text-sky-600 font-semibold">7 Jam</span>
+              </div>
+              <div class="text-xl font-extrabold font-mono-num text-slate-900 dark:text-white mt-1">${shiftPagi} <span class="text-xs font-normal text-slate-400">nota</span> &bull; <span class="text-sky-600 font-bold">${S().rp(shiftPagiOmzet)}</span></div>
+              <div class="text-[10.5px] text-slate-400 mt-0.5">Rata-rata: ${Math.round((shiftPagi / 7) * 10) / 10} transaksi/jam</div>
             </div>
-            <span class="text-lg">🌤️</span>
+            <span class="text-2xl">🌤️</span>
           </div>
-          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="p-3.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
             <div>
-              <div class="text-[10px] font-bold text-amber-600">☀️ Siang (12:00 - 15:59)</div>
-              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftSiang} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
+              <div class="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                <span>🌆 Shift Sore (15:00 &ndash; 22:00)</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 font-semibold">7 Jam</span>
+              </div>
+              <div class="text-xl font-extrabold font-mono-num text-slate-900 dark:text-white mt-1">${shiftSore} <span class="text-xs font-normal text-slate-400">nota</span> &bull; <span class="text-emerald-600 font-bold">${S().rp(shiftSoreOmzet)}</span></div>
+              <div class="text-[10.5px] text-slate-400 mt-0.5">Rata-rata: ${Math.round((shiftSore / 7) * 10) / 10} transaksi/jam</div>
             </div>
-            <span class="text-lg">☀️</span>
-          </div>
-          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div>
-              <div class="text-[10px] font-bold text-indigo-600">🌆 Sore (16:00 - 18:59)</div>
-              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftSore} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
-            </div>
-            <span class="text-lg">🌇</span>
-          </div>
-          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div>
-              <div class="text-[10px] font-bold text-emerald-600">🌙 Malam (19:00 - 22:00)</div>
-              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftMalam} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
-            </div>
-            <span class="text-lg">🌙</span>
+            <span class="text-2xl">🌇</span>
           </div>
         </div>
 
-        <!-- Heatmap Hourly Bars -->
+        <!-- Heatmap Hourly Bars (Pagi 08-15: Biru Langit, Sore 15-22: Hijau Zamrud) -->
         <div class="pt-2">
           <div class="grid grid-cols-5 sm:grid-cols-15 gap-1.5 items-end h-32 pt-6 pb-2 px-1 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
             ${(() => {
@@ -2836,9 +2834,9 @@
                 const isPeak = cnt > 0 && cnt === maxHourTrx;
                 const barColor = isPeak
                   ? 'bg-amber-500 ring-2 ring-amber-400 shadow-md'
-                  : (h < 12 ? 'bg-sky-500' : (h < 16 ? 'bg-amber-400' : (h < 19 ? 'bg-indigo-500' : 'bg-emerald-500')));
+                  : (h < 15 ? 'bg-sky-500' : 'bg-emerald-500');
                 bars.push(`
-                  <div class="flex flex-col items-center h-full justify-end group relative" title="Jam ${String(h).padStart(2, '0')}:00 &bull; ${cnt} Transaksi &bull; Omzet ${S().rp(omz)}">
+                  <div class="flex flex-col items-center h-full justify-end group relative" title="Jam ${String(h).padStart(2, '0')}:00 (${h < 15 ? 'Shift Pagi' : 'Shift Sore'}) &bull; ${cnt} Transaksi &bull; Omzet ${S().rp(omz)}">
                     <span class="text-[9px] font-mono-num font-bold mb-1 opacity-0 group-hover:opacity-100 transition text-slate-700 dark:text-slate-200">${cnt}</span>
                     <div class="w-full max-w-[20px] rounded-t-md transition-all ${barColor}" style="height:${heightPct}%"></div>
                     <span class="text-[9px] font-mono-num mt-1 font-semibold ${isPeak ? 'text-amber-600 font-extrabold' : 'text-slate-400'}">${String(h).padStart(2, '0')}</span>
@@ -2849,9 +2847,9 @@
             })()}
           </div>
           <div class="flex items-center justify-between text-[10px] text-slate-400 px-1 mt-1.5 font-medium">
-            <span>08:00 (Buka Apotek)</span>
-            <span class="hidden sm:inline">Pola Beban Kerja Shift Siang &amp; Malam</span>
-            <span>22:00 (Tutup Shift)</span>
+            <span>08:00 (Buka Apotek &bull; Shift Pagi)</span>
+            <span class="font-bold text-slate-600 dark:text-slate-300">Pukul 15:00 &bull; Pergantian Shift Sore</span>
+            <span>22:00 (Tutup Shift Sore)</span>
           </div>
         </div>
       </div>

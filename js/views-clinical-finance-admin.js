@@ -8092,8 +8092,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between text-xs" style="border-color:var(--ons-border)">
         <div class="flex items-center gap-4">
           <span class="font-bold text-slate-700 dark:text-slate-200">Periode: Pekan Berjalan (10 Nov 2026 - 16 Nov 2026)</span>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Shift Pagi: 07:00 - 15:00</span>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Shift Siang: 14:30 - 22:00</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Shift Pagi: 08:00 - 15:00</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Shift Sore: 15:00 - 22:00</span>
         </div>
         <span class="font-mono-num text-[11px] text-slate-500">Cabang: ${S().esc(st.cabangId || 'ONS-01')}</span>
       </div>
