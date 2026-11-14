@@ -479,6 +479,7 @@
   }
 
   function ensureV11Seed(db) {
+    let changed = false;
     [
       'penjualan', 'detail_penjualan', 'stok_batch', 'mutasi_stok', 'surat_pesanan',
       'faktur_pbf', 'rekam_klinis', 'pemeriksaan_pasien', 'jurnal_keuangan',
