@@ -8647,7 +8647,13 @@
   const KONSINYASI_DRAFTS_KEY = 'ONS_KONSINYASI_DRAFTS_V1';
   const RETUR_DRAFTS_KEY = 'ONS_RETUR_DRAFTS_V1';
 
-  let fakturTab = 'daftar';
+  let fakturTab = 'rencana';
+  let rencanaSubMode = 'RENCANA'; // 'RENCANA' | 'DEFECTA'
+  let fakturPilihanData = 'FAKTUR'; // 'FAKTUR' | 'PRODUK' | 'MARGIN'
+  let hutangProcView = 'TAGIHAN'; // 'TAGIHAN' | 'RIWAYAT'
+  let hutangProcSearchQ = '';
+  let hutangProcStatusFilter = 'SEMUA'; // 'SEMUA' | 'TEMPO_7H' | 'OVERDUE'
+  let hutangProcDueFilter = '';
   let fakturListQ = '';
   let fakturListFilter = 'SEMUA';
   let fakturListPbfFilter = '';
@@ -8808,10 +8814,232 @@
     }
   }
 
+
+  function _renderPembayaranUtangTab(st) {
+    const allFaktur = st.fakturPbf || [];
+    const openFakturPbf = allFaktur.filter((f) => Number(f.sisa_hutang || 0) > 0 && String(f.status_bayar || '').toUpperCase() !== 'KONSINYASI' && String(f.jenis_penerimaan || '').toUpperCase() !== 'KONSINYASI');
+    let manualUtang = [];
+    try {
+      manualUtang = (_readLocalList('ONS_MANUAL_UTANG_V1') || []).filter((u) => Number(u.sisa_utang || 0) > 0);
+    } catch (_) {}
+
+    const combinedOpenUtang = [
+      ...openFakturPbf.map((f) => ({
+        is_manual: false,
+        id_row: f.id_beli || f.id_faktur || f.no_faktur_pbf,
+        waktu_trx: String(f.tgl_terima || f.tgl_faktur || f.created_at || '').slice(0, 10),
+        kreditur: f.id_pbf || f.nama_pbf || 'Distributor PBF',
+        no_faktur: f.no_faktur_pbf || f.id_beli || '-',
+        no_sp: f.no_sp || '-',
+        keterangan: f.catatan || ('Faktur Pembelian ' + (f.no_sp || '')),
+        tgl_jatuh_tempo: f.tgl_jatuh_tempo || '',
+        nominal_awal: Number(f.netto_hutang || f.total_bruto || f.sisa_hutang || 0),
+        nominal_sisa: Number(f.sisa_hutang || 0)
+      })),
+      ...manualUtang.map((u) => ({
+        is_manual: true,
+        id_row: u.id_utang,
+        waktu_trx: String(u.tanggal || '').slice(0, 10),
+        kreditur: u.kreditur || '-',
+        no_faktur: u.no_referensi || u.id_utang,
+        no_sp: '-',
+        keterangan: u.keterangan || 'Hutang Non-Faktur',
+        tgl_jatuh_tempo: u.tgl_jatuh_tempo || '',
+        nominal_awal: Number(u.nominal_awal || u.sisa_utang || 0),
+        nominal_sisa: Number(u.sisa_utang || 0)
+      }))
+    ];
+
+    const totalOpenDebt = combinedOpenUtang.reduce((s, u) => s + Number(u.nominal_sisa || 0), 0);
+    const dueSoonList = combinedOpenUtang.filter((u) => u.tgl_jatuh_tempo && S().daysUntil(u.tgl_jatuh_tempo) <= 7);
+    const dueSoonNominal = dueSoonList.reduce((s, u) => s + Number(u.nominal_sisa || 0), 0);
+    const overdueList = combinedOpenUtang.filter((u) => u.tgl_jatuh_tempo && S().daysUntil(u.tgl_jatuh_tempo) < 0);
+
+    const allKasMutasi = st.mutasiKas || [];
+    const payHistory = allKasMutasi.filter((m) => {
+      const j = String(m.jenis_transaksi || m.kategori || m.keterangan || '').toUpperCase();
+      return j.includes('PELUNASAN') || j.includes('HUTANG') || j.includes('BAYAR_UTANG') || j.includes('PBF');
+    });
+
+    const q = (hutangProcSearchQ || '').trim().toLowerCase();
+    const filteredUtang = combinedOpenUtang.filter((u) => {
+      if (hutangProcStatusFilter === 'TEMPO_7H' && S().daysUntil(u.tgl_jatuh_tempo) > 7) return false;
+      if (hutangProcStatusFilter === 'OVERDUE' && S().daysUntil(u.tgl_jatuh_tempo) >= 0) return false;
+      if (hutangProcDueFilter && String(u.tgl_jatuh_tempo || '').slice(0, 10) > hutangProcDueFilter) return false;
+      if (q) {
+        const hay = `${u.kreditur} ${u.no_faktur} ${u.no_sp} ${u.keterangan}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const totalFiltered = filteredUtang.reduce((s, u) => s + Number(u.nominal_sisa || 0), 0);
+
+    return `<div class="space-y-4">
+      <!-- 3 KPI Cards Utang Usaha -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="ons-card p-3.5 border-l-4 ${totalOpenDebt > 0 ? 'border-l-red-500 ring-1 ring-red-500/20' : 'border-l-emerald-500'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Sisa Hutang Usaha</span>
+            <span class="w-2 h-2 rounded-full ${totalOpenDebt > 0 ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}"></span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-1 ${totalOpenDebt > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(totalOpenDebt)}</div>
+          <div class="text-[10px]" style="color:var(--ons-text-soft)">${combinedOpenUtang.length} tagihan belum lunas</div>
+        </div>
+
+        <div class="ons-card p-3.5 border-l-4 ${dueSoonList.length > 0 ? 'border-l-amber-500 ring-1 ring-amber-500/20' : 'border-l-emerald-500'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Jatuh Tempo &le; 7 Hari</span>
+            <span class="w-2 h-2 rounded-full ${dueSoonList.length > 0 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}"></span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-1 ${dueSoonList.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${dueSoonList.length} <span class="text-xs font-normal">Faktur</span></div>
+          <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Nominal: ${S().rp(dueSoonNominal)}</div>
+        </div>
+
+        <div class="ons-card p-3.5 border-l-4 ${overdueList.length > 0 ? 'border-l-rose-600 ring-1 ring-rose-500/20' : 'border-l-blue-500'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Faktur Terlambat (Overdue)</span>
+            <span class="w-2 h-2 rounded-full ${overdueList.length > 0 ? 'bg-rose-600 animate-pulse' : 'bg-blue-500'}"></span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-1 ${overdueList.length > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-white'}">${overdueList.length} <span class="text-xs font-normal">Faktur</span></div>
+          <div class="text-[10px]" style="color:var(--ons-text-soft)">Prioritas pelunasan segera</div>
+        </div>
+      </div>
+
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-slate-500 uppercase mr-1">Pilihan Tampilan:</span>
+            <button type="button" onclick="window.setHutangProcView('TAGIHAN')" class="ons-btn text-xs py-1 px-3 ${hutangProcView === 'TAGIHAN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📋 Tagihan Utang Usaha (${combinedOpenUtang.length})</button>
+            <button type="button" onclick="window.setHutangProcView('RIWAYAT')" class="ons-btn text-xs py-1 px-3 ${hutangProcView === 'RIWAYAT' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📜 Riwayat Pembayaran</button>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="if(window.exportUtangUsahaExcel) window.exportUtangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+            <button type="button" onclick="window.openCatatUtangModal()" class="ons-btn ons-btn-emerald text-xs font-bold shadow-sm">+ Catat Utang Manual</button>
+          </div>
+        </div>
+
+        ${hutangProcView === 'TAGIHAN' ? `
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+            <div class="flex flex-wrap items-center gap-2">
+              <input class="ons-input text-xs w-52" placeholder="Cari kreditur, No. Faktur, keterangan..." value="${S().esc(hutangProcSearchQ)}" oninput="window.setHutangProcFilter('q', this.value)"/>
+              <input type="date" aria-label="Jatuh tempo maks" class="ons-input text-xs py-1 min-h-0 w-36" title="Tgl. Jatuh Tempo maks" value="${S().esc(hutangProcDueFilter)}" onchange="window.setHutangProcFilter('due', this.value)"/>
+              <div class="ons-tab-bar">
+                ${[
+                  { id: 'SEMUA', label: 'Semua Tempo' },
+                  { id: 'TEMPO_7H', label: `Tempo <= 7h (${dueSoonList.length})` },
+                  { id: 'OVERDUE', label: `Terlambat (${overdueList.length})` }
+                ].map((f) => `<button onclick="window.setHutangProcFilter('status','${f.id}')" class="ons-tab-btn ${hutangProcStatusFilter === f.id ? 'active' : ''}">${f.label}</button>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Tanggal Faktur</th>
+                  <th>Kreditur &amp; No. Faktur</th>
+                  <th>No. SP</th>
+                  <th>Keterangan</th>
+                  <th>Jatuh Tempo</th>
+                  <th class="text-right">Nominal Awal</th>
+                  <th class="text-right">Sisa Hutang</th>
+                  <th>Aksi Pelunasan</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredUtang.length ? filteredUtang.map((u, idx) => {
+                  const dTempo = u.tgl_jatuh_tempo ? S().daysUntil(u.tgl_jatuh_tempo) : 999;
+                  const tempoBadge = dTempo < 0
+                    ? `<span class="badge-bpom bpom-narkotika text-[9px] font-bold ml-1">Terlambat ${Math.abs(dTempo)}h</span>`
+                    : (dTempo <= 7 ? `<span class="badge-bpom bpom-prekursor text-[9px] font-bold ml-1">H-${dTempo}</span>` : '');
+                  return `<tr>
+                    <td class="font-mono-num text-xs">${idx + 1}.</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap">${S().formatTgl(u.waktu_trx)}</td>
+                    <td class="text-xs">
+                      <div class="font-bold text-slate-900 dark:text-white">${S().esc(u.no_faktur)}</div>
+                      <div class="text-[11px] font-semibold text-blue-600 dark:text-blue-400">${S().esc(u.kreditur)}</div>
+                    </td>
+                    <td class="font-mono-num text-xs">${S().esc(u.no_sp)}</td>
+                    <td class="text-xs max-w-[200px] truncate" title="${S().esc(u.keterangan)}">${S().esc(u.keterangan)}</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap">
+                      <div>${S().esc(u.tgl_jatuh_tempo || '-')}</div>
+                      <div>${tempoBadge}</div>
+                    </td>
+                    <td class="text-right font-mono-num text-xs">${S().rp(u.nominal_awal)}</td>
+                    <td class="text-right font-mono-num text-xs font-black text-red-600 dark:text-red-400">${S().rp(u.nominal_sisa)}</td>
+                    <td>
+                      <div class="flex flex-wrap gap-1.5">
+                        ${u.is_manual ? `
+                          <button type="button" onclick="window.payManualUtang('${S().esc(u.id_row)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5 font-bold shadow-sm">Bayar Lunas</button>
+                        ` : `
+                          <button type="button" onclick="window.openPayHutangModal('${S().esc(u.id_row)}', '${S().esc(u.no_faktur)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-primary text-xs py-1 px-2">Cicil</button>
+                          <button type="button" onclick="window.openPayHutangModal('${S().esc(u.id_row)}', '${S().esc(u.no_faktur)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5 font-bold shadow-sm">Bayar Lunas</button>
+                        `}
+                      </div>
+                    </td>
+                  </tr>`;
+                }).join('') : '<tr><td colspan="9" class="text-center py-8 text-xs">Seluruh hutang faktur PBF telah lunas. Tidak ada tagihan jatuh tempo.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-4 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="font-bold text-blue-600">Rekap Data Utang Usaha</div>
+            <div class="flex flex-wrap gap-6">
+              <div>Total Utang Usaha: <b class="font-mono-num text-sm text-red-600">${S().rp(totalFiltered)}</b></div>
+              <div>Jumlah Transaksi: <b class="font-mono-num text-sm">${filteredUtang.length} kali</b></div>
+            </div>
+          </div>
+        ` : `
+          <div class="ons-table-wrap pt-2 border-t" style="border-color:var(--ons-border)">
+            <table class="ons-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Waktu Transaksi</th>
+                  <th>No. Bukti Kas Keluar</th>
+                  <th>Keterangan / Faktur</th>
+                  <th>Akun Kas / Bank</th>
+                  <th class="text-right">Nominal Bayar</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${payHistory.length ? payHistory.map((p, idx) => `<tr>
+                  <td class="font-mono-num text-xs">${idx + 1}.</td>
+                  <td class="font-mono-num text-xs whitespace-nowrap">${S().formatTgl(p.timestamp || p.created_at || '-')}</td>
+                  <td class="font-mono-num text-xs font-bold">${S().esc(p.no_voucher || p.id_mutasi || 'KK-' + (idx + 1))}</td>
+                  <td class="text-xs">
+                    <div class="font-semibold">${S().esc(p.keterangan || 'Pelunasan Faktur PBF')}</div>
+                    ${p.no_referensi ? `<div class="text-[10px] font-mono-num text-slate-400">Ref: ${S().esc(p.no_referensi)}</div>` : ''}
+                  </td>
+                  <td class="text-xs font-medium">${S().esc(p.akun_kas || p.metode || 'Kas Operasional Toko')}</td>
+                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(p.nominal || p.kredit || p.debet || 0)}</td>
+                  <td><span class="badge-bpom bpom-bebas">TERBAYAR</span></td>
+                </tr>`).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs">Belum ada riwayat pembayaran hutang tercatat.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    </div>`;
+  }
+
   function renderFakturView() {
     const st = S().AppState;
-    fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'defecta';
-    if (fakturTab === 'order') fakturTab = 'defecta';
+    fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'rencana';
+    if (fakturTab === 'order' || fakturTab === 'defecta') {
+      fakturTab = 'rencana';
+      rencanaSubMode = 'DEFECTA';
+    }
+    if (fakturTab === 'daftar') fakturTab = 'faktur';
+    if (fakturTab === 'harga') {
+      fakturTab = 'faktur';
+      fakturPilihanData = 'MARGIN';
+    }
     ensureGrnInitialized();
 
     const allPlans = _readLocalList(PLANS_KEY);
@@ -8937,34 +9165,70 @@
       <div class="ons-page-header">
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <span class="badge-bpom bpom-bebas">PENGADAAN FARMASI &amp; PBF</span>
+            <span class="badge-bpom bpom-bebas">PEMBELIAN &amp; PENGADAAN APOTEK</span>
             <span class="text-xs" style="color:var(--ons-text-soft)">CDOB Kompatibel &bull; BPOM Terintegrasi</span>
           </div>
-          <h1 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Pengadaan &amp; Faktur PBF</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Siklus pengadaan apotek terpadu: pantau defecta stok kritis, rencana pembelian, terbitkan SP A4 resmi BPOM, terima faktur GRN/OCR, analisa riwayat harga &amp; margin jual, retur BAR-PBF, dan konsinyasi.</p>
+          <h1 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">${
+            fakturTab === 'rencana' ? 'Rencana Pembelian' :
+            (fakturTab === 'sp' ? 'Pesanan Pembelian' :
+            (fakturTab === 'input' ? 'Terima Faktur Pembelian (GRN)' :
+            (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF)' :
+            (fakturTab === 'hutang' ? 'Pembayaran Utang Usaha' :
+            (fakturTab === 'konsinyasi' ? 'Konsinyasi Masuk' : 'Faktur Pembelian')))))
+          }</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${
+            fakturTab === 'rencana' ? 'Perencanaan kebutuhan pengadaan apotek, analisa ambang ROP buffer stock, defecta, penawaran sales, dan konversi ke Surat Pesanan BPOM.' :
+            (fakturTab === 'sp' ? 'Pengelolaan Surat Pesanan (SP) regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak A4, dan pelacakan status.' :
+            (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), perhitungan DPP/PPN, dan update stok.' :
+            (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, Kartu Stok &amp; hutang otomatis disesuaikan.' :
+            (fakturTab === 'hutang' ? 'Monitoring saldo hutang dagang supplier rekanan PBF, jatuh tempo tempo/kredit, pencatatan cicilan &amp; pelunasan faktur, dan bukti pengeluaran kas.' :
+            (fakturTab === 'konsinyasi' ? 'Titip jual distributor, mutasi stok konsinyasi, pelacakan penjualan laku bayar, dan settlement tagihan distributor.' :
+            'Penerimaan fisik barang PBF, scan OCR/PDF faktur, pencatatan batch &amp; tanggal kadaluarsa (FEFO), perhitungan DPP/PPN, dan pembentukan Utang Usaha.')))))
+          }</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          ${(fakturTab === 'defecta' || fakturTab === 'order') ? `
-            <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-ghost text-xs py-2 px-3">+ Buat SP Manual</button>
-            <button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-2 px-3.5 shadow-sm">⚡ Pesanan Otomatis</button>
-          ` : fakturTab === 'sp' ? `
-            <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs py-2 px-3.5 font-bold shadow-sm">+ Buat SP Baru (A4)</button>
+          ${(fakturTab === 'rencana') ? `
+            <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📋 Usulan Rencana (${allPlans.length})</button>
+            <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📦 Defecta ROP (${lowStockDefecta.length})</button>
+            <button type="button" onclick="window.openPenawaranSalesModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Penawaran Sales</button>
+            <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">+ Rencana Baru</button>
+            <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3 shadow-sm">⚡ Pesanan Otomatis</button>
+          ` : (fakturTab === 'sp') ? `
+            <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 font-bold shadow-sm">+ Pesanan Baru (A4)</button>
+          ` : (fakturTab === 'faktur' || fakturTab === 'daftar') ? `
+            <button type="button" onclick="window.openFakturDraftModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5 font-bold">Draft (${fakturDrafts.length})</button>
+            <button type="button" onclick="window.exportFakturList('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
+            <button type="button" onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 font-bold shadow-sm">+ Faktur Pembelian</button>
+          ` : (fakturTab === 'input') ? `
+            <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-bold">← Kembali ke Daftar Faktur</button>
+          ` : (fakturTab === 'retur') ? `
+            <button type="button" onclick="window.openReturDraftModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5 font-bold">Draft (${returDrafts.length})</button>
+            <button type="button" onclick="window.exportReturHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
+            <button type="button" onclick="window.openCreateReturPembelianModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 font-bold shadow-sm">+ Retur Pembelian</button>
+          ` : (fakturTab === 'hutang') ? `
+            <button type="button" onclick="window.setHutangProcView('TAGIHAN')" class="ons-btn ${hutangProcView === 'TAGIHAN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📋 Tagihan Utang Usaha</button>
+            <button type="button" onclick="window.setHutangProcView('RIWAYAT')" class="ons-btn ${hutangProcView === 'RIWAYAT' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📜 Riwayat Pembayaran</button>
+            <button type="button" onclick="window.openCatatUtangModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 font-bold shadow-sm">+ Catat Utang Manual</button>
           ` : ''}
+
           <div class="ons-tab-bar overflow-x-auto max-w-full">
-            <button onclick="window.setFakturTab('defecta')" class="ons-tab-btn ${fakturTab === 'defecta' || fakturTab === 'order' ? 'active font-bold' : ''}">📦 Defecta (${lowStockDefecta.length})</button>
-            <button onclick="window.setFakturTab('rencana')" class="ons-tab-btn ${fakturTab === 'rencana' ? 'active font-bold' : ''}">📋 Rencana (${allPlans.length})</button>
-            <button onclick="window.setFakturTab('sp')" class="ons-tab-btn ${fakturTab === 'sp' ? 'active font-bold' : ''}">📄 Surat Pesanan (${(st.suratPesanan || []).length})</button>
-            <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active font-bold' : ''}">📥 Terima Faktur (GRN)</button>
-            <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active font-bold' : ''}">📑 Faktur PBF (${allFaktur.length})</button>
-            <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active font-bold' : ''}">📊 Analisa Margin</button>
-            <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active font-bold' : ''}">🔄 Retur (${nearEdBatches.length})</button>
-            <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active font-bold' : ''}">🤝 Konsinyasi</button>
+            <button onclick="window.setFakturTab('rencana')" class="ons-tab-btn ${fakturTab === 'rencana' || fakturTab === 'defecta' ? 'active font-bold' : ''}">📋 Rencana Pembelian (${allPlans.length + lowStockDefecta.length})</button>
+            <button onclick="window.setFakturTab('sp')" class="ons-tab-btn ${fakturTab === 'sp' ? 'active font-bold' : ''}">📄 Pesanan Pembelian (${(st.suratPesanan || []).length})</button>
+            <button onclick="window.setFakturTab('faktur')" class="ons-tab-btn ${fakturTab === 'faktur' || fakturTab === 'input' || fakturTab === 'daftar' || fakturTab === 'harga' ? 'active font-bold' : ''}">📥 Faktur Pembelian (${allFaktur.length})</button>
+            <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active font-bold' : ''}">🔄 Retur Pembelian (${nearEdBatches.length})</button>
+            <button onclick="window.setFakturTab('hutang')" class="ons-tab-btn ${fakturTab === 'hutang' ? 'active font-bold' : ''}">💳 Pembayaran Utang (${totalSisaHutang > 0 ? allFaktur.filter(f => f.status_bayar !== 'LUNAS').length : 0})</button>
+            <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active font-bold' : ''}">🤝 Konsinyasi Masuk</button>
           </div>
         </div>
       </div>
 
-      ${(fakturTab === 'defecta' || fakturTab === 'order') ? _renderDefectaTabContent(st) : fakturTab === 'sp' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderSuratPesananTab() : '') : fakturTab === 'rencana' ? `
+      ${(fakturTab === 'rencana' || fakturTab === 'defecta' || fakturTab === 'order') ? (rencanaSubMode === 'DEFECTA' ? _renderDefectaTabContent(st) : `
         <div class="space-y-4">
+          <div class="flex items-center gap-1.5 pb-1">
+            <span class="text-xs font-bold text-slate-500 uppercase mr-1">Pilihan Tampilan:</span>
+            <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn text-xs py-1 px-3 ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📋 Daftar Rencana Usulan (${allPlans.length})</button>
+            <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn text-xs py-1 px-3 ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📦 Defecta &amp; Ambang ROP (${lowStockDefecta.length})</button>
+          </div>
           <!-- 4 Executive KPI Cards Rencana Pembelian -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="ons-card p-3.5 border-l-4 border-l-blue-500">
@@ -9101,7 +9365,7 @@
             </div>
           </div>
         </div>
-      ` : fakturTab === 'input' ? `
+      `) : fakturTab === 'sp' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderSuratPesananTab() : '') : fakturTab === 'input' ? `
         <div class="space-y-4">
           <!-- 4-Step GRN Workflow Strip -->
           <div class="ons-card p-3 bg-gradient-to-r from-blue-500/10 via-emerald-500/10 to-transparent border-l-4 border-l-blue-600">
@@ -9467,7 +9731,7 @@
             </div>
           </div>
         </div>
-      ` : fakturTab === 'konsinyasi' ? renderKonsinyasiTabHtml(st) : `
+      ` : fakturTab === 'konsinyasi' ? renderKonsinyasiTabHtml(st) : fakturTab === 'hutang' ? _renderPembayaranUtangTab(st) : fakturPilihanData === 'MARGIN' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : `
         <div class="space-y-4">
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="ons-card p-3.5 border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturListFilter('SEMUA')">
@@ -9505,6 +9769,19 @@
           </div>
 
           <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style="border-color:var(--ons-border)">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-slate-500 uppercase mr-1">Pilihan Data:</span>
+                <button type="button" onclick="window.setFakturPilihanData('FAKTUR')" class="ons-btn text-xs py-1 px-3 ${fakturPilihanData === 'FAKTUR' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📄 Faktur Pembelian (${allFaktur.length})</button>
+                <button type="button" onclick="window.setFakturPilihanData('PRODUK')" class="ons-btn text-xs py-1 px-3 ${fakturPilihanData === 'PRODUK' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📦 Produk Pembelian</button>
+                <button type="button" onclick="window.setFakturPilihanData('MARGIN')" class="ons-btn text-xs py-1 px-3 ${fakturPilihanData === 'MARGIN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📊 Analisa Margin</button>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.openFakturDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${fakturDrafts.length})</button>
+                <button type="button" onclick="window.exportFakturList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+                <button type="button" onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Faktur Pembelian</button>
+              </div>
+            </div>
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <input class="ons-input text-xs w-52" placeholder="Cari No. Faktur, SP, PBF, produk..." value="${S().esc(fakturListQ)}" oninput="window.setFakturListQ(this.value)"/>
@@ -9534,6 +9811,25 @@
                 <button type="button" onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs font-bold">+ Faktur Pembelian</button>
               </div>
             </div>
+            ${fakturPilihanData === 'PRODUK' ? `
+              <div class="ons-table-wrap">
+                <table class="ons-table">
+                  <thead><tr><th>No.</th><th>Nama Obat / Produk</th><th>Supplier PBF</th><th>No. Faktur</th><th>No. Batch &amp; ED</th><th class="text-right">Qty Masuk</th><th class="text-right">HPP Beli</th><th class="text-right">Subtotal</th></tr></thead>
+                  <tbody>
+                    ${(() => {
+                      const batchRows = (st.stokBatch || []).filter((b) => b.no_faktur_pbf);
+                      if (!batchRows.length) return '<tr><td colspan="8" class="text-center py-6 text-xs">Belum ada rincian produk faktur masuk.</td></tr>';
+                      return batchRows.map((b, idx) => {
+                        const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat) || {};
+                        const hpp = Number(b.hpp_beli || ob.hpp_terakhir || ob.hpp_avg || 0);
+                        const qty = Number(b.qty_masuk_awal || b.qty_sisa || 0);
+                        return `<tr>\n                          <td class="font-mono-num text-xs">${idx + 1}.</td>\n                          <td class="text-xs font-semibold">${S().esc(ob.nama_dagang || b.id_obat)}</td>\n                          <td class="text-xs">${S().esc(b.id_pbf || '-')}</td>\n                          <td class="font-mono-num text-xs"><b>${S().esc(b.no_faktur_pbf)}</b></td>\n                          <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">ED: ${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))}</div></td>\n                          <td class="text-right font-mono-num text-xs font-bold">${qty}</td>\n                          <td class="text-right font-mono-num text-xs">${S().rp(hpp)}</td>\n                          <td class="text-right font-mono-num text-xs font-bold text-blue-600">${S().rp(qty * hpp)}</td>\n                        </tr>`;
+                      }).join('');
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
             <div class="ons-table-wrap">
               <table class="ons-table">
                 <thead><tr><th>No.</th><th>Tanggal Terima</th><th>Petugas</th><th>No. Faktur &amp; SP</th><th>Supplier</th><th>Produk</th><th>Jatuh Tempo</th><th class="text-right">Total / Sisa Hutang</th><th>Status</th><th>Actions</th></tr></thead>
@@ -9574,6 +9870,7 @@
                 </tbody>
               </table>
             </div>
+            `}
           </div>
 
           <div class="ons-card p-4">
@@ -9589,8 +9886,16 @@
   }
 
   global.setFakturTab = (t) => {
-    if (t === 'order') t = 'defecta';
-    fakturTab = t || 'defecta';
+    if (t === 'order' || t === 'defecta') {
+      t = 'rencana';
+      rencanaSubMode = 'DEFECTA';
+    }
+    if (t === 'daftar') t = 'faktur';
+    if (t === 'harga') {
+      t = 'faktur';
+      fakturPilihanData = 'MARGIN';
+    }
+    fakturTab = t || 'rencana';
     if (S().AppState.subTabs) {
       S().AppState.subTabs.faktur = fakturTab;
       S().AppState.subTabs.defecta = fakturTab;
@@ -9613,6 +9918,27 @@
     global.renderActiveView();
   };
   global.dismissPlanBanner = () => { planBannerDismissed = true; global.renderActiveView(); };
+  global.openAddPlanModal = () => {
+    if (typeof global.openPenawaranSalesModal === 'function') global.openPenawaranSalesModal();
+  };
+  global.setRencanaSubMode = (mode) => {
+    rencanaSubMode = mode || 'RENCANA';
+    global.renderActiveView();
+  };
+  global.setFakturPilihanData = (mode) => {
+    fakturPilihanData = mode || 'FAKTUR';
+    global.renderActiveView();
+  };
+  global.setHutangProcView = (view) => {
+    hutangProcView = view || 'TAGIHAN';
+    global.renderActiveView();
+  };
+  global.setHutangProcFilter = (k, val) => {
+    if (k === 'q') hutangProcSearchQ = val || '';
+    else if (k === 'status') hutangProcStatusFilter = val || 'SEMUA';
+    else if (k === 'due') hutangProcDueFilter = val || '';
+    global.renderActiveView();
+  };
 
   global.addObatToPurchasePlan = (idObat, qtyCustom, keterangan, goToPlan) => {
     const st = S().AppState;
