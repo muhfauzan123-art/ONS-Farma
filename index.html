@@ -1675,8 +1675,9 @@
                   <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'} hidden lg:inline-block">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE'}</span>
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2 text-white">
-                  <button onclick="window.openCommandPalette()" aria-label="Tanya AI dan Cari Fitur" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1.5 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Tanya AI / Cari Fitur (Ctrl+K)">
-                    <span class="font-semibold text-white">✨ Tanya AI</span>
+                  <button onclick="window.openCommandPalette()" aria-label="Pencarian Cepat dan Pintasan Navigasi" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1.5 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Pencarian Cepat &amp; Pintasan Fitur (Ctrl+K)">
+                    ${svgIcon('search', 'w-3.5 h-3.5 text-white')}
+                    <span class="font-semibold text-white">Cari Cepat</span>
                     <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">Ctrl+K</kbd>
                   </button>
                   <div id="headerAlertHost" class="relative">
