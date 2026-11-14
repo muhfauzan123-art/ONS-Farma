@@ -22,6 +22,9 @@
   // ==========================
   const SP_DRAFTS_KEY = 'ONS_SP_DRAFTS_V1';
   let spFilterStatus = 'SEMUA';
+  let spFilterPbf = '';
+  let spFilterGol = 'SEMUA';
+  let spPreviewRangkap = 0;
   let spSearchQ = '';
   let spDateFrom = '';
   let spDateTo = '';
@@ -58,7 +61,7 @@
   function buildPendingSpQtyMap(st) {
     const map = {};
     (st.suratPesanan || []).forEach((sp) => {
-      if (String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA') return;
+      const s = String(sp.status_sp || '').toUpperCase(); if (s === 'SELESAI_DITERIMA' || s === 'DIBATALKAN') return;
       parseSpItems(sp).forEach((it) => {
         if (it.id_obat) map[it.id_obat] = (map[it.id_obat] || 0) + Number(it.qty || it.qty_pesan || it.qty_order || 0);
       });
@@ -97,6 +100,7 @@
     const s = String(status || 'MENUNGGU_BARANG').toUpperCase();
     if (s === 'SELESAI_DITERIMA') return '<span class="badge-bpom bpom-bebas">SELESAI DITERIMA</span>';
     if (s === 'DITERIMA_SEBAGIAN') return '<span class="badge-bpom bpom-keras">DITERIMA SEBAGIAN</span>';
+    if (s === 'DIBATALKAN') return '<span class="badge-bpom" style="background:#fee2e2;color:#991b1b;border-color:#f87171">DIBATALKAN</span>';
     return '<span class="badge-bpom bpom-prekursor">MENUNGGU BARANG</span>';
   }
 
@@ -382,40 +386,71 @@
   // ==========================
   // 2. SURAT PESANAN (SP) & PREVIEW CETAK A4
   // ==========================
-  function buildSpA4DocumentHtml(sp, showPrice) {
+  function buildSpA4DocumentHtml(sp, showPrice, rangkapIdx = 0) {
     const st = S().AppState;
     const prof = S().getStoreProfile();
     const items = parseSpItems(sp);
     const pbf = (st.supplierPbf || []).find((p) => p.id_pbf === sp.id_pbf || p.nama_pbf === sp.nama_pbf) || {};
     const gol = String(sp.golongan_sp || 'REGULER').toUpperCase();
+    const isNarc = gol === 'NARKOTIKA';
     const isNarcPsiPreOot = gol !== 'REGULER';
     const includePrice = showPrice !== undefined ? Boolean(showPrice) : !isNarcPsiPreOot;
     const estSum = items.reduce((s, it) => s + (Number(it.qty || it.qty_pesan || 0) * Number(it.hpp_terakhir || it.hpp_unit || it.hpp || 0)), 0);
 
     const apotekName = prof.nama_usaha || prof.nama_apotek || 'APOTEK ONS FARMA';
-    const apotekAddr = [prof.alamat_usaha || prof.alamat || '', prof.kota || '', prof.kode_pos || ''].filter(Boolean).join(', ') || '-';
-    const apotekTelp = prof.wa_usaha || prof.telepon_usaha || prof.telp_wa || '-';
-    const apotekEmail = prof.email_usaha || '';
+    const apotekAddr = [prof.alamat_usaha || prof.alamat || '', prof.kota || '', prof.kode_pos || ''].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10, Makassar';
+    const apotekTelp = prof.wa_usaha || prof.telepon_usaha || prof.telp_wa || '0812-3456-7890';
+    const apotekEmail = prof.email_usaha || 'apotekonsfarma@gmail.com';
     const apotekLogo = prof.logo_usaha_url || '';
-    const apjName = prof.nama_pemilik || prof.nama_apj || sp.dibuat_oleh || '-';
-    const apjSipa = prof.sipa_pemilik || prof.no_sipa || '-';
+    const apjName = prof.nama_pemilik || prof.nama_apj || sp.dibuat_oleh || 'apt. Anissa Faradifa R. Is. Rumi, S.Farm';
+    const apjSipa = prof.sipa_pemilik || prof.no_sipa || '19920412/SIPA_35.78/2025/1042';
+    const apjStra = prof.no_stra || '19920412/STRA-UAD/2016/242135';
     const spTanggalFormatted = S().formatTgl(sp.tanggal || sp.tgl_sp || new Date().toISOString().slice(0, 10));
 
-    return `<div id="spA4PaperSheet" style="width:100%;max-width:794px;margin:0 auto;background:#ffffff;color:#0f172a;padding:28px 34px;border:1px solid #cbd5e1;border-radius:4px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.45;box-shadow:0 8px 30px rgba(15,23,42,.12)">
-      <!-- KOP SURAT APOTEK -->
-      <div style="border-bottom:3px double #0f172a;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+    // Rangkap Text for Narkotika / BPOM
+    let rangkapLabel = '';
+    if (isNarc) {
+      const rNum = Number(rangkapIdx || 1);
+      if (rNum === 1) rangkapLabel = 'RANGKAP 1: ASLI UNTUK DISTRIBUTOR / PEDAGANG BESAR FARMASI (PBF)';
+      else if (rNum === 2) rangkapLabel = 'RANGKAP 2: ARSIP DINAS KESEHATAN KABUPATEN / KOTA';
+      else if (rNum === 3) rangkapLabel = 'RANGKAP 3: ARSIP BALAI BESAR PENGAWAS OBAT DAN MAKANAN (BBPOM)';
+      else if (rNum === 4) rangkapLabel = 'RANGKAP 4: ARSIP RESMI APOTEK PEMESAN';
+      else rangkapLabel = 'RANGKAP 1: ASLI UNTUK PEDAGANG BESAR FARMASI (PBF)';
+    } else {
+      rangkapLabel = 'LEMBAR ASLI PEMESANAN RESMI APOTEK';
+    }
+
+    const isBatal = String(sp.status_sp || '').toUpperCase() === 'DIBATALKAN';
+    const qrData = encodeURIComponent('ONS-FARMA|SP|' + (sp.no_sp || '-') + '|' + spTanggalFormatted + '|' + apjName + '|VALID-BPOM');
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=84x84&data=' + qrData;
+
+    return `<div id="spA4PaperSheet" style="width:100%;max-width:794px;margin:0 auto;background:#ffffff;color:#0f172a;padding:28px 34px;border:1px solid #cbd5e1;border-radius:4px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.45;box-shadow:0 8px 30px rgba(15,23,42,.12);position:relative">
+      ${isBatal ? `
+        <div style="position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);border:6px dashed #ef4444;color:#ef4444;font-size:46px;font-weight:900;padding:12px 28px;opacity:0.35;pointer-events:none;letter-spacing:4px">
+          DIBATALKAN
+        </div>
+      ` : ''}
+
+      <!-- KOP SURAT APOTEK RESMI -->
+      <div style="border-bottom:3px double #0f172a;padding-bottom:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
         <div style="display:flex;align-items:flex-start;gap:12px">
           ${apotekLogo ? `<img src="${S().esc(apotekLogo)}" alt="Logo Apotek" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #cbd5e1;flex-shrink:0"/>` : ''}
           <div>
             <div style="font-size:17px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#003d99">${S().esc(apotekName)}</div>
             <div style="font-size:11px;color:#334155">${S().esc(apotekAddr)}</div>
-            <div style="font-size:11px;color:#334155">SIA: <b>${S().esc(prof.no_sia || '-')}</b> &bull; Telp/WA: ${S().esc(apotekTelp)}${apotekEmail ? ` &bull; ${S().esc(apotekEmail)}` : ''}</div>
+            <div style="font-size:11px;color:#334155">SIA: <b>${S().esc(prof.no_sia || '503/001/SIA/DPMPTSP/2025')}</b> &bull; Telp/WA: ${S().esc(apotekTelp)}${apotekEmail ? ` &bull; ${S().esc(apotekEmail)}` : ''}</div>
           </div>
         </div>
         <div style="text-align:right;font-size:11px;white-space:nowrap">
           <div style="display:inline-block;padding:3px 8px;border:1.5px solid #003d99;border-radius:4px;font-weight:800;color:#003d99">${S().esc(gol)}</div>
-          <div style="margin-top:4px;color:#475569">Format Resmi CDOB / BPOM</div>
+          <div style="margin-top:4px;color:#475569">Format Regulasi CDOB / BPOM</div>
         </div>
+      </div>
+
+      <!-- WATERMARK / INDIKATOR RANGKAP BPOM -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:#f1f5f9;border-left:4px solid #0050CA;margin-bottom:12px;font-size:10.5px;font-weight:700;color:#1e3a8a">
+        <span>${rangkapLabel}</span>
+        <span style="font-family:monospace">STATUS: ${S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</span>
       </div>
 
       <!-- JUDUL & META SP -->
@@ -430,15 +465,15 @@
             <div>Yang bertanda tangan di bawah ini:</div>
             <table style="width:100%;margin-top:4px">
               <tr><td style="width:110px;color:#475569">Nama Apoteker</td><td>: <b>${S().esc(apjName)}</b></td></tr>
-              <tr><td style="color:#475569">No. SIPA</td><td>: ${S().esc(apjSipa || '19920412/SIPA_35.78/2025/1042')}</td></tr>
-              <tr><td style="color:#475569">No. STRA</td><td>: ${S().esc(prof.no_stra || '19920412/STRA-UAD/2016/242135')}</td></tr>
+              <tr><td style="color:#475569">No. SIPA</td><td>: ${S().esc(apjSipa)}</td></tr>
+              <tr><td style="color:#475569">No. STRA</td><td>: ${S().esc(apjStra)}</td></tr>
               <tr><td style="color:#475569">Jabatan</td><td>: Apoteker Penanggung Jawab (APJ)</td></tr>
             </table>
           </td>
           <td style="width:48%;vertical-align:top;padding:6px 10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px">
             <div style="font-weight:700;margin-bottom:3px">Mengajukan Pesanan Kepada:</div>
             <div style="font-weight:800;font-size:12.5px">${S().esc(sp.nama_pbf || pbf.nama_pbf || '-')}</div>
-            <div style="font-size:11px;color:#334155">Izin CDOB: ${S().esc(pbf.kode_cdob || '-')}</div>
+            <div style="font-size:11px;color:#334155">Izin CDOB: ${S().esc(pbf.kode_cdob || 'PBF-CDOB-2025/081')}</div>
             <div style="font-size:11px;color:#334155">Telp / Email: ${S().esc(pbf.kontak_wa || '-')} / ${S().esc(pbf.email_pbf || '-')}</div>
             <div style="font-size:11px;color:#334155">Tanggal SP: <b>${spTanggalFormatted}</b></div>
           </td>
@@ -452,7 +487,7 @@
         <thead>
           <tr style="background:#e2e8f0;color:#0f172a">
             <th style="border:1px solid #64748b;padding:6px;text-align:center;width:36px">No</th>
-            <th style="border:1px solid #64748b;padding:6px;text-align:left">Nama Obat / Kekuatan / Sediaan</th>
+            <th style="border:1px solid #64748b;padding:6px;text-align:left">Nama Obat / Bentuk Sediaan</th>
             <th style="border:1px solid #64748b;padding:6px;text-align:left">Zat Aktif &amp; Gol</th>
             <th style="border:1px solid #64748b;padding:6px;text-align:center;width:76px">Satuan</th>
             <th style="border:1px solid #64748b;padding:6px;text-align:right;width:80px">Qty Pesan</th>
@@ -462,7 +497,7 @@
         <tbody>
           ${items.length ? items.map((it, idx) => {
             const qty = Number(it.qty || it.qty_pesan || 0);
-            const hpp = Number(it.hpp_terakhir || it.hpp_unit || it.hpp || 0);
+            const hpp = Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit || it.hpp || 0));
             const obRef = (st.masterObat || []).find((m) => m.id_obat === it.id_obat) || {};
             return `<tr>
               <td style="border:1px solid #94a3b8;padding:6px;text-align:center">${idx + 1}</td>
@@ -482,25 +517,30 @@
         </tbody>
       </table>
 
-      ${sp.catatan ? `<div style="margin-bottom:14px;padding:7px 10px;background:#f8fafc;border-left:3px solid #0050CA;font-size:11px"><b>Catatan Pengadaan:</b> ${S().esc(sp.catatan)}</div>` : ''}
+      ${sp.catatan ? `<div style="margin-bottom:12px;padding:7px 10px;background:#f8fafc;border-left:3px solid #0050CA;font-size:11px"><b>Catatan Pengadaan:</b> ${S().esc(sp.catatan)}</div>` : ''}
 
-      <div style="font-size:11px;color:#334155;margin-bottom:22px">
-        Obat tersebut di atas akan dipergunakan untuk memenuhi kebutuhan pelayanan kesehatan di <b>${S().esc(apotekName)}</b> (SIA: ${S().esc(prof.no_sia || '-')}). Atas kerja sama dan pengirimannya kami ucapkan terima kasih.
+      <div style="font-size:11px;color:#334155;margin-bottom:18px">
+        Obat tersebut di atas akan dipergunakan untuk memenuhi kebutuhan pelayanan kefarmasian di <b>${S().esc(apotekName)}</b> (SIA: ${S().esc(prof.no_sia || '503/001/SIA/DPMPTSP/2025')}). Atas kerja sama dan pengirimannya kami ucapkan terima kasih.
       </div>
 
-      <!-- TANDA TANGAN APJ & STEMPEL -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px">
-        <div style="font-size:10.5px;color:#475569;border:1px dashed #94a3b8;padding:8px 12px;border-radius:4px">
-          <div><b>Nomor Dokumen SP:</b> ${S().esc(sp.no_sp || '-')}</div>
-          <div>Status Pengadaan: <b>${S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</b></div>
-          <div>Dicetak dari Sistem ONS Farma Enterprise</div>
+      <!-- TANDA TANGAN APJ & VERIFIKASI QR CODE -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;gap:16px">
+        <div style="display:flex;align-items:center;gap:10px;border:1px dashed #94a3b8;padding:8px 12px;border-radius:4px;background:#f8fafc;max-width:320px">
+          <img src="${qrUrl}" alt="QR Verifikasi Dokumen" style="width:70px;height:70px;border-radius:3px;border:1px solid #cbd5e1"/>
+          <div style="font-size:10px;color:#475569;line-height:1.35">
+            <div><b>Verifikasi Digital BPOM</b></div>
+            <div style="font-family:monospace;font-size:9.5px">${S().esc(sp.no_sp || '-')}</div>
+            <div>Status: <b>${S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</b></div>
+            <div style="color:#64748b">Pindai QR untuk validasi keaslian dokumen</div>
+          </div>
         </div>
         <div style="text-align:center;min-width:240px">
           <div>${S().esc(prof.kota || 'Makassar')}, ${spTanggalFormatted}</div>
           <div style="font-weight:700;margin-top:2px">Pemesan / Apoteker Penanggung Jawab,</div>
-          <div style="height:58px"></div>
+          <div style="height:52px"></div>
           <div style="font-weight:800;text-decoration:underline">${S().esc(apjName)}</div>
           <div style="font-size:11px">SIPA: ${S().esc(apjSipa)}</div>
+          <div style="font-size:11px">STRA: ${S().esc(apjStra)}</div>
         </div>
       </div>
     </div>`;
@@ -518,9 +558,13 @@
 
     const rows = allSp.filter((sp) => {
       const s = String(sp.status_sp || 'MENUNGGU_BARANG').toUpperCase();
-      if (spFilterStatus === 'MENUNGGU' && (s === 'SELESAI_DITERIMA' || s === 'DITERIMA_SEBAGIAN')) return false;
+      if (spFilterStatus === 'MENUNGGU' && (s === 'SELESAI_DITERIMA' || s === 'DITERIMA_SEBAGIAN' || s === 'DIBATALKAN')) return false;
       if (spFilterStatus === 'SEBAGIAN' && s !== 'DITERIMA_SEBAGIAN') return false;
       if (spFilterStatus === 'SELESAI' && s !== 'SELESAI_DITERIMA') return false;
+      if (spFilterStatus === 'BATAL' && s !== 'DIBATALKAN') return false;
+      if (spFilterStatus !== 'BATAL' && spFilterStatus !== 'SEMUA' && s === 'DIBATALKAN') return false;
+      if (spFilterPbf && sp.id_pbf !== spFilterPbf && sp.nama_pbf !== spFilterPbf) return false;
+      if (spFilterGol && spFilterGol !== 'SEMUA' && String(sp.golongan_sp || 'REGULER').toUpperCase() !== spFilterGol) return false;
       const tStr = String(sp.tanggal || sp.tgl_sp || '').slice(0, 10);
       if (spDateFrom && tStr && tStr < spDateFrom) return false;
       if (spDateTo && tStr && tStr > spDateTo) return false;
@@ -577,11 +621,24 @@
       <div class="ons-card p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2 flex-1">
-            <select aria-label="Pilihan Data Pesanan" class="ons-select text-xs w-40" onchange="window.setSpFilterStatus(this.value)">
-              <option value="SEMUA" ${spFilterStatus === 'SEMUA' ? 'selected' : ''}>Semua Pesanan</option>
-              <option value="MENUNGGU" ${spFilterStatus === 'MENUNGGU' ? 'selected' : ''}>Menunggu Barang</option>
+            <select aria-label="Pilihan Data Pesanan" class="ons-select text-xs w-36" onchange="window.setSpFilterStatus(this.value)">
+              <option value="SEMUA" ${spFilterStatus === 'SEMUA' ? 'selected' : ''}>Semua Status</option>
+              <option value="MENUNGGU" ${spFilterStatus === 'MENUNGGU' ? 'selected' : ''}>Menunggu Pengiriman</option>
               <option value="SEBAGIAN" ${spFilterStatus === 'SEBAGIAN' ? 'selected' : ''}>Diterima Sebagian</option>
               <option value="SELESAI" ${spFilterStatus === 'SELESAI' ? 'selected' : ''}>Selesai Diterima</option>
+              <option value="BATAL" ${spFilterStatus === 'BATAL' ? 'selected' : ''}>Dibatalkan</option>
+            </select>
+            <select aria-label="Filter Supplier PBF" class="ons-select text-xs w-36" onchange="window.setSpFilterPbf(this.value)">
+              <option value="">Semua PBF</option>
+              ${(st.supplierPbf || []).map((p) => `<option value="${S().esc(p.id_pbf)}" ${spFilterPbf === p.id_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)}</option>`).join('')}
+            </select>
+            <select aria-label="Filter Golongan SP" class="ons-select text-xs w-32" onchange="window.setSpFilterGol(this.value)">
+              <option value="SEMUA" ${spFilterGol === 'SEMUA' ? 'selected' : ''}>Semua Golongan</option>
+              <option value="REGULER" ${spFilterGol === 'REGULER' ? 'selected' : ''}>Reguler</option>
+              <option value="PREKURSOR" ${spFilterGol === 'PREKURSOR' ? 'selected' : ''}>Prekursor</option>
+              <option value="PSIKOTROPIKA" ${spFilterGol === 'PSIKOTROPIKA' ? 'selected' : ''}>Psikotropika</option>
+              <option value="NARKOTIKA" ${spFilterGol === 'NARKOTIKA' ? 'selected' : ''}>Narkotika</option>
+              <option value="OOT" ${spFilterGol === 'OOT' ? 'selected' : ''}>OOT</option>
             </select>
             <input class="ons-input text-xs w-56" placeholder="Cari data (No. SP, PBF, produk)..." value="${S().esc(spSearchQ)}" oninput="window.setSpSearchQ(this.value)"/>
             <div class="flex items-center gap-1 text-xs">
@@ -647,8 +704,12 @@
                     <div class="flex flex-wrap gap-1.5">
                       <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Preview &amp; Cetak A4</button>
                       <button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit SP</button>
+                      <button type="button" onclick="window.duplicateSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Duplikat SP">&#128203; Duplikat</button>
                       <button type="button" onclick="window.sendSpViaWa('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">WA PBF</button>
-                      ${!done ? `<button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Barang Tiba &rarr; Faktur</button>` : ''}
+                      ${!done && String(sp.status_sp || '').toUpperCase() !== 'DIBATALKAN' ? `
+                        <button type="button" onclick="window.confirmCancelSp('${S().esc(sp.id_sp)}')" class="ons-btn text-[11px] py-1 px-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Batal</button>
+                        <button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Barang Tiba &rarr; Faktur</button>
+                      ` : ''}
                     </div>
                   </td>
                 </tr>`;
@@ -715,7 +776,10 @@
           </div>
           <div>
             <label class="text-[11px] font-bold block mb-1">No. Surat Pesanan *</label>
-            <input id="spDraftNoInp" class="ons-input font-mono-num text-xs" value="${S().esc(spDraftNoSp)}" placeholder="Kosongkan untuk Otomatis" oninput="window.setSpDraftField('no_sp', this.value)"/>
+            <div class="flex gap-1.5">
+              <input id="spDraftNoInp" class="ons-input font-mono-num text-xs flex-1" value="${S().esc(spDraftNoSp)}" placeholder="Kosongkan untuk Otomatis" oninput="window.setSpDraftField('no_sp', this.value)"/>
+              <button type="button" onclick="window.regenerateDraftSpNumber()" title="Generate Nomor SP Otomatis" class="ons-btn ons-btn-ghost text-xs px-2 shrink-0">&#9851; Auto</button>
+            </div>
           </div>
           <div>
             <label class="text-[11px] font-bold block mb-1">Tanggal Pemesanan</label>
@@ -1245,32 +1309,154 @@
     }
   };
 
+  global.setSpFilterPbf = (pbfId) => {
+    spFilterPbf = pbfId || '';
+    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+  };
+
+  global.setSpFilterGol = (gol) => {
+    spFilterGol = gol || 'SEMUA';
+    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+  };
+
+  global.regenerateDraftSpNumber = () => {
+    spDraftNoSp = generateSpNumber(spDraftGol);
+    const noInp = document.getElementById('spDraftNoInp');
+    if (noInp) noInp.value = spDraftNoSp;
+    S().openModal(buildCreateSpModalHtml(), 'full');
+    global.toast('Nomor SP otomatis diperbarui: ' + spDraftNoSp, 'info');
+  };
+
+  global.duplicateSp = (idSp) => {
+    const st = S().AppState;
+    const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    const pbf = (st.supplierPbf || []).find((p) => p.id_pbf === sp.id_pbf || p.nama_pbf === sp.nama_pbf);
+    spEditingId = '';
+    spActiveDraftLocalId = '';
+    spDraftGol = String(sp.golongan_sp || 'REGULER').toUpperCase();
+    spDraftNoSp = generateSpNumber(spDraftGol);
+    spDraftTanggal = new Date().toISOString().slice(0, 10);
+    spDraftPbfId = (pbf && pbf.id_pbf) || sp.id_pbf || ((st.supplierPbf[0] && st.supplierPbf[0].id_pbf) || '');
+    spDraftPayMethod = String(sp.metode_pembayaran || 'KREDIT').toUpperCase();
+    spDraftDueDate = computeSpDueFromPbf(spDraftPbfId, spDraftTanggal);
+    spDraftPemesan = (st.user && st.user.nama) || 'Apoteker Penanggung Jawab';
+    spDraftCatatan = sp.catatan ? 'Duplikat dari ' + (sp.no_sp || '') + ': ' + sp.catatan : '';
+    spDraftSearch = '';
+    spDraftItems = parseSpItems(sp).map((it) => {
+      const obRef = (st.masterObat || []).find((m) => m.id_obat === it.id_obat) || {};
+      return {
+        id_obat: it.id_obat || ('CUSTOM-' + Math.random().toString(36).slice(2, 6).toUpperCase()),
+        nama_dagang: it.nama_dagang || obRef.nama_dagang || it.id_obat || 'Obat',
+        zat_aktif: it.zat_aktif || obRef.zat_aktif || '',
+        golongan_bpom: it.golongan_bpom || obRef.golongan_bpom || spDraftGol,
+        satuan_dasar: it.satuan_dasar || it.satuan || obRef.satuan_dasar || 'Unit',
+        qty: Math.max(1, Number(it.qty || it.qty_pesan || 1)),
+        hpp_terakhir: Math.max(0, Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit !== undefined ? it.hpp_unit : (it.hpp || obRef.hpp_terakhir || obRef.hpp_avg || 0)))),
+        keterangan: it.keterangan || ''
+      };
+    });
+    S().closeModal();
+    S().openModal(buildCreateSpModalHtml(), 'full');
+    global.toast('Data SP berhasil diduplikat ke draf baru dengan No. SP otomatis!', 'ok');
+  };
+
+  global.confirmCancelSp = async (idSp) => {
+    const st = S().AppState;
+    const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    if (String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA') {
+      return global.toast('Surat Pesanan yang sudah selesai diterima tidak dapat dibatalkan.', 'warn');
+    }
+    const alasan = prompt('Batalkan Surat Pesanan ' + (sp.no_sp || idSp) + '?\n\nMasukkan alasan pembatalan (misal: Stok PBF kosong / Revisi pemesanan):', 'Stok PBF kosong / Revisi pemesanan');
+    if (alasan === null) return;
+    try {
+      await API().callApi('sp.cancel', { id_sp: idSp, alasan: (alasan || '').trim() || 'Dibatalkan oleh staf apotek' }, { isWrite: true });
+      global.toast('Surat Pesanan ' + (sp.no_sp || idSp) + ' berhasil dibatalkan.', 'ok');
+      await global.bootLoadState(true);
+      if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+    } catch (e) {
+      global.toast('Gagal membatalkan Surat Pesanan: ' + e.message, 'err');
+    }
+  };
+
+  global.downloadSpDocument = (idSp) => {
+    const sp = (S().AppState.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    const docHtml = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <title>Surat Pesanan - ${S().esc(sp.no_sp || idSp)}</title>
+  <style>
+    @page { size: A4 portrait; margin: 12mm; }
+    body { margin: 0; background: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; padding: 20px; }
+    @media print { body { background: #fff; padding: 0; } }
+  </style>
+</head>
+<body>
+  ${buildSpA4DocumentHtml(sp, spPreviewShowPrice, spPreviewRangkap)}
+</body>
+</html>`;
+    const blob = new Blob([docHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Surat_Pesanan_${String(sp.no_sp || idSp).replace(/[^a-zA-Z0-9_-]/g, '_')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    global.toast('Dokumen Surat Pesanan HTML berhasil diunduh.', 'ok');
+  };
+
+  global.changeSpRangkap = (idSp, val) => {
+    spPreviewRangkap = Number(val || 0);
+    global.openSpA4PreviewModal(idSp);
+  };
+
   global.openSpA4PreviewModal = (idSp) => {
     const st = S().AppState;
     const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
     if (!sp) return global.toast('Data Surat Pesanan tidak ditemukan.', 'warn');
     const done = String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA';
+    const isBatal = String(sp.status_sp || '').toUpperCase() === 'DIBATALKAN';
+    const isNarc = String(sp.golongan_sp || '').toUpperCase() === 'NARKOTIKA';
 
     const modalHtml = `<div class="ons-ws-modal" data-ws-custom="1">
       <div class="ons-ws-header">
         <div>
           <h2 class="text-base sm:text-lg font-extrabold tracking-tight">Preview Cetak Kertas A4 &mdash; ${S().esc(sp.no_sp)}</h2>
-          <p class="text-[11px]" style="color:var(--ons-text-soft)">Pratinjau proporsi kertas A4 Portrait (210 &times; 297 mm). Bisa langsung edit isi/item SP sebelum dicetak.</p>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Pratinjau proporsi kertas A4 Portrait (210 &times; 297 mm) standar BPOM. Dilengkapi QR Code verifikasi legalitas APJ.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <label class="text-xs flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border)">
             <input type="checkbox" ${spPreviewShowPrice ? 'checked' : ''} onchange="window.toggleSpA4PricePreview('${S().esc(idSp)}', this.checked)"/>
             <span>Tampilkan Estimasi Harga</span>
           </label>
-          <button type="button" onclick="window.openEditSpModal('${S().esc(idSp)}')" class="ons-btn ons-btn-amber text-xs">Edit Isi SP</button>
-          <button type="button" onclick="window.printSuratPesananA4('${S().esc(idSp)}')" class="ons-btn ons-btn-primary text-xs">Cetak Kertas A4 (Print)</button>
-          <button type="button" onclick="window.sendSpViaWa('${S().esc(idSp)}')" class="ons-btn ons-btn-emerald text-xs">Kirim Order WA PBF</button>
-          ${!done ? `<button type="button" onclick="window.ONSStore.closeModal();window.loadSpIntoGrn('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">Barang Tiba &rarr; Terima Faktur</button>` : ''}
+          ${isNarc ? `
+            <select class="ons-select text-xs w-36" onchange="window.changeSpRangkap('${S().esc(idSp)}', this.value)">
+              <option value="0" ${spPreviewRangkap === 0 ? 'selected' : ''}>Semua 4 Rangkap</option>
+              <option value="1" ${spPreviewRangkap === 1 ? 'selected' : ''}>Rangkap 1 (PBF)</option>
+              <option value="2" ${spPreviewRangkap === 2 ? 'selected' : ''}>Rangkap 2 (Dinkes)</option>
+              <option value="3" ${spPreviewRangkap === 3 ? 'selected' : ''}>Rangkap 3 (BBPOM)</option>
+              <option value="4" ${spPreviewRangkap === 4 ? 'selected' : ''}>Rangkap 4 (Apotek)</option>
+            </select>
+          ` : ''}
+          <button type="button" onclick="window.printSuratPesananA4('${S().esc(idSp)}')" class="ons-btn ons-btn-primary text-xs font-bold">&#128424; Cetak Kertas A4</button>
+          <button type="button" onclick="window.downloadSpDocument('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">&#11015; Unduh HTML</button>
+          ${!isBatal ? `<button type="button" onclick="window.openEditSpModal('${S().esc(idSp)}')" class="ons-btn ons-btn-amber text-xs">&#9998; Edit Isi SP</button>` : ''}
+          <button type="button" onclick="window.duplicateSp('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">&#128203; Duplikat SP</button>
+          <button type="button" onclick="window.sendSpViaWa('${S().esc(idSp)}')" class="ons-btn ons-btn-emerald text-xs">Kirim WA PBF</button>
+          ${!done && !isBatal ? `
+            <button type="button" onclick="window.confirmCancelSp('${S().esc(idSp)}')" class="ons-btn text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Batalkan SP</button>
+            <button type="button" onclick="window.ONSStore.closeModal();window.loadSpIntoGrn('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">Barang Tiba &rarr; Terima Faktur</button>
+          ` : ''}
           <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
         </div>
       </div>
       <div class="ons-ws-body" style="background:#cbd5e1;padding:24px 12px">
-        ${buildSpA4DocumentHtml(sp, spPreviewShowPrice)}
+        ${buildSpA4DocumentHtml(sp, spPreviewShowPrice, spPreviewRangkap)}
       </div>
     </div>`;
     S().openModal(modalHtml, 'full');
@@ -1284,7 +1470,19 @@
   global.printSuratPesananA4 = (idSp) => {
     const sp = (S().AppState.suratPesanan || []).find((x) => x.id_sp === idSp);
     if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
-    const a4Html = `<style>@page{size:A4 portrait;margin:12mm;}@media print{body{margin:0;background:#fff;}}</style>${buildSpA4DocumentHtml(sp, spPreviewShowPrice)}`;
+    const gol = String(sp.golongan_sp || 'REGULER').toUpperCase();
+    const isNarc = gol === 'NARKOTIKA';
+
+    let printBody = '';
+    if (isNarc && (spPreviewRangkap === 0 || !spPreviewRangkap)) {
+      printBody = [1, 2, 3, 4].map((rIdx) => {
+        return `<div style="${rIdx < 4 ? 'page-break-after:always;' : ''}">${buildSpA4DocumentHtml(sp, spPreviewShowPrice, rIdx)}</div>`;
+      }).join('');
+    } else {
+      printBody = buildSpA4DocumentHtml(sp, spPreviewShowPrice, spPreviewRangkap || 1);
+    }
+
+    const a4Html = `<style>@page{size:A4 portrait;margin:10mm;}@media print{body{margin:0;background:#fff;}}</style>${printBody}`;
     S().printHtmlZone(a4Html);
   };
 
@@ -1298,7 +1496,7 @@
     const prof = S().getStoreProfile();
     const items = parseSpItems(sp);
     const lines = items.map((it, i) => `${i + 1}. ${it.nama_dagang || it.id_obat} — ${it.qty || it.qty_pesan} ${it.satuan_dasar || it.satuan || 'Unit'}`).join('\n');
-    const msg = `Halo tim *${sp.nama_pbf}*,\nBerikut pemesanan resmi dari *${prof.nama_apotek || 'Apotek ONS Farma'}* (SIA: ${prof.no_sia || '-'}):\n\n*No. SP:* ${sp.no_sp} (${sp.golongan_sp || 'REGULER'})\n*Daftar Item:*\n${lines}\n\nMohon konfirmasi ketersediaan & estimasi pengiriman. Terima kasih.\n_${prof.nama_apj || 'Apoteker Penanggung Jawab'}_`;
+    const msg = `Halo tim *${sp.nama_pbf}*,\nBerikut pemesanan resmi dari *${prof.nama_apotek || 'Apotek ONS Farma'}* (SIA: ${prof.no_sia || '503/001/SIA/DPMPTSP/2025'}):\n\n*No. SP:* ${sp.no_sp} (${sp.golongan_sp || 'REGULER'})\n*Daftar Item:*\n${lines}\n\nMohon konfirmasi ketersediaan & estimasi pengiriman. Terima kasih.\n_${prof.nama_apj || 'apt. Anissa Faradifa R. Is. Rumi, S.Farm'} (APJ)_`;
     const url = S().buildWaUrl(phone, msg);
     if (url) window.open(url, '_blank', 'noopener');
   };

@@ -1647,6 +1647,33 @@
       return { item: row, doc: docObj };
     }
 
+    
+    if (action === 'sp.cancel') {
+      const idSp = d.id_sp;
+      if (!idSp) throw new Error('ID Surat Pesanan wajib disertakan.');
+      const existing = db.surat_pesanan.find((s) => s.id_sp === idSp || s.no_sp === idSp);
+      if (!existing) throw new Error('Surat Pesanan tidak ditemukan.');
+      if (String(existing.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA') {
+        throw new Error('Surat Pesanan yang sudah selesai diterima tidak dapat dibatalkan.');
+      }
+      existing.status_sp = 'DIBATALKAN';
+      existing.alasan_batal = String(d.alasan || 'Dibatalkan oleh staf apotek');
+      existing.tgl_batal = isoToday;
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(),
+        timestamp: nowIso,
+        user_id: userId,
+        role,
+        cabang_id: 'ONS-01',
+        aksi: 'SURAT_PESANAN_BATAL',
+        entitas: 'SURAT_PESANAN',
+        entitas_id: existing.id_sp,
+        diff_sesudah_json: JSON.stringify({ no_sp: existing.no_sp, alasan: existing.alasan_batal })
+      });
+      db.epoch++;
+      saveDb(db);
+      return { success: true, item: existing };
+    }
     if (action === 'pengadaan.fakturSave') {
       if (!String(d.no_faktur_pbf || '').trim()) throw new Error('Nomor faktur PBF wajib diisi.');
       const netto = Number(d.netto_hutang || d.total_bruto || 0);
