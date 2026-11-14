@@ -3117,32 +3117,37 @@ html.dark .ons-pos-search-pill .ons-btn-ghost:hover {
   --ons-nav-hover-text: #FFFFFF;
   --ons-nav-active-bg: #FFFFFF;
   --ons-nav-active-border: #FFFFFF;
-  --ons-nav-active-text: #0066D6;
-  --ons-nav-accent: #F59E0B;
+  --ons-nav-active-text: #0284C7;
+  --ons-nav-accent: #10B981;
   --ons-nav-brand-sub: #E0F2FE;
   --ons-nav-subline: rgba(255, 255, 255, 0.25);
-  --ons-topbar-bg: #0066D6;
+  --ons-topbar-bg: linear-gradient(135deg, #0A1E3F 0%, #0F2E5E 50%, #11427D 100%);
 }
 
 .ons-sidebar {
-  background: linear-gradient(180deg, #0066D6 0%, #0050CA 100%) !important;
+  background: linear-gradient(180deg, #0A192F 0%, #0F274E 45%, #16366E 100%) !important;
   color: #FFFFFF !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.15) !important;
 }
 
-/* Yellow border search pill */
+/* Distinctive HealthTech Modern Search Pill */
 .ons-sb-search-pill {
-  border: 2.5px solid #F59E0B !important;
+  border: 1.5px solid rgba(226, 232, 240, 0.75) !important;
   background: #FFFFFF !important;
   color: #0F172A !important;
   border-radius: 9999px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 2px 10px rgba(10, 25, 47, 0.12) !important;
+  transition: all 0.2s ease;
+}
+.ons-sb-search-pill:focus {
+  border-color: #10B981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22) !important;
 }
 .ons-sb-search-pill::placeholder {
   color: #64748B !important;
 }
 
-/* Normal Inactive Menu Row on Blue Sidebar */
+/* Normal Inactive Menu Row on Midnight Sapphire Sidebar */
 .ons-nav-group {
   margin-bottom: 0.16rem;
   border-radius: 0.85rem;
@@ -3176,16 +3181,17 @@ html.dark .ons-pos-search-pill .ons-btn-ghost:hover {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* THE SIGNATURE WHITE-ISLAND CARD (When Active or Open) */
+/* THE SIGNATURE ONS FARMA WHITE-ISLAND CARD (With Bio-Emerald Edge Accent) */
 .ons-nav-group.is-open,
 .ons-nav-group.has-active {
   background: #FFFFFF !important;
   color: #0F172A !important;
   border-radius: 0.85rem !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14) !important;
+  box-shadow: 0 4px 20px rgba(10, 25, 47, 0.16) !important;
   margin: 0.35rem 0.15rem !important;
   padding: 0.25rem 0.35rem 0.45rem 0.35rem !important;
-  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  border-left: 3.5px solid #10B981 !important;
 }
 
 html.dark .ons-nav-group.is-open,
@@ -3193,7 +3199,8 @@ html.dark .ons-nav-group.has-active {
   background: #1E293B !important;
   color: #F8FAFC !important;
   border-color: rgba(51, 65, 85, 0.9) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  border-left: 3.5px solid #10B981 !important;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.45) !important;
 }
 
 .ons-nav-group.is-open .ons-nav-row,
@@ -3222,7 +3229,7 @@ html.dark .ons-nav-group.has-active .ons-nav-row-btn {
 
 .ons-nav-group.is-open .ons-nav-row-btn .ons-nav-svg,
 .ons-nav-group.has-active .ons-nav-row-btn .ons-nav-svg {
-  color: #0066D6 !important;
+  color: #0284C7 !important;
 }
 
 html.dark .ons-nav-group.is-open .ons-nav-row-btn .ons-nav-svg,
@@ -3236,7 +3243,7 @@ html.dark .ons-nav-group.has-active .ons-nav-row-btn .ons-nav-svg {
 }
 .ons-nav-group.is-open .ons-nav-caret[aria-expanded="true"],
 .ons-nav-group.has-active .ons-nav-caret[aria-expanded="true"] {
-  color: #0066D6 !important;
+  color: #0284C7 !important;
 }
 html.dark .ons-nav-group.is-open .ons-nav-caret[aria-expanded="true"],
 html.dark .ons-nav-group.has-active .ons-nav-caret[aria-expanded="true"] {
@@ -3270,7 +3277,7 @@ html.dark .ons-nav-group.is-open .ons-submenu-btn {
 
 .ons-nav-group.is-open .ons-submenu-btn:hover {
   background: #F1F5F9 !important;
-  color: #0066D6 !important;
+  color: #0284C7 !important;
 }
 
 html.dark .ons-nav-group.is-open .ons-submenu-btn:hover {
@@ -3279,19 +3286,47 @@ html.dark .ons-nav-group.is-open .ons-submenu-btn:hover {
 }
 
 .ons-nav-group.is-open .ons-submenu-btn.active {
-  background: #EFF6FF !important;
-  color: #0066D6 !important;
+  background: rgba(2, 132, 199, 0.09) !important;
+  color: #0369A1 !important;
   font-weight: 750 !important;
   box-shadow: none !important;
 }
 
 html.dark .ons-nav-group.is-open .ons-submenu-btn.active {
-  background: rgba(59, 130, 246, 0.2) !important;
+  background: rgba(56, 189, 248, 0.18) !important;
   color: #38BDF8 !important;
 }
 
 .ons-nav-group.is-open .ons-submenu-btn.active .ons-submenu-dot {
-  background: #0066D6 !important;
+  background: #10B981 !important;
   opacity: 1 !important;
-  box-shadow: 0 0 0 2px rgba(0, 102, 214, 0.25) !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* === SIGNATURE ONS FARMA HEALTHTECH ACCENTS & DIFFERENTIATION === */
+.ons-card-accent-emerald {
+  border-top: 3.5px solid #10B981 !important;
+}
+.ons-card-accent-sapphire {
+  border-top: 3.5px solid #0284C7 !important;
+}
+.ons-card-accent-amber {
+  border-top: 3.5px solid #F59E0B !important;
+}
+.ons-card-accent-rose {
+  border-top: 3.5px solid #EF4444 !important;
+}
+
+/* Distinctive HealthTech Topbar Brand Emblem */
+.ons-topbar-crest {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }

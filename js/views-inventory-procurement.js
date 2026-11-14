@@ -9359,9 +9359,10 @@
           ${(fakturTab === 'rencana') ? `
             <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📋 Usulan Rencana (${allPlans.length})</button>
             <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📦 Defecta ROP (${lowStockDefecta.length})</button>
+            <button type="button" onclick="window.openRopCalculatorModal()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3 shadow-sm flex items-center gap-1.5">🧮 Kalkulator ROP</button>
             <button type="button" onclick="window.openPenawaranSalesModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Penawaran Sales</button>
             <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">+ Rencana Baru</button>
-            <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3 shadow-sm">⚡ Pesanan Otomatis</button>
+            <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3 shadow-sm">⚡ Pesanan Otomatis</button>
           ` : (fakturTab === 'input') ? `
             <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-bold">← Kembali ke Daftar Faktur</button>
           ` : (fakturTab === 'hutang') ? `
@@ -9430,6 +9431,7 @@
                 <div class="flex flex-wrap gap-2">
                   <button type="button" onclick="window.setFakturTab('defecta')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold">Defecta</button>
                   <button type="button" onclick="window.setFakturTab('harga')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold">Analisis Pembelian &amp; Margin</button>
+                  <button type="button" onclick="window.openRopCalculatorModal()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 font-bold">🧮 Hitung ROP &amp; Usulkan Restok</button>
                   <button type="button" onclick="window.pullLowStockToPlans()" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 font-bold">+ Tarik Item Defecta ke Rencana</button>
                 </div>
               </div>
@@ -10332,6 +10334,217 @@
     if (typeof global.openSpModalFromPlans === 'function') {
       global.openSpModalFromPlans(firstSup, golSp, picked, 'Konversi ' + picked.length + ' item Rencana Pembelian');
     }
+  };
+
+  global.openRopCalculatorModal = (targetDaysParam, bufferDaysParam) => {
+    const st = S().AppState;
+    const targetDays = Number(targetDaysParam || 14);
+    const bufferDays = Number(bufferDaysParam || 5);
+    const pbfLeadMap = {};
+    (st.supplierPbf || []).forEach((p) => { pbfLeadMap[String(p.nama_pbf || '').trim().toUpperCase()] = Number(p.lead_time_hari || 3); });
+
+    const nowMs = Date.now();
+    const trx30Ids = {};
+    (st.penjualan || []).forEach((p) => {
+      const tMs = new Date(p.tanggal || nowMs).getTime();
+      if ((nowMs - tMs) <= 30 * 86400000) trx30Ids[p.id_transaksi] = true;
+    });
+    const sold30Map = {};
+    (st.detailPenjualan || []).forEach((d) => {
+      if (!Object.keys(trx30Ids).length || trx30Ids[d.id_transaksi]) {
+        sold30Map[d.id_obat] = (sold30Map[d.id_obat] || 0) + Number(d.qty || 0);
+      }
+    });
+
+    const suggestions = [];
+    (st.masterObat || []).forEach((o) => {
+      const stok = S().getSellableStok(o.id_obat);
+      const qty30 = Number(sold30Map[o.id_obat] || 0);
+      const avgHarian = Math.max(0.2, Math.round((qty30 > 0 ? qty30 / 30 : Number(o.stok_min || 10) / 14) * 10) / 10);
+      const leadTime = pbfLeadMap[String(o.pbf_utama || '').trim().toUpperCase()] || 3;
+      const safetyStock = Math.max(Number(o.stok_min || 10), Math.ceil(avgHarian * bufferDays));
+      const rop = Math.ceil(avgHarian * leadTime) + safetyStock;
+      const targetStock = Math.ceil(avgHarian * (targetDays + leadTime)) + safetyStock;
+      const usulanQty = Math.max(0, targetStock - stok);
+
+      if (stok <= rop || stok <= Number(o.stok_min || 10)) {
+        const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
+        const golSp = _resolvePlanJenisSp(o.golongan_bpom);
+        suggestions.push({
+          id_obat: o.id_obat,
+          nama: o.nama_dagang,
+          stok,
+          avgHarian,
+          leadTime,
+          safetyStock,
+          rop,
+          usulanQty: Math.max(1, usulanQty),
+          satuan: o.satuan_dasar || 'Unit',
+          pbf: o.pbf_utama || 'PBF Reguler',
+          jenisSp: golSp,
+          hpp,
+          subtotal: Math.max(1, usulanQty) * hpp
+        });
+      }
+    });
+
+    const totalEstRp = suggestions.reduce((s, it) => s + it.subtotal, 0);
+
+    S().openModal(`<div class="p-5 sm:p-6 space-y-4 text-xs">
+      <div class="flex items-center justify-between gap-2 bg-gradient-to-r from-blue-700 via-indigo-700 to-emerald-600 text-white -m-5 sm:-m-6 mb-4 px-5 py-4 rounded-t-2xl shadow-md">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🧮</span>
+          <div>
+            <h3 class="font-black text-base tracking-tight">Kalkulator Pintar ROP &amp; Usulan Restok Otomatis</h3>
+            <p class="text-[11px] text-white/80">Reorder Point = (Lead Time &times; Rata-rata Harian) + Safety Stock &bull; Standar Manajemen Farmasi</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="text-white/80 hover:text-white text-xl px-2 font-bold">&times;</button>
+      </div>
+
+      <div class="p-3.5 rounded-xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <label class="font-bold block mb-1">Target Proteksi Stok</label>
+              <select id="ropTargetDaysSel" class="ons-select text-xs py-1" onchange="window.openRopCalculatorModal(this.value, document.getElementById('ropBufferDaysSel')?.value)">
+                <option value="7" ${targetDays === 7 ? 'selected' : ''}>7 Hari (Turnover Cepat)</option>
+                <option value="14" ${targetDays === 14 ? 'selected' : ''}>14 Hari (Standar Apotek)</option>
+                <option value="21" ${targetDays === 21 ? 'selected' : ''}>21 Hari (Proteksi Sedang)</option>
+                <option value="30" ${targetDays === 30 ? 'selected' : ''}>30 Hari (1 Bulan Penuh)</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Safety Buffer Cadangan</label>
+              <select id="ropBufferDaysSel" class="ons-select text-xs py-1" onchange="window.openRopCalculatorModal(document.getElementById('ropTargetDaysSel')?.value, this.value)">
+                <option value="3" ${bufferDays === 3 ? 'selected' : ''}>3 Hari</option>
+                <option value="5" ${bufferDays === 5 ? 'selected' : ''}>5 Hari (Rekomendasi)</option>
+                <option value="7" ${bufferDays === 7 ? 'selected' : ''}>7 Hari (Ekstra Aman)</option>
+              </select>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Estimasi Nilai Pengadaan</div>
+            <div class="text-lg font-black font-mono-num text-emerald-600">${S().rp(totalEstRp)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ons-table-wrap max-h-72 overflow-y-auto">
+        <table class="ons-table text-xs">
+          <thead>
+            <tr>
+              <th class="w-8"><input type="checkbox" id="ropCheckAll" checked onchange="document.querySelectorAll('.rop-row-check').forEach(c => c.checked = this.checked); window.recalcRopModalTotals();"/></th>
+              <th>Nama Produk</th>
+              <th>Supplier Utama</th>
+              <th class="text-right">Stok Fisik</th>
+              <th class="text-right">Ambang ROP</th>
+              <th class="text-right">Usulan Order</th>
+              <th class="text-right">Estimasi Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${suggestions.length ? suggestions.map((s, idx) => `
+              <tr data-rop-id="${S().esc(s.id_obat)}">
+                <td><input type="checkbox" class="rop-row-check" checked data-idx="${idx}" onchange="window.recalcRopModalTotals()"/></td>
+                <td>
+                  <div class="font-bold">${S().esc(s.nama)}</div>
+                  <div class="text-[10px]" style="color:var(--ons-text-soft)">Avg: ${s.avgHarian}/hari &bull; Lead Time: ${s.leadTime}h &bull; Satuan: ${S().esc(s.satuan)}</div>
+                </td>
+                <td class="text-xs">${S().esc(s.pbf)}</td>
+                <td class="text-right font-mono-num font-bold ${s.stok <= 0 ? 'text-red-600' : 'text-amber-600'}">${s.stok}</td>
+                <td class="text-right font-mono-num font-semibold">${s.rop}</td>
+                <td class="text-right">
+                  <input type="number" min="1" value="${s.usulanQty}" data-hpp="${s.hpp}" class="rop-qty-inp ons-input text-xs font-mono-num text-right w-20 py-1 min-h-0" oninput="window.recalcRopModalTotals()"/>
+                </td>
+                <td class="text-right font-mono-num font-bold rop-subtotal-cell text-emerald-600">${S().rp(s.subtotal)}</td>
+              </tr>
+            `).join('') : `
+              <tr><td colspan="7" class="text-center py-6 text-slate-500">Tidak ada produk yang berada di bawah ambang batas ROP saat ini. Semua stok apotek dalam kondisi aman.</td></tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t" style="border-color:var(--ons-border)">
+        <div class="text-xs text-slate-500"><span id="ropCheckedCountSpan">${suggestions.length}</span> item terpilih</div>
+        <div class="flex gap-2">
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" id="ropApplyBtn" class="ons-btn ons-btn-emerald text-xs font-bold py-2 px-4 shadow-sm" ${!suggestions.length ? 'disabled' : ''}>
+            + Terapkan ke Rencana Pembelian (${suggestions.length})
+          </button>
+        </div>
+      </div>
+    </div>`, { mode: 'spotlight', maxWidth: '820px' });
+
+    const btn = document.getElementById('ropApplyBtn');
+    if (btn && suggestions.length) {
+      btn.onclick = () => window.applyRopSuggestionsToPlans(suggestions);
+    }
+  };
+
+  global.recalcRopModalTotals = () => {
+    let tot = 0;
+    let count = 0;
+    const checks = document.querySelectorAll('.rop-row-check');
+    checks.forEach((chk) => {
+      const tr = chk.closest('tr');
+      if (!tr) return;
+      const inp = tr.querySelector('.rop-qty-inp');
+      const subCell = tr.querySelector('.rop-subtotal-cell');
+      if (chk.checked && inp) {
+        count++;
+        const qty = Math.max(1, Number(inp.value || 1));
+        const hpp = Number(inp.dataset.hpp || 0);
+        const sub = qty * hpp;
+        tot += sub;
+        if (subCell) subCell.textContent = S().rp(sub);
+      }
+    });
+    const cntSpan = document.getElementById('ropCheckedCountSpan');
+    if (cntSpan) cntSpan.textContent = String(count);
+  };
+
+  global.applyRopSuggestionsToPlans = (sugList) => {
+    if (!Array.isArray(sugList) || !sugList.length) return;
+    const plans = _readLocalList(PLANS_KEY);
+    const checks = document.querySelectorAll('.rop-row-check');
+    const existingIds = new Set(plans.map((p) => p.id_obat));
+    let addedCount = 0;
+
+    sugList.forEach((sug, idx) => {
+      const chk = checks[idx];
+      if (chk && !chk.checked) return;
+      const tr = chk ? chk.closest('tr') : null;
+      const inp = tr ? tr.querySelector('.rop-qty-inp') : null;
+      const qty = inp ? Math.max(1, Number(inp.value || 1)) : sug.usulanQty;
+
+      if (existingIds.has(sug.id_obat)) {
+        const ex = plans.find((p) => p.id_obat === sug.id_obat);
+        if (ex) { ex.kuantitas = Math.max(ex.kuantitas, qty); ex.selected = true; }
+      } else {
+        plans.unshift({
+          id_plan: 'PLN-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5).toUpperCase(),
+          id_obat: sug.id_obat,
+          nama_produk: sug.nama,
+          jenis_sp: sug.jenisSp || 'REGULER',
+          nama_supplier: sug.pbf || 'PBF Reguler',
+          kuantitas: qty,
+          satuan: sug.satuan || 'Unit',
+          harga_beli: sug.hpp || 0,
+          keterangan: 'Kalkulator ROP (Ambang ' + sug.rop + ')',
+          selected: true
+        });
+        existingIds.add(sug.id_obat);
+      }
+      addedCount++;
+    });
+
+    _writeLocalList(PLANS_KEY, plans);
+    S().closeModal();
+    global.toast(`${addedCount} usulan restok ROP berhasil ditambahkan ke Rencana Pembelian!`, 'ok');
+    global.setFakturTab('rencana');
+    global.renderActiveView();
   };
 
   global.exportPurchasePlans = (fmt) => {

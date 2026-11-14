@@ -2568,6 +2568,40 @@
     });
     const top10Cust = Object.values(custMap).sort((a, b) => b.total - a.total).slice(0, 10);
 
+    // Analisis Jam Ramai (Peak Hours 08:00 - 22:00)
+    const hourlyCounts = {};
+    const hourlyOmzets = {};
+    for (let h = 8; h <= 22; h++) {
+      hourlyCounts[h] = 0;
+      hourlyOmzets[h] = 0;
+    }
+    rValid.forEach((p) => {
+      let dt = null;
+      if (p.tanggal) dt = new Date(p.tanggal);
+      else if (p.created_at) dt = new Date(p.created_at);
+      if (dt && !isNaN(dt.getTime())) {
+        const h = dt.getHours();
+        if (h >= 8 && h <= 22) {
+          hourlyCounts[h] = (hourlyCounts[h] || 0) + 1;
+          hourlyOmzets[h] = (hourlyOmzets[h] || 0) + Number(p.grand_total || 0);
+        }
+      }
+    });
+
+    let peakHour = 8;
+    let maxHourTrx = 0;
+    for (let h = 8; h <= 22; h++) {
+      if (hourlyCounts[h] > maxHourTrx) {
+        maxHourTrx = hourlyCounts[h];
+        peakHour = h;
+      }
+    }
+
+    const shiftPagi = [8, 9, 10, 11].reduce((s, h) => s + hourlyCounts[h], 0);
+    const shiftSiang = [12, 13, 14, 15].reduce((s, h) => s + hourlyCounts[h], 0);
+    const shiftSore = [16, 17, 18].reduce((s, h) => s + hourlyCounts[h], 0);
+    const shiftMalam = [19, 20, 21, 22].reduce((s, h) => s + hourlyCounts[h], 0);
+
     return `<div class="space-y-5">
       <!-- Sub-Hero Executive Banner Penjualan -->
       <div class="ons-card p-4 sm:p-5 border-l-4 space-y-3 rounded-2xl shadow-sm" style="border-left-color:#0066FE;background:linear-gradient(135deg, rgba(0,102,254,0.06) 0%, rgba(16,185,129,0.04) 100%)">
@@ -2732,6 +2766,92 @@
               </button>
               ${canPos ? `<button type="button" onclick="navigateView('pos','riwayat')" class="ons-btn ons-btn-primary w-full text-xs py-2 font-bold">Buka Riwayat Nota Lengkap &rarr;</button>` : ''}
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jam Ramai & Heatmap Transaksi Apotek (Peak Hours) -->
+      <div class="ons-card p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
+            <div>
+              <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">Pola Kunjungan Pasien &amp; Jam Ramai (Peak Hours 08:00 - 22:00)</h3>
+              <p class="text-xs text-slate-500">Distribusi jam transaksi untuk optimalisasi jadwal shift apoteker &amp; kesiapan kasir.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            ${maxHourTrx > 0 ? `
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                <span>🔥 Puncak Kunjungan:</span>
+                <span class="font-mono-num font-extrabold">${String(peakHour).padStart(2, '0')}:00 - ${String(peakHour).padStart(2, '0')}:59</span>
+                <span class="font-normal opacity-80">(${maxHourTrx} nota)</span>
+              </div>
+            ` : '<span class="text-xs text-slate-400">Belum ada pola jam</span>'}
+          </div>
+        </div>
+
+        <!-- Shift Breakdown Badges -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div>
+              <div class="text-[10px] font-bold text-sky-600">🌅 Pagi (08:00 - 11:59)</div>
+              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftPagi} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
+            </div>
+            <span class="text-lg">🌤️</span>
+          </div>
+          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div>
+              <div class="text-[10px] font-bold text-amber-600">☀️ Siang (12:00 - 15:59)</div>
+              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftSiang} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
+            </div>
+            <span class="text-lg">☀️</span>
+          </div>
+          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div>
+              <div class="text-[10px] font-bold text-indigo-600">🌆 Sore (16:00 - 18:59)</div>
+              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftSore} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
+            </div>
+            <span class="text-lg">🌇</span>
+          </div>
+          <div class="p-2.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div>
+              <div class="text-[10px] font-bold text-emerald-600">🌙 Malam (19:00 - 22:00)</div>
+              <div class="text-base font-extrabold font-mono-num text-slate-900 dark:text-white mt-0.5">${shiftMalam} <span class="text-[10px] font-normal text-slate-400">nota</span></div>
+            </div>
+            <span class="text-lg">🌙</span>
+          </div>
+        </div>
+
+        <!-- Heatmap Hourly Bars -->
+        <div class="pt-2">
+          <div class="grid grid-cols-5 sm:grid-cols-15 gap-1.5 items-end h-32 pt-6 pb-2 px-1 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            ${(() => {
+              const bars = [];
+              const maxRef = Math.max(1, maxHourTrx);
+              for (let h = 8; h <= 22; h++) {
+                const cnt = hourlyCounts[h] || 0;
+                const omz = hourlyOmzets[h] || 0;
+                const heightPct = Math.max(6, Math.round((cnt / maxRef) * 100));
+                const isPeak = cnt > 0 && cnt === maxHourTrx;
+                const barColor = isPeak
+                  ? 'bg-amber-500 ring-2 ring-amber-400 shadow-md'
+                  : (h < 12 ? 'bg-sky-500' : (h < 16 ? 'bg-amber-400' : (h < 19 ? 'bg-indigo-500' : 'bg-emerald-500')));
+                bars.push(`
+                  <div class="flex flex-col items-center h-full justify-end group relative" title="Jam ${String(h).padStart(2, '0')}:00 &bull; ${cnt} Transaksi &bull; Omzet ${S().rp(omz)}">
+                    <span class="text-[9px] font-mono-num font-bold mb-1 opacity-0 group-hover:opacity-100 transition text-slate-700 dark:text-slate-200">${cnt}</span>
+                    <div class="w-full max-w-[20px] rounded-t-md transition-all ${barColor}" style="height:${heightPct}%"></div>
+                    <span class="text-[9px] font-mono-num mt-1 font-semibold ${isPeak ? 'text-amber-600 font-extrabold' : 'text-slate-400'}">${String(h).padStart(2, '0')}</span>
+                  </div>
+                `);
+              }
+              return bars.join('');
+            })()}
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 px-1 mt-1.5 font-medium">
+            <span>08:00 (Buka Apotek)</span>
+            <span class="hidden sm:inline">Pola Beban Kerja Shift Siang &amp; Malam</span>
+            <span>22:00 (Tutup Shift)</span>
           </div>
         </div>
       </div>
@@ -4273,9 +4393,10 @@
 
         ${cart.items.length ? `<div class="flex flex-wrap gap-1 justify-end">
           <button type="button" onclick="window.applyPosDiscPreset('PCT', 0)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">Reset</button>
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 5)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">5%</button>
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 10)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">10%</button>
-          <button type="button" onclick="window.applyPosDiscPreset('RP', 5000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">-5rb</button>
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 5)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-emerald-600">Member 5%</button>
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 10)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-indigo-600">Lansia 10%</button>
+          <button type="button" onclick="window.applyPosDiscPreset('RP', 5000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-amber-600">-5rb</button>
+          <button type="button" onclick="window.applyPosDiscPreset('RP', 10000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-rose-600">-10rb</button>
         </div>` : ''}
 
         ${totals.itemDiscTotal > 0 ? `<div class="flex justify-between text-[11px] text-emerald-600 font-semibold">
@@ -4375,6 +4496,20 @@
           <select aria-label="Kanal Penjualan" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs h-8 py-1">
             ${['Offline', 'Toko Fisik', 'Resep WA', 'Pasien Rutin', 'Online / Ojol'].map((ch) => `<option value="${ch}" ${(cart.channel || 'Offline') === ch ? 'selected' : ''}>${ch}</option>`).join('')}
           </select>
+        </div>
+        <div class="pt-1">
+          <button type="button" onclick="window.openPosDeliveryModal()" class="ons-btn ons-btn-ghost w-full py-1.5 text-xs font-bold text-sky-700 dark:text-sky-300 border border-sky-400/40 hover:bg-sky-50 dark:hover:bg-sky-900/30 flex items-center justify-center gap-1.5 shadow-sm">
+            <span>🛵 Atur Pengantaran / Delivery WA</span>
+          </button>
+          ${cart.delivery_info ? `
+            <div class="mt-1.5 p-2 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-[11px] space-y-0.5">
+              <div class="font-bold text-sky-800 dark:text-sky-300 flex items-center justify-between">
+                <span>🛵 ${S().esc(cart.delivery_info.kurir || 'Kurir')}</span>
+                <span class="font-mono-num text-emerald-600">${S().rp(cart.ongkos_kirim || 0)}</span>
+              </div>
+              <div class="truncate text-slate-500">${S().esc(cart.delivery_info.alamat || 'Alamat diatur')}</div>
+            </div>
+          ` : ''}
         </div>
         <div class="ons-pos-fee-row">
           <span class="font-semibold">Kode Invoice Eksternal</span>
@@ -6321,6 +6456,124 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
+  global.openPosDeliveryModal = () => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (!cart) return;
+    const curDel = cart.delivery_info || {};
+    const member = S().AppState.members.find((m) => m.id_member === cart.id_member) || {};
+    const namaPasien = curDel.nama_penerima || cart.pelanggan_nama || member.nama_pasien || '';
+    const telp = curDel.no_telp || member.no_telepon || member.no_wa || '';
+    const alamat = curDel.alamat || member.alamat || '';
+    const kurir = curDel.kurir || 'Kurir Internal Apotek';
+    const ongkir = Number(cart.ongkos_kirim || curDel.ongkir || 0);
+    const catatan = curDel.catatan_antar || '';
+
+    S().openModal(`<div class="p-5 sm:p-6 space-y-4 text-xs">
+      <div class="flex items-center justify-between gap-2 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white -m-5 sm:-m-6 mb-4 px-5 py-4 rounded-t-2xl shadow-md">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🛵</span>
+          <div>
+            <h3 class="font-extrabold text-base tracking-tight">Pengaturan Pengantaran &amp; Pesanan Delivery / WA</h3>
+            <p class="text-[11px] text-white/80">Integrasi pengiriman obat langsung ke rumah pasien dengan pelacakan ongkir &amp; WhatsApp</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.ONSStore.closeModal()" class="text-white/80 hover:text-white text-xl px-2 font-bold">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="font-bold block mb-1">Nama Penerima / Pasien *</label>
+          <input id="delivNama" class="ons-input text-xs" value="${S().esc(namaPasien)}" placeholder="Nama penerima paket obat"/>
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Nomor WhatsApp / HP *</label>
+          <input id="delivTelp" type="tel" class="ons-input font-mono-num text-xs" value="${S().esc(telp)}" placeholder="08xxxxxxxxxx"/>
+        </div>
+      </div>
+
+      <div>
+        <label class="font-bold block mb-1">Alamat Lengkap Pengantaran *</label>
+        <textarea id="delivAlamat" rows="2" class="ons-input text-xs" placeholder="Jl. Nama Jalan, No. Rumah, RT/RW, Patokan / Warna Pagar">${S().esc(alamat)}</textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="font-bold block mb-1">Pilihan Kurir / Pengantar</label>
+          <select id="delivKurir" class="ons-select text-xs">
+            ${['Kurir Internal Apotek', 'GrabExpress / GoSend', 'Maxim Delivery', 'JNE / SiCepat / J&T', 'Ambil Sendiri di Apotek (Pick Up)'].map((k) => `
+              <option value="${k}" ${kurir === k ? 'selected' : ''}>${k}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Ongkos Kirim (Rp)</label>
+          <input id="delivOngkir" type="number" min="0" step="1000" class="ons-input font-mono-num text-xs" value="${ongkir}" placeholder="0"/>
+        </div>
+      </div>
+
+      <div>
+        <label class="font-bold block mb-1">Catatan Pengantaran (Instruksi Driver)</label>
+        <input id="delivCatatan" class="ons-input text-xs" value="${S().esc(catatan)}" placeholder="Cth: Titip di satpam jika tidak ada orang / Hubungi saat tiba"/>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t" style="border-color:var(--ons-border)">
+        ${telp ? `
+          <button type="button" onclick="window.sendPosDeliveryWa('${S().esc(telp)}')" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 shadow-sm">
+            <span>💬 Kirim Rincian via WhatsApp</span>
+          </button>
+        ` : '<div></div>'}
+        <div class="flex gap-2">
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.savePosDeliverySettings()" class="ons-btn ons-btn-primary text-xs font-bold py-2 px-4 shadow-sm">
+            Simpan Pengantaran &amp; Terapkan Ongkir
+          </button>
+        </div>
+      </div>
+    </div>`, { mode: 'spotlight', maxWidth: '620px' });
+  };
+
+  global.savePosDeliverySettings = () => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (!cart) return;
+    const nama = ((document.getElementById('delivNama') || {}).value || '').trim();
+    const telp = ((document.getElementById('delivTelp') || {}).value || '').trim();
+    const alamat = ((document.getElementById('delivAlamat') || {}).value || '').trim();
+    const kurir = (document.getElementById('delivKurir') || {}).value || 'Kurir Internal Apotek';
+    const ongkir = Math.max(0, Number((document.getElementById('delivOngkir') || {}).value || 0));
+    const catatan = ((document.getElementById('delivCatatan') || {}).value || '').trim();
+
+    cart.delivery_info = {
+      nama_penerima: nama,
+      no_telp: telp,
+      alamat,
+      kurir,
+      ongkir,
+      catatan_antar: catatan,
+      status_antar: 'MENUNGGU_PENGANTARAN'
+    };
+    cart.channel = 'Resep WA / Delivery';
+    cart.ongkos_kirim = ongkir;
+    if (nama && !cart.pelanggan_nama) cart.pelanggan_nama = nama;
+
+    S().closeModal();
+    global.toast('Info delivery dan ongkos kirim ' + S().rp(ongkir) + ' berhasil diterapkan!', 'ok');
+    global.renderActiveView();
+  };
+
+  global.sendPosDeliveryWa = (rawTelp) => {
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (!cart || !cart.items.length) return global.toast('Keranjang masih kosong.', 'warn');
+    let phone = String(rawTelp || '').replace(/\D/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.slice(1);
+    if (!phone) return global.toast('Nomor telepon pasien tidak valid.', 'warn');
+
+    const tots = computePosCartTotals(cart);
+    const itemList = cart.items.map((it, i) => `${i + 1}. ${it.nama_dagang} (${it.qty} ${it.satuan || 'Unit'}) = ${S().rp(Number(it.harga_jual || 0) * Number(it.qty || 1))}`).join('\n');
+    const msg = `Halo Kak, berikut rincian pesanan obat dari Apotek ONS Farma:\n\n${itemList}\n\nSubtotal: ${S().rp(tots.subtotal)}\nOngkir: ${S().rp(tots.ongkosKirim)}\nTotal Tagihan: ${S().rp(tots.grandTotal)}\n\nPengiriman via: ${(cart.delivery_info && cart.delivery_info.kurir) || 'Kurir Apotek'}\nAlamat: ${(cart.delivery_info && cart.delivery_info.alamat) || '-'}\n\nTerima kasih atas kepercayaannya. 🙏`;
+
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   global.openPosCheckoutModal = (metode, total) => {
     const cart = S().AppState.carts[S().AppState.activeCartIdx];
     if (!cart || !cart.items.length) { global.toast('Keranjang masih kosong!', 'warn'); return; }
@@ -6643,6 +6896,7 @@
       cabang_id: st.cabangId,
       shift_id: (st.activeShift && st.activeShift.id_shift) || 'SHF-AKTIF',
       channel: cart.channel,
+      delivery_info: cart.delivery_info || null,
       id_member: cart.id_member,
       tier_harga: cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM'),
       pelanggan_nama: piutangNama || cart.pelanggan_nama || (member && member.nama_pasien) || 'Pasien Umum',
