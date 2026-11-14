@@ -4148,6 +4148,7 @@
           <div id="posSearchDropdown" class="ons-pos-search-menu ${String(st.posSearchQ || '').trim() ? '' : 'hidden'}">${String(st.posSearchQ || '').trim() ? renderPosSearchDropdownHtml(catalog) : ''}</div>
         </div>
         <div class="flex items-center gap-3 ml-auto">
+          <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool" title="Kalkulator Dosis &amp; Aturan Pakai">&#129658; Hitung Dosis</button>
           <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
           <div class="text-right">
             <div class="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Total Tagihan</div>
