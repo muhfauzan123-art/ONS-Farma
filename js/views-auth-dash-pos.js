@@ -1020,8 +1020,8 @@
           </div>
         </div>
 
-        <!-- Panel Kanan: Form Login Staf & Portal Publik -->
-        <div class="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between gap-5">
+        <!-- Panel Kanan: Form Login Staf -->
+        <div class="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-center gap-5">
           <div class="space-y-5">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1149,22 +1149,6 @@
                 <div class="flex items-center gap-1.5">${_loginIco('check', 'w-3.5 h-3.5 text-emerald-500')}<span>Wipe cache otomatis saat keluar</span></div>
               </div>
             </div>`}
-          </div>
-
-          <div class="pt-3 border-t flex flex-wrap items-center gap-2" style="border-color:var(--ons-border)">
-            <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Portal Publik:</span>
-            <a href="./index.html?katalog=1" class="ons-login-portal-pill">
-              ${_loginIco('store', 'w-3.5 h-3.5 text-blue-600')}
-              <span>Etalase E-Apotek</span>
-            </a>
-            <a href="./index.html?erx=DOKTER-MITRA-01" class="ons-login-portal-pill">
-              ${_loginIco('rx', 'w-3.5 h-3.5 text-emerald-600')}
-              <span>E-Resep Dokter</span>
-            </a>
-            <button type="button" onclick="window.openManualVerifyPrompt()" class="ons-login-portal-pill">
-              ${_loginIco('qr', 'w-3.5 h-3.5 text-amber-600')}
-              <span>Verifikasi QR Surat</span>
-            </button>
           </div>
         </div>
       </div>
