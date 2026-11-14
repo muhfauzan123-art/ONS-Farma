@@ -1868,7 +1868,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
-            <button onclick="window.setKlinisTab('soap')" class="ons-tab-btn ${klinisTab === 'soap' ? 'active' : ''}">Skrining &amp; SOAP (${(st.rekamKlinis || []).length})</button>
+            <button onclick="window.setKlinisTab('soap')" class="ons-tab-btn ${klinisTab === 'soap' ? 'active' : ''}">Kajian Resep &amp; SOAP (${(st.rekamKlinis || []).length})</button>
             <button onclick="window.setKlinisTab('racikan')" class="ons-tab-btn ${klinisTab === 'racikan' ? 'active' : ''}">Racikan &amp; Etiket</button>
             <button onclick="window.setKlinisTab('kalkulator')" class="ons-tab-btn ${klinisTab === 'kalkulator' ? 'active' : ''}">Kalkulator Dosis &amp; Template</button>
             <button onclick="window.setKlinisTab('pio')" class="ons-tab-btn ${klinisTab === 'pio' ? 'active' : ''}">Kartu PIO &amp; Jadwal</button>
@@ -2225,7 +2225,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
       </div>
       <div class="flex gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
-        <button onclick="window.openSkriningModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost flex-1">+ Catat Skrining</button>
+        <button onclick="ONSStore.closeModal();window.openPemeriksaanModal('${S().esc(m.id_member)}','semua')" class="ons-btn ons-btn-emerald flex-1">+ Cek Lab (POCT)</button>
         <button onclick="window.openPioFromMember('${S().esc(m.id_member)}')" class="ons-btn ons-btn-primary flex-1">Buat Kartu PIO WA &rarr;</button>
       </div>
     </div>`, '430px');
@@ -2347,16 +2347,17 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
   function renderEresepPrbView() {
     const st = S().AppState;
-    eresepTab = (st.subTabs && st.subTabs['eresep-prb']) || eresepTab || 'erx';
+    eresepTab = (st.subTabs && st.subTabs['eresep-prb']) || eresepTab || 'prb';
     const erxUrl = `${global.location.origin}${global.location.pathname}?erx=DR-MITRA-${new Date().getFullYear()}`;
-    const erxAll = st.rekamKlinis.filter((k) => String(k.status_klinis || '') === 'ANTRIAN_VALIDASI_APJ' || String(k.layanan_jenis || '') === 'ERX_DOKTER');
+    const erxAll = (st.rekamKlinis || []).filter((k) => String(k.status_klinis || '') === 'ANTRIAN_VALIDASI_APJ' || String(k.layanan_jenis || '') === 'ERX_DOKTER');
     const eq = erxSearchQ.trim().toLowerCase();
     const erxQueue = erxAll.filter((rx) => !eq || `${rx.id_klinis} ${rx.nama_pasien} ${rx.dokter_asal} ${rx.soap_notes}`.toLowerCase().includes(eq));
     const antreCount = erxAll.filter((x) => x.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
 
     const fmtProg = (p) => (S().formatMemberProgram ? S().formatMemberProgram(p) : (p || 'MEMBER'));
     const pq = prbSearchQ.trim().toLowerCase();
-    const filteredMembers = (st.members || []).filter((m) => {
+    const allMembers = st.members || [];
+    const filteredMembers = allMembers.filter((m) => {
       const prog = fmtProg(m.program_prb);
       if (prbFilter === 'MEMBER_RUTIN' && prog !== 'MEMBER_RUTIN' && prog !== 'TERAPI_RUTIN') return false;
       if (prbFilter === 'UMUM' && prog !== 'UMUM') return false;
@@ -2371,19 +2372,50 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       return true;
     });
 
+    const rutinCount = allMembers.filter((m) => {
+      const p = fmtProg(m.program_prb);
+      return p === 'MEMBER_RUTIN' || p === 'TERAPI_RUTIN';
+    }).length;
+    const refillSegeraCount = allMembers.filter((m) => m.tgl_habis_obat && S().daysUntil(m.tgl_habis_obat) <= 5).length;
+    const totalLabCount = (st.pemeriksaanPasien || []).length;
+
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">E-Resep Dokter Mitra, Skrining Kesehatan &amp; Pantau Pasien Rutin</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Validasi PIN APJ antrean resep dokter mitra, skrining TDS/GDS/BMI dengan grafik sparkline, &amp; pengingat refill obat rutin apotek.</p>
+          <h1 class="text-xl font-extrabold">Pasien &amp; Terapi Rutin, Refill Kronis (PRB) &amp; Antrean E-Resep</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Manajemen data pasien apotek, pemantauan kepatuhan terapi rutin kronis, pengingat refill obat via WhatsApp, &amp; validasi resep dokter.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
+            <button onclick="window.setEresepTab('prb')" class="ons-tab-btn ${eresepTab === 'prb' ? 'active' : ''}">Pasien &amp; Terapi Rutin (${allMembers.length})</button>
             <button onclick="window.setEresepTab('erx')" class="ons-tab-btn ${eresepTab === 'erx' ? 'active' : ''}">Antrean E-Resep (${antreCount}/${erxAll.length})</button>
-            <button onclick="window.setEresepTab('prb')" class="ons-tab-btn ${eresepTab === 'prb' ? 'active' : ''}">Pasien Rutin &amp; Skrining (${(st.members || []).length})</button>
           </div>
-          <button onclick="window.openSkriningModal()" class="ons-btn ons-btn-emerald text-xs">+ Catat Skrining</button>
+          <button onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs">+ Cek Lab Pasien (POCT)</button>
           <button onclick="window.openAddMemberPrbModal()" class="ons-btn ons-btn-primary text-xs">+ Pasien / Member</button>
+        </div>
+      </div>
+
+      <!-- Jalur Ringkasan Pasien & Kepatuhan Terapi -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="ons-card p-3">
+          <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Pasien Apotek</div>
+          <div class="text-xl font-extrabold font-mono-num mt-0.5">${allMembers.length}</div>
+          <div class="text-[10px] mt-0.5" style="color:var(--ons-text-muted)">Terdaftar di sistem</div>
+        </div>
+        <div class="ons-card p-3">
+          <div class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Pasien Terapi Rutin</div>
+          <div class="text-xl font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 mt-0.5">${rutinCount}</div>
+          <div class="text-[10px] mt-0.5" style="color:var(--ons-text-muted)">Program PRB / Kronis</div>
+        </div>
+        <div class="ons-card p-3">
+          <div class="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Refill Segera (&le;5 Hari)</div>
+          <div class="text-xl font-extrabold font-mono-num text-amber-600 dark:text-amber-400 mt-0.5">${refillSegeraCount}</div>
+          <div class="text-[10px] mt-0.5" style="color:var(--ons-text-muted)">Perlu dikirimi reminder</div>
+        </div>
+        <div class="ons-card p-3">
+          <div class="text-[11px] font-semibold text-blue-600 dark:text-blue-400">E-Resep Menunggu PIN</div>
+          <div class="text-xl font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-0.5">${antreCount}</div>
+          <div class="text-[10px] mt-0.5" style="color:var(--ons-text-muted)">Validasi APJ sebelum POS</div>
         </div>
       </div>
 
@@ -2391,7 +2423,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="ons-card p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap gap-2 items-center">
-              <input class="ons-input text-xs w-60" placeholder="Cari pasien, diagnosa, alergi..." value="${S().esc(prbSearchQ)}" oninput="window.setPrbSearchQ(this.value)"/>
+              <input class="ons-input text-xs w-60" placeholder="Cari nama pasien, diagnosa, alergi..." value="${S().esc(prbSearchQ)}" oninput="window.setPrbSearchQ(this.value)"/>
               <div class="ons-tab-bar">
                 ${[
                   { id: 'SEMUA', label: 'Semua' },
@@ -2401,30 +2433,56 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 ].map((f) => `<button onclick="window.setPrbFilter('${f.id}')" class="ons-tab-btn ${prbFilter === f.id ? 'active' : ''}">${f.label}</button>`).join('')}
               </div>
             </div>
-            <button onclick="navigateView('billing','tagihan')" class="ons-btn ons-btn-ghost text-xs">Tagihan Pasien &rarr;</button>
+            <button onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-ghost text-xs">&#128302; Buka Pemeriksaan Pasien &rarr;</button>
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
-              <thead><tr><th>Pasien &amp; Alergi</th><th>Program &amp; Diagnosa</th><th>Tgl Habis Obat</th><th>Poin</th><th>Skrining &amp; Tren GDS</th><th>Aksi</th></tr></thead>
+              <thead><tr><th>Pasien &amp; Alergi</th><th>Program &amp; Diagnosa</th><th>Tgl Habis Obat</th><th>Poin</th><th>Pemeriksaan Terakhir (POCT)</th><th>Aksi</th></tr></thead>
               <tbody>
                 ${filteredMembers.length ? filteredMembers.map((m) => {
+                  // SINKRONISASI DATA PEMERIKSAAN DENGAN st.pemeriksaanPasien
+                  const allPem = st.pemeriksaanPasien || [];
+                  const latestPem = allPem.find((p) => (p.id_member && p.id_member === m.id_member) || (p.nama_pasien && m.nama_pasien && p.nama_pasien.trim().toLowerCase() === m.nama_pasien.trim().toLowerCase()));
+                  
                   let skrList = [];
                   try { skrList = JSON.parse(m.riwayat_skrining_json || '[]'); } catch (e) {}
                   const lastSkr = skrList[skrList.length - 1];
+
+                  let pemSummary = '-';
+                  if (latestPem) {
+                    const parts = [];
+                    if (latestPem.td_sistol && latestPem.td_diastol) parts.push('TD ' + latestPem.td_sistol + '/' + latestPem.td_diastol);
+                    if (latestPem.gula_sewaktu || latestPem.gula_puasa) parts.push('Gula ' + (latestPem.gula_sewaktu || latestPem.gula_puasa));
+                    if (latestPem.kolesterol_total) parts.push('Kol ' + latestPem.kolesterol_total);
+                    if (latestPem.asam_urat) parts.push('AU ' + latestPem.asam_urat);
+                    pemSummary = parts.join(' | ') || (latestPem.imt_bmi ? 'BMI ' + latestPem.imt_bmi : '-');
+                  } else if (lastSkr) {
+                    pemSummary = 'TD ' + (lastSkr.td || '-') + ' | GDS ' + (lastSkr.gds || '-') + ' | BMI ' + (lastSkr.bmi || '-');
+                  }
+
                   const daysLeft = m.tgl_habis_obat ? S().daysUntil(m.tgl_habis_obat) : null;
                   return `<tr>
-                    <td><b>${S().esc(m.nama_pasien)}</b><br/><span class="text-xs text-red-600">Alergi: ${S().esc(m.alergi_list)}</span></td>
-                    <td class="text-xs"><span class="badge-bpom bpom-terbatas">${S().esc(fmtProg(m.program_prb))}</span><div class="mt-1">${S().esc(m.penyakit_kronis)}</div></td>
-                    <td class="font-mono-num text-xs">${m.tgl_habis_obat ? `<span class="badge-bpom ${daysLeft <= 3 ? 'bpom-keras' : (daysLeft <= 7 ? 'bpom-prekursor' : 'bpom-bebas')}">${m.tgl_habis_obat} (${daysLeft}h)</span>` : '-'}</td>
+                    <td>
+                      <b class="text-sm">${S().esc(m.nama_pasien)}</b>
+                      <div class="text-xs text-red-600 mt-0.5">Alergi: ${S().esc(m.alergi_list || 'Tidak Ada')}</div>
+                      <div class="text-[11px] font-mono-num text-slate-500">${S().esc(m.no_hp || '-')}</div>
+                    </td>
+                    <td class="text-xs">
+                      <span class="badge-bpom bpom-terbatas">${S().esc(fmtProg(m.program_prb))}</span>
+                      <div class="mt-1 font-medium">${S().esc(m.penyakit_kronis || '-')}</div>
+                    </td>
+                    <td class="font-mono-num text-xs">
+                      ${m.tgl_habis_obat ? `<span class="badge-bpom ${daysLeft <= 3 ? 'bpom-keras' : (daysLeft <= 7 ? 'bpom-prekursor' : 'bpom-bebas')}">${m.tgl_habis_obat} (${daysLeft}h)</span>` : '-'}
+                    </td>
                     <td class="font-mono-num font-bold text-blue-600">${m.poin_loyalitas || 0}</td>
                     <td class="text-xs font-mono-num">
-                      <div>${lastSkr ? `TD ${S().esc(lastSkr.td)} | GDS ${S().esc(lastSkr.gds)} | BMI ${S().esc(lastSkr.bmi)}` : '-'}</div>
+                      <div class="font-semibold text-slate-800 dark:text-slate-200">${S().esc(pemSummary)}</div>
                       <div>${_renderSkriningSparkline(skrList)}</div>
                     </td>
                     <td>
                       <div class="flex flex-wrap gap-1">
-                        <button onclick="window.openMemberProfileDrawer('${S().esc(m.id_member)}')" class="ons-btn ons-btn-primary text-xs py-1 px-2">Profil</button>
-                        <button onclick="window.openSkriningModal('${S().esc(m.id_member)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">+ Skrining</button>
+                        <button onclick="window.openMemberProfileDrawer('${S().esc(m.id_member)}')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Profil</button>
+                        <button onclick="window.openPemeriksaanModal('${S().esc(m.id_member)}','semua')" class="ons-btn ons-btn-ghost text-xs py-1 px-2" title="Catat Cek Tensi, Gula, Kolesterol, Asam Urat">+ Cek Lab</button>
                         ${(() => {
                           if (!m.no_hp) return '';
                           const profPrb = S().getStoreProfile ? S().getStoreProfile() : {};
@@ -2434,17 +2492,17 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                             'Halo *' + m.nama_pasien + '*,',
                             'Pengingat Refill Obat Rutin (' + (m.penyakit_kronis || fmtProg(m.program_prb)) + ') dari *' + apotekNm + '*.',
                             'Jadwal habis obat: *' + (m.tgl_habis_obat || 'minggu ini') + '*.',
-                            'Skrining terakhir: ' + (lastSkr ? ('TD ' + lastSkr.td + ', GDS ' + lastSkr.gds + ', BMI ' + lastSkr.bmi) : 'Terpantau baik') + '.',
+                            'Pemeriksaan terakhir: ' + (pemSummary !== '-' ? pemSummary : 'Terpantau baik') + '.',
                             'Pesan ulang online langsung: ' + eApotekUrl,
                             'Apoteker: ' + (profPrb.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')
                           ].join('\n');
                           const hrefWa = S().buildWaUrl ? S().buildWaUrl(m.no_hp, waBody) : ('https://wa.me/' + m.no_hp + '?text=' + encodeURIComponent(waBody));
-                          return `<a target="_blank" rel="noopener" href="${S().esc(hrefWa)}" class="ons-btn ons-btn-emerald text-xs py-1 px-2">WA Refill (Gratis)</a>`;
+                          return `<a target="_blank" rel="noopener" href="${S().esc(hrefWa)}" class="ons-btn ons-btn-emerald text-xs py-1 px-2">WA Refill</a>`;
                         })()}
                       </div>
                     </td>
                   </tr>`;
-                }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Tidak ada pasien / member sesuai filter ini.</td></tr>'}
+                }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Tidak ada pasien / member sesuai filter ini.</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -2453,12 +2511,11 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="space-y-4">
           <div class="ons-card p-4 flex flex-wrap items-center justify-between gap-3">
             <div class="text-xs">
-              <div class="font-bold text-sm">Tautan Khusus Mini-Portal Dokter Mitra:</div>
+              <div class="font-bold text-sm">Tautan Khusus Mini-Portal Dokter Mitra (E-Resep):</div>
               <code class="font-mono-num text-blue-600 break-all">${S().esc(erxUrl)}</code>
             </div>
             <div class="flex gap-2">
-              <button onclick="navigator.clipboard?.writeText('${S().esc(erxUrl)}');toast('Link E-Resep Dokter disalin!','ok')" class="ons-btn ons-btn-ghost text-xs">Salin Tautan</button>
-              <a href="?erx=DR-MITRA-01" class="ons-btn ons-btn-primary text-xs">Buka Portal Dokter &rarr;</a>
+              <button onclick="navigator.clipboard?.writeText('${S().esc(erxUrl)}');toast('Tautan E-Resep Dokter Mitra disalin!','ok')" class="ons-btn ons-btn-ghost text-xs">Salin Tautan</button>
             </div>
           </div>
 
@@ -2471,15 +2528,15 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               </div>
             </div>
             <div class="space-y-2">
-              ${erxQueue.length === 0 ? '<div class="text-xs py-5 text-center" style="color:var(--ons-text-soft)">Belum ada E-Resep masuk yang cocok.</div>' : erxQueue.map((rx) => `
-                <div class="p-3 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+              ${erxQueue.length === 0 ? '<div class="text-xs py-6 text-center" style="color:var(--ons-text-soft)">Belum ada E-Resep masuk dari dokter mitra. Resep offline dapat langsung di-input melalui menu <b>Pelayanan Klinis &rarr; + Input SOAP Klinis</b>.</div>' : erxQueue.map((rx) => `
+                <div class="p-3.5 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
                   <div class="space-y-1">
                     <div class="flex flex-wrap items-center gap-2">
                       <span class="font-mono-num font-bold">${S().esc(rx.id_klinis)}</span>
                       <span class="badge-bpom ${rx.status_klinis === 'TERVERIFIKASI_APJ' ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(rx.status_klinis)}</span>
                       <b>${S().esc(rx.nama_pasien)}</b> &bull; <span>${S().esc(rx.dokter_asal)} (${S().esc(rx.no_sip_dokter || '-')})</span>
                     </div>
-                    <div class="font-mono-num whitespace-pre-line p-2 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(rx.soap_notes || '-')}</div>
+                    <div class="font-mono-num whitespace-pre-line p-2.5 rounded-lg border text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(rx.soap_notes || '-')}</div>
                     ${rx.cdss_warning ? `<div class="text-amber-600 font-semibold">${S().esc(rx.cdss_warning)}</div>` : ''}
                   </div>
                   <div class="flex flex-wrap gap-2 shrink-0">
@@ -10662,7 +10719,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <button onclick="navigateView('dashboard')" class="font-bold text-blue-600">&#127968; Home</button>
             <button onclick="navigateView('pos')">&#9889; POS</button>
             <button onclick="navigateView('gudang')">&#128230; Stok</button>
-            <button onclick="navigateView('billing')">&#128179; Tagihan</button>
+            <button onclick="navigateView('klinis')">&#129658; Klinis</button>
           </div>` : ''}
         </div>
       </div>

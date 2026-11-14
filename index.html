@@ -196,12 +196,12 @@
           label: 'Klinis & Pasien',
           items: [
             {
-              viewId: 'eresep-prb', label: 'E-Resep &amp; Pasien Rutin', icon: 'shield', badgeKey: 'erxPending', badgeTone: 'info',
-              desc: 'Validasi E-Resep dokter mitra via PIN SIPA & pantau terapi rutin pasien apotek.',
-              kw: 'e-resep erx pin apj pasien rutin kronis skrining terapi',
+              viewId: 'eresep-prb', label: 'Pasien &amp; Terapi Rutin', icon: 'shield', badgeKey: 'erxPending', badgeTone: 'info',
+              desc: 'Database pasien, terapi rutin kronis (PRB), riwayat alergi, & antrean e-resep dokter.',
+              kw: 'pasien rutin kronis terapi prb member profil alergi e-resep erx pin apj refill',
               tabs: [
-                { subTab: 'erx', label: 'Antrean E-Resep', kw: 'e-resep dokter mitra pin apj validasi pos' },
-                { subTab: 'prb', label: 'Pasien Rutin & Skrining', kw: 'pasien rutin kronis refill gds sparkline wa skrining' }
+                { subTab: 'prb', label: 'Pasien Terapi Rutin (PRB)', kw: 'pasien rutin kronis terapi prb member profil alergi refill' },
+                { subTab: 'erx', label: 'Antrean E-Resep', kw: 'e-resep dokter mitra pin apj validasi pos' }
               ]
             },
             {
@@ -218,14 +218,14 @@
             },
             {
               viewId: 'klinis', label: 'Pelayanan Klinis', icon: 'clinical',
-              desc: 'Skrining resep, SOAP SATUSEHAT, racikan, etiket, Kartu PIO & MESO Naranjo.',
+              desc: 'Kajian resep dokter, SOAP SATUSEHAT, racikan & etiket, Kalkulator Dosis 41 preset, Kartu PIO & MESO.',
               kw: 'klinis apoteker soap pio satusehat racikan etiket meso naranjo copy resep kalkulator dosis obat anak dewasa bsa infus gfr',
               tabs: [
-                { subTab: 'soap', label: 'Skrining & SOAP', kw: 'soap pio pto skrining resep satusehat' },
+                { subTab: 'soap', label: 'Kajian Resep & SOAP', kw: 'soap pio pto kajian skrining resep satusehat' },
                 { subTab: 'racikan', label: 'Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru' },
                 { subTab: 'kalkulator', label: 'Kalkulator Dosis & Template', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa sirup tetes tetesan infus gfr aturan minum template' },
-                { subTab: 'pio', label: 'Kartu PIO & Jadwal', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
-                { subTab: 'meso', label: 'MESO (Naranjo)', kw: 'meso naranjo efek samping rotd bpom' }
+                { subTab: 'pio', label: 'Kartu PIO & Edukasi WA', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
+                { subTab: 'meso', label: 'MESO BPOM (Naranjo)', kw: 'meso naranjo efek samping rotd bpom' }
               ]
             },
             {
@@ -903,9 +903,9 @@
             klinis: window.setKlinisTab,
             'eresep-prb': window.setEresepTab,
             pemeriksaan: window.setPemeriksaanTab,
+            'crm-wa': (t) => (window.ONSViewsOmniCrm && typeof window.ONSViewsOmniCrm.setCrmTab === 'function' ? window.ONSViewsOmniCrm.setCrmTab(t) : null),
             finance: window.setFinanceTab,
             sipnap: window.setSipnapTab,
-            billing: window.setBillingTab,
             analisis: window.setAnalisisTab,
             users: window.setUsersTab,
             settings: window.setSettingsTab
