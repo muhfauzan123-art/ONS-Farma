@@ -12,6 +12,9 @@
   let masterFilterStok = 'SEMUA'; // SEMUA | AMAN | KRITIS | HABIS | NEAR_ED
   let masterFilterSediaan = 'SEMUA'; // SEMUA | TABLET | KAPSUL | SIRUP | SALEP | INJEKSI | LAINNYA
   let masterFilterStatusJual = 'SEMUA'; // SEMUA | DIJUAL | TIDAK_DIJUAL
+  let masterFilterPabrikan = 'SEMUA';
+  let masterFilterPbf = 'SEMUA';
+  let masterFilterSuhu = 'SEMUA'; // SEMUA | CHILLER | RUANG
   let masterSortBy = 'NAMA'; // NAMA | NAMA_DESC | STOK_ASC | STOK_DESC | ED_ASC | HARGA_DESC | HARGA_ASC | MARGIN_DESC | VALUASI_DESC
   let masterViewMode = 'TABLE'; // TABLE | CARD
   let masterSearchQ = '';
@@ -147,6 +150,31 @@
     </div>`, '420px');
   }
 
+  function _formatStockMultiSatuan(stok, o) {
+    const sDasar = o.satuan_dasar || 'Unit';
+    const sSedang = o.satuan_sedang || 'Strip';
+    const sBesar = o.satuan_besar || 'Box';
+    const rBesar = Number(o.rasio_besar || 0);
+    const rSedang = Number(o.rasio_sedang || 0);
+    const qty = Math.max(0, Number(stok || 0));
+    if (qty === 0) return `0 ${sDasar}`;
+    if (rBesar > 1 && qty >= rBesar) {
+      const b = Math.floor(qty / rBesar);
+      const rem = qty % rBesar;
+      if (rSedang > 1 && rem >= rSedang) {
+        const s = Math.floor(rem / rSedang);
+        const d = rem % rSedang;
+        return `${b} ${sBesar} ${s} ${sSedang}${d > 0 ? ` ${d} ${sDasar}` : ''}`;
+      }
+      return `${b} ${sBesar}${rem > 0 ? ` ${rem} ${sDasar}` : ''}`;
+    } else if (rSedang > 1 && qty >= rSedang) {
+      const s = Math.floor(qty / rSedang);
+      const d = qty % rSedang;
+      return `${s} ${sSedang}${d > 0 ? ` ${d} ${sDasar}` : ''}`;
+    }
+    return `${qty} ${sDasar}`;
+  }
+
   function buildObatMeta(o) {
     const stok = S().getSellableStok(o.id_obat);
     const totalFisik = S().getTotalStok(o.id_obat);
@@ -168,7 +196,8 @@
       : (isLow
         ? { label: 'Menipis', color: '#D97706', bar: '#F59E0B', badge: 'bpom-prekursor' }
         : { label: 'Aman', color: '#059669', bar: '#10B981', badge: 'bpom-bebas' });
-    return { o, stok, totalFisik, min, max, pct, isZero, isLow, isCritical, nearBatch, edDays, isNearEd, isCold, hpp, harga, marginPct, stokTone };
+    const stockMultiDesc = _formatStockMultiSatuan(stok, o);
+    return { o, stok, totalFisik, min, max, pct, isZero, isLow, isCritical, nearBatch, edDays, isNearEd, isCold, hpp, harga, marginPct, stokTone, stockMultiDesc };
   }
 
   function _getFilteredMasterObatMeta() {
@@ -194,9 +223,13 @@
       }
       if (masterFilterStatusJual === 'DIJUAL' && String(o.status_aktif || 'AKTIF').toUpperCase() === 'NONAKTIF') return false;
       if (masterFilterStatusJual === 'TIDAK_DIJUAL' && String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF') return false;
+      if (masterFilterPabrikan !== 'SEMUA' && String(o.pabrikan || '').trim() !== masterFilterPabrikan) return false;
+      if (masterFilterPbf !== 'SEMUA' && String(o.pbf_utama || '').trim() !== masterFilterPbf) return false;
+      if (masterFilterSuhu === 'CHILLER' && !m.isCold) return false;
+      if (masterFilterSuhu === 'RUANG' && m.isCold) return false;
       if (masterSearchQ) {
         const q = masterSearchQ.toLowerCase();
-        const hay = `${o.id_obat} ${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi} ${o.pbf_utama} ${o.bentuk_sediaan} ${o.kekuatan}`.toLowerCase();
+        const hay = `${o.id_obat} ${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi} ${o.pbf_utama} ${o.pabrikan} ${o.bentuk_sediaan} ${o.kekuatan}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -252,10 +285,11 @@
     const potensiRugiCount = seeCost ? allMeta.filter((m) => Number(m.hpp || 0) > 0 && Number(m.harga || 0) <= Number(m.hpp || 0)).length : 0;
     const totalItemFisik = allMeta.reduce((sum, m) => sum + Math.max(0, m.stok), 0);
     const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (Math.max(0, m.stok) * m.hpp), 0) : 0;
-    const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA');
+    const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA' || masterFilterPabrikan !== 'SEMUA' || masterFilterPbf !== 'SEMUA' || masterFilterSuhu !== 'SEMUA');
 
     const actionButtons = (o) => `<div class="flex flex-wrap items-center gap-1 justify-end">
       <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2" title="Detail Monograf Klinis &amp; Batch FEFO">👁️ Detail</button>
+      <button type="button" onclick="window.openShelfLabelModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-teal-700 font-semibold" title="Cetak Label Harga Rak Apotek (Shelf Talker)">🏷️ Label Rak</button>
       <button type="button" onclick="window.openObatRiwayatBeliModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-blue-700 font-semibold" title="Riwayat Beli dari PBF &amp; Keputusan Harga Jual">📈 Riwayat Beli</button>
       <button type="button" onclick="window.openProductBarcodeModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Barcode Label Stiker 58/80mm">🏷️ Barcode</button>
       <button type="button" onclick="window.openObatKartuStok('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Buka Kartu Stok &amp; Riwayat Mutasi">📊 Mutasi</button>
@@ -290,6 +324,13 @@
         const o = m.o;
         const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
         const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
+        const rSedang = Number(o.rasio_sedang || 10);
+        const rBesar = Number(o.rasio_besar || 100);
+        const hEceran = Number(o.harga_umum || 0);
+        const hStrip = Number(o.harga_strip || (hEceran * rSedang));
+        const hBox = Number(o.harga_box || (hEceran * rBesar));
+        const hMem = Number(o.harga_member || hEceran);
+        const sBreakdown = _formatStockMultiSatuan(m.stok, o);
         return `<div class="ons-product-card flex flex-col justify-between gap-2.5 ${!isAktifJual ? 'opacity-75' : ''}">
           <div class="space-y-1.5">
             <div class="flex items-start justify-between gap-2">
@@ -313,9 +354,12 @@
               <span>&bull; Pabrik: <b class="text-blue-600">${S().esc(o.pabrikan || '-')}</b></span>
               <span>&bull; PBF: ${S().esc(o.pbf_utama || 'Apotek')}</span>
             </div>
-            <div class="p-2.5 rounded-lg border space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="p-2.5 rounded-lg border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
               <div class="flex items-center justify-between text-xs font-mono-num">
-                <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar || 'Unit')}</span>
+                <div>
+                  <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar || 'Unit')}</span>
+                  ${m.stok > 0 && (rSedang > 1 || rBesar > 1) ? `<span class="text-[10px] text-slate-500 font-medium ml-1">(&approx; ${sBreakdown})</span>` : ''}
+                </div>
                 <span class="text-[10.5px] font-bold uppercase" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
               </div>
               <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
@@ -323,16 +367,39 @@
                 <span>Min: ${m.min} &bull; Max: ${m.max}</span>
                 ${m.nearBatch ? `<span class="${m.isNearEd ? 'text-red-600 font-bold' : ''}">ED: ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</span>` : '<span>Belum ada batch</span>'}
               </div>
-              <div class="text-[10.5px] font-mono-num pt-0.5 border-t border-slate-200 dark:border-slate-700" style="color:var(--ons-text-soft)">
-                1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar || 'Unit')} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar || 'Unit')}
+              ${m.isCritical ? `
+              <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', undefined, 'Defecta dari Master Obat')" class="ons-btn ons-btn-emerald text-[10.5px] py-1 px-2 w-full font-bold flex items-center justify-center gap-1 shadow-xs" title="Masukkan kekurangan stok ke Rencana Pemesanan SP">
+                ⚡ + Defecta (Pesan ke PBF)
+              </button>` : ''}
+              <div class="text-[10.5px] font-mono-num pt-1 border-t border-slate-200 dark:border-slate-700" style="color:var(--ons-text-soft)">
+                1 ${S().esc(o.satuan_besar || 'Box')} = ${rBesar} ${S().esc(o.satuan_dasar || 'Unit')} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}
               </div>
             </div>
+            <div class="grid grid-cols-2 gap-1.5 p-2 rounded-lg border text-[11px] font-mono-num" style="border-color:var(--ons-border)">
+              <div>
+                <span class="text-[10px] text-slate-400 block uppercase">Eceran</span>
+                <span class="font-extrabold text-blue-600 text-sm">${S().rp(hEceran)}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-emerald-600 block uppercase">Member</span>
+                <span class="font-bold text-emerald-600">${S().rp(hMem)}</span>
+              </div>
+              ${rSedang > 1 ? `
+              <div>
+                <span class="text-[9.5px] text-slate-400 block uppercase">Per ${S().esc(o.satuan_sedang || 'Strip')}</span>
+                <span class="font-semibold text-slate-700 dark:text-slate-300">${S().rp(hStrip)}</span>
+              </div>` : ''}
+              ${rBesar > 1 ? `
+              <div>
+                <span class="text-[9.5px] text-slate-400 block uppercase">Per ${S().esc(o.satuan_besar || 'Box')}</span>
+                <span class="font-semibold text-slate-700 dark:text-slate-300">${S().rp(hBox)}</span>
+              </div>` : ''}
+            </div>
           </div>
-          <div class="pt-2 border-t flex flex-wrap items-end justify-between gap-2" style="border-color:var(--ons-border)">
+          <div class="pt-2 border-t flex flex-wrap items-center justify-between gap-2" style="border-color:var(--ons-border)">
             <div>
-              <div class="text-[10px] font-semibold uppercase" style="color:var(--ons-text-soft)">Harga / ${S().esc(o.satuan_dasar || 'Unit')}</div>
-              <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(o.harga_umum)}</div>
-              ${seeCost ? `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">HPP ${S().rp(o.hpp_avg || 0)}${m.marginPct !== null ? ` &bull; <b class="text-emerald-600">+${m.marginPct}%</b>` : ''}</div>` : `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Member: ${S().rp(o.harga_member || o.harga_umum)}</div>`}
+              ${seeCost ? `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">HPP ${S().rp(o.hpp_avg || 0)}${m.marginPct !== null ? ` &bull; <b class="text-emerald-600">+${m.marginPct}%</b>` : ''}</div>` : ''}
+              <div class="text-[10px] text-slate-400 line-through">HET: ${S().rp(hetVal)}</div>
             </div>
             ${actionButtons(o)}
           </div>
@@ -351,13 +418,13 @@
               <th class="w-10 text-center">No.</th>
               <th>Nama Produk &amp; Sediaan</th>
               <th>Kode KFA &amp; NIE BPOM</th>
-              <th>Pabrik / PBF Utama</th>
+              <th>Pabrik &amp; Distributor</th>
               <th>Lokasi Rak</th>
               <th>Stok Buffer &amp; Kadaluarsa</th>
-              <th>Konversi Kemasan</th>
+              <th>Multi-Kemasan</th>
               ${seeCost ? '<th title="Referensi Harga Beli / Harga Pokok (HPP)">HPP Modal</th>' : ''}
               <th>HET Kemenkes</th>
-              <th>Harga Jual (Umum / Member)</th>
+              <th>Harga Jual Bertingkat (Eceran / Strip / Box / Member)</th>
               <th class="text-center">Status</th>
               <th class="text-right">Aksi</th>
             </tr>
@@ -368,11 +435,18 @@
               const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
               const rugiWarn = seeCost && m.hpp > 0 && m.harga <= m.hpp;
               const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
+              const rSedang = Number(o.rasio_sedang || 10);
+              const rBesar = Number(o.rasio_besar || 100);
+              const hEceran = Number(o.harga_umum || 0);
+              const hStrip = Number(o.harga_strip || (hEceran * rSedang));
+              const hBox = Number(o.harga_box || (hEceran * rBesar));
+              const hMem = Number(o.harga_member || hEceran);
+              const sBreakdown = _formatStockMultiSatuan(m.stok, o);
               return `<tr class="${!isAktifJual ? 'opacity-70 bg-slate-500/5' : ''}">
                 <td class="font-mono-num text-xs text-center">${idx + 1}.</td>
                 <td>
                   <div class="flex items-start gap-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:${m.stokTone.color}" title="Status Stok: ${m.stokTone.label}"></span>
+                    <span class="inline-block w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style="background:${m.stokTone.color}" title="Status Stok: ${m.stokTone.label}"></span>
                     <div>
                       <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="font-bold text-left hover:text-blue-600 transition-colors leading-tight">${S().esc(o.nama_dagang)}</button>
                       <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <span class="font-semibold">${S().esc(o.bentuk_sediaan || 'Sediaan Farmasi')}</span></div>
@@ -400,30 +474,52 @@
                 </td>
                 <td class="text-xs font-mono-num">
                   <span class="px-2 py-0.5 rounded border font-semibold text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK-UTAMA')}</span>
+                  ${m.isCold ? `<div class="text-[9.5px] text-blue-600 font-bold mt-0.5">❄️ Chiller</div>` : ''}
                 </td>
-                <td class="text-xs min-w-[140px]">
+                <td class="text-xs min-w-[155px]">
                   <div class="flex items-center justify-between gap-1 text-[11px] font-mono-num">
                     <span class="font-bold text-xs" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar || 'Unit')}</span>
                     <span class="text-[10px] uppercase font-bold" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
                   </div>
+                  ${m.stok > 0 && (rSedang > 1 || rBesar > 1) ? `
+                  <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title="${sBreakdown}">&approx; ${sBreakdown}</div>
+                  ` : ''}
                   <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
                   <div class="flex items-center justify-between text-[10px] font-mono-num text-slate-400 mt-0.5">
                     <span>Min: ${m.min}</span>
                     <span>Max: ${m.max}</span>
                   </div>
                   ${m.nearBatch ? `<div class="text-[10px] font-mono-num mt-0.5 ${m.isNearEd ? 'text-red-600 font-bold' : 'text-slate-400'}">ED: ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</div>` : '<div class="text-[10px] text-slate-400 mt-0.5">Belum ada batch</div>'}
+                  ${m.isCritical ? `
+                  <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', undefined, 'Defecta dari Master Obat')" class="mt-1.5 w-full ons-btn ons-btn-emerald text-[10.5px] py-0.5 px-1.5 font-bold flex items-center justify-center gap-1 shadow-xs" title="1-Klik Masukkan ke Keranjang Defecta / SP">
+                    ⚡ + Defecta
+                  </button>
+                  ` : ''}
                 </td>
                 <td class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">
-                  <div>1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar || 'Unit')}</div>
-                  <div>1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar || 'Unit')}</div>
+                  <div>1 ${S().esc(o.satuan_besar || 'Box')} = ${rBesar} ${S().esc(o.satuan_dasar || 'Unit')}</div>
+                  <div>1 ${S().esc(o.satuan_sedang || 'Strip')} = ${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}</div>
                 </td>
                 ${seeCost ? `<td class="font-mono-num text-xs font-semibold">${S().rp(o.hpp_avg || o.hpp_terakhir || 0)}</td>` : ''}
                 <td class="font-mono-num text-xs text-slate-400 line-through">${S().rp(hetVal)}</td>
-                <td class="font-mono-num text-xs">
-                  <div class="font-bold text-blue-600 text-sm">${S().rp(o.harga_umum || 0)}</div>
-                  <div class="text-[10.5px] flex items-center gap-1.5 mt-0.5" style="color:var(--ons-text-soft)">
-                    <span>Mbr: ${S().rp(o.harga_member || o.harga_umum || 0)}</span>
-                    ${m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[9.5px]">+${m.marginPct}%</span>` : ''}
+                <td class="font-mono-num text-xs min-w-[170px]">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Eceran:</span>
+                    <span class="font-bold text-blue-600 text-sm">${S().rp(hEceran)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(o.satuan_dasar || 'Unit')}</span></span>
+                  </div>
+                  ${rSedang > 1 ? `
+                  <div class="flex items-center justify-between gap-1 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                    <span class="text-[9.5px] uppercase font-medium text-slate-400">Strip:</span>
+                    <span class="font-semibold">${S().rp(hStrip)} <span class="text-[9px] text-slate-400">(${rSedang} ${S().esc(o.satuan_dasar)})</span></span>
+                  </div>` : ''}
+                  ${rBesar > 1 ? `
+                  <div class="flex items-center justify-between gap-1 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                    <span class="text-[9.5px] uppercase font-medium text-slate-400">Box:</span>
+                    <span class="font-semibold">${S().rp(hBox)} <span class="text-[9px] text-slate-400">(${rBesar} ${S().esc(o.satuan_dasar)})</span></span>
+                  </div>` : ''}
+                  <div class="flex items-center justify-between gap-1 pt-1 mt-1 border-t border-slate-200 dark:border-slate-700 text-[10.5px]">
+                    <span class="text-emerald-600 font-semibold">Mbr: ${S().rp(hMem)}</span>
+                    ${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[9.5px]">+${m.marginPct}%</span>` : ''}
                   </div>
                   ${seeCost && rugiWarn ? '<div class="text-[10px] font-bold text-red-600 mt-0.5">⚠️ Di Bawah HPP</div>' : ''}
                 </td>
@@ -460,13 +556,16 @@
       golCounts[g] = (golCounts[g] || 0) + 1;
     });
 
-    const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA');
+    const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA' || masterFilterPabrikan !== 'SEMUA' || masterFilterPbf !== 'SEMUA' || masterFilterSuhu !== 'SEMUA');
+
+    const pabrikList = Array.from(new Set(allMeta.map((m) => String(m.o.pabrikan || '').trim()).filter(Boolean))).sort();
+    const pbfList = Array.from(new Set(allMeta.map((m) => String(m.o.pbf_utama || '').trim()).filter(Boolean))).sort();
 
     return `<div class="space-y-3">
       <div class="ons-card p-3 space-y-2.5">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 items-center">
-          <div class="lg:col-span-4">
-            ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, KFA, NIE, Rak, Pabrik...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-2 items-center">
+          <div class="lg:col-span-3">
+            ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, KFA, NIE, Rak, Pabrik, PBF...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
           </div>
           <div class="lg:col-span-2">
             <select class="ons-select w-full text-xs" onchange="window.setMasterSediaan(this.value)" aria-label="Filter Bentuk Sediaan">
@@ -489,6 +588,12 @@
             </select>
           </div>
           <div class="lg:col-span-2">
+            <select class="ons-select w-full text-xs" onchange="window.setMasterPabrikan(this.value)" aria-label="Filter Pabrik Industri Farmasi">
+              <option value="SEMUA" ${masterFilterPabrikan === 'SEMUA' ? 'selected' : ''}>Semua Pabrikan</option>
+              ${pabrikList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPabrikan === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="lg:col-span-2">
             <select class="ons-select w-full text-xs" onchange="window.setMasterSort(this.value)" aria-label="Urutkan Produk">
               <option value="NAMA" ${masterSortBy === 'NAMA' ? 'selected' : ''}>Nama A-Z</option>
               <option value="NAMA_DESC" ${masterSortBy === 'NAMA_DESC' ? 'selected' : ''}>Nama Z-A</option>
@@ -501,11 +606,11 @@
               ${seeCost ? '<option value="VALUASI_DESC" ' + (masterSortBy === 'VALUASI_DESC' ? 'selected' : '') + '>Valuasi Terbesar</option>' : ''}
             </select>
           </div>
-          <div class="lg:col-span-2 flex items-center gap-1.5 justify-end">
-            <button type="button" onclick="window.scanMasterObatBarcode()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5 shrink-0" title="Cari Obat Lewat Kamera Barcode">📷 Scan</button>
+          <div class="lg:col-span-1 flex items-center gap-1.5 justify-end">
+            <button type="button" onclick="window.scanMasterObatBarcode()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2 shrink-0" title="Cari Obat Lewat Kamera Barcode">📷</button>
             <div class="inline-flex rounded-lg border p-0.5 shrink-0" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-              <button type="button" onclick="window.setMasterViewMode('TABLE')" class="ons-btn text-[11px] py-1 px-2 ${masterViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Tabel</button>
-              <button type="button" onclick="window.setMasterViewMode('CARD')" class="ons-btn text-[11px] py-1 px-2 ${masterViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}">Kartu</button>
+              <button type="button" onclick="window.setMasterViewMode('TABLE')" class="ons-btn text-[11px] py-1 px-1.5 ${masterViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}" title="Mode Tabel">&#9776;</button>
+              <button type="button" onclick="window.setMasterViewMode('CARD')" class="ons-btn text-[11px] py-1 px-1.5 ${masterViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}" title="Mode Kartu">&#9638;</button>
             </div>
           </div>
         </div>
@@ -518,7 +623,16 @@
               return `<button type="button" onclick="window.setMasterGol('${g}')" class="ons-subnav-chip ${masterFilterGol === g ? 'active' : ''}">${g || 'Semua'} (${cnt})</button>`;
             }).join('')}
           </div>
-          <div class="flex items-center gap-2 text-xs">
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <select class="ons-select text-xs py-0.5 px-2" onchange="window.setMasterPbf(this.value)" aria-label="Filter Distributor PBF">
+              <option value="SEMUA" ${masterFilterPbf === 'SEMUA' ? 'selected' : ''}>Semua PBF</option>
+              ${pbfList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPbf === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
+            </select>
+            <select class="ons-select text-xs py-0.5 px-2" onchange="window.setMasterSuhu(this.value)" aria-label="Filter Suhu Simpan">
+              <option value="SEMUA" ${masterFilterSuhu === 'SEMUA' ? 'selected' : ''}>Semua Suhu</option>
+              <option value="CHILLER" ${masterFilterSuhu === 'CHILLER' ? 'selected' : ''}>❄️ Chiller 2-8&deg;C</option>
+              <option value="RUANG" ${masterFilterSuhu === 'RUANG' ? 'selected' : ''}>🌡️ Suhu Ruang</option>
+            </select>
             <select class="ons-select text-xs py-0.5 px-2" onchange="window.setMasterStatusJual(this.value)" aria-label="Status Jual">
               <option value="SEMUA" ${masterFilterStatusJual === 'SEMUA' ? 'selected' : ''}>Semua Status Jual</option>
               <option value="DIJUAL" ${masterFilterStatusJual === 'DIJUAL' ? 'selected' : ''}>Hanya Dijual</option>
@@ -2854,6 +2968,9 @@
   global.setMasterGol = (g) => { masterFilterGol = g; global.renderActiveView(); };
   global.setMasterStokFilter = (f) => { masterFilterStok = f || 'SEMUA'; global.renderActiveView(); };
   global.setMasterSediaan = (s) => { masterFilterSediaan = s || 'SEMUA'; global.renderActiveView(); };
+  global.setMasterPabrikan = (p) => { masterFilterPabrikan = p || 'SEMUA'; global.renderActiveView(); };
+  global.setMasterPbf = (p) => { masterFilterPbf = p || 'SEMUA'; global.renderActiveView(); };
+  global.setMasterSuhu = (sh) => { masterFilterSuhu = sh || 'SEMUA'; global.renderActiveView(); };
   global.setMasterStatusJual = (st) => { masterFilterStatusJual = st || 'SEMUA'; global.renderActiveView(); };
   global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; global.renderActiveView(); };
   global.setMasterViewMode = (m) => { masterViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
@@ -2862,6 +2979,9 @@
     masterFilterStok = 'SEMUA';
     masterFilterSediaan = 'SEMUA';
     masterFilterStatusJual = 'SEMUA';
+    masterFilterPabrikan = 'SEMUA';
+    masterFilterPbf = 'SEMUA';
+    masterFilterSuhu = 'SEMUA';
     masterSearchQ = '';
     masterSortBy = 'NAMA';
     global.renderActiveView();
@@ -2921,15 +3041,17 @@
 
   global.setObatDetailTab = (tabName) => {
     const tMono = document.getElementById('detailTabContentMonograf');
+    const tMulti = document.getElementById('detailTabContentMultiSatuan');
     const tRiwayat = document.getElementById('detailTabContentRiwayatBeli');
     const tBatch = document.getElementById('detailTabContentBatch');
     const btnMono = document.getElementById('btnDetailTabMonograf');
+    const btnMulti = document.getElementById('btnDetailTabMultiSatuan');
     const btnRiwayat = document.getElementById('btnDetailTabRiwayatBeli');
     const btnBatch = document.getElementById('btnDetailTabBatch');
-    if (!tMono && !tRiwayat && !tBatch) return;
+    if (!tMono && !tMulti && !tRiwayat && !tBatch) return;
 
-    [tMono, tRiwayat, tBatch].forEach((t) => { if (t) t.classList.add('hidden'); });
-    [btnMono, btnRiwayat, btnBatch].forEach((b) => {
+    [tMono, tMulti, tRiwayat, tBatch].forEach((t) => { if (t) t.classList.add('hidden'); });
+    [btnMono, btnMulti, btnRiwayat, btnBatch].forEach((b) => {
       if (!b) return;
       b.classList.remove('active', 'border-blue-600', 'text-blue-600');
       b.classList.add('border-transparent', 'text-slate-500');
@@ -2942,6 +3064,13 @@
         btnBatch.classList.add('active', 'border-blue-600', 'text-blue-600');
         btnBatch.classList.remove('border-transparent', 'text-slate-500');
         btnBatch.setAttribute('aria-selected', 'true');
+      }
+    } else if (tabName === 'multi-satuan' && tMulti) {
+      tMulti.classList.remove('hidden');
+      if (btnMulti) {
+        btnMulti.classList.add('active', 'border-blue-600', 'text-blue-600');
+        btnMulti.classList.remove('border-transparent', 'text-slate-500');
+        btnMulti.setAttribute('aria-selected', 'true');
       }
     } else if (tabName === 'riwayat-beli' && tRiwayat) {
       tRiwayat.classList.remove('hidden');
@@ -3024,6 +3153,155 @@
         </div>
       </div>
     `, '440px');
+  };
+
+  global.openShelfLabelModal = (idObat) => {
+    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
+    if (!o) return;
+    const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
+    const rSedang = Number(o.rasio_sedang || 10);
+    const rBesar = Number(o.rasio_besar || 100);
+    const hEceran = Number(o.harga_umum || 0);
+    const hStrip = Number(o.harga_strip || (hEceran * rSedang));
+    const hBox = Number(o.harga_box || (hEceran * rBesar));
+    const hMem = Number(o.harga_member || hEceran);
+    const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+    const sia = prof.sia || prof.no_izin || 'SIA: 503/Apt/DPMPTSP/2024';
+    const todayStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const shelfTalkerHtml = `
+      <div class="ons-shelf-talker space-y-2 text-left bg-white text-slate-900 border-2 border-teal-600 rounded-lg p-3 shadow-md max-w-sm mx-auto">
+        <div class="flex items-center justify-between border-b pb-1.5 border-teal-500">
+          <div>
+            <div class="font-extrabold text-[12px] uppercase text-teal-800 tracking-wider">${S().esc(usahaNama)}</div>
+            <div class="text-[9px] text-slate-500">${S().esc(sia)}</div>
+          </div>
+          <span class="text-[9.5px] font-mono-num font-bold px-1.5 py-0.5 rounded bg-teal-50 border border-teal-300 text-teal-800">${S().esc(o.rak_lokasi || 'RAK-UTAMA')}</span>
+        </div>
+        <div>
+          <div class="text-[13.5px] font-black tracking-tight leading-snug text-slate-950 uppercase">${S().esc(o.nama_dagang)}</div>
+          <div class="text-[10px] text-slate-600 mt-0.5">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <b class="text-teal-700">${S().esc(o.bentuk_sediaan || o.satuan_dasar)}</b></div>
+          <div class="text-[9px] text-slate-400 font-mono-num mt-0.5">NIE: ${S().esc(o.nie_bpom || '-')} &bull; Pabrik: ${S().esc(o.pabrikan || '-')}</div>
+        </div>
+        <div class="p-2 rounded bg-slate-50 border border-slate-200 grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <div class="text-[9.5px] font-bold text-slate-500 uppercase">Harga Eceran / ${S().esc(o.satuan_dasar || 'Unit')}</div>
+            <div class="text-base font-black text-blue-700 font-mono-num">${S().rp(hEceran)}</div>
+            <div class="text-[9px] text-slate-400 line-through">HET: ${S().rp(hetVal)}</div>
+          </div>
+          <div>
+            <div class="text-[9.5px] font-bold text-emerald-700 uppercase">Khusus Member</div>
+            <div class="text-sm font-black text-emerald-600 font-mono-num">${S().rp(hMem)}</div>
+            <div class="text-[9px] text-emerald-600 font-medium">Hemat &amp; Poin PRB</div>
+          </div>
+          ${rSedang > 1 ? `
+          <div>
+            <div class="text-[9.5px] font-bold text-slate-500 uppercase">Per ${S().esc(o.satuan_sedang || 'Strip')} (${rSedang} ${S().esc(o.satuan_dasar)})</div>
+            <div class="text-xs font-bold text-slate-800 font-mono-num">${S().rp(hStrip)}</div>
+          </div>` : ''}
+          ${rBesar > 1 ? `
+          <div>
+            <div class="text-[9.5px] font-bold text-slate-500 uppercase">Per ${S().esc(o.satuan_besar || 'Box')} (${rBesar} ${S().esc(o.satuan_dasar)})</div>
+            <div class="text-xs font-bold text-slate-800 font-mono-num">${S().rp(hBox)}</div>
+          </div>` : ''}
+        </div>
+        <div class="flex items-center justify-between pt-1 border-t border-slate-200 text-[9px] text-slate-400 font-mono-num">
+          <div class="flex items-center gap-1">
+            <span class="font-bold text-slate-600">|||| ||| |||||</span>
+            <span>${S().esc(codeVal)}</span>
+          </div>
+          <div>Cetak: ${todayStr}</div>
+        </div>
+      </div>
+    `;
+
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-extrabold text-base">Cetak Label Harga Rak Display (Shelf Talker)</h3>
+            <p style="color:var(--ons-text-soft)">Etiket rak apotek standar dengan multi-satuan (Eceran, Strip, Box) &amp; harga member.</p>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 leading-none">&times;</button>
+        </div>
+
+        <div class="py-2 flex justify-center">
+          ${shelfTalkerHtml}
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <div class="text-[11px] text-slate-500">Ukuran Display: 70 &times; 45 mm</div>
+          <div class="flex gap-2">
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+            <button type="button" onclick="window.printShelfTalker('${S().esc(idObat)}')" class="ons-btn ons-btn-primary text-xs font-bold px-4 py-2">🖨️ Cetak ke Printer</button>
+          </div>
+        </div>
+      </div>
+    `, '480px');
+  };
+
+  global.printShelfTalker = (idObat) => {
+    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
+    if (!o) return;
+    const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
+    const rSedang = Number(o.rasio_sedang || 10);
+    const rBesar = Number(o.rasio_besar || 100);
+    const hEceran = Number(o.harga_umum || 0);
+    const hStrip = Number(o.harga_strip || (hEceran * rSedang));
+    const hBox = Number(o.harga_box || (hEceran * rBesar));
+    const hMem = Number(o.harga_member || hEceran);
+    const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+    const sia = prof.sia || prof.no_izin || 'SIA: 503/Apt/DPMPTSP/2024';
+    const todayStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const printHtml = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;width:70mm;padding:3mm;border:1.5px solid #0D9488;border-radius:4px;color:#0F172A;box-sizing:border-box;">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #0D9488;padding-bottom:2mm;margin-bottom:2mm;">
+          <div>
+            <div style="font-weight:900;font-size:10pt;color:#0D9488;text-transform:uppercase;">${S().esc(usahaNama)}</div>
+            <div style="font-size:6.5pt;color:#64748B;">${S().esc(sia)}</div>
+          </div>
+          <div style="font-size:7.5pt;font-weight:bold;background:#F0FDFA;border:1px solid #99F6E4;padding:1px 4px;border-radius:2px;color:#0F766E;">${S().esc(o.rak_lokasi || 'RAK-UTAMA')}</div>
+        </div>
+        <div style="font-weight:900;font-size:11pt;line-height:1.2;text-transform:uppercase;margin-bottom:1.5mm;">${S().esc(o.nama_dagang)}</div>
+        <div style="font-size:7.5pt;color:#475569;margin-bottom:1mm;">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <b>${S().esc(o.bentuk_sediaan || o.satuan_dasar)}</b></div>
+        <div style="font-size:6.5pt;color:#94A3B8;margin-bottom:2mm;">NIE: ${S().esc(o.nie_bpom || '-')} | Pabrik: ${S().esc(o.pabrikan || '-')}</div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:3px;padding:2mm;margin-bottom:2mm;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1mm;">
+            <span style="font-size:7pt;color:#64748B;font-weight:bold;text-transform:uppercase;">Eceran / ${S().esc(o.satuan_dasar || 'Unit')}:</span>
+            <span style="font-size:12pt;font-weight:900;color:#1D4ED8;">${S().rp(hEceran)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1mm;">
+            <span style="font-size:7pt;color:#059669;font-weight:bold;text-transform:uppercase;">Member Apotek:</span>
+            <span style="font-size:9.5pt;font-weight:800;color:#059669;">${S().rp(hMem)}</span>
+          </div>
+          ${rSedang > 1 ? `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:7pt;color:#334155;">
+            <span>Per ${S().esc(o.satuan_sedang || 'Strip')} (${rSedang} ${S().esc(o.satuan_dasar)}):</span>
+            <span style="font-weight:bold;">${S().rp(hStrip)}</span>
+          </div>` : ''}
+          ${rBesar > 1 ? `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:7pt;color:#334155;margin-top:0.5mm;">
+            <span>Per ${S().esc(o.satuan_besar || 'Box')} (${rBesar} ${S().esc(o.satuan_dasar)}):</span>
+            <span style="font-weight:bold;">${S().rp(hBox)}</span>
+          </div>` : ''}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:6.5pt;color:#94A3B8;border-top:1px dashed #CBD5E1;padding-top:1.5mm;">
+          <span>Barcode: ${S().esc(codeVal)}</span>
+          <span>Tgl: ${todayStr}</span>
+        </div>
+      </div>
+    `;
+
+    if (S().printHtml) {
+      S().printHtml(printHtml, { widthMm: 75 });
+    } else {
+      window.print();
+    }
   };
 
   global.openBulkMarginWizard = () => {
@@ -3726,9 +4004,16 @@
     const seeCost = S().canSeeFinancialCost();
     const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
     const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
+    const rSedang = Number(o.rasio_sedang || 10);
+    const rBesar = Number(o.rasio_besar || 100);
+    const hEceran = Number(o.harga_umum || 0);
+    const hStrip = Number(o.harga_strip || (hEceran * rSedang));
+    const hBox = Number(o.harga_box || (hEceran * rBesar));
+    const hMem = Number(o.harga_member || hEceran);
     const isRiw = initialTab === 'riwayat-beli';
     const isBatch = initialTab === 'batch';
-    const isMono = !isRiw && !isBatch;
+    const isHarga = initialTab === 'multi-satuan';
+    const isMono = !isRiw && !isBatch && !isHarga;
     const batches = (st.stokBatch || [])
       .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF')
       .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
@@ -3764,6 +4049,9 @@
         <button id="btnDetailTabMonograf" type="button" role="tab" aria-selected="${isMono ? 'true' : 'false'}" onclick="window.setObatDetailTab('monograf')" class="pb-2 text-xs font-bold border-b-2 ${isMono ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'} transition-colors whitespace-nowrap">
           📋 Monograf &amp; Info Produk
         </button>
+        <button id="btnDetailTabMultiSatuan" type="button" role="tab" aria-selected="${isHarga ? 'true' : 'false'}" onclick="window.setObatDetailTab('multi-satuan')" class="pb-2 text-xs font-bold border-b-2 ${isHarga ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'} transition-colors whitespace-nowrap">
+          🏷️ Multi-Kemasan &amp; Skema Harga
+        </button>
         <button id="btnDetailTabRiwayatBeli" type="button" role="tab" aria-selected="${isRiw ? 'true' : 'false'}" onclick="window.setObatDetailTab('riwayat-beli')" class="pb-2 text-xs font-bold border-b-2 ${isRiw ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'} transition-colors whitespace-nowrap">
           📈 Riwayat Beli &amp; Tren HPP
         </button>
@@ -3780,13 +4068,13 @@
             <div class="text-[10px] font-semibold mt-0.5" style="color:${m.stokTone.color}">${m.stokTone.label}</div>
           </div>
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div style="color:var(--ons-text-soft)">Harga Jual Umum</div>
-            <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(o.harga_umum)}</div>
-            <div class="text-[10px] text-slate-400">Eceran Tertinggi</div>
+            <div style="color:var(--ons-text-soft)">Harga Jual Eceran</div>
+            <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(hEceran)}</div>
+            <div class="text-[10px] text-slate-400">Per ${S().esc(o.satuan_dasar || 'Unit')}</div>
           </div>
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
             <div style="color:var(--ons-text-soft)">Harga Member</div>
-            <div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(o.harga_member || o.harga_umum)}</div>
+            <div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(hMem)}</div>
             <div class="text-[10px] text-emerald-600">Diskon Pelanggan</div>
           </div>
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
@@ -3845,7 +4133,7 @@
             </div>
             <div class="sm:col-span-2 py-1 border-b border-slate-200 dark:border-slate-700">
               <span style="color:var(--ons-text-soft)">Konversi Multi-Satuan:</span>
-              <span class="font-mono-num font-semibold ml-2">1 ${S().esc(o.satuan_besar || 'Box')} = ${Number(o.rasio_besar || 100)} ${S().esc(o.satuan_dasar || 'Unit')} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${Number(o.rasio_sedang || 10)} ${S().esc(o.satuan_dasar || 'Unit')}</span>
+              <span class="font-mono-num font-semibold ml-2">1 ${S().esc(o.satuan_besar || 'Box')} = ${rBesar} ${S().esc(o.satuan_dasar || 'Unit')} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}</span>
             </div>
             ${subNames.length ? `
             <div class="sm:col-span-2 py-1">
@@ -3860,6 +4148,70 @@
           <div class="text-xs space-y-1.5" style="color:var(--ons-text-soft)">
             <div><b>Aturan Pakai Standar:</b> ${S().esc(o.aturan_pakai || 'Gunakan sesuai instruksi dokter atau etiket farmasi.')}</div>
             <div><b>Catatan Farmasis:</b> ${S().esc(o.catatan_klinis || o.indikasi || 'Konsultasikan dengan Apoteker Penanggung Jawab (APJ) untuk instruksi penggunaan khusus.')}</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="detailTabContentMultiSatuan" class="space-y-4 ${isHarga ? '' : 'hidden'}">
+        <div class="p-3.5 rounded-xl border space-y-2.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">Matriks Multi-Tingkat Kemasan &amp; Harga Jual</span>
+            <span class="text-[10px] text-slate-500">Konversi Bertingkat Otomatis</span>
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table is-compact">
+              <thead>
+                <tr>
+                  <th>Tingkat Kemasan</th>
+                  <th>Rasio Isi</th>
+                  <th>HPP Beli Modal</th>
+                  <th>Harga Umum (Eceran)</th>
+                  <th>Harga Member</th>
+                  <th>Margin Keuntungan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-bold text-xs">Satuan Dasar (${S().esc(o.satuan_dasar || 'Unit')})</td>
+                  <td class="font-mono-num text-xs">1 ${S().esc(o.satuan_dasar || 'Unit')}</td>
+                  <td class="font-mono-num text-xs">${seeCost ? S().rp(o.hpp_avg || 0) : '-'}</td>
+                  <td class="font-mono-num font-bold text-blue-600 text-xs">${S().rp(hEceran)}</td>
+                  <td class="font-mono-num font-bold text-emerald-600 text-xs">${S().rp(hMem)}</td>
+                  <td class="font-mono-num text-xs">${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]">+${m.marginPct}%</span>` : '-'}</td>
+                </tr>
+                ${rSedang > 1 ? `
+                <tr>
+                  <td class="font-bold text-xs">Satuan Sedang (${S().esc(o.satuan_sedang || 'Strip')})</td>
+                  <td class="font-mono-num text-xs">${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}</td>
+                  <td class="font-mono-num text-xs">${seeCost ? S().rp(Number(o.hpp_avg || 0) * rSedang) : '-'}</td>
+                  <td class="font-mono-num font-bold text-slate-800 dark:text-slate-100 text-xs">${S().rp(hStrip)}</td>
+                  <td class="font-mono-num font-bold text-emerald-600 text-xs">${S().rp(Number(o.harga_member || hEceran) * rSedang)}</td>
+                  <td class="font-mono-num text-xs">${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]">+${m.marginPct}%</span>` : '-'}</td>
+                </tr>` : ''}
+                ${rBesar > 1 ? `
+                <tr>
+                  <td class="font-bold text-xs">Satuan Besar (${S().esc(o.satuan_besar || 'Box')})</td>
+                  <td class="font-mono-num text-xs">${rBesar} ${S().esc(o.satuan_dasar || 'Unit')}</td>
+                  <td class="font-mono-num text-xs">${seeCost ? S().rp(Number(o.hpp_avg || 0) * rBesar) : '-'}</td>
+                  <td class="font-mono-num font-bold text-slate-800 dark:text-slate-100 text-xs">${S().rp(hBox)}</td>
+                  <td class="font-mono-num font-bold text-emerald-600 text-xs">${S().rp(Number(o.harga_member || hEceran) * rBesar)}</td>
+                  <td class="font-mono-num text-xs">${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]">+${m.marginPct}%</span>` : '-'}</td>
+                </tr>` : ''}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div class="p-3 rounded-xl border space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="text-[11px] font-bold text-slate-500 uppercase">Skema Grosir / Reseller B2B</div>
+            <div class="text-sm font-extrabold font-mono-num text-blue-700 dark:text-blue-400">${S().rp(o.harga_grosir || o.harga_member || o.harga_umum)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(o.satuan_dasar || 'Unit')}</span></div>
+            <div class="text-[10.5px] text-slate-500">Minimal Pembelian: <b>${Number(o.min_qty_grosir || 10)} ${S().esc(o.satuan_dasar || 'Unit')}</b></div>
+          </div>
+          <div class="p-3 rounded-xl border space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="text-[11px] font-bold text-slate-500 uppercase">Skema Faskes / Dokter Mitra</div>
+            <div class="text-sm font-extrabold font-mono-num text-slate-700 dark:text-slate-200">${S().rp(o.harga_faskes || o.harga_grosir || o.harga_umum)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(o.satuan_dasar || 'Unit')}</span></div>
+            <div class="text-[10.5px] text-slate-500">Tarif khusus klinik kerjasama &amp; dokter praktek mandiri.</div>
           </div>
         </div>
       </div>
@@ -3927,17 +4279,19 @@
       </div>
 
       <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t" style="border-color:var(--ons-border)">
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-1.5">
           <button type="button" onclick="ONSStore.closeDrawer();window.openObatKartuStok('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Lihat Kartu Stok Lengkap">📊 Kartu Stok</button>
+          <button type="button" onclick="window.openShelfLabelModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 text-teal-700 font-semibold" title="Cetak Label Harga Rak Apotek (Shelf Talker)">🏷️ Label Rak</button>
           <button type="button" onclick="window.openProductBarcodeModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Cetak Barcode Label Stiker 58/80mm">🏷️ Cetak Barcode</button>
           <button type="button" onclick="window.setObatDetailTab('riwayat-beli')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 text-blue-700 font-semibold" title="Buka Riwayat Pembelian PBF &amp; Hitung Margin">📈 Riwayat Beli</button>
         </div>
         <div class="flex gap-2">
+          ${m.isCritical ? `<button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', undefined, 'Defecta dari Detail Master');" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5 font-bold flex items-center gap-1 shadow-xs" title="1-Klik Masukkan ke Defecta">⚡ + Defecta</button>` : ''}
           <button type="button" onclick="ONSStore.closeDrawer();navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Buka Form Pemesanan SP Defecta">🛒 Buat SP</button>
           ${seeCost ? `<button type="button" onclick="ONSStore.closeDrawer();window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">✏️ Edit Produk</button>` : ''}
         </div>
       </div>
-    </div>`, '660px');
+    </div>`, '680px');
   };
 
   global.exportMasterObat = (fmt) => {
@@ -3956,6 +4310,11 @@
       const marginDecimal = (seeCost && Number(o.hpp_avg || 0) > 0 && Number(o.harga_umum || 0) > 0)
         ? Number((((Number(o.harga_umum || 0) - Number(o.hpp_avg || 0)) / Number(o.hpp_avg || 0)) * 100).toFixed(1))
         : 0;
+      const rSedang = Number(o.rasio_sedang || 10);
+      const rBesar = Number(o.rasio_besar || 100);
+      const hEceran = Number(o.harga_umum || 0);
+      const hStrip = Number(o.harga_strip || (hEceran * rSedang));
+      const hBox = Number(o.harga_box || (hEceran * rBesar));
       return {
         no: i + 1,
         kode_kfa: o.kode_kfa || o.id_obat || '',
@@ -3965,13 +4324,14 @@
         golongan_bpom: String(o.golongan_bpom || 'BEBAS').toUpperCase(),
         bentuk_sediaan: o.bentuk_sediaan || 'Tablet',
         nie_bpom: o.nie_bpom || '-',
+        pabrikan: o.pabrikan || '-',
         rak_lokasi: o.rak_lokasi || 'RAK-A1',
         suhu_simpan: o.suhu_simpan || 'Suhu Ruang (15-25 C)',
         satuan_dasar: o.satuan_dasar || 'Tablet',
         satuan_sedang: o.satuan_sedang || 'Strip',
-        rasio_sedang: Number(o.rasio_sedang || 10),
+        rasio_sedang: rSedang,
         satuan_besar: o.satuan_besar || 'Box',
-        rasio_besar: Number(o.rasio_besar || 100),
+        rasio_besar: rBesar,
         stok_jual: Number(m.stok || 0),
         stok_min: Number(o.stok_min || 10),
         stok_max: Number(o.stok_max || 100),
@@ -3980,7 +4340,9 @@
         hpp_avg: seeCost ? Number(o.hpp_avg || 0) : 0,
         valuasi_modal: valModal,
         margin_pct: marginDecimal,
-        harga_umum: Number(o.harga_umum || 0),
+        harga_umum: hEceran,
+        harga_strip: hStrip,
+        harga_box: hBox,
         harga_member: Number(o.harga_member || o.harga_umum || 0),
         harga_grosir: Number(o.harga_grosir || o.harga_member || o.harga_umum || 0),
         min_qty_grosir: Number(o.min_qty_grosir || 10),
@@ -4013,6 +4375,7 @@
       { key: 'golongan_bpom', label: 'Golongan BPOM', type: 'status', width: 16 },
       { key: 'bentuk_sediaan', label: 'Bentuk Sediaan', type: 'text', width: 15 },
       { key: 'nie_bpom', label: 'NIE BPOM', type: 'text', width: 19 },
+      { key: 'pabrikan', label: 'Pabrikan Farmasi', type: 'text', width: 22 },
       { key: 'rak_lokasi', label: 'Rak Lokasi', type: 'text', width: 12 },
       { key: 'suhu_simpan', label: 'Suhu Simpan', type: 'text', width: 22 },
       { key: 'satuan_dasar', label: 'Satuan Dasar', type: 'text', width: 14 },
@@ -4030,7 +4393,9 @@
         { key: 'valuasi_modal', label: 'Valuasi Modal (Rp)', type: 'currency', sum: true, width: 20 },
         { key: 'margin_pct', label: 'Margin (%)', type: 'percent', width: 12 }
       ] : []),
-      { key: 'harga_umum', label: 'Harga Umum (Rp)', type: 'currency', width: 16 },
+      { key: 'harga_umum', label: 'Harga Eceran (Rp)', type: 'currency', width: 16 },
+      { key: 'harga_strip', label: 'Harga Strip (Rp)', type: 'currency', width: 16 },
+      { key: 'harga_box', label: 'Harga Box (Rp)', type: 'currency', width: 16 },
       { key: 'harga_member', label: 'Harga Member (Rp)', type: 'currency', width: 16 },
       { key: 'harga_grosir', label: 'Harga Grosir (Rp)', type: 'currency', width: 16 },
       { key: 'min_qty_grosir', label: 'Min Grosir', type: 'int', width: 12 },

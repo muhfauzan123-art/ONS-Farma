@@ -1457,6 +1457,26 @@ html.dark .ons-nav-badge.info {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
+.ons-shelf-talker {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 2px solid #0D9488;
+  border-radius: 8px;
+  padding: 12px 14px;
+  max-width: 380px;
+  margin: 0 auto;
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.12);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+.ons-shelf-talker::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0D9488, #2563EB);
+}
 .ons-subnav-bar {
   background: var(--ons-bg-card);
   border-bottom: 1px solid var(--ons-border);
