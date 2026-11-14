@@ -7489,9 +7489,7 @@
   let defectaTab = 'order';
   let defectaOrderQty = {};
 
-  function renderDefectaView() {
-    const st = S().AppState;
-    defectaTab = (st.subTabs && st.subTabs.defecta) || defectaTab || 'order';
+  function _renderDefectaTabContent(st) {
     const pbfLeadMap = {};
     (st.supplierPbf || []).forEach((p) => { pbfLeadMap[String(p.nama_pbf || '').trim().toUpperCase()] = Number(p.lead_time_hari || 3); });
     const nowMs = Date.now();
@@ -7547,7 +7545,6 @@
       if (dq && !`${o.nama_dagang} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase().includes(dq)) return false;
       return true;
     });
-    const estDos = (idObat) => (forecastMap[idObat] ? forecastMap[idObat].dos : 0);
     const groupedPbf = {};
     lowStock.forEach((o) => {
       const pbf = o.pbf_utama || 'PBF Reguler Lainnya';
@@ -7571,268 +7568,258 @@
 
     const estTotalPo = lowStock.reduce((acc, o) => acc + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0);
 
-    return `<div class="space-y-5 ons-view-enter">
-      <!-- HEADER DEFECTA & SP -->
-      <div class="ons-page-header">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">Pengadaan Farmasi CDOB</span>
-            <span class="text-[11px] text-slate-400 font-medium">Monitoring Ambang Stok &amp; Pesanan PBF</span>
+    return `
+      <!-- 1. EXECUTIVE KPI METRIC CARDS DEFECTA -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <button type="button" onclick="window.setDefectaStatusFilter('SEMUA')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">TOTAL PERLU RESTOK</span>
+            <span class="text-sm">⚠️</span>
           </div>
-          <h1 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Defecta &amp; Surat Pesanan (SP A4)</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Analisis kebutuhan restok otomatis, manajemen buffer stok apotek, dan penerbitan SP resmi A4 BPOM CDOB.</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="ons-tab-bar">
-            <button onclick="window.setDefectaTab('order')" class="ons-tab-btn ${defectaTab === 'order' ? 'active font-bold' : ''}">📦 Defecta &amp; Restok (${lowStock.length})</button>
-            <button onclick="window.setDefectaTab('sp')" class="ons-tab-btn ${defectaTab === 'sp' ? 'active font-bold' : ''}">📄 Surat Pesanan (A4) (${(st.suratPesanan || []).length})</button>
+          <div class="text-2xl font-extrabold font-mono-num text-slate-900 dark:text-white mt-1">${lowStock.length} <span class="text-xs font-normal text-slate-500">Item</span></div>
+          <div class="text-[10.5px] text-slate-500 mt-0.5">Ambang ROP &amp; Buffer Minimum</div>
+        </button>
+
+        <button type="button" onclick="window.setDefectaStatusFilter('KOSONG')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'KOSONG' ? 'ring-2 ring-red-500 shadow-sm' : 'hover:border-red-400'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-red-600 dark:text-red-400">STOK HABIS (OOS)</span>
+            <span class="text-sm">🔴</span>
           </div>
-          <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-ghost text-xs py-2 px-3">+ Buat SP Manual</button>
-          <button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-2 px-3.5 shadow-sm">⚡ Pesanan Otomatis</button>
+          <div class="text-2xl font-extrabold font-mono-num text-red-600 mt-1">${emptyCount} <span class="text-xs font-normal text-red-500">Item</span></div>
+          <div class="text-[10.5px] text-red-600 dark:text-red-400 mt-0.5">Prioritas Terbitkan SP Darurat</div>
+        </button>
+
+        <button type="button" onclick="window.setDefectaStatusFilter('DIBAWAH_MIN')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'DIBAWAH_MIN' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400">MENIPIS &le; BUFFER MIN</span>
+            <span class="text-sm">🟡</span>
+          </div>
+          <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${belowMinCount} <span class="text-xs font-normal text-amber-500">Item</span></div>
+          <div class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-0.5">Cadangan fisik hampir habis</div>
+        </button>
+
+        <div class="ons-card p-3.5 text-left">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400">ESTIMASI NILAI PO</span>
+            <span class="text-sm">💰</span>
+          </div>
+          <div class="text-xl font-extrabold font-mono-num text-blue-700 dark:text-blue-300 mt-1">${S().rp(estTotalPo)}</div>
+          <div class="text-[10.5px] text-slate-500 mt-0.5">${lowStock.length} produk siap dipesan</div>
         </div>
       </div>
 
-      ${defectaTab === 'sp' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderSuratPesananTab() : '') : `
-        <!-- 1. EXECUTIVE KPI METRIC CARDS DEFECTA -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <button type="button" onclick="window.setDefectaStatusFilter('SEMUA')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">TOTAL PERLU RESTOK</span>
-              <span class="text-sm">⚠️</span>
+      <!-- 2. PAKET ORDER OTOMATIS PER SUPPLIER PBF -->
+      ${Object.keys(groupedPbf).length ? `
+      <div class="p-3.5 rounded-2xl border bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white dark:from-slate-800/80 dark:via-slate-800/50 dark:to-slate-900 space-y-2.5" style="border-color:var(--ons-border)">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🚚</span>
+            <div>
+              <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">Paket Pesanan Otomatis per Supplier PBF (${Object.keys(groupedPbf).length} Distributor):</span>
+              <span class="text-[11px] text-slate-500 ml-1">Klik distributor untuk langsung membuat draft SP terkelompok</span>
             </div>
-            <div class="text-2xl font-extrabold font-mono-num text-slate-900 dark:text-white mt-1">${lowStock.length} <span class="text-xs font-normal text-slate-500">Item</span></div>
-            <div class="text-[10.5px] text-slate-500 mt-0.5">Ambang ROP &amp; Buffer Minimum</div>
-          </button>
+          </div>
+          <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 text-blue-700 font-bold border border-blue-300 dark:border-blue-700">⚡ Terbitkan Semua SP Sekaligus</button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${Object.keys(groupedPbf).map((pbfName) => {
+            const pbfItems = groupedPbf[pbfName];
+            const pbfVal = pbfItems.reduce((sum, o) => sum + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0);
+            return `<button type="button" onclick="window.generateSpFromDefecta('${S().esc(pbfName)}')" class="ons-btn text-xs py-1.5 px-3 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-white dark:bg-slate-900 hover:border-blue-500 hover:shadow-sm font-semibold flex items-center gap-2 group">
+              <span class="group-hover:text-blue-600 transition-colors">🏢 ${S().esc(pbfName)}</span>
+              <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">${pbfItems.length} item</span>
+              <span class="font-mono-num text-[11px] text-slate-500 dark:text-slate-400 font-bold">${S().rp(pbfVal)}</span>
+            </button>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
 
-          <button type="button" onclick="window.setDefectaStatusFilter('KOSONG')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'KOSONG' ? 'ring-2 ring-red-500 shadow-sm' : 'hover:border-red-400'}">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-red-600 dark:text-red-400">STOK HABIS (OOS)</span>
-              <span class="text-sm">🔴</span>
+      <!-- 3. COLLAPSIBLE PBF SLA & TERMIN KREDIT -->
+      <details class="ons-card p-3.5 rounded-xl text-xs group cursor-pointer">
+        <summary class="font-bold flex items-center justify-between select-none">
+          <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+            <span>📋 Direktori SLA &amp; Termin Kredit Distributor PBF Resmi (${st.supplierPbf.length} PBF)</span>
+            <span class="text-[10px] text-slate-400 font-normal">(Klik untuk melihat SLA, lead time &amp; TOP)</span>
+          </div>
+          <span class="text-slate-400 group-open:rotate-180 transition-transform">&darr;</span>
+        </summary>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-3 mt-3 border-t" style="border-color:var(--ons-border)">
+          ${st.supplierPbf.map((p) => `<div class="p-2.5 rounded-xl border space-y-1 bg-slate-50/60 dark:bg-slate-800/40" style="border-color:var(--ons-border)">
+            <div class="font-bold text-xs text-slate-900 dark:text-white truncate">${S().esc(p.nama_pbf)}</div>
+            <div class="font-mono-num text-[10px] text-slate-500">${S().esc(p.kode_cdob || 'PBF-CDOB')}</div>
+            <div class="flex justify-between pt-1 text-[11px]">
+              <span>Lead Time: <b class="font-mono-num">${p.lead_time_hari} Hari</b></span>
+              <span class="text-emerald-600 font-bold">SLA ${p.skor_sla}%</span>
             </div>
-            <div class="text-2xl font-extrabold font-mono-num text-red-600 mt-1">${emptyCount} <span class="text-xs font-normal text-red-500">Item</span></div>
-            <div class="text-[10.5px] text-red-600 dark:text-red-400 mt-0.5">Prioritas Terbitkan SP Darurat</div>
-          </button>
+            <div class="text-[11px]">Termin Kredit: <b class="font-mono-num">TOP ${p.termin_hari} Hari</b></div>
+          </div>`).join('')}
+        </div>
+      </details>
 
-          <button type="button" onclick="window.setDefectaStatusFilter('DIBAWAH_MIN')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'DIBAWAH_MIN' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400">MENIPIS &le; BUFFER MIN</span>
-              <span class="text-sm">🟡</span>
+      <!-- 4. TABEL DEFECTA & RESTOK -->
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center gap-2">
+            <input class="ons-input text-xs w-60" placeholder="Cari nama obat, zat aktif, distributor..." value="${S().esc(defectaSearchQ)}" oninput="window.setDefectaSearchQ(this.value)"/>
+            <div class="ons-tab-bar">
+              <button onclick="window.setDefectaStatusFilter('SEMUA')" class="ons-tab-btn ${defectaStatusFilter === 'SEMUA' ? 'active font-bold' : ''}">Semua (${lowStock.length})</button>
+              <button onclick="window.setDefectaStatusFilter('KOSONG')" class="ons-tab-btn ${defectaStatusFilter === 'KOSONG' ? 'active font-bold text-red-600' : ''}">Stok Kosong (${emptyCount})</button>
+              <button onclick="window.setDefectaStatusFilter('DIBAWAH_MIN')" class="ons-tab-btn ${defectaStatusFilter === 'DIBAWAH_MIN' ? 'active font-bold text-amber-600' : ''}">Menipis &le; Min (${belowMinCount})</button>
             </div>
-            <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${belowMinCount} <span class="text-xs font-normal text-amber-500">Item</span></div>
-            <div class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-0.5">Cadangan fisik hampir habis</div>
-          </button>
-
-          <div class="ons-card p-3.5 text-left">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400">ESTIMASI NILAI PO</span>
-              <span class="text-sm">💰</span>
-            </div>
-            <div class="text-xl font-extrabold font-mono-num text-blue-700 dark:text-blue-300 mt-1">${S().rp(estTotalPo)}</div>
-            <div class="text-[10.5px] text-slate-500 mt-0.5">${lowStock.length} produk siap dipesan</div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-mono-num font-bold text-blue-600">Total Est. PO: ${S().rp(estTotalPo)}</span>
+            <button type="button" onclick="window.exportDefectaList('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">📊 Unduh Excel</button>
           </div>
         </div>
 
-        <!-- 2. PAKET ORDER OTOMATIS PER SUPPLIER PBF -->
-        ${Object.keys(groupedPbf).length ? `
-        <div class="p-3.5 rounded-2xl border bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white dark:from-slate-800/80 dark:via-slate-800/50 dark:to-slate-900 space-y-2.5" style="border-color:var(--ons-border)">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-base">🚚</span>
-              <div>
-                <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">Paket Pesanan Otomatis per Supplier PBF (${Object.keys(groupedPbf).length} Distributor):</span>
-                <span class="text-[11px] text-slate-500 ml-1">Klik distributor untuk langsung membuat draft SP terkelompok</span>
-              </div>
-            </div>
-            <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 text-blue-700 font-bold border border-blue-300 dark:border-blue-700">⚡ Terbitkan Semua SP Sekaligus</button>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            ${Object.keys(groupedPbf).map((pbfName) => {
-              const pbfItems = groupedPbf[pbfName];
-              const pbfVal = pbfItems.reduce((sum, o) => sum + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0);
-              return `<button type="button" onclick="window.generateSpFromDefecta('${S().esc(pbfName)}')" class="ons-btn text-xs py-1.5 px-3 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-white dark:bg-slate-900 hover:border-blue-500 hover:shadow-sm font-semibold flex items-center gap-2 group">
-                <span class="group-hover:text-blue-600 transition-colors">🏢 ${S().esc(pbfName)}</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">${pbfItems.length} item</span>
-                <span class="font-mono-num text-[11px] text-slate-500 dark:text-slate-400 font-bold">${S().rp(pbfVal)}</span>
-              </button>`;
-            }).join('')}
-          </div>
-        </div>` : ''}
+        <div class="ons-table-wrap">
+          <table class="ons-table is-compact">
+            <thead>
+              <tr>
+                <th class="w-8">No.</th>
+                <th>Produk Farmasi &amp; Spesifikasi</th>
+                <th class="text-center">Jenis SP</th>
+                <th>Stok Aktif &amp; Buffer</th>
+                <th>Ambang Min - Max</th>
+                <th>Distributor Utama</th>
+                <th class="text-center">Sedang Dipesan</th>
+                <th class="text-right">Kuantitas Pesan</th>
+                <th class="text-right">Aksi Pengadaan</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lowStock.length ? lowStock.map((o, idx) => {
+                const s = S().getSellableStok(o.id_obat);
+                const totFisik = S().getTotalStok(o.id_obat);
+                const edBlocked = Math.max(0, totFisik - s);
+                const fc = forecastMap[o.id_obat] || { avg_harian: 0.5, lead_time_hari: 3, reorder_point: Number(o.stok_min || 10), rekomendasi_order: 20, dos: 0 };
+                const qtyOrder = getOrderQty(o);
+                const sedangDipesan = Number(pendingOrderMap[o.id_obat] || 0);
+                const inPlan = (_readLocalList(PLANS_KEY) || []).find((p) => p.id_obat === o.id_obat);
+                const jenisSp = resolveJenisSp(o.golongan_bpom);
+                const sMin = Number(o.stok_min || 10);
+                const sMax = Number(o.stok_max || 100);
+                const sPct = sMax > 0 ? Math.min(100, Math.round((s / sMax) * 100)) : 0;
+                const isKosong = s <= 0;
 
-        <!-- 3. COLLAPSIBLE PBF SLA & TERMIN KREDIT -->
-        <details class="ons-card p-3.5 rounded-xl text-xs group cursor-pointer">
-          <summary class="font-bold flex items-center justify-between select-none">
-            <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-              <span>📋 Direktori SLA &amp; Termin Kredit Distributor PBF Resmi (${st.supplierPbf.length} PBF)</span>
-              <span class="text-[10px] text-slate-400 font-normal">(Klik untuk melihat SLA, lead time &amp; TOP)</span>
-            </div>
-            <span class="text-slate-400 group-open:rotate-180 transition-transform">&darr;</span>
-          </summary>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-3 mt-3 border-t" style="border-color:var(--ons-border)">
-            ${st.supplierPbf.map((p) => `<div class="p-2.5 rounded-xl border space-y-1 bg-slate-50/60 dark:bg-slate-800/40" style="border-color:var(--ons-border)">
-              <div class="font-bold text-xs text-slate-900 dark:text-white truncate">${S().esc(p.nama_pbf)}</div>
-              <div class="font-mono-num text-[10px] text-slate-500">${S().esc(p.kode_cdob || 'PBF-CDOB')}</div>
-              <div class="flex justify-between pt-1 text-[11px]">
-                <span>Lead Time: <b class="font-mono-num">${p.lead_time_hari} Hari</b></span>
-                <span class="text-emerald-600 font-bold">SLA ${p.skor_sla}%</span>
-              </div>
-              <div class="text-[11px]">Termin Kredit: <b class="font-mono-num">TOP ${p.termin_hari} Hari</b></div>
-            </div>`).join('')}
-          </div>
-        </details>
-
-        <!-- 4. TABEL DEFECTA & RESTOK -->
-        <div class="ons-card p-4 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
-            <div class="flex flex-wrap items-center gap-2">
-              <input class="ons-input text-xs w-60" placeholder="Cari nama obat, zat aktif, distributor..." value="${S().esc(defectaSearchQ)}" oninput="window.setDefectaSearchQ(this.value)"/>
-              <div class="ons-tab-bar">
-                <button onclick="window.setDefectaStatusFilter('SEMUA')" class="ons-tab-btn ${defectaStatusFilter === 'SEMUA' ? 'active font-bold' : ''}">Semua (${lowStock.length})</button>
-                <button onclick="window.setDefectaStatusFilter('KOSONG')" class="ons-tab-btn ${defectaStatusFilter === 'KOSONG' ? 'active font-bold text-red-600' : ''}">Stok Kosong (${emptyCount})</button>
-                <button onclick="window.setDefectaStatusFilter('DIBAWAH_MIN')" class="ons-tab-btn ${defectaStatusFilter === 'DIBAWAH_MIN' ? 'active font-bold text-amber-600' : ''}">Menipis &le; Min (${belowMinCount})</button>
-              </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-xs font-mono-num font-bold text-blue-600">Total Est. PO: ${S().rp(estTotalPo)}</span>
-              <button type="button" onclick="window.exportDefectaList('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">📊 Unduh Excel</button>
-            </div>
-          </div>
-
-          <div class="ons-table-wrap">
-            <table class="ons-table is-compact">
-              <thead>
-                <tr>
-                  <th class="w-8">No.</th>
-                  <th>Produk Farmasi &amp; Spesifikasi</th>
-                  <th class="text-center">Jenis SP</th>
-                  <th>Stok Aktif &amp; Buffer</th>
-                  <th>Ambang Min - Max</th>
-                  <th>Distributor Utama</th>
-                  <th class="text-center">Sedang Dipesan</th>
-                  <th class="text-right">Kuantitas Pesan</th>
-                  <th class="text-right">Aksi Pengadaan</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${lowStock.length ? lowStock.map((o, idx) => {
-                  const s = S().getSellableStok(o.id_obat);
-                  const totFisik = S().getTotalStok(o.id_obat);
-                  const edBlocked = Math.max(0, totFisik - s);
-                  const fc = forecastMap[o.id_obat] || { avg_harian: 0.5, lead_time_hari: 3, reorder_point: Number(o.stok_min || 10), rekomendasi_order: 20, dos: 0 };
-                  const qtyOrder = getOrderQty(o);
-                  const sedangDipesan = Number(pendingOrderMap[o.id_obat] || 0);
-                  const inPlan = (_readLocalList(PLANS_KEY) || []).find((p) => p.id_obat === o.id_obat);
-                  const jenisSp = resolveJenisSp(o.golongan_bpom);
-                  const sMin = Number(o.stok_min || 10);
-                  const sMax = Number(o.stok_max || 100);
-                  const sPct = sMax > 0 ? Math.min(100, Math.round((s / sMax) * 100)) : 0;
-                  const isKosong = s <= 0;
-
-                  return `<tr>
-                    <td class="font-mono-num text-xs text-center text-slate-400">${idx + 1}.</td>
-                    <td>
-                      <div class="flex items-start gap-1.5">
-                        <span class="inline-block w-2 h-2 rounded-full mt-1.5 shrink-0 ${isKosong ? 'bg-red-500' : 'bg-amber-500'}" title="${isKosong ? 'Stok Habis' : 'Stok Menipis'}"></span>
-                        <div>
-                          <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="font-bold text-xs text-left hover:text-blue-600 transition-colors leading-tight">
-                            ${S().esc(o.nama_dagang)}
-                          </button>
-                          <div class="text-[11px]" style="color:var(--ons-text-soft)">
-                            ${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <span class="font-semibold">${S().esc(o.bentuk_sediaan || o.satuan_dasar)}</span>
-                          </div>
-                          <div class="flex flex-wrap items-center gap-1 mt-0.5">
-                            ${S().bpomBadge(o.golongan_bpom)}
-                            <span class="font-mono-num text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold">DOS &plusmn;${fc.dos} hari</span>
-                          </div>
+                return `<tr>
+                  <td class="font-mono-num text-xs text-center text-slate-400">${idx + 1}.</td>
+                  <td>
+                    <div class="flex items-start gap-1.5">
+                      <span class="inline-block w-2 h-2 rounded-full mt-1.5 shrink-0 ${isKosong ? 'bg-red-500' : 'bg-amber-500'}" title="${isKosong ? 'Stok Habis' : 'Stok Menipis'}"></span>
+                      <div>
+                        <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="font-bold text-xs text-left hover:text-blue-600 transition-colors leading-tight">
+                          ${S().esc(o.nama_dagang)}
+                        </button>
+                        <div class="text-[11px]" style="color:var(--ons-text-soft)">
+                          ${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <span class="font-semibold">${S().esc(o.bentuk_sediaan || o.satuan_dasar)}</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                          ${S().bpomBadge(o.golongan_bpom)}
+                          <span class="font-mono-num text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold">DOS &plusmn;${fc.dos} hari</span>
                         </div>
                       </div>
-                    </td>
-                    <td class="text-center">
-                      <span class="badge-bpom ${jenisSp === 'REGULER' ? 'bpom-bebas' : 'bpom-prekursor'} text-[10px] font-bold">${jenisSp}</span>
-                    </td>
-                    <td class="min-w-[120px]">
-                      <div class="flex items-center justify-between text-xs font-mono-num">
-                        <span class="${isKosong ? 'text-red-600 font-extrabold' : 'text-amber-600 font-bold'}">${s} ${S().esc(o.satuan_dasar)}</span>
-                        <span class="text-[10px] font-bold ${isKosong ? 'text-red-600' : 'text-amber-600'}">${isKosong ? 'KOSONG' : 'MENIPIS'}</span>
-                      </div>
-                      <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${Math.max(4, sPct)}%;background:${isKosong ? '#EF4444' : '#F59E0B'}"></div></div>
-                      ${edBlocked > 0 ? `<div class="text-[10px] text-amber-600 font-mono-num mt-0.5">(${edBlocked} unit expired dikarantina)</div>` : ''}
-                    </td>
-                    <td class="font-mono-num text-xs whitespace-nowrap">
-                      <div>Min: <b>${sMin}</b> &bull; Max: <b>${sMax}</b></div>
-                      <div class="text-[10px] text-slate-400">ROP: ${fc.reorder_point} ${S().esc(o.satuan_dasar)}</div>
-                    </td>
-                    <td class="text-xs">
-                      <div class="font-semibold text-slate-800 dark:text-slate-200">${S().esc(o.pbf_utama || 'Distributor Apotek')}</div>
-                      <div class="text-[10px] font-mono-num text-slate-400">Lead Time &plusmn;${fc.lead_time_hari} Hari</div>
-                    </td>
-                    <td class="font-mono-num text-xs text-center">
-                      ${sedangDipesan > 0
-                        ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">${sedangDipesan} ${S().esc(o.satuan_dasar)}</span>`
-                        : '<span class="text-slate-400 text-[11px]">-</span>'}
-                    </td>
-                    <td class="text-right">
-                      <div class="flex items-center justify-end gap-1">
-                        <input type="number" min="1" value="${qtyOrder}" onchange="window.setDefectaOrderQty('${o.id_obat}', this.value)" class="ons-input font-mono-num text-right text-xs w-16 py-1 min-h-0 h-8 font-bold"/>
-                        <span class="text-[10px] text-slate-500 font-semibold">${S().esc(o.satuan_dasar)}</span>
-                      </div>
-                      <div class="text-[10px] font-mono-num text-slate-400 mt-0.5">
-                        ${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}
-                        ${inPlan ? ` &bull; <span class="text-emerald-600 font-bold">Di Rencana (${inPlan.kuantitas})</span>` : ''}
-                      </div>
-                    </td>
-                    <td class="text-right whitespace-nowrap">
-                      <div class="flex items-center justify-end gap-1">
-                        <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', ${qtyOrder}, 'Dari Defecta Stok Tipis')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2 font-bold" title="Masukkan ke Rencana Pembelian">+ Rencana</button>
-                        <button type="button" onclick="window.generateSpFromDefecta('${S().esc(o.pbf_utama || '')}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2 font-bold" title="Buat SP untuk Distributor">+ Buat SP</button>
-                        <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-1.5" title="Buka Detail Monograf &amp; Riwayat Beli">👁️</button>
-                      </div>
-                    </td>
-                  </tr>`;
-                }).join('') : '<tr><td colspan="9" class="text-center py-8 text-xs text-slate-500">Seluruh stok obat memenuhi ambang cadangan aman. Tidak ada produk yang perlu restok!</td></tr>'}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge-bpom ${jenisSp === 'REGULER' ? 'bpom-bebas' : 'bpom-prekursor'} text-[10px] font-bold">${jenisSp}</span>
+                  </td>
+                  <td class="min-w-[120px]">
+                    <div class="flex items-center justify-between text-xs font-mono-num">
+                      <span class="${isKosong ? 'text-red-600 font-extrabold' : 'text-amber-600 font-bold'}">${s} ${S().esc(o.satuan_dasar)}</span>
+                      <span class="text-[10px] font-bold ${isKosong ? 'text-red-600' : 'text-amber-600'}">${isKosong ? 'KOSONG' : 'MENIPIS'}</span>
+                    </div>
+                    <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${Math.max(4, sPct)}%;background:${isKosong ? '#EF4444' : '#F59E0B'}"></div></div>
+                    ${edBlocked > 0 ? `<div class="text-[10px] text-amber-600 font-mono-num mt-0.5">(${edBlocked} unit expired dikarantina)</div>` : ''}
+                  </td>
+                  <td class="font-mono-num text-xs whitespace-nowrap">
+                    <div>Min: <b>${sMin}</b> &bull; Max: <b>${sMax}</b></div>
+                    <div class="text-[10px] text-slate-400">ROP: ${fc.reorder_point} ${S().esc(o.satuan_dasar)}</div>
+                  </td>
+                  <td class="text-xs">
+                    <div class="font-semibold text-slate-800 dark:text-slate-200">${S().esc(o.pbf_utama || 'Distributor Apotek')}</div>
+                    <div class="text-[10px] font-mono-num text-slate-400">Lead Time &plusmn;${fc.lead_time_hari} Hari</div>
+                  </td>
+                  <td class="font-mono-num text-xs text-center">
+                    ${sedangDipesan > 0
+                      ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">${sedangDipesan} ${S().esc(o.satuan_dasar)}</span>`
+                      : '<span class="text-slate-400 text-[11px]">-</span>'}
+                  </td>
+                  <td class="text-right">
+                    <div class="flex items-center justify-end gap-1">
+                      <input type="number" min="1" value="${qtyOrder}" onchange="window.setDefectaOrderQty('${o.id_obat}', this.value)" class="ons-input font-mono-num text-right text-xs w-16 py-1 min-h-0 h-8 font-bold"/>
+                      <span class="text-[10px] text-slate-500 font-semibold">${S().esc(o.satuan_dasar)}</span>
+                    </div>
+                    <div class="text-[10px] font-mono-num text-slate-400 mt-0.5">
+                      ${S().rp(qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0))}
+                      ${inPlan ? ` &bull; <span class="text-emerald-600 font-bold">Di Rencana (${inPlan.kuantitas})</span>` : ''}
+                    </div>
+                  </td>
+                  <td class="text-right whitespace-nowrap">
+                    <div class="flex items-center justify-end gap-1">
+                      <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', ${qtyOrder}, 'Dari Defecta Stok Tipis')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2 font-bold" title="Masukkan ke Rencana Pembelian">+ Rencana</button>
+                      <button type="button" onclick="window.generateSpFromDefecta('${S().esc(o.pbf_utama || '')}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2 font-bold" title="Buat SP untuk Distributor">+ Buat SP</button>
+                      <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-1.5" title="Buka Detail Monograf &amp; Riwayat Beli">👁️</button>
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="9" class="text-center py-8 text-xs text-slate-500">Seluruh stok obat memenuhi ambang cadangan aman. Tidak ada produk yang perlu restok!</td></tr>'}
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        <div class="ons-card p-4 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">Riwayat &amp; Status Surat Pesanan (SP Terintegrasi Faktur &amp; A4) (${(st.suratPesanan || []).length})</h3>
-              <p class="text-[11px] text-slate-500">Lacak surat pesanan yang sedang menunggu barang dari PBF atau telah selesai diterima.</p>
-            </div>
-            <button type="button" onclick="window.setDefectaTab('sp')" class="ons-btn ons-btn-ghost text-xs font-bold text-blue-600">Buka Daftar Surat Pesanan (A4) &rarr;</button>
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">Riwayat &amp; Status Surat Pesanan (SP Terintegrasi Faktur &amp; A4) (${(st.suratPesanan || []).length})</h3>
+            <p class="text-[11px] text-slate-500">Lacak surat pesanan yang sedang menunggu barang dari PBF atau telah selesai diterima.</p>
           </div>
-          <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>No. SP &amp; Tanggal</th><th>Supplier PBF</th><th>Golongan &amp; Item</th><th>Est. Total</th><th>Status Pengadaan</th><th>Aksi Lanjut</th></tr></thead>
-              <tbody>
-                ${(st.suratPesanan || []).length ? (st.suratPesanan || []).map((sp) => {
-                  let itemsArr = [];
-                  try { itemsArr = JSON.parse(sp.items_json || '[]'); } catch (e) {}
-                  const done = String(sp.status_sp || '') === 'SELESAI_DITERIMA';
-                  return `<tr>
-                    <td class="font-mono-num text-xs"><b>${S().esc(sp.no_sp)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sp.tanggal)}</span></td>
-                    <td class="font-semibold text-xs">${S().esc(sp.nama_pbf || sp.id_pbf)}</td>
-                    <td class="text-xs"><span class="badge-bpom bpom-prekursor">${S().esc(sp.golongan_sp || 'REGULER')}</span> <span class="ml-1">${itemsArr.length} item</span></td>
-                    <td class="font-mono-num text-xs font-bold">${S().rp(sp.estimasi_total || 0)}</td>
-                    <td><span class="badge-bpom ${done ? 'bpom-bebas' : 'bpom-terbatas'}">${done ? ('DITERIMA: ' + S().esc(sp.no_faktur_pbf || 'OK')) : S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</span></td>
-                    <td>
-                      <div class="flex flex-wrap gap-1.5">
-                        <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Preview A4</button>
-                        <button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Edit</button>
-                        ${!done
-                          ? `<button onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Faktur (GRN) &rarr;</button>`
-                          : `<button onclick="navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Lihat Faktur</button>`}
-                      </div>
-                    </td>
-                  </tr>`;
-                }).join('') : '<tr><td colspan="6" class="text-center py-5 text-xs text-slate-400">Belum ada Surat Pesanan tercatat. Klik tombol "Buat SP" di atas untuk menerbitkan SP resmi.</td></tr>'}
-              </tbody>
-            </table>
-          </div>
+          <button type="button" onclick="window.setFakturTab('sp')" class="ons-btn ons-btn-ghost text-xs font-bold text-blue-600">Buka Daftar Surat Pesanan (A4) &rarr;</button>
         </div>
-      `}
-    </div>`;
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>No. SP &amp; Tanggal</th><th>Supplier PBF</th><th>Golongan &amp; Item</th><th>Est. Total</th><th>Status Pengadaan</th><th>Aksi Lanjut</th></tr></thead>
+            <tbody>
+              ${(st.suratPesanan || []).length ? (st.suratPesanan || []).map((sp) => {
+                let itemsArr = [];
+                try { itemsArr = JSON.parse(sp.items_json || '[]'); } catch (e) {}
+                const done = String(sp.status_sp || '') === 'SELESAI_DITERIMA';
+                return `<tr>
+                  <td class="font-mono-num text-xs"><b>${S().esc(sp.no_sp)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sp.tanggal)}</span></td>
+                  <td class="font-semibold text-xs">${S().esc(sp.nama_pbf || sp.id_pbf)}</td>
+                  <td class="text-xs"><span class="badge-bpom bpom-prekursor">${S().esc(sp.golongan_sp || 'REGULER')}</span> <span class="ml-1">${itemsArr.length} item</span></td>
+                  <td class="font-mono-num text-xs font-bold">${S().rp(sp.estimasi_total || 0)}</td>
+                  <td><span class="badge-bpom ${done ? 'bpom-bebas' : 'bpom-terbatas'}">${done ? ('DITERIMA: ' + S().esc(sp.no_faktur_pbf || 'OK')) : S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</span></td>
+                  <td>
+                    <div class="flex flex-wrap gap-1.5">
+                      <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5">Preview A4</button>
+                      <button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Edit</button>
+                      ${!done
+                        ? `<button onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5">Terima Faktur (GRN) &rarr;</button>`
+                        : `<button onclick="window.setFakturTab('daftar')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Lihat Faktur</button>`}
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="6" class="text-center py-5 text-xs text-slate-400">Belum ada Surat Pesanan tercatat. Klik tombol "Buat SP" di atas untuk menerbitkan SP resmi.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDefectaView() {
+    const st = S().AppState;
+    defectaTab = (st.subTabs && st.subTabs.defecta) || defectaTab || 'defecta';
+    if (defectaTab === 'order') defectaTab = 'defecta';
+    if (st.subTabs) {
+      st.subTabs.faktur = defectaTab;
+      st.subTabs.defecta = defectaTab;
+    }
+    fakturTab = defectaTab;
+    return renderFakturView();
   }
 
   global.setDefectaTab = (t) => {
@@ -7840,10 +7827,8 @@
       if (typeof global.navigateView === 'function') return global.navigateView('obat', 'supplier');
       if (typeof global.setMasterTab === 'function') return global.setMasterTab('supplier');
     }
-    defectaTab = t || 'order';
-    if (S().AppState.subTabs) S().AppState.subTabs.defecta = defectaTab;
-    global.renderActiveView();
-    if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+    if (t === 'order') t = 'defecta';
+    global.setFakturTab(t);
   };
   global.setDefectaOrderQty = (idObat, val) => {
     defectaOrderQty[idObat] = Math.max(1, Number(val || 1));
@@ -8143,7 +8128,8 @@
 
   function renderFakturView() {
     const st = S().AppState;
-    fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'rencana';
+    fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'defecta';
+    if (fakturTab === 'order') fakturTab = 'defecta';
     ensureGrnInitialized();
 
     const allPlans = _readLocalList(PLANS_KEY);
@@ -8260,27 +8246,42 @@
       return true;
     });
 
+    const lowStockDefecta = (st.masterObat || []).filter((o) => {
+      const s = S().getSellableStok(o.id_obat);
+      return s <= Number(o.stok_min || 10);
+    });
+
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <span class="badge-bpom bpom-bebas">PENGADAAN &amp; HUTANG DAGANG</span>
-            <span class="text-xs" style="color:var(--ons-text-soft)">CDOB Kompatibel</span>
+            <span class="badge-bpom bpom-bebas">PENGADAAN FARMASI &amp; PBF</span>
+            <span class="text-xs" style="color:var(--ons-text-soft)">CDOB Kompatibel &bull; BPOM Terintegrasi</span>
           </div>
-          <h1 class="text-xl font-extrabold">Pembelian &amp; Faktur PBF</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Rencana pembelian, pesanan PBF, daftar faktur &amp; tempo hutang, terima barang (GRN / Scan OCR), analisa harga, konsinyasi &amp; retur BAR-PBF.</p>
+          <h1 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Pengadaan &amp; Faktur PBF</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Siklus pengadaan apotek terpadu: pantau defecta stok kritis, rencana pembelian, terbitkan SP A4 resmi BPOM, terima faktur GRN/OCR, analisa riwayat harga &amp; margin jual, retur BAR-PBF, dan konsinyasi.</p>
         </div>
-        <div class="ons-tab-bar">
-          <button onclick="window.setFakturTab('rencana')" class="ons-tab-btn ${fakturTab === 'rencana' ? 'active' : ''}">📋 Rencana (${allPlans.length})</button>
-          <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active' : ''}">📑 Faktur PBF (${allFaktur.length})</button>
-          <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active' : ''}">📥 Terima Faktur (GRN)</button>
-          <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active' : ''}">📊 Analisa Margin</button>
-          <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active' : ''}">🔄 Retur (${nearEdBatches.length})</button>
-          <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active' : ''}">🤝 Konsinyasi</button>
+        <div class="flex flex-wrap items-center gap-2">
+          ${(fakturTab === 'defecta' || fakturTab === 'order') ? `
+            <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-ghost text-xs py-2 px-3">+ Buat SP Manual</button>
+            <button onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-2 px-3.5 shadow-sm">⚡ Pesanan Otomatis</button>
+          ` : fakturTab === 'sp' ? `
+            <button onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs py-2 px-3.5 font-bold shadow-sm">+ Buat SP Baru (A4)</button>
+          ` : ''}
+          <div class="ons-tab-bar overflow-x-auto max-w-full">
+            <button onclick="window.setFakturTab('defecta')" class="ons-tab-btn ${fakturTab === 'defecta' || fakturTab === 'order' ? 'active font-bold' : ''}">📦 Defecta (${lowStockDefecta.length})</button>
+            <button onclick="window.setFakturTab('rencana')" class="ons-tab-btn ${fakturTab === 'rencana' ? 'active font-bold' : ''}">📋 Rencana (${allPlans.length})</button>
+            <button onclick="window.setFakturTab('sp')" class="ons-tab-btn ${fakturTab === 'sp' ? 'active font-bold' : ''}">📄 Surat Pesanan (${(st.suratPesanan || []).length})</button>
+            <button onclick="window.setFakturTab('input')" class="ons-tab-btn ${fakturTab === 'input' ? 'active font-bold' : ''}">📥 Terima Faktur (GRN)</button>
+            <button onclick="window.setFakturTab('daftar')" class="ons-tab-btn ${fakturTab === 'daftar' ? 'active font-bold' : ''}">📑 Faktur PBF (${allFaktur.length})</button>
+            <button onclick="window.setFakturTab('harga')" class="ons-tab-btn ${fakturTab === 'harga' ? 'active font-bold' : ''}">📊 Analisa Margin</button>
+            <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active font-bold' : ''}">🔄 Retur (${nearEdBatches.length})</button>
+            <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active font-bold' : ''}">🤝 Konsinyasi</button>
+          </div>
         </div>
       </div>
 
-      ${fakturTab === 'rencana' ? `
+      ${(fakturTab === 'defecta' || fakturTab === 'order') ? _renderDefectaTabContent(st) : fakturTab === 'sp' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderSuratPesananTab() : '') : fakturTab === 'rencana' ? `
         <div class="space-y-4">
           <!-- 4 Executive KPI Cards Rencana Pembelian -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -8322,7 +8323,7 @@
               <div class="space-y-1.5">
                 <div class="font-semibold text-emerald-800 dark:text-emerald-200">&#10004; Bingung merencanakan pembelian? Yuk cek rekomendasi di halaman <b>Analisis Pembelian</b> atau <b>Defecta</b>.</div>
                 <div class="flex flex-wrap gap-2">
-                  <button type="button" onclick="window.navigateView('defecta','order')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold">Defecta</button>
+                  <button type="button" onclick="window.setFakturTab('defecta')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold">Defecta</button>
                   <button type="button" onclick="window.setFakturTab('harga')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold">Analisis Pembelian &amp; Margin</button>
                   <button type="button" onclick="window.pullLowStockToPlans()" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 font-bold">+ Tarik Item Defecta ke Rencana</button>
                 </div>
@@ -8348,7 +8349,7 @@
                 <button type="button" onclick="window.exportPurchasePlans('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
                 ${allPlans.length ? `<button type="button" onclick="window.clearAllPurchasePlans()" class="ons-btn ons-btn-ghost text-xs text-rose-600 hover:bg-rose-50 border-rose-200">Kosongkan Rencana</button>` : ''}
                 <button type="button" onclick="window.openPenawaranSalesModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Penawaran Sales</button>
-                ${selectedPlans.length ? `<button type="button" onclick="window.convertSelectedPlansToSp()" class="ons-btn ons-btn-primary text-xs font-bold">Buat Pesanan SP (${selectedPlans.length}) &rarr;</button>` : `<button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-primary text-xs">Lihat Pesanan (SP) &rarr;</button>`}
+                ${selectedPlans.length ? `<button type="button" onclick="window.convertSelectedPlansToSp()" class="ons-btn ons-btn-primary text-xs font-bold">Buat Pesanan SP (${selectedPlans.length}) &rarr;</button>` : `<button type="button" onclick="window.setFakturTab('sp')" class="ons-btn ons-btn-primary text-xs">Lihat Pesanan (SP) &rarr;</button>`}
               </div>
             </div>
 
@@ -8455,7 +8456,7 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-1.5">
                   <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ${isScanExpanded ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs">${isScanExpanded ? 'Tutup Scan OCR / PDF' : 'Scan Foto / PDF Faktur'}</button>
-                  <button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs">Daftar SP &amp; A4 &rarr;</button>
+                  <button type="button" onclick="window.setFakturTab('sp')" class="ons-btn ons-btn-ghost text-xs">Daftar SP &amp; A4 &rarr;</button>
                   <button type="button" onclick="window.resetGrnForm()" class="ons-btn ons-btn-ghost text-xs text-red-600">Reset Form</button>
                 </div>
               </div>
@@ -8903,8 +8904,12 @@
   }
 
   global.setFakturTab = (t) => {
-    fakturTab = t || 'rencana';
-    if (S().AppState.subTabs) S().AppState.subTabs.faktur = fakturTab;
+    if (t === 'order') t = 'defecta';
+    fakturTab = t || 'defecta';
+    if (S().AppState.subTabs) {
+      S().AppState.subTabs.faktur = fakturTab;
+      S().AppState.subTabs.defecta = fakturTab;
+    }
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };

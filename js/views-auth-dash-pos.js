@@ -1538,7 +1538,7 @@
         unit: 'produk stok 0',
         actionLabel: 'Order Defecta',
         icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/>',
-        onClick: canDefecta ? `navigateView('defecta','order')` : (canGudang ? `navigateView('gudang','batch')` : '')
+        onClick: canDefecta ? `navigateView('faktur','defecta')` : (canGudang ? `navigateView('gudang','batch')` : '')
       },
       {
         title: 'Dekat Kadaluarsa',
@@ -1893,7 +1893,7 @@
         badgeCls: seeCost && spOpenCount ? 'bpom-prekursor' : 'bpom-bebas',
         icoBg: 'bg-amber-500/10 text-amber-600',
         ico: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
-        onClick: seeCost && canDefecta ? `navigateView('defecta','sp')` : (!seeCost && canObat ? `navigateView('obat','obat')` : '')
+        onClick: seeCost && canDefecta ? `navigateView('faktur','sp')` : (!seeCost && canObat ? `navigateView('obat','obat')` : '')
       },
       {
         title: 'Monitor Suhu (2&ndash;8&deg;C)',
@@ -1920,7 +1920,7 @@
         count: defectaCount,
         dotCls: defectaCount ? 'bg-amber-500' : 'bg-emerald-500',
         pillCls: defectaCount ? 'bg-amber-500/15 text-amber-600' : 'bg-slate-500/10 text-slate-500',
-        onClick: seeCost && canDefecta ? `navigateView('defecta','order')` : (canGudang ? `navigateView('gudang','batch')` : '')
+        onClick: seeCost && canDefecta ? `navigateView('faktur','defecta')` : (canGudang ? `navigateView('gudang','batch')` : '')
       },
       {
         label: 'Antrean Validasi E-Resep APJ',
@@ -2839,8 +2839,8 @@
             <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Kelola siklus pengadaan apotek dari rencana stok defecta, pesanan Surat Pesanan (SP) aktif, hingga jatuh tempo faktur PBF tempo.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            ${canDefecta ? `<button type="button" onclick="navigateView('defecta','order')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>+ Rencana Order (Defecta)</span></button>` : ''}
-            ${canDefecta ? `<button type="button" onclick="navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Buka Buku SP &rsaquo;</button>` : ''}
+            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>+ Rencana Order (Defecta)</span></button>` : ''}
+            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Buka Buku SP &rsaquo;</button>` : ''}
             ${canFin ? `<button type="button" onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Buku Hutang PBF &rsaquo;</button>` : ''}
           </div>
         </div>
@@ -2873,11 +2873,11 @@
           </span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('defecta','order')"` : ''}>
+          <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('faktur','defecta')"` : ''}>
             <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg></span>
             <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Rencana Pembelian (Defecta Buffer)</div><div class="text-lg font-extrabold font-mono-num text-emerald-600">${S().rp(rencanaPembelianRp)}</div></div>
           </div>
-          <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('defecta','sp')"` : ''}>
+          <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('faktur','sp')"` : ''}>
             <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
             <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pesanan Aktif (${openSpList.length} SP)</div><div class="text-lg font-extrabold font-mono-num text-blue-600">${S().rp(pesananAktifRp)}</div></div>
           </div>
@@ -2923,7 +2923,7 @@
             <span class="flex items-center gap-1.5 font-bold">
               <span>Pesanan Aktif (Surat Pesanan PBF)</span>
             </span>
-            ${canDefecta ? `<button type="button" onclick="navigateView('defecta','sp')" class="text-xs font-bold underline">Surat Pesanan &rsaquo;</button>` : ''}
+            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','sp')" class="text-xs font-bold underline">Surat Pesanan &rsaquo;</button>` : ''}
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table text-xs">
@@ -3199,7 +3199,7 @@
           <span class="flex items-center gap-1.5 font-bold">
             <span>Prioritas Pengadaan Defecta (Stok &le; Batas Minimum)</span>
           </span>
-          ${canDefecta ? `<button type="button" onclick="navigateView('defecta','order')" class="text-xs font-bold underline">Buka Buku Defecta &rsaquo;</button>` : ''}
+          ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="text-xs font-bold underline">Buka Buku Defecta &rsaquo;</button>` : ''}
         </div>
         <div class="ons-table-wrap">
           <table class="ons-table text-xs">
@@ -3216,7 +3216,7 @@
                   <td><span class="badge-bpom ${stok === 0 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num font-bold">${stok} ${S().esc(o.satuan_terkecil || 'pcs')}</span></td>
                   <td class="font-mono-num">${min} &bull; ${max}</td>
                   <td class="font-mono-num font-extrabold text-blue-600">${saran} ${S().esc(o.satuan_terkecil || 'pcs')}</td>
-                  <td>${canDefecta ? `<button type="button" onclick="navigateView('defecta','order')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5 font-bold">Pesan SP &rarr;</button>` : '-'}</td>
+                  <td>${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5 font-bold">Pesan SP &rarr;</button>` : '-'}</td>
                 </tr>`;
               }).join('')}
             </tbody>
@@ -4139,7 +4139,7 @@
         </div>
         <div class="flex items-center gap-2 text-xs">
           <span class="px-3 py-1.5 rounded-xl border font-mono-num font-bold bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300">${filtered.length} kejadian${totalEstNilai > 0 ? ` &bull; Est. Peluang ${S().rp(totalEstNilai)}` : ''}</span>
-          ${S().canAccessView('defecta') ? `<button type="button" onclick="navigateView('defecta','')" class="ons-btn ons-btn-primary text-xs">Buka Defecta &rarr;</button>` : ''}
+          ${S().canAccessView('faktur') ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs">Buka Defecta &rarr;</button>` : ''}
         </div>
       </div>
 
@@ -4192,7 +4192,7 @@
                   <td class="text-xs"><span class="badge-bpom bpom-prekursor">${S().esc(ls.alasan || 'Stok habis')}</span></td>
                   <td class="text-xs">
                     <div class="flex gap-1.5">
-                      ${S().canAccessView('defecta') ? `<button type="button" onclick="navigateView('defecta','')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Ajukan Defecta</button>` : ''}
+                      ${S().canAccessView('faktur') ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Ajukan Defecta</button>` : ''}
                       <button type="button" onclick="window.deletePosLostSale(${origIdx})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
                     </div>
                   </td>

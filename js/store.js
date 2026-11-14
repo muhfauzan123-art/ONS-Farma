@@ -407,6 +407,8 @@
     if (r === 'Pemilik') return true;
     const perms = getUserPermissions(AppState.user);
     if (viewId === 'settings' && perms.includes('settings:audit')) return true;
+    if (viewId === 'faktur' && perms.includes('defecta')) return true;
+    if (viewId === 'defecta' && perms.includes('faktur')) return true;
     return perms.includes(viewId);
   }
 
