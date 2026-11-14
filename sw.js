@@ -6,7 +6,7 @@
  * - Selalu sajikan UI instan dari cache untuk pengalaman bebas lag (<50ms)
  */
 
-const CACHE_NAME = 'ons-farma-pwa-v18.10.4';
+const CACHE_NAME = 'ons-farma-pwa-v18.11.0';
 const CORE_ASSETS = [
   './',
   './index.html',

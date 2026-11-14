@@ -2735,9 +2735,12 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   }
   function _getKasAccountsList() {
     let list = _readFinLocalList(KAS_ACCOUNTS_KEY);
-    if (!list.length) {
+    if (!list.length || list.length < 2) {
       list = [
-        { id_akun: 'KAS-01', nama: 'Kas Utama', deskripsi: 'Akun Kas Tunai Kasir Utama', kode_kustom: '1-101', catatan: 'Laci Kasir Toko', jenis: 'cash', saldo_awal: 0, status: 'Aktif' }
+        { id_akun: 'KAS-01', nama: 'Kas Tunai Kasir', deskripsi: 'Akun Kas Tunai Laci Kasir Utama', kode_kustom: '1-101', catatan: 'Laci Kasir Toko', jenis: 'cash', saldo_awal: 0, status: 'Aktif' },
+        { id_akun: 'KAS-02', nama: 'Brankas Apotek', deskripsi: 'Kas Utama Brankas Apotek', kode_kustom: '1-102', catatan: 'Brankas Penyimpanan Pemilik', jenis: 'cash', saldo_awal: 0, status: 'Aktif' },
+        { id_akun: 'BANK-01', nama: 'Bank BCA Operasional', deskripsi: 'Rekening Bank BCA Operasional Apotek', kode_kustom: '1-103', catatan: 'Pembayaran Faktur PBF & Penerimaan EDC/Transfer', jenis: 'bank', saldo_awal: 0, status: 'Aktif' },
+        { id_akun: 'WALLET-01', nama: 'QRIS & E-Wallet', deskripsi: 'Penampungan Pembayaran QRIS / Non-Tunai Kasir', kode_kustom: '1-104', catatan: 'Merchant QRIS Statis/Dinamis', jenis: 'ewallet', saldo_awal: 0, status: 'Aktif' }
       ];
       _writeFinLocalList(KAS_ACCOUNTS_KEY, list);
     }
@@ -2792,7 +2795,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const ppnKurangBayar = Math.max(0, ppnKeluaran - ppnMasukanFaktur);
     const pphFinal = Math.round((salesValid.reduce((s, p) => s + Number(p.grand_total || 0), 0) || totalMasuk) * 0.005);
 
-    const openFakturPbf = st.fakturPbf.filter((f) => Number(f.sisa_hutang || 0) > 0 && String(f.status_bayar || '').toUpperCase() !== 'KONSINYASI' && String(f.jenis_penerimaan || '').toUpperCase() !== 'KONSINYASI');
+    const openFakturPbf = (st.fakturPbf || []).filter((f) => Number(f.sisa_hutang || 0) > 0 && String(f.status_bayar || '').toUpperCase() !== 'KONSINYASI' && String(f.jenis_penerimaan || '').toUpperCase() !== 'KONSINYASI');
     const manualUtang = _readFinLocalList(MANUAL_UTANG_KEY).filter((u) => Number(u.sisa_utang || 0) > 0);
     const combinedOpenUtang = [
       ...openFakturPbf.map((f) => ({
@@ -3490,7 +3493,120 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     global.toast('Akun Kas "' + nama + '" berhasil ditambahkan.', 'ok');
     global.renderActiveView();
   };
-  global.openTransferKasModal = (fromAkunId) => {
+
+  global.exportSipnapCsv = () => {
+    global.exportSipnapExcel('csv');
+  };
+
+  global.quickSetorKasir = (destType) => {
+    const fromSelect = document.getElementById('trfKasFrom');
+    const toSelect = document.getElementById('trfKasTo');
+    const noteInput = document.getElementById('trfKasNote');
+    if (!fromSelect || !toSelect) return;
+    
+    // Select KAS-01 as source if available
+    for (let opt of fromSelect.options) {
+      if (opt.value === 'KAS-01' || /kasir|tunai|utama/i.test(opt.text)) {
+        fromSelect.value = opt.value;
+        break;
+      }
+    }
+    // Select Bank or Brankas
+    for (let opt of toSelect.options) {
+      if (destType === 'BANK' && (/bca|bank|mandiri/i.test(opt.text) || opt.value === 'BANK-01')) {
+        toSelect.value = opt.value;
+        if (noteInput) noteInput.value = 'Setoran Kasir Tunai ke Rekening Bank BCA';
+        break;
+      } else if (destType === 'BRANKAS' && (/brankas|owner|pemilik/i.test(opt.text) || opt.value === 'KAS-02')) {
+        toSelect.value = opt.value;
+        if (noteInput) noteInput.value = 'Setoran Kasir Tunai ke Brankas Utama Apotek';
+        break;
+      }
+    }
+  };
+
+  global.openReturFromDeadStock = (batchId) => {
+    sessionStorage.setItem('ons_pending_retur_batch', batchId);
+    if (typeof global.navigateView === 'function') {
+      global.navigateView('faktur', 'retur');
+    }
+    if (global.toast) global.toast('Batch ' + batchId + ' dialihkan ke form Retur Pembelian PBF.', 'info');
+  };
+
+  global.syncParetoToDefecta = async () => {
+    try {
+      const st = S().AppState;
+      const salesMap = {};
+      (st.detailPenjualan || []).forEach((d) => {
+        if (!salesMap[d.id_obat]) salesMap[d.id_obat] = { qty: 0, rev: 0 };
+        salesMap[d.id_obat].qty += Number(d.qty || 0);
+        salesMap[d.id_obat].rev += Number(d.subtotal_item || (Number(d.qty || 0) * Number(d.harga_jual || 0)));
+      });
+      const ranked = (st.masterObat || []).map((o) => {
+        const qtyStok = S().getTotalStok(o.id_obat);
+        const sold = salesMap[o.id_obat] || { qty: 0, rev: 0 };
+        const val = sold.rev > 0 ? sold.rev : (Math.max(1, qtyStok) * Number(o.harga_umum || 0));
+        return { o, val, qtyStok };
+      }).sort((a, b) => b.val - a.val);
+
+      const totalVal = Math.max(1, ranked.reduce((s, r) => s + r.val, 0));
+      let cum = 0;
+      const criticalParetoA = [];
+      ranked.forEach((r) => {
+        const pct = (r.val / totalVal) * 100;
+        cum += pct;
+        if (cum <= 70) {
+          const sMin = Number(r.o.stok_min !== undefined ? r.o.stok_min : 10);
+          if (r.qtyStok <= sMin) {
+            criticalParetoA.push(r);
+          }
+        }
+      });
+
+      if (!criticalParetoA.length) {
+        return global.toast('Seluruh item Kelas A (Pareto Omzet 70%) memiliki stok fisik yang aman di atas batas minimum.', 'ok');
+      }
+
+      // Add to Rencana Pembelian (Defecta)
+      const RENCANA_KEY = 'ons_faktur_rencana_list_v1';
+      let rList = [];
+      try { rList = JSON.parse(localStorage.getItem(RENCANA_KEY) || '[]'); } catch(e){}
+      let addedCount = 0;
+      criticalParetoA.forEach((item) => {
+        const o = item.o;
+        if (!rList.some(r => r.id_obat === o.id_obat)) {
+          const sMax = Number(o.stok_max || 100);
+          const orderQty = Math.max(10, sMax - item.qtyStok);
+          rList.push({
+            id_rencana: 'REC-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random()*900+100),
+            id_obat: o.id_obat,
+            nama_produk: o.nama_dagang,
+            satuan: o.satuan_besar || o.satuan_dasar || 'Box',
+            satuan_dasar: o.satuan_dasar || 'Tablet',
+            qty_usulan: orderQty,
+            stok_saat_ini: item.qtyStok,
+            stok_min: o.stok_min || 10,
+            hpp_terakhir: o.hpp_avg || 0,
+            subtotal_estimasi: orderQty * (o.hpp_avg || 0),
+            supplier_nama: o.pbf_utama || 'PBF Rekanan',
+            alasan_order: 'Prioritas Pareto A (Kontributor 70% Omzet Apotek) - Stok Kritis',
+            tanggal: new Date().toISOString().slice(0, 10),
+            status: 'DRAFT'
+          });
+          addedCount++;
+        }
+      });
+      localStorage.setItem(RENCANA_KEY, JSON.stringify(rList));
+      global.toast(`✓ Berhasil menambahkan ${addedCount} produk Kelas A ke Rencana Pembelian (Defecta)!`, 'ok');
+      if (typeof global.navigateView === 'function') {
+        global.navigateView('faktur', 'rencana');
+      }
+    } catch(e) {
+      global.toast(e.message, 'err');
+    }
+  };
+
+    global.openTransferKasModal = (fromAkunId) => {
     const accounts = _computeKasAccountsWithBalance(S().AppState);
     if (accounts.length < 2) {
       return global.toast('Tambahkan minimal 1 akun kas tujuan terlebih dahulu (+ Akun Kas Baru).', 'warn');
@@ -3498,8 +3614,16 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const targets = accounts.filter((a) => a.id_akun !== fromAkunId);
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
-        <h3 class="font-bold text-base">Transfer Saldo Antar Akun Kas</h3>
+        <div>
+          <h3 class="font-bold text-base text-blue-600">Transfer Saldo Antar Akun Kas &amp; Setoran Kasir</h3>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Pindahkan uang fisik laci kasir ke rekening bank atau brankas apotek.</p>
+        </div>
         <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div class="flex items-center gap-1.5 p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+        <span class="text-[11px] font-bold text-blue-800 dark:text-blue-200">Preset Cepat:</span>
+        <button type="button" onclick="window.quickSetorKasir('BANK')" class="ons-wiz-chip text-[10.5px] py-0.5 px-2">Setor ke Bank BCA</button>
+        <button type="button" onclick="window.quickSetorKasir('BRANKAS')" class="ons-wiz-chip text-[10.5px] py-0.5 px-2">Setor ke Brankas</button>
       </div>
       <div><label class="font-semibold block mb-1">Dari Akun Kas</label>
         <select id="trfKasFrom" class="ons-select">
@@ -3555,8 +3679,23 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const accounts = _getKasAccountsList();
     const autoNo = 'TRXB' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.floor(10 + Math.random() * 89);
     const nowDt = new Date().toISOString().slice(0, 16);
-    const outCats = ['Pembayaran Sewa Tempat', 'Biaya Listrik, Air & Internet', 'Gaji & Tunjangan Karyawan', 'Biaya Kemasan & Struk', 'Biaya Operasional Lainnya'];
-    const inCats = ['Pendapatan Lainnya', 'Penambahan Modal Pemilik', 'Pendapatan Jasa Klinik / Praktek', 'Cashback / Rebate PBF'];
+    const outCats = [
+      'Gaji & Upah Karyawan / Apoteker',
+      'Biaya Listrik, Air & Internet',
+      'Biaya Sewa Tempat / Gedung Ruko',
+      'Biaya Perlengkapan Kasir, Kemasan & Struk Thermal',
+      'Biaya Pemeliharaan Sarana (AC, Chiller & Kalibrasi)',
+      'Pajak & Retribusi Daerah Apotek',
+      'Penarikan Prive Pemilik Apotek',
+      'Biaya Transportasi & Pengiriman Obat',
+      'Biaya Operasional Lainnya'
+    ];
+    const inCats = [
+      'Pendapatan Jasa Konsultasi / Pelayanan Klinik',
+      'Penambahan Modal / Setoran Pemilik',
+      'Cashback / Bonus Pembelian dari PBF',
+      'Pendapatan Bunga Bank / Lainnya'
+    ];
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
         <h3 class="font-bold text-base text-blue-600">Buat Transaksi Baru (Buku Kas)</h3>
@@ -6296,7 +6435,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <button onclick="window.exportLaporanKeuanganExcel()" class="ons-btn ons-btn-emerald text-xs">Export XLSX</button>
         <button onclick="window.printLaporanKeuangan()" class="ons-btn ons-btn-primary text-xs">Cetak Laporan</button>
       ` : `
-        <button onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-primary text-xs">Export SIPNAP (.xlsx)</button>
+        <button onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-ghost text-xs">Excel SIPNAP (.xlsx)</button>
+        <button onclick="window.exportSipnapCsv()" class="ons-btn ons-btn-primary text-xs font-bold">Unduh CSV SIPNAP</button>
       `)));
 
     return `<div class="space-y-4 ons-view-enter">
@@ -6325,69 +6465,113 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         : sipnapTab === 'persediaan' ? _renderLapPersediaanSubTab()
         : sipnapTab === 'keuangan' ? _renderLapKeuanganSubTab()
         : sipnapTab === 'pareto' ? `
-        <div class="ons-card p-5 space-y-4">
-          <div class="flex flex-wrap justify-between items-center gap-2">
-            <div>
-              <h3 class="font-bold text-sm">Analisis Pareto ABC Omzet / Valuasi &amp; Fast-Slow Moving</h3>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Memprioritaskan pengadaan item Kelas A (kontributor 70% nilai apotek).</p>
-            </div>
-            <span class="badge-bpom ${abxPct <= 30 ? 'bpom-bebas' : 'bpom-keras'}">Rasio Antibiotik WHO: ${abxPct}% (&le;30%)</span>
-          </div>
-          <div class="space-y-2.5 text-xs">
-            ${paretoRows.length ? paretoRows.map((p) => `<div>
-              <div class="flex flex-wrap justify-between mb-1">
-                <span><b>${S().esc(p.nama)}</b> <span class="badge-bpom ${p.cls.startsWith('A') ? 'bpom-bebas' : (p.cls.startsWith('B') ? 'bpom-terbatas' : 'bpom-prekursor')}">${p.cls}</span> <span style="color:var(--ons-text-soft)">&bull; Terjual: ${p.qtySold} unit &bull; Stok: ${p.qtyStok}</span></span>
-                <span class="font-mono-num font-bold">${p.pct}% (${S().rp(p.val)})</span>
+        <div class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl border bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🎯</span>
+              <div>
+                <b class="text-emerald-900 dark:text-emerald-100">Prinsip Pareto ABC (70-20-10):</b>
+                <span class="text-emerald-800 dark:text-emerald-200 ml-1">Fokuskan pengadaan pada Kelas A (kontributor 70% omzet). Jangan biarkan stok obat Kelas A kosong!</span>
               </div>
-              <div class="w-full h-2.5 rounded-full overflow-hidden" style="background:var(--ons-border)"><div class="h-full" style="width:${Math.max(4, p.pct)}%;background:${p.cls.startsWith('A') ? '#0066FE' : (p.cls.startsWith('B') ? '#10B981' : '#94A3B8')}"></div></div>
-            </div>`).join('') : '<div style="color:var(--ons-text-soft)">Belum ada data produk di katalog untuk dianalisis.</div>'}
-          </div>
-        </div>
-      ` : sipnapTab === 'deadstock' ? `
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div class="ons-card p-4 lg:col-span-7 space-y-3">
-            <div class="flex items-center justify-between">
-              <h3 class="font-bold text-sm">Radar Batch Dead / Slow-Moving (${deadBatches.length} Batch)</h3>
-              <button onclick="navigateView('faktur','retur')" class="ons-btn ons-btn-ghost text-xs">Retur BAR-PBF &rarr;</button>
             </div>
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>Nama Obat</th><th>No Batch</th><th>Tgl ED</th><th>Qty Sisa</th><th>Saran Tindakan</th></tr></thead>
-                <tbody>
-                  ${deadBatches.length ? deadBatches.map((b) => {
-                    const ob = st.masterObat.find((m) => m.id_obat === b.id_obat);
-                    return `<tr>
-                      <td class="font-semibold text-xs">${S().esc(ob ? ob.nama_dagang : b.id_obat)}</td>
-                      <td class="font-mono-num text-xs">${S().esc(b.no_batch)}</td>
-                      <td class="font-mono-num text-xs">${S().esc(b.tgl_kadaluarsa)}</td>
-                      <td class="font-mono-num font-bold">${b.qty_sisa}</td>
-                      <td><button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Promo / Bundling POS</button></td>
-                    </tr>`;
-                  }).join('') : '<tr><td colspan="5" class="text-center py-6 text-xs">Tidak ada batch pergerakan lambat terdeteksi.</td></tr>'}
-                </tbody>
-              </table>
+            <button type="button" onclick="window.syncParetoToDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3">🛒 Sinkronkan Produk Kelas A Kritis ke Rencana Pembelian</button>
+          </div>
+          ${_renderAnlParetoSubTab()}
+        </div>
+      ` : sipnapTab === 'deadstock' ? (() => {
+        const deadThresholdDays = window._deadStockThresholdDays || 90;
+        const totalValuasiDead = deadBatches.reduce((acc, b) => {
+          const ob = st.masterObat.find((m) => m.id_obat === b.id_obat);
+          const hpp = Number((ob && ob.hpp_avg) || b.hpp_beli || 0);
+          return acc + (Number(b.qty_sisa || 0) * hpp);
+        }, 0);
+        return `<div class="space-y-4">
+          <div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card is-red">
+              <div class="text-[10.5px] font-semibold text-slate-500">Batch Mengendap (Dead Stock)</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-red-600">${deadBatches.length} Batch</div>
+              <div class="text-[10px] text-slate-400">Tidak ada mutasi keluar &gt; ${deadThresholdDays} hari</div>
+            </div>
+            <div class="ons-cockpit-card is-amber">
+              <div class="text-[10.5px] font-semibold text-slate-500">Total Modal Tertahan</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${S().rp(totalValuasiDead)}</div>
+              <div class="text-[10px] text-slate-400">Modal tertahan pada batch slow-moving</div>
+            </div>
+            <div class="ons-cockpit-card is-blue">
+              <div class="text-[10.5px] font-semibold text-slate-500">Tindakan Defensif Cepat</div>
+              <div class="text-sm font-bold mt-1 text-blue-600">Bundling POS &bull; Retur PBF</div>
+              <div class="text-[10px] text-slate-400">Cegah kerugian kadaluarsa (expired)</div>
             </div>
           </div>
 
-          <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
-            <div class="flex justify-between items-center">
-              <h3 class="font-bold text-sm">Log Permintaan Tertolak (Lost Sales)</h3>
-              <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">+ Katalog Obat</button>
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="ons-card p-4 lg:col-span-7 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-bold text-sm">Radar Batch Mengendap (${deadBatches.length} Batch)</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Filter rentang hari tanpa transaksi penjualan:</p>
+                </div>
+                <div class="flex items-center gap-1">
+                  ${[30, 60, 90, 180].map(d => `<button type="button" onclick="window._deadStockThresholdDays=${d};window.renderActiveView();" class="ons-btn text-[11px] py-1 px-2.5 ${deadThresholdDays === d ? 'ons-btn-primary font-bold' : 'ons-btn-ghost'}">${d} Hari</button>`).join('')}
+                  <button onclick="navigateView('faktur','retur')" class="ons-btn ons-btn-ghost text-xs ml-2">Retur PBF &rarr;</button>
+                </div>
+              </div>
+              <div class="ons-table-wrap">
+                <table class="ons-table is-compact">
+                  <thead><tr><th>Nama Obat</th><th>No Batch</th><th>Kadaluarsa</th><th>Sisa Qty</th><th>Modal Tertahan</th><th>Aksi</th></tr></thead>
+                  <tbody>
+                    ${deadBatches.length ? deadBatches.map((b) => {
+                      const ob = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                      const hpp = Number((ob && ob.hpp_avg) || b.hpp_beli || 0);
+                      const valBatch = Number(b.qty_sisa || 0) * hpp;
+                      return `<tr>
+                        <td class="font-semibold text-xs">
+                          <div>${S().esc(ob ? ob.nama_dagang : b.id_obat)}</div>
+                          <div class="text-[10px] text-slate-400">${S().esc(ob ? (ob.satuan_dasar || 'Unit') : 'Unit')}</div>
+                        </td>
+                        <td class="font-mono-num text-xs">${S().esc(b.no_batch)}</td>
+                        <td class="font-mono-num text-xs">${S().esc(b.tgl_kadaluarsa)}</td>
+                        <td class="font-mono-num font-bold text-xs text-red-600">${b.qty_sisa}</td>
+                        <td class="font-mono-num text-xs font-bold text-amber-600">${S().rp(valBatch)}</td>
+                        <td>
+                          <div class="flex items-center gap-1">
+                            <button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-[10.5px] py-0.5 px-1.5" title="Buka Kasir untuk Promo">Promo</button>
+                            <button onclick="window.openReturFromDeadStock('${S().esc(b.id_batch || b.no_batch)}')" class="ons-btn ons-btn-primary text-[10.5px] py-0.5 px-1.5" title="Ajukan Retur PBF">Retur</button>
+                          </div>
+                        </td>
+                      </tr>`;
+                    }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Tidak ada batch pergerakan lambat terdeteksi pada filter ini.</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div class="flex gap-2">
-              <input id="lsNama" class="ons-input flex-1" placeholder="Nama obat dicari pasien tapi kosong..."/>
-              <input id="lsQty" type="number" class="ons-input w-16 font-mono-num" value="1"/>
-              <button onclick="window.addLostSaleNow()" class="ons-btn ons-btn-primary">Catat</button>
-            </div>
-            <div class="space-y-1.5 max-h-60 overflow-auto">
-              ${lostSales.slice().reverse().map((ls) => `<div class="p-2 rounded-lg border flex justify-between items-center" style="border-color:var(--ons-border)">
-                <div><b>${S().esc(ls.nama_obat)}</b> (${ls.qty}x)</div>
-                <span style="color:var(--ons-text-soft)">${S().esc(ls.tanggal)}</span>
-              </div>`).join('')}
+
+            <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="font-bold text-sm">Log Permintaan Tertolak (Lost Sales)</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Obat dicari pasien tapi stok kosong &bull; Terhubung ke Defecta</p>
+                </div>
+                <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">+ Katalog</button>
+              </div>
+              <div class="flex gap-2">
+                <input id="lsNama" class="ons-input flex-1 text-xs" placeholder="Nama obat dicari pasien..."/>
+                <input id="lsQty" type="number" class="ons-input w-16 font-mono-num text-xs" value="1"/>
+                <button onclick="window.addLostSaleNow()" class="ons-btn ons-btn-primary text-xs">Catat</button>
+              </div>
+              <div class="space-y-1.5 max-h-60 overflow-auto">
+                ${lostSales.length ? lostSales.slice().reverse().map((ls) => `<div class="p-2.5 rounded-lg border flex justify-between items-center" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                  <div>
+                    <b class="text-slate-800 dark:text-slate-100">${S().esc(ls.nama_obat)}</b>
+                    <span class="text-[11px] text-blue-600 font-bold ml-1">(${ls.qty}x)</span>
+                  </div>
+                  <button type="button" onclick="window.convertLostSaleToRencanaOrder(${JSON.stringify(ls).replace(/"/g, '&quot;')})" class="ons-btn ons-btn-emerald text-[10px] py-0.5 px-2">+ Defecta</button>
+                </div>`).join('') : '<div class="text-center py-6 text-slate-400">Belum ada catatan lost sales.</div>'}
+              </div>
             </div>
           </div>
-        </div>
-      ` : `
+        </div>`;
+      })() : `
         <div class="ons-card p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 class="font-bold text-sm">Pelaporan Bulanan SIPNAP Kemenkes (Agregasi Kartu Stok Nyata)</h3>

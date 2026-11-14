@@ -310,6 +310,7 @@
             <div class="flex flex-wrap gap-2 text-[11px] font-mono-num" style="color:var(--ons-text-soft)">
               <span>KFA: <b>${S().esc(o.kode_kfa || o.id_obat)}</b></span>
               <span>&bull; NIE: ${S().esc(o.nie_bpom || '-')}</span>
+              <span>&bull; Pabrik: <b class="text-blue-600">${S().esc(o.pabrikan || '-')}</b></span>
               <span>&bull; PBF: ${S().esc(o.pbf_utama || 'Apotek')}</span>
             </div>
             <div class="p-2.5 rounded-lg border space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
@@ -394,8 +395,8 @@
                   </div>
                 </td>
                 <td class="text-xs">
-                  <div class="font-semibold">${S().esc(o.pbf_utama || 'PBF Apotek')}</div>
-                  <div class="text-[10px] text-slate-400">Distributor Resmi</div>
+                  <div class="font-bold text-slate-800 dark:text-slate-100">${S().esc(o.pabrikan || 'Pabrikan Farmasi')}</div>
+                  <div class="text-[10.5px] text-blue-600 dark:text-blue-400 font-semibold">${S().esc(o.pbf_utama || 'Distributor PBF')}</div>
                 </td>
                 <td class="text-xs font-mono-num">
                   <span class="px-2 py-0.5 rounded border font-semibold text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.rak_lokasi || 'RAK-UTAMA')}</span>
@@ -1157,6 +1158,66 @@
           <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
           <button type="button" onclick="window.exportMasterKategoriExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
           <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+        </div>
+      </div>
+      <div class="p-4 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⚖️</span>
+            <div>
+              <h4 class="font-bold text-xs text-blue-900 dark:text-blue-200">Kalkulator Konversi Multi-Satuan Kemasan Farmasi</h4>
+              <p class="text-[11px] text-blue-700 dark:text-blue-300">Simulasikan konversi pecahan kemasan dari Box &rarr; Strip &rarr; Tablet secara instan.</p>
+            </div>
+          </div>
+          <div class="flex gap-1.5 text-[11px]">
+            <button type="button" onclick="window.calcQuickUnit(1, 10, 100)" class="ons-wiz-chip py-1 px-2.5">Box (100) &bull; Strip (10)</button>
+            <button type="button" onclick="window.calcQuickUnit(1, 5, 50)" class="ons-wiz-chip py-1 px-2.5">Box (50) &bull; Strip (10)</button>
+            <button type="button" onclick="window.calcQuickUnit(1, 1, 24)" class="ons-wiz-chip py-1 px-2.5">Karton (24 Botol)</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+          <div>
+            <label class="font-semibold block mb-1">Jumlah Kemasan Beli</label>
+            <div class="flex gap-1.5 items-center">
+              <input id="calcBoxQty" type="number" min="1" value="1" oninput="window.runUnitConvertCalc()" class="ons-input font-mono-num font-bold w-20"/>
+              <select id="calcSatBesar" onchange="window.runUnitConvertCalc()" class="ons-select">
+                <option value="Box">Box / Dus</option>
+                <option value="Karton">Karton</option>
+                <option value="Kaleng">Kaleng</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Rasio Satuan Menengah</label>
+            <div class="flex gap-1.5 items-center">
+              <span class="text-[11px]">Isi:</span>
+              <input id="calcRasioSedang" type="number" min="1" value="10" oninput="window.runUnitConvertCalc()" class="ons-input font-mono-num w-16"/>
+              <select id="calcSatSedang" onchange="window.runUnitConvertCalc()" class="ons-select">
+                <option value="Strip">Strip</option>
+                <option value="Blister">Blister</option>
+                <option value="Folio">Folio</option>
+                <option value="Sachet">Sachet</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Rasio Satuan Terkecil</label>
+            <div class="flex gap-1.5 items-center">
+              <span class="text-[11px]">Total:</span>
+              <input id="calcRasioDasar" type="number" min="1" value="100" oninput="window.runUnitConvertCalc()" class="ons-input font-mono-num w-20 font-bold"/>
+              <select id="calcSatDasar" onchange="window.runUnitConvertCalc()" class="ons-select">
+                <option value="Tablet">Tablet</option>
+                <option value="Kapsul">Kapsul</option>
+                <option value="Botol">Botol</option>
+                <option value="Ampul">Ampul</option>
+                <option value="Tube">Tube</option>
+              </select>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-lg border bg-white dark:bg-slate-900 border-blue-300 dark:border-blue-800 text-xs">
+            <div class="text-[10px] uppercase font-bold text-blue-600">Hasil Konversi Kasir &amp; Stok:</div>
+            <div id="calcConvertResult" class="font-extrabold text-sm font-mono-num text-emerald-600 mt-0.5">= 10 Strip &bull; 100 Tablet</div>
+          </div>
         </div>
       </div>
       <div class="ons-table-wrap">
@@ -3771,8 +3832,12 @@
               <span class="font-mono-num font-semibold">${S().esc(o.rak_lokasi || 'RAK-UTAMA')}</span>
             </div>
             <div class="flex justify-between items-center py-1 border-b border-slate-200 dark:border-slate-700">
+              <span style="color:var(--ons-text-soft)">Pabrikan (Produsen Farmasi):</span>
+              <span class="font-bold text-slate-800 dark:text-slate-100">${S().esc(o.pabrikan || 'Industri Farmasi')}</span>
+            </div>
+            <div class="flex justify-between items-center py-1 border-b border-slate-200 dark:border-slate-700">
               <span style="color:var(--ons-text-soft)">Distributor PBF Utama:</span>
-              <span class="font-semibold">${S().esc(o.pbf_utama || 'PBF Resmi Apotek')}</span>
+              <span class="font-semibold text-blue-600">${S().esc(o.pbf_utama || 'PBF Resmi Apotek')}</span>
             </div>
             <div class="flex justify-between items-center py-1 border-b border-slate-200 dark:border-slate-700">
               <span style="color:var(--ons-text-soft)">HET Pemerintah:</span>
@@ -4074,6 +4139,8 @@
       harga_faskes: num('wHrgFaskes', baseObj.harga_faskes),
       stok_min: num('wStokMin', baseObj.stok_min),
       stok_max: num('wStokMax', baseObj.stok_max),
+      pabrikan: val('wPabrikan', baseObj.pabrikan),
+      pbf_utama: val('wPbfUtama', baseObj.pbf_utama),
       substitusi_ids: val('wSubstitusi', baseObj.substitusi_ids)
     };
   }
@@ -4089,6 +4156,7 @@
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1', satuan_dasar: 'Tablet',
       satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 10, stok_max: 100,
+      pabrikan: '', pbf_utama: '',
       hpp_avg: 0, harga_umum: 0, harga_member: 0, harga_grosir: 0, min_qty_grosir: 10, harga_faskes: 0, substitusi_ids: ''
     };
     const o = draftObj ? { ...baseDefault, ...draftObj } : baseDefault;
@@ -4225,6 +4293,54 @@
                     </label>
                     <input id="wNie" class="${inpCls} font-mono-num" value="${S().esc(o.nie_bpom)}" placeholder="Cth: DBL8512304504A1"/>
                     <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Tertera pada boks/blister kemasan pabrik.</div>
+                  </div>
+                  <div>
+                    <label class="font-bold block mb-1.5 flex items-center justify-between">
+                      <span>Pabrikan (Industri Farmasi / Produsen)</span>
+                      <span class="text-[10px] text-slate-500 font-semibold">(Produsen Obat)</span>
+                    </label>
+                    <input id="wPabrikan" list="pabrikanListDatalist" class="${inpCls}" value="${S().esc(o.pabrikan || '')}" placeholder="Cth: Kalbe Farma / Sanbe / Kimia Farma"/>
+                    <datalist id="pabrikanListDatalist">
+                      <option value="Kalbe Farma"></option>
+                      <option value="Sanbe Farma"></option>
+                      <option value="Dexa Medica"></option>
+                      <option value="Kimia Farma"></option>
+                      <option value="Pharos Indonesia"></option>
+                      <option value="Bernofarm"></option>
+                      <option value="Interbat"></option>
+                      <option value="Tempo Scan Pacific"></option>
+                      <option value="Novell Pharmaceutical"></option>
+                      <option value="Darya-Varia Laboratoria"></option>
+                      <option value="Soho Global Health"></option>
+                      <option value="Konimex"></option>
+                      <option value="Combiphar"></option>
+                      <option value="Otto Pharmaceutical"></option>
+                      <option value="Pyridam Farma"></option>
+                      <option value="Caprifarmindo"></option>
+                      <option value="Taisho Pharmaceutical"></option>
+                    </datalist>
+                    <div class="flex flex-wrap gap-1 mt-1.5">
+                      <button type="button" onclick="document.getElementById('wPabrikan').value='Kalbe Farma';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Kalbe</button>
+                      <button type="button" onclick="document.getElementById('wPabrikan').value='Sanbe Farma';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Sanbe</button>
+                      <button type="button" onclick="document.getElementById('wPabrikan').value='Dexa Medica';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Dexa</button>
+                      <button type="button" onclick="document.getElementById('wPabrikan').value='Kimia Farma';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Kimia Farma</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="font-bold block mb-1.5 flex items-center justify-between">
+                      <span>Supplier / PBF Distributor Utama</span>
+                      <span class="text-[10px] text-slate-500 font-semibold">(Pemasok Faktur)</span>
+                    </label>
+                    <input id="wPbfUtama" list="supplierListDatalist" class="${inpCls}" value="${S().esc(o.pbf_utama || o.supplier_utama || '')}" placeholder="Cth: PT Enseval Putera Megatrading / AAM"/>
+                    <datalist id="supplierListDatalist">
+                      ${(st.supplierPbf || []).map(s => `<option value="${S().esc(s.nama_supplier || s.nama || s.id_supplier)}"></option>`).join('')}
+                      <option value="PT Enseval Putera Megatrading"></option>
+                      <option value="PT Anugrah Argon Medica (AAM)"></option>
+                      <option value="PT Kimia Farma Trading & Distribution"></option>
+                      <option value="PT Mensa Binasukses (MBS)"></option>
+                      <option value="PT Parit Padang Global (PPG)"></option>
+                    </datalist>
+                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">PBF tempat apotek memesan obat ini saat defecta.</div>
                   </div>
                 </div>
               </section>
@@ -5120,6 +5236,8 @@
         harga_faskes: hFaskes,
         stok_min: stokMin,
         stok_max: stokMax,
+        pabrikan: val('wPabrikan'),
+        pbf_utama: val('wPbfUtama'),
         substitusi_ids: val('wSubstitusi')
       }, { isWrite: true });
 
@@ -12579,3 +12697,29 @@
 
   global.ONSViewsInventoryProcurement = { renderMasterObatView, renderGudangView, renderDefectaView, renderFakturView };
 })(window);
+
+  global.runUnitConvertCalc = () => {
+    const boxQty = Number((document.getElementById('calcBoxQty') || {}).value || 1);
+    const satBes = (document.getElementById('calcSatBesar') || {}).value || 'Box';
+    const rasSed = Number((document.getElementById('calcRasioSedang') || {}).value || 10);
+    const satSed = (document.getElementById('calcSatSedang') || {}).value || 'Strip';
+    const rasDas = Number((document.getElementById('calcRasioDasar') || {}).value || 100);
+    const satDas = (document.getElementById('calcSatDasar') || {}).value || 'Tablet';
+
+    const totSedang = boxQty * rasSed;
+    const totDasar = boxQty * rasDas;
+    const resEl = document.getElementById('calcConvertResult');
+    if (resEl) {
+      resEl.textContent = `= ${totSedang} ${satSed} • ${totDasar} ${satDas}`;
+    }
+  };
+
+  global.calcQuickUnit = (box, sed, das) => {
+    const elB = document.getElementById('calcBoxQty');
+    const elS = document.getElementById('calcRasioSedang');
+    const elD = document.getElementById('calcRasioDasar');
+    if (elB) elB.value = box;
+    if (elS) elS.value = sed;
+    if (elD) elD.value = das;
+    global.runUnitConvertCalc();
+  };

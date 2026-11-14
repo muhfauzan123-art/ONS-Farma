@@ -752,6 +752,8 @@
       item.rasio_besar = Math.max(1, sanitizeNum(item.rasio_besar, 100));
       item.stok_min = Math.max(0, sanitizeNum(item.stok_min, 10));
       item.stok_max = Math.max(1, sanitizeNum(item.stok_max, 100));
+      item.pabrikan = String(item.pabrikan || '').trim();
+      item.pbf_utama = String(item.pbf_utama || '').trim();
 
       if (existingIdx >= 0) db.master_obat[existingIdx] = Object.assign(db.master_obat[existingIdx], item);
       else db.master_obat.push(item);
