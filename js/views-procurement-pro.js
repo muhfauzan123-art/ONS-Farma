@@ -25,6 +25,9 @@
   let spFilterPbf = '';
   let spFilterGol = 'SEMUA';
   let spPreviewRangkap = 0;
+  let spPreviewHideKop = false;
+  let spPaperSize = 'A4';
+  let spViewMode = 'PESANAN';
   let spSearchQ = '';
   let spDateFrom = '';
   let spDateTo = '';
@@ -386,7 +389,7 @@
   // ==========================
   // 2. SURAT PESANAN (SP) & PREVIEW CETAK A4
   // ==========================
-  function buildSpA4DocumentHtml(sp, showPrice, rangkapIdx = 0) {
+  function buildSpA4DocumentHtml(sp, showPrice, rangkapIdx = 0, hideKop = false, paperSize = 'A4') {
     const st = S().AppState;
     const prof = S().getStoreProfile();
     const items = parseSpItems(sp);
@@ -395,6 +398,7 @@
     const isNarc = gol === 'NARKOTIKA';
     const isNarcPsiPreOot = gol !== 'REGULER';
     const includePrice = showPrice !== undefined ? Boolean(showPrice) : !isNarcPsiPreOot;
+    const isA5 = paperSize === 'A5';
     const estSum = items.reduce((s, it) => s + (Number(it.qty || it.qty_pesan || 0) * Number(it.hpp_terakhir || it.hpp_unit || it.hpp || 0)), 0);
 
     const apotekName = prof.nama_usaha || prof.nama_apotek || 'APOTEK ONS FARMA';
@@ -424,28 +428,38 @@
     const qrData = encodeURIComponent('ONS-FARMA|SP|' + (sp.no_sp || '-') + '|' + spTanggalFormatted + '|' + apjName + '|VALID-BPOM');
     const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=84x84&data=' + qrData;
 
-    return `<div id="spA4PaperSheet" style="width:100%;max-width:794px;margin:0 auto;background:#ffffff;color:#0f172a;padding:28px 34px;border:1px solid #cbd5e1;border-radius:4px;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.45;box-shadow:0 8px 30px rgba(15,23,42,.12);position:relative">
+    const maxWidth = isA5 ? '560px' : '794px';
+    const padVal = isA5 ? '18px 22px' : '28px 34px';
+    const fontSize = isA5 ? '11px' : '12px';
+
+    return `<div id="spA4PaperSheet" style="width:100%;max-width:${maxWidth};margin:0 auto;background:#ffffff;color:#0f172a;padding:${padVal};border:1px solid #cbd5e1;border-radius:4px;font-family:'Segoe UI',Arial,sans-serif;font-size:${fontSize};line-height:1.45;box-shadow:0 8px 30px rgba(15,23,42,.12);position:relative">
       ${isBatal ? `
         <div style="position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);border:6px dashed #ef4444;color:#ef4444;font-size:46px;font-weight:900;padding:12px 28px;opacity:0.35;pointer-events:none;letter-spacing:4px">
           DIBATALKAN
         </div>
       ` : ''}
 
-      <!-- KOP SURAT APOTEK RESMI -->
-      <div style="border-bottom:3px double #0f172a;padding-bottom:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
-        <div style="display:flex;align-items:flex-start;gap:12px">
-          ${apotekLogo ? `<img src="${S().esc(apotekLogo)}" alt="Logo Apotek" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #cbd5e1;flex-shrink:0"/>` : ''}
-          <div>
-            <div style="font-size:17px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#003d99">${S().esc(apotekName)}</div>
-            <div style="font-size:11px;color:#334155">${S().esc(apotekAddr)}</div>
-            <div style="font-size:11px;color:#334155">SIA: <b>${S().esc(prof.no_sia || '503/001/SIA/DPMPTSP/2025')}</b> &bull; Telp/WA: ${S().esc(apotekTelp)}${apotekEmail ? ` &bull; ${S().esc(apotekEmail)}` : ''}</div>
+      <!-- KOP SURAT APOTEK RESMI (ATAU SPACE PRE-PRINTED KOP) -->
+      ${hideKop ? `
+        <div class="ons-kop-preprinted" style="height:38mm;border:1px dashed #cbd5e1;border-radius:4px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:1px">
+          [ Ruang Cetak Kop Surat Apotek Pre-Printed ]
+        </div>
+      ` : `
+        <div style="border-bottom:3px double #0f172a;padding-bottom:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            ${apotekLogo ? `<img src="${S().esc(apotekLogo)}" alt="Logo Apotek" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #cbd5e1;flex-shrink:0"/>` : ''}
+            <div>
+              <div style="font-size:17px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#003d99">${S().esc(apotekName)}</div>
+              <div style="font-size:11px;color:#334155">${S().esc(apotekAddr)}</div>
+              <div style="font-size:11px;color:#334155">SIA: <b>${S().esc(prof.no_sia || '503/001/SIA/DPMPTSP/2025')}</b> &bull; Telp/WA: ${S().esc(apotekTelp)}${apotekEmail ? ` &bull; ${S().esc(apotekEmail)}` : ''}</div>
+            </div>
+          </div>
+          <div style="text-align:right;font-size:11px;white-space:nowrap">
+            <div style="display:inline-block;padding:3px 8px;border:1.5px solid #003d99;border-radius:4px;font-weight:800;color:#003d99">${S().esc(gol)}</div>
+            <div style="margin-top:4px;color:#475569">Format Regulasi CDOB / BPOM</div>
           </div>
         </div>
-        <div style="text-align:right;font-size:11px;white-space:nowrap">
-          <div style="display:inline-block;padding:3px 8px;border:1.5px solid #003d99;border-radius:4px;font-weight:800;color:#003d99">${S().esc(gol)}</div>
-          <div style="margin-top:4px;color:#475569">Format Regulasi CDOB / BPOM</div>
-        </div>
-      </div>
+      `}
 
       <!-- WATERMARK / INDIKATOR RANGKAP BPOM -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:#f1f5f9;border-left:4px solid #0050CA;margin-bottom:12px;font-size:10.5px;font-weight:700;color:#1e3a8a">
@@ -459,7 +473,7 @@
         <div style="font-size:12px;font-family:monospace;margin-top:2px">Nomor: <b>${S().esc(sp.no_sp || '-')}</b></div>
       </div>
 
-      <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11.5px">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px">
         <tr>
           <td style="width:52%;vertical-align:top;padding:4px 0">
             <div>Yang bertanda tangan di bawah ini:</div>
@@ -480,18 +494,18 @@
         </tr>
       </table>
 
-      <div style="margin-bottom:8px;font-size:11.5px">Agar dikirimkan sediaan farmasi / alat kesehatan untuk keperluan pelayanan kefarmasian di apotek sebagai berikut:</div>
+      <div style="margin-bottom:8px;font-size:11px">Agar dikirimkan sediaan farmasi / alat kesehatan untuk keperluan pelayanan kefarmasian di apotek sebagai berikut:</div>
 
       <!-- TABEL ITEM PESANAN -->
-      <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11.5px">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px">
         <thead>
           <tr style="background:#e2e8f0;color:#0f172a">
-            <th style="border:1px solid #64748b;padding:6px;text-align:center;width:36px">No</th>
+            <th style="border:1px solid #64748b;padding:6px;text-align:center;width:34px">No</th>
             <th style="border:1px solid #64748b;padding:6px;text-align:left">Nama Obat / Bentuk Sediaan</th>
             <th style="border:1px solid #64748b;padding:6px;text-align:left">Zat Aktif &amp; Gol</th>
-            <th style="border:1px solid #64748b;padding:6px;text-align:center;width:76px">Satuan</th>
-            <th style="border:1px solid #64748b;padding:6px;text-align:right;width:80px">Qty Pesan</th>
-            ${includePrice ? '<th style="border:1px solid #64748b;padding:6px;text-align:right;width:110px">Est. HPP Unit</th><th style="border:1px solid #64748b;padding:6px;text-align:right;width:120px">Est. Subtotal</th>' : ''}
+            <th style="border:1px solid #64748b;padding:6px;text-align:center;width:70px">Satuan</th>
+            <th style="border:1px solid #64748b;padding:6px;text-align:right;width:76px">Qty Pesan</th>
+            ${includePrice ? '<th style="border:1px solid #64748b;padding:6px;text-align:right;width:100px">Est. HPP Unit</th><th style="border:1px solid #64748b;padding:6px;text-align:right;width:110px">Est. Subtotal</th>' : ''}
           </tr>
         </thead>
         <tbody>
@@ -500,47 +514,47 @@
             const hpp = Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit || it.hpp || 0));
             const obRef = (st.masterObat || []).find((m) => m.id_obat === it.id_obat) || {};
             return `<tr>
-              <td style="border:1px solid #94a3b8;padding:6px;text-align:center">${idx + 1}</td>
-              <td style="border:1px solid #94a3b8;padding:6px"><b>${S().esc(it.nama_dagang || obRef.nama_dagang || it.id_obat)}</b></td>
-              <td style="border:1px solid #94a3b8;padding:6px;color:#334155">${S().esc(it.zat_aktif || obRef.zat_aktif || '-')} (${S().esc(it.golongan_bpom || obRef.golongan_bpom || gol)})</td>
-              <td style="border:1px solid #94a3b8;padding:6px;text-align:center">${S().esc(it.satuan_dasar || it.satuan || obRef.satuan_dasar || 'Unit')}</td>
-              <td style="border:1px solid #94a3b8;padding:6px;text-align:right;font-weight:800;font-family:monospace">${qty}</td>
-              ${includePrice ? `<td style="border:1px solid #94a3b8;padding:6px;text-align:right;font-family:monospace">${S().rp(hpp)}</td><td style="border:1px solid #94a3b8;padding:6px;text-align:right;font-family:monospace;font-weight:700">${S().rp(qty * hpp)}</td>` : ''}
+              <td style="border:1px solid #94a3b8;padding:5px;text-align:center">${idx + 1}</td>
+              <td style="border:1px solid #94a3b8;padding:5px"><b>${S().esc(it.nama_dagang || obRef.nama_dagang || it.id_obat)}</b></td>
+              <td style="border:1px solid #94a3b8;padding:5px;color:#334155">${S().esc(it.zat_aktif || obRef.zat_aktif || '-')} (${S().esc(it.golongan_bpom || obRef.golongan_bpom || gol)})</td>
+              <td style="border:1px solid #94a3b8;padding:5px;text-align:center">${S().esc(it.satuan_dasar || it.satuan || obRef.satuan_dasar || 'Unit')}</td>
+              <td style="border:1px solid #94a3b8;padding:5px;text-align:right;font-weight:800;font-family:monospace">${qty}</td>
+              ${includePrice ? `<td style="border:1px solid #94a3b8;padding:5px;text-align:right;font-family:monospace">${S().rp(hpp)}</td><td style="border:1px solid #94a3b8;padding:5px;text-align:right;font-family:monospace;font-weight:700">${S().rp(qty * hpp)}</td>` : ''}
             </tr>`;
           }).join('') : `<tr><td colspan="${includePrice ? 7 : 5}" style="border:1px solid #94a3b8;padding:12px;text-align:center;color:#64748b">Belum ada item terlampir pada SP ini.</td></tr>`}
           ${includePrice ? `
             <tr style="background:#f8fafc">
-              <td colspan="6" style="border:1px solid #64748b;padding:7px;text-align:right;font-weight:800">TOTAL ESTIMASI NILAI PESANAN</td>
-              <td style="border:1px solid #64748b;padding:7px;text-align:right;font-weight:800;font-family:monospace">${S().rp(estSum || sp.estimasi_total || 0)}</td>
+              <td colspan="6" style="border:1px solid #64748b;padding:6px;text-align:right;font-weight:800">TOTAL ESTIMASI NILAI PESANAN</td>
+              <td style="border:1px solid #64748b;padding:6px;text-align:right;font-weight:800;font-family:monospace">${S().rp(estSum || sp.estimasi_total || 0)}</td>
             </tr>
           ` : ''}
         </tbody>
       </table>
 
-      ${sp.catatan ? `<div style="margin-bottom:12px;padding:7px 10px;background:#f8fafc;border-left:3px solid #0050CA;font-size:11px"><b>Catatan Pengadaan:</b> ${S().esc(sp.catatan)}</div>` : ''}
+      ${sp.catatan ? `<div style="margin-bottom:12px;padding:6px 10px;background:#f8fafc;border-left:3px solid #0050CA;font-size:10.5px"><b>Catatan Pengadaan:</b> ${S().esc(sp.catatan)}</div>` : ''}
 
-      <div style="font-size:11px;color:#334155;margin-bottom:18px">
+      <div style="font-size:10.5px;color:#334155;margin-bottom:16px">
         Obat tersebut di atas akan dipergunakan untuk memenuhi kebutuhan pelayanan kefarmasian di <b>${S().esc(apotekName)}</b> (SIA: ${S().esc(prof.no_sia || '503/001/SIA/DPMPTSP/2025')}). Atas kerja sama dan pengirimannya kami ucapkan terima kasih.
       </div>
 
       <!-- TANDA TANGAN APJ & VERIFIKASI QR CODE -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;gap:16px">
-        <div style="display:flex;align-items:center;gap:10px;border:1px dashed #94a3b8;padding:8px 12px;border-radius:4px;background:#f8fafc;max-width:320px">
-          <img src="${qrUrl}" alt="QR Verifikasi Dokumen" style="width:70px;height:70px;border-radius:3px;border:1px solid #cbd5e1"/>
-          <div style="font-size:10px;color:#475569;line-height:1.35">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;gap:14px">
+        <div style="display:flex;align-items:center;gap:10px;border:1px dashed #94a3b8;padding:6px 10px;border-radius:4px;background:#f8fafc;max-width:300px">
+          <img src="${qrUrl}" alt="QR Verifikasi Dokumen" style="width:64px;height:64px;border-radius:3px;border:1px solid #cbd5e1"/>
+          <div style="font-size:9.5px;color:#475569;line-height:1.35">
             <div><b>Verifikasi Digital BPOM</b></div>
-            <div style="font-family:monospace;font-size:9.5px">${S().esc(sp.no_sp || '-')}</div>
+            <div style="font-family:monospace;font-size:9px">${S().esc(sp.no_sp || '-')}</div>
             <div>Status: <b>${S().esc(sp.status_sp || 'MENUNGGU_BARANG')}</b></div>
-            <div style="color:#64748b">Pindai QR untuk validasi keaslian dokumen</div>
+            <div style="color:#64748b">Pindai QR untuk validasi dokumen</div>
           </div>
         </div>
-        <div style="text-align:center;min-width:240px">
+        <div style="text-align:center;min-width:220px">
           <div>${S().esc(prof.kota || 'Makassar')}, ${spTanggalFormatted}</div>
           <div style="font-weight:700;margin-top:2px">Pemesan / Apoteker Penanggung Jawab,</div>
-          <div style="height:52px"></div>
+          <div style="height:48px"></div>
           <div style="font-weight:800;text-decoration:underline">${S().esc(apjName)}</div>
-          <div style="font-size:11px">SIPA: ${S().esc(apjSipa)}</div>
-          <div style="font-size:11px">STRA: ${S().esc(apjStra)}</div>
+          <div style="font-size:10.5px">SIPA: ${S().esc(apjSipa)}</div>
+          <div style="font-size:10.5px">STRA: ${S().esc(apjStra)}</div>
         </div>
       </div>
     </div>`;
@@ -619,6 +633,18 @@
       </div>
 
       <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2" style="border-color:var(--ons-border)">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-slate-500 uppercase mr-1">Tampilan Data:</span>
+            <button type="button" onclick="window.setSpViewMode('PESANAN')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'PESANAN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#128221; Daftar Pesanan (SP)</button>
+            <button type="button" onclick="window.setSpViewMode('PRODUK')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'PRODUK' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#128230; Rincian Produk Dipesan</button>
+            <button type="button" onclick="window.setSpViewMode('SUPPLIER')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'SUPPLIER' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#127970; Rekap per Supplier PBF</button>
+          </div>
+          <div class="text-xs font-semibold text-slate-500">
+            Terpilih: <b>${spSelectedIds.size}</b> SP &bull; Total Nilai: <b class="text-blue-600">${S().rp(totalNilaiPesanan)}</b>
+          </div>
+        </div>
+
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2 flex-1">
             <select aria-label="Pilihan Data Pesanan" class="ons-select text-xs w-36" onchange="window.setSpFilterStatus(this.value)">
@@ -658,64 +684,138 @@
         </div>
 
         <div class="ons-table-wrap">
-          <table class="ons-table">
-            <thead>
-              <tr>
-                <th class="w-8"><input type="checkbox" aria-label="Pilih semua pesanan" ${allVisibleSelected ? 'checked' : ''} onchange="window.toggleSelectAllSp(this.checked)"/></th>
-                <th>No.</th>
-                <th>Tanggal</th>
-                <th>No. SP</th>
-                <th>Supplier</th>
-                <th>Produk</th>
-                <th>Status Penerimaan</th>
-                <th>Status &amp; Golongan</th>
-                <th class="text-right">Total</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.length ? rows.map((sp, idx) => {
-                const items = parseSpItems(sp);
-                const done = String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA';
-                const itemPreview = items.slice(0, 2).map((x) => `${x.nama_dagang || x.id_obat} (${x.qty || x.qty_pesan} ${x.satuan_dasar || x.satuan || ''})`).join(', ');
-                const checked = spSelectedIds.has(sp.id_sp);
-                return `<tr>
-                  <td><input type="checkbox" aria-label="Pilih ${S().esc(sp.no_sp)}" ${checked ? 'checked' : ''} onchange="window.toggleSelectSpRow('${S().esc(sp.id_sp)}', this.checked)"/></td>
-                  <td class="font-mono-num text-xs">${idx + 1}.</td>
-                  <td class="text-xs font-mono-num whitespace-nowrap">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
-                  <td class="text-xs font-mono-num font-bold whitespace-nowrap">${S().esc(sp.no_sp)}</td>
-                  <td class="text-xs font-bold">${S().esc(sp.nama_pbf || '-')}</td>
-                  <td class="text-xs">
-                    <div><b>${items.length} item</b></div>
-                    <div class="text-[11px] truncate max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(itemPreview)}${items.length > 2 ? ', +' + (items.length - 2) + ' lagi' : ''}</div>
-                  </td>
-                  <td class="text-xs">
-                    ${spStatusBadge(sp.status_sp)}
-                    ${sp.no_faktur_pbf ? `<div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Faktur: ${S().esc(sp.no_faktur_pbf)}</div>` : ''}
-                  </td>
-                  <td>
-                    <div class="flex flex-col gap-0.5 items-start">
-                      <span class="badge-bpom bpom-keras">${S().esc(sp.golongan_sp || 'REGULER')}</span>
-                      <span class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().esc(sp.metode_pembayaran || 'KREDIT')}</span>
-                    </div>
-                  </td>
-                  <td class="text-right font-mono-num text-xs font-bold whitespace-nowrap">${S().rp(sp.estimasi_total || 0)}</td>
-                  <td>
-                    <div class="flex flex-wrap gap-1.5">
-                      <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Preview &amp; Cetak A4</button>
-                      <button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit SP</button>
-                      <button type="button" onclick="window.duplicateSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Duplikat SP">&#128203; Duplikat</button>
-                      <button type="button" onclick="window.sendSpViaWa('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">WA PBF</button>
-                      ${!done && String(sp.status_sp || '').toUpperCase() !== 'DIBATALKAN' ? `
-                        <button type="button" onclick="window.confirmCancelSp('${S().esc(sp.id_sp)}')" class="ons-btn text-[11px] py-1 px-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Batal</button>
-                        <button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Barang Tiba &rarr; Faktur</button>
-                      ` : ''}
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('') : '<tr><td colspan="10" class="text-center py-8 text-xs">Data tidak ditemukan. Klik <b>+ Pesanan Baru</b> atau buat dari <b>Rencana Pembelian</b> / <b>Defecta</b>.</td></tr>'}
-            </tbody>
-          </table>
+          ${spViewMode === 'PRODUK' ? `
+            <table class="ons-table">
+              <thead><tr><th>No.</th><th>Nama Produk / Obat</th><th>No. SP</th><th>Tanggal</th><th>Supplier PBF</th><th class="text-right">Qty Pesan</th><th>Satuan</th><th class="text-right">Est. HPP Unit</th><th class="text-right">Subtotal</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody>
+                ${(() => {
+                  const flatItems = [];
+                  rows.forEach((sp) => {
+                    parseSpItems(sp).forEach((it) => {
+                      flatItems.push({ sp, it });
+                    });
+                  });
+                  if (!flatItems.length) return '<tr><td colspan="11" class="text-center py-8 text-xs">Belum ada rincian produk pada pesanan yang difilter.</td></tr>';
+                  return flatItems.map((row, idx) => {
+                    const it = row.it;
+                    const sp = row.sp;
+                    const qty = Number(it.qty || it.qty_pesan || 0);
+                    const hpp = Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit || 0));
+                    return `<tr>
+                      <td class="font-mono-num text-xs">${idx + 1}.</td>
+                      <td class="font-bold text-xs">${S().esc(it.nama_dagang || it.id_obat)}</td>
+                      <td class="font-mono-num text-xs">${S().esc(sp.no_sp)}</td>
+                      <td class="text-xs font-mono-num">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
+                      <td class="text-xs">${S().esc(sp.nama_pbf || '-')}</td>
+                      <td class="font-mono-num text-xs font-bold text-right">${qty}</td>
+                      <td class="text-xs">${S().esc(it.satuan_dasar || it.satuan || 'Unit')}</td>
+                      <td class="font-mono-num text-xs text-right">${S().rp(hpp)}</td>
+                      <td class="font-mono-num text-xs font-bold text-right text-blue-600">${S().rp(qty * hpp)}</td>
+                      <td>${spStatusBadge(sp.status_sp)}</td>
+                      <td>
+                        <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Detail SP</button>
+                      </td>
+                    </tr>`;
+                  }).join('');
+                })()}
+              </tbody>
+            </table>
+          ` : spViewMode === 'SUPPLIER' ? `
+            <table class="ons-table">
+              <thead><tr><th>No.</th><th>Supplier / Distributor PBF</th><th class="text-right">Jumlah SP</th><th class="text-right">Total Item Obat</th><th class="text-right">Total Nilai Pesanan</th><th>Kontak Sales</th><th>Aksi Cepat</th></tr></thead>
+              <tbody>
+                ${(() => {
+                  const pbfMap = {};
+                  rows.forEach((sp) => {
+                    const pId = sp.id_pbf || sp.nama_pbf || 'LAIN';
+                    if (!pbfMap[pId]) pbfMap[pId] = { id: pId, nama: sp.nama_pbf || 'PBF', spList: [], totalItem: 0, totalRp: 0 };
+                    pbfMap[pId].spList.push(sp);
+                    const items = parseSpItems(sp);
+                    pbfMap[pId].totalItem += items.length;
+                    pbfMap[pId].totalRp += Number(sp.estimasi_total || 0);
+                  });
+                  const pbfRows = Object.values(pbfMap);
+                  if (!pbfRows.length) return '<tr><td colspan="7" class="text-center py-8 text-xs">Belum ada rekap supplier pada pesanan yang difilter.</td></tr>';
+                  return pbfRows.map((p, idx) => {
+                    const pRef = (st.supplierPbf || []).find((x) => x.id_pbf === p.id || x.nama_pbf === p.nama) || {};
+                    return `<tr>
+                      <td class="font-mono-num text-xs">${idx + 1}.</td>
+                      <td class="font-bold text-xs text-blue-700 dark:text-blue-300">${S().esc(p.nama)}</td>
+                      <td class="font-mono-num text-xs font-bold text-right">${p.spList.length} SP</td>
+                      <td class="font-mono-num text-xs text-right">${p.totalItem} Produk</td>
+                      <td class="font-mono-num text-xs font-bold text-right text-emerald-600">${S().rp(p.totalRp)}</td>
+                      <td class="text-xs">${S().esc(pRef.kontak_wa || '-')}</td>
+                      <td>
+                        <button type="button" onclick="window.setSpFilterPbf('${S().esc(p.id)}');window.setSpViewMode('PESANAN');" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Lihat SP PBF Ini &rarr;</button>
+                      </td>
+                    </tr>`;
+                  }).join('');
+                })()}
+              </tbody>
+            </table>
+          ` : `
+            <table class="ons-table">
+              <thead>
+                <tr>
+                  <th class="w-8"><input type="checkbox" aria-label="Pilih semua pesanan" ${allVisibleSelected ? 'checked' : ''} onchange="window.toggleSelectAllSp(this.checked)"/></th>
+                  <th>No.</th>
+                  <th>Tanggal</th>
+                  <th>No. SP</th>
+                  <th>Supplier</th>
+                  <th>Produk</th>
+                  <th>Status Penerimaan</th>
+                  <th>Status &amp; Golongan</th>
+                  <th class="text-right">Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.length ? rows.map((sp, idx) => {
+                  const items = parseSpItems(sp);
+                  const done = String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA';
+                  const isBatal = String(sp.status_sp || '').toUpperCase() === 'DIBATALKAN';
+                  const itemPreview = items.slice(0, 2).map((x) => `${x.nama_dagang || x.id_obat} (${x.qty || x.qty_pesan} ${x.satuan_dasar || x.satuan || ''})`).join(', ');
+                  const checked = spSelectedIds.has(sp.id_sp);
+                  return `<tr>
+                    <td><input type="checkbox" aria-label="Pilih ${S().esc(sp.no_sp)}" ${checked ? 'checked' : ''} onchange="window.toggleSelectSpRow('${S().esc(sp.id_sp)}', this.checked)"/></td>
+                    <td class="font-mono-num text-xs">${idx + 1}.</td>
+                    <td class="text-xs font-mono-num whitespace-nowrap">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
+                    <td class="text-xs font-mono-num font-bold whitespace-nowrap">${S().esc(sp.no_sp)}</td>
+                    <td class="text-xs font-bold">${S().esc(sp.nama_pbf || '-')}</td>
+                    <td class="text-xs">
+                      <div><b>${items.length} item</b></div>
+                      <div class="text-[11px] truncate max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(itemPreview)}${items.length > 2 ? ', +' + (items.length - 2) + ' lagi' : ''}</div>
+                    </td>
+                    <td class="text-xs">
+                      ${spStatusBadge(sp.status_sp)}
+                      ${sp.no_faktur_pbf ? `<div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Faktur: ${S().esc(sp.no_faktur_pbf)}</div>` : ''}
+                    </td>
+                    <td>
+                      <div class="flex flex-col gap-0.5 items-start">
+                        <span class="badge-bpom bpom-keras">${S().esc(sp.golongan_sp || 'REGULER')}</span>
+                        <span class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().esc(sp.metode_pembayaran || 'KREDIT')}</span>
+                      </div>
+                    </td>
+                    <td class="text-right font-mono-num text-xs font-bold whitespace-nowrap">${S().rp(sp.estimasi_total || 0)}</td>
+                    <td>
+                      <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-bold">Detail</button>
+                        <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Preview &amp; Cetak A4</button>
+                        ${!isBatal ? `<button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit SP</button>` : ''}
+                        <button type="button" onclick="window.duplicateSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Duplikat SP">&#128203; Duplikat</button>
+                        <button type="button" onclick="window.sendSpViaWa('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">WA PBF</button>
+                        ${!done && !isBatal ? `
+                          <button type="button" onclick="window.markSpClosed('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-emerald-600 font-semibold" title="Tandai Selesai">&#10003; Selesai</button>
+                          <button type="button" onclick="window.confirmCancelSp('${S().esc(sp.id_sp)}')" class="ons-btn text-[11px] py-1 px-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Batal</button>
+                          <button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Barang Tiba &rarr; Faktur</button>
+                        ` : ''}
+                      </div>
+                    </td>
+                  </tr>`;
+                }).join('') : '<tr><td colspan="10" class="text-center py-8 text-xs">Data tidak ditemukan. Klik <b>+ Pesanan Baru</b> atau buat dari <b>Rencana Pembelian</b> / <b>Defecta</b>.</td></tr>'}
+              </tbody>
+            </table>
+          `}
         </div>
       </div>
 
@@ -1395,7 +1495,7 @@
   </style>
 </head>
 <body>
-  ${buildSpA4DocumentHtml(sp, spPreviewShowPrice, spPreviewRangkap)}
+  ${buildSpA4DocumentHtml(sp, spPreviewShowPrice, spPreviewRangkap, spPreviewHideKop, spPaperSize)}
 </body>
 </html>`;
     const blob = new Blob([docHtml], { type: 'text/html;charset=utf-8' });
@@ -1413,6 +1513,97 @@
   global.changeSpRangkap = (idSp, val) => {
     spPreviewRangkap = Number(val || 0);
     global.openSpA4PreviewModal(idSp);
+  };
+
+  global.setSpViewMode = (mode) => {
+    spViewMode = mode || 'PESANAN';
+    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+  };
+
+  global.toggleSpHideKopPreview = (idSp, checked) => {
+    spPreviewHideKop = Boolean(checked);
+    global.openSpA4PreviewModal(idSp);
+  };
+
+  global.changeSpPaperSize = (idSp, size) => {
+    spPaperSize = size || 'A4';
+    global.openSpA4PreviewModal(idSp);
+  };
+
+  global.markSpClosed = async (idSp) => {
+    const st = S().AppState;
+    const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    if (!confirm('Tandai Surat Pesanan ' + (sp.no_sp || idSp) + ' sebagai SELESAI (CLOSED)?')) return;
+    try {
+      await API().callApi('sp.save', { id_sp: idSp, status_sp: 'SELESAI_DITERIMA', catatan: (sp.catatan ? sp.catatan + ' | ' : '') + 'Ditutup selesai manual' }, { isWrite: true });
+      global.toast('Surat Pesanan ' + (sp.no_sp || idSp) + ' ditandai selesai (CLOSED).', 'ok');
+      await global.bootLoadState(true);
+      if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+    } catch (e) {
+      global.toast('Gagal menandai selesai: ' + e.message, 'err');
+    }
+  };
+
+  global.openSpDetailModal = (idSp) => {
+    const st = S().AppState;
+    const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    const items = parseSpItems(sp);
+    const pbf = (st.supplierPbf || []).find((p) => p.id_pbf === sp.id_pbf || p.nama_pbf === sp.nama_pbf) || {};
+
+    const html = `<div class="ons-ws-modal" data-ws-custom="1">
+      <div class="ons-ws-header">
+        <div>
+          <h2 class="text-base sm:text-lg font-extrabold tracking-tight">Detail Surat Pesanan (Read-Only) &mdash; ${S().esc(sp.no_sp)}</h2>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Rincian lengkap data pemesanan obat ke supplier distributor PBF.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(idSp)}')" class="ons-btn ons-btn-primary text-xs font-bold">&#128424; Cetak / Preview A4</button>
+          <button type="button" onclick="window.openEditSpModal('${S().esc(idSp)}')" class="ons-btn ons-btn-amber text-xs">&#9998; Edit SP</button>
+          <button type="button" onclick="window.duplicateSp('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">&#128203; Duplikat</button>
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+        </div>
+      </div>
+      <div class="ons-ws-body space-y-4">
+        <div class="ons-card p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div><span class="text-slate-500 block text-[10.5px]">No. Surat Pesanan</span><b class="font-mono-num text-sm text-blue-600">${S().esc(sp.no_sp)}</b></div>
+          <div><span class="text-slate-500 block text-[10.5px]">Supplier PBF</span><b>${S().esc(sp.nama_pbf || pbf.nama_pbf || '-')}</b></div>
+          <div><span class="text-slate-500 block text-[10.5px]">Tanggal SP</span><b class="font-mono-num">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</b></div>
+          <div><span class="text-slate-500 block text-[10.5px]">Jenis SP BPOM</span><span class="badge-bpom bpom-keras">${S().esc(sp.golongan_sp || 'REGULER')}</span></div>
+          <div><span class="text-slate-500 block text-[10.5px]">Metode Bayar</span><b>${S().esc(sp.metode_pembayaran || 'KREDIT')}</b></div>
+          <div><span class="text-slate-500 block text-[10.5px]">Jatuh Tempo</span><b class="font-mono-num">${S().esc(sp.tgl_jatuh_tempo || '-')}</b></div>
+          <div><span class="text-slate-500 block text-[10.5px]">Status Dokumen</span>${spStatusBadge(sp.status_sp)}</div>
+          <div><span class="text-slate-500 block text-[10.5px]">Total Estimasi Nilai</span><b class="font-mono-num text-sm text-emerald-600">${S().rp(sp.estimasi_total || 0)}</b></div>
+        </div>
+
+        <div class="ons-card p-4 space-y-2">
+          <div class="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Daftar Item Obat Terlampir (${items.length} Produk)</div>
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead><tr><th>No.</th><th>Produk Obat</th><th>Zat Aktif &amp; Golongan</th><th class="text-right">Qty Pesan</th><th>Satuan</th><th class="text-right">Est. HPP Unit</th><th class="text-right">Est. Subtotal</th><th>Catatan</th></tr></thead>
+              <tbody>
+                ${items.map((it, idx) => {
+                  const qty = Number(it.qty || it.qty_pesan || 0);
+                  const hpp = Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit || 0));
+                  return `<tr>
+                    <td class="font-mono-num text-xs">${idx + 1}.</td>
+                    <td class="font-bold text-xs">${S().esc(it.nama_dagang || it.id_obat)}</td>
+                    <td class="text-xs text-slate-500">${S().esc(it.zat_aktif || '-')}</td>
+                    <td class="font-mono-num text-xs font-bold text-right">${qty}</td>
+                    <td class="text-xs">${S().esc(it.satuan_dasar || it.satuan || 'Unit')}</td>
+                    <td class="font-mono-num text-xs text-right">${S().rp(hpp)}</td>
+                    <td class="font-mono-num text-xs font-bold text-right">${S().rp(qty * hpp)}</td>
+                    <td class="text-xs text-slate-500">${S().esc(it.keterangan || '-')}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    S().openModal(html, 'full');
   };
 
   global.openSpA4PreviewModal = (idSp) => {
@@ -1434,6 +1625,14 @@
             <input type="checkbox" ${spPreviewShowPrice ? 'checked' : ''} onchange="window.toggleSpA4PricePreview('${S().esc(idSp)}', this.checked)"/>
             <span>Tampilkan Estimasi Harga</span>
           </label>
+          <label class="text-xs flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer" style="border-color:var(--ons-border)">
+            <input type="checkbox" ${spPreviewHideKop ? 'checked' : ''} onchange="window.toggleSpHideKopPreview('${S().esc(idSp)}', this.checked)"/>
+            <span>Sembunyikan Kop Surat (Pre-Printed)</span>
+          </label>
+          <select class="ons-select text-xs w-28" onchange="window.changeSpPaperSize('${S().esc(idSp)}', this.value)">
+            <option value="A4" ${spPaperSize === 'A4' ? 'selected' : ''}>Ukuran A4</option>
+            <option value="A5" ${spPaperSize === 'A5' ? 'selected' : ''}>Ukuran A5</option>
+          </select>
           ${isNarc ? `
             <select class="ons-select text-xs w-36" onchange="window.changeSpRangkap('${S().esc(idSp)}', this.value)">
               <option value="0" ${spPreviewRangkap === 0 ? 'selected' : ''}>Semua 4 Rangkap</option>
@@ -1472,17 +1671,19 @@
     if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
     const gol = String(sp.golongan_sp || 'REGULER').toUpperCase();
     const isNarc = gol === 'NARKOTIKA';
+    const isA5 = spPaperSize === 'A5';
 
     let printBody = '';
     if (isNarc && (spPreviewRangkap === 0 || !spPreviewRangkap)) {
       printBody = [1, 2, 3, 4].map((rIdx) => {
-        return `<div style="${rIdx < 4 ? 'page-break-after:always;' : ''}">${buildSpA4DocumentHtml(sp, spPreviewShowPrice, rIdx)}</div>`;
+        return `<div style="${rIdx < 4 ? 'page-break-after:always;' : ''}">${buildSpA4DocumentHtml(sp, spPreviewShowPrice, rIdx, spPreviewHideKop, spPaperSize)}</div>`;
       }).join('');
     } else {
-      printBody = buildSpA4DocumentHtml(sp, spPreviewShowPrice, spPreviewRangkap || 1);
+      printBody = buildSpA4DocumentHtml(sp, spPreviewShowPrice, spPreviewRangkap || 1, spPreviewHideKop, spPaperSize);
     }
 
-    const a4Html = `<style>@page{size:A4 portrait;margin:10mm;}@media print{body{margin:0;background:#fff;}}</style>${printBody}`;
+    const pageSizeCss = isA5 ? 'size:A5 portrait;margin:8mm;' : 'size:A4 portrait;margin:10mm;';
+    const a4Html = `<style>@page{${pageSizeCss}}@media print{body{margin:0;background:#fff;}.ons-kop-preprinted{border:none !important;visibility:hidden !important;}}</style>${printBody}`;
     S().printHtmlZone(a4Html);
   };
 
