@@ -4021,23 +4021,83 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   };
 
   global.openPayHutangModal = (idBeli, noFak, sisaMax) => {
-    S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Bayar / Cicil Hutang Faktur ${S().esc(noFak)}</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
-      <div class="p-3 rounded-lg" style="background:var(--ons-bg-subtle)">Sisa hutang saat ini: <b class="font-mono-num text-amber-600">${S().rp(sisaMax)}</b></div>
-      <div><label class="font-semibold block mb-1">Nominal Pembayaran (Rp) *</label><input id="payHutangAmt" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(sisaMax)}" oninput="window.maskNumberInput(this)"/></div>
-      <div><label class="font-semibold block mb-1">Metode Transfer</label><select id="payHutangMetode" class="ons-select"><option value="TRANSFER_BANK">TRANSFER_BANK</option><option value="KAS_TUNAI">KAS_TUNAI</option><option value="GIRO">GIRO / CEK</option></select></div>
-      <button onclick="window.submitPayHutangPartial('${S().esc(idBeli)}')" class="ons-btn ons-btn-emerald w-full">Catat Pembayaran PBF ke Jurnal Kas</button>
-    </div>`, '440px');
+    const st = S().AppState;
+    const f = (st.fakturPbf || []).find((x) => x.id_beli === idBeli || x.no_faktur_pbf === noFak || x.no_faktur_pbf === idBeli) || {};
+    const supplier = f.id_pbf || f.nama_pbf || 'Distributor PBF';
+    const sisa = Number(sisaMax !== undefined ? sisaMax : (f.sisa_hutang || 0));
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-start border-b pb-3" style="border-color:var(--ons-border)">
+        <div>
+          <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Pelunasan Hutang Faktur PBF</h3>
+          <div class="text-[11px] text-slate-500 font-mono-num mt-0.5">${S().esc(noFak || f.no_faktur_pbf || idBeli)} &bull; ${S().esc(supplier)}</div>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="text-xl px-1.5 text-slate-400 hover:text-slate-600">&times;</button>
+      </div>
+
+      <div class="p-3.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div>
+          <span class="text-[10.5px] text-slate-500 block">Sisa Tagihan Hutang Saat Ini</span>
+          <b class="text-xl font-extrabold font-mono-num text-red-600">${S().rp(sisa)}</b>
+        </div>
+        <div class="text-right text-[11px] text-slate-500">
+          <div>Jatuh Tempo: <b>${S().esc(f.tgl_jatuh_tempo || '-')}</b></div>
+          <div>Status: <span class="badge-bpom bpom-prekursor">${S().esc(f.status_bayar || 'BELUM_LUNAS')}</span></div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="font-bold block mb-1">Nominal Pembayaran (Rp) *</label>
+          <input id="payHutangAmt" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-base font-bold" value="${S().formatDots(sisa)}" oninput="window.maskNumberInput(this)"/>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button type="button" onclick="document.getElementById('payHutangAmt').value='${S().formatDots(sisa)}'" class="ons-btn ons-btn-ghost text-[10.5px] py-0.5 px-2 font-bold text-blue-600 border border-blue-200">Lunasi Penuh (${S().rp(sisa)})</button>
+            ${sisa > 100000 ? `<button type="button" onclick="document.getElementById('payHutangAmt').value='${S().formatDots(Math.round(sisa/2))}'" class="ons-btn ons-btn-ghost text-[10.5px] py-0.5 px-2">Cicil 50% (${S().rp(Math.round(sisa/2))})</button>` : ''}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="font-bold block mb-1">Sumber Rekening / Akun Kas</label>
+            <select id="payHutangAkunKas" class="ons-select">
+              <option value="BANK_BCA">Bank BCA (123-456-7890)</option>
+              <option value="BANK_MANDIRI">Bank Mandiri (987-654-3210)</option>
+              <option value="KAS_UTAMA">Kas Utama Apotek</option>
+              <option value="KAS_KASIR">Kas Kasir (Laci Shift)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Metode Bayar</label>
+            <select id="payHutangMetode" class="ons-select">
+              <option value="TRANSFER_BANK">Transfer Bank</option>
+              <option value="KAS_TUNAI">Tunai / Kas</option>
+              <option value="GIRO">Giro / Cek</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold block mb-1">No. Referensi Bank / Bukti Setor</label>
+          <input id="payHutangRef" class="ons-input font-mono-num" placeholder="TRX-123456789 atau no slip setoran..."/>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t flex flex-wrap gap-2 justify-end" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitPayHutangPartial('${S().esc(idBeli)}')" class="ons-btn ons-btn-emerald text-xs font-bold py-2 px-4 shadow-sm">&#10003; Konfirmasi &amp; Catat ke Jurnal Kas</button>
+      </div>
+    </div>`, '480px');
   };
 
   global.submitPayHutangPartial = async (idBeli) => {
     try {
       const amt = window.parseNumber ? window.parseNumber(document.getElementById('payHutangAmt').value || 0) : Number(document.getElementById('payHutangAmt').value || 0);
       const met = document.getElementById('payHutangMetode').value || 'TRANSFER_BANK';
+      const ref = (document.getElementById('payHutangRef') || {}).value || '';
       if (amt <= 0) throw new Error('Nominal bayar harus > 0.');
-      await API().callApi('finance.payHutangPbf', { id_beli: idBeli, nominal_bayar: amt, metode: met }, { isWrite: true });
+      await API().callApi('finance.payHutangPbf', { id_beli: idBeli, nominal_bayar: amt, metode: met, ref_no: ref }, { isWrite: true });
       S().closeModal();
-      global.toast('Pembayaran hutang PBF tercatat ke Jurnal Kas!', 'ok');
+      global.toast('Pembayaran hutang PBF sebesar ' + S().rp(amt) + ' berhasil dibukukan!', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };

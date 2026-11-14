@@ -8374,41 +8374,98 @@
 
   global.generateSpFromDefecta = async (targetPbf) => {
     const st = S().AppState;
-    const lowAll = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
-    const itemsFiltered = targetPbf ? lowAll.filter((o) => o.pbf_utama === targetPbf) : lowAll;
-    const pickedItems = itemsFiltered.length ? itemsFiltered : st.masterObat.slice(0, 1);
-    const pbfName = targetPbf || ((pickedItems[0] && pickedItems[0].pbf_utama) || (st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PT Bina San Prima');
-    const pbfObj = (st.supplierPbf || []).find((p) => p.nama_pbf === pbfName || p.id_pbf === pbfName);
-    const spItems = pickedItems.map((o) => {
+    const lowAll = st.masterObat.filter((o) => {
+      const s = S().getSellableStok(o.id_obat);
+      return s <= Number(o.stok_min || 10);
+    });
+
+    if (!lowAll.length) {
+      return global.toast('Tidak ada produk yang perlu restok saat ini.', 'info');
+    }
+
+    // Jika targetPbf spesifik dipilih: terbitkan SP untuk PBF tersebut
+    if (targetPbf) {
+      const pbfItems = lowAll.filter((o) => (o.pbf_utama || 'PBF Reguler') === targetPbf);
+      const pickedItems = pbfItems.length ? pbfItems : lowAll.slice(0, 1);
+      const pbfObj = (st.supplierPbf || []).find((p) => p.nama_pbf === targetPbf || p.id_pbf === targetPbf);
+      const spItems = pickedItems.map((o) => {
+        const s = S().getSellableStok(o.id_obat);
+        const q = defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - s);
+        return {
+          id_obat: o.id_obat,
+          nama_dagang: o.nama_dagang,
+          golongan_bpom: o.golongan_bpom || 'BEBAS',
+          qty: q,
+          satuan_dasar: o.satuan_dasar || 'Unit',
+          hpp_unit: Number(o.hpp_terakhir || o.hpp_avg || 0)
+        };
+      });
+      const golList = spItems.map((x) => String(x.golongan_bpom || '').toUpperCase());
+      const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
+      try {
+        const res = await API().callApi('sp.save', {
+          id_pbf: pbfObj ? pbfObj.id_pbf : '',
+          nama_pbf: targetPbf,
+          golongan_sp: golSp,
+          items: spItems,
+          create_doc: false,
+          catatan: 'SP dibuat otomatis dari analisa Defecta Apotek (' + targetPbf + ')'
+        }, { isWrite: true });
+        global.toast('SP Resmi (' + res.item.no_sp + ') tersimpan! Siap Preview, Edit & Print A4.', 'ok');
+        await global.bootLoadState(true);
+        if (res && res.item && res.item.id_sp && typeof global.openSpA4PreviewModal === 'function') {
+          global.setDefectaTab('sp');
+          global.openSpA4PreviewModal(res.item.id_sp);
+        }
+      } catch (e) { global.toast(e.message, 'err'); }
+      return;
+    }
+
+    // MULTI-SUPPLIER & REGULATION BATCH ENGINE (STANDAR APOTEK DIGITAL)
+    // Kelompokkan ratusan obat defecta berdasarkan PBF Utama dan Jenis SP Regulasi BPOM
+    const groupKeyMap = {};
+    lowAll.forEach((o) => {
+      const pbfName = o.pbf_utama || ((st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PBF Reguler');
+      const gol = String(o.golongan_bpom || 'BEBAS').toUpperCase();
+      const jenisSp = gol === 'NARKOTIKA' ? 'NARKOTIKA' : (gol === 'PSIKOTROPIKA' ? 'PSIKOTROPIKA' : (gol === 'PREKURSOR' ? 'PREKURSOR' : (gol === 'OOT' ? 'OOT' : 'REGULER')));
+      const key = pbfName + '|||' + jenisSp;
+      if (!groupKeyMap[key]) groupKeyMap[key] = { pbfName, jenisSp, items: [] };
       const s = S().getSellableStok(o.id_obat);
       const q = defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - s);
-      return {
+      groupKeyMap[key].items.push({
         id_obat: o.id_obat,
         nama_dagang: o.nama_dagang,
         golongan_bpom: o.golongan_bpom || 'BEBAS',
         qty: q,
         satuan_dasar: o.satuan_dasar || 'Unit',
         hpp_unit: Number(o.hpp_terakhir || o.hpp_avg || 0)
-      };
+      });
     });
-    const golList = spItems.map((x) => String(x.golongan_bpom || '').toUpperCase());
-    const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
-    try {
-      const res = await API().callApi('sp.save', {
-        id_pbf: pbfObj ? pbfObj.id_pbf : '',
-        nama_pbf: pbfName,
-        golongan_sp: golSp,
-        items: spItems,
-        create_doc: false,
-        catatan: 'SP dibuat otomatis dari analisa Defecta Apotek'
-      }, { isWrite: true });
-      global.toast('SP Resmi (' + res.item.no_sp + ') tersimpan! Siap Preview, Edit & Print A4.', 'ok');
-      await global.bootLoadState(true);
-      if (res && res.item && res.item.id_sp && typeof global.openSpA4PreviewModal === 'function') {
-        global.setDefectaTab('sp');
-        global.openSpA4PreviewModal(res.item.id_sp);
+
+    const groups = Object.values(groupKeyMap);
+    if (!confirm('Terbitkan ' + groups.length + ' Surat Pesanan (SP) otomatis untuk seluruh distributor PBF terdaftar sesuai regulasi pemisahan BPOM?')) return;
+
+    let createdCount = 0;
+    for (const grp of groups) {
+      const pbfObj = (st.supplierPbf || []).find((p) => p.nama_pbf === grp.pbfName || p.id_pbf === grp.pbfName);
+      try {
+        await API().callApi('sp.save', {
+          id_pbf: pbfObj ? pbfObj.id_pbf : '',
+          nama_pbf: grp.pbfName,
+          golongan_sp: grp.jenisSp,
+          items: grp.items,
+          create_doc: false,
+          catatan: 'SP Terbit Otomatis via Batch Defecta Engine [' + grp.jenisSp + ']'
+        }, { isWrite: true });
+        createdCount++;
+      } catch (err) {
+        console.error('Gagal membuat SP untuk ' + grp.pbfName, err);
       }
-    } catch (e) { global.toast(e.message, 'err'); }
+    }
+
+    global.toast('Berhasil menerbitkan ' + createdCount + ' Surat Pesanan (SP) otomatis ke antrean SP!', 'ok');
+    await global.bootLoadState(true);
+    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
   };
 
   global.toggleDefectaSelect = (idObat, isChecked) => {
@@ -9509,7 +9566,7 @@
                     <td>
                       <div class="flex flex-wrap gap-1.5">
                         <button type="button" onclick="window.openFakturDetailModal('${S().esc(f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Detail</button>
-                        ${isKons ? `<button type="button" onclick="window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-primary text-xs py-1 px-2">Settle</button>` : (Number(f.sisa_hutang || 0) > 0 ? `<button type="button" onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs py-1 px-2">Bayar</button>` : '')}
+                        ${isKons ? `<button type="button" onclick="window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-primary text-xs py-1 px-2">Settle</button>` : (Number(f.sisa_hutang || 0) > 0 ? `<button type="button" onclick="window.openPayHutangModal('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}', '${S().esc(f.no_faktur_pbf)}', ${Number(f.sisa_hutang || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5 font-bold shadow-sm">Bayar Hutang</button>` : '')}
                       </div>
                     </td>
                   </tr>`;

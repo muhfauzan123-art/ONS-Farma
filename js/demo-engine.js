@@ -2256,7 +2256,7 @@
       return { inserted, updated };
     }
     if (action === 'finance.payHutangPbf') {
-      const f = db.faktur_pbf.find((x) => x.id_beli === d.id_beli);
+      const f = db.faktur_pbf.find((x) => x.id_beli === d.id_beli || x.no_faktur_pbf === d.id_beli);
       if (!f) throw new Error('Faktur tidak ditemukan.');
       const oldSisa = Math.max(0, Number(f.sisa_hutang || 0));
       if (oldSisa <= 0 || String(f.status_bayar || '').toUpperCase() === 'LUNAS') throw new Error('Faktur PBF ini sudah berstatus LUNAS.');
