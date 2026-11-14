@@ -8650,7 +8650,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Provinsi</label>
-              <input id="profProvinsi" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.provinsi || 'Sulawesi Selatan')}" placeholder="Provinsi"/>
+              <input id="profProvinsi" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.provinsi || 'Sulawesi Selatan')}" placeholder="Provinsi" oninput="window.refreshProfileKopPreview()"/>
             </div>
             <div>
               <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kabupaten / Kota</label>
@@ -8661,11 +8661,11 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kecamatan</label>
-              <input id="profKecamatan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kecamatan || 'Panakkukang')}" placeholder="Kecamatan"/>
+              <input id="profKecamatan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kecamatan || 'Panakkukang')}" placeholder="Kecamatan" oninput="window.refreshProfileKopPreview()"/>
             </div>
             <div>
               <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kelurahan</label>
-              <input id="profKelurahan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kelurahan || 'Masale')}" placeholder="Kelurahan"/>
+              <input id="profKelurahan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kelurahan || 'Masale')}" placeholder="Kelurahan" oninput="window.refreshProfileKopPreview()"/>
             </div>
           </div>
 
@@ -11313,89 +11313,184 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   /* ==========================================================================
      MODAL ATUR KOORDINAT GPS & LOKASI OUTLET APOTEK (PROFIL BISNIS)
      ========================================================================== */
+  /* ==========================================================================
+     DATABASE PRESET LOKASI & KOORDINAT APOTEK DI SELURUH INDONESIA
+     ========================================================================== */
   const GPS_PRESETS = [
+    // Sulawesi
     { nama: 'Apotek ONS Farma Panakkukang (Makassar)', lat: '-5.147665', lon: '119.432732', alamat: 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang', kelurahan: 'Masale', kecamatan: 'Panakkukang', kota: 'Makassar', provinsi: 'Sulawesi Selatan', kode_pos: '90231' },
-    { nama: 'Apotek ONS Farma Cabang Sigi / Palu', lat: '-0.985600', lon: '119.921300', alamat: 'Jl. Trans Palu - Kulawi No. 12', kelurahan: 'Kalukubula', kecamatan: 'Sigi Biromaru', kota: 'Kabupaten Sigi', provinsi: 'Sulawesi Tengah', kode_pos: '94364' },
+    { nama: 'Apotek ONS Farma Cabang Sigi (Sulteng)', lat: '-0.985600', lon: '119.921300', alamat: 'Jl. Trans Palu - Kulawi No. 12', kelurahan: 'Kalukubula', kecamatan: 'Sigi Biromaru', kota: 'Kabupaten Sigi', provinsi: 'Sulawesi Tengah', kode_pos: '94364' },
+    { nama: 'Apotek ONS Farma Palu Timur (Sulteng)', lat: '-0.891700', lon: '119.878500', alamat: 'Jl. Sam Ratulangi No. 34', kelurahan: 'Besusu Barat', kecamatan: 'Palu Timur', kota: 'Palu', provinsi: 'Sulawesi Tengah', kode_pos: '94118' },
+    { nama: 'Apotek ONS Farma Somba Opu (Gowa)', lat: '-5.201667', lon: '119.453333', alamat: 'Jl. Sultan Hasanuddin No. 45', kelurahan: 'Sungguminasa', kecamatan: 'Somba Opu', kota: 'Gowa', provinsi: 'Sulawesi Selatan', kode_pos: '92111' },
+    { nama: 'Apotek ONS Farma Turikale (Maros)', lat: '-5.004444', lon: '119.574444', alamat: 'Jl. Jenderal Sudirman No. 20', kelurahan: 'Pettuadae', kecamatan: 'Turikale', kota: 'Maros', provinsi: 'Sulawesi Selatan', kode_pos: '90516' },
+    { nama: 'Apotek ONS Farma Parepare', lat: '-4.013333', lon: '119.625000', alamat: 'Jl. Andi Mappatola No. 15', kelurahan: 'Mallusetasi', kecamatan: 'Ujung', kota: 'Parepare', provinsi: 'Sulawesi Selatan', kode_pos: '91111' },
+    { nama: 'Apotek ONS Farma Palopo', lat: '-2.993333', lon: '120.198333', alamat: 'Jl. Andi Djemma No. 78', kelurahan: 'Boting', kecamatan: 'Wara', kota: 'Palopo', provinsi: 'Sulawesi Selatan', kode_pos: '91921' },
+    { nama: 'Apotek ONS Farma Bone (Watampone)', lat: '-4.538333', lon: '120.328333', alamat: 'Jl. Ahmad Yani No. 50', kelurahan: 'Manurunge', kecamatan: 'Tanete Riattang', kota: 'Bone', provinsi: 'Sulawesi Selatan', kode_pos: '92712' },
+    { nama: 'Apotek ONS Farma Kendari (Sultra)', lat: '-3.998459', lon: '122.512604', alamat: 'Jl. Abdullah Silondae No. 88', kelurahan: 'Korumba', kecamatan: 'Mandonga', kota: 'Kendari', provinsi: 'Sulawesi Tenggara', kode_pos: '93111' },
+    { nama: 'Apotek ONS Farma Manado (Sulut)', lat: '1.474830', lon: '124.842079', alamat: 'Jl. Sam Ratulangi No. 120', kelurahan: 'Tikala', kecamatan: 'Wenang', kota: 'Manado', provinsi: 'Sulawesi Utara', kode_pos: '95111' },
+    { nama: 'Apotek ONS Farma Gorontalo', lat: '0.543544', lon: '123.056769', alamat: 'Jl. Nani Wartabone No. 19', kelurahan: 'Buladu', kecamatan: 'Kota Barat', kota: 'Gorontalo', provinsi: 'Gorontalo', kode_pos: '96136' },
+    { nama: 'Apotek ONS Farma Mamuju (Sulbar)', lat: '-2.677059', lon: '118.889498', alamat: 'Jl. Urip Sumoharjo No. 30', kelurahan: 'Karema', kecamatan: 'Simboro', kota: 'Mamuju', provinsi: 'Sulawesi Barat', kode_pos: '91512' },
+
+    // Jawa & Bali
     { nama: 'Apotek ONS Farma Jakarta Selatan', lat: '-6.261493', lon: '106.810600', alamat: 'Jl. Kemang Raya No. 45', kelurahan: 'Bangka', kecamatan: 'Mampang Prapatan', kota: 'Jakarta Selatan', provinsi: 'DKI Jakarta', kode_pos: '12730' },
-    { nama: 'Apotek ONS Farma Surabaya Pusat', lat: '-7.257472', lon: '112.752090', alamat: 'Jl. Basuki Rahmat No. 18', kelurahan: 'Embong Kaliasin', kecamatan: 'Genteng', kota: 'Surabaya', provinsi: 'Jawa Timur', kode_pos: '60271' },
+    { nama: 'Apotek ONS Farma Jakarta Pusat', lat: '-6.180511', lon: '106.828384', alamat: 'Jl. Kebon Sirih No. 60', kelurahan: 'Kebon Kelapa', kecamatan: 'Gambir', kota: 'Jakarta Pusat', provinsi: 'DKI Jakarta', kode_pos: '10110' },
+    { nama: 'Apotek ONS Farma Tangerang Selatan', lat: '-6.288889', lon: '106.717778', alamat: 'Jl. Pahlawan Seribu No. 8', kelurahan: 'Lengkong Gudang', kecamatan: 'Serpong', kota: 'Tangerang Selatan', provinsi: 'Banten', kode_pos: '15310' },
     { nama: 'Apotek ONS Farma Bandung', lat: '-6.917464', lon: '107.619123', alamat: 'Jl. R.E. Martadinata No. 56', kelurahan: 'Citarum', kecamatan: 'Bandung Wetan', kota: 'Bandung', provinsi: 'Jawa Barat', kode_pos: '40115' },
+    { nama: 'Apotek ONS Farma Surabaya Pusat', lat: '-7.257472', lon: '112.752090', alamat: 'Jl. Basuki Rahmat No. 18', kelurahan: 'Embong Kaliasin', kecamatan: 'Genteng', kota: 'Surabaya', provinsi: 'Jawa Timur', kode_pos: '60271' },
+    { nama: 'Apotek ONS Farma Semarang', lat: '-6.966667', lon: '110.416667', alamat: 'Jl. Pemuda No. 142', kelurahan: 'Pandansari', kecamatan: 'Semarang Tengah', kota: 'Semarang', provinsi: 'Jawa Tengah', kode_pos: '50139' },
+    { nama: 'Apotek ONS Farma Yogyakarta', lat: '-7.795580', lon: '110.369490', alamat: 'Jl. Malioboro No. 90', kelurahan: 'Ngupasan', kecamatan: 'Gondomanan', kota: 'Yogyakarta', provinsi: 'D.I. Yogyakarta', kode_pos: '55122' },
+    { nama: 'Apotek ONS Farma Solo (Surakarta)', lat: '-7.575489', lon: '110.824326', alamat: 'Jl. Slamet Riyadi No. 230', kelurahan: 'Manahan', kecamatan: 'Banjarsari', kota: 'Surakarta', provinsi: 'Jawa Tengah', kode_pos: '57139' },
+    { nama: 'Apotek ONS Farma Malang', lat: '-7.966620', lon: '112.632632', alamat: 'Jl. Ijen No. 25', kelurahan: 'Kauman', kecamatan: 'Klojen', kota: 'Malang', provinsi: 'Jawa Timur', kode_pos: '65119' },
+    { nama: 'Apotek ONS Farma Denpasar Bali', lat: '-8.670458', lon: '115.212629', alamat: 'Jl. Teuku Umar No. 80', kelurahan: 'Dauh Puri Kauh', kecamatan: 'Denpasar Barat', kota: 'Denpasar', provinsi: 'Bali', kode_pos: '80113' },
+
+    // Sumatera & Kalimantan
     { nama: 'Apotek ONS Farma Medan', lat: '3.595196', lon: '98.672223', alamat: 'Jl. Gajah Mada No. 22', kelurahan: 'Petisah Hulu', kecamatan: 'Medan Baru', kota: 'Medan', provinsi: 'Sumatera Utara', kode_pos: '20153' },
-    { nama: 'Apotek ONS Farma Denpasar Bali', lat: '-8.670458', lon: '115.212629', alamat: 'Jl. Teuku Umar No. 80', kelurahan: 'Dauh Puri Kauh', kecamatan: 'Denpasar Barat', kota: 'Denpasar', provinsi: 'Bali', kode_pos: '80113' }
+    { nama: 'Apotek ONS Farma Padang', lat: '-0.947083', lon: '100.417181', alamat: 'Jl. Khatib Sulaiman No. 40', kelurahan: 'Olo', kecamatan: 'Padang Barat', kota: 'Padang', provinsi: 'Sumatera Barat', kode_pos: '25117' },
+    { nama: 'Apotek ONS Farma Palembang', lat: '-2.976074', lon: '104.775431', alamat: 'Jl. Jenderal Sudirman No. 110', kelurahan: '20 Ilir', kecamatan: 'Ilir Timur I', kota: 'Palembang', provinsi: 'Sumatera Selatan', kode_pos: '30121' },
+    { nama: 'Apotek ONS Farma Pekanbaru', lat: '0.507068', lon: '101.447779', alamat: 'Jl. Tuanku Tambusai No. 85', kelurahan: 'Jadirejo', kecamatan: 'Sukajadi', kota: 'Pekanbaru', provinsi: 'Riau', kode_pos: '28121' },
+    { nama: 'Apotek ONS Farma Bandar Lampung', lat: '-5.450000', lon: '105.266667', alamat: 'Jl. Raden Intan No. 55', kelurahan: 'Palapa', kecamatan: 'Tanjung Karang Pusat', kota: 'Bandar Lampung', provinsi: 'Lampung', kode_pos: '35116' },
+    { nama: 'Apotek ONS Farma Balikpapan', lat: '-1.265386', lon: '116.831200', alamat: 'Jl. Jenderal Sudirman No. 33', kelurahan: 'Klandasan Ulu', kecamatan: 'Balikpapan Kota', kota: 'Balikpapan', provinsi: 'Kalimantan Timur', kode_pos: '76112' },
+    { nama: 'Apotek ONS Farma Samarinda', lat: '-0.502106', lon: '117.153709', alamat: 'Jl. Pahlawan No. 12', kelurahan: 'Pasar Pagi', kecamatan: 'Samarinda Kota', kota: 'Samarinda', provinsi: 'Kalimantan Timur', kode_pos: '75111' },
+    { nama: 'Apotek ONS Farma Banjarmasin', lat: '-3.319384', lon: '114.590111', alamat: 'Jl. Lambung Mangkurat No. 45', kelurahan: 'Kertak Baru Ilir', kecamatan: 'Banjarmasin Tengah', kota: 'Banjarmasin', provinsi: 'Kalimantan Selatan', kode_pos: '70111' },
+    { nama: 'Apotek ONS Farma Pontianak', lat: '-0.026330', lon: '109.342503', alamat: 'Jl. Gajah Mada No. 67', kelurahan: 'Tengah', kecamatan: 'Pontianak Kota', kota: 'Pontianak', provinsi: 'Kalimantan Barat', kode_pos: '78111' },
+
+    // Nusa Tenggara, Maluku & Papua
+    { nama: 'Apotek ONS Farma Mataram (Lombok)', lat: '-8.583333', lon: '116.116667', alamat: 'Jl. Pejanggik No. 70', kelurahan: 'Dasan Agung', kecamatan: 'Selaparang', kota: 'Mataram', provinsi: 'Nusa Tenggara Barat', kode_pos: '83125' },
+    { nama: 'Apotek ONS Farma Kupang (NTT)', lat: '-10.177200', lon: '123.607033', alamat: 'Jl. El Tari No. 18', kelurahan: 'Oetete', kecamatan: 'Oebobo', kota: 'Kupang', provinsi: 'Nusa Tenggara Timur', kode_pos: '85112' },
+    { nama: 'Apotek ONS Farma Ambon (Maluku)', lat: '-3.695420', lon: '128.181420', alamat: 'Jl. A.Y. Patty No. 24', kelurahan: 'Honipopu', kecamatan: 'Sirimau', kota: 'Ambon', provinsi: 'Maluku', kode_pos: '97126' },
+    { nama: 'Apotek ONS Farma Jayapura (Papua)', lat: '-2.548926', lon: '140.716820', alamat: 'Jl. Percetakan Negara No. 15', kelurahan: 'Gurabesi', kecamatan: 'Jayapura Utara', kota: 'Jayapura', provinsi: 'Papua', kode_pos: '99111' },
+    { nama: 'Apotek ONS Farma Sorong', lat: '-0.876111', lon: '131.255833', alamat: 'Jl. Jenderal Sudirman No. 50', kelurahan: 'Remu Selatan', kecamatan: 'Sorong Manoi', kota: 'Sorong', provinsi: 'Papua Barat Daya', kode_pos: '98414' }
   ];
 
+  function findClosestIndonesianLocation(lat, lon) {
+    const pLat = Number(lat);
+    const pLon = Number(lon);
+    if (isNaN(pLat) || isNaN(pLon)) return null;
+    const R = 6371;
+    let closest = null;
+    let minDist = Infinity;
+    for (let i = 0; i < GPS_PRESETS.length; i++) {
+      const loc = GPS_PRESETS[i];
+      const dLat = (Number(loc.lat) - pLat) * Math.PI / 180;
+      const dLon = (Number(loc.lon) - pLon) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(pLat * Math.PI / 180) * Math.cos(Number(loc.lat) * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const dist = R * c;
+      if (dist < minDist) {
+        minDist = dist;
+        closest = loc;
+      }
+    }
+    return closest ? { location: closest, distanceKm: Math.round(minDist * 10) / 10 } : null;
+  }
+
   global.updateGmapsLinkFromInputs = () => {
-    const lat = (document.getElementById('profLat') || {}).value || '-5.147665';
-    const lng = (document.getElementById('profLng') || {}).value || '119.432732';
+    const prof = (typeof S === 'function' && S().getStoreProfile) ? S().getStoreProfile() : {};
+    const lat = (document.getElementById('profLat') || {}).value || prof.latitude || '-5.147665';
+    const lng = (document.getElementById('profLng') || {}).value || prof.longitude || '119.432732';
     const link = document.getElementById('profGmapsLink');
     if (link) {
-      link.href = 'https://www.google.com/maps?q=' + encodeURIComponent(lat.trim()) + ',' + encodeURIComponent(lng.trim());
+      link.href = 'https://www.google.com/maps?q=' + encodeURIComponent(String(lat).trim()) + ',' + encodeURIComponent(String(lng).trim());
     }
   };
 
   global.openKoordinatModal = () => {
-    const val = (id, fb) => (document.getElementById(id) || {}).value || fb || '';
-    const curLat = val('profLat', '-5.147665');
-    const curLng = val('profLng', '119.432732');
-    const curAlamat = val('profAlamatUsaha', 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang');
-    const curKel = val('profKelurahan', 'Masale');
-    const curKec = val('profKecamatan', 'Panakkukang');
-    const curKota = val('profKota', 'Makassar');
-    const curProv = val('profProvinsi', 'Sulawesi Selatan');
-    const curKodePos = val('profKodePos', '90231');
+    const prof = (typeof S === 'function' && S().getStoreProfile) ? S().getStoreProfile() : {};
+    const val = (id, fb) => {
+      const el = document.getElementById(id);
+      return (el && el.value !== undefined && el.value !== '') ? el.value : (fb || '');
+    };
+    const curLat = val('profLat', prof.latitude || '-5.147665');
+    const curLng = val('profLng', prof.longitude || '119.432732');
+    const curAlamat = val('profAlamatUsaha', prof.alamat_usaha || 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang');
+    const curKel = val('profKelurahan', prof.kelurahan || 'Masale');
+    const curKec = val('profKecamatan', prof.kecamatan || 'Panakkukang');
+    const curKota = val('profKota', prof.kota || 'Makassar');
+    const curProv = val('profProvinsi', prof.provinsi || 'Sulawesi Selatan');
+    const curKodePos = val('profKodePos', prof.kode_pos || '90231');
 
     S().openModal(`<div class="p-5 sm:p-6 space-y-4 text-xs">
-      <div class="flex items-start justify-between gap-3 border-b pb-3" style="border-color:var(--ons-border)">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between gap-3 border-b pb-3.5" style="border-color:var(--ons-border)">
         <div>
           <h3 class="font-extrabold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <span class="text-teal-600 dark:text-teal-400">&#128205;</span>
-            Atur Koordinat GPS &amp; Lokasi Outlet Apotek
+            <span class="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+            </span>
+            <span>Atur Koordinat GPS &amp; Lokasi Outlet Apotek</span>
           </h3>
-          <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Sinkronkan titik koordinat digital peta satelit dan perbarui otomatis nama alamat &amp; wilayah administratif outlet.</p>
+          <p class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Sinkronkan titik satelit GPS, pratinjau peta satelit, dan perbarui otomatis nama alamat &amp; wilayah administratif apotek.</p>
         </div>
-        <button onclick="ONSStore.closeModal()" class="text-xl leading-none text-slate-400 hover:text-slate-600">&times;</button>
+        <button onclick="ONSStore.closeModal()" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-500/10 text-xl leading-none text-slate-400 hover:text-slate-600 transition-colors">&times;</button>
       </div>
 
       <!-- Fitur 1: Deteksi Otomatis GPS & Pencarian Tempat -->
       <div class="p-3.5 rounded-xl border space-y-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="font-bold text-[11px] text-slate-700 dark:text-slate-200">1. Deteksi GPS &amp; Pencarian Lokasi Cepat</span>
-          <button type="button" onclick="window.detectCurrentGpsLocation()" class="ons-btn text-white text-[11px] font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5" style="background:#0D9488">
-            <span>&#128225;</span> Ambil Lokasi GPS Saya Saat Ini
+          <span class="font-bold text-[11px] text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+            <span>1. Deteksi GPS &amp; Pencarian Lokasi Cepat</span>
+          </span>
+          <button type="button" onclick="window.detectCurrentGpsLocation()" class="ons-btn text-white text-[11px] font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
+            <span>Ambil Lokasi GPS Saya Saat Ini</span>
           </button>
         </div>
 
         <div class="flex gap-2">
-          <input id="modalGpsSearchInput" class="ons-input text-xs flex-1" placeholder="Cari nama jalan, landmark, atau kota (contoh: Jl. Kesehatan Raya, Panakkukang)..." onkeydown="if(event.key==='Enter'){event.preventDefault();window.searchGpsPlace();}"/>
-          <button type="button" onclick="window.searchGpsPlace()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shrink-0">Cari Tempat</button>
+          <input id="modalGpsSearchInput" class="ons-input text-xs flex-1" placeholder="Ketik nama jalan, apotek, kecamatan, atau kota (contoh: Panakkukang, Sigi, Jakarta Selatan)..." onkeydown="if(event.key==='Enter'){event.preventDefault();window.searchGpsPlace();}"/>
+          <button type="button" onclick="window.searchGpsPlace()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shrink-0 font-bold flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <span>Cari</span>
+          </button>
         </div>
 
         <!-- Status Message Box -->
-        <div id="modalGpsStatusBox" class="text-[11px] p-2 rounded-lg border hidden" style="background:var(--ons-bg-card);border-color:var(--ons-border)"></div>
+        <div id="modalGpsStatusBox" class="text-[11px] p-2.5 rounded-lg border hidden transition-all" style="background:var(--ons-bg-card);border-color:var(--ons-border)"></div>
 
         <!-- Hasil Pencarian -->
-        <div id="modalGpsSearchResults" class="space-y-1.5 max-h-36 overflow-y-auto hidden"></div>
+        <div id="modalGpsSearchResults" class="space-y-1.5 max-h-40 overflow-y-auto hidden"></div>
 
-        <!-- Preset Kota Cepat -->
-        <div>
-          <span class="text-[10px] font-semibold text-slate-500 block mb-1">Preset Lokasi Kota Populer:</span>
+        <!-- Preset Wilayah Cepat -->
+        <div class="space-y-1">
+          <span class="text-[10px] font-semibold text-slate-500 block">Pilihan Cepat Wilayah Populer:</span>
           <div class="flex flex-wrap gap-1.5">
-            ${GPS_PRESETS.map((p, idx) => `<button type="button" onclick="window.pickGpsPreset(${idx})" class="px-2 py-1 rounded-md border text-[10px] font-medium hover:border-teal-500 hover:text-teal-600 transition-colors" style="background:var(--ons-bg-card);border-color:var(--ons-border)">${S().esc(p.kota)}</button>`).join('')}
+            ${GPS_PRESETS.slice(0, 10).map((p, idx) => `<button type="button" onclick="window.pickGpsPreset(${idx})" class="px-2.5 py-1 rounded-md border text-[10px] font-semibold hover:border-teal-500 hover:text-teal-600 transition-colors" style="background:var(--ons-bg-card);border-color:var(--ons-border)">${S().esc(p.kota || p.nama)}</button>`).join('')}
           </div>
         </div>
       </div>
 
-      <!-- Fitur 2: Form Detail Koordinat & Alamat Terpilih -->
+      <!-- Fitur 2: Pratinjau Peta Satelit Interaktif -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="font-bold text-slate-700 dark:text-slate-200">Pratinjau Peta Satelit Digital</span>
+          <div class="flex items-center gap-1 text-[10px]">
+            <span class="text-slate-400">Geser Halus:</span>
+            <button type="button" onclick="window.nudgeGpsCoordinate(0.0005, 0)" class="px-1.5 py-0.5 rounded border hover:bg-slate-500/10" title="Geser ke Utara">&uarr; U</button>
+            <button type="button" onclick="window.nudgeGpsCoordinate(-0.0005, 0)" class="px-1.5 py-0.5 rounded border hover:bg-slate-500/10" title="Geser ke Selatan">&darr; S</button>
+            <button type="button" onclick="window.nudgeGpsCoordinate(0, -0.0005)" class="px-1.5 py-0.5 rounded border hover:bg-slate-500/10" title="Geser ke Barat">&larr; B</button>
+            <button type="button" onclick="window.nudgeGpsCoordinate(0, 0.0005)" class="px-1.5 py-0.5 rounded border hover:bg-slate-500/10" title="Geser ke Timur">&rarr; T</button>
+          </div>
+        </div>
+        <div class="relative w-full h-44 rounded-xl overflow-hidden border" style="border-color:var(--ons-border)">
+          <iframe id="modalGpsMapIframe" class="w-full h-full border-0 bg-slate-100 dark:bg-slate-800" src="https://maps.google.com/maps?q=${encodeURIComponent(curLat)},${encodeURIComponent(curLng)}&z=15&output=embed" loading="lazy"></iframe>
+        </div>
+      </div>
+
+      <!-- Fitur 3: Form Detail Koordinat & Alamat Terpilih -->
       <div class="space-y-3">
-        <span class="font-bold text-[11px] text-slate-700 dark:text-slate-200 block">2. Detail Titik Koordinat &amp; Nama Wilayah</span>
+        <span class="font-bold text-[11px] text-slate-700 dark:text-slate-200 block">2. Detail Titik Koordinat &amp; Nama Wilayah Outlet</span>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="font-semibold text-[11px] block mb-1">Latitude</label>
-            <input id="modalGpsLat" class="ons-input font-mono-num text-xs w-full" value="${S().esc(curLat)}" placeholder="-5.147665" oninput="window.updateModalGmapsPreview()"/>
+            <label class="font-semibold text-[11px] block mb-1">Latitude (Lintang)</label>
+            <input id="modalGpsLat" class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(curLat)}" placeholder="-5.147665" oninput="window.updateModalGmapsPreview()"/>
           </div>
           <div>
-            <label class="font-semibold text-[11px] block mb-1">Longitude</label>
-            <input id="modalGpsLng" class="ons-input font-mono-num text-xs w-full" value="${S().esc(curLng)}" placeholder="119.432732" oninput="window.updateModalGmapsPreview()"/>
+            <label class="font-semibold text-[11px] block mb-1">Longitude (Bujur)</label>
+            <input id="modalGpsLng" class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(curLng)}" placeholder="119.432732" oninput="window.updateModalGmapsPreview()"/>
           </div>
         </div>
 
@@ -11406,7 +11501,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="font-semibold text-[11px] block mb-1">Kelurahan</label>
+            <label class="font-semibold text-[11px] block mb-1">Kelurahan / Desa</label>
             <input id="modalGpsKel" class="ons-input text-xs w-full" value="${S().esc(curKel)}" placeholder="Kelurahan / Desa"/>
           </div>
           <div>
@@ -11418,7 +11513,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="sm:col-span-1">
             <label class="font-semibold text-[11px] block mb-1">Kabupaten / Kota</label>
-            <input id="modalGpsKota" class="ons-input text-xs w-full" value="${S().esc(curKota)}" placeholder="Kota / Kabupaten"/>
+            <input id="modalGpsKota" class="ons-input text-xs w-full font-semibold" value="${S().esc(curKota)}" placeholder="Kota / Kabupaten"/>
           </div>
           <div class="sm:col-span-1">
             <label class="font-semibold text-[11px] block mb-1">Provinsi</label>
@@ -11431,26 +11526,43 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
       </div>
 
-      <!-- Fitur 3: Tombol Aksi Terapkan -->
+      <!-- Fitur 4: Tombol Aksi Terapkan & Simpan -->
       <div class="pt-3 border-t flex flex-wrap items-center justify-between gap-2" style="border-color:var(--ons-border)">
-        <a id="modalGmapsPreviewBtn" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(curLat)},${encodeURIComponent(curLng)}" class="ons-btn ons-btn-ghost text-xs px-3 py-2 flex items-center gap-1.5">
-          <span>&#128506;&#65039; Pratinjau di Google Maps</span>
+        <a id="modalGmapsPreviewBtn" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(curLat)},${encodeURIComponent(curLng)}" class="ons-btn ons-btn-ghost text-xs px-3 py-2 flex items-center gap-1.5" title="Buka Titik Koordinat di Aplikasi Google Maps">
+          <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span>Buka di Google Maps</span>
         </a>
         <div class="flex gap-2">
           <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs px-4 py-2">Batal</button>
-          <button type="button" onclick="window.applyGpsLocationToForm()" class="ons-btn text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
-            <span>&#10004;</span> Terapkan ke Profil Bisnis
+          <button type="button" onclick="window.applyGpsLocationToForm()" class="ons-btn text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Terapkan &amp; Simpan Lokasi</span>
           </button>
         </div>
       </div>
-    </div>`, '640px');
+    </div>`, '660px');
+  };
+
+  global.nudgeGpsCoordinate = (dLat, dLon) => {
+    const latEl = document.getElementById('modalGpsLat');
+    const lngEl = document.getElementById('modalGpsLng');
+    if (!latEl || !lngEl) return;
+    const curLat = parseFloat(latEl.value) || -5.147665;
+    const curLng = parseFloat(lngEl.value) || 119.432732;
+    const newLat = (curLat + dLat).toFixed(6);
+    const newLng = (curLng + dLon).toFixed(6);
+    latEl.value = newLat;
+    lngEl.value = newLng;
+    global.updateModalGmapsPreview();
   };
 
   global.updateModalGmapsPreview = () => {
-    const lat = (document.getElementById('modalGpsLat') || {}).value || '-5.147665';
-    const lng = (document.getElementById('modalGpsLng') || {}).value || '119.432732';
+    const lat = ((document.getElementById('modalGpsLat') || {}).value || '-5.147665').trim();
+    const lng = ((document.getElementById('modalGpsLng') || {}).value || '119.432732').trim();
     const btn = document.getElementById('modalGmapsPreviewBtn');
-    if (btn) btn.href = 'https://www.google.com/maps?q=' + encodeURIComponent(lat.trim()) + ',' + encodeURIComponent(lng.trim());
+    if (btn) btn.href = 'https://www.google.com/maps?q=' + encodeURIComponent(lat) + ',' + encodeURIComponent(lng);
+    const iframe = document.getElementById('modalGpsMapIframe');
+    if (iframe) iframe.src = 'https://maps.google.com/maps?q=' + encodeURIComponent(lat) + ',' + encodeURIComponent(lng) + '&z=15&output=embed';
   };
 
   global.pickGpsPreset = (idx) => {
@@ -11469,8 +11581,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const stBox = document.getElementById('modalGpsStatusBox');
     if (stBox) {
       stBox.classList.remove('hidden');
-      stBox.className = 'text-[11px] p-2 rounded-lg border text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 border-teal-300 dark:border-teal-800';
-      stBox.innerHTML = '&#9989; Preset <b>' + S().esc(p.nama) + '</b> berhasil dimuat!';
+      stBox.className = 'text-[11px] p-2.5 rounded-lg border text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 border-teal-300 dark:border-teal-800';
+      stBox.innerHTML = '&#9989; Lokasi <b>' + S().esc(p.nama) + '</b> berhasil dimuat! Koordinat: <b>' + p.lat + ', ' + p.lon + '</b>.';
     }
   };
 
@@ -11480,15 +11592,16 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
     if (!navigator.geolocation) {
       if (stBox) {
-        stBox.className = 'text-[11px] p-2 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
-        stBox.textContent = 'Peramban tidak mendukung Geolocation API. Silakan pilih dari preset atau ketik pencarian alamat.';
+        stBox.className = 'text-[11px] p-2.5 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
+        stBox.textContent = 'Peramban tidak mendukung Geolocation API. Silakan pilih dari preset kota atau ketik pencarian nama tempat.';
       }
       return;
     }
     if (stBox) {
-      stBox.className = 'text-[11px] p-2 rounded-lg border text-blue-700 bg-blue-50 border-blue-300 animate-pulse';
-      stBox.textContent = 'Mendeteksi titik koordinat GPS perangkat Anda... Mohon izinkan akses lokasi jika diminta browser.';
+      stBox.className = 'text-[11px] p-2.5 rounded-lg border text-blue-700 bg-blue-50 border-blue-300 animate-pulse';
+      stBox.textContent = 'Mendeteksi titik koordinat satelit GPS perangkat Anda... Mohon izinkan akses lokasi.';
     }
+
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const lat = pos.coords.latitude.toFixed(6);
       const lon = pos.coords.longitude.toFixed(6);
@@ -11497,12 +11610,25 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       setVal('modalGpsLng', lon);
       global.updateModalGmapsPreview();
 
-      if (stBox) {
-        stBox.className = 'text-[11px] p-2 rounded-lg border text-teal-700 bg-teal-50 border-teal-300';
-        stBox.innerHTML = '&#9989; Titik koordinat GPS berhasil terdeteksi: <b>' + lat + ', ' + lon + '</b> (Akurasi: ' + Math.round(pos.coords.accuracy || 10) + 'm). Menyesuaikan nama alamat...';
+      // Step 1: Instant local match against Indonesian coordinate database
+      const match = findClosestIndonesianLocation(lat, lon);
+      if (match && match.location) {
+        const loc = match.location;
+        setVal('modalGpsKota', loc.kota);
+        setVal('modalGpsProv', loc.provinsi);
+        setVal('modalGpsKec', loc.kecamatan);
+        setVal('modalGpsKel', loc.kelurahan);
+        setVal('modalGpsKodePos', loc.kode_pos);
+        setVal('modalGpsAlamat', loc.alamat);
       }
 
-      // Reverse geocode via Nominatim OSM
+      if (stBox) {
+        const cityLabel = match ? (match.location.kota + ', ' + match.location.provinsi) : 'Indonesia';
+        stBox.className = 'text-[11px] p-2.5 rounded-lg border text-teal-700 bg-teal-50 border-teal-300';
+        stBox.innerHTML = '&#9989; Titik GPS berhasil terdeteksi: <b>' + lat + ', ' + lon + '</b> (Akurasi: ' + Math.round(pos.coords.accuracy || 10) + 'm). Wilayah: <b>' + S().esc(cityLabel) + '</b>.';
+      }
+
+      // Step 2: In parallel, attempt online reverse-geocoding to refine street details
       try {
         const controller = new AbortController();
         const t = setTimeout(() => controller.abort(), 3500);
@@ -11521,18 +11647,14 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           if (addr.state) setVal('modalGpsProv', addr.state);
           if (addr.postcode) setVal('modalGpsKodePos', addr.postcode);
           if (stBox) {
-            stBox.innerHTML = '&#9989; Titik GPS <b>' + lat + ', ' + lon + '</b> &amp; nama alamat berhasil disinkronkan!';
+            stBox.innerHTML = '&#9989; Titik GPS <b>' + lat + ', ' + lon + '</b> &amp; nama alamat lengkap berhasil disinkronkan!';
           }
         }
-      } catch (err) {
-        if (stBox) {
-          stBox.innerHTML = '&#9989; Titik GPS <b>' + lat + ', ' + lon + '</b> tersimpan (koneksi geocoding balik offline, Anda dapat mengisi nama jalan secara langsung).';
-        }
-      }
+      } catch (_) {}
     }, (err) => {
       if (stBox) {
-        stBox.className = 'text-[11px] p-2 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
-        stBox.textContent = 'Tidak dapat mengakses GPS (' + (err.message || 'Izin ditolak') + '). Anda tetap dapat memilih preset kota atau memasukkan koordinat manual.';
+        stBox.className = 'text-[11px] p-2.5 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
+        stBox.textContent = 'Akses sensor GPS belum diizinkan (' + (err.message || 'Izin ditolak') + '). Anda tetap dapat memilih preset kota di atas atau mengetik nama tempat.';
       }
     }, { timeout: 8000, enableHighAccuracy: true });
   };
@@ -11544,25 +11666,44 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     if (!q) {
       if (stBox) {
         stBox.classList.remove('hidden');
-        stBox.className = 'text-[11px] p-2 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
+        stBox.className = 'text-[11px] p-2.5 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
         stBox.textContent = 'Ketik nama tempat, jalan, atau kota yang ingin dicari.';
       }
       return;
     }
     if (stBox) {
       stBox.classList.remove('hidden');
-      stBox.className = 'text-[11px] p-2 rounded-lg border text-blue-700 bg-blue-50 border-blue-300 animate-pulse';
+      stBox.className = 'text-[11px] p-2.5 rounded-lg border text-blue-700 bg-blue-50 border-blue-300 animate-pulse';
       stBox.textContent = 'Mencari lokasi: ' + q + '...';
     }
     if (resWrap) {
       resWrap.classList.remove('hidden');
-      resWrap.innerHTML = '<div class="p-2 text-center text-slate-500">Memuat hasil pencarian...</div>';
+      resWrap.innerHTML = '<div class="p-2 text-center text-slate-500">Mencari hasil lokasi...</div>';
     }
 
-    let items = [];
+    // Step 1: Instant search in local preset database
+    const qLow = q.toLowerCase();
+    let localMatches = GPS_PRESETS.filter((p) => {
+      const full = (p.nama + ' ' + p.alamat + ' ' + p.kelurahan + ' ' + p.kecamatan + ' ' + p.kota + ' ' + p.provinsi).toLowerCase();
+      return full.includes(qLow);
+    });
+
+    let items = localMatches.map((it) => ({
+      lat: it.lat,
+      lon: it.lon,
+      nama: it.nama,
+      alamat: it.alamat,
+      kelurahan: it.kelurahan,
+      kecamatan: it.kecamatan,
+      kota: it.kota,
+      provinsi: it.provinsi,
+      kode_pos: it.kode_pos
+    }));
+
+    // Step 2: Attempt online geocoding if online
     try {
       const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 4000);
+      const t = setTimeout(() => controller.abort(), 3500);
       const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&countrycodes=id&addressdetails=1&limit=5', {
         signal: controller.signal,
         headers: { 'Accept-Language': 'id,en' }
@@ -11570,7 +11711,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       clearTimeout(t);
       if (res.ok) {
         const list = await res.json();
-        items = (list || []).map((it) => {
+        const onlineItems = (list || []).map((it) => {
           const a = it.address || {};
           return {
             lat: it.lat,
@@ -11584,31 +11725,26 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             kode_pos: a.postcode || ''
           };
         });
+        items = items.concat(onlineItems);
       }
-    } catch (e) {}
-
-    // Fallback search in local presets
-    if (!items.length) {
-      const qLow = q.toLowerCase();
-      items = GPS_PRESETS.filter((p) => (p.nama + ' ' + p.alamat + ' ' + p.kota + ' ' + p.provinsi).toLowerCase().includes(qLow));
-    }
+    } catch (_) {}
 
     if (!items.length) {
       if (stBox) {
-        stBox.className = 'text-[11px] p-2 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
-        stBox.textContent = 'Lokasi "' + q + '" tidak ditemukan. Silakan gunakan format yang lebih spesifik atau pilih preset di bawah.';
+        stBox.className = 'text-[11px] p-2.5 rounded-lg border text-amber-700 bg-amber-50 border-amber-300';
+        stBox.textContent = 'Lokasi "' + q + '" tidak ditemukan. Silakan gunakan kata kunci kota atau pilih preset wilayah di atas.';
       }
       if (resWrap) resWrap.innerHTML = '<div class="p-2 text-center text-slate-400">Tidak ada hasil cocok.</div>';
       return;
     }
 
     if (stBox) {
-      stBox.className = 'text-[11px] p-2 rounded-lg border text-teal-700 bg-teal-50 border-teal-300';
+      stBox.className = 'text-[11px] p-2.5 rounded-lg border text-teal-700 bg-teal-50 border-teal-300';
       stBox.textContent = 'Ditemukan ' + items.length + ' hasil lokasi. Klik salah satu untuk memilih:';
     }
     if (resWrap) {
-      resWrap.innerHTML = items.map((it, idx) => `
-        <div onclick="window.pickSearchedGpsItem(${idx})" class="p-2 rounded-lg border hover:border-teal-500 hover:bg-teal-50/20 cursor-pointer transition-colors" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+      resWrap.innerHTML = items.slice(0, 6).map((it, idx) => `
+        <div onclick="window.pickSearchedGpsItem(${idx})" class="p-2.5 rounded-lg border hover:border-teal-500 hover:bg-teal-50/20 cursor-pointer transition-colors" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
           <div class="font-bold text-slate-800 dark:text-slate-100 truncate">${S().esc(it.nama || it.alamat)}</div>
           <div class="text-[10px] font-mono-num text-teal-600 dark:text-teal-400 mt-0.5">Titik GPS: ${it.lat}, ${it.lon} &bull; ${S().esc(it.kota || it.provinsi || '-')}</div>
         </div>
@@ -11634,7 +11770,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const stBox = document.getElementById('modalGpsStatusBox');
     if (stBox) {
       stBox.classList.remove('hidden');
-      stBox.className = 'text-[11px] p-2 rounded-lg border text-teal-700 bg-teal-50 border-teal-300';
+      stBox.className = 'text-[11px] p-2.5 rounded-lg border text-teal-700 bg-teal-50 border-teal-300';
       stBox.innerHTML = '&#9989; Lokasi <b>' + S().esc(it.nama || it.alamat) + '</b> terpilih!';
     }
   };
@@ -11650,11 +11786,11 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const prov = val('modalGpsProv');
     const kodePos = val('modalGpsKodePos');
 
+    // 1. Update form inputs in DOM
     const setFormVal = (id, v) => {
       const el = document.getElementById(id);
       if (el && v !== undefined && v !== '') el.value = v;
     };
-
     if (lat) setFormVal('profLat', lat);
     if (lng) setFormVal('profLng', lng);
     if (alamat) setFormVal('profAlamatUsaha', alamat);
@@ -11664,11 +11800,33 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     if (prov) setFormVal('profProvinsi', prov);
     if (kodePos) setFormVal('profKodePos', kodePos);
 
+    // 2. Directly update store profile in persistent storage & AppState
+    if (typeof S === 'function' && S().getStoreProfile && S().setStoreProfile) {
+      const curProf = S().getStoreProfile();
+      const updatedProf = Object.assign({}, curProf, {
+        latitude: lat || curProf.latitude,
+        longitude: lng || curProf.longitude,
+        alamat_usaha: alamat || curProf.alamat_usaha,
+        kelurahan: kel || curProf.kelurahan,
+        kecamatan: kec || curProf.kecamatan,
+        kota: kota || curProf.kota,
+        provinsi: prov || curProf.provinsi,
+        kode_pos: kodePos || curProf.kode_pos
+      });
+      S().setStoreProfile(updatedProf);
+
+      // 3. Background sync to Google Sheet backend if API available
+      if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
+        API().callApi('profil.save', updatedProf, { isWrite: true }).catch(() => {});
+      }
+    }
+
+    // 4. Update UI helpers
     if (typeof global.updateGmapsLinkFromInputs === 'function') global.updateGmapsLinkFromInputs();
     if (typeof global.refreshProfileKopPreview === 'function') global.refreshProfileKopPreview();
 
     ONSStore.closeModal();
-    global.toast('Titik koordinat (' + (lat || '-') + ', ' + (lng || '-') + ') & nama lokasi berhasil diterapkan! Klik \'Simpan Profil Bisnis\' untuk menyimpan permanen.', 'ok');
+    global.toast('Titik koordinat (' + (lat || '-') + ', ' + (lng || '-') + ') & lokasi ' + (kota ? kota + ' ' : '') + 'berhasil diterapkan dan disimpan!', 'ok');
   };
 
 })(window);
