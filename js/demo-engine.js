@@ -183,12 +183,81 @@
         { id_beli: 'BLI-KNS-01', no_sp: 'SP-KNS-01', jenis_sp: 'REGULER', jenis_penerimaan: 'KONSINYASI', no_faktur_pbf: 'FK-KNS-01', tgl_faktur: addDays(-10), tgl_jatuh_tempo: addDays(20), id_pbf: 'CV Herbal Berkah Alami', cabang_id: 'ONS-01', total_bruto: 160000, diskon_pbf: 0, ppn_masukan: 0, netto_hutang: 160000, sisa_hutang: 160000, status_bayar: 'KONSINYASI', status_bar: 'AKTIF', status_konsinyasi: 'AKTIF' },
         { id_beli: 'BLI-RET-01', no_sp: 'SP/0010/ONS/10/2026', jenis_sp: 'REGULER', no_faktur_pbf: 'FK-ENS-4012', tgl_faktur: addDays(-40), tgl_jatuh_tempo: addDays(-10), id_pbf: 'PT Enseval Putera Megatrading', cabang_id: 'ONS-01', total_bruto: 1200000, diskon_pbf: 0, ppn_masukan: 132000, netto_hutang: 1332000, sisa_hutang: 0, status_bayar: 'RETUR', status_bar: 'AKTIF', retur_pbf: { no_retur: 'RET-PBF-01', tgl_retur: addDays(-5), alasan: 'Kemasan rusak saat pengiriman', nilai_retur: 320000, status: 'SELESAI' } }
       ],
-      cold_chain: [
-        { id_log_suhu: 'CC-01', timestamp: addDays(-2) + 'T07:30:00', cabang_id: 'ONS-01', id_kulkas: 'CHILLER-VAKSIN-01', suhu_celcius: 4.6, kelembapan: 54, status_alarm: 'NORMAL', petugas_id: 'apt. Siti Rahma, S.Farm', tindakan_korektif: '-' },
-        { id_log_suhu: 'CC-02', timestamp: addDays(-1) + 'T07:30:00', cabang_id: 'ONS-01', id_kulkas: 'CHILLER-VAKSIN-01', suhu_celcius: 5.1, kelembapan: 56, status_alarm: 'NORMAL', petugas_id: 'apt. Siti Rahma, S.Farm', tindakan_korektif: '-' },
-        { id_log_suhu: 'CC-03', timestamp: addDays(-1) + 'T16:15:00', cabang_id: 'ONS-01', id_kulkas: 'CHILLER-VAKSIN-01', suhu_celcius: 4.8, kelembapan: 52, status_alarm: 'NORMAL', petugas_id: 'Budi Santoso', tindakan_korektif: '-' },
-        { id_log_suhu: 'CC-04', timestamp: new Date(Date.now() - 3600000).toISOString(), cabang_id: 'ONS-01', id_kulkas: 'CHILLER-VAKSIN-01', suhu_celcius: 4.9, kelembapan: 53, status_alarm: 'NORMAL', petugas_id: 'apt. Siti Rahma, S.Farm', tindakan_korektif: '-' }
-      ],
+      cold_chain: (() => {
+        const logs = [];
+        const petugasList = ['apt. Siti Rahma, S.Farm', 'Budi Santoso', 'apt. Anissa Faradifa R. Is Rumi'];
+        // Generate pemantauan 14 hari terakhir untuk Kulkas & Ruangan
+        for (let i = 13; i >= 0; i--) {
+          const dStr = addDays(-i);
+          // 1. Kulkas Cold-Chain (2.0 - 8.0°C)
+          // Pagi 08:00
+          const kSuhuPagi = Number((4.1 + (i % 5) * 0.25 + (i % 2 === 0 ? 0.2 : -0.1)).toFixed(1));
+          logs.push({
+            id_log_suhu: 'CC-KUL-' + (100 + (13 - i) * 2 + 1),
+            timestamp: dStr + 'T08:00:00',
+            cabang_id: 'ONS-01',
+            kategori: 'KULKAS',
+            id_kulkas: 'CHILLER-VAKSIN-01',
+            suhu_celcius: kSuhuPagi,
+            kelembapan: 50 + (i % 6),
+            waktu_shift: 'PAGI',
+            status_alarm: 'NORMAL',
+            petugas_id: petugasList[0],
+            tindakan_korektif: '-'
+          });
+
+          // Sore 16:30 (simulasikan 1 fluktuasi pada 4 hari lalu)
+          const isAlarm = (i === 4);
+          const kSuhuSore = isAlarm ? 8.4 : Number((4.6 + (i % 4) * 0.28).toFixed(1));
+          logs.push({
+            id_log_suhu: 'CC-KUL-' + (100 + (13 - i) * 2 + 2),
+            timestamp: dStr + 'T16:30:00',
+            cabang_id: 'ONS-01',
+            kategori: 'KULKAS',
+            id_kulkas: 'CHILLER-VAKSIN-01',
+            suhu_celcius: kSuhuSore,
+            kelembapan: 52 + (i % 5),
+            waktu_shift: 'SORE',
+            status_alarm: isAlarm ? 'ALARM_KELUAR_RENTANG' : 'NORMAL',
+            petugas_id: petugasList[1],
+            tindakan_korektif: isAlarm ? 'Pintu chiller ditutup rapat & cek segel karet, suhu kembali normal 4.8°C dalam 30 menit' : '-'
+          });
+
+          // 2. Ruangan Apotek & Gudang Farmasi (15.0 - 25.0°C, RH <= 70%)
+          // Pagi 08:05
+          const rSuhuPagi = Number((21.4 + (i % 4) * 0.35 + (i % 3 === 0 ? 0.3 : -0.2)).toFixed(1));
+          logs.push({
+            id_log_suhu: 'CC-RNG-' + (200 + (13 - i) * 2 + 1),
+            timestamp: dStr + 'T08:05:00',
+            cabang_id: 'ONS-01',
+            kategori: 'RUANGAN',
+            id_kulkas: 'RUANG-APOTEK-01',
+            suhu_celcius: rSuhuPagi,
+            kelembapan: 58 + (i % 6),
+            waktu_shift: 'PAGI',
+            status_alarm: 'NORMAL',
+            petugas_id: petugasList[0],
+            tindakan_korektif: '-'
+          });
+
+          // Sore 16:35
+          const rSuhuSore = Number((23.2 + (i % 5) * 0.30).toFixed(1));
+          logs.push({
+            id_log_suhu: 'CC-RNG-' + (200 + (13 - i) * 2 + 2),
+            timestamp: dStr + 'T16:35:00',
+            cabang_id: 'ONS-01',
+            kategori: 'RUANGAN',
+            id_kulkas: 'RUANG-APOTEK-01',
+            suhu_celcius: rSuhuSore,
+            kelembapan: 62 + (i % 5),
+            waktu_shift: 'SORE',
+            status_alarm: 'NORMAL',
+            petugas_id: petugasList[1],
+            tindakan_korektif: '-'
+          });
+        }
+        return logs;
+      })(),
       rekam_klinis: [
         { id_klinis: 'KLN-8801', tanggal: isoToday + 'T09:15:00', cabang_id: 'ONS-01', pasien_id: 'MBR-001', nama_pasien: 'Tn. Bambang Suryono', no_wa_pasien: '6281234567801', dokter_asal: 'dr. Andi Pratama, Sp.JP', no_sip_dokter: '446/109/SIP-DOK/2024', alergi_pasien: 'Penisilin', layanan_jenis: 'SKRINING_RESEP', cdss_warning: 'Kontraindikasi Amoxicillin + Alergi Penisilin terdeteksi & telah diganti Cefadroxil/Azithromycin.', apj_pin_verified_by: 'apt. Siti Rahma, S.Farm', soap_notes: 'S: Kontrol TD rutin. O: TD 136/86 mmHg. A: Hipertensi terkontrol. P: Lanjut Amlodipine 10mg 1x1 malam, edukasi diet rendah garam.', status_klinis: 'TERVERIFIKASI_APJ' },
         { id_klinis: 'KLN-8802', tanggal: isoToday + 'T11:30:00', cabang_id: 'ONS-01', pasien_id: 'MBR-002', nama_pasien: 'Ny. Hj. Aminah Kusuma', no_wa_pasien: '6281234567802', dokter_asal: 'dr. Rina Wijaya, Sp.PD-KEMD', no_sip_dokter: '446/218/SIP-DOK/2025', alergi_pasien: 'Sulfa', layanan_jenis: 'ERX_DOKTER', cdss_warning: 'Resep Cold Chain Insulin Glargine — Cek Suhu Chiller 2-8C.', apj_pin_verified_by: '', soap_notes: 'R/ Lantus SoloStar Pen No. I (S 0-0-14 IU s.c.)\nR/ Paracetamol 500mg Tab No. X (S 3 dd 1 prn demam)', status_klinis: 'ANTRIAN_VALIDASI_APJ' }
@@ -1347,16 +1416,32 @@
 
     if (action === 'coldchain.log') {
       const suhu = Number(d.suhu_celcius);
+      const hum = Number(d.kelembapan || 55);
+      const rawKat = (d.kategori || '').toUpperCase();
+      const kategori = rawKat || (String(d.id_kulkas || '').toUpperCase().includes('RUANG') || String(d.id_kulkas || '').toUpperCase().includes('GUDANG') ? 'RUANGAN' : 'KULKAS');
+      const shift = (d.waktu_shift || '').toUpperCase() || (new Date().getHours() < 12 ? 'PAGI' : (new Date().getHours() < 16 ? 'SIANG' : 'SORE'));
+
+      let statusAlarm = 'NORMAL';
+      if (kategori === 'KULKAS') {
+        if (suhu < 2.0 || suhu > 8.0) statusAlarm = 'ALARM_KELUAR_RENTANG';
+      } else {
+        if (suhu > 30.0 || hum > 75) statusAlarm = 'ALARM_KELUAR_RENTANG';
+        else if (suhu > 25.0 || hum > 70) statusAlarm = 'PERINGATAN';
+      }
+
+      const defaultUnit = kategori === 'RUANGAN' ? 'RUANG-APOTEK-01' : 'CHILLER-VAKSIN-01';
       const entry = {
-        id_log_suhu: 'CC-' + Date.now(),
-        timestamp: nowIso,
-        cabang_id: 'ONS-01',
-        id_kulkas: d.id_kulkas || 'CHILLER-VAKSIN-01',
+        id_log_suhu: 'CC-' + (kategori === 'RUANGAN' ? 'RNG-' : 'KUL-') + Date.now(),
+        timestamp: d.timestamp || nowIso,
+        cabang_id: d.cabang_id || 'ONS-01',
+        kategori: kategori,
+        id_kulkas: d.id_kulkas || defaultUnit,
         suhu_celcius: suhu,
-        kelembapan: Number(d.kelembapan || 54),
-        status_alarm: (suhu >= 2 && suhu <= 8) ? 'NORMAL' : 'ALARM_KELUAR_RENTANG',
-        petugas_id: userNama,
-        tindakan_korektif: d.tindakan_korektif || ((suhu >= 2 && suhu <= 8) ? '-' : 'Pengecekan termostat segera')
+        kelembapan: hum,
+        waktu_shift: shift,
+        status_alarm: statusAlarm,
+        petugas_id: d.petugas_id || userNama,
+        tindakan_korektif: d.tindakan_korektif || (statusAlarm === 'NORMAL' ? '-' : (kategori === 'KULKAS' ? 'Pintu chiller ditutup rapat & periksa termostat kompresor' : 'Nyalakan pendingin AC ruangan & periksa sirkulasi'))
       };
       db.cold_chain.push(entry);
       saveDb(db);

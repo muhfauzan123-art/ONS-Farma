@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.1.0"/>
+  <meta name="application-version" content="v18.1.1"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.1.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.1.1"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.1.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.1.1"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" style="display:none!important;" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.1.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.1.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.1.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.1.1"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.1.1"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.1.1"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.1.0"></script>
-  <script src="./js/struk-engine.js?v=18.1.0"></script>
-  <script src="./js/demo-engine.js?v=18.1.0"></script>
-  <script src="./js/api-turbo.js?v=18.1.0"></script>
-  <script src="./js/store.js?v=18.1.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.1.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.1.0"></script>
+  <script src="./js/config.js?v=18.1.1"></script>
+  <script src="./js/struk-engine.js?v=18.1.1"></script>
+  <script src="./js/demo-engine.js?v=18.1.1"></script>
+  <script src="./js/api-turbo.js?v=18.1.1"></script>
+  <script src="./js/store.js?v=18.1.1"></script>
+  <script src="./js/invoice-scanner.js?v=18.1.1"></script>
+  <script src="./js/barcode-scanner.js?v=18.1.1"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.1.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.1.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.1.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.1.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.1.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.1.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.1.1"></script>
+  <script src="./js/views-procurement-pro.js?v=18.1.1"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.1.1"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.1.1"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.1.1"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.1.1"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -150,15 +150,15 @@
             },
             {
               viewId: 'gudang', label: 'Persediaan & Stok', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
-              desc: 'Stok kadaluarsa FEFO, stok opname, penyesuaian stok, perpindahan stok, kartu stok BPOM & monitor suhu 2–8°C.',
-              kw: 'persediaan gudang stok kadaluarsa batch fefo batas retur stok opname penyesuaian stok perpindahan stok kartu stok monitor suhu cold chain chiller',
+              desc: 'Stok kadaluarsa FEFO, stok opname, penyesuaian stok, perpindahan stok, kartu stok BPOM & monitor suhu (ruang & kulkas).',
+              kw: 'persediaan gudang stok kadaluarsa batch fefo batas retur stok opname penyesuaian stok perpindahan stok kartu stok monitor suhu ruangan kulkas cold chain chiller',
               tabs: [
                 { subTab: 'batch', label: 'Stok Kadaluarsa', kw: 'stok kadaluarsa batch fefo batas retur karantina recall' },
                 { subTab: 'opname', label: 'Stok Opname', kw: 'stok opname cycle count riwayat opname selisih fisik', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'penyesuaian', label: 'Penyesuaian Stok', kw: 'penyesuaian stok selisih opname rusak expired rekap nilai', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'transfer', label: 'Perpindahan Stok', kw: 'perpindahan stok mutasi rak gudang antar cabang draft import', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'alur obat masuk keluar kartu stok mutasi bpom xlsx' },
-                { subTab: 'coldchain', label: 'Monitor Suhu (2–8°C)', kw: 'monitor suhu cold chain chiller kulkas vaksin insulin cdob' }
+                { subTab: 'coldchain', label: 'Monitor Suhu (Ruang & Kulkas)', kw: 'monitor suhu ruangan kulkas chiller cold chain vaksin insulin kelembapan rh grafik laporan a4 cdob' }
               ]
             }
           ]
@@ -1199,7 +1199,7 @@
           { show: seeCost && ONSStore.canAccessView('obat'), title: 'Tambah Produk Obat', sub: 'Buka Studio Wizard 5 Langkah', kbd: '+OBT', tone: 'bg-amber-500/10 text-amber-600', icon: 'pill', run: () => { ONSStore.closeModal(); navigateView('obat', 'obat'); setTimeout(() => window.openObatWizardModal && window.openObatWizardModal(), 40); } },
           { show: seeCost && ONSStore.canAccessView('defecta'), title: 'Surat Pesanan & Faktur', sub: 'Buat SP A4 atau Scan Faktur PBF', kbd: 'PBF', tone: 'bg-blue-500/10 text-blue-600', icon: 'truck', run: () => { ONSStore.closeModal(); navigateView('defecta', 'sp'); } },
           { show: ONSStore.canAccessView('gudang'), title: 'Cek Batch & Kadaluarsa', sub: 'Pantau FEFO & kartu stok gudang', kbd: 'FEFO', tone: 'bg-red-500/10 text-red-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'batch'); } },
-          { show: ONSStore.canAccessView('gudang'), title: 'Monitor Suhu (2–8°C)', sub: 'Catat & pantau suhu chiller/kulkas CDOB', kbd: '2-8°C', tone: 'bg-sky-500/10 text-sky-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'coldchain'); } },
+          { show: ONSStore.canAccessView('gudang'), title: 'Monitor Suhu (Ruang & Kulkas)', sub: 'Catat & pantau suhu ruangan serta kulkas/chiller CDOB', kbd: 'Suhu', tone: 'bg-sky-500/10 text-sky-600', icon: 'inventory', run: () => { ONSStore.closeModal(); navigateView('gudang', 'coldchain'); } },
           { show: ONSStore.canAccessView('settings'), title: 'Sistem Audit, APJ & Kasir', sub: 'Edit identitas APJ/Kasir & hak akses', kbd: 'RBAC', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'settings', run: () => { ONSStore.closeModal(); navigateView('settings', 'audit'); } }
         ].filter((q) => q.show);
 

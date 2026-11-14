@@ -5778,99 +5778,12 @@
             ${canAdj ? `<button onclick="window.setGudangTab('penyesuaian')" class="ons-tab-btn ${gudangTab === 'penyesuaian' ? 'active' : ''}">Penyesuaian Stok</button>` : ''}
             ${canTrf ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Perpindahan Stok</button>` : ''}
             <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok Digital (${(st.mutasiStok || []).length})</button>
-            <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu (2&ndash;8&deg;C) (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
+            <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu (Ruang &amp; Kulkas) (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
           </div>
         </div>
       </div>
 
-      ${gudangTab === 'coldchain' ? (() => {
-        const coldItems = (st.masterObat || []).filter((o) => /2\s*[-–]\s*8|cold|chiller|kulkas/i.test(`${o.suhu_simpan || ''} ${o.rak_lokasi || ''}`));
-        const alarmCount = coldLogs.filter((c) => String(c.status_alarm || 'NORMAL') !== 'NORMAL').length;
-        const unitPresets = Array.from(new Set(['CHILLER-VAKSIN-01', 'CHILLER-INSULIN-01', 'KULKAS-UMUM-01'].concat(coldLogs.map((c) => c.id_kulkas).filter(Boolean))));
-        return `<div class="space-y-4">
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Suhu Kulkas Terakhir</div><div class="text-xl font-extrabold font-mono-num ${latestCold ? (hasColdAlarm ? 'text-red-600' : 'text-emerald-600') : 'text-amber-600'}">${latestCold ? (Number(latestCold.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Status Rentang CDOB (2&ndash;8&deg;C)</div><div class="text-sm font-extrabold mt-1">${latestCold ? `<span class="badge-bpom ${hasColdAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(latestCold.status_alarm || 'NORMAL')}</span>` : '<span class="badge-bpom bpom-prekursor">MENUNGGU CATATAN</span>'}</div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Kelembapan &amp; Total Log</div><div class="text-lg font-bold font-mono-num">${latestCold ? (Number(latestCold.kelembapan || 55) + '%') : '-'} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">(${coldLogs.length} log${alarmCount ? `, ${alarmCount} alarm` : ''})</span></div></div>
-            <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Item Obat Cold-Chain</div><div class="text-xl font-extrabold font-mono-num text-blue-600">${coldItems.length} Produk</div></div>
-          </div>
-
-          <div class="ons-card p-4 space-y-3 text-xs">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 class="font-bold text-sm">Catat Monitoring Suhu Chiller / Kulkas (Standar CDOB 2&ndash;8&deg;C)</h3>
-                <p style="color:var(--ons-text-soft)">Pencatatan otomatis mengecek rentang aman 2.0&deg;C &ndash; 8.0&deg;C dan menandai alarm bila suhu keluar batas.</p>
-              </div>
-              <button type="button" onclick="window.printColdChainLogCdob()" class="ons-btn ons-btn-ghost text-xs">Cetak Kartu Log Suhu (A4)</button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
-              <div class="lg:col-span-3">
-                <label class="font-semibold block mb-1">ID Kulkas / Chiller *</label>
-                <input id="ccKulkasInp" list="ccKulkasPresets" class="ons-input font-mono-num" value="${S().esc((latestCold && latestCold.id_kulkas) || 'CHILLER-VAKSIN-01')}"/>
-                <datalist id="ccKulkasPresets">${unitPresets.map((u) => `<option value="${S().esc(u)}"></option>`).join('')}</datalist>
-              </div>
-              <div class="lg:col-span-2">
-                <label class="font-semibold block mb-1">Suhu Terukur (&deg;C) *</label>
-                <input id="ccSuhuInp" type="number" step="0.1" value="${latestCold ? Number(latestCold.suhu_celcius || 4.8).toFixed(1) : '4.8'}" class="ons-input font-mono-num font-bold"/>
-              </div>
-              <div class="lg:col-span-2">
-                <label class="font-semibold block mb-1">Kelembapan (%)</label>
-                <input id="ccHumInp" type="number" min="0" max="100" step="1" value="${latestCold ? Number(latestCold.kelembapan || 55) : '55'}" class="ons-input font-mono-num"/>
-              </div>
-              <div class="lg:col-span-3">
-                <label class="font-semibold block mb-1">Tindakan Korektif / Catatan</label>
-                <input id="ccTindakanInp" class="ons-input" placeholder="Opsional (cth. Cek segel pintu &amp; kompresor)"/>
-              </div>
-              <div class="lg:col-span-2">
-                <button type="button" onclick="window.submitColdChainLog()" class="ons-btn ons-btn-primary w-full font-bold">+ Simpan Log Suhu</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div class="ons-card p-4 lg:col-span-8 space-y-3">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="font-bold text-sm">Riwayat Pencatatan Suhu Cold-Chain (${coldLogs.length})</h3>
-                <span class="text-[11px]" style="color:var(--ons-text-soft)">Rentang aman: <b>2.0&deg;C &ndash; 8.0&deg;C</b></span>
-              </div>
-              <div class="ons-table-wrap">
-                <table class="ons-table">
-                  <thead><tr><th>Waktu Catat</th><th>Unit Kulkas</th><th class="text-right">Suhu (&deg;C)</th><th class="text-right">RH %</th><th>Status</th><th>Petugas</th><th>Catatan / Korektif</th></tr></thead>
-                  <tbody>
-                    ${coldLogs.length ? coldLogs.slice(0, 60).map((c) => {
-                      const isAlarm = String(c.status_alarm || 'NORMAL') !== 'NORMAL';
-                      return `<tr>
-                        <td class="font-mono-num text-xs">${S().formatTgl(c.timestamp, true)}</td>
-                        <td class="font-mono-num text-xs font-semibold">${S().esc(c.id_kulkas || 'CHILLER-VAKSIN-01')}</td>
-                        <td class="text-right font-mono-num font-extrabold ${isAlarm ? 'text-red-600' : 'text-emerald-600'}">${Number(c.suhu_celcius || 0).toFixed(1)}&deg;C</td>
-                        <td class="text-right font-mono-num text-xs">${Number(c.kelembapan || 55)}%</td>
-                        <td><span class="badge-bpom ${isAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(c.status_alarm || 'NORMAL')}</span></td>
-                        <td class="text-xs">${S().esc(c.petugas_id || '-')}</td>
-                        <td class="text-xs">${S().esc(c.tindakan_korektif || '-')}</td>
-                      </tr>`;
-                    }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Belum ada log suhu kulkas/chiller tercatat. Gunakan form di atas untuk mencatat suhu hari ini.</td></tr>'}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="ons-card p-4 lg:col-span-4 space-y-3">
-              <h3 class="font-bold text-sm">Obat Penyimpanan 2&ndash;8&deg;C (${coldItems.length})</h3>
-              <div class="ons-table-wrap">
-                <table class="ons-table">
-                  <thead><tr><th>Nama Obat</th><th class="text-right">Stok</th></tr></thead>
-                  <tbody>
-                    ${coldItems.length ? coldItems.map((o) => `<tr>
-                      <td class="text-xs"><div class="font-bold">${S().esc(o.nama_dagang)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(o.rak_lokasi || 'CHILLER')} &bull; ${S().esc(o.suhu_simpan || '2-8°C')}</div></td>
-                      <td class="text-right font-mono-num font-bold text-xs">${S().getSellableStok(o.id_obat)} ${S().esc(o.satuan_dasar || '')}</td>
-                    </tr>`).join('') : '<tr><td colspan="2" class="text-center py-5 text-xs">Belum ada produk bertanda Chiller 2&ndash;8&deg;C di Master Obat.</td></tr>'}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>`;
-      })() : (gudangTab === 'transfer' && canTrf ? _renderGudangTransferTab(st, seeCost)
+      ${gudangTab === 'coldchain' ? _renderSuhuMonitoringSuite(st, coldLogs) : (gudangTab === 'transfer' && canTrf ? _renderGudangTransferTab(st, seeCost)
       : (gudangTab === 'penyesuaian' && canAdj ? _renderGudangPenyesuaianTab(st, seeCost)
       : (gudangTab === 'opname' && canOpname ? _renderGudangOpnameTab(st, activeForOpname, rakList, opnameCounted, opnameSelisihUnit, opnameSelisihRp)
       : (gudangTab === 'kartu-stok' ? `
@@ -5929,70 +5842,867 @@
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
 
-  global.submitColdChainLog = async () => {
+
+  let suhuActiveKategori = 'kulkas'; // 'kulkas' | 'ruangan' | 'grafik'
+  let suhuSelectedMonth = '2026-11';
+  let suhuUnitFilter = '';
+
+  global.setSuhuKategoriTab = (kat) => {
+    suhuActiveKategori = kat || 'kulkas';
+    if (typeof global.renderActiveView === 'function') global.renderActiveView();
+  };
+
+  global.setSuhuSelectedMonth = (m) => {
+    suhuSelectedMonth = m || '2026-11';
+    if (typeof global.renderActiveView === 'function') global.renderActiveView();
+  };
+
+  global.setSuhuUnitFilter = (u) => {
+    suhuUnitFilter = u || '';
+    if (typeof global.renderActiveView === 'function') global.renderActiveView();
+  };
+
+  function _isKulkasLog(log) {
+    if (!log) return true;
+    const k = String(log.kategori || '').toUpperCase();
+    if (k === 'KULKAS') return true;
+    if (k === 'RUANGAN') return false;
+    const id = String(log.id_kulkas || '').toUpperCase();
+    return !id.includes('RUANG') && !id.includes('GUDANG');
+  }
+
+  function _renderTemperatureSvgChart(logs, category, options) {
+    const isKulkas = category === 'kulkas';
+    const opt = options || {};
+    const width = opt.width || 840;
+    const height = opt.height || 240;
+    const padL = 50;
+    const padR = 30;
+    const padT = 25;
+    const padB = 35;
+    const plotW = width - padL - padR;
+    const plotH = height - padT - padB;
+
+    const yMin = isKulkas ? 0 : 10;
+    const yMax = isKulkas ? 12 : 35;
+    const yRange = yMax - yMin;
+
+    const getY = (val) => padT + Math.max(0, Math.min(plotH, ((yMax - Number(val || 0)) / yRange) * plotH));
+
+    // Safe zone band & threshold lines
+    let safeBandHtml = '';
+    let linesHtml = '';
+    if (isKulkas) {
+      const y8 = getY(8);
+      const y2 = getY(2);
+      safeBandHtml = `<rect x="${padL}" y="${y8.toFixed(1)}" width="${plotW}" height="${(y2 - y8).toFixed(1)}" fill="rgba(16,185,129,0.14)" stroke="rgba(16,185,129,0.3)" stroke-dasharray="3,3" rx="3"/>`;
+      linesHtml += `<line x1="${padL}" y1="${y8.toFixed(1)}" x2="${padL + plotW}" y2="${y8.toFixed(1)}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+      linesHtml += `<text x="${padL + plotW - 6}" y="${(y8 - 4).toFixed(1)}" fill="#ef4444" font-size="10" font-weight="bold" text-anchor="end">Batas Atas CDOB 8.0°C</text>`;
+      linesHtml += `<line x1="${padL}" y1="${y2.toFixed(1)}" x2="${padL + plotW}" y2="${y2.toFixed(1)}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+      linesHtml += `<text x="${padL + plotW - 6}" y="${(y2 + 12).toFixed(1)}" fill="#3b82f6" font-size="10" font-weight="bold" text-anchor="end">Batas Bawah CDOB 2.0°C</text>`;
+    } else {
+      const y30 = getY(30);
+      const y25 = getY(25);
+      const y15 = getY(15);
+      safeBandHtml = `<rect x="${padL}" y="${y25.toFixed(1)}" width="${plotW}" height="${(y15 - y25).toFixed(1)}" fill="rgba(16,185,129,0.14)" stroke="rgba(16,185,129,0.3)" stroke-dasharray="3,3" rx="3"/>`;
+      safeBandHtml += `<rect x="${padL}" y="${y30.toFixed(1)}" width="${plotW}" height="${(y25 - y30).toFixed(1)}" fill="rgba(245,158,11,0.06)"/>`;
+      linesHtml += `<line x1="${padL}" y1="${y30.toFixed(1)}" x2="${padL + plotW}" y2="${y30.toFixed(1)}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+      linesHtml += `<text x="${padL + plotW - 6}" y="${(y30 - 4).toFixed(1)}" fill="#ef4444" font-size="10" font-weight="bold" text-anchor="end">Batas Maks Kamar 30.0°C</text>`;
+      linesHtml += `<line x1="${padL}" y1="${y25.toFixed(1)}" x2="${padL + plotW}" y2="${y25.toFixed(1)}" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+      linesHtml += `<text x="${padL + plotW - 6}" y="${(y25 - 4).toFixed(1)}" fill="#10b981" font-size="10" font-weight="bold" text-anchor="end">Standar Sejuk 25.0°C</text>`;
+      linesHtml += `<line x1="${padL}" y1="${y15.toFixed(1)}" x2="${padL + plotW}" y2="${y15.toFixed(1)}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+      linesHtml += `<text x="${padL + plotW - 6}" y="${(y15 + 12).toFixed(1)}" fill="#3b82f6" font-size="10" font-weight="bold" text-anchor="end">Batas Bawah 15.0°C</text>`;
+    }
+
+    // Horizontal grid lines
+    let gridHtml = '';
+    const ySteps = isKulkas ? [0, 2, 4, 6, 8, 10, 12] : [10, 15, 20, 25, 30, 35];
+    ySteps.forEach((val) => {
+      const y = getY(val);
+      gridHtml += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + plotW}" y2="${y.toFixed(1)}" stroke="currentColor" stroke-opacity="0.08" stroke-width="1"/>`;
+      gridHtml += `<text x="${padL - 8}" y="${(y + 3.5).toFixed(1)}" fill="currentColor" opacity="0.6" font-size="10" text-anchor="end">${val}°C</text>`;
+    });
+
+    // Map log points
+    const points = [];
+    (logs || []).forEach((log) => {
+      const d = new Date(log.timestamp);
+      if (Number.isNaN(d.getTime())) return;
+      const day = d.getDate();
+      const shift = String(log.waktu_shift || (d.getHours() < 12 ? 'PAGI' : (d.getHours() < 16 ? 'SIANG' : 'SORE'))).toUpperCase();
+      const xBase = padL + ((Math.max(1, Math.min(31, day)) - 1) / 30) * plotW;
+      const x = shift === 'PAGI' ? xBase - 2.5 : (shift === 'SORE' ? xBase + 2.5 : xBase);
+      const y = getY(Number(log.suhu_celcius || 0));
+      const isAlarm = isKulkas
+        ? (Number(log.suhu_celcius || 0) < 2 || Number(log.suhu_celcius || 0) > 8)
+        : (Number(log.suhu_celcius || 0) > 30 || Number(log.suhu_celcius || 0) < 15);
+      points.push({ x, y, log, day, shift, isAlarm });
+    });
+
+    points.sort((a, b) => new Date(a.log.timestamp) - new Date(b.log.timestamp));
+
+    let pathD = '';
+    points.forEach((p, idx) => {
+      pathD += (idx === 0 ? 'M ' : ' L ') + p.x.toFixed(1) + ' ' + p.y.toFixed(1);
+    });
+    const strokeColor = isKulkas ? '#2563eb' : '#059669';
+    const pathHtml = pathD ? `<path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` : '';
+
+    let dotsHtml = '';
+    points.forEach((p) => {
+      const color = p.isAlarm ? '#ef4444' : (p.shift === 'PAGI' ? '#3b82f6' : '#10b981');
+      if (p.isAlarm) {
+        dotsHtml += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="7.5" fill="none" stroke="#ef4444" stroke-width="2" opacity="0.6"><animate attributeName="r" values="6;9;6" dur="2s" repeatCount="indefinite"/></circle>`;
+      }
+      dotsHtml += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.2" fill="${color}" stroke="#ffffff" stroke-width="1.5" class="cursor-pointer transition-transform hover:scale-125">
+        <title>Tgl ${p.day} [${p.shift}]: ${Number(p.log.suhu_celcius || 0).toFixed(1)}°C | RH ${Number(p.log.kelembapan || 55)}% | Petugas: ${S().esc(p.log.petugas_id || '-')}</title>
+      </circle>`;
+    });
+
+    // Day labels on X axis
+    let xLabelsHtml = '';
+    for (let day = 1; day <= 31; day += 2) {
+      const x = padL + ((day - 1) / 30) * plotW;
+      xLabelsHtml += `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${padT + plotH}" stroke="currentColor" stroke-opacity="0.04" stroke-width="1" stroke-dasharray="2,2"/>`;
+      xLabelsHtml += `<text x="${x.toFixed(1)}" y="${(height - padB + 16).toFixed(1)}" fill="currentColor" opacity="0.6" font-size="9.5" text-anchor="middle">H-${day}</text>`;
+    }
+
+    return `<svg viewBox="0 0 ${width} ${height}" class="w-full h-auto select-none" style="overflow:visible">
+      ${safeBandHtml}
+      ${gridHtml}
+      ${linesHtml}
+      ${xLabelsHtml}
+      ${pathHtml}
+      ${dotsHtml}
+    </svg>`;
+  }
+
+  function _renderSuhuMonitoringSuite(st, coldLogs) {
+    const allLogs = (st.coldChain || []).slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+    const kulkasLogs = allLogs.filter(_isKulkasLog);
+    const ruanganLogs = allLogs.filter((l) => !_isKulkasLog(l));
+
+    // Determine current month or list of available months
+    const monthSet = new Set(['2026-11', '2026-10']);
+    allLogs.forEach((l) => {
+      if (l.timestamp && l.timestamp.length >= 7) monthSet.add(l.timestamp.slice(0, 7));
+    });
+    const months = Array.from(monthSet).sort().reverse();
+    if (!suhuSelectedMonth || !monthSet.has(suhuSelectedMonth)) {
+      suhuSelectedMonth = months[0] || '2026-11';
+    }
+
+    // Filter logs by month and unit
+    const filterByMonthAndUnit = (list) => {
+      return list.filter((l) => {
+        if (suhuSelectedMonth && l.timestamp && !l.timestamp.startsWith(suhuSelectedMonth)) return false;
+        if (suhuUnitFilter && l.id_kulkas !== suhuUnitFilter) return false;
+        return true;
+      });
+    };
+
+    const activeLogs = suhuActiveKategori === 'ruangan'
+      ? filterByMonthAndUnit(ruanganLogs)
+      : (suhuActiveKategori === 'grafik' ? filterByMonthAndUnit(allLogs) : filterByMonthAndUnit(kulkasLogs));
+
+    const latestKulkas = kulkasLogs[0] || null;
+    const latestRuangan = ruanganLogs[0] || null;
+
+    // Presets for unit input
+    const kulkasUnits = Array.from(new Set(['CHILLER-VAKSIN-01', 'CHILLER-INSULIN-01', 'KULKAS-SUPPO-01'].concat(kulkasLogs.map((l) => l.id_kulkas).filter(Boolean))));
+    const ruanganUnits = Array.from(new Set(['RUANG-APOTEK-01', 'GUDANG-OBAT-01', 'AREA-RACIKAN-LAB'].concat(ruanganLogs.map((l) => l.id_kulkas).filter(Boolean))));
+    const currentUnits = suhuActiveKategori === 'ruangan' ? ruanganUnits : kulkasUnits;
+
+    // Cold-chain drug products
+    const coldItems = (st.masterObat || []).filter((o) => /2\s*[-–]\s*8|cold|chiller|kulkas|insulin|vaksin/i.test(`${o.suhu_simpan || ''} ${o.rak_lokasi || ''} ${o.nama_dagang || ''}`));
+
+    // Compute stats for Kulkas
+    const kulkasMonthLogs = filterByMonthAndUnit(kulkasLogs);
+    const kTemps = kulkasMonthLogs.map((l) => Number(l.suhu_celcius || 0)).filter((n) => !Number.isNaN(n));
+    const minKulkas = kTemps.length ? Math.min(...kTemps).toFixed(1) : '-';
+    const maxKulkas = kTemps.length ? Math.max(...kTemps).toFixed(1) : '-';
+    const avgKulkas = kTemps.length ? (kTemps.reduce((a, b) => a + b, 0) / kTemps.length).toFixed(1) : '-';
+    const kCompliant = kulkasMonthLogs.filter((l) => Number(l.suhu_celcius || 0) >= 2 && Number(l.suhu_celcius || 0) <= 8).length;
+    const complianceKulkasPct = kulkasMonthLogs.length ? ((kCompliant / kulkasMonthLogs.length) * 100).toFixed(1) : '100.0';
+
+    // Compute stats for Ruangan
+    const ruanganMonthLogs = filterByMonthAndUnit(ruanganLogs);
+    const rTemps = ruanganMonthLogs.map((l) => Number(l.suhu_celcius || 0)).filter((n) => !Number.isNaN(n));
+    const minRuangan = rTemps.length ? Math.min(...rTemps).toFixed(1) : '-';
+    const maxRuangan = rTemps.length ? Math.max(...rTemps).toFixed(1) : '-';
+    const avgRuangan = rTemps.length ? (rTemps.reduce((a, b) => a + b, 0) / rTemps.length).toFixed(1) : '-';
+    const rCompliant = ruanganMonthLogs.filter((l) => Number(l.suhu_celcius || 0) >= 15 && Number(l.suhu_celcius || 0) <= 25 && Number(l.kelembapan || 55) <= 70).length;
+    const complianceRuanganPct = ruanganMonthLogs.length ? ((rCompliant / ruanganMonthLogs.length) * 100).toFixed(1) : '100.0';
+
+    // Has alarm check
+    const hasKulkasAlarm = latestKulkas && (Number(latestKulkas.suhu_celcius || 0) < 2 || Number(latestKulkas.suhu_celcius || 0) > 8);
+    const hasRuanganAlarm = latestRuangan && (Number(latestRuangan.suhu_celcius || 0) > 30 || Number(latestRuangan.suhu_celcius || 0) < 15);
+
+    return `<div class="space-y-4 ons-view-enter">
+      <!-- Sub-Tab Navigation Bar & Filter Bulan -->
+      <div class="ons-card p-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="window.setSuhuKategoriTab('kulkas')" class="ons-btn ${suhuActiveKategori === 'kulkas' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs font-bold py-1.5 px-3">
+            🧊 Suhu Kulkas (2&ndash;8&deg;C) <span class="ml-1 opacity-80 font-normal">(${kulkasLogs.length})</span>
+            ${hasKulkasAlarm ? '<span class="ml-1 text-red-300 font-black animate-pulse">&#9888;</span>' : ''}
+          </button>
+          <button onclick="window.setSuhuKategoriTab('ruangan')" class="ons-btn ${suhuActiveKategori === 'ruangan' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs font-bold py-1.5 px-3">
+            🌡️ Suhu Ruangan (15&ndash;25&deg;C) <span class="ml-1 opacity-80 font-normal">(${ruanganLogs.length})</span>
+            ${hasRuanganAlarm ? '<span class="ml-1 text-red-300 font-black animate-pulse">&#9888;</span>' : ''}
+          </button>
+          <button onclick="window.setSuhuKategoriTab('grafik')" class="ons-btn ${suhuActiveKategori === 'grafik' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs font-bold py-1.5 px-3">
+            📊 Grafik &amp; Laporan Cetak (A4)
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <div class="flex items-center gap-1">
+            <span class="font-semibold" style="color:var(--ons-text-soft)">Periode:</span>
+            <select aria-label="Pilih Periode Bulan" class="ons-select text-xs py-1 min-h-0" onchange="window.setSuhuSelectedMonth(this.value)">
+              ${months.map((m) => `<option value="${m}" ${suhuSelectedMonth === m ? 'selected' : ''}>${m}</option>`).join('')}
+            </select>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="font-semibold" style="color:var(--ons-text-soft)">Unit:</span>
+            <select aria-label="Pilih Unit Lokasi" class="ons-select text-xs py-1 min-h-0" onchange="window.setSuhuUnitFilter(this.value)">
+              <option value="">Semua Unit (${currentUnits.length})</option>
+              ${currentUnits.map((u) => `<option value="${S().esc(u)}" ${suhuUnitFilter === u ? 'selected' : ''}>${S().esc(u)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Executive KPI Cards -->
+      ${suhuActiveKategori === 'kulkas' ? `
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="ons-card p-3.5 border-l-4 ${hasKulkasAlarm ? 'border-l-red-500 ring-1 ring-red-500/20' : 'border-l-blue-500'}">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Suhu Kulkas Terkini</span>
+              <span class="w-2 h-2 rounded-full ${hasKulkasAlarm ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 ${hasKulkasAlarm ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">
+              ${latestKulkas ? (Number(latestKulkas.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}
+            </div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">
+              ${latestKulkas ? `<span class="badge-bpom ${hasKulkasAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(latestKulkas.status_alarm || 'NORMAL')}</span>` : 'Menunggu input'}
+            </div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-emerald-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kelembapan Terkini</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 text-emerald-600 dark:text-emerald-400">
+              ${latestKulkas ? (Number(latestKulkas.kelembapan || 55) + '% RH') : '-'}
+            </div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Target Chiller: 45&ndash;65% RH</div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-indigo-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Rata-rata ${suhuSelectedMonth}</span>
+              <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 text-indigo-600 dark:text-indigo-400">${avgKulkas}&deg;C</div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Min: ${minKulkas}&deg;C &bull; Max: ${maxKulkas}&deg;C</div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-amber-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kepatuhan CDOB (2&ndash;8&deg;C)</span>
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 ${complianceKulkasPct >= 95 ? 'text-emerald-600' : 'text-amber-600'}">${complianceKulkasPct}%</div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">${coldItems.length} produk obat cold-chain</div>
+          </div>
+        </div>
+      ` : (suhuActiveKategori === 'ruangan' ? `
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="ons-card p-3.5 border-l-4 ${hasRuanganAlarm ? 'border-l-red-500 ring-1 ring-red-500/20' : 'border-l-emerald-500'}">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Suhu Ruangan Terkini</span>
+              <span class="w-2 h-2 rounded-full ${hasRuanganAlarm ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 ${hasRuanganAlarm ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">
+              ${latestRuangan ? (Number(latestRuangan.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}
+            </div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">
+              ${latestRuangan ? (Number(latestRuangan.suhu_celcius || 0) <= 25 ? '<span class="badge-bpom bpom-bebas">SEJUK AC (15–25°C)</span>' : (Number(latestRuangan.suhu_celcius || 0) <= 30 ? '<span class="badge-bpom bpom-terbatas">KAMAR (≤30°C)</span>' : '<span class="badge-bpom bpom-keras">KRITIS PANAS</span>')) : 'Menunggu input'}
+            </div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-blue-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kelembapan Ruang Terkini</span>
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 text-blue-600 dark:text-blue-400">
+              ${latestRuangan ? (Number(latestRuangan.kelembapan || 60) + '% RH') : '-'}
+            </div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Standar BPOM: Target &le; 70% RH</div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-indigo-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Rata-rata ${suhuSelectedMonth}</span>
+              <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 text-indigo-600 dark:text-indigo-400">${avgRuangan}&deg;C</div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Min: ${minRuangan}&deg;C &bull; Max: ${maxRuangan}&deg;C</div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-amber-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kepatuhan Suhu Ruangan</span>
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 text-emerald-600 dark:text-emerald-400">${complianceRuanganPct}%</div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Stabilitas sediaan tablet, sirup &amp; salep</div>
+          </div>
+        </div>
+      ` : `
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="ons-card p-3.5 border-l-4 border-l-blue-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Log Tercatat</span>
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1">${activeLogs.length} <span class="text-xs font-normal">Observasi</span></div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Periode ${suhuSelectedMonth}</div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-emerald-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kepatuhan Kulkas 2&ndash;8&deg;C</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 text-emerald-600">${complianceKulkasPct}%</div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Rata-rata: ${avgKulkas}&deg;C</div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-indigo-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kepatuhan Ruang &le;25&deg;C</span>
+              <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+            </div>
+            <div class="text-xl font-black font-mono-num mt-1 text-indigo-600">${complianceRuanganPct}%</div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Rata-rata: ${avgRuangan}&deg;C</div>
+          </div>
+
+          <div class="ons-card p-3.5 border-l-4 border-l-amber-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Status Laporan CDOB</span>
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            </div>
+            <div class="text-sm font-black mt-1 text-emerald-600">SIAP CETAK A4</div>
+            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Siap audit BPOM / Dinkes</div>
+          </div>
+        </div>
+      `)}
+
+      <!-- Fast Record Input Form -->
+      <div class="ons-card p-4 space-y-3 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style="border-color:var(--ons-border)">
+          <div>
+            <div class="font-extrabold text-sm flex items-center gap-1.5">
+              <span>${suhuActiveKategori === 'ruangan' ? '🌡️ Form Pemantauan Suhu Ruangan & Gudang (CDOB 15–25°C)' : '🧊 Form Pemantauan Suhu Kulkas Cold-Chain (CDOB 2–8°C)'}</span>
+            </div>
+            <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">
+              ${suhuActiveKategori === 'ruangan'
+                ? 'Catat suhu ruangan apotek & kelembapan (RH target &le; 70%). Sistem otomatis mendeteksi suhu hangat/panas.'
+                : 'Pencatatan harian chiller vaksin & insulin. Sistem mengecek rentang aman 2.0°C – 8.0°C dan memicu alarm bila keluar batas.'}
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="window.openTemperaturePrintPreview('${suhuActiveKategori}','${suhuSelectedMonth}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">
+              🖨️ Cetak Lembar Kendali A4
+            </button>
+            <button type="button" onclick="window.exportTemperatureLogs('xlsx','${suhuActiveKategori}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">
+              📊 Unduh Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end pt-1">
+          <div class="lg:col-span-2">
+            <label for="suhuKategoriInp" class="font-semibold block mb-1">Kategori *</label>
+            <select id="suhuKategoriInp" class="ons-select font-bold" onchange="window.handleSuhuKategoriChange(this.value)">
+              <option value="KULKAS" ${suhuActiveKategori !== 'ruangan' ? 'selected' : ''}>🧊 Kulkas (2–8°C)</option>
+              <option value="RUANGAN" ${suhuActiveKategori === 'ruangan' ? 'selected' : ''}>🌡️ Ruangan (15–25°C)</option>
+            </select>
+          </div>
+
+          <div class="lg:col-span-2">
+            <label for="suhuUnitInp" class="font-semibold block mb-1">Unit / Lokasi *</label>
+            <input id="suhuUnitInp" list="suhuUnitPresets" class="ons-input font-mono-num" value="${S().esc(suhuUnitFilter || (suhuActiveKategori === 'ruangan' ? 'RUANG-APOTEK-01' : 'CHILLER-VAKSIN-01'))}"/>
+            <datalist id="suhuUnitPresets">${currentUnits.map((u) => `<option value="${S().esc(u)}"></option>`).join('')}</datalist>
+          </div>
+
+          <div class="lg:col-span-2">
+            <label for="suhuShiftInp" class="font-semibold block mb-1">Shift / Waktu *</label>
+            <select id="suhuShiftInp" class="ons-select font-bold">
+              <option value="PAGI" ${new Date().getHours() < 12 ? 'selected' : ''}>Pagi (08:00)</option>
+              <option value="SIANG" ${new Date().getHours() >= 12 && new Date().getHours() < 16 ? 'selected' : ''}>Siang (14:00)</option>
+              <option value="SORE" ${new Date().getHours() >= 16 ? 'selected' : ''}>Sore (16:30)</option>
+            </select>
+          </div>
+
+          <div class="lg:col-span-2">
+            <label for="suhuNilaiInp" class="font-semibold block mb-1">Suhu (&deg;C) *</label>
+            <input id="suhuNilaiInp" type="number" step="0.1" value="${suhuActiveKategori === 'ruangan' ? '22.4' : (latestKulkas ? Number(latestKulkas.suhu_celcius || 4.8).toFixed(1) : '4.8')}" class="ons-input font-mono-num font-bold text-sm"/>
+          </div>
+
+          <div class="lg:col-span-1">
+            <label for="suhuHumInp" class="font-semibold block mb-1">RH %</label>
+            <input id="suhuHumInp" type="number" min="0" max="100" step="1" value="${suhuActiveKategori === 'ruangan' ? '60' : (latestKulkas ? Number(latestKulkas.kelembapan || 55) : '55')}" class="ons-input font-mono-num text-sm"/>
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="suhuKorektifInp" class="font-semibold block mb-1">Tindakan Korektif</label>
+            <input id="suhuKorektifInp" class="ons-input" placeholder="Opsional jika normal, wajib bila deviasi"/>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t" style="border-color:var(--ons-border)">
+          <div class="text-[11px]" style="color:var(--ons-text-soft)">
+            Standar Batas: <b>${suhuActiveKategori === 'ruangan' ? '15.0°C – 25.0°C (Maks 30.0°C, RH ≤ 70%)' : '2.0°C – 8.0°C (Cold Chain)'}</b> &bull; Diverifikasi oleh Petugas &amp; APJ
+          </div>
+          <button type="button" onclick="window.submitTemperatureLog()" class="ons-btn ons-btn-primary font-bold text-xs py-2 px-4 shadow-sm">
+            + Simpan Log Suhu
+          </button>
+        </div>
+      </div>
+
+      <!-- VISUAL LINE CHART (Grafik Sesuai Aturan) -->
+      <div class="ons-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-extrabold text-sm flex items-center gap-1.5">
+              <span>📈 Grafik Fluktuasi Suhu &mdash; Periode ${suhuSelectedMonth}</span>
+              <span class="badge-bpom bpom-bebas text-[10px]">VEKTOR SVG PRESISI CDOB</span>
+            </h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">
+              Arsiran hijau menunjukkan zona suhu aman sesuai aturan BPOM. Titik di luar zona menandakan alarm penyimpangan mutu.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500"></span><span style="color:var(--ons-text-soft)">Zona Aman</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span><span style="color:var(--ons-text-soft)">Shift Pagi</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span style="color:var(--ons-text-soft)">Shift Sore</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span><span class="font-bold text-red-600">Alarm Deviasi</span></span>
+          </div>
+        </div>
+
+        ${suhuActiveKategori === 'grafik' ? `
+          <div class="space-y-4">
+            <div class="p-3 rounded-xl border bg-blue-500/5 border-blue-500/20">
+              <div class="font-bold text-xs text-blue-700 dark:text-blue-300 mb-2">1. Grafik Suhu Kulkas &amp; Chiller (2.0&deg;C &ndash; 8.0&deg;C)</div>
+              ${_renderTemperatureSvgChart(kulkasMonthLogs, 'kulkas', { width: 840, height: 210 })}
+            </div>
+            <div class="p-3 rounded-xl border bg-emerald-500/5 border-emerald-500/20">
+              <div class="font-bold text-xs text-emerald-700 dark:text-emerald-300 mb-2">2. Grafik Suhu Ruangan Apotek &amp; Gudang (15.0&deg;C &ndash; 25.0&deg;C)</div>
+              ${_renderTemperatureSvgChart(ruanganMonthLogs, 'ruangan', { width: 840, height: 210 })}
+            </div>
+          </div>
+        ` : `
+          <div class="p-2 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            ${_renderTemperatureSvgChart(activeLogs, suhuActiveKategori === 'ruangan' ? 'ruangan' : 'kulkas', { width: 840, height: 240 })}
+          </div>
+        `}
+      </div>
+
+      <!-- Data Table Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="ons-card p-4 ${suhuActiveKategori === 'ruangan' ? 'lg:col-span-12' : 'lg:col-span-8'} space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="font-bold text-sm">
+              Riwayat Pencatatan Suhu ${suhuActiveKategori === 'ruangan' ? 'Ruangan' : (suhuActiveKategori === 'grafik' ? 'Gabungan' : 'Kulkas')} (${activeLogs.length})
+            </h3>
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="window.exportTemperatureLogs('xlsx','${suhuActiveKategori}')" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5 font-bold">Export Excel</button>
+              <button onclick="window.exportTemperatureLogs('csv','${suhuActiveKategori}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Export CSV</button>
+            </div>
+          </div>
+
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead>
+                <tr>
+                  <th>Waktu Catat</th>
+                  <th>Shift</th>
+                  <th>Unit / Lokasi</th>
+                  <th class="text-right">Suhu (&deg;C)</th>
+                  <th class="text-right">RH %</th>
+                  <th>Status</th>
+                  <th>Petugas</th>
+                  <th>Catatan / Tindakan Korektif</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activeLogs.length ? activeLogs.slice(0, 60).map((c) => {
+                  const isK = _isKulkasLog(c);
+                  const isAlarm = isK
+                    ? (Number(c.suhu_celcius || 0) < 2 || Number(c.suhu_celcius || 0) > 8)
+                    : (Number(c.suhu_celcius || 0) > 30 || Number(c.suhu_celcius || 0) < 15);
+                  return `<tr>
+                    <td class="font-mono-num text-xs">${S().formatTgl(c.timestamp, true)}</td>
+                    <td class="text-xs font-semibold">${S().esc(c.waktu_shift || (new Date(c.timestamp).getHours() < 12 ? 'PAGI' : 'SORE'))}</td>
+                    <td class="font-mono-num text-xs font-semibold">${S().esc(c.id_kulkas || '-')}</td>
+                    <td class="text-right font-mono-num font-extrabold ${isAlarm ? 'text-red-600' : 'text-emerald-600'}">${Number(c.suhu_celcius || 0).toFixed(1)}&deg;C</td>
+                    <td class="text-right font-mono-num text-xs">${Number(c.kelembapan || 55)}%</td>
+                    <td><span class="badge-bpom ${isAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(c.status_alarm || (isAlarm ? 'ALARM' : 'NORMAL'))}</span></td>
+                    <td class="text-xs">${S().esc(c.petugas_id || '-')}</td>
+                    <td class="text-xs">${S().esc(c.tindakan_korektif || '-')}</td>
+                  </tr>`;
+                }).join('') : `<tr><td colspan="8" class="text-center py-6 text-xs">Belum ada log suhu pada periode ini. Gunakan form di atas untuk mencatat suhu hari ini.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        ${suhuActiveKategori !== 'ruangan' ? `
+          <div class="ons-card p-4 lg:col-span-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm">Obat Cold-Chain 2&ndash;8&deg;C (${coldItems.length})</h3>
+              <span class="badge-bpom bpom-bebas text-[10px]">CHILLER</span>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>Nama Obat</th><th class="text-right">Stok</th></tr></thead>
+                <tbody>
+                  ${coldItems.length ? coldItems.map((o) => `<tr>
+                    <td class="text-xs">
+                      <div class="font-bold">${S().esc(o.nama_dagang)}</div>
+                      <div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(o.rak_lokasi || 'CHILLER')} &bull; ${S().esc(o.suhu_simpan || '2-8°C')}</div>
+                    </td>
+                    <td class="text-right font-mono-num font-bold text-xs">${S().getSellableStok(o.id_obat)} ${S().esc(o.satuan_dasar || '')}</td>
+                  </tr>`).join('') : `<tr><td colspan="2" class="text-center py-5 text-xs">Belum ada produk bertanda Chiller 2&ndash;8&deg;C di Master Obat.</td></tr>`}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    </div>`;
+  }
+
+  global.handleSuhuKategoriChange = (val) => {
+    suhuActiveKategori = (val || 'kulkas').toLowerCase();
+    const unitInp = document.getElementById('suhuUnitInp');
+    if (unitInp) {
+      unitInp.value = suhuActiveKategori === 'ruangan' ? 'RUANG-APOTEK-01' : 'CHILLER-VAKSIN-01';
+    }
+    const nilaiInp = document.getElementById('suhuNilaiInp');
+    if (nilaiInp) {
+      nilaiInp.value = suhuActiveKategori === 'ruangan' ? '22.4' : '4.8';
+    }
+    const humInp = document.getElementById('suhuHumInp');
+    if (humInp) {
+      humInp.value = suhuActiveKategori === 'ruangan' ? '60' : '55';
+    }
+    global.renderActiveView();
+  };
+
+  global.submitTemperatureLog = async () => {
     try {
-      const idKulkas = ((document.getElementById('ccKulkasInp') || {}).value || 'CHILLER-VAKSIN-01').trim();
-      const rawSuhu = (document.getElementById('ccSuhuInp') || {}).value;
+      const katEl = document.getElementById('suhuKategoriInp');
+      const unitEl = document.getElementById('suhuUnitInp');
+      const shiftEl = document.getElementById('suhuShiftInp');
+      const nilaiEl = document.getElementById('suhuNilaiInp');
+      const humEl = document.getElementById('suhuHumInp');
+      const korEl = document.getElementById('suhuKorektifInp');
+
+      const kategori = katEl ? katEl.value : (suhuActiveKategori === 'ruangan' ? 'RUANGAN' : 'KULKAS');
+      const unit = unitEl ? unitEl.value.trim() : (kategori === 'RUANGAN' ? 'RUANG-APOTEK-01' : 'CHILLER-VAKSIN-01');
+      const shift = shiftEl ? shiftEl.value : 'PAGI';
+      const rawSuhu = nilaiEl ? nilaiEl.value : '';
       const suhu = Number(rawSuhu);
       if (rawSuhu === '' || rawSuhu === undefined || Number.isNaN(suhu)) {
         throw new Error('Masukkan angka suhu terukur (°C) yang valid.');
       }
-      const hum = Number((document.getElementById('ccHumInp') || {}).value || 55);
-      const tindakan = ((document.getElementById('ccTindakanInp') || {}).value || '').trim();
+      const hum = Number((humEl && humEl.value) || 55);
+      const tindakan = (korEl && korEl.value ? korEl.value : '').trim();
+
       const res = await API().callApi('coldchain.log', {
-        id_kulkas: idKulkas,
+        kategori,
+        id_kulkas: unit,
+        waktu_shift: shift,
         suhu_celcius: suhu,
         kelembapan: hum,
         tindakan_korektif: tindakan
       }, { isWrite: true });
+
       const it = res && res.item;
       const isAlarm = it && String(it.status_alarm || 'NORMAL') !== 'NORMAL';
       global.toast(
         isAlarm
-          ? `PERINGATAN COLD-CHAIN: ${idKulkas} tercatat ${suhu.toFixed(1)}°C (di luar rentang 2–8°C)!`
-          : `Log suhu ${idKulkas} (${suhu.toFixed(1)}°C) tersimpan.`,
+          ? `PERINGATAN ${kategori}: ${unit} tercatat ${suhu.toFixed(1)}°C (di luar batas aman)! Segera lakukan tindakan korektif.`
+          : `Log suhu ${unit} (${suhu.toFixed(1)}°C, RH ${hum}%) berhasil dicatat.`,
         isAlarm ? 'warn' : 'ok'
       );
       await global.bootLoadState(true);
-    } catch (e) { global.toast(e.message, 'err'); }
+    } catch (e) {
+      global.toast(e.message, 'err');
+    }
+  };
+
+  global.submitColdChainLog = global.submitTemperatureLog;
+
+  function _buildTemperatureReportHtml(category, monthYear) {
+    const isKulkas = category === 'kulkas';
+    const st = S().AppState;
+    const prof = (typeof S().getStoreProfile === 'function') ? S().getStoreProfile() : {};
+    const ym = monthYear || suhuSelectedMonth || '2026-11';
+
+    const allLogs = (st.coldChain || []).filter((l) => {
+      if (l.timestamp && !l.timestamp.startsWith(ym)) return false;
+      return isKulkas ? _isKulkasLog(l) : !_isKulkasLog(l);
+    });
+
+    const selectedUnit = suhuUnitFilter || (isKulkas ? 'CHILLER-VAKSIN-01' : 'RUANG-APOTEK-01');
+    const unitLogs = allLogs.filter((l) => !suhuUnitFilter || l.id_kulkas === suhuUnitFilter);
+
+    // Compute stats
+    const temps = unitLogs.map((l) => Number(l.suhu_celcius || 0)).filter((n) => !Number.isNaN(n));
+    const hums = unitLogs.map((l) => Number(l.kelembapan || 0)).filter((n) => !Number.isNaN(n));
+    const minTemp = temps.length ? Math.min(...temps).toFixed(1) : '-';
+    const maxTemp = temps.length ? Math.max(...temps).toFixed(1) : '-';
+    const avgTemp = temps.length ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1) : '-';
+    const avgHum = hums.length ? (hums.reduce((a, b) => a + b, 0) / hums.length).toFixed(0) : '-';
+
+    const compliantCount = unitLogs.filter((l) => {
+      const s = Number(l.suhu_celcius || 0);
+      return isKulkas ? (s >= 2 && s <= 8) : (s >= 15 && s <= 25 && Number(l.kelembapan || 55) <= 70);
+    }).length;
+    const compliancePct = unitLogs.length ? ((compliantCount / unitLogs.length) * 100).toFixed(1) : '100.0';
+
+    // Group logs by day (1..31)
+    const logsByDay = {};
+    unitLogs.forEach((l) => {
+      const d = new Date(l.timestamp);
+      if (!Number.isNaN(d.getTime())) {
+        const day = d.getDate();
+        if (!logsByDay[day]) logsByDay[day] = [];
+        logsByDay[day].push(l);
+      }
+    });
+
+    // Generate chart SVG for printable report (high contrast for white paper)
+    const chartSvg = _renderTemperatureSvgChart(unitLogs, isKulkas ? 'kulkas' : 'ruangan', { width: 780, height: 200 });
+
+    // Table matrix 1..31
+    const [yStr, mStr] = ym.split('-');
+    const totalDaysInMonth = new Date(Number(yStr), Number(mStr), 0).getDate() || 30;
+
+    let matrixRowsHtml = '';
+    for (let day = 1; day <= totalDaysInMonth; day++) {
+      const dayLogs = logsByDay[day] || [];
+      const pagi = dayLogs.find((l) => (l.waktu_shift || '').toUpperCase() === 'PAGI' || new Date(l.timestamp).getHours() < 12);
+      const sore = dayLogs.find((l) => (l.waktu_shift || '').toUpperCase() === 'SORE' || new Date(l.timestamp).getHours() >= 12);
+
+      const pSuhu = pagi ? Number(pagi.suhu_celcius).toFixed(1) : '-';
+      const pRh = pagi ? pagi.kelembapan + '%' : '-';
+      const pJam = pagi ? S().formatTgl(pagi.timestamp, true).slice(11, 16) : '-';
+      const pParaf = pagi ? (pagi.petugas_id ? pagi.petugas_id.split(' ')[0] : 'OK') : '-';
+
+      const sSuhu = sore ? Number(sore.suhu_celcius).toFixed(1) : '-';
+      const sRh = sore ? sore.kelembapan + '%' : '-';
+      const sJam = sore ? S().formatTgl(sore.timestamp, true).slice(11, 16) : '-';
+      const sParaf = sore ? (sore.petugas_id ? sore.petugas_id.split(' ')[0] : 'OK') : '-';
+
+      const dayAlarm = (pagi && String(pagi.status_alarm || 'NORMAL') !== 'NORMAL') || (sore && String(sore.status_alarm || 'NORMAL') !== 'NORMAL');
+      const dayKorektif = (sore && sore.tindakan_korektif && sore.tindakan_korektif !== '-') ? sore.tindakan_korektif : (pagi && pagi.tindakan_korektif && pagi.tindakan_korektif !== '-' ? pagi.tindakan_korektif : '-');
+
+      matrixRowsHtml += `<tr style="border-bottom:1px solid #E2E8F0;${dayAlarm ? 'background:#FEF2F2;' : ''}">
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-weight:bold;">${day}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-family:monospace;">${pJam}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-weight:bold;${pagi && ((isKulkas && (pagi.suhu_celcius < 2 || pagi.suhu_celcius > 8)) || (!isKulkas && pagi.suhu_celcius > 30)) ? 'color:#DC2626;' : ''}">${pSuhu}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-family:monospace;">${pRh}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-size:9px;">${pParaf}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-family:monospace;">${sJam}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-weight:bold;${sore && ((isKulkas && (sore.suhu_celcius < 2 || sore.suhu_celcius > 8)) || (!isKulkas && sore.suhu_celcius > 30)) ? 'color:#DC2626;' : ''}">${sSuhu}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-family:monospace;">${sRh}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-size:9px;">${sParaf}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;font-weight:bold;${dayAlarm ? 'color:#DC2626;' : 'color:#059669;'}">${dayLogs.length ? (dayAlarm ? 'ALARM' : 'NORMAL') : '-'}</td>
+        <td style="border:1px solid #CBD5E1;padding:3.5px 5px;text-align:left;font-size:9.5px;">${S().esc(dayKorektif)}</td>
+      </tr>`;
+    }
+
+    const monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const monthLabel = (monthNames[Number(mStr)] || mStr) + ' ' + yStr;
+
+    return `<div style="max-width:820px;margin:0 auto;background:#FFFFFF;color:#0F172A;font-family:Arial,Helvetica,sans-serif;padding:24px;border:1.5px solid #0F172A;box-sizing:border-box;">
+      <!-- KOP RESMI APOTEK -->
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #0F172A;padding-bottom:12px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:48px;height:48px;border-radius:10px;background:#1D4ED8;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;">+</div>
+          <div>
+            <div style="font-size:17px;font-weight:900;letter-spacing:0.5px;color:#0F172A;">${(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase()}</div>
+            <div style="font-size:11px;color:#334155;">${prof.alamat || 'Jl. Kesehatan Raya No. 45, Kota Semarang'} &bull; Telp: (024) 8412345</div>
+            <div style="font-size:11px;color:#334155;"><b>No. SIA:</b> ${prof.no_sia || 'SIA.503/0021/DPMPTSP/2024'} &bull; <b>APJ:</b> ${prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi, S.Farm'} (<b>SIPA:</b> ${prof.sipa_pemilik || '19950812/SIPA_33.74/2023/2048'})</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;">DOKUMEN PENGENDALIAN MUTU CDOB</div>
+          <div style="font-size:14px;font-weight:900;color:#1D4ED8;">FORM-CDOB-SUHU-01</div>
+          <div style="font-size:10px;color:#64748B;">Revisi: 03 &bull; Halaman 1 dari 1</div>
+        </div>
+      </div>
+
+      <!-- TITLE & METADATA -->
+      <div style="text-align:center;margin-bottom:14px;">
+        <h2 style="font-size:15px;font-weight:bold;margin:0 0 4px;text-transform:uppercase;color:#0F172A;">
+          LEMBAR KENDALI &amp; GRAFIK PEMANTAUAN SUHU ${isKulkas ? 'KULKAS / CHILLER COLD-CHAIN' : 'RUANGAN &amp; GUDANG FARMASI'}
+        </h2>
+        <div style="font-size:11.5px;color:#334155;">Standar Peraturan BPOM RI tentang CDOB &amp; Permenkes RI No. 73 Tahun 2016</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:11px;">
+        <div><span style="color:#64748B;">Unit / Lokasi:</span><br/><b>${selectedUnit}</b></div>
+        <div><span style="color:#64748B;">Periode Pemantauan:</span><br/><b>${monthLabel}</b></div>
+        <div><span style="color:#64748B;">Standar Rentang:</span><br/><b style="color:${isKulkas ? '#1D4ED8' : '#059669'};">${isKulkas ? '2.0°C – 8.0°C (Cold Chain)' : '15.0°C – 25.0°C (RH ≤ 70%)'}</b></div>
+        <div><span style="color:#64748B;">Alat Thermohygrometer:</span><br/><b>Digital Calibrated (TH-2025-081)</b></div>
+      </div>
+
+      <!-- GRAFIK TREN SUHU TERCETAK JELAS -->
+      <div style="border:1px solid #CBD5E1;border-radius:6px;padding:10px;margin-bottom:14px;background:#FFFFFF;">
+        <div style="font-size:11px;font-weight:bold;margin-bottom:6px;color:#0F172A;display:flex;justify-content:space-between;">
+          <span>GRAFIK FLUKTUASI SUHU HARIAN &mdash; ${monthLabel}</span>
+          <span style="font-size:10px;color:#64748B;">Waktu Catat: Pagi (08:00) &bull; Sore (16:30)</span>
+        </div>
+        ${chartSvg}
+      </div>
+
+      <!-- TABEL REKAPITULASI MATRIKS 31 HARI -->
+      <div style="margin-bottom:14px;">
+        <table style="width:100%;border-collapse:collapse;font-size:10px;text-align:center;">
+          <thead>
+            <tr style="background:#F1F5F9;font-weight:bold;">
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">TGL</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">PAGI (JAM)</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">SUHU (°C)</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">RH %</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">PARAF</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">SORE (JAM)</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">SUHU (°C)</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">RH %</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">PARAF</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;">STATUS</th>
+              <th style="border:1px solid #CBD5E1;padding:4px 5px;text-align:left;">TINDAKAN KOREKTIF / KETERANGAN</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${matrixRowsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- STATISTIK KEPATUHAN & TANDA TANGAN -->
+      <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-top:14px;font-size:11px;">
+        <div style="border:1px solid #CBD5E1;border-radius:6px;padding:8px 12px;background:#F8FAFC;">
+          <div style="font-weight:bold;margin-bottom:4px;color:#0F172A;">Ringkasan Evaluasi Mutu CDOB:</div>
+          <div>&bull; Suhu Terendah (Min): <b>${minTemp}&deg;C</b></div>
+          <div>&bull; Suhu Tertinggi (Max): <b>${maxTemp}&deg;C</b></div>
+          <div>&bull; Rata-rata Suhu: <b>${avgTemp}&deg;C</b> &bull; RH: <b>${avgHum}%</b></div>
+          <div>&bull; Tingkat Kepatuhan: <b style="color:${compliancePct >= 95 ? '#059669' : '#DC2626'};">${compliancePct}% (${compliancePct >= 95 ? 'MEMENUHI SYARAT' : 'PERLU EVALUASI'})</b></div>
+        </div>
+        <div style="text-align:center;padding:8px;">
+          <div>Petugas Pemantau:</div>
+          <div style="height:48px;"></div>
+          <div style="font-weight:bold;text-decoration:underline;">${(unitLogs[0] && unitLogs[0].petugas_id) || 'apt. Siti Rahma, S.Farm'}</div>
+          <div style="font-size:10px;color:#64748B;">Staf / Asisten Tenaga Kefarmasian</div>
+        </div>
+        <div style="text-align:center;padding:8px;">
+          <div>Mengetahui &amp; Memvalidasi:</div>
+          <div style="height:48px;"></div>
+          <div style="font-weight:bold;text-decoration:underline;">${prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi, S.Farm'}</div>
+          <div style="font-size:10px;color:#64748B;">Apoteker Penanggung Jawab (APJ)<br/>SIPA: ${prof.sipa_pemilik || '19950812/SIPA_33.74/2023/2048'}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  global.openTemperaturePrintPreview = (category, monthYear) => {
+    const cat = category || suhuActiveKategori || 'kulkas';
+    const my = monthYear || suhuSelectedMonth || '2026-11';
+    const reportHtml = _buildTemperatureReportHtml(cat, my);
+
+    S().openModal(`<div class="p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
+        <div>
+          <h3 class="font-extrabold text-base">Pratinjau Lembar Kendali &amp; Grafik Suhu CDOB (A4)</h3>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Format formulir audit resmi BPOM RI &amp; Dinas Kesehatan untuk pelaporan bulanan.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.printTemperatureReport('${cat}','${my}')" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3">
+            🖨️ Cetak Formulir (Print / PDF)
+          </button>
+          <button type="button" onclick="window.exportTemperatureLogs('xlsx','${cat}')" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3">
+            📊 Unduh Excel
+          </button>
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">&times; Tutup</button>
+        </div>
+      </div>
+
+      <div class="shadow-xl rounded-xl overflow-hidden border border-gray-300">
+        ${reportHtml}
+      </div>
+    </div>`, '900px');
+  };
+
+  global.printTemperatureReport = (category, monthYear) => {
+    const cat = category || suhuActiveKategori || 'kulkas';
+    const my = monthYear || suhuSelectedMonth || '2026-11';
+    const reportHtml = _buildTemperatureReportHtml(cat, my);
+    S().printHtmlZone(reportHtml, 'a4');
   };
 
   global.printColdChainLogCdob = () => {
+    global.printTemperatureReport('kulkas');
+  };
+
+  global.exportTemperatureLogs = (fmt, category) => {
     const st = S().AppState;
-    const logs = (st.coldChain || []).slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || ''))).slice(0, 60);
-    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    S().printHtmlZone(`<div style="max-width:720px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#111;border:1.5px solid #1e293b;padding:18px;">
-      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:8px;margin-bottom:10px;">
-        <div>
-          <div style="font-size:15px;font-weight:bold;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
-          <div>${S().esc(prof.alamat || '')} &bull; APJ: ${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:13px;font-weight:bold;">KARTU LOG SUHU COLD-CHAIN (2&ndash;8&deg;C)</div>
-          <div>Standar Penyimpanan CDOB / BPOM</div>
-        </div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
-        <thead><tr style="background:#f1f5f9;">
-          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Waktu</th>
-          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Unit Kulkas</th>
-          <th style="border:1px solid #cbd5e1;padding:5px;text-align:right;">Suhu</th>
-          <th style="border:1px solid #cbd5e1;padding:5px;text-align:right;">RH%</th>
-          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Status</th>
-          <th style="border:1px solid #cbd5e1;padding:5px;text-align:left;">Petugas &amp; Korektif</th>
-        </tr></thead>
-        <tbody>
-          ${logs.length ? logs.map((c) => `<tr>
-            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().formatTgl(c.timestamp, true)}</td>
-            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().esc(c.id_kulkas || '-')}</td>
-            <td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;font-weight:bold;">${Number(c.suhu_celcius || 0).toFixed(1)}&deg;C</td>
-            <td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;">${Number(c.kelembapan || 55)}%</td>
-            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().esc(c.status_alarm || 'NORMAL')}</td>
-            <td style="border:1px solid #cbd5e1;padding:4px 6px;">${S().esc(c.petugas_id || '-')}${c.tindakan_korektif && c.tindakan_korektif !== '-' ? ' — ' + S().esc(c.tindakan_korektif) : ''}</td>
-          </tr>`).join('') : '<tr><td colspan="6" style="border:1px solid #cbd5e1;padding:12px;text-align:center;">Belum ada catatan log suhu.</td></tr>'}
-        </tbody>
-      </table>
-    </div>`, 'a4');
+    const allLogs = (st.coldChain || []).filter((l) => {
+      if (category === 'kulkas') return _isKulkasLog(l);
+      if (category === 'ruangan') return !_isKulkasLog(l);
+      return true;
+    });
+
+    const rows = allLogs.map((l, idx) => ({
+      no: idx + 1,
+      waktu: S().formatTgl(l.timestamp, true),
+      kategori: l.kategori || (_isKulkasLog(l) ? 'KULKAS' : 'RUANGAN'),
+      unit_lokasi: l.id_kulkas || '-',
+      shift: l.waktu_shift || (new Date(l.timestamp).getHours() < 12 ? 'PAGI' : 'SORE'),
+      suhu_celcius: Number(l.suhu_celcius || 0),
+      kelembapan_rh: Number(l.kelembapan || 55),
+      status_alarm: l.status_alarm || 'NORMAL',
+      petugas: l.petugas_id || '-',
+      tindakan_korektif: l.tindakan_korektif || '-'
+    }));
+
+    const prof = (typeof S().getStoreProfile === 'function') ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'Apotek ONS Farma';
+    const fileBase = `log-suhu-${category || 'semua'}-${suhuSelectedMonth || '2026-11'}`;
+
+    S().exportDataset(fmt || 'xlsx', `Monitoring Suhu & Kelembapan CDOB - ${apotekName}`, fileBase, [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'waktu', label: 'Waktu Catat', type: 'text', width: 20 },
+      { key: 'kategori', label: 'Kategori', type: 'status', width: 12 },
+      { key: 'unit_lokasi', label: 'Unit / Lokasi', type: 'text', width: 22 },
+      { key: 'shift', label: 'Shift', type: 'text', width: 10 },
+      { key: 'suhu_celcius', label: 'Suhu (°C)', type: 'num', width: 12 },
+      { key: 'kelembapan_rh', label: 'RH (%)', type: 'int', width: 10 },
+      { key: 'status_alarm', label: 'Status Alarm', type: 'status', width: 18 },
+      { key: 'petugas', label: 'Petugas Pemantau', type: 'text', width: 22 },
+      { key: 'tindakan_korektif', label: 'Tindakan Korektif', type: 'wrap', width: 35 }
+    ], rows, {
+      sheetName: 'Log_Suhu_CDOB',
+      subtitle: `Periode: ${suhuSelectedMonth} | Dicetak: ${S().formatTgl(new Date().toISOString(), true)} | Total ${rows.length} catatan`,
+      emptyMessage: 'Belum ada log suhu pada filter yang dipilih.'
+    });
   };
 
   global.submitMutasiCabangSend = async () => {
