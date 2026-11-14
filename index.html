@@ -1034,7 +1034,7 @@
           const _hu = Number(o.harga_umum || 0);
           const _hpp = Number(o.hpp_avg || 0);
           if (_hu > 0 && _hu <= 10 && _hpp > _hu * 5) {
-            const _fac = Math.round(_hpp / _hu) >= 500 ? 1000 : 100;
+            const _fac = 1000;
             o.harga_umum = _hu * _fac;
             if (Number(o.harga_member || 0) <= 10) o.harga_member = Number(o.harga_member || _hu) * _fac;
             if (Number(o.harga_grosir || 0) <= 10) o.harga_grosir = Number(o.harga_grosir || _hu) * _fac;
@@ -1856,7 +1856,7 @@
               const _hu = Number(_o.harga_umum || 0);
               const _hpp = Number(_o.hpp_avg || 0);
               if (_hu > 0 && _hu <= 10 && _hpp > _hu * 5) {
-                const _fac = Math.round(_hpp / _hu) >= 500 ? 1000 : 100;
+                const _fac = 1000;
                 _o.harga_umum = _hu * _fac;
                 if (Number(_o.harga_member || 0) <= 10) _o.harga_member = Number(_o.harga_member || _hu) * _fac;
                 if (Number(_o.harga_grosir || 0) <= 10) _o.harga_grosir = Number(_o.harga_grosir || _hu) * _fac;

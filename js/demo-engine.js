@@ -621,15 +621,14 @@
     if (Array.isArray(db.master_obat)) {
       db.master_obat.forEach((o) => {
         // Auto-heal produk yang sempat tersimpan harga 5 akibat bug Number("5.000")
-        // Kondisi: harga_umum<=10 tapi hpp_avg>harga_umum*5 (tidak masuk akal jual lebih murah dari beli)
+        // Bug: "5.000" → Number() → 5. Faktor selalu 1000 (X.000 → X*1000)
         const hu = Number(o.harga_umum || 0);
         const hpp = Number(o.hpp_avg || 0);
         if (hu > 0 && hu <= 10 && hpp > hu * 5) {
-          const factor = Math.round(hpp / hu) >= 500 ? 1000 : 100;
-          o.harga_umum = hu * factor;
-          if (Number(o.harga_member || 0) <= 10) o.harga_member = Number(o.harga_member || hu) * factor;
-          if (Number(o.harga_grosir || 0) <= 10) o.harga_grosir = Number(o.harga_grosir || hu) * factor;
-          if (Number(o.harga_faskes || 0) <= 10) o.harga_faskes = Number(o.harga_faskes || hu) * factor;
+          o.harga_umum = hu * 1000;
+          if (Number(o.harga_member || 0) <= 10) o.harga_member = Number(o.harga_member || hu) * 1000;
+          if (Number(o.harga_grosir || 0) <= 10) o.harga_grosir = Number(o.harga_grosir || hu) * 1000;
+          if (Number(o.harga_faskes || 0) <= 10) o.harga_faskes = Number(o.harga_faskes || hu) * 1000;
           changed = true;
         }
       });
