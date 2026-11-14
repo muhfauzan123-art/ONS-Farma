@@ -4697,9 +4697,21 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     });
     const actShift = st.activeShift || (st.shiftHistory || []).find((sh) => String(sh.status_shift || '').toUpperCase() === 'TERBUKA') || null;
     const modalDefault = actShift ? Number(actShift.modal_awal || 0) : 300000;
-    const expectedTunai = modalDefault + sisTunai;
+    const drawerTxList = (typeof global._getCashDrawerTx === 'function') ? global._getCashDrawerTx() : [];
+    const todayDrawerTx = drawerTxList.filter((tx) => {
+      const tgl = String(tx.tanggal || '').slice(0, 10);
+      return !tgl || tgl === todayIso;
+    });
+    let totalKasMasuk = 0;
+    let totalKasKeluar = 0;
+    todayDrawerTx.forEach((tx) => {
+      const nom = Number(tx.nominal || 0);
+      if (tx.tipe === 'MASUK') totalKasMasuk += nom;
+      else if (tx.tipe === 'KELUAR') totalKasKeluar += nom;
+    });
+    const expectedTunai = modalDefault + sisTunai + totalKasMasuk - totalKasKeluar;
     const canReveal = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
-    shiftMetaCtx = { expectedBase: expectedTunai, sisTunai, canReveal };
+    shiftMetaCtx = { expectedBase: expectedTunai, sisTunai, totalKasMasuk, totalKasKeluar, canReveal };
 
     const denomSum = _calcDenomSum();
     const currentAktual = shiftAktualCustom !== null ? shiftAktualCustom : denomSum;
@@ -4743,42 +4755,65 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
       </div>
 
-      <!-- 4 Tender Reconciliation Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-xs">
+      <!-- 5 Tender Reconciliation Cards (Apotek Digital Standard) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 text-xs">
         <div class="ons-kpi-card is-blue">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Total Penjualan (${todayIso})</div>
-              <div class="text-xl font-extrabold font-mono-num mt-1 text-blue-600 truncate">${S().rp(totalBruto)}</div>
+              <div style="color:var(--ons-text-soft)">Penjualan Tunai (${todayIso})</div>
+              <div class="text-xl font-extrabold font-mono-num mt-1 text-blue-600 truncate">${S().rp(sisTunai)}</div>
             </div>
             <span class="ons-kpi-ico bg-blue-500/10 text-blue-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           </div>
           <div class="mt-2 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-            <span>${validToday.length} nota lunas</span>
-            <span>${returToday > 0 ? returToday + ' retur/void' : '0 retur'}</span>
+            <span>${validToday.length} nota valid</span>
+            <span>Omzet: ${S().rp(totalBruto)}</span>
           </div>
         </div>
 
         <div class="ons-kpi-card is-emerald">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Non-Tunai QRIS</div>
-              <div class="text-xl font-extrabold font-mono-num mt-1 text-emerald-600 truncate">${S().rp(sisQris)}</div>
+              <div style="color:var(--ons-text-soft)">Non-Tunai (QRIS &amp; EDC)</div>
+              <div class="text-xl font-extrabold font-mono-num mt-1 text-emerald-600 truncate">${S().rp(sisQris + sisTransfer)}</div>
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7h-7z"/></svg></span>
           </div>
-          <div class="mt-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Cocokkan dengan mutasi settlement QRIS</div>
+          <div class="mt-2 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <span>QRIS: ${S().rp(sisQris)}</span>
+            <span>EDC: ${S().rp(sisTransfer)}</span>
+          </div>
+        </div>
+
+        <div class="ons-kpi-card is-amber">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div style="color:var(--ons-text-soft)">Mutasi Kas Laci (Petty Cash)</div>
+              <div class="text-xs font-extrabold font-mono-num mt-1 space-y-0.5">
+                <div class="text-emerald-600 font-bold">+ Masuk: ${S().rp(totalKasMasuk)}</div>
+                <div class="text-rose-600 font-bold">&minus; Keluar: ${S().rp(totalKasKeluar)}</div>
+              </div>
+            </div>
+            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          </div>
+          <div class="mt-2 pt-2 border-t text-[11px] flex justify-between items-center" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <span>${todayDrawerTx.length} mutasi laci</span>
+            <div class="flex gap-1.5">
+              <button type="button" onclick="window.openKasMasukModal()" class="text-[10.5px] text-emerald-600 font-bold hover:underline">+ Masuk</button>
+              <button type="button" onclick="window.openKasKeluarModal()" class="text-[10.5px] text-rose-600 font-bold hover:underline">&minus; Keluar</button>
+            </div>
+          </div>
         </div>
 
         <div class="ons-kpi-card is-blue">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Transfer Bank / EDC</div>
-              <div class="text-xl font-extrabold font-mono-num mt-1 truncate">${S().rp(sisTransfer)}</div>
+              <div style="color:var(--ons-text-soft)">Modal Awal Laci</div>
+              <div class="text-xl font-extrabold font-mono-num mt-1 truncate">${S().rp(modalDefault)}</div>
             </div>
             <span class="ons-kpi-ico bg-sky-500/10 text-sky-600"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
           </div>
-          <div class="mt-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${sisPiutang > 0 ? ('Tempo/Piutang: ' + S().rp(sisPiutang)) : 'Settlement mesin EDC & mutasi rekening'}</div>
+          <div class="mt-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Uang kembalian awal kasir</div>
         </div>
 
         <div class="ons-kpi-card ${canReveal && shiftBlindRevealed ? 'is-emerald' : 'is-amber'}">
@@ -4792,7 +4827,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <span class="ons-kpi-ico ${canReveal && shiftBlindRevealed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
           </div>
           <div class="mt-2 pt-2 border-t text-[11px] truncate" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-            ${(canReveal && shiftBlindRevealed) ? ('Modal ' + S().rp(modalDefault) + ' + Tunai ' + S().rp(sisTunai)) : 'Hitung fisik uang terlebih dahulu'}
+            ${(canReveal && shiftBlindRevealed) ? ('Modal + Tunai + Masuk &minus; Keluar') : 'Hitung fisik uang terlebih dahulu'}
           </div>
         </div>
       </div>
@@ -4900,7 +4935,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <input id="shPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num font-bold tracking-widest" placeholder="Masukkan 6 Digit PIN${API().isDemoMode() ? ' (Demo: 123456)' : ''}"/>
           </div>
 
-          <button type="button" onclick="window.submitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer})" class="ons-btn ons-btn-emerald w-full py-3 font-bold text-xs shadow-sm">Tutup Shift, Simpan &amp; Terbitkan Z-Report</button>
+          <button type="button" onclick="window.submitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer}, ${totalKasMasuk}, ${totalKasKeluar})" class="ons-btn ons-btn-emerald w-full py-3 font-bold text-xs shadow-sm">Tutup Shift, Simpan &amp; Terbitkan Z-Report</button>
           <p class="text-[10px] text-center" style="color:var(--ons-text-soft)">Setelah ditutup, Z-Report resmi langsung terbit dan rekap terkirim ke email/WA Pemilik.</p>
         </div>
       </div>
@@ -5034,8 +5069,10 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const tunai = Number(sh.sistem_tunai || 0);
     const qris = Number(sh.sistem_qris || 0);
     const trf = Number(sh.sistem_transfer || 0);
+    const kasMasuk = Number(sh.kas_masuk || 0);
+    const kasKeluar = Number(sh.kas_keluar || 0);
     const totalOmzet = tunai + qris + trf;
-    const targetLaci = modal + tunai;
+    const targetLaci = modal + tunai + kasMasuk - kasKeluar;
     const aktual = Number(sh.aktual_tunai || 0);
     const selisih = Number(sh.selisih_kas !== undefined ? sh.selisih_kas : (aktual - targetLaci));
     const selisihTxt = selisih === 0 ? 'Klop (Rp 0)' : ((selisih > 0 ? 'Lebih +' : 'Kurang -') + S().rp(Math.abs(selisih)));
@@ -5067,7 +5104,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
         <div class="border-t pt-2 space-y-1.5" style="border-color:var(--ons-border)">
           <div class="flex justify-between"><span>Modal Awal Laci</span><span class="font-mono-num">${S().rp(modal)}</span></div>
-          <div class="flex justify-between"><span>Target Tunai Laci (Modal + Tunai)</span><span class="font-mono-num">${S().rp(targetLaci)}</span></div>
+          <div class="flex justify-between text-emerald-600"><span>+ Kas Masuk Laci (Modal/Tukar)</span><span class="font-mono-num">+${S().rp(kasMasuk)}</span></div>
+          <div class="flex justify-between text-rose-600"><span>&minus; Kas Keluar Laci (Petty Cash)</span><span class="font-mono-num">&minus;${S().rp(kasKeluar)}</span></div>
+          <div class="flex justify-between font-bold"><span>Target Tunai Laci (Modal + Tunai + Masuk &minus; Keluar)</span><span class="font-mono-num">${S().rp(targetLaci)}</span></div>
           <div class="flex justify-between"><span>Fisik Tunai Laci Aktual</span><b class="font-mono-num">${S().rp(aktual)}</b></div>
           <div class="flex justify-between font-extrabold">
             <span>Selisih Kas</span>
@@ -5112,6 +5151,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       ${kv('QRIS', S().rp(sh.sistem_qris || 0))}
       ${kv('Transfer / EDC', S().rp(sh.sistem_transfer || 0))}
       ${kv('Modal Awal', S().rp(sh.modal_awal || 0))}
+      ${kv('Kas Masuk (+)', S().rp(sh.kas_masuk || 0))}
+      ${kv('Kas Keluar (-)', S().rp(sh.kas_keluar || 0))}
+      ${kv('Target Laci', S().rp(Number(sh.modal_awal || 0) + Number(sh.sistem_tunai || 0) + Number(sh.kas_masuk || 0) - Number(sh.kas_keluar || 0)))}
       ${kv('Fisik Laci', S().rp(sh.aktual_tunai || 0), true)}
       ${hr}
       ${kv('Selisih Kas', (selisih > 0 ? '+' : '') + S().rp(selisih), true)}
@@ -5153,7 +5195,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     }
   };
 
-  global.submitCloseShift = async (sisTunai, sisQris, sisTransfer) => {
+  global.submitCloseShift = async (sisTunai, sisQris, sisTransfer, totalKasMasuk = 0, totalKasKeluar = 0) => {
     try {
       const act = S().AppState.activeShift || (S().AppState.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
       const modalVal = Number((document.getElementById('shModal') || {}).value || 0);
@@ -5165,6 +5207,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       const noteParts = [];
       if (reasonSel) noteParts.push('[Alasan: ' + reasonSel + ']');
       noteParts.push('[Float Laci: ' + S().rp(floatVal) + ' | Setor Brankas: ' + S().rp(bankDrop) + ']');
+      if (totalKasMasuk || totalKasKeluar) noteParts.push('[Kas Masuk: ' + S().rp(totalKasMasuk) + ' | Kas Keluar: ' + S().rp(totalKasKeluar) + ']');
       if (rawNote) noteParts.push(rawNote);
 
       const res = await API().callApi('shift.close', {
@@ -5175,6 +5218,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         sistem_tunai: Number(sisTunai || 0),
         sistem_qris: Number(sisQris || 0),
         sistem_transfer: Number(sisTransfer || 0),
+        kas_masuk: Number(totalKasMasuk || 0),
+        kas_keluar: Number(totalKasKeluar || 0),
         catatan_handover: noteParts.join(' '),
         supervisor_pin: (document.getElementById('shPin') || {}).value || ''
       }, { isWrite: true });

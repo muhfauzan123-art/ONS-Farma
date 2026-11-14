@@ -1935,8 +1935,11 @@
       const sisTunai = d.sistem_tunai !== undefined ? Number(d.sistem_tunai || 0) : calcTunai;
       const sisQris = d.sistem_qris !== undefined ? Number(d.sistem_qris || 0) : calcQris;
       const sisTransfer = d.sistem_transfer !== undefined ? Number(d.sistem_transfer || 0) : calcTransfer;
+      const kasMasuk = Number(d.kas_masuk || 0);
+      const kasKeluar = Number(d.kas_keluar || 0);
       const aktTunai = Number(d.aktual_tunai || 0);
-      const selisih = aktTunai - (modal + sisTunai);
+      const targetLaci = modal + sisTunai + kasMasuk - kasKeluar;
+      const selisih = aktTunai - targetLaci;
       if (row) {
         Object.assign(row, {
           tgl_tutup: nowIso,
@@ -1945,6 +1948,8 @@
           sistem_tunai: sisTunai,
           sistem_qris: sisQris,
           sistem_transfer: sisTransfer,
+          kas_masuk: kasMasuk,
+          kas_keluar: kasKeluar,
           aktual_tunai: aktTunai,
           selisih_kas: selisih,
           catatan_handover: d.catatan_handover || row.catatan_handover || '',

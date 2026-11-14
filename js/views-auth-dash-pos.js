@@ -4440,7 +4440,8 @@
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
-          
+          <button type="button" onclick="window.openKasMasukModal()" class="ons-btn ons-btn-ghost text-emerald-600 dark:text-emerald-400 text-[11px] py-1 px-2 min-h-0 h-7 font-bold" title="Catat Kas Masuk Laci">+ Masuk</button>
+          <button type="button" onclick="window.openKasKeluarModal()" class="ons-btn ons-btn-ghost text-rose-600 dark:text-rose-400 text-[11px] py-1 px-2 min-h-0 h-7 font-bold" title="Catat Kas Keluar Laci">- Keluar</button>
           <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">Printer BT</button>
           ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold">Tutup Shift &rarr;</button>` : ''}
         </div>
@@ -4638,10 +4639,12 @@
       <!-- Bottom Action & Status Strip (Apotek Digital Style) -->
       <div class="ons-pos-bottom-bar">
         <div class="flex flex-wrap items-center gap-1.5">
-          <button type="button" onclick="window.openCartEtiketModal(0)" class="ons-pos-bar-tool" title="Cetak Etiket Obat Putih/Biru">&#127991; Etiket</button>
-          <button type="button" onclick="window.openCopyResepFromPosModal()" class="ons-pos-bar-tool" title="Salinan Resep p.c.c">&#128221; Copy Resep</button>
-          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-pos-bar-tool" title="Daftar Penjualan &amp; Draft">&#128203; Daftar Penjualan</button>
-          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-pos-bar-tool" title="Catat Penjualan Tertolak">&#9888; Penjualan Tertolak</button>
+          <button type="button" onclick="window.openCartEtiketModal(0)" class="ons-pos-bar-tool font-bold" title="Cetak Etiket Obat Putih/Biru">&#127991; Cetak Etiket</button>
+          <button type="button" onclick="window.openCopyResepFromPosModal()" class="ons-pos-bar-tool font-bold" title="Salinan Resep p.c.c">&#128221; Copy Resep</button>
+          <button type="button" onclick="window.openKasMasukModal()" class="ons-pos-bar-tool font-extrabold text-emerald-300 hover:text-white" title="Catat Kas Masuk Laci (Modal Tambahan / Tukar Receh)">+ Kas Masuk</button>
+          <button type="button" onclick="window.openKasKeluarModal()" class="ons-pos-bar-tool font-extrabold text-rose-300 hover:text-white" title="Catat Kas Keluar Laci (Petty Cash Operasional / Beli Plastik)">- Kas Keluar</button>
+          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-pos-bar-tool" title="Daftar Penjualan &amp; Draft">&#128203; Riwayat Penjualan</button>
+          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-pos-bar-tool text-amber-300" title="Catat Penjualan Tertolak / Lost Sales">&#9888; Obat Kosong</button>
           <span class="px-2.5 py-1 rounded-md font-extrabold text-[11px] bg-amber-400 text-slate-900">${S().esc(prof.status_pajak || 'Non-PKP')}</span>
         </div>
         <div class="flex flex-wrap items-center gap-2 ml-auto">
@@ -4741,6 +4744,127 @@
     arr.splice(idx, 1);
     try { localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr)); } catch (e) {}
     global.toast('Catatan penjualan tertolak dihapus.', 'info');
+    global.renderActiveView();
+  };
+
+  global.quickRecordLostSale = (drugName) => {
+    const clean = String(drugName || '').trim();
+    if (!clean) return;
+    const arr = _getDashLostSales();
+    arr.push({
+      tanggal: toLocalYmd_(new Date()),
+      nama_obat: clean,
+      qty: 1,
+      est_harga: 0,
+      alasan: 'Pasien menanyakan produk tapi stok apotek kosong'
+    });
+    try { localStorage.setItem(DASH_LOST_SALES_KEY, JSON.stringify(arr.slice(-100))); } catch (e) {}
+    global.toast('Obat kosong "' + clean + '" dicatat ke Penjualan Tertolak & Defecta!', 'ok');
+    global.renderActiveView();
+  };
+
+  const CASH_DRAWER_TX_KEY = 'ons_cash_drawer_tx_v1';
+  function _getCashDrawerTx() {
+    try {
+      const raw = localStorage.getItem(CASH_DRAWER_TX_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function _saveCashDrawerTx(list) {
+    try {
+      localStorage.setItem(CASH_DRAWER_TX_KEY, JSON.stringify((list || []).slice(-200)));
+    } catch (e) {}
+  }
+  global._getCashDrawerTx = _getCashDrawerTx;
+
+  global.openKasMasukModal = () => {
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b pb-2.5" style="border-color:var(--ons-border)">
+        <div class="flex items-center gap-2.5">
+          <span class="text-emerald-500 font-extrabold text-xl">💰</span>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">Catat Kas Masuk Laci (Cash In)</h3>
+            <p class="text-[11px] text-slate-500">Uang tambahan ke laci kasir (tambah modal receh / tukar uang kembalian).</p>
+          </div>
+        </div>
+        <button type="button" onclick="S().closeModal()" class="text-xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-bold block mb-1">Nominal Kas Masuk (Rp) *</label>
+          <input id="kasMasukNominal" type="number" min="1000" step="1000" class="ons-input text-base font-bold font-mono-num text-emerald-600" placeholder="Cth: 100000" autofocus/>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            ${[20000, 50000, 100000, 200000, 500000].map(n => `<button type="button" onclick="document.getElementById('kasMasukNominal').value=${n}" class="ons-quick-denom text-[10px] py-1 px-2.5 font-mono-num font-bold">${S().rp(n)}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Keterangan / Sumber Dana *</label>
+          <input id="kasMasukKet" class="ons-input text-xs" placeholder="Cth: Tambah uang receh kembalian / Modal awal shift"/>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2.5 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="S().closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitKasDrawerTx('IN')" class="ons-btn ons-btn-emerald text-xs font-bold px-4">+ Simpan Kas Masuk</button>
+      </div>
+    </div>`, '460px');
+  };
+
+  global.openKasKeluarModal = () => {
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b pb-2.5" style="border-color:var(--ons-border)">
+        <div class="flex items-center gap-2.5">
+          <span class="text-rose-500 font-extrabold text-xl">💸</span>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">Catat Kas Keluar Laci (Petty Cash Out)</h3>
+            <p class="text-[11px] text-slate-500">Pengeluaran kecil dari laci kasir (beli kantong plastik, galon air, operasional).</p>
+          </div>
+        </div>
+        <button type="button" onclick="S().closeModal()" class="text-xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="font-bold block mb-1">Nominal Pengeluaran (Rp) *</label>
+          <input id="kasKeluarNominal" type="number" min="500" step="500" class="ons-input text-base font-bold font-mono-num text-rose-600" placeholder="Cth: 15000" autofocus/>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            ${[5000, 10000, 15000, 20000, 50000].map(n => `<button type="button" onclick="document.getElementById('kasKeluarNominal').value=${n}" class="ons-quick-denom text-[10px] py-1 px-2.5 font-mono-num font-bold">${S().rp(n)}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Keperluan / Keterangan Pengeluaran *</label>
+          <input id="kasKeluarKet" class="ons-input text-xs" placeholder="Cth: Beli kantong kresek / Beli air galon / Uang sampah"/>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2.5 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="S().closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.submitKasDrawerTx('OUT')" class="ons-btn ons-btn-danger text-xs font-bold px-4">- Simpan Kas Keluar</button>
+      </div>
+    </div>`, '460px');
+  };
+
+  global.submitKasDrawerTx = (tipe) => {
+    const isOut = tipe === 'OUT';
+    const nomEl = document.getElementById(isOut ? 'kasKeluarNominal' : 'kasMasukNominal');
+    const ketEl = document.getElementById(isOut ? 'kasKeluarKet' : 'kasMasukKet');
+    const nominal = Math.max(0, Number((nomEl && nomEl.value) || 0));
+    const ket = String((ketEl && ketEl.value) || '').trim();
+    if (nominal <= 0) return global.toast('Nominal harus lebih dari Rp 0', 'warn');
+    if (!ket) return global.toast('Keterangan kas wajib diisi', 'warn');
+
+    const st = S().AppState;
+    const txList = _getCashDrawerTx();
+    const newTx = {
+      id: 'CDT-' + Date.now().toString(36),
+      tgl: new Date().toISOString(),
+      tipe: isOut ? 'OUT' : 'IN',
+      nominal: nominal,
+      keterangan: ket,
+      kasir: (st.user && st.user.nama_lengkap) || 'Kasir',
+      shift_id: (st.activeShift && st.activeShift.id_shift) || 'SHF-AKTIF'
+    };
+    txList.push(newTx);
+    _saveCashDrawerTx(txList);
+    S().closeModal();
+    global.toast((isOut ? 'Kas keluar Rp ' : 'Kas masuk Rp ') + nominal.toLocaleString('id-ID') + ' tersimpan di laci kasir.', 'ok');
     global.renderActiveView();
   };
 
@@ -5097,54 +5221,103 @@
     const pasienName = (member && member.nama_pasien) || cart.pelanggan_nama || 'Pasien Umum';
     const defAturan = (it && it.aturan_pakai) || '3 x 1 Sehari (Sesudah Makan)';
     const defBiru = /luar|oles|tetes|salep|krim|injeksi/i.test(defAturan);
+
+    const nowDt = new Date();
+    const budDate = new Date(nowDt.getTime() + 30 * 86400000);
+    const defBudYmd = budDate.toISOString().slice(0, 10);
+
     S().openModal(`<div class="p-6 space-y-4 text-xs">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base">Cetak Etiket Obat (Putih Oral / Biru Luar)</h3>
-        <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+      <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--ons-border)">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🏷️</span>
+          <div>
+            <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Cetak Etiket Aturan Pakai Obat</h3>
+            <p class="text-[11px] text-slate-500">Standar BPOM: Etiket Putih (Oral/Dalam) &amp; Etiket Biru (Obat Luar) + BUD.</p>
+          </div>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="text-xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
       </div>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="font-semibold block mb-1">Pilih Item Keranjang</label>
-          <select id="etItemSel" class="ons-select text-xs" onchange="window.refreshCartEtiketBox()">
+          <select id="etItemSel" class="ons-select text-xs font-semibold" onchange="window.refreshCartEtiketBox()">
             ${items.map((x, idx) => `<option value="${S().esc(x.nama_dagang)} (${x.qty} ${S().esc(x.satuan)})" ${idx === Number(itemIdx || 0) ? 'selected' : ''}>${S().esc(x.nama_dagang)} (${x.qty} ${S().esc(x.satuan)})</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="font-semibold block mb-1">Jenis Etiket</label>
-          <select id="etJenisSel" class="ons-select text-xs" onchange="window.refreshCartEtiketBox()">
-            <option value="putih" ${!defBiru ? 'selected' : ''}>Etiket PUTIH — Obat Dalam / Oral</option>
-            <option value="biru" ${defBiru ? 'selected' : ''}>Etiket BIRU — Obat Luar / Injeksi</option>
+          <label class="font-semibold block mb-1">Kategori Etiket</label>
+          <select id="etJenisSel" class="ons-select text-xs font-bold" onchange="window.refreshCartEtiketBox()">
+            <option value="putih" ${!defBiru ? 'selected' : ''}>⚪ Etiket PUTIH — Obat Dalam / Diminum</option>
+            <option value="biru" ${defBiru ? 'selected' : ''}>🔵 Etiket BIRU — Obat Luar / Topikal (Tidak Ditelan)</option>
           </select>
         </div>
-        <div><label class="font-semibold block mb-1">Nama Pasien</label><input id="etPasienInp" class="ons-input text-xs" value="${S().esc(pasienName)}" oninput="window.refreshCartEtiketBox()"/></div>
-        <div><label class="font-semibold block mb-1">Aturan Pakai</label><input id="etAturanInp" class="ons-input text-xs" value="${S().esc(defAturan)}" oninput="window.refreshCartEtiketBox()"/></div>
+        <div><label class="font-semibold block mb-1">Nama Pasien</label><input id="etPasienInp" class="ons-input text-xs font-bold" value="${S().esc(pasienName)}" oninput="window.refreshCartEtiketBox()"/></div>
+        <div><label class="font-semibold block mb-1">Aturan Pakai (Signa)</label><input id="etAturanInp" class="ons-input text-xs font-bold" value="${S().esc(defAturan)}" oninput="window.refreshCartEtiketBox()"/></div>
+        <div class="sm:col-span-2">
+          <div class="flex flex-wrap items-center justify-between gap-1 mb-1">
+            <label class="font-semibold block">Batas Kadaluarsa / Beyond Use Date (BUD) *</label>
+            <div class="flex flex-wrap gap-1 text-[10px]">
+              <button type="button" onclick="window.setEtiketBudPreset(7)" class="ons-quick-denom py-0.5 px-2">+7 Hari (Sirup Kering)</button>
+              <button type="button" onclick="window.setEtiketBudPreset(14)" class="ons-quick-denom py-0.5 px-2">+14 Hari (Krim/Salep)</button>
+              <button type="button" onclick="window.setEtiketBudPreset(30)" class="ons-quick-denom py-0.5 px-2 font-bold text-blue-600">+30 Hari (Puyer/Kapsul)</button>
+            </div>
+          </div>
+          <input id="etBudInp" type="date" class="ons-input text-xs font-mono-num font-bold" value="${defBudYmd}" onchange="window.refreshCartEtiketBox()"/>
+        </div>
       </div>
-      <div id="etPreviewZone" class="ons-etiket-box ${defBiru ? 'biru' : 'putih'} space-y-1 text-center">
+      <div id="etPreviewZone" class="ons-etiket-box ${defBiru ? 'biru' : 'putih'} space-y-1.5 text-center p-3 rounded-xl border">
         ${(() => {
           const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-          return `<div class="font-extrabold text-sm tracking-wide">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
-            <div class="text-[10px]">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>`;
+          return `<div class="font-black text-sm tracking-wide uppercase">${S().esc(prof.nama_usaha || 'APOTEK ONS FARMA')}</div>
+            <div class="text-[10px] text-slate-700 dark:text-slate-200">${S().esc(prof.nama_pemilik || 'apt. Anissa Faradifa R. Is Rumi')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '19920412/SIPA_35.78/2025/1042')}</div>`;
         })()}
-        <div class="border-y border-slate-800 my-1 py-1 font-bold" id="etPrevSub">${S().esc(pasienName)} &bull; ${new Date().toLocaleDateString('id-ID')}</div>
+        <div class="border-y border-slate-700/60 my-1 py-1 font-bold text-xs flex justify-between px-2" id="etPrevSub">
+          <span>Pasien: <b>${S().esc(pasienName)}</b></span>
+          <span class="font-mono-num">${new Date().toLocaleDateString('id-ID')}</span>
+        </div>
         <div class="font-bold text-sm" id="etPrevObat">${S().esc(it.nama_dagang)} (${it.qty} ${S().esc(it.satuan)})</div>
-        <div class="font-extrabold text-sm underline" id="etPrevAturan">${S().esc(defAturan)}</div>
-        <div class="text-[10px] pt-1 font-semibold" id="etPrevFooter">${defBiru ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA LEKAS SEMBUH'}</div>
+        <div class="font-extrabold text-sm underline text-blue-900 dark:text-blue-100 py-0.5" id="etPrevAturan">${S().esc(defAturan)}</div>
+        <div class="text-[10.5px] font-mono-num font-bold text-slate-800 dark:text-slate-100" id="etPrevBud">
+          Batas Waktu Penggunaan (BUD): <span class="underline font-black text-rose-700 dark:text-rose-400">${budDate.toLocaleDateString('id-ID')}</span>
+        </div>
+        <div class="text-[10px] pt-1 font-extrabold tracking-wider" id="etPrevFooter">${defBiru ? '⚠️ OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA LEKAS SEMBUH'}</div>
       </div>
-      <button onclick="ONSStore.printHtmlZone('etPreviewZone', 'Etiket Obat ONS Farma')" class="ons-btn ons-btn-primary w-full text-xs">Cetak Etiket Sekarang</button>
-    </div>`, '540px');
+      <div class="flex gap-2">
+        <button type="button" onclick="ONSStore.printHtmlZone('etPreviewZone', 'Etiket Obat ONS Farma')" class="ons-btn ons-btn-primary flex-1 text-xs font-bold py-2">🖨️ Cetak Etiket Ini</button>
+      </div>
+    </div>`, '560px');
+  };
+
+  global.setEtiketBudPreset = (days) => {
+    const d = new Date();
+    d.setDate(d.getDate() + Number(days || 30));
+    const ymd = d.toISOString().slice(0, 10);
+    const inp = document.getElementById('etBudInp');
+    if (inp) {
+      inp.value = ymd;
+      global.refreshCartEtiketBox();
+    }
   };
 
   global.refreshCartEtiketBox = () => {
     const j = (document.getElementById('etJenisSel') || {}).value || 'putih';
     const box = document.getElementById('etPreviewZone');
-    if (box) { box.className = 'ons-etiket-box ' + j + ' space-y-1 text-center'; }
+    if (box) { box.className = 'ons-etiket-box ' + j + ' space-y-1.5 text-center p-3 rounded-xl border'; }
     const p = (document.getElementById('etPasienInp') || {}).value || 'Pasien Umum';
     const ob = (document.getElementById('etItemSel') || {}).value || '';
     const at = (document.getElementById('etAturanInp') || {}).value || '';
-    if (document.getElementById('etPrevSub')) document.getElementById('etPrevSub').textContent = p + ' • ' + new Date().toLocaleDateString('id-ID');
+    const budVal = (document.getElementById('etBudInp') || {}).value || '';
+    let budFmt = '-';
+    if (budVal) {
+      try {
+        budFmt = new Date(budVal + 'T00:00:00').toLocaleDateString('id-ID');
+      } catch (e) { budFmt = budVal; }
+    }
+    if (document.getElementById('etPrevSub')) document.getElementById('etPrevSub').innerHTML = `<span>Pasien: <b>${S().esc(p)}</b></span><span class="font-mono-num">${new Date().toLocaleDateString('id-ID')}</span>`;
     if (document.getElementById('etPrevObat')) document.getElementById('etPrevObat').textContent = ob;
     if (document.getElementById('etPrevAturan')) document.getElementById('etPrevAturan').textContent = at;
-    if (document.getElementById('etPrevFooter')) document.getElementById('etPrevFooter').textContent = j === 'biru' ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA LEKAS SEMBUH';
+    if (document.getElementById('etPrevBud')) document.getElementById('etPrevBud').innerHTML = `Batas Waktu Penggunaan (BUD): <span class="underline font-black text-rose-700 dark:text-rose-400">${budFmt}</span>`;
+    if (document.getElementById('etPrevFooter')) document.getElementById('etPrevFooter').textContent = j === 'biru' ? '⚠️ OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA LEKAS SEMBUH';
   };
   global.addPosItemById = (idObat) => {
     posSubTab = 'kasir';

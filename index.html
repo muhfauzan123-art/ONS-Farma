@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.3.0"/>
+  <meta name="application-version" content="v18.4.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.1.6"/>
+  <link rel="manifest" href="./manifest.json?v=18.4.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.1.6"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.4.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" style="display:none!important;" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.1.6"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.1.6"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.1.6"></script>
+  <script src="./vendor/ons-code128.js?v=18.4.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.4.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.4.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.1.6"></script>
-  <script src="./js/struk-engine.js?v=18.1.6"></script>
-  <script src="./js/demo-engine.js?v=18.1.6"></script>
-  <script src="./js/api-turbo.js?v=18.1.6"></script>
-  <script src="./js/store.js?v=18.1.6"></script>
-  <script src="./js/invoice-scanner.js?v=18.1.6"></script>
-  <script src="./js/barcode-scanner.js?v=18.1.6"></script>
+  <script src="./js/config.js?v=18.4.0"></script>
+  <script src="./js/struk-engine.js?v=18.4.0"></script>
+  <script src="./js/demo-engine.js?v=18.4.0"></script>
+  <script src="./js/api-turbo.js?v=18.4.0"></script>
+  <script src="./js/store.js?v=18.4.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.4.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.4.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.1.6"></script>
-  <script src="./js/views-procurement-pro.js?v=18.1.6"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.1.6"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.1.6"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.1.6"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.1.6"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.4.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.4.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.4.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.4.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.4.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.4.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -95,15 +95,15 @@
         return `<svg viewBox="0 0 24 24" aria-hidden="true" class="ons-nav-svg ${extraClass || ''}">${SVG_ICONS[name] || SVG_ICONS.home}</svg>`;
       }
 
-      // Arsitektur Menu Apotek Digital v16.4: 6 Seksi Operasional Rapi, 17 Modul Utama + 100% Sub-Tab Tersinkron
+      // Arsitektur Menu Apotek Digital v18.4: 6 Seksi Operasional Rapi, 17 Modul Utama + 100% Sub-Tab Terintegrasi
       const MENU_TREE = [
         {
           id: 'sect-main',
-          label: 'Dasbor & Penjualan',
+          label: 'Dasbor & Kasir POS',
           items: [
             {
               viewId: 'dashboard', label: 'Dashboard', icon: 'home',
-              desc: 'Dashboard Umum, Analisis Penjualan, Pengadaan Pembelian & Status Persediaan realtime.',
+              desc: 'Dashboard Ringkasan Eksekutif, Analisis Penjualan, Pengadaan Pembelian & Status Persediaan realtime.',
               kw: 'beranda pusat komando dashboard umum penjualan pembelian persediaan kpi ringkasan kepatuhan',
               tabs: [
                 { subTab: 'umum', label: 'Dashboard Umum', kw: 'dashboard umum ringkasan penjualan analisis toko database apotek status persediaan kpi karyawan' },
@@ -114,50 +114,50 @@
             },
             {
               viewId: 'pos', label: 'Kasir & Penjualan', icon: 'pos',
-              desc: 'Workstation kasir FEFO, daftar penjualan, retur penjualan, penjualan tertolak & tutup shift kas.',
-              kw: 'kasir pos fefo penjualan jual barcode f2 f4 f9 daftar penjualan retur tertolak tutup shift z-report kas',
+              desc: 'Workstation kasir FEFO, cetak etiket, kas masuk/keluar laci kasir, penjualan tertolak & tutup shift kas.',
+              kw: 'kasir pos fefo penjualan jual barcode f2 f4 f9 daftar penjualan retur tertolak obat kosong tutup shift z-report kas masuk kas keluar laci',
               tabs: [
-                { subTab: 'kasir', label: 'Kasir', kw: 'kasir jual scan barcode f2 f4 f9 split poin diskon etiket fefo biaya servis embalase' },
-                { subTab: 'riwayat', label: 'Daftar Penjualan', kw: 'daftar penjualan riwayat transaksi nota cetak ulang rincian faktur draft' },
-                { subTab: 'retur', label: 'Retur Penjualan', kw: 'retur penjualan void pin nota pengembalian barang' },
-                { subTab: 'tertolak', label: 'Penjualan Tertolak', kw: 'penjualan tertolak lost sale barang kosong defecta' },
-                { subTab: 'tutup-shift', label: 'Tutup Shift & Kas', kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi laci kas' }
+                { subTab: 'kasir', label: 'Kasir POS (FEFO)', kw: 'kasir jual scan barcode f2 f4 f9 multi satuan box strip tablet split poin diskon etiket fefo kas masuk keluar laci' },
+                { subTab: 'riwayat', label: 'Riwayat & Nota Penjualan', kw: 'daftar penjualan riwayat transaksi nota cetak ulang rincian faktur draft salinan resep' },
+                { subTab: 'retur', label: 'Retur Penjualan (Void)', kw: 'retur penjualan void pin nota pengembalian barang kasir' },
+                { subTab: 'tertolak', label: 'Obat Kosong (Lost Sales)', kw: 'penjualan tertolak lost sale barang kosong permintaan pasien defecta', badge: 'DEFECTA' },
+                { subTab: 'tutup-shift', label: 'Tutup Shift & Z-Report', kw: 'tutup shift z-report kasir pecahan denominasi uang rekonsiliasi laci kas kas masuk kas keluar float setoran' }
               ]
             }
           ]
         },
         {
           id: 'sect-inv',
-          label: 'Produk & Gudang',
+          label: 'Master Data & Gudang',
           items: [
             {
-              viewId: 'obat', label: 'Master Data', icon: 'pill',
-              desc: 'Database terpadu Master Produk, Kategori, Satuan, Rak, Gudang, Kategori Pelanggan, Pajak, Supplier, Pelanggan, Dokter & Sales.',
+              viewId: 'obat', label: 'Master Data Farmasi', icon: 'pill',
+              desc: 'Database terpadu Master Produk, Kategori, Satuan Kemasan, Rak, Gudang, Kategori Pelanggan, Pajak, Supplier, Pelanggan, Dokter & Sales.',
               kw: 'master data produk obat kfa nie bpom kategori satuan kemasan rak gudang kategori pelanggan pajak ppn supplier pelanggan dokter sales',
               tabs: [
-                { subTab: 'obat', label: 'Master Produk', kw: 'master data produk obat kfa nie bpom harga jual beli margin code128 sku het' },
-                { subTab: 'kategori', label: 'Master Kategori', kw: 'master kategori produk obat bebas terbatas keras herbal alat kesehatan' },
-                { subTab: 'satuan', label: 'Master Satuan', kw: 'master satuan kemasan botol box strip tablet ampul vial bungkus' },
-                { subTab: 'rak', label: 'Master Rak', kw: 'master rak penyimpanan gudang utama rak 1 2 3 etalase chiller' },
-                { subTab: 'gudang', label: 'Master Gudang', kw: 'master gudang lokasi penyimpanan utama cabang transit' },
-                { subTab: 'kategori-pelanggan', label: 'Master Kategori Pelanggan', kw: 'master kategori pelanggan member umum vip instansi harga khusus' },
-                { subTab: 'pajak', label: 'Master Pajak', kw: 'master pajak ppn 11 persen tarif tanpa pajak faktur' },
-                { subTab: 'supplier', label: 'Supplier', kw: 'supplier pbf cdob termin sla kontak vendor minimal order', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'pelanggan', label: 'Pelanggan', kw: 'pelanggan member pasien terapi rutin alergi poin rekam medis' },
-                { subTab: 'dokter', label: 'Dokter', kw: 'dokter mitra penulis resep sip str ktp satusehat klinik faskes' },
-                { subTab: 'sales', label: 'Sales/Pelayan', kw: 'sales pelayan pegawai kasir kode sales telepon' }
+                { subTab: 'obat', label: 'Master Produk & Obat', kw: 'master data produk obat kfa nie bpom harga jual beli margin code128 sku het' },
+                { subTab: 'kategori', label: 'Kategori Produk', kw: 'master kategori produk obat bebas terbatas keras herbal alat kesehatan' },
+                { subTab: 'satuan', label: 'Satuan & Konversi Kemasan', kw: 'master satuan kemasan botol box strip tablet ampul vial bungkus konversi' },
+                { subTab: 'rak', label: 'Rak & Etalase', kw: 'master rak penyimpanan gudang utama rak 1 2 3 etalase chiller display' },
+                { subTab: 'gudang', label: 'Lokasi Gudang Farmasi', kw: 'master gudang lokasi penyimpanan utama cabang transit' },
+                { subTab: 'kategori-pelanggan', label: 'Kategori Pelanggan', kw: 'master kategori pelanggan member umum vip instansi harga khusus diskon' },
+                { subTab: 'pajak', label: 'Tarif Pajak (PPN)', kw: 'master pajak ppn 11 persen tarif tanpa pajak faktur' },
+                { subTab: 'supplier', label: 'Supplier PBF Resmi', kw: 'supplier pbf cdob termin sla kontak vendor minimal order', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'pelanggan', label: 'Data Pelanggan & Pasien', kw: 'pelanggan member pasien terapi rutin alergi poin rekam medis' },
+                { subTab: 'dokter', label: 'Dokter Mitra Penulis Resep', kw: 'dokter mitra penulis resep sip str ktp satusehat klinik faskes' },
+                { subTab: 'sales', label: 'Sales & Tenaga Pelayan', kw: 'sales pelayan pegawai kasir kode sales telepon' }
               ]
             },
             {
               viewId: 'gudang', label: 'Persediaan & Stok', icon: 'inventory', badgeKey: 'nearEd', badgeTone: 'danger',
-              desc: 'Stok kadaluarsa FEFO, stok opname, penyesuaian stok, perpindahan stok, kartu stok BPOM & monitor suhu (ruang & kulkas).',
+              desc: 'Stok kadaluarsa FEFO, stok opname fisik, penyesuaian stok, perpindahan rak/gudang, kartu stok BPOM & monitor suhu.',
               kw: 'persediaan gudang stok kadaluarsa batch fefo batas retur stok opname penyesuaian stok perpindahan stok kartu stok monitor suhu ruangan kulkas cold chain chiller',
               tabs: [
-                { subTab: 'batch', label: 'Stok Kadaluarsa', kw: 'stok kadaluarsa batch fefo batas retur karantina recall' },
-                { subTab: 'opname', label: 'Stok Opname', kw: 'stok opname cycle count riwayat opname selisih fisik', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'penyesuaian', label: 'Penyesuaian Stok', kw: 'penyesuaian stok selisih opname rusak expired rekap nilai', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'transfer', label: 'Perpindahan Stok', kw: 'perpindahan stok mutasi rak gudang antar cabang draft import', roles: ['Pemilik', 'APJ'] },
-                { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'alur obat masuk keluar kartu stok mutasi bpom xlsx' },
+                { subTab: 'batch', label: 'Stok Kadaluarsa (ED)', kw: 'stok kadaluarsa batch fefo batas retur karantina recall ed 90 hari' },
+                { subTab: 'opname', label: 'Stok Opname Fisik', kw: 'stok opname cycle count riwayat opname selisih fisik', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'penyesuaian', label: 'Penyesuaian Stok (Koreksi)', kw: 'penyesuaian stok selisih opname rusak expired rekap nilai koreksi', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'transfer', label: 'Perpindahan Stok (Mutasi)', kw: 'perpindahan stok mutasi rak gudang antar cabang draft import', roles: ['Pemilik', 'APJ'] },
+                { subTab: 'kartu-stok', label: 'Kartu Stok Digital (BPOM)', kw: 'alur obat masuk keluar kartu stok mutasi bpom cdob xlsx' },
                 { subTab: 'coldchain', label: 'Monitor Suhu (Ruang & Kulkas)', kw: 'monitor suhu ruangan kulkas chiller cold chain vaksin insulin kelembapan rh grafik laporan a4 cdob' }
               ]
             }
@@ -165,20 +165,20 @@
         },
         {
           id: 'sect-buy',
-          label: 'Pengadaan & PBF',
+          label: 'Pengadaan & Pembelian (PBF)',
           items: [
             {
               viewId: 'faktur', label: 'Pengadaan & Faktur', icon: 'truck', badgeKey: 'lowStock', badgeTone: '',
               desc: 'Siklus pengadaan apotek terpadu: Defecta ambang stok, rencana pembelian, SP resmi BPOM, terima barang GRN/Scan, daftar faktur PBF, analisa harga & margin, retur BAR-PBF & konsinyasi.',
               kw: 'pengadaan pembelian faktur pbf defecta ambang stok rencana pembelian surat pesanan sp bpom terima faktur grn scan ocr analisa harga margin naik hutang jatuh tempo retur bar konsinyasi',
               tabs: [
-                { subTab: 'defecta', label: 'Defecta & Ambang Stok', kw: 'defecta stok minimal maksimal rop ambang buffer pesanan otomatis pbf' },
-                { subTab: 'rencana', label: 'Rencana Pembelian', kw: 'rencana pembelian penawaran sales usulan staf kalkulasi kebutuhan sp' },
-                { subTab: 'sp', label: 'Surat Pesanan (SP BPOM)', kw: 'surat pesanan sp bpom resmi reguler prekursor psikotropika narkotika oot a4 print preview' },
-                { subTab: 'input', label: 'Terima Faktur (GRN / Scan)', kw: 'terima faktur grn sp multi item ocr scan batch masuk gudang fefo' },
+                { subTab: 'defecta', label: 'Defecta & Ambang ROP', kw: 'defecta stok minimal maksimal rop ambang buffer pesanan otomatis pbf oos' },
+                { subTab: 'rencana', label: 'Rencana Pembelian (PO)', kw: 'rencana pembelian penawaran sales usulan staf kalkulasi kebutuhan sp po draft' },
+                { subTab: 'sp', label: 'Surat Pesanan (SP BPOM)', kw: 'surat pesanan sp bpom resmi reguler prekursor psikotropika narkotika oot a4 print preview', badge: 'RESMI' },
+                { subTab: 'input', label: 'Terima Barang / Faktur', kw: 'terima faktur grn sp multi item ocr scan batch masuk gudang fefo' },
                 { subTab: 'daftar', label: 'Daftar Faktur PBF', kw: 'daftar faktur pembelian hutang pbf tempo termin jatuh tempo status lunas' },
                 { subTab: 'harga', label: 'Analisa Harga & Margin', kw: 'analisa harga margin hpp riwayat beli pbf keputusan harga jual margin tipis naik' },
-                { subTab: 'retur', label: 'Retur BAR-PBF', kw: 'retur barang pbf near ed kadaluarsa rusak recall surat bar' },
+                { subTab: 'retur', label: 'Retur Pembelian (BAR-PBF)', kw: 'retur barang pbf near ed kadaluarsa rusak recall surat bar' },
                 { subTab: 'konsinyasi', label: 'Konsinyasi Distributor', kw: 'konsinyasi titip jual distributor settlement laku bayar rekap' }
               ]
             }
@@ -186,65 +186,64 @@
         },
         {
           id: 'sect-clin',
-          label: 'Klinis & Pasien',
+          label: 'Pelayanan Apotek & Pasien',
           items: [
-            {
-              viewId: 'pemeriksaan', label: 'Pemeriksaan Pasien', icon: 'activity',
-              desc: 'Pemeriksaan Tensi, Gula Darah, Kolesterol & Asam Urat tersimpan + kirim laporan via WhatsApp.',
-              kw: 'pemeriksaan pasien cek kesehatan tensi darah gula darah kolesterol asam urat wa',
-              tabs: [
-                { subTab: 'semua', label: 'Semua Pemeriksaan', kw: 'ringkasan paket cek kesehatan lengkap input riwayat wa' },
-                { subTab: 'tensi', label: 'Cek Tensi Darah', kw: 'tensi tekanan darah sistol diastol nadi mmhg hipertensi' },
-                { subTab: 'gula', label: 'Cek Gula Darah', kw: 'gula darah glukosa gds gdp 2jpp diabetes' },
-                { subTab: 'kolesterol', label: 'Cek Kolesterol', kw: 'kolesterol total lemak darah mg/dl' },
-                { subTab: 'asam_urat', label: 'Cek Asam Urat', kw: 'asam urat uric acid gout nyeri sendi pria wanita' }
-              ]
-            },
             {
               viewId: 'klinis', label: 'Pelayanan Klinis', icon: 'clinical', badgeKey: 'erxPending', badgeTone: 'info',
               desc: 'Kajian resep dokter, antrean E-Resep, SOAP SATUSEHAT, racikan & etiket, Kalkulator Dosis 41 preset, Kartu PIO & MESO.',
               kw: 'klinis apoteker soap pio satusehat racikan etiket meso naranjo copy resep e-resep erx antrean dokter kalkulator dosis obat anak dewasa bsa infus gfr',
               tabs: [
                 { subTab: 'soap', label: 'Kajian Resep & SOAP', kw: 'soap pio pto kajian skrining resep satusehat' },
-                { subTab: 'erx', label: 'Antrean E-Resep', kw: 'antrean e-resep dokter mitra pin apj validasi pos' },
-                { subTab: 'racikan', label: 'Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru' },
-                { subTab: 'kalkulator', label: 'Kalkulator Dosis & Template', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa sirup tetes tetesan infus gfr aturan minum template' },
+                { subTab: 'erx', label: 'Antrean E-Resep Dokter', kw: 'antrean e-resep dokter mitra pin apj validasi pos' },
+                { subTab: 'racikan', label: 'Racikan & Etiket BUD', kw: 'racikan puyer multi bahan etiket putih biru beyond use date bud', badge: 'BUD' },
+                { subTab: 'kalkulator', label: 'Kalkulator Dosis (41 Preset)', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa sirup tetes tetesan infus gfr aturan minum template' },
                 { subTab: 'pio', label: 'Kartu PIO & Edukasi WA', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
-                { subTab: 'meso', label: 'MESO BPOM (Naranjo)', kw: 'meso naranjo efek samping rotd bpom' }
+                { subTab: 'meso', label: 'MESO BPOM (Farmakovigilans)', kw: 'meso naranjo efek samping rotd bpom farmakovigilans' }
               ]
             },
             {
-              viewId: 'crm-wa', label: 'CRM & Broadcast WA', icon: 'chat',
-              desc: 'Kontak & Opt-Out WhatsApp pasien, broadcast edukasi terjadwal & monitor antrean Fonnte.',
-              kw: 'crm kontak whatsapp broadcast blast fonnte opt out',
+              viewId: 'pemeriksaan', label: 'Pemeriksaan Pasien', icon: 'activity',
+              desc: 'Pemeriksaan Point-of-Care Tensi, Gula Darah, Kolesterol & Asam Urat tersimpan + kirim laporan via WhatsApp.',
+              kw: 'pemeriksaan pasien cek kesehatan tensi darah gula darah kolesterol asam urat wa',
               tabs: [
-                { subTab: 'kontak', label: 'Kontak & Opt-Out', kw: 'kontak crm pasien wa 08 62 opt out' },
-                { subTab: 'blast', label: 'Broadcast WA Massal', kw: 'broadcast blast wa reminder edukasi' },
-                { subTab: 'antrean', label: 'Antrean Notifikasi', kw: 'antrean log wa fonnte email' }
+                { subTab: 'semua', label: 'Semua Pemeriksaan', kw: 'ringkasan paket cek kesehatan lengkap input riwayat wa' },
+                { subTab: 'tensi', label: 'Cek Tekanan Darah', kw: 'tensi tekanan darah sistol diastol nadi mmhg hipertensi' },
+                { subTab: 'gula', label: 'Cek Gula Darah', kw: 'gula darah glukosa gds gdp 2jpp diabetes' },
+                { subTab: 'kolesterol', label: 'Cek Kolesterol Total', kw: 'kolesterol total lemak darah mg/dl' },
+                { subTab: 'asam_urat', label: 'Cek Asam Urat', kw: 'asam urat uric acid gout nyeri sendi pria wanita' }
+              ]
+            },
+            {
+              viewId: 'crm-wa', label: 'CRM & WhatsApp Gateway', icon: 'chat',
+              desc: 'Database kontak pasien, broadcast pengingat minum obat / edukasi terjadwal & monitor antrean Fonnte.',
+              kw: 'crm kontak whatsapp broadcast blast fonnte opt out reminder pengingat minum obat',
+              tabs: [
+                { subTab: 'kontak', label: 'Database Pasien & Kontak', kw: 'kontak crm pasien wa 08 62 opt out riwayat' },
+                { subTab: 'blast', label: 'Broadcast Pesan WA', kw: 'broadcast blast wa reminder pengingat edukasi' },
+                { subTab: 'antrean', label: 'Antrean Notifikasi Fonnte', kw: 'antrean log wa fonnte email status antrean' }
               ]
             }
           ]
         },
         {
           id: 'sect-fin',
-          label: 'Keuangan & Laporan',
+          label: 'Keuangan & Analitik Bisnis',
           items: [
             {
-              viewId: 'finance', label: 'Keuangan & Kas', icon: 'finance',
-              desc: 'Laba-Rugi P&L, buku kas & kunci periode, piutang, hutang PBF, pajak & slip gaji A4.',
+              viewId: 'finance', label: 'Keuangan & Buku Kas', icon: 'finance',
+              desc: 'Laba-Rugi P&L, buku kas & kunci periode, piutang pelanggan, hutang PBF, pajak & slip gaji A4.',
               kw: 'keuangan laba rugi pnl jurnal kas lock piutang hutang pajak ppn slip gaji',
               tabs: [
                 { subTab: 'pnl', label: 'Laba-Rugi (P&L)', kw: 'laba rugi pnl omzet hpp margin valuasi aset xlsx' },
-                { subTab: 'akun-kas', label: 'Daftar Akun Kas', kw: 'akun kas bank ewallet saldo transfer kas utama' },
-                { subTab: 'jurnal', label: 'Buku Kas & Lock', kw: 'jurnal petty cash kunci periode tutup buku transaksi baru' },
-                { subTab: 'piutang', label: 'Piutang Pelanggan', kw: 'piutang usaha tempo pelanggan klinik tanda terima faktur ttf' },
+                { subTab: 'akun-kas', label: 'Daftar Rekening & Kas', kw: 'akun kas bank ewallet saldo transfer kas utama' },
+                { subTab: 'jurnal', label: 'Buku Kas & Jurnal', kw: 'jurnal petty cash kunci periode tutup buku transaksi baru' },
+                { subTab: 'piutang', label: 'Piutang Usaha Pelanggan', kw: 'piutang usaha tempo pelanggan klinik tanda terima faktur ttf' },
                 { subTab: 'hutang', label: 'Hutang Faktur PBF', kw: 'utang usaha pbf cicil bayar faktur catat utang riwayat' },
                 { subTab: 'pajak', label: 'Pajak & Slip Gaji', kw: 'pajak ppn pph slip gaji karyawan a4' }
               ]
             },
-
             {
-              viewId: 'sipnap', label: 'Laporan', icon: 'report',
+              viewId: 'sipnap', label: 'Laporan & SIPNAP', icon: 'report',
               desc: 'Laporan Penjualan, Pembelian, Persediaan, Keuangan Terstruktur, SIPNAP Kemenkes & Analisis Pareto.',
               kw: 'laporan penjualan pembelian persediaan keuangan laba rugi sipnap kemenkes pareto dead stock',
               tabs: [
@@ -252,26 +251,26 @@
                 { subTab: 'pembelian', label: 'Laporan Pembelian', kw: 'laporan pembelian produk faktur pbf kuantitas nilai beli' },
                 { subTab: 'persediaan', label: 'Laporan Persediaan', kw: 'laporan persediaan mutasi stok awal beli retur jual pindah opname akhir saldo' },
                 { subTab: 'keuangan', label: 'Laporan Keuangan', kw: 'laporan keuangan laba rugi neraca arus kas bulanan tahunan persentase' },
-                { subTab: 'narkotika', label: 'SIPNAP Kemenkes', kw: 'sipnap narkotika psikotropika oot' },
+                { subTab: 'narkotika', label: 'SIPNAP Kemenkes', kw: 'sipnap narkotika psikotropika oot resmi kemenkes' },
                 { subTab: 'pareto', label: 'Pareto ABC & WHO', kw: 'pareto abc fast slow moving who' },
-                { subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock permintaan tertolak lost sales' }
+                { subTab: 'deadstock', label: 'Dead Stock & Lost Sales', kw: 'dead stock permintaan tertolak lost sales barang kosong' }
               ]
             },
             {
-              viewId: 'analisis', label: 'Analisis', icon: 'rocket',
+              viewId: 'analisis', label: 'Analisis Bisnis', icon: 'rocket',
               desc: 'Analisis Pareto A-B-C, Analisis Pembelian Stok Buffer, & Analisis Rekomendasi Harga Jual Produk.',
               kw: 'analisis pareto abc analisis pembelian pesanan otomatis buffer stock deadstock understock overstock analisis harga produk markup update sekaligus',
               tabs: [
-                { subTab: 'pareto', label: 'Analisis Pareto', kw: 'analisis pareto abc fast slow moving omzet keuntungan' },
-                { subTab: 'pembelian', label: 'Analisis Pembelian', kw: 'analisis pembelian buffer stock po otomatis lead time target pemenuhan deadstock understock' },
-                { subTab: 'harga', label: 'Analisis Harga', kw: 'analisis harga produk markup rekomendasi harga jual update sekaligus' }
+                { subTab: 'pareto', label: 'Analisis Pareto ABC', kw: 'analisis pareto abc fast slow moving omzet keuntungan' },
+                { subTab: 'pembelian', label: 'Analisis Pembelian Buffer', kw: 'analisis pembelian buffer stock po otomatis lead time target pemenuhan deadstock understock' },
+                { subTab: 'harga', label: 'Rekomendasi Harga Jual', kw: 'analisis harga produk markup rekomendasi harga jual update sekaligus' }
               ]
             }
           ]
         },
         {
           id: 'sect-sys',
-          label: 'Pengaturan Sistem',
+          label: 'Sistem & Pengaturan',
           items: [
             {
               viewId: 'users', label: 'Manajemen Pengguna', icon: 'users',
@@ -280,10 +279,10 @@
               tabs: [
                 { subTab: 'daftar', label: 'Daftar Pengguna', kw: 'daftar pengguna akun user admin apj kasir nama role no hp status' },
                 { subTab: 'peran', label: 'Peran & Hak Akses', kw: 'peran hak akses rbac permission role admin apoteker penanggung jawab cashier' },
-                { subTab: 'jadwal', label: 'Jadwal Kerja', kw: 'jadwal kerja shift kalender jam kerja staf pro', badge: 'PRO' },
-                { subTab: 'presensi', label: 'Riwayat Presensi', kw: 'riwayat presensi absensi staf jam masuk pulang pro', badge: 'PRO' },
-                { subTab: 'shift', label: 'Riwayat Shift/Sesi', kw: 'riwayat shift sesi kasir daftar buka tutup selisih anggota status' },
-                { subTab: 'log', label: 'Log Aktivitas', kw: 'log aktivitas audit jejak rekam aktivitas staf beta', badge: 'BETA' }
+                { subTab: 'jadwal', label: 'Jadwal Kerja Shift', kw: 'jadwal kerja shift kalender jam kerja staf pro', badge: 'PRO' },
+                { subTab: 'presensi', label: 'Riwayat Presensi Staf', kw: 'riwayat presensi absensi staf jam masuk pulang pro', badge: 'PRO' },
+                { subTab: 'shift', label: 'Riwayat Sesi Shift', kw: 'riwayat shift sesi kasir daftar buka tutup selisih anggota status' },
+                { subTab: 'log', label: 'Log Aktivitas Staf', kw: 'log aktivitas audit jejak rekam aktivitas staf audit', badge: 'AUDIT' }
               ]
             },
             {
@@ -291,18 +290,18 @@
               desc: 'Konfirmasi profil pemilik & tempat usaha, metode pembayaran, pengguna, struk thermal, reset pabrik & log audit.',
               kw: 'pengaturan profil bisnis pemilik anissa tempat usaha foto logo sia sipa metode pembayaran akun sandi pin struk thermal script properties reset pabrik audit',
               tabs: [
-                { subTab: 'profil', label: 'Profil Bisnis (Profil Pemilik & Usaha)', kw: 'profil bisnis pemilik anissa tempat usaha foto logo sia sipa konfirmasi' },
-                { subTab: 'metode-bayar', label: 'Metode Pembayaran', kw: 'metode pembayaran kas non tunai mdr qris transfer debit edc asuransi' },
-                { subTab: 'akun', label: 'Pengguna & Akses', kw: 'akun user kasir apj sipa ganti sandi pin' },
-                { subTab: 'struk', label: 'Desain Struk Thermal', kw: 'desain struk thermal 58mm 80mm escpos qr' },
-                { subTab: 'vault', label: 'Audit DB, Brankas & Reset', kw: 'script properties fonnte vault migrasi backup drive reset data pabrik audit db' },
-                { subTab: 'audit', label: 'Log Audit Aktivitas', kw: 'log audit aktivitas keamanan riwayat ubah' }
+                { subTab: 'profil', label: 'Profil Usaha & SIA/SIPA', kw: 'profil bisnis pemilik anissa tempat usaha foto logo sia sipa konfirmasi legalitas' },
+                { subTab: 'metode-bayar', label: 'Metode Bayar & QRIS/EDC', kw: 'metode pembayaran kas non tunai mdr qris transfer debit edc asuransi' },
+                { subTab: 'akun', label: 'Pengguna & PIN Otorisasi', kw: 'akun user kasir apj sipa ganti sandi pin otorisasi' },
+                { subTab: 'struk', label: 'Desain Struk Thermal', kw: 'desain struk thermal 58mm 80mm escpos qr bluetooth' },
+                { subTab: 'vault', label: 'Brankas & Reset Data', kw: 'script properties fonnte vault migrasi backup drive reset data pabrik audit db' },
+                { subTab: 'audit', label: 'Log Audit Keamanan', kw: 'log audit aktivitas keamanan riwayat ubah' }
               ]
             },
             {
               viewId: 'mobile-preview', label: 'Tampilan Mode HP', icon: 'smartphone',
               desc: 'Pratinjau & simulasi tampilan aplikasi apotek di layar smartphone kasir/opname.',
-              kw: 'mode hp mobile preview simulasi pwa android'
+              kw: 'mode hp mobile preview simulasi pwa android responsive'
             }
           ]
         }
@@ -460,7 +459,13 @@
                               <span class="ons-submenu-dot"></span>
                               <span class="truncate">${ONSStore.esc(t.label)}</span>
                             </span>
-                            ${t.badge ? `<span class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded ${t.badge === 'BETA' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'}">${t.badge}</span>` : ''}
+                            ${t.badge ? `<span class="ml-auto text-[9px] font-extrabold px-1.5 py-0.2 rounded ${subAct ? 'bg-white/20 text-white' : (
+  t.badge === 'DEFECTA' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300' :
+  t.badge === 'BUD' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300' :
+  t.badge === 'RESMI' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300' :
+  t.badge === 'PRO' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300' :
+  'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300'
+)}">${t.badge}</span>` : ''}
                           </button>`;
                         }).join('')}
                       </div>

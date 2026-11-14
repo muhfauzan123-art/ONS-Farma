@@ -7951,6 +7951,11 @@
     };
 
     const estTotalPo = lowStock.reduce((acc, o) => acc + getOrderQty(o) * Number(o.hpp_terakhir || o.hpp_avg || 0), 0);
+    let lostSalesList = [];
+    try {
+      const rawLs = localStorage.getItem('ons_dash_lost_sales_v1');
+      if (rawLs) lostSalesList = JSON.parse(rawLs) || [];
+    } catch (e) {}
 
     return `
       <!-- 1. EXECUTIVE KPI METRIC CARDS DEFECTA -->
@@ -7991,6 +7996,30 @@
           <div class="text-[10.5px] text-slate-500 mt-0.5">${lowStock.length} produk siap dipesan</div>
         </div>
       </div>
+
+      <!-- 1.5 LOST SALES / PERMINTAAN OBAT KOSONG PASIEN (APOTEK DIGITAL SYNC) -->
+      ${lostSalesList.length ? `
+      <div class="p-3.5 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">⚠️</span>
+            <div>
+              <span class="text-xs font-extrabold text-amber-900 dark:text-amber-200">Permintaan Obat Pasien Kosong / Lost Sales (${lostSalesList.length} Item Ditanyakan Pasien):</span>
+              <span class="text-[11px] text-amber-800/80 dark:text-amber-300/80 ml-1">Pasien pernah menanyakan produk ini di kasir saat stok habis. Masukkan ke rencana SP PBF untuk mencegah omzet hilang.</span>
+            </div>
+          </div>
+          <button type="button" onclick="window.setPosSubTab('tertolak'); window.navigateView('pos', 'tertolak')" class="ons-btn ons-btn-amber text-[11px] py-1 px-2.5 font-bold">Kelola di Kasir &rarr;</button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${lostSalesList.slice(-8).map((ls) => `
+            <span class="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 text-xs font-semibold flex items-center gap-2 shadow-sm">
+              <span class="font-bold text-slate-800 dark:text-slate-100">${S().esc(ls.nama_obat)}</span>
+              <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold font-mono-num">${ls.qty || 1}x dicari</span>
+              <span class="text-[10px] text-slate-400 font-mono-num">${S().esc(ls.tanggal || '')}</span>
+            </span>
+          `).join('')}
+        </div>
+      </div>` : ''}
 
       <!-- 2. PAKET ORDER OTOMATIS PER SUPPLIER PBF -->
       ${Object.keys(groupedPbf).length ? `

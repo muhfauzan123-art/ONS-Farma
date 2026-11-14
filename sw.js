@@ -1,12 +1,12 @@
 /**
- * Service Worker PWA - Apotek ONS Farma Enterprise v18.3.0
+ * Service Worker PWA - Apotek ONS Farma Enterprise v18.4.0
  * Aturan Emas /gas-pwa-github:
  * - Path aset selalu relatif (./)
  * - Jangan pernah cache endpoint Google Apps Script (script.google.com / script.googleusercontent.com)
  * - Selalu sajikan UI instan dari cache untuk pengalaman bebas lag (<50ms)
  */
 
-const CACHE_NAME = 'ons-farma-pwa-v18.3.0';
+const CACHE_NAME = 'ons-farma-pwa-v18.4.0';
 const CORE_ASSETS = [
   './',
   './index.html',
