@@ -7871,6 +7871,7 @@
    */
   let defectaTab = 'order';
   let defectaOrderQty = {};
+  let defectaSelectedIds = new Set();
 
   function _renderDefectaTabContent(st) {
     const pbfLeadMap = {};
@@ -8039,6 +8040,24 @@
         </div>
       </details>
 
+      <!-- 3.5 FLOATING / BATCH ACTION BAR DEFECTA SELECTION -->
+      ${defectaSelectedIds.size > 0 ? `
+      <div class="p-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-lg flex flex-wrap items-center justify-between gap-3 animate-pulse">
+        <div class="flex items-center gap-2.5">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/20 text-white font-extrabold text-sm">✓</span>
+          <div>
+            <div class="text-xs font-extrabold">Terpilih: <span class="font-mono-num text-amber-300 text-sm font-black">${defectaSelectedIds.size}</span> Produk Farmasi Defecta</div>
+            <div class="text-[11px] text-blue-100">Siap diterbitkan langsung menjadi Surat Pesanan (SP) Resmi ke Distributor PBF</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.clearDefectaSelected()" class="text-xs text-blue-100 hover:text-white underline font-semibold px-2 py-1">Batal Pilih</button>
+          <button type="button" onclick="window.createSpFromSelectedDefecta()" class="ons-btn bg-white hover:bg-amber-300 text-blue-900 font-extrabold text-xs py-1.5 px-3.5 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+            <span>⚡ Terbitkan SP untuk Produk Terpilih (${defectaSelectedIds.size}) &rarr;</span>
+          </button>
+        </div>
+      </div>` : ''}
+
       <!-- 4. TABEL DEFECTA & RESTOK -->
       <div class="ons-card p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
@@ -8060,6 +8079,9 @@
           <table class="ons-table is-compact">
             <thead>
               <tr>
+                <th class="w-8 text-center">
+                  <input type="checkbox" aria-label="Pilih Semua Produk Defecta" ${lowStock.length > 0 && lowStock.every((o) => defectaSelectedIds.has(o.id_obat)) ? 'checked' : ''} onchange="window.toggleDefectaSelectAll(this.checked)" class="rounded cursor-pointer w-3.5 h-3.5"/>
+                </th>
                 <th class="w-8">No.</th>
                 <th>Produk Farmasi &amp; Spesifikasi</th>
                 <th class="text-center">Jenis SP</th>
@@ -8085,9 +8107,13 @@
                 const sMax = Number(o.stok_max || 100);
                 const sPct = sMax > 0 ? Math.min(100, Math.round((s / sMax) * 100)) : 0;
                 const isKosong = s <= 0;
+                const isChecked = defectaSelectedIds.has(o.id_obat);
 
-                return `<tr>
-                  <td class="font-mono-num text-xs text-center text-slate-400">${idx + 1}.</td>
+                return `<tr class="${isChecked ? 'bg-blue-50/60 dark:bg-blue-950/30' : ''}">
+                  <td class="text-center align-middle">
+                    <input type="checkbox" aria-label="Pilih ${S().esc(o.nama_dagang)}" ${isChecked ? 'checked' : ''} onchange="window.toggleDefectaSelect('${S().esc(o.id_obat)}', this.checked)" class="rounded cursor-pointer w-3.5 h-3.5"/>
+                  </td>
+                  <td class="font-mono-num text-xs text-center text-slate-400 align-middle">${idx + 1}.</td>
                   <td>
                     <div class="flex items-start gap-1.5">
                       <span class="inline-block w-2 h-2 rounded-full mt-1.5 shrink-0 ${isKosong ? 'bg-red-500' : 'bg-amber-500'}" title="${isKosong ? 'Stok Habis' : 'Stok Menipis'}"></span>
@@ -8142,12 +8168,12 @@
                   <td class="text-right whitespace-nowrap">
                     <div class="flex items-center justify-end gap-1">
                       <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', ${qtyOrder}, 'Dari Defecta Stok Tipis')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2 font-bold" title="Masukkan ke Rencana Pembelian">+ Rencana</button>
-                      <button type="button" onclick="window.generateSpFromDefecta('${S().esc(o.pbf_utama || '')}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2 font-bold" title="Buat SP untuk Distributor">+ Buat SP</button>
+                      <button type="button" onclick="window.openSpModalForSingleObat('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 font-bold shadow-sm flex items-center gap-1" title="1-Klik Buat Surat Pesanan (SP) untuk Obat Ini">⚡ + SP</button>
                       <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-1.5" title="Buka Detail Monograf &amp; Riwayat Beli">👁️</button>
                     </div>
                   </td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="9" class="text-center py-8 text-xs text-slate-500">Seluruh stok obat memenuhi ambang cadangan aman. Tidak ada produk yang perlu restok!</td></tr>'}
+              }).join('') : '<tr><td colspan="10" class="text-center py-8 text-xs text-slate-500">Seluruh stok obat memenuhi ambang cadangan aman. Tidak ada produk yang perlu restok!</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -8338,6 +8364,177 @@
         global.openSpA4PreviewModal(res.item.id_sp);
       }
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.toggleDefectaSelect = (idObat, isChecked) => {
+    if (isChecked) defectaSelectedIds.add(idObat);
+    else defectaSelectedIds.delete(idObat);
+    global.renderActiveView();
+  };
+
+  global.toggleDefectaSelectAll = (isChecked) => {
+    const st = S().AppState;
+    const dq = defectaSearchQ.trim().toLowerCase();
+    const lowStock = st.masterObat.filter((o) => {
+      const s = S().getSellableStok(o.id_obat);
+      const sMin = Number(o.stok_min || 10);
+      if (s > sMin) return false;
+      if (defectaStatusFilter === 'KOSONG' && s > 0) return false;
+      if (defectaStatusFilter === 'DIBAWAH_MIN' && !(s > 0 && s <= sMin)) return false;
+      if (dq && !`${o.nama_dagang} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase().includes(dq)) return false;
+      return true;
+    });
+    if (isChecked) {
+      lowStock.forEach((o) => defectaSelectedIds.add(o.id_obat));
+    } else {
+      defectaSelectedIds.clear();
+    }
+    global.renderActiveView();
+  };
+
+  global.clearDefectaSelected = () => {
+    defectaSelectedIds.clear();
+    global.renderActiveView();
+  };
+
+  global.openSpModalForSingleObat = (idObat) => {
+    const st = S().AppState;
+    const o = st.masterObat.find((x) => x.id_obat === idObat);
+    if (!o) return global.toast('Data obat tidak ditemukan.', 'warn');
+    const s = S().getSellableStok(o.id_obat);
+    const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : Math.max(10, Number(o.stok_max || 100) - s);
+    const pbfName = o.pbf_utama || ((st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'Distributor Apotek');
+    const g = String(o.golongan_bpom || '').toUpperCase();
+    const golSp = ['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g) ? g : 'REGULER';
+    const itemObj = {
+      id_obat: o.id_obat,
+      nama_dagang: o.nama_dagang,
+      nama_produk: o.nama_dagang,
+      zat_aktif: o.zat_aktif || '',
+      golongan_bpom: o.golongan_bpom || 'BEBAS',
+      jenis_sp: golSp,
+      satuan_dasar: o.satuan_dasar || 'Unit',
+      satuan: o.satuan_dasar || 'Unit',
+      qty: q,
+      kuantitas: q,
+      hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0),
+      harga_beli: Number(o.hpp_terakhir || o.hpp_avg || 0),
+      nama_supplier: pbfName,
+      keterangan: 'Defecta Stok Tipis/Habis'
+    };
+    if (typeof global.openSpModalFromPlans === 'function') {
+      global.openSpModalFromPlans(pbfName, golSp, [itemObj], 'Surat Pesanan Cepat Defecta: ' + o.nama_dagang);
+    } else {
+      global.generateSpFromDefecta(pbfName);
+    }
+  };
+
+  global.openSpForSpecificPbfGroup = (targetPbf) => {
+    const st = S().AppState;
+    const pickedObat = Array.from(defectaSelectedIds)
+      .map((id) => st.masterObat.find((x) => x.id_obat === id))
+      .filter((o) => o && (o.pbf_utama || 'Distributor Apotek') === targetPbf);
+    if (!pickedObat.length) return;
+    const items = pickedObat.map((o) => {
+      const s = S().getSellableStok(o.id_obat);
+      const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : Math.max(10, Number(o.stok_max || 100) - s);
+      const g = String(o.golongan_bpom || '').toUpperCase();
+      const golSp = ['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g) ? g : 'REGULER';
+      return {
+        id_obat: o.id_obat,
+        nama_dagang: o.nama_dagang,
+        nama_produk: o.nama_dagang,
+        zat_aktif: o.zat_aktif || '',
+        golongan_bpom: o.golongan_bpom || 'BEBAS',
+        jenis_sp: golSp,
+        satuan_dasar: o.satuan_dasar || 'Unit',
+        satuan: o.satuan_dasar || 'Unit',
+        qty: q,
+        kuantitas: q,
+        hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0),
+        harga_beli: Number(o.hpp_terakhir || o.hpp_avg || 0),
+        nama_supplier: targetPbf,
+        keterangan: 'Defecta Stok Terpilih'
+      };
+    });
+    pickedObat.forEach((o) => defectaSelectedIds.delete(o.id_obat));
+    const golList = items.map((x) => String(x.jenis_sp || 'REGULER').toUpperCase());
+    const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
+    if (typeof global.openSpModalFromPlans === 'function') {
+      global.openSpModalFromPlans(targetPbf, golSp, items, 'Surat Pesanan dari Produk Defecta Terpilih: ' + targetPbf);
+    }
+  };
+
+  global.createSpFromSelectedDefecta = () => {
+    const st = S().AppState;
+    if (!defectaSelectedIds.size) return global.toast('Pilih minimal 1 obat defecta dengan mencentang kotak.', 'warn');
+    const pickedObat = Array.from(defectaSelectedIds).map((id) => st.masterObat.find((x) => x.id_obat === id)).filter(Boolean);
+    if (!pickedObat.length) return;
+
+    const grouped = {};
+    pickedObat.forEach((o) => {
+      const pbf = o.pbf_utama || 'Distributor Apotek';
+      if (!grouped[pbf]) grouped[pbf] = [];
+      const s = S().getSellableStok(o.id_obat);
+      const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : Math.max(10, Number(o.stok_max || 100) - s);
+      const g = String(o.golongan_bpom || '').toUpperCase();
+      const golSp = ['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g) ? g : 'REGULER';
+      grouped[pbf].push({
+        id_obat: o.id_obat,
+        nama_dagang: o.nama_dagang,
+        nama_produk: o.nama_dagang,
+        zat_aktif: o.zat_aktif || '',
+        golongan_bpom: o.golongan_bpom || 'BEBAS',
+        jenis_sp: golSp,
+        satuan_dasar: o.satuan_dasar || 'Unit',
+        satuan: o.satuan_dasar || 'Unit',
+        qty: q,
+        kuantitas: q,
+        hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0),
+        harga_beli: Number(o.hpp_terakhir || o.hpp_avg || 0),
+        nama_supplier: pbf,
+        keterangan: 'Defecta Stok Terpilih'
+      });
+    });
+
+    const pbfNames = Object.keys(grouped);
+    if (pbfNames.length === 1) {
+      const pbf = pbfNames[0];
+      const items = grouped[pbf];
+      const golList = items.map((x) => String(x.jenis_sp || 'REGULER').toUpperCase());
+      const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
+      defectaSelectedIds.clear();
+      if (typeof global.openSpModalFromPlans === 'function') {
+        global.openSpModalFromPlans(pbf, golSp, items, 'Surat Pesanan dari ' + items.length + ' Produk Defecta Terpilih');
+      } else {
+        global.generateSpFromDefecta(pbf);
+      }
+    } else {
+      S().openModal(`<div class="p-5 space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚡</span>
+          <div>
+            <h3 class="font-extrabold text-base">Terbitkan SP untuk ${pickedObat.length} Produk Terpilih</h3>
+            <p class="text-xs text-slate-500">Produk yang Anda centang berasal dari ${pbfNames.length} Distributor PBF berbeda:</p>
+          </div>
+        </div>
+        <div class="space-y-2 max-h-[320px] overflow-y-auto">
+          ${pbfNames.map((pbf) => {
+            const list = grouped[pbf];
+            return `<div class="p-3 rounded-xl border flex items-center justify-between gap-3 bg-slate-50/80 dark:bg-slate-800/50" style="border-color:var(--ons-border)">
+              <div>
+                <div class="font-bold text-xs">🏢 ${S().esc(pbf)}</div>
+                <div class="text-[11px] text-slate-500">${list.length} produk (${list.map((x) => S().esc(x.nama_dagang)).slice(0, 3).join(', ')}${list.length > 3 ? '...' : ''})</div>
+              </div>
+              <button type="button" onclick="S().closeModal();window.openSpForSpecificPbfGroup('${S().esc(pbf)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold whitespace-nowrap shadow-sm">Buka SP ${S().esc(pbf)} &rarr;</button>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="S().closeModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Tutup</button>
+        </div>
+      </div>`, '540px');
+    }
   };
 
   /**

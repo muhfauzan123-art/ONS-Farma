@@ -4534,9 +4534,10 @@
                         </div>
                       </td>
                       <td class="align-top">
-                        <select aria-label="Satuan" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-24">
-                          ${it.unitOptions.map((u) => `<option value="${u.label}" ${u.label === it.satuan ? 'selected' : ''}>${u.label}</option>`).join('')}
+                        <select aria-label="Satuan Jual" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] font-bold py-1 px-1.5 min-h-0 h-8 min-w-[115px] max-w-[150px] bg-blue-50/70 dark:bg-slate-800 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 shadow-sm cursor-pointer" title="Klik untuk ubah satuan jual (Box/Strip/Tablet)">
+                          ${(it.unitOptions || []).map((u) => `<option value="${S().esc(u.label)}" ${u.label === it.satuan ? 'selected' : ''}>${S().esc(u.displayText || u.label)}</option>`).join('')}
                         </select>
+                        ${Number(it.faktor_konversi || 1) > 1 ? `<div class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 font-mono-num">(1 ${S().esc(it.satuan)} = ${it.faktor_konversi} ${ob ? S().esc(ob.satuan_dasar || 'unit') : 'unit'})</div>` : ''}
                       </td>
                       <td class="align-top">
                         <select aria-label="Opsi Harga" onchange="window.posChangeItemTier(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-28">
@@ -5209,16 +5210,44 @@
     const eff = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, totalBaseQty, tierMode) : { harga: Number(obat.harga_umum || 0), tierApplied: 'UMUM', isGrosirAuto: false };
     it.harga_jual = eff.harga * Math.max(1, Number(it.faktor_konversi || 1));
     it.tier_applied = eff.tierApplied;
-    const rSed = Number(obat.rasio_sedang || 10);
-    const rBes = Number(obat.rasio_besar || 100);
+
+    const baseSat = obat.satuan_dasar || 'Unit';
     const baseEff1 = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, 1, tierMode).harga : Number(obat.harga_umum || 0);
-    const baseEffSed = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rSed, tierMode).harga : baseEff1;
-    const baseEffBes = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rBes, tierMode).harga : baseEff1;
-    it.unitOptions = [
-      { label: obat.satuan_dasar, faktor: 1, harga: baseEff1 },
-      { label: obat.satuan_sedang || 'Strip', faktor: rSed, harga: baseEffSed * rSed },
-      { label: obat.satuan_besar || 'Box', faktor: rBes, harga: baseEffBes * rBes }
-    ];
+    const uOpts = [];
+    uOpts.push({
+      label: baseSat,
+      faktor: 1,
+      harga: baseEff1,
+      displayText: `${baseSat} (${S().rp(baseEff1)})`
+    });
+
+    const rSed = Number(obat.rasio_sedang || 0);
+    const satSed = String(obat.satuan_sedang || '').trim();
+    if (satSed && satSed !== baseSat && rSed > 1) {
+      const baseEffSed = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rSed, tierMode).harga : baseEff1;
+      const hrgSed = baseEffSed * rSed;
+      uOpts.push({
+        label: satSed,
+        faktor: rSed,
+        harga: hrgSed,
+        displayText: `${satSed} (isi ${rSed} • ${S().rp(hrgSed)})`
+      });
+    }
+
+    const rBes = Number(obat.rasio_besar || 0);
+    const satBes = String(obat.satuan_besar || '').trim();
+    if (satBes && satBes !== baseSat && satBes !== satSed && rBes > 1) {
+      const baseEffBes = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rBes, tierMode).harga : baseEff1;
+      const hrgBes = baseEffBes * rBes;
+      uOpts.push({
+        label: satBes,
+        faktor: rBes,
+        harga: hrgBes,
+        displayText: `${satBes} (isi ${rBes} • ${S().rp(hrgBes)})`
+      });
+    }
+
+    it.unitOptions = uOpts;
     return eff;
   }
 
@@ -5412,14 +5441,15 @@
 
   global.posChangeUnit = (idx, label) => {
     const cart = S().AppState.carts[S().AppState.activeCartIdx];
-    const it = cart.items[idx];
-    const opt = it.unitOptions.find((u) => u.label === label);
+    const it = cart && cart.items && cart.items[idx];
+    if (!it) return;
+    const opt = (it.unitOptions || []).find((u) => u.label === label);
     if (opt) {
       const sellStok = S().getSellableStok(it.id_obat);
       const otherBase = _cartBaseQtyForObat(cart, it.id_obat, idx);
       const nextFaktor = Math.max(1, Number(opt.faktor || 1));
       if (otherBase + (Number(it.qty || 1) * nextFaktor) > sellStok) {
-        global.toast('Satuan ' + opt.label + ' melebihi stok layak jual tersedia (' + sellStok + ').', 'warn');
+        global.toast('Satuan ' + opt.label + ' melebihi stok layak jual tersedia (' + sellStok + ' unit dasar).', 'warn');
         global.renderActiveView();
         return;
       }
@@ -5429,7 +5459,9 @@
       const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
       const eff = _repriceCartItem(ob, it, tierMode);
       if (eff && eff.isGrosirAuto) {
-        global.toast('Tier Grosir Otomatis diterapkan untuk ' + it.nama_dagang, 'ok');
+        global.toast('Tier Grosir Otomatis aktif untuk ' + it.nama_dagang, 'ok');
+      } else {
+        global.toast('Satuan ' + it.nama_dagang + ' diubah: ' + opt.label + (nextFaktor > 1 ? ' (isi ' + nextFaktor + ')' : '') + ' • ' + S().rp(it.harga_jual), 'info');
       }
       global.renderActiveView();
     }
