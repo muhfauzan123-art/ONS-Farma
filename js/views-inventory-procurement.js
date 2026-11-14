@@ -8028,17 +8028,12 @@
 
   function _readLocalList(key) {
     try {
-      const raw = global.localStorage ? global.localStorage.getItem(key) : '[]';
-      const arr = JSON.parse(raw || '[]');
-      if (Array.isArray(arr) && arr.length) return arr;
+      const raw = global.localStorage ? global.localStorage.getItem(key) : null;
+      if (raw !== null && raw !== undefined) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      }
     } catch (e) {}
-    if (key === PLANS_KEY) {
-      return [
-        { id_plan: 'PLN-01', id_obat: 'OBT-004', nama_produk: 'Rhinos SR Kapsul Lepas Lambat', jenis_sp: 'PREKURSOR', nama_supplier: 'PT Dexa Medica Dist', kuantitas: 5, satuan: 'Box', harga_beli: 390000, keterangan: 'Stok menipis sisa 14 kapsul (Defecta)', selected: false },
-        { id_plan: 'PLN-02', id_obat: 'OBT-003', nama_produk: 'Lantus SoloStar Insulin Pen', jenis_sp: 'REGULER', nama_supplier: 'PT Anugrah Argon Medika', kuantitas: 3, satuan: 'Box Isi 5', harga_beli: 590000, keterangan: 'Kebutuhan resep pasien diabetes rutin', selected: false },
-        { id_plan: 'PLN-03', id_obat: 'OBT-007', nama_produk: 'Amlodipine Besylate 10mg', jenis_sp: 'REGULER', nama_supplier: 'PT Kimia Farma Trading & Dist', kuantitas: 10, satuan: 'Box', harga_beli: 12300, keterangan: 'Fast moving obat hipertensi', selected: false }
-      ];
-    }
     return [];
   }
 
@@ -8047,6 +8042,19 @@
       if (global.localStorage) global.localStorage.setItem(key, JSON.stringify(Array.isArray(arr) ? arr : []));
     } catch (e) {}
   }
+
+  // Pembersihan otomatis data dummy bawaan contoh lama (PLN-01, PLN-02, PLN-03) agar apotek bersih
+  try {
+    if (global.localStorage) {
+      const storedPlansRaw = global.localStorage.getItem(PLANS_KEY);
+      if (storedPlansRaw) {
+        const parsed = JSON.parse(storedPlansRaw);
+        if (Array.isArray(parsed) && parsed.length && parsed.every((p) => ['PLN-01', 'PLN-02', 'PLN-03'].includes(p.id_plan))) {
+          global.localStorage.setItem(PLANS_KEY, '[]');
+        }
+      }
+    }
+  } catch (e) {}
 
   function _resolvePlanJenisSp(gol) {
     const g = String(gol || 'REGULER').toUpperCase();
@@ -8338,6 +8346,7 @@
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="window.exportPurchasePlans('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
+                ${allPlans.length ? `<button type="button" onclick="window.clearAllPurchasePlans()" class="ons-btn ons-btn-ghost text-xs text-rose-600 hover:bg-rose-50 border-rose-200">Kosongkan Rencana</button>` : ''}
                 <button type="button" onclick="window.openPenawaranSalesModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Penawaran Sales</button>
                 ${selectedPlans.length ? `<button type="button" onclick="window.convertSelectedPlansToSp()" class="ons-btn ons-btn-primary text-xs font-bold">Buat Pesanan SP (${selectedPlans.length}) &rarr;</button>` : `<button type="button" onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-primary text-xs">Lihat Pesanan (SP) &rarr;</button>`}
               </div>
@@ -9002,6 +9011,18 @@
 
   global.removePurchasePlan = (idPlan) => {
     _writeLocalList(PLANS_KEY, _readLocalList(PLANS_KEY).filter((p) => p.id_plan !== idPlan));
+    global.renderActiveView();
+  };
+
+  global.clearAllPurchasePlans = () => {
+    const list = _readLocalList(PLANS_KEY);
+    if (!list.length) {
+      if (typeof global.toast === 'function') global.toast('Daftar Rencana Pembelian sudah kosong.', 'info');
+      return;
+    }
+    if (!confirm('Kosongkan seluruh daftar Rencana Pembelian (' + list.length + ' item)? Semua draf usulan pengadaan akan dibersihkan.')) return;
+    _writeLocalList(PLANS_KEY, []);
+    if (typeof global.toast === 'function') global.toast('Daftar Rencana Pembelian berhasil dikosongkan.', 'ok');
     global.renderActiveView();
   };
 
