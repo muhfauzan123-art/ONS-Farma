@@ -9028,6 +9028,56 @@
     </div>`;
   }
 
+  function _renderFallbackSpTabHtml(st) {
+    const list = Array.isArray(st.suratPesanan) ? st.suratPesanan : [];
+    return `
+      <div class="ons-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <div class="text-sm font-bold flex items-center gap-2">
+              <span>📄 Surat Pesanan (SP) Pembelian</span>
+              <span class="ons-badge ons-badge-blue text-xs">${list.length} SP</span>
+            </div>
+            <div class="text-xs" style="color:var(--ons-text-soft)">Pengelolaan Surat Pesanan sesuai regulasi BPOM dan pemesanan ke distributor/PBF.</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="typeof window.openCreateSpModal === 'function' ? window.openCreateSpModal() : null" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Pesanan Baru (A4)</button>
+          </div>
+        </div>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead>
+              <tr>
+                <th>No. SP</th>
+                <th>Tanggal</th>
+                <th>Distributor / PBF</th>
+                <th>Golongan</th>
+                <th>Status</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.length === 0 ? `
+                <tr><td colspan="6" class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Belum ada data Surat Pesanan. Klik "+ Pesanan Baru (A4)" untuk membuat SP baru.</td></tr>
+              ` : list.map((sp) => `
+                <tr class="cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/50" onclick="typeof window.openSpDetailModal === 'function' ? window.openSpDetailModal('${S().esc(sp.id_sp)}') : null">
+                  <td class="font-mono-num font-bold text-blue-600">${S().esc(sp.no_sp || sp.id_sp)}</td>
+                  <td class="font-mono-num text-xs">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
+                  <td class="text-xs font-medium">${S().esc(sp.nama_pbf || '-')}</td>
+                  <td><span class="ons-badge ons-badge-indigo text-[10px]">${S().esc(sp.golongan_sp || 'REGULER')}</span></td>
+                  <td><span class="ons-badge ${sp.status_sp === 'SELESAI' ? 'ons-badge-emerald' : 'ons-badge-amber'} text-[10px]">${S().esc(sp.status_sp || 'MENUNGGU')}</span></td>
+                  <td class="text-right">
+                    <button type="button" class="ons-btn ons-btn-ghost text-xs py-1 px-2" onclick="event.stopPropagation(); typeof window.openSpDetailModal === 'function' ? window.openSpDetailModal('${S().esc(sp.id_sp)}') : null">Detail</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
   function renderFakturView() {
     const st = S().AppState;
     fakturTab = (st.subTabs && st.subTabs.faktur) || fakturTab || 'rencana';
@@ -9193,18 +9243,8 @@
             <button type="button" onclick="window.openPenawaranSalesModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Penawaran Sales</button>
             <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">+ Rencana Baru</button>
             <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3 shadow-sm">⚡ Pesanan Otomatis</button>
-          ` : (fakturTab === 'sp') ? `
-            <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 font-bold shadow-sm">+ Pesanan Baru (A4)</button>
-          ` : (fakturTab === 'faktur' || fakturTab === 'daftar') ? `
-            <button type="button" onclick="window.openFakturDraftModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5 font-bold">Draft (${fakturDrafts.length})</button>
-            <button type="button" onclick="window.exportFakturList('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-            <button type="button" onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 font-bold shadow-sm">+ Faktur Pembelian</button>
           ` : (fakturTab === 'input') ? `
             <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-bold">← Kembali ke Daftar Faktur</button>
-          ` : (fakturTab === 'retur') ? `
-            <button type="button" onclick="window.openReturDraftModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5 font-bold">Draft (${returDrafts.length})</button>
-            <button type="button" onclick="window.exportReturHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-            <button type="button" onclick="window.openCreateReturPembelianModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 font-bold shadow-sm">+ Retur Pembelian</button>
           ` : (fakturTab === 'hutang') ? `
             <button type="button" onclick="window.setHutangProcView('TAGIHAN')" class="ons-btn ${hutangProcView === 'TAGIHAN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📋 Tagihan Utang Usaha</button>
             <button type="button" onclick="window.setHutangProcView('RIWAYAT')" class="ons-btn ${hutangProcView === 'RIWAYAT' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📜 Riwayat Pembayaran</button>
@@ -9365,7 +9405,7 @@
             </div>
           </div>
         </div>
-      `) : fakturTab === 'sp' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderSuratPesananTab() : '') : fakturTab === 'input' ? `
+      `) : fakturTab === 'sp' ? (global.ONSProcurementPro && typeof global.ONSProcurementPro.renderSuratPesananTab === 'function' ? global.ONSProcurementPro.renderSuratPesananTab() : _renderFallbackSpTabHtml(st)) : fakturTab === 'input' ? `
         <div class="space-y-4">
           <!-- 4-Step GRN Workflow Strip -->
           <div class="ons-card p-3 bg-gradient-to-r from-blue-500/10 via-emerald-500/10 to-transparent border-l-4 border-l-blue-600">
@@ -9896,9 +9936,13 @@
       fakturPilihanData = 'MARGIN';
     }
     fakturTab = t || 'rencana';
-    if (S().AppState.subTabs) {
-      S().AppState.subTabs.faktur = fakturTab;
-      S().AppState.subTabs.defecta = fakturTab;
+    const st = S().AppState;
+    if (st) {
+      st.activeView = 'faktur';
+      if (!st.subTabs) st.subTabs = {};
+      st.subTabs.faktur = fakturTab;
+      st.subTabs.defecta = fakturTab;
+      st.activeSubTab = fakturTab;
     }
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();

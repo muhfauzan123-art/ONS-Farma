@@ -676,10 +676,9 @@
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="window.navigateView('faktur','rencana')" class="ons-btn ons-btn-ghost text-xs">Rencana Pembelian &rarr;</button>
             <button type="button" onclick="window.openSpDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${drafts.length})</button>
             <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-            <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Pesanan Baru</button>
+            <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Pesanan Baru (A4)</button>
           </div>
         </div>
 
@@ -701,10 +700,10 @@
                     const sp = row.sp;
                     const qty = Number(it.qty || it.qty_pesan || 0);
                     const hpp = Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit || 0));
-                    return `<tr>
+                    return `<tr class="cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition-colors" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')">
                       <td class="font-mono-num text-xs">${idx + 1}.</td>
                       <td class="font-bold text-xs">${S().esc(it.nama_dagang || it.id_obat)}</td>
-                      <td class="font-mono-num text-xs">${S().esc(sp.no_sp)}</td>
+                      <td class="font-mono-num text-xs font-bold text-blue-600">${S().esc(sp.no_sp)}</td>
                       <td class="text-xs font-mono-num">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
                       <td class="text-xs">${S().esc(sp.nama_pbf || '-')}</td>
                       <td class="font-mono-num text-xs font-bold text-right">${qty}</td>
@@ -712,7 +711,7 @@
                       <td class="font-mono-num text-xs text-right">${S().rp(hpp)}</td>
                       <td class="font-mono-num text-xs font-bold text-right text-blue-600">${S().rp(qty * hpp)}</td>
                       <td>${spStatusBadge(sp.status_sp)}</td>
-                      <td>
+                      <td onclick="event.stopPropagation()">
                         <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Detail SP</button>
                       </td>
                     </tr>`;
@@ -738,14 +737,14 @@
                   if (!pbfRows.length) return '<tr><td colspan="7" class="text-center py-8 text-xs">Belum ada rekap supplier pada pesanan yang difilter.</td></tr>';
                   return pbfRows.map((p, idx) => {
                     const pRef = (st.supplierPbf || []).find((x) => x.id_pbf === p.id || x.nama_pbf === p.nama) || {};
-                    return `<tr>
+                    return `<tr class="cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition-colors" onclick="window.setSpFilterPbf('${S().esc(p.id)}');window.setSpViewMode('PESANAN');">
                       <td class="font-mono-num text-xs">${idx + 1}.</td>
                       <td class="font-bold text-xs text-blue-700 dark:text-blue-300">${S().esc(p.nama)}</td>
                       <td class="font-mono-num text-xs font-bold text-right">${p.spList.length} SP</td>
                       <td class="font-mono-num text-xs text-right">${p.totalItem} Produk</td>
                       <td class="font-mono-num text-xs font-bold text-right text-emerald-600">${S().rp(p.totalRp)}</td>
                       <td class="text-xs">${S().esc(pRef.kontak_wa || '-')}</td>
-                      <td>
+                      <td onclick="event.stopPropagation()">
                         <button type="button" onclick="window.setSpFilterPbf('${S().esc(p.id)}');window.setSpViewMode('PESANAN');" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Lihat SP PBF Ini &rarr;</button>
                       </td>
                     </tr>`;
@@ -776,12 +775,14 @@
                   const isBatal = String(sp.status_sp || '').toUpperCase() === 'DIBATALKAN';
                   const itemPreview = items.slice(0, 2).map((x) => `${x.nama_dagang || x.id_obat} (${x.qty || x.qty_pesan} ${x.satuan_dasar || x.satuan || ''})`).join(', ');
                   const checked = spSelectedIds.has(sp.id_sp);
-                  return `<tr>
-                    <td><input type="checkbox" aria-label="Pilih ${S().esc(sp.no_sp)}" ${checked ? 'checked' : ''} onchange="window.toggleSelectSpRow('${S().esc(sp.id_sp)}', this.checked)"/></td>
+                  return `<tr class="cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition-colors" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')">
+                    <td onclick="event.stopPropagation()"><input type="checkbox" aria-label="Pilih ${S().esc(sp.no_sp)}" ${checked ? 'checked' : ''} onchange="window.toggleSelectSpRow('${S().esc(sp.id_sp)}', this.checked)"/></td>
                     <td class="font-mono-num text-xs">${idx + 1}.</td>
                     <td class="text-xs font-mono-num whitespace-nowrap">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
-                    <td class="text-xs font-mono-num font-bold whitespace-nowrap">${S().esc(sp.no_sp)}</td>
-                    <td class="text-xs font-bold">${S().esc(sp.nama_pbf || '-')}</td>
+                    <td class="text-xs font-mono-num font-bold whitespace-nowrap">
+                      <button type="button" onclick="event.stopPropagation();window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="text-blue-600 dark:text-blue-400 hover:underline font-bold text-left font-mono-num" title="Klik untuk Pratinjau &amp; Cetak A4">${S().esc(sp.no_sp)}</button>
+                    </td>
+                    <td class="text-xs font-bold text-slate-800 dark:text-slate-100">${S().esc(sp.nama_pbf || '-')}</td>
                     <td class="text-xs">
                       <div><b>${items.length} item</b></div>
                       <div class="text-[11px] truncate max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(itemPreview)}${items.length > 2 ? ', +' + (items.length - 2) + ' lagi' : ''}</div>
@@ -797,7 +798,7 @@
                       </div>
                     </td>
                     <td class="text-right font-mono-num text-xs font-bold whitespace-nowrap">${S().rp(sp.estimasi_total || 0)}</td>
-                    <td>
+                    <td onclick="event.stopPropagation()">
                       <div class="flex flex-wrap gap-1.5">
                         <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-bold">Detail</button>
                         <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Preview &amp; Cetak A4</button>
@@ -1400,7 +1401,7 @@
       S().closeModal();
       global.toast('Surat Pesanan ' + (res && res.item ? res.item.no_sp : '') + (wasEdit ? ' berhasil diperbarui!' : ' berhasil dibuat!'), 'ok');
       await global.bootLoadState(true);
-      if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+      if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
       if (res && res.item && res.item.id_sp) {
         global.openSpA4PreviewModal(res.item.id_sp);
       }
@@ -1411,12 +1412,14 @@
 
   global.setSpFilterPbf = (pbfId) => {
     spFilterPbf = pbfId || '';
-    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+    if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+    else global.renderActiveView();
   };
 
   global.setSpFilterGol = (gol) => {
     spFilterGol = gol || 'SEMUA';
-    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+    if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+    else global.renderActiveView();
   };
 
   global.regenerateDraftSpNumber = () => {
@@ -1474,7 +1477,8 @@
       await API().callApi('sp.cancel', { id_sp: idSp, alasan: (alasan || '').trim() || 'Dibatalkan oleh staf apotek' }, { isWrite: true });
       global.toast('Surat Pesanan ' + (sp.no_sp || idSp) + ' berhasil dibatalkan.', 'ok');
       await global.bootLoadState(true);
-      if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+      if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+      else global.renderActiveView();
     } catch (e) {
       global.toast('Gagal membatalkan Surat Pesanan: ' + e.message, 'err');
     }
@@ -1517,7 +1521,8 @@
 
   global.setSpViewMode = (mode) => {
     spViewMode = mode || 'PESANAN';
-    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+    if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+    else global.renderActiveView();
   };
 
   global.toggleSpHideKopPreview = (idSp, checked) => {
@@ -1539,7 +1544,8 @@
       await API().callApi('sp.save', { id_sp: idSp, status_sp: 'SELESAI_DITERIMA', catatan: (sp.catatan ? sp.catatan + ' | ' : '') + 'Ditutup selesai manual' }, { isWrite: true });
       global.toast('Surat Pesanan ' + (sp.no_sp || idSp) + ' ditandai selesai (CLOSED).', 'ok');
       await global.bootLoadState(true);
-      if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+      if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+      else global.renderActiveView();
     } catch (e) {
       global.toast('Gagal menandai selesai: ' + e.message, 'err');
     }
