@@ -6660,7 +6660,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Aktif Dipindai</div><div class="text-lg font-bold font-mono-num">${activeForOpname.length}</div></div>
         <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Sudah Diisi Hitungan</div><div class="text-lg font-bold font-mono-num text-blue-600">${opnameCounted}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Net Selisih Unit</div><div class="text-lg font-bold font-mono-num ${opnameSelisihUnit === 0 ? 'text-emerald-600' : 'text-amber-600'}">${opnameSelisihUnit > 0 ? '+' : ''}${opnameSelisihUnit}</div></div>
+        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Net Selisih (Satuan 1)</div><div class="text-lg font-bold font-mono-num ${opnameSelisihUnit === 0 ? 'text-emerald-600' : 'text-amber-600'}">${opnameSelisihUnit > 0 ? '+' : ''}${opnameSelisihUnit} unit dasar</div></div>
         <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Dampak Nilai HPP Selisih</div><div class="text-lg font-bold font-mono-num ${opnameSelisihRp >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(opnameSelisihRp)}</div></div>
       </div>
       <div class="ons-card p-4 space-y-3">
@@ -6691,44 +6691,111 @@
             ${activeForOpname.map((b) => {
               const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
               const sysQty = Number(b.qty_sisa || 0);
+              const sat1 = String(o ? (o.satuan_1 || o.satuan_dasar || 'Unit') : 'Unit').trim();
+              const sat2 = String(o && o.satuan_2 !== undefined ? o.satuan_2 : (o && o.satuan_sedang || '')).trim();
+              const sat3 = String(o && o.satuan_3 !== undefined ? o.satuan_3 : (o && o.satuan_besar || '')).trim();
+              const ras2 = sat2 ? Math.max(1, Number(o && o.rasio_2 !== undefined ? o.rasio_2 : (o && o.rasio_sedang || 1))) : 1;
+              const ras3 = sat3 ? Math.max(1, Number(o && o.rasio_3 !== undefined ? o.rasio_3 : (o && o.rasio_besar || 1))) : 1;
+              const valid2 = !!(sat2 && sat2.toLowerCase() !== sat1.toLowerCase() && ras2 > 1);
+              const valid3 = !!(sat3 && sat3.toLowerCase() !== sat1.toLowerCase() && sat3.toLowerCase() !== sat2.toLowerCase() && ras3 > 1);
+
               const val = opnameDraftQty[b.id_batch] !== undefined ? opnameDraftQty[b.id_batch] : '';
               const diff = val !== '' ? (Number(val) - sysQty) : null;
+              const hpp = Number(b.hpp_beli || (o && o.hpp_avg) || 0);
               return `<div class="p-3.5 rounded-xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="font-bold text-sm">${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
                     <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Rak: <b>${S().esc((o && o.rak_lokasi) || '-')}</b> &bull; Batch <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</div>
                   </div>
-                  <span class="badge-bpom bpom-terbatas font-mono-num">Sistem: ${sysQty}</span>
+                  <div class="text-right">
+                    <span class="badge-bpom bpom-terbatas font-mono-num font-bold">Sistem: ${sysQty} ${S().esc(sat1)}</span>
+                    <div class="mt-1">${valid2 || valid3 ? `<span class="badge-bpom bpom-prekursor text-[9.5px]">Multi-Satuan</span>` : `<span class="badge-bpom bpom-bebas text-[9.5px]">Satuan 1: ${S().esc(sat1)}</span>`}</div>
+                  </div>
                 </div>
+                ${valid2 || valid3 ? `<div class="p-2 rounded-lg bg-blue-50/60 dark:bg-blue-950/20 text-[10.5px] border border-blue-200/60 dark:border-blue-900/40 flex items-center justify-between gap-1">
+                  <div class="font-mono-num text-blue-700 dark:text-blue-300">
+                    Konversi: ${valid3 ? `1 ${S().esc(sat3)} = ${ras3} ${S().esc(sat1)} &bull; ` : ''}1 ${S().esc(sat2)} = ${ras2} ${S().esc(sat1)}
+                  </div>
+                  <button type="button" onclick="window.openOpnameMultiSatuanCalcModal('${b.id_batch}')" class="ons-btn ons-btn-ghost text-[10px] px-2 py-0.5 text-blue-600 font-bold shrink-0">&#129304; Kalkulator</button>
+                </div>` : ''}
                 <div class="flex flex-wrap items-center gap-1.5">
                   <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, -1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">-1</button>
-                  <input type="number" min="0" value="${S().esc(val)}" placeholder="${sysQty}" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-sm font-bold w-24 text-center py-1 min-h-0 h-8"/>
+                  <div class="inline-flex items-center gap-1">
+                    <input type="number" min="0" value="${S().esc(val)}" placeholder="${sysQty}" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-sm font-bold w-24 text-center py-1 min-h-0 h-8"/>
+                    <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">${S().esc(sat1)}</span>
+                  </div>
                   <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 1)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+1</button>
-                  <button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 10)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+10</button>
+                  ${valid2 ? `<button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, ${ras2})" class="ons-btn ons-btn-ghost text-xs px-2 py-1">+1 ${S().esc(sat2)}</button>` : `<button type="button" onclick="window.stepOpnameDraftQty('${b.id_batch}', ${sysQty}, 10)" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1">+10</button>`}
                   <button type="button" onclick="window.setOpnameDraftQty('${b.id_batch}', ${sysQty})" class="ons-btn ons-btn-emerald text-xs px-2.5 py-1 ml-auto">= Sistem</button>
                 </div>
-                ${diff !== null ? `<div class="text-xs font-mono-num font-bold ${diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600')}">Selisih: ${diff > 0 ? '+' : ''}${diff} unit (${S().rp(diff * Number(b.hpp_beli || 0))})</div>` : ''}
+                ${diff !== null ? `<div class="text-xs font-mono-num font-bold ${diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600')}">Selisih: ${diff > 0 ? '+' : ''}${diff} ${S().esc(sat1)} (${S().rp(diff * hpp)})</div>` : ''}
               </div>`;
             }).join('')}
           </div>
         ` : `
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>Nama Obat &amp; Rak</th><th>No. Batch &amp; ED</th><th>Stok Sistem</th><th>Hitung Fisik Riil</th><th>Selisih Unit</th><th>Estimasi Selisih Rp</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Nama Obat &amp; Rak</th>
+                <th>No. Batch &amp; ED</th>
+                <th>Satuan 1, 2, 3 &amp; Konversi</th>
+                <th>Stok Sistem</th>
+                <th>Hitung Fisik Riil</th>
+                <th>Selisih Unit</th>
+                <th>Estimasi Selisih Rp</th>
+              </tr>
+            </thead>
             <tbody>
               ${activeForOpname.map((b) => {
                 const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                const sysQty = Number(b.qty_sisa || 0);
+                const sat1 = String(o ? (o.satuan_1 || o.satuan_dasar || 'Unit') : 'Unit').trim();
+                const sat2 = String(o && o.satuan_2 !== undefined ? o.satuan_2 : (o && o.satuan_sedang || '')).trim();
+                const sat3 = String(o && o.satuan_3 !== undefined ? o.satuan_3 : (o && o.satuan_besar || '')).trim();
+                const ras2 = sat2 ? Math.max(1, Number(o && o.rasio_2 !== undefined ? o.rasio_2 : (o && o.rasio_sedang || 1))) : 1;
+                const ras3 = sat3 ? Math.max(1, Number(o && o.rasio_3 !== undefined ? o.rasio_3 : (o && o.rasio_besar || 1))) : 1;
+                const valid2 = !!(sat2 && sat2.toLowerCase() !== sat1.toLowerCase() && ras2 > 1);
+                const valid3 = !!(sat3 && sat3.toLowerCase() !== sat1.toLowerCase() && sat3.toLowerCase() !== sat2.toLowerCase() && ras3 > 1);
+
                 const val = opnameDraftQty[b.id_batch] !== undefined ? opnameDraftQty[b.id_batch] : '';
-                const diff = val !== '' ? (Number(val) - Number(b.qty_sisa || 0)) : null;
-                const diffRp = diff !== null ? diff * Number(b.hpp_beli || 0) : 0;
+                const diff = val !== '' ? (Number(val) - sysQty) : null;
+                const hpp = Number(b.hpp_beli || (o && o.hpp_avg) || 0);
+                const diffRp = diff !== null ? diff * hpp : 0;
                 return `<tr>
-                  <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}<br/><span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">Rak: ${S().esc((o && o.rak_lokasi) || '-')}</span></td>
-                  <td class="font-mono-num text-xs"><b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</td>
-                  <td class="font-mono-num font-bold">${b.qty_sisa}</td>
-                  <td><input type="number" min="0" value="${S().esc(val)}" placeholder="Isi qty riil" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-xs w-28 py-1 text-right"/></td>
-                  <td class="font-mono-num font-bold ${diff === null ? '' : (diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600'))}">${diff === null ? '-' : ((diff > 0 ? '+' : '') + diff)}</td>
-                  <td class="font-mono-num text-xs ${diffRp < 0 ? 'text-red-600' : 'text-emerald-600'}">${diff === null ? '-' : S().rp(diffRp)}</td>
+                  <td class="font-semibold text-xs">
+                    <div>${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
+                    <span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">Rak: ${S().esc((o && o.rak_lokasi) || '-')}</span>
+                  </td>
+                  <td class="font-mono-num text-xs whitespace-nowrap"><b>${S().esc(b.no_batch)}</b><br/><span class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(b.tgl_kadaluarsa)}</span></td>
+                  <td class="text-xs">
+                    ${valid2 || valid3 ? `
+                      <span class="badge-bpom bpom-terbatas text-[9.5px] font-bold">Satuan 1: ${S().esc(sat1)}</span>
+                      <div class="text-[10px] font-mono-num text-blue-600 mt-0.5">
+                        ${valid3 ? `1 ${S().esc(sat3)} = ${ras3} ${S().esc(sat1)}<br/>` : ''}1 ${S().esc(sat2)} = ${ras2} ${S().esc(sat1)}
+                      </div>
+                      <button type="button" onclick="window.openOpnameMultiSatuanCalcModal('${b.id_batch}')" class="text-[10px] text-blue-600 hover:underline font-bold mt-1 inline-flex items-center gap-1">&#129304; Kalkulator Satuan</button>
+                    ` : `
+                      <span class="badge-bpom bpom-bebas text-[9.5px] font-bold">Satuan 1: ${S().esc(sat1)}</span>
+                      <div class="text-[10px] text-slate-500 mt-0.5">Satuan Tunggal</div>
+                    `}
+                  </td>
+                  <td class="font-mono-num font-bold text-xs">
+                    <div>${sysQty} <span class="text-[10px] font-normal" style="color:var(--ons-text-soft)">${S().esc(sat1)}</span></div>
+                  </td>
+                  <td>
+                    <div class="flex items-center gap-1.5">
+                      <input type="number" min="0" value="${S().esc(val)}" placeholder="${sysQty}" oninput="window.setOpnameDraftQty('${b.id_batch}', this.value)" class="ons-input font-mono-num text-xs w-24 py-1 text-right font-bold"/>
+                      <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">${S().esc(sat1)}</span>
+                    </div>
+                  </td>
+                  <td class="font-mono-num font-bold text-xs ${diff === null ? '' : (diff === 0 ? 'text-emerald-600' : (diff < 0 ? 'text-red-600' : 'text-blue-600'))}">
+                    ${diff === null ? '-' : ((diff > 0 ? '+' : '') + diff + ' ' + S().esc(sat1))}
+                  </td>
+                  <td class="font-mono-num text-xs ${diffRp < 0 ? 'text-red-600' : 'text-emerald-600'}">
+                    ${diff === null ? '-' : S().rp(diffRp)}
+                  </td>
                 </tr>`;
               }).join('')}
             </tbody>
@@ -8173,29 +8240,42 @@
     const batches = (st.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' || String(b.status_batch || '') === 'HABIS');
     if (!batches.length) return global.toast('Belum ada batch produk untuk disesuaikan.', 'warn');
     const firstB = batches[0];
+    const firstOb = (st.masterObat || []).find((o) => o.id_obat === firstB.id_obat) || {};
+    const firstSat = String(firstOb.satuan_1 || firstOb.satuan_dasar || 'Unit').trim();
     S().openModal(`<div class="p-6 space-y-4 text-xs">
       <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base">+ Sesuaikan Stok Produk</h3>
+        <div>
+          <span class="badge-bpom bpom-bebas">PENYESUAIAN STOK</span>
+          <h3 class="font-bold text-base mt-1">+ Sesuaikan Stok Produk</h3>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Penyesuaian stok batch langsung dalam <b>Satuan 1 (Unit Dasar)</b>.</p>
+        </div>
         <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="sm:col-span-2">
           <label class="font-semibold block mb-1">Pilih Produk &amp; Batch FEFO *</label>
-          <select id="adjBatchInp" class="ons-select text-xs" onchange="window.onQuickAdjBatchChange()">
+          <select id="adjBatchInp" class="ons-select text-xs font-semibold" onchange="window.onQuickAdjBatchChange()">
             ${batches.map((b) => {
               const ob = (st.masterObat || []).find((o) => o.id_obat === b.id_obat) || {};
-              return `<option value="${S().esc(b.id_batch)}" data-sys="${Number(b.qty_sisa || 0)}">${S().esc(ob.nama_dagang || b.id_obat)} — Batch ${S().esc(b.no_batch)} (Sistem: ${Number(b.qty_sisa || 0)})</option>`;
+              const s1 = String(ob.satuan_1 || ob.satuan_dasar || 'Unit').trim();
+              return `<option value="${S().esc(b.id_batch)}" data-sys="${Number(b.qty_sisa || 0)}" data-sat="${S().esc(s1)}">${S().esc(ob.nama_dagang || b.id_obat)} — Batch ${S().esc(b.no_batch)} (Sistem: ${Number(b.qty_sisa || 0)} ${S().esc(s1)})</option>`;
             }).join('')}
           </select>
         </div>
         <div>
           <label class="font-semibold block mb-1">Stok Sistem Saat Ini</label>
-          <input id="adjSysQtyInp" class="ons-input font-mono-num font-bold" readonly value="${Number(firstB.qty_sisa || 0)}"/>
+          <div class="flex items-center gap-1.5">
+            <input id="adjSysQtyInp" class="ons-input font-mono-num font-bold flex-1" readonly value="${Number(firstB.qty_sisa || 0)}"/>
+            <span id="adjSysSatSpan" class="text-xs font-semibold px-2 py-1 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(firstSat)}</span>
+          </div>
         </div>
         <div>
-          <label class="font-semibold block mb-1">Stok Fisik Baru *</label>
-          <input id="adjNewQtyInp" type="number" min="0" class="ons-input font-mono-num font-bold text-blue-600" value="${Number(firstB.qty_sisa || 0)}" oninput="window.onQuickAdjQtyPreview()"/>
-          <div id="adjSelisihPreview" class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Selisih: 0</div>
+          <label class="font-semibold block mb-1">Stok Fisik Baru (Satuan 1) *</label>
+          <div class="flex items-center gap-1.5">
+            <input id="adjNewQtyInp" type="number" min="0" class="ons-input font-mono-num font-bold text-blue-600 flex-1" value="${Number(firstB.qty_sisa || 0)}" oninput="window.onQuickAdjQtyPreview()"/>
+            <span id="adjNewSatSpan" class="text-xs font-semibold px-2 py-1 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(firstSat)}</span>
+          </div>
+          <div id="adjSelisihPreview" class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Selisih: 0 ${S().esc(firstSat)}</div>
         </div>
         <div>
           <label class="font-semibold block mb-1">Penyebab Selisih *</label>
@@ -8219,19 +8299,27 @@
     const sel = document.getElementById('adjBatchInp');
     const opt = sel && sel.options ? sel.options[sel.selectedIndex] : null;
     const sys = opt ? Number(opt.getAttribute('data-sys') || 0) : 0;
+    const sat = opt ? (opt.getAttribute('data-sat') || 'Unit') : 'Unit';
     const sysEl = document.getElementById('adjSysQtyInp');
     const newEl = document.getElementById('adjNewQtyInp');
+    const sysSat = document.getElementById('adjSysSatSpan');
+    const newSat = document.getElementById('adjNewSatSpan');
     if (sysEl) sysEl.value = sys;
     if (newEl) newEl.value = sys;
+    if (sysSat) sysSat.textContent = sat;
+    if (newSat) newSat.textContent = sat;
     if (typeof global.onQuickAdjQtyPreview === 'function') global.onQuickAdjQtyPreview();
   };
   global.onQuickAdjQtyPreview = () => {
     const sys = Number((document.getElementById('adjSysQtyInp') || {}).value || 0);
     const baru = Number((document.getElementById('adjNewQtyInp') || {}).value || 0);
+    const sel = document.getElementById('adjBatchInp');
+    const opt = sel && sel.options ? sel.options[sel.selectedIndex] : null;
+    const sat = opt ? (opt.getAttribute('data-sat') || 'Unit') : 'Unit';
     const diff = baru - sys;
     const prev = document.getElementById('adjSelisihPreview');
     if (prev) {
-      prev.textContent = `Selisih: ${diff > 0 ? '+' : ''}${diff}`;
+      prev.textContent = `Selisih: ${diff > 0 ? '+' : ''}${diff} ${sat}`;
       prev.className = `text-[11px] font-mono-num font-bold mt-1 ${diff === 0 ? '' : (diff > 0 ? 'text-emerald-600' : 'text-red-600')}`;
     }
   };
@@ -8710,9 +8798,16 @@
       <div class="space-y-2 max-h-72 overflow-y-auto text-xs">
         ${activeBatches.map((b) => {
           const o = S().AppState.masterObat.find((m) => m.id_obat === b.id_obat);
+          const sat1 = String(o ? (o.satuan_1 || o.satuan_dasar || 'Unit') : 'Unit').trim();
           return `<div class="flex items-center justify-between gap-2 p-2 rounded-lg border">
-            <div><b>${S().esc(o ? o.nama_dagang : b.id_obat)}</b><div class="font-mono-num" style="color:var(--ons-text-soft)">Batch: ${S().esc(b.no_batch)} | ED: ${S().esc(b.tgl_kadaluarsa)}</div></div>
-            <input type="number" data-opname-batch="${b.id_batch}" class="ons-input font-mono-num w-24 text-right" placeholder="Qty Fisik"/>
+            <div>
+              <b>${S().esc(o ? o.nama_dagang : b.id_obat)}</b>
+              <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Batch: ${S().esc(b.no_batch)} | ED: ${S().esc(b.tgl_kadaluarsa)} | Satuan 1: <b>${S().esc(sat1)}</b></div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <input type="number" min="0" data-opname-batch="${b.id_batch}" class="ons-input font-mono-num w-24 text-right font-bold" placeholder="Qty Fisik"/>
+              <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">${S().esc(sat1)}</span>
+            </div>
           </div>`;
         }).join('')}
       </div>
@@ -13638,7 +13733,13 @@
           <div>
             <label class="font-bold block mb-1">Pilih Produk Obat *</label>
             <select id="opnameNewBatchIdObat" class="ons-select text-xs font-semibold w-full" onchange="window.onOpnameNewBatchObatChange(this.value)">
-              ${st.masterObat.map((o) => `<option value="${o.id_obat}">${S().esc(o.nama_dagang)} (${S().esc(o.id_obat)}) - Satuan: ${S().esc(o.satuan_dasar)}</option>`).join('')}
+              ${st.masterObat.map((o) => {
+                const sat1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+                const sat2 = String(o.satuan_2 !== undefined ? o.satuan_2 : (o.satuan_sedang || '')).trim();
+                const sat3 = String(o.satuan_3 !== undefined ? o.satuan_3 : (o.satuan_besar || '')).trim();
+                const multiTxt = (sat2 || sat3) ? ` [Multi: ${sat1} • ${sat2}${sat3 ? ` • ${sat3}` : ''}]` : ` [Satuan 1: ${sat1}]`;
+                return `<option value="${o.id_obat}">${S().esc(o.nama_dagang)} (${S().esc(o.id_obat)})${S().esc(multiTxt)}</option>`;
+              }).join('')}
             </select>
           </div>
 
@@ -13652,11 +13753,14 @@
               <input id="opnameNewBatchEd" type="date" class="ons-input font-mono text-xs" value="${defaultEd}"/>
             </div>
             <div>
-              <label class="font-bold block mb-1">Hitungan Fisik Riil *</label>
-              <input id="opnameNewBatchQty" type="number" min="1" class="ons-input font-mono-num text-xs font-extrabold text-blue-600" value="10"/>
+              <label class="font-bold block mb-1">Hitungan Fisik Riil (Satuan 1) *</label>
+              <div class="flex items-center gap-1.5">
+                <input id="opnameNewBatchQty" type="number" min="1" class="ons-input font-mono-num text-xs font-extrabold text-blue-600 flex-1" value="10"/>
+                <span id="opnameNewBatchSatSpan" class="text-xs font-semibold px-2 py-1 rounded border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(String(defaultObat.satuan_1 || defaultObat.satuan_dasar || 'Unit').trim())}</span>
+              </div>
             </div>
             <div>
-              <label class="font-bold block mb-1">HPP Beli Estimasi (Rp)</label>
+              <label class="font-bold block mb-1">HPP Beli Estimasi (Satuan 1 Rp)</label>
               <input id="opnameNewBatchHpp" type="number" min="0" class="ons-input font-mono-num text-xs" value="${Number(defaultObat.hpp_avg || defaultObat.harga_pokok || 0)}"/>
             </div>
           </div>
@@ -13686,6 +13790,8 @@
     if (hppEl) hppEl.value = Number(ob.hpp_avg || ob.harga_pokok || 0);
     const rakEl = document.getElementById('opnameNewBatchRak');
     if (rakEl) rakEl.value = ob.rak_lokasi || 'Gudang Utama';
+    const satSpan = document.getElementById('opnameNewBatchSatSpan');
+    if (satSpan) satSpan.textContent = String(ob.satuan_1 || ob.satuan_dasar || 'Unit').trim();
   };
 
   global.submitAddOpnameNewBatch = async () => {
@@ -13702,6 +13808,8 @@
     }
 
     const st = S().AppState;
+    const ob = st.masterObat.find((o) => o.id_obat === idObat) || {};
+    const sat1 = String(ob.satuan_1 || ob.satuan_dasar || 'unit').trim();
     const newBatchId = 'BTH-' + Date.now().toString().slice(-6);
 
     const newBatchObj = {
@@ -13725,7 +13833,7 @@
     }
 
     ONSStore.closeModal();
-    global.toast('Batch ' + noBatch + ' berhasil didaftarkan ke sesi opname dengan hitungan ' + qtyFisik + ' unit!', 'ok');
+    global.toast('Batch ' + noBatch + ' berhasil didaftarkan ke sesi opname dengan hitungan ' + qtyFisik + ' ' + sat1 + '!', 'ok');
     global.renderActiveView();
   };
 
@@ -13739,12 +13847,13 @@
       const fisik = Number(opnameDraftQty[idBatch] || 0);
       const sistem = b ? Number(b.qty_sisa || 0) : 0;
       const selisih = fisik - sistem;
+      const sat1 = String(o ? (o.satuan_1 || o.satuan_dasar || 'Unit') : 'Unit').trim();
       const hpp = b ? Number(b.hpp_beli || (o && o.hpp_avg) || 0) : 0;
       return {
         nama: o ? o.nama_dagang : idBatch,
         batch: b ? b.no_batch : '-',
         ed: b ? b.tgl_kadaluarsa : '-',
-        satuan: o ? o.satuan_dasar : 'Unit',
+        satuan: sat1,
         sistem,
         fisik,
         selisih,
@@ -13765,7 +13874,7 @@
         <td style="border:1px solid #333;padding:4px;text-align:center;">${S().esc(e.ed)}</td>
         <td style="border:1px solid #333;padding:4px;text-align:right;">${e.sistem} ${S().esc(e.satuan)}</td>
         <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;">${e.fisik} ${S().esc(e.satuan)}</td>
-        <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;color:${e.selisih >= 0 ? '#059669' : '#DC2626'};">${e.selisih > 0 ? '+' : ''}${e.selisih}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;color:${e.selisih >= 0 ? '#059669' : '#DC2626'};">${e.selisih > 0 ? '+' : ''}${e.selisih} ${S().esc(e.satuan)}</td>
         <td style="border:1px solid #333;padding:4px;text-align:right;">${S().rp(e.hpp)}</td>
         <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;color:${e.nilaiSelisih >= 0 ? '#059669' : '#DC2626'};">${S().rp(e.nilaiSelisih)}</td>
       </tr>
@@ -13788,6 +13897,7 @@
           </div>
           <div style="text-align:right;">
             <div><b>Total Item Dihitung:</b> ${activeEntries.length} Batch</div>
+            <div><b>Satuan Dasar Acuan:</b> Satuan 1 (Terendah)</div>
             <div><b>Status Pelaksanaan:</b> LENGKAP &amp; TERVERIFIKASI</div>
           </div>
         </div>
@@ -13799,10 +13909,10 @@
               <th style="border:1px solid #333;padding:4px;">Nama Produk</th>
               <th style="border:1px solid #333;padding:4px;">No. Batch</th>
               <th style="border:1px solid #333;padding:4px;">ED</th>
-              <th style="border:1px solid #333;padding:4px;">Sistem</th>
-              <th style="border:1px solid #333;padding:4px;">Fisik</th>
+              <th style="border:1px solid #333;padding:4px;">Sistem (Satuan 1)</th>
+              <th style="border:1px solid #333;padding:4px;">Fisik (Satuan 1)</th>
               <th style="border:1px solid #333;padding:4px;">Selisih (&Delta;)</th>
-              <th style="border:1px solid #333;padding:4px;">HPP Satuan</th>
+              <th style="border:1px solid #333;padding:4px;">HPP (Satuan 1)</th>
               <th style="border:1px solid #333;padding:4px;">Dampak Nilai (Rp)</th>
             </tr>
           </thead>
@@ -13810,7 +13920,7 @@
           <tfoot>
             <tr style="background:#F1F5F9;font-weight:bold;">
               <td colspan="6" style="border:1px solid #333;padding:4px;text-align:right;">TOTAL REKAPITULASI SELISIH OPNAME:</td>
-              <td style="border:1px solid #333;padding:4px;text-align:right;">+${totalSurplusUnit} / -${totalDefisitUnit} unit</td>
+              <td style="border:1px solid #333;padding:4px;text-align:right;">+${totalSurplusUnit} / -${totalDefisitUnit} unit dasar</td>
               <td style="border:1px solid #333;padding:4px;text-align:right;">NET IMPACT:</td>
               <td style="border:1px solid #333;padding:4px;text-align:right;color:${netDampakRp >= 0 ? '#059669' : '#DC2626'};">${S().rp(netDampakRp)}</td>
             </tr>
@@ -13839,6 +13949,121 @@
         </div>
       </div>
     `);
+  };
+
+  global.openOpnameMultiSatuanCalcModal = (idBatch) => {
+    const st = S().AppState;
+    const b = (st.stokBatch || []).find((x) => x.id_batch === idBatch);
+    if (!b) return;
+    const o = (st.masterObat || []).find((m) => m.id_obat === b.id_obat);
+    if (!o) return;
+
+    const sat1 = String(o.satuan_1 || o.satuan_dasar || 'Tablet').trim();
+    const sat2 = String(o.satuan_2 !== undefined ? o.satuan_2 : (o.satuan_sedang || '')).trim();
+    const sat3 = String(o.satuan_3 !== undefined ? o.satuan_3 : (o.satuan_besar || '')).trim();
+    const ras2 = sat2 ? Math.max(1, Number(o.rasio_2 !== undefined ? o.rasio_2 : (o.rasio_sedang || 1))) : 1;
+    const ras3 = sat3 ? Math.max(1, Number(o.rasio_3 !== undefined ? o.rasio_3 : (o.rasio_besar || 1))) : 1;
+    const valid2 = !!(sat2 && sat2.toLowerCase() !== sat1.toLowerCase() && ras2 > 1);
+    const valid3 = !!(sat3 && sat3.toLowerCase() !== sat1.toLowerCase() && sat3.toLowerCase() !== sat2.toLowerCase() && ras3 > 1);
+
+    const curFisik = Number(opnameDraftQty[idBatch] !== undefined ? opnameDraftQty[idBatch] : (b.qty_sisa || 0));
+
+    let initQ3 = 0, initQ2 = 0, initQ1 = curFisik;
+    if (valid3 && ras3 > 1) {
+      initQ3 = Math.floor(initQ1 / ras3);
+      initQ1 = initQ1 % ras3;
+    }
+    if (valid2 && ras2 > 1) {
+      initQ2 = Math.floor(initQ1 / ras2);
+      initQ1 = initQ1 % ras2;
+    }
+
+    S().openModal(`<div class="p-5 md:p-6 space-y-4 text-xs">
+      <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
+        <div>
+          <span class="badge-bpom bpom-bebas">KALKULATOR HITUNG FISIK OPNAME</span>
+          <h3 class="text-base font-extrabold mt-1 text-slate-800 dark:text-slate-100">${S().esc(o.nama_dagang)}</h3>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Batch: <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)} &bull; Stok Sistem: <b>${b.qty_sisa} ${S().esc(sat1)}</b></p>
+        </div>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 text-xs space-y-1">
+        <div class="font-bold flex items-center gap-1.5">&#128161; Rumus Konversi Satuan:</div>
+        <div>
+          ${valid3 ? `&bull; 1 ${S().esc(sat3)} = <b>${ras3} ${S().esc(sat1)}</b><br/>` : ''}
+          ${valid2 ? `&bull; 1 ${S().esc(sat2)} = <b>${ras2} ${S().esc(sat1)}</b><br/>` : ''}
+          &bull; Satuan Terendah (Satuan 1): <b>${S().esc(sat1)}</b>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        ${valid3 ? `<div class="p-3 rounded-xl border flex items-center justify-between gap-3" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+          <div class="flex-1">
+            <label class="font-bold block text-purple-700 dark:text-purple-300">Satuan 3: ${S().esc(sat3)}</label>
+            <span class="text-[10px]" style="color:var(--ons-text-soft)">1 ${S().esc(sat3)} = ${ras3} ${S().esc(sat1)}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="calcOpnameQ3" type="number" min="0" value="${initQ3}" oninput="window.updateOpnameCalcTotal('${idBatch}', ${ras2}, ${ras3}, '${S().esc(sat1)}')" class="ons-input font-mono-num text-sm font-bold w-24 text-right py-1"/>
+            <span class="font-semibold text-xs w-12">${S().esc(sat3)}</span>
+          </div>
+        </div>` : ''}
+
+        ${valid2 ? `<div class="p-3 rounded-xl border flex items-center justify-between gap-3" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+          <div class="flex-1">
+            <label class="font-bold block text-emerald-700 dark:text-emerald-300">Satuan 2: ${S().esc(sat2)}</label>
+            <span class="text-[10px]" style="color:var(--ons-text-soft)">1 ${S().esc(sat2)} = ${ras2} ${S().esc(sat1)}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="calcOpnameQ2" type="number" min="0" value="${initQ2}" oninput="window.updateOpnameCalcTotal('${idBatch}', ${ras2}, ${ras3}, '${S().esc(sat1)}')" class="ons-input font-mono-num text-sm font-bold w-24 text-right py-1"/>
+            <span class="font-semibold text-xs w-12">${S().esc(sat2)}</span>
+          </div>
+        </div>` : ''}
+
+        <div class="p-3 rounded-xl border flex items-center justify-between gap-3" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+          <div class="flex-1">
+            <label class="font-bold block text-blue-700 dark:text-blue-300">Satuan 1: ${S().esc(sat1)} (Eceran Terendah)</label>
+            <span class="text-[10px]" style="color:var(--ons-text-soft)">Satuan dasar inventaris</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="calcOpnameQ1" type="number" min="0" value="${initQ1}" oninput="window.updateOpnameCalcTotal('${idBatch}', ${ras2}, ${ras3}, '${S().esc(sat1)}')" class="ons-input font-mono-num text-sm font-bold w-24 text-right py-1"/>
+            <span class="font-semibold text-xs w-12">${S().esc(sat1)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-xl border text-center space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Hasil Hitung Fisik (Dikonversi ke Satuan 1)</div>
+        <div id="calcOpnameGrandTotal" class="text-2xl font-extrabold font-mono-num text-blue-600">${curFisik} ${S().esc(sat1)}</div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="window.applyOpnameCalcTotal('${idBatch}', ${ras2}, ${ras3})" class="ons-btn ons-btn-emerald text-xs font-bold py-2.5 px-4">
+          &#10003; Terapkan ke Lembar Opname &rarr;
+        </button>
+      </div>
+    </div>`, '480px');
+  };
+
+  global.updateOpnameCalcTotal = (idBatch, ras2, ras3, sat1) => {
+    const q3 = Math.max(0, Number((document.getElementById('calcOpnameQ3') || {}).value || 0));
+    const q2 = Math.max(0, Number((document.getElementById('calcOpnameQ2') || {}).value || 0));
+    const q1 = Math.max(0, Number((document.getElementById('calcOpnameQ1') || {}).value || 0));
+    const total = (q3 * (ras3 || 1)) + (q2 * (ras2 || 1)) + q1;
+    const disp = document.getElementById('calcOpnameGrandTotal');
+    if (disp) disp.textContent = `${total} ${sat1}`;
+  };
+
+  global.applyOpnameCalcTotal = (idBatch, ras2, ras3) => {
+    const q3 = Math.max(0, Number((document.getElementById('calcOpnameQ3') || {}).value || 0));
+    const q2 = Math.max(0, Number((document.getElementById('calcOpnameQ2') || {}).value || 0));
+    const q1 = Math.max(0, Number((document.getElementById('calcOpnameQ1') || {}).value || 0));
+    const total = (q3 * (ras3 || 1)) + (q2 * (ras2 || 1)) + q1;
+    opnameDraftQty[idBatch] = total;
+    ONSStore.closeModal();
+    global.toast(`Hitungan fisik batch berhasil diperbarui: ${total} unit dasar.`, 'ok');
+    global.renderActiveView();
   };
 
   
