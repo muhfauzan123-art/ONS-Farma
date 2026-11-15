@@ -9250,7 +9250,7 @@
 
   let fakturTab = 'rencana';
   let rencanaSubMode = 'RENCANA'; // 'RENCANA' | 'DEFECTA'
-  let fakturPilihanData = 'FAKTUR'; // 'FAKTUR' | 'PRODUK' | 'MARGIN'
+  let fakturPilihanData = 'FAKTUR'; // 'FAKTUR' | 'PRODUK' | 'PENERIMA' | 'SUPPLIER' | 'MARGIN'
   let hutangProcView = 'TAGIHAN'; // 'TAGIHAN' | 'RIWAYAT'
   let hutangProcSearchQ = '';
   let hutangProcStatusFilter = 'SEMUA'; // 'SEMUA' | 'TEMPO_7H' | 'OVERDUE'
@@ -10415,9 +10415,11 @@
             <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style="border-color:var(--ons-border)">
               <div class="flex items-center gap-1.5">
                 <span class="text-xs font-bold text-slate-500 uppercase mr-1">Pilihan Data:</span>
-                <button type="button" onclick="window.setFakturPilihanData('FAKTUR')" class="ons-btn text-xs py-1 px-3 ${fakturPilihanData === 'FAKTUR' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📄 Faktur Pembelian (${allFaktur.length})</button>
-                <button type="button" onclick="window.setFakturPilihanData('PRODUK')" class="ons-btn text-xs py-1 px-3 ${fakturPilihanData === 'PRODUK' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📦 Produk Pembelian</button>
-                <button type="button" onclick="window.setFakturPilihanData('MARGIN')" class="ons-btn text-xs py-1 px-3 ${fakturPilihanData === 'MARGIN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📊 Analisa Margin</button>
+                <button type="button" onclick="window.setFakturPilihanData('FAKTUR')" class="ons-btn text-xs py-1 px-2.5 ${fakturPilihanData === 'FAKTUR' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📄 Faktur (${allFaktur.length})</button>
+                <button type="button" onclick="window.setFakturPilihanData('PRODUK')" class="ons-btn text-xs py-1 px-2.5 ${fakturPilihanData === 'PRODUK' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📦 Produk</button>
+                <button type="button" onclick="window.setFakturPilihanData('PENERIMA')" class="ons-btn text-xs py-1 px-2.5 ${fakturPilihanData === 'PENERIMA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">👤 Penerima</button>
+                <button type="button" onclick="window.setFakturPilihanData('SUPPLIER')" class="ons-btn text-xs py-1 px-2.5 ${fakturPilihanData === 'SUPPLIER' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">🏢 Supplier</button>
+                <button type="button" onclick="window.setFakturPilihanData('MARGIN')" class="ons-btn text-xs py-1 px-2.5 ${fakturPilihanData === 'MARGIN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📊 Analisa Margin</button>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="window.openFakturDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${fakturDrafts.length})</button>
@@ -10472,6 +10474,76 @@
                   </tbody>
                 </table>
               </div>
+            ` : fakturPilihanData === 'PENERIMA' ? `
+              <div class="ons-table-wrap">
+                <table class="ons-table">
+                  <thead><tr><th>No.</th><th>Petugas Penerima</th><th class="text-center">Jumlah Faktur</th><th class="text-right">Total Nilai Pembelian</th><th>Faktur Terakhir</th><th>Aksi</th></tr></thead>
+                  <tbody>
+                    ${(() => {
+                      const byPetugas = {};
+                      allFaktur.forEach((f) => {
+                        const p = f.petugas || 'APJ / Pemilik';
+                        if (!byPetugas[p]) byPetugas[p] = { count: 0, total: 0, lastDate: f.tgl_terima || f.tgl_faktur || '-' };
+                        byPetugas[p].count++;
+                        byPetugas[p].total += Number(f.netto_hutang || 0);
+                        if ((f.tgl_terima || f.tgl_faktur || '') > byPetugas[p].lastDate) byPetugas[p].lastDate = f.tgl_terima || f.tgl_faktur;
+                      });
+                      const entries = Object.entries(byPetugas);
+                      if (!entries.length) return '<tr><td colspan="6" class="text-center py-6 text-xs">Belum ada riwayat petugas penerima.</td></tr>';
+                      return entries.map(([petugas, data], idx) => `
+                        <tr>
+                          <td class="font-mono-num text-xs">${idx + 1}.</td>
+                          <td class="text-xs font-bold">${S().esc(petugas)}</td>
+                          <td class="text-center font-mono-num text-xs font-bold">${data.count} faktur</td>
+                          <td class="text-right font-mono-num text-xs font-bold text-blue-600">${S().rp(data.total)}</td>
+                          <td class="font-mono-num text-xs">${S().formatTgl(data.lastDate)}</td>
+                          <td><button type="button" onclick="window.setFakturListQ('${S().esc(petugas)}');window.setFakturPilihanData('FAKTUR');" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Filter Faktur</button></td>
+                        </tr>
+                      `).join('');
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            ` : fakturPilihanData === 'SUPPLIER' ? `
+              <div class="ons-table-wrap">
+                <table class="ons-table">
+                  <thead><tr><th>No.</th><th>Nama Supplier / PBF</th><th class="text-center">Termin Bawaan</th><th class="text-center">Jumlah Faktur</th><th class="text-right">Total Pembelian</th><th class="text-right">Sisa Utang</th><th>Aksi</th></tr></thead>
+                  <tbody>
+                    ${(() => {
+                      const bySup = {};
+                      allFaktur.forEach((f) => {
+                        const sup = f.id_pbf || 'Lain-lain';
+                        if (!bySup[sup]) bySup[sup] = { count: 0, total: 0, sisa: 0 };
+                        bySup[sup].count++;
+                        bySup[sup].total += Number(f.netto_hutang || 0);
+                        bySup[sup].sisa += Number(f.sisa_hutang || 0);
+                      });
+                      const entries = Object.entries(bySup);
+                      if (!entries.length) return '<tr><td colspan="7" class="text-center py-6 text-xs">Belum ada riwayat supplier PBF.</td></tr>';
+                      return entries.map(([sup, data], idx) => {
+                        const pbfInfo = (st.supplierPbf || []).find((p) => p.nama_pbf === sup) || {};
+                        const termin = pbfInfo.termin_hari !== undefined ? pbfInfo.termin_hari : 30;
+                        return `
+                          <tr>
+                            <td class="font-mono-num text-xs">${idx + 1}.</td>
+                            <td class="text-xs font-bold">${S().esc(sup)}</td>
+                            <td class="text-center font-mono-num text-xs">${termin} hari</td>
+                            <td class="text-center font-mono-num text-xs font-bold">${data.count} faktur</td>
+                            <td class="text-right font-mono-num text-xs font-bold text-blue-600">${S().rp(data.total)}</td>
+                            <td class="text-right font-mono-num text-xs font-bold ${data.sisa > 0 ? 'text-red-600' : 'text-emerald-600'}">${S().rp(data.sisa)}</td>
+                            <td>
+                              <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="window.setFakturListPbfFilter('${S().esc(sup)}');window.setFakturPilihanData('FAKTUR');" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Lihat Faktur</button>
+                                ${data.sisa > 0 ? `<button type="button" onclick="window.navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs py-1 px-2 font-bold">Bayar Utang</button>` : ''}
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join('');
+                    })()}
+                  </tbody>
+                </table>
+              </div>
             ` : `
             <div class="ons-table-wrap">
               <table class="ons-table">
@@ -10506,7 +10578,9 @@
                       <div class="flex flex-wrap gap-1.5">
                         <button type="button" onclick="window.openFakturDetailModal('${S().esc(f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Detail</button>
                         <button type="button" onclick="window.printFakturPembelianA4('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2" title="Cetak Bukti Penerimaan Barang Resmi (GRN A4)">Cetak GRN</button>
+                        <button type="button" onclick="window.duplicateFaktur('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2" title="Duplikasi Faktur ke Form Input">Duplikat</button>
                         ${isKons ? `<button type="button" onclick="window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-primary text-xs py-1 px-2">Settle</button>` : (Number(f.sisa_hutang || 0) > 0 ? `<button type="button" onclick="window.openPayHutangModal('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}', '${S().esc(f.no_faktur_pbf)}', ${Number(f.sisa_hutang || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5 font-bold shadow-sm">Bayar Hutang</button>` : '')}
+                        ${f.status_bayar !== 'DIBATALKAN' ? `<button type="button" onclick="window.cancelFaktur('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-1.5 text-red-500 hover:text-red-700" title="Batalkan Faktur Pembelian">&times;</button>` : ''}
                       </div>
                     </td>
                   </tr>`;
@@ -14178,4 +14252,77 @@
     if (elS) elS.value = sed;
     if (elD) elD.value = das;
     global.runUnitConvertCalc();
+  };
+
+  global.duplicateFaktur = (idBeliOrNoFaktur) => {
+    const st = S().AppState;
+    const f = (st.fakturPbf || []).find((x) => x.id_beli === idBeliOrNoFaktur || x.no_faktur_pbf === idBeliOrNoFaktur || x.id_faktur === idBeliOrNoFaktur);
+    if (!f) return global.toast('Faktur tidak ditemukan.', 'warn');
+    ensureGrnInitialized();
+    grnHeader.id_pbf = f.id_pbf || '';
+    grnHeader.no_sp = f.no_sp || '';
+    grnHeader.no_faktur_pbf = (f.no_faktur_pbf || '') + '-COPY';
+    grnHeader.diskon_pbf = Number(f.diskon_pbf || 0);
+    grnHeader.ppn_masukan = Number(f.ppn_masukan || 0);
+    grnHeader.gudang = f.gudang || 'Gudang Utama';
+    grnHeader.catatan = (f.catatan ? f.catatan + ' ' : '') + '(Duplikasi dari ' + f.no_faktur_pbf + ')';
+    const linkedBatches = (st.stokBatch || []).filter((b) => b.no_faktur_pbf === f.no_faktur_pbf);
+    if (linkedBatches.length) {
+      grnItems = linkedBatches.map((b) => ({
+        id_obat: b.id_obat,
+        no_batch: b.no_batch + '-1',
+        tgl_kadaluarsa: b.tgl_kadaluarsa || '',
+        qty_dasar: Number(b.qty_masuk_awal || b.qty_sisa || 1),
+        hpp_unit: Number(b.hpp_beli || 0),
+        diskon_item: 0,
+        is_bonus: false
+      }));
+    }
+    window.setFakturTab('input');
+    global.toast('Faktur ' + f.no_faktur_pbf + ' diduplikasi ke form input.', 'ok');
+  };
+
+  global.cancelFaktur = (idBeliOrNoFaktur) => {
+    const st = S().AppState;
+    const f = (st.fakturPbf || []).find((x) => x.id_beli === idBeliOrNoFaktur || x.no_faktur_pbf === idBeliOrNoFaktur || x.id_faktur === idBeliOrNoFaktur);
+    if (!f) return global.toast('Faktur tidak ditemukan.', 'warn');
+    if (f.status_bayar === 'DIBATALKAN') return global.toast('Faktur ini sudah dibatalkan.', 'warn');
+    S().openModal(`
+      <div class="p-5 space-y-4">
+        <h3 class="text-base font-bold text-red-600">Batalkan Faktur Pembelian ${S().esc(f.no_faktur_pbf)}</h3>
+        <p class="text-xs" style="color:var(--ons-text-soft)">Pembatalan akan menarik kembali stok batch obat yang masuk, membebaskan utang terkait, dan menandai faktur sebagai DIBATALKAN.</p>
+        <div>
+          <label class="text-xs font-semibold block mb-1">Alasan Pembatalan *</label>
+          <input id="cancelFakturReason" class="ons-input text-xs" placeholder="Contoh: Salah input faktur / dibatalkan PBF" value="Salah input faktur penerimaan" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+          <button type="button" onclick="window.confirmCancelFaktur('${S().esc(f.id_beli || f.no_faktur_pbf)}')" class="ons-btn ons-btn-danger text-xs font-bold">Konfirmasi Batalkan</button>
+        </div>
+      </div>
+    `);
+  };
+
+  global.confirmCancelFaktur = async (idBeliOrNoFaktur) => {
+    try {
+      const reasonInp = document.getElementById('cancelFakturReason');
+      const reason = (reasonInp && reasonInp.value) ? reasonInp.value.trim() : 'Faktur dibatalkan';
+      const st = S().AppState;
+      const f = (st.fakturPbf || []).find((x) => x.id_beli === idBeliOrNoFaktur || x.no_faktur_pbf === idBeliOrNoFaktur || x.id_faktur === idBeliOrNoFaktur);
+      if (!f) throw new Error('Faktur tidak ditemukan.');
+      f.status_bayar = 'DIBATALKAN';
+      f.catatan = (f.catatan ? f.catatan + ' ' : '') + '[DIBATALKAN: ' + reason + ']';
+      (st.stokBatch || []).forEach((b) => {
+        if (b.no_faktur_pbf === f.no_faktur_pbf) {
+          b.status_batch = 'DIBATALKAN';
+          b.qty_sisa = 0;
+        }
+      });
+      f.sisa_hutang = 0;
+      S().closeModal();
+      global.toast('Faktur ' + f.no_faktur_pbf + ' berhasil dibatalkan.', 'ok');
+      global.renderActiveView();
+    } catch (e) {
+      global.toast(e.message || 'Gagal membatalkan faktur.', 'err');
+    }
   };
