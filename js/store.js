@@ -836,8 +836,8 @@
    */
   function getEffectiveObatPrice(obat, qtyBase = 1, tierMode = 'UMUM') {
     if (!obat) return { harga: 0, tierApplied: 'UMUM', isGrosirAuto: false };
-    const hUmum = Number(obat.harga_umum || 0);
-    return { harga: hUmum, tierApplied: 'UMUM', isGrosirAuto: false };
+    const h1 = Number(obat.harga_jual_1 !== undefined && obat.harga_jual_1 !== '' ? obat.harga_jual_1 : (obat.harga_umum || 0));
+    return { harga: h1, tierApplied: 'UMUM', isGrosirAuto: false };
   }
 
   function getNearEdBatchInfo(idObat, thresholdDays = 90) {

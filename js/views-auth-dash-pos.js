@@ -3988,11 +3988,25 @@
       const nearest = S().getNearestSellableBatch(o.id_obat);
       const edDays = nearest ? S().daysUntil(nearest.tgl_kadaluarsa) : null;
       const edBadgeCls = edDays === null ? '' : (edDays <= 90 ? 'text-red-600 font-bold' : (edDays <= 180 ? 'text-amber-600 font-semibold' : 'text-emerald-600'));
-      const effPrice = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(o, 1, tierMode) : { harga: o.harga_umum, tierApplied: 'UMUM' };
       const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(o.id_obat, 90) : { hasNearEd: false };
       const qtyInCart = inCartMap[o.id_obat] || 0;
       const isLow = sellStok > 0 && sellStok <= Number(o.stok_min || 10);
       const isEmpty = sellStok <= 0;
+
+      // Standarisasi Satuan 1, Satuan 2, Satuan 3 & Harga Jual 1, 2, 3 (Sinkron Kasir POS)
+      const sat1 = String(o.satuan_1 || o.satuan_dasar || 'Tablet').trim();
+      const sat2 = String(o.satuan_2 !== undefined ? o.satuan_2 : (o.satuan_sedang || '')).trim();
+      const sat3 = String(o.satuan_3 !== undefined ? o.satuan_3 : (o.satuan_besar || '')).trim();
+      const ras2 = sat2 ? Math.max(1, Number(o.rasio_2 !== undefined ? o.rasio_2 : (o.rasio_sedang || 1))) : 1;
+      const ras3 = sat3 ? Math.max(1, Number(o.rasio_3 !== undefined ? o.rasio_3 : (o.rasio_besar || 1))) : 1;
+      const valid2 = !!(sat2 && sat2.toLowerCase() !== sat1.toLowerCase() && ras2 > 1);
+      const valid3 = !!(sat3 && sat3.toLowerCase() !== sat1.toLowerCase() && sat3.toLowerCase() !== sat2.toLowerCase() && ras3 > 1);
+
+      const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+      const defH2 = valid2 ? Math.round(h1 * ras2) : 0;
+      const defH3 = valid3 ? Math.round(h1 * ras3) : 0;
+      const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang !== undefined && o.harga_sedang !== '' ? o.harga_sedang : (o.harga_strip || defH2))) : 0;
+      const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar !== undefined && o.harga_besar !== '' ? o.harga_besar : (o.harga_box || defH3))) : 0;
 
       if (isList) {
         return `<div onclick="window.posAddToCart('${S().esc(o.id_obat)}')" class="ons-pos-listrow ${qtyInCart ? 'is-incart' : ''} ${isEmpty ? 'opacity-70' : ''}">
@@ -4002,13 +4016,15 @@
               ${S().bpomBadge(o.golongan_bpom)}
               ${qtyInCart ? `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white">${qtyInCart}x</span>` : ''}
               ${nearEd.hasNearEd ? `<span class="badge-bpom bpom-prekursor text-[9px]">ED ${nearEd.minDays}h</span>` : ''}
+              ${valid2 ? `<span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300">Sat 2 (${S().esc(sat2)}): ${S().rp(h2)}</span>` : ''}
+              ${valid3 ? `<span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">Sat 3 (${S().esc(sat3)}): ${S().rp(h3)}</span>` : ''}
             </div>
             <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; Rak ${S().esc(o.rak_lokasi || '-')} &bull; ${nearest ? `Batch ${S().esc(nearest.no_batch)} (<span class="${edBadgeCls}">ED ${nearest.tgl_kadaluarsa}</span>)` : (expiredQty > 0 ? '<span class="text-red-600 font-bold">Batch ED Terblokir</span>' : '<span class="text-red-600 font-bold">Kosong</span>')}</div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <div class="text-right">
-              <div class="text-xs font-extrabold font-mono-num text-blue-600">${S().rp(effPrice.harga)}<span class="text-[10px] font-normal">/${S().esc(o.satuan_dasar)}</span></div>
-              <div class="text-[10px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok}</div>
+              <div class="text-xs font-extrabold font-mono-num text-blue-600">${S().rp(h1)}<span class="text-[10px] font-normal">/${S().esc(sat1)}</span></div>
+              <div class="text-[10px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok: ${sellStok} ${S().esc(sat1)}</div>
             </div>
             ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[10px] px-2 py-1 min-h-0 h-7">Cabang</button>` : ''}
             ${isEmpty ? `
@@ -4038,14 +4054,15 @@
           <div class="flex flex-wrap gap-1 mt-1.5">
             ${nearEd.hasNearEd ? `<span class="badge-bpom bpom-prekursor text-[10px]">Promo Near-ED &le;${nearEd.minDays}h: -${nearEd.suggestedDiscPct}%</span>` : ''}
             ${isLow ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300">Stok Menipis</span>' : ''}
-            ${o.satuan_sedang && (o.harga_sedang || o.harga_strip) ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300">${S().esc(o.satuan_sedang)}: ${S().rp(o.harga_sedang || o.harga_strip)}</span>` : ''}
-            ${o.satuan_besar && (o.harga_besar || o.harga_box) ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">${S().esc(o.satuan_besar)}: ${S().rp(o.harga_besar || o.harga_box)}</span>` : ''}
+            ${valid2 ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300">Satuan 2 (${S().esc(sat2)}): ${S().rp(h2)}</span>` : ''}
+            ${valid3 ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">Satuan 3 (${S().esc(sat3)}): ${S().rp(h3)}</span>` : ''}
+            ${!valid2 && !valid3 ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-500/10 text-slate-700 dark:text-slate-300">Satuan 1 Tunggal (${S().esc(sat1)})</span>` : ''}
           </div>
         </div>
         <div class="flex items-center justify-between pt-2 border-t gap-2" style="border-color:var(--ons-border)">
           <div class="min-w-0">
-            <div class="text-sm font-extrabold font-mono-num text-blue-600">${S().rp(effPrice.harga)} <span class="text-[10px] font-normal" style="color:var(--ons-text-soft)">/${S().esc(o.satuan_dasar)}</span></div>
-            <div class="text-[11px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok}${expiredQty > 0 ? ` <span class="text-amber-600">(+${expiredQty} ED)</span>` : ''}</div>
+            <div class="text-sm font-extrabold font-mono-num text-blue-600">${S().rp(h1)} <span class="text-[10px] font-normal" style="color:var(--ons-text-soft)">/${S().esc(sat1)}</span></div>
+            <div class="text-[11px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok} ${S().esc(sat1)}${expiredQty > 0 ? ` <span class="text-amber-600">(+${expiredQty} ED)</span>` : ''}</div>
           </div>
           <div class="flex gap-1 shrink-0">
             ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8" title="Cek Stok Antar-Cabang">Cabang</button>` : ''}
@@ -5046,10 +5063,10 @@
                         </div>
                       </td>
                       <td class="align-top">
-                        <select aria-label="Satuan Jual" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] font-bold py-1 px-1.5 min-h-0 h-8 min-w-[125px] max-w-[170px] bg-blue-50/70 dark:bg-slate-800 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 shadow-sm cursor-pointer" title="Klik untuk ubah satuan jual (Eceran / Strip / Box)">
+                        <select aria-label="Satuan Jual" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] font-bold py-1 px-1.5 min-h-0 h-8 min-w-[125px] max-w-[170px] bg-blue-50/70 dark:bg-slate-800 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 shadow-sm cursor-pointer" title="Klik untuk ubah satuan jual (Satuan 1 / 2 / 3)">
                           ${(it.unitOptions || []).map((u) => `<option value="${S().esc(u.label)}" ${u.label === it.satuan ? 'selected' : ''}>${S().esc(u.displayText || u.label)}</option>`).join('')}
                         </select>
-                        ${Number(it.faktor_konversi || 1) > 1 ? `<div class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 font-mono-num">(1 ${S().esc(it.satuan)} = ${it.faktor_konversi} ${ob ? S().esc(ob.satuan_dasar || 'unit') : 'unit'})</div>` : ''}
+                        ${Number(it.faktor_konversi || 1) > 1 ? `<div class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 font-mono-num">(1 ${S().esc(it.satuan)} = ${it.faktor_konversi} ${ob ? S().esc(ob.satuan_1 || ob.satuan_dasar || 'unit') : 'unit'})</div>` : ''}
                       </td>
                       <td class="text-right font-mono-num text-xs align-top">
                         <div>${S().rp(it.harga_jual)}</div>
@@ -5895,7 +5912,7 @@
       label: baseSat,
       faktor: 1,
       harga: hrg1,
-      displayText: `${baseSat} (${S().rp(hrg1)})`
+      displayText: `Satuan 1: ${baseSat} (${S().rp(hrg1)})`
     });
 
     if (satSed && satSed.toLowerCase() !== baseSat.toLowerCase() && rSed > 1) {
@@ -5903,7 +5920,7 @@
         label: satSed,
         faktor: rSed,
         harga: hrg2,
-        displayText: `${satSed} (isi ${rSed} ${baseSat} • ${S().rp(hrg2)})`
+        displayText: `Satuan 2: ${satSed} (${rSed} ${baseSat} • ${S().rp(hrg2)})`
       });
     }
 
@@ -5912,7 +5929,7 @@
         label: satBes,
         faktor: rBes,
         harga: hrg3,
-        displayText: `${satBes} (isi ${rBes} ${baseSat} • ${S().rp(hrg3)})`
+        displayText: `Satuan 3: ${satBes} (${rBes} ${baseSat} • ${S().rp(hrg3)})`
       });
     }
 
@@ -6028,6 +6045,7 @@
     const obat = st.masterObat.find((o) => o.id_obat === idObat);
     if (!obat) return;
     const sellStok = S().getSellableStok(idObat);
+    const baseSat = String(obat.satuan_1 || obat.satuan_dasar || 'Tablet').trim();
     if (sellStok <= 0) {
       playPosBeep('err');
       global.toast('Stok layak jual ' + obat.nama_dagang + ' habis atau kadaluarsa (diblokir FEFO).', 'err');
@@ -6037,7 +6055,7 @@
     const usedBase = _cartBaseQtyForObat(cart, idObat, -1);
     if (usedBase + 1 > sellStok) {
       playPosBeep('err');
-      global.toast('Qty keranjang melebihi stok layak jual (' + sellStok + ' ' + obat.satuan_dasar + ').', 'warn');
+      global.toast('Qty keranjang melebihi stok layak jual (' + sellStok + ' ' + baseSat + ').', 'warn');
       return;
     }
     const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
@@ -6046,14 +6064,14 @@
       existing.qty++;
       _repriceCartItem(obat, existing, tierMode);
     } else {
-      const eff = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, 1, tierMode) : { harga: Number(obat.harga_umum || 0), tierApplied: tierMode };
+      const h1 = Number(obat.harga_jual_1 !== undefined && obat.harga_jual_1 !== '' ? obat.harga_jual_1 : (obat.harga_umum || 0));
       const itemObj = {
         id_obat: obat.id_obat,
         nama_dagang: obat.nama_dagang,
-        satuan: obat.satuan_dasar,
+        satuan: baseSat,
         faktor_konversi: 1,
-        harga_jual: eff.harga,
-        tier_applied: eff.tierApplied,
+        harga_jual: h1,
+        tier_applied: 'UMUM',
         diskon_item: 0,
         qty: 1,
         aturan_pakai: '',
@@ -6128,21 +6146,18 @@
       const sellStok = S().getSellableStok(it.id_obat);
       const otherBase = _cartBaseQtyForObat(cart, it.id_obat, idx);
       const nextFaktor = Math.max(1, Number(opt.faktor || 1));
+      const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
+      const baseSat = ob ? String(ob.satuan_1 || ob.satuan_dasar || 'unit').trim() : 'unit';
       if (otherBase + (Number(it.qty || 1) * nextFaktor) > sellStok) {
-        global.toast('Satuan ' + opt.label + ' melebihi stok layak jual tersedia (' + sellStok + ' unit dasar).', 'warn');
+        global.toast('Satuan ' + opt.label + ' melebihi stok layak jual tersedia (' + sellStok + ' ' + baseSat + ').', 'warn');
         global.renderActiveView();
         return;
       }
       it.satuan = opt.label;
       it.faktor_konversi = nextFaktor;
-      const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
       const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
-      const eff = _repriceCartItem(ob, it, tierMode);
-      if (eff && eff.isGrosirAuto) {
-        global.toast('Tier Grosir Otomatis aktif untuk ' + it.nama_dagang, 'ok');
-      } else {
-        global.toast('Satuan ' + it.nama_dagang + ' diubah: ' + opt.label + (nextFaktor > 1 ? ' (isi ' + nextFaktor + ')' : '') + ' • ' + S().rp(it.harga_jual), 'info');
-      }
+      _repriceCartItem(ob, it, tierMode);
+      global.toast('Satuan ' + it.nama_dagang + ' diubah: ' + opt.label + (nextFaktor > 1 ? ' (isi ' + nextFaktor + ' ' + baseSat + ')' : '') + ' • ' + S().rp(it.harga_jual), 'info');
       global.renderActiveView();
     }
   };
@@ -6155,16 +6170,16 @@
     const sellStok = S().getSellableStok(it.id_obat);
     const otherBase = _cartBaseQtyForObat(cart, it.id_obat, idx);
     const faktor = Math.max(1, Number(it.faktor_konversi || 1));
+    const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
+    const baseSat = ob ? String(ob.satuan_1 || ob.satuan_dasar || 'satuan dasar').trim() : 'satuan dasar';
     const maxItemQty = Math.max(1, Math.floor((sellStok - otherBase) / faktor));
     if ((otherBase + reqQty * faktor) > sellStok) {
-      global.toast('Stok layak jual ' + it.nama_dagang + ' tidak mencukupi (maks ' + sellStok + ' satuan dasar).', 'warn');
+      global.toast('Stok layak jual ' + it.nama_dagang + ' tidak mencukupi (maks ' + sellStok + ' ' + baseSat + ').', 'warn');
       it.qty = maxItemQty;
     } else {
       it.qty = reqQty;
     }
-    const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
     const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
-    const wasAuto = it.tier_applied === 'GROSIR_AUTO';
     _repriceCartItem(ob, it, tierMode);
     global.renderActiveView();
   };
@@ -8120,19 +8135,20 @@
       if (existing) {
         existing.qty = Number(existing.qty || 0) + qtyButir;
       } else {
-        const hrg = Number(ob.harga_umum || 0);
+        const sat1 = String(ob.satuan_1 || ob.satuan_dasar || 'Tablet').trim();
+        const hrg1 = Number(ob.harga_jual_1 !== undefined && ob.harga_jual_1 !== '' ? ob.harga_jual_1 : (ob.harga_umum || 0));
         cart.items.push({
           id_obat: ing.id_obat,
           nama_dagang: ob.nama_dagang,
-          satuan: ob.satuan_dasar || 'Tablet',
+          satuan: sat1,
           qty: qtyButir,
           faktor_konversi: 1,
-          harga_jual: hrg,
+          harga_jual: hrg1,
           diskon_item: 0,
           aturan_pakai: s.aturanPakai,
           racikan_nama: racikanLabel,
           golongan_bpom: ob.golongan_bpom || 'BEBAS',
-          unitOptions: [{ label: ob.satuan_dasar || 'Tablet', ratio: 1, displayText: ob.satuan_dasar || 'Tablet' }]
+          unitOptions: [{ label: sat1, faktor: 1, harga: hrg1, displayText: `Satuan 1: ${sat1} (${S().rp(hrg1)})` }]
         });
       }
       addedCount++;
