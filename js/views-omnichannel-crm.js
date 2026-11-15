@@ -53,12 +53,14 @@
     const parsedItems = parseItemsJson(ord.items_json);
     const cartItems = parsedItems.map((it) => {
       const obat = st.masterObat.find((o) => o.id_obat === it.id_obat) || {};
-      const harga = Number(it.harga || it.harga_jual || obat.harga_umum || 0);
+      const h1 = Number(obat.harga_jual_1 !== undefined && obat.harga_jual_1 !== '' ? obat.harga_jual_1 : (obat.harga_umum || 0));
+      const s1 = String(obat.satuan_1 || obat.satuan_dasar || 'Unit').trim();
+      const harga = Number(it.harga || it.harga_jual || h1 || 0);
       return {
         id_obat: it.id_obat || obat.id_obat || '',
         nama_dagang: it.nama || obat.nama_dagang || 'Produk E-Apotek',
         qty: Math.max(1, Number(it.qty || 1)),
-        satuan: it.satuan || obat.satuan_dasar || 'Unit',
+        satuan: it.satuan || s1,
         faktor_konversi: Number(it.faktor_konversi || 1),
         harga_jual: harga
       };
@@ -93,9 +95,11 @@
   }
 
   function openNewOmniOrderModal() {
-    const obatOpts = S().AppState.masterObat.map((o) =>
-      `<option value="${S().esc(o.id_obat)}">${S().esc(o.nama_dagang)} (${S().rp(o.harga_umum)})</option>`
-    ).join('');
+    const obatOpts = S().AppState.masterObat.map((o) => {
+      const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+      const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+      return `<option value="${S().esc(o.id_obat)}">${S().esc(o.nama_dagang)} (${S().rp(h1)}/${S().esc(s1)})</option>`;
+    }).join('');
     S().openModal(`<div class="p-6 space-y-4 text-sm">
       <div class="flex justify-between items-center">
         <h3 class="font-bold text-base">Catat Order WA / Delivery / Marketplace</h3>
@@ -141,8 +145,10 @@
     const idObat = document.getElementById('omObatPick').value;
     const qty = Math.max(1, Number(document.getElementById('omQtyPick').value || 1));
     const obat = S().AppState.masterObat.find((o) => o.id_obat === idObat);
-    const itemArr = obat ? [{ id_obat: obat.id_obat, nama: obat.nama_dagang, qty, satuan: obat.satuan_dasar, harga: obat.harga_umum }] : [];
-    const estTotal = obat ? (qty * Number(obat.harga_umum || 0)) : 0;
+    const h1 = obat ? Number(obat.harga_jual_1 !== undefined && obat.harga_jual_1 !== '' ? obat.harga_jual_1 : (obat.harga_umum || 0)) : 0;
+    const s1 = obat ? String(obat.satuan_1 || obat.satuan_dasar || 'Unit').trim() : 'Unit';
+    const itemArr = obat ? [{ id_obat: obat.id_obat, nama: obat.nama_dagang, qty, satuan: s1, harga: h1 }] : [];
+    const estTotal = obat ? (qty * h1) : 0;
     try {
       const res = await API().callApi('omni.save', {
         nama_pelanggan: nama,

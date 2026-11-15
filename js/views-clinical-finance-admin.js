@@ -1850,7 +1850,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       const ob = st.masterObat.find((o) => o.id_obat === ing.id_obat);
       const exactTabs = (Number(racikanState.jumlahBungkus || 1) * Number(ing.dosis_mg || 0)) / Math.max(1, Number(ing.kekuatan_mg || 1));
       const bulat = Math.max(1, Math.ceil(exactTabs));
-      const subHarga = ob ? bulat * Number(ob.harga_umum || 0) : 0;
+      const price1 = ob ? Number(ob.harga_jual_1 !== undefined && ob.harga_jual_1 !== '' ? ob.harga_jual_1 : (ob.harga_umum || 0)) : 0;
+      const subHarga = ob ? bulat * price1 : 0;
       totalBahanRp += subHarga;
       return Object.assign({}, ing, { idx, ob, exactTabs, bulat, subHarga });
     });
@@ -2012,7 +2013,11 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 <div class="p-3 rounded-xl border space-y-2 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                   <div class="flex flex-wrap items-center gap-2">
                     <select class="ons-select flex-1 min-w-[200px]" onchange="window.updateRacikanIng(${row.idx}, 'id_obat', this.value)">
-                      ${st.masterObat.map((o) => `<option value="${o.id_obat}" ${o.id_obat === row.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)} (${S().rp(o.harga_umum)}/${S().esc(o.satuan_dasar)})</option>`).join('')}
+                      ${st.masterObat.map((o) => {
+                        const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+                        const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+                        return `<option value="${o.id_obat}" ${o.id_obat === row.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)} (${S().rp(h1)}/${S().esc(s1)})</option>`;
+                      }).join('')}
                     </select>
                     <button onclick="window.removeRacikanIng(${row.idx})" ${ingRows.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button>
                   </div>
@@ -3681,7 +3686,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       const ranked = (st.masterObat || []).map((o) => {
         const qtyStok = S().getTotalStok(o.id_obat);
         const sold = salesMap[o.id_obat] || { qty: 0, rev: 0 };
-        const val = sold.rev > 0 ? sold.rev : (Math.max(1, qtyStok) * Number(o.harga_umum || 0));
+        const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+        const val = sold.rev > 0 ? sold.rev : (Math.max(1, qtyStok) * h1);
         return { o, val, qtyStok };
       }).sort((a, b) => b.val - a.val);
 
@@ -3717,8 +3723,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             id_rencana: 'REC-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random()*900+100),
             id_obat: o.id_obat,
             nama_produk: o.nama_dagang,
-            satuan: o.satuan_besar || o.satuan_dasar || 'Box',
-            satuan_dasar: o.satuan_dasar || 'Tablet',
+            satuan: o.satuan_3 || o.satuan_besar || o.satuan_1 || o.satuan_dasar || 'Box',
+            satuan_dasar: o.satuan_1 || o.satuan_dasar || 'Tablet',
             qty_usulan: orderQty,
             stok_saat_ini: item.qtyStok,
             stok_min: o.stok_min || 10,
@@ -6961,7 +6967,8 @@ S. prn 3 dd 1 tab</textarea>
     const ranked = st.masterObat.map((o) => {
       const qtyStok = S().getTotalStok(o.id_obat);
       const sold = salesByObat[o.id_obat] || { qty: 0, rev: 0 };
-      const val = sold.rev > 0 ? sold.rev : (Math.max(1, qtyStok) * Number(o.harga_umum || 0));
+      const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+      const val = sold.rev > 0 ? sold.rev : (Math.max(1, qtyStok) * h1);
       return { id_obat: o.id_obat, nama: o.nama_dagang, val, revSold: sold.rev, qtySold: sold.qty, qtyStok, zat: String(o.zat_aktif || '').toLowerCase() };
     }).sort((a, b) => b.val - a.val);
     const totalVal = Math.max(1, ranked.reduce((s, r) => s + r.val, 0));
