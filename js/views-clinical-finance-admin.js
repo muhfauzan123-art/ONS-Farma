@@ -11984,128 +11984,130 @@ S. prn 3 dd 1 tab</textarea>
         const sampleData = buildStrukEditorSampleData(prof);
         const previewHtml = renderStrukPreviewContent(curTpl.template_teks, sampleData, widthNum);
         const presets = (global.StrukEngine && global.StrukEngine.TEMPLATE_PRESETS) || [];
-        return `<div class="ons-card p-5 space-y-4 text-xs">
-          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
-            <div>
-              <h3 class="font-bold text-sm">Desain &amp; Pratinjau Struk Thermal 58mm / 80mm</h3>
-              <p style="color:var(--ons-text-soft)">Atur tata letak struk kasir dengan direktif <code>[C]</code>, <code>[B]</code>, <code>[LR]Kiri||Kanan</code>, blok item <code>{{#ITEM}}...{{/ITEM}}</code>, dan <code>[QR]</code>.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <select id="strukTplWidth" onchange="window.previewEditedStruk()" class="ons-select w-32 text-xs font-semibold">
-                <option value="58" ${widthNum !== 80 ? 'selected' : ''}>58 mm (32 Kolom)</option>
-                <option value="80" ${widthNum === 80 ? 'selected' : ''}>80 mm (46 Kolom)</option>
-              </select>
-              <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Cetak</button>
-              <button type="button" onclick="window.downloadEditedStrukPng()" class="ons-btn ons-btn-ghost text-xs">Unduh PNG</button>
-              <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template ke Sheets</button>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap items-center gap-1.5">
-              <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Preset Cepat:</span>
-              ${presets.map((pr) => `<button type="button" onclick="window.applyStrukPreset('${S().esc(pr.id)}')" class="ons-struk-preset-btn ${curTpl.kode === pr.kode ? 'active' : ''}">${S().esc(pr.label)}</button>`).join('')}
-            </div>
-            ${tpls.length > 1 ? `<div class="flex items-center gap-1.5">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
-              <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-xs w-56">
-                ${tpls.map((t, idx) => `<option value="${idx}" ${idx === safeIdx ? 'selected' : ''}>${S().esc(t.nama || t.kode)} (${Number(t.lebar_mm) === 80 ? '80mm' : '58mm'})</option>`).join('')}
-              </select>
-            </div>` : ''}
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <div class="lg:col-span-7 space-y-2.5">
-              <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_POS_58MM')}"/>
+        return `<div class="space-y-5">
+          <!-- Card 1: Desain & Pratinjau Struk Thermal 58mm / 80mm -->
+          <div class="ons-card p-5 space-y-4 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
               <div>
-                <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Nama Template Struk</label>
-                <input id="strukTplNama" class="ons-input text-xs font-bold" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
+                <h3 class="font-bold text-sm">Desain &amp; Pratinjau Struk Thermal 58mm / 80mm</h3>
+                <p style="color:var(--ons-text-soft)">Atur tata letak struk kasir dengan direktif <code>[C]</code>, <code>[B]</code>, <code>[LR]Kiri||Kanan</code>, blok item <code>{{#ITEM}}...{{/ITEM}}</code>, dan <code>[QR]</code>.</p>
               </div>
-              <div>
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                  <label class="font-semibold text-[11px]" style="color:var(--ons-text-soft)">Kode Tata Letak Struk</label>
-                  <button type="button" onclick="window.resetEditedStrukPreset()" class="text-[11px] font-semibold text-blue-600 hover:underline">Pulihkan Template Bawaan</button>
-                </div>
-                <textarea id="strukTplText" rows="16" oninput="window.previewEditedStruk()" class="ons-textarea font-mono-num text-[11.5px] leading-relaxed">${S().esc(curTpl.template_teks || '')}</textarea>
-              </div>
-              <div class="p-2.5 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Sisipkan Variabel / Direktif Cepat (klik untuk menambah ke editor):</div>
-                <div class="flex flex-wrap gap-1.5">
-                  ${STRUK_TOKEN_SNIPPETS.map((c, idx) => `<button type="button" onclick="window.insertStrukToken(${idx})" class="ons-struk-chip">${S().esc(c.label)}</button>`).join('')}
-                </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="strukTplWidth" onchange="window.previewEditedStruk()" class="ons-select w-32 text-xs font-semibold">
+                  <option value="58" ${widthNum !== 80 ? 'selected' : ''}>58 mm (32 Kolom)</option>
+                  <option value="80" ${widthNum === 80 ? 'selected' : ''}>80 mm (46 Kolom)</option>
+                </select>
+                <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Cetak</button>
+                <button type="button" onclick="window.downloadEditedStrukPng()" class="ons-btn ons-btn-ghost text-xs">Unduh PNG</button>
+                <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template ke Sheets</button>
               </div>
             </div>
 
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Preset Cepat:</span>
+                ${presets.map((pr) => `<button type="button" onclick="window.applyStrukPreset('${S().esc(pr.id)}')" class="ons-struk-preset-btn ${curTpl.kode === pr.kode ? 'active' : ''}">${S().esc(pr.label)}</button>`).join('')}
+              </div>
+              ${tpls.length > 1 ? `<div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
+                <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-xs w-56">
+                  ${tpls.map((t, idx) => `<option value="${idx}" ${idx === safeIdx ? 'selected' : ''}>${S().esc(t.nama || t.kode)} (${Number(t.lebar_mm) === 80 ? '80mm' : '58mm'})</option>`).join('')}
+                </select>
+              </div>` : ''}
+            </div>
 
-            <!-- Aturan Pembulatan Kasir POS Otomatis (Apotek Digital Adoption) -->
-            <div class="ons-card p-5 space-y-4 text-xs">
-              <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              <div class="lg:col-span-7 space-y-2.5">
+                <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_POS_58MM')}"/>
                 <div>
-                  <h3 class="font-bold text-sm flex items-center gap-2">
-                    <span>🪙 Aturan Pembulatan Kasir POS Otomatis</span>
-                    <span class="badge-bpom bpom-bebas">Apotek Pro</span>
-                  </h3>
-                  <p style="color:var(--ons-text-soft)">Atur kelipatan pembulatan total tagihan kasir (misal kelipatan Rp 100 terdekat) untuk efisiensi uang receh kembalian.</p>
+                  <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Nama Template Struk</label>
+                  <input id="strukTplNama" class="ons-input text-xs font-bold" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
                 </div>
-                <button type="button" onclick="window.savePosRoundingSettings()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3">Simpan Aturan Pembulatan</button>
+                <div>
+                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <label class="font-semibold text-[11px]" style="color:var(--ons-text-soft)">Kode Tata Letak Struk</label>
+                    <button type="button" onclick="window.resetEditedStrukPreset()" class="text-[11px] font-semibold text-blue-600 hover:underline">Pulihkan Template Bawaan</button>
+                  </div>
+                  <textarea id="strukTplText" rows="16" oninput="window.previewEditedStruk()" class="ons-textarea font-mono-num text-[11.5px] leading-relaxed">${S().esc(curTpl.template_teks || '')}</textarea>
+                </div>
+                <div class="p-2.5 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                  <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Sisipkan Variabel / Direktif Cepat (klik untuk menambah ke editor):</div>
+                  <div class="flex flex-wrap gap-1.5">
+                    ${STRUK_TOKEN_SNIPPETS.map((c, idx) => `<button type="button" onclick="window.insertStrukToken(${idx})" class="ons-struk-chip">${S().esc(c.label)}</button>`).join('')}
+                  </div>
+                </div>
               </div>
 
-              ${(() => {
-                const roundCfg = typeof S().getPosRoundingConfig === 'function' ? S().getPosRoundingConfig() : { nominal: 100, arah: 'terdekat' };
-                return `
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label class="font-semibold block mb-1">Kelipatan Pembulatan *</label>
-                      <select id="cfgRoundNominal" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
-                        <option value="1" ${Number(roundCfg.nominal) === 1 ? 'selected' : ''}>Nonaktif (Tanpa Pembulatan / Rp 1)</option>
-                        <option value="50" ${Number(roundCfg.nominal) === 50 ? 'selected' : ''}>Kelipatan Rp 50</option>
-                        <option value="100" ${Number(roundCfg.nominal) === 100 ? 'selected' : ''}>Kelipatan Rp 100 (Rekomendasi Standar)</option>
-                        <option value="500" ${Number(roundCfg.nominal) === 500 ? 'selected' : ''}>Kelipatan Rp 500</option>
-                        <option value="1000" ${Number(roundCfg.nominal) === 1000 ? 'selected' : ''}>Kelipatan Rp 1.000</option>
-                      </select>
-                    </div>
+              <div class="lg:col-span-5 space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-xs">Live Preview</span>
+                    <span id="strukPreviewWidthPill" class="badge-bpom bpom-terbatas">${widthNum} mm &bull; ${widthNum === 80 ? '46' : '32'} Kolom</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button type="button" onclick="window.setStrukPreviewMode('paper')" class="ons-btn ${strukPreviewMode === 'paper' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">Kertas</button>
+                    <button type="button" onclick="window.setStrukPreviewMode('text')" class="ons-btn ${strukPreviewMode === 'text' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">ESC/POS</button>
+                  </div>
+                </div>
+                <label class="flex items-center gap-2 text-[11px] cursor-pointer" style="color:var(--ons-text-soft)">
+                  <input type="checkbox" ${strukPreviewExtras ? 'checked' : ''} onchange="window.toggleStrukPreviewExtras(this.checked)" class="w-3.5 h-3.5 accent-blue-600"/>
+                  <span>Tampilkan contoh diskon, aturan pakai &amp; kembalian di pratinjau</span>
+                </label>
+                <div id="strukEditorLivePreview" class="ons-struk-paper-tray">${previewHtml}</div>
+              </div>
+            </div>
+          </div>
 
-                    <div>
-                      <label class="font-semibold block mb-1">Arah / Metode Pembulatan *</label>
-                      <select id="cfgRoundArah" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
-                        <option value="terdekat" ${roundCfg.arah === 'terdekat' ? 'selected' : ''}>Bulat Terdekat (Round: &lt;50 ke bawah, &gt;=50 ke atas)</option>
-                        <option value="keatas" ${roundCfg.arah === 'keatas' ? 'selected' : ''}>Selalu Bulat Ke Atas (Ceil)</option>
-                        <option value="kebawah" ${roundCfg.arah === 'kebawah' ? 'selected' : ''}>Selalu Bulat Ke Bawah (Floor)</option>
-                      </select>
-                    </div>
+          <!-- Card 2: Aturan Pembulatan Kasir POS Otomatis (Apotek Digital Adoption) -->
+          <div class="ons-card p-5 space-y-4 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
+              <div>
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                  <span>🪙 Aturan Pembulatan Kasir POS Otomatis</span>
+                  <span class="badge-bpom bpom-bebas">Apotek Pro</span>
+                </h3>
+                <p style="color:var(--ons-text-soft)">Atur kelipatan pembulatan total tagihan kasir (misal kelipatan Rp 100 terdekat) untuk efisiensi uang receh kembalian.</p>
+              </div>
+              <button type="button" onclick="window.savePosRoundingSettings()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3">Simpan Aturan Pembulatan</button>
+            </div>
 
-                    <div class="p-3 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <div class="font-bold text-blue-700 dark:text-blue-300">Live Simulator Pembulatan:</div>
-                      <div class="flex items-center gap-2">
-                        <span class="text-slate-500">Contoh Tagihan:</span>
-                        <input id="cfgRoundSimInp" type="number" value="12340" oninput="window.simulasiPosRounding()" class="ons-input font-mono-num text-xs w-24 py-1 text-right"/>
-                      </div>
-                      <div id="cfgRoundSimResult" class="font-mono-num font-extrabold text-xs text-emerald-600">
-                        Hasil: Rp 12.300 (Pembulatan: -Rp 40)
-                      </div>
+            ${(() => {
+              const roundCfg = typeof S().getPosRoundingConfig === 'function' ? S().getPosRoundingConfig() : { nominal: 100, arah: 'terdekat' };
+              return `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="font-semibold block mb-1">Kelipatan Pembulatan *</label>
+                    <select id="cfgRoundNominal" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
+                      <option value="1" ${Number(roundCfg.nominal) === 1 ? 'selected' : ''}>Nonaktif (Tanpa Pembulatan / Rp 1)</option>
+                      <option value="50" ${Number(roundCfg.nominal) === 50 ? 'selected' : ''}>Kelipatan Rp 50</option>
+                      <option value="100" ${Number(roundCfg.nominal) === 100 ? 'selected' : ''}>Kelipatan Rp 100 (Rekomendasi Standar)</option>
+                      <option value="500" ${Number(roundCfg.nominal) === 500 ? 'selected' : ''}>Kelipatan Rp 500</option>
+                      <option value="1000" ${Number(roundCfg.nominal) === 1000 ? 'selected' : ''}>Kelipatan Rp 1.000</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="font-semibold block mb-1">Arah / Metode Pembulatan *</label>
+                    <select id="cfgRoundArah" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
+                      <option value="terdekat" ${roundCfg.arah === 'terdekat' ? 'selected' : ''}>Bulat Terdekat (Round: &lt;50 ke bawah, &gt;=50 ke atas)</option>
+                      <option value="keatas" ${roundCfg.arah === 'keatas' ? 'selected' : ''}>Selalu Bulat Ke Atas (Ceil)</option>
+                      <option value="kebawah" ${roundCfg.arah === 'kebawah' ? 'selected' : ''}>Selalu Bulat Ke Bawah (Floor)</option>
+                    </select>
+                  </div>
+
+                  <div class="p-3 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <div class="font-bold text-blue-700 dark:text-blue-300">Live Simulator Pembulatan:</div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-slate-500">Contoh Tagihan:</span>
+                      <input id="cfgRoundSimInp" type="number" value="12340" oninput="window.simulasiPosRounding()" class="ons-input font-mono-num text-xs w-24 py-1 text-right"/>
+                    </div>
+                    <div id="cfgRoundSimResult" class="font-mono-num font-extrabold text-xs text-emerald-600">
+                      Hasil: Rp 12.300 (Pembulatan: -Rp 40)
                     </div>
                   </div>
-                `;
-              })()}
-            </div>
-
-            <div class="lg:col-span-5 space-y-2.5">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-bold text-xs">Live Preview</span>
-                  <span id="strukPreviewWidthPill" class="badge-bpom bpom-terbatas">${widthNum} mm &bull; ${widthNum === 80 ? '46' : '32'} Kolom</span>
                 </div>
-                <div class="flex items-center gap-1">
-                  <button type="button" onclick="window.setStrukPreviewMode('paper')" class="ons-btn ${strukPreviewMode === 'paper' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">Kertas</button>
-                  <button type="button" onclick="window.setStrukPreviewMode('text')" class="ons-btn ${strukPreviewMode === 'text' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">ESC/POS</button>
-                </div>
-              </div>
-              <label class="flex items-center gap-2 text-[11px] cursor-pointer" style="color:var(--ons-text-soft)">
-                <input type="checkbox" ${strukPreviewExtras ? 'checked' : ''} onchange="window.toggleStrukPreviewExtras(this.checked)" class="w-3.5 h-3.5 accent-blue-600"/>
-                <span>Tampilkan contoh diskon, aturan pakai &amp; kembalian di pratinjau</span>
-              </label>
-              <div id="strukEditorLivePreview" class="ons-struk-paper-tray">${previewHtml}</div>
-            </div>
+              `;
+            })()}
           </div>
         </div>`;
       })() : ''}
