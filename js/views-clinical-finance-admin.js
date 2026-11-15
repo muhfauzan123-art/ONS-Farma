@@ -8161,14 +8161,23 @@ S. prn 3 dd 1 tab</textarea>
     const targetRatio = Math.min(0.85, Math.max(0.05, anlHargaTargetMarkup / 100));
     const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : Number(o.harga_umum || 0);
     const newPrice = Math.ceil(rawTarget / 100) * 100;
+    const sat1 = String(o.satuan_1 || o.satuan_dasar || 'Tablet').trim();
+    const sat2 = String(o.satuan_2 !== undefined ? o.satuan_2 : (o.satuan_sedang || '')).trim();
+    const sat3 = String(o.satuan_3 !== undefined ? o.satuan_3 : (o.satuan_besar || '')).trim();
+    const ras2 = sat2 ? Math.max(1, Number(o.rasio_2 !== undefined ? o.rasio_2 : (o.rasio_sedang || 1))) : 1;
+    const ras3 = sat3 ? Math.max(1, Number(o.rasio_3 !== undefined ? o.rasio_3 : (o.rasio_besar || 1))) : 1;
+    const h2 = (sat2 && ras2 > 1) ? Math.round(newPrice * ras2) : 0;
+    const h3 = (sat3 && ras3 > 1) ? Math.round(newPrice * ras3) : 0;
     try {
       await API().callApi('obat.updatePrices', {
         items: [{
           id_obat: o.id_obat,
+          harga_jual_1: newPrice,
+          harga_jual_2: h2,
+          harga_jual_3: h3,
           harga_umum: newPrice,
-          harga_member: Math.max(hppRef, Math.ceil(newPrice * 0.95 / 100) * 100),
-          harga_grosir: Math.max(hppRef, Math.ceil(newPrice * 0.90 / 100) * 100),
-          harga_faskes: Math.max(hppRef, Math.ceil(newPrice * 0.88 / 100) * 100)
+          harga_sedang: h2,
+          harga_besar: h3
         }],
         catatan: 'Penyesuaian Harga dari Analisis Harga Produk'
       }, { isWrite: true });
@@ -8203,12 +8212,21 @@ S. prn 3 dd 1 tab</textarea>
       const targetRatio = Math.min(0.85, Math.max(0.05, anlHargaTargetMarkup / 100));
       const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : Number(o.harga_umum || 0);
       const newPrice = Math.ceil(rawTarget / 100) * 100;
+      const sat1 = String(o.satuan_1 || o.satuan_dasar || 'Tablet').trim();
+      const sat2 = String(o.satuan_2 !== undefined ? o.satuan_2 : (o.satuan_sedang || '')).trim();
+      const sat3 = String(o.satuan_3 !== undefined ? o.satuan_3 : (o.satuan_besar || '')).trim();
+      const ras2 = sat2 ? Math.max(1, Number(o.rasio_2 !== undefined ? o.rasio_2 : (o.rasio_sedang || 1))) : 1;
+      const ras3 = sat3 ? Math.max(1, Number(o.rasio_3 !== undefined ? o.rasio_3 : (o.rasio_besar || 1))) : 1;
+      const h2 = (sat2 && ras2 > 1) ? Math.round(newPrice * ras2) : 0;
+      const h3 = (sat3 && ras3 > 1) ? Math.round(newPrice * ras3) : 0;
       return {
         id_obat: o.id_obat,
+        harga_jual_1: newPrice,
+        harga_jual_2: h2,
+        harga_jual_3: h3,
         harga_umum: newPrice,
-        harga_member: Math.max(hppRef, Math.ceil(newPrice * 0.95 / 100) * 100),
-        harga_grosir: Math.max(hppRef, Math.ceil(newPrice * 0.90 / 100) * 100),
-        harga_faskes: Math.max(hppRef, Math.ceil(newPrice * 0.88 / 100) * 100)
+        harga_sedang: h2,
+        harga_besar: h3
       };
     });
 
@@ -13203,21 +13221,20 @@ S. prn 3 dd 1 tab</textarea>
       cart.pelanggan_nama = rx.nama_pasien;
       cart.no_wa = rx.no_wa_pasien || (mem && mem.no_hp) || '';
       cart.items = pick.map((o) => {
-        const unitSell = Number(mem ? (o.harga_member || o.harga_umum) : o.harga_umum);
-        return {
+        const itemObj = {
           id_obat: o.id_obat,
           nama_dagang: o.nama_dagang,
           qty: 1,
-          satuan: o.satuan_dasar,
+          satuan: o.satuan_1 || o.satuan_dasar || 'Unit',
           faktor_konversi: 1,
-          harga_jual: unitSell,
+          harga_jual: Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0)),
           aturan_pakai: '',
-          unitOptions: [
-            { label: o.satuan_dasar, faktor: 1, harga: unitSell },
-            { label: o.satuan_sedang || 'Strip', faktor: Number(o.rasio_sedang || 10), harga: unitSell * Number(o.rasio_sedang || 10) },
-            { label: o.satuan_besar || 'Box', faktor: Number(o.rasio_besar || 100), harga: Number(o.harga_grosir || unitSell) * Number(o.rasio_besar || 100) }
-          ]
+          unitOptions: []
         };
+        if (typeof window._repriceCartItem === 'function') {
+          window._repriceCartItem(o, itemObj, 'UMUM');
+        }
+        return itemObj;
       });
     }
     global.toast('Obat dari E-Resep ' + idKlinis + ' dimuat ke Kasir POS!', 'ok');

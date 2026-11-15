@@ -246,15 +246,25 @@
     }
     if (Array.isArray(db.master_obat)) {
       db.master_obat.forEach((o) => {
-        const hu = Number(o.harga_umum || 0);
+        const hu = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
         const hpp = Number(o.hpp_avg || 0);
         if (hu > 0 && hu <= 10 && hpp > hu * 5) {
-          o.harga_umum = hu * 1000;
-          if (Number(o.harga_member || 0) <= 10) o.harga_member = Number(o.harga_member || hu) * 1000;
-          if (Number(o.harga_grosir || 0) <= 10) o.harga_grosir = Number(o.harga_grosir || hu) * 1000;
-          if (Number(o.harga_faskes || 0) <= 10) o.harga_faskes = Number(o.harga_faskes || hu) * 1000;
+          o.harga_jual_1 = hu * 1000;
+          o.harga_umum = o.harga_jual_1;
           changed = true;
         }
+        if (!o.satuan_1) { o.satuan_1 = o.satuan_dasar || 'Tablet'; changed = true; }
+        if (o.satuan_2 === undefined) { o.satuan_2 = o.satuan_sedang || ''; changed = true; }
+        if (o.satuan_3 === undefined) { o.satuan_3 = o.satuan_besar || ''; changed = true; }
+        if (o.rasio_2 === undefined) { o.rasio_2 = o.rasio_sedang || 1; changed = true; }
+        if (o.rasio_3 === undefined) { o.rasio_3 = o.rasio_besar || 1; changed = true; }
+        if (o.harga_jual_1 === undefined) { o.harga_jual_1 = o.harga_umum || 0; changed = true; }
+        if (o.harga_jual_2 === undefined) { o.harga_jual_2 = o.harga_sedang || o.harga_strip || 0; changed = true; }
+        if (o.harga_jual_3 === undefined) { o.harga_jual_3 = o.harga_besar || o.harga_box || 0; changed = true; }
+        delete o.harga_member;
+        delete o.harga_grosir;
+        delete o.min_qty_grosir;
+        delete o.harga_faskes;
       });
     }
     if (!Array.isArray(db.master_dokter)) {
@@ -795,27 +805,35 @@
         status_aktif: 'AKTIF',
         updated_at: nowIso
       }, d);
-      item.satuan_dasar = String(item.satuan_dasar || 'Tablet').trim();
-      item.satuan_sedang = String(item.satuan_sedang || '').trim();
-      item.satuan_besar = String(item.satuan_besar || '').trim();
-      item.rasio_sedang = item.satuan_sedang ? Math.max(1, sanitizeNum(item.rasio_sedang, 1)) : 1;
-      item.rasio_besar = item.satuan_besar ? Math.max(1, sanitizeNum(item.rasio_besar, 1)) : 1;
+      item.satuan_1 = String(item.satuan_1 || item.satuan_dasar || 'Tablet').trim();
+      item.satuan_2 = String(item.satuan_2 !== undefined ? item.satuan_2 : (item.satuan_sedang || '')).trim();
+      item.satuan_3 = String(item.satuan_3 !== undefined ? item.satuan_3 : (item.satuan_besar || '')).trim();
+      item.rasio_2 = item.satuan_2 ? Math.max(1, sanitizeNum(item.rasio_2 !== undefined ? item.rasio_2 : item.rasio_sedang, 1)) : 1;
+      item.rasio_3 = item.satuan_3 ? Math.max(1, sanitizeNum(item.rasio_3 !== undefined ? item.rasio_3 : item.rasio_besar, 1)) : 1;
 
       item.hpp_avg = sanitizeNum(item.hpp_avg, 0);
-      item.harga_umum = sanitizeNum(item.harga_umum, 0);
+      item.harga_jual_1 = sanitizeNum(item.harga_jual_1 !== undefined && item.harga_jual_1 !== '' ? item.harga_jual_1 : item.harga_umum, 0);
 
-      const defHrgSed = (item.satuan_sedang && item.rasio_sedang > 1) ? Math.round(item.harga_umum * item.rasio_sedang) : 0;
-      const defHrgBes = (item.satuan_besar && item.rasio_besar > 1) ? Math.round(item.harga_umum * item.rasio_besar) : 0;
-      item.harga_sedang = item.satuan_sedang ? sanitizeNum(item.harga_sedang !== undefined && item.harga_sedang !== '' ? item.harga_sedang : item.harga_strip, defHrgSed) : 0;
-      item.harga_besar = item.satuan_besar ? sanitizeNum(item.harga_besar !== undefined && item.harga_besar !== '' ? item.harga_besar : item.harga_box, defHrgBes) : 0;
-      item.harga_strip = item.harga_sedang;
-      item.harga_box = item.harga_besar;
+      const defHrg2 = (item.satuan_2 && item.rasio_2 > 1) ? Math.round(item.harga_jual_1 * item.rasio_2) : 0;
+      const defHrg3 = (item.satuan_3 && item.rasio_3 > 1) ? Math.round(item.harga_jual_1 * item.rasio_3) : 0;
+      item.harga_jual_2 = item.satuan_2 ? sanitizeNum(item.harga_jual_2 !== undefined && item.harga_jual_2 !== '' ? item.harga_jual_2 : (item.harga_sedang !== undefined && item.harga_sedang !== '' ? item.harga_sedang : item.harga_strip), defHrg2) : 0;
+      item.harga_jual_3 = item.satuan_3 ? sanitizeNum(item.harga_jual_3 !== undefined && item.harga_jual_3 !== '' ? item.harga_jual_3 : (item.harga_besar !== undefined && item.harga_besar !== '' ? item.harga_besar : item.harga_box), defHrg3) : 0;
 
-      // Harga member, grosir, faskes disetarakan ke harga kemasan konversi (tanpa tiering pelanggan)
-      item.harga_member = item.harga_umum;
-      item.harga_grosir = item.harga_umum;
-      item.min_qty_grosir = 1;
-      item.harga_faskes = item.harga_umum;
+      // Backward compatible aliases
+      item.satuan_dasar = item.satuan_1;
+      item.satuan_sedang = item.satuan_2;
+      item.satuan_besar = item.satuan_3;
+      item.rasio_sedang = item.rasio_2;
+      item.rasio_besar = item.rasio_3;
+      item.harga_umum = item.harga_jual_1;
+      item.harga_sedang = item.harga_jual_2;
+      item.harga_besar = item.harga_jual_3;
+      item.harga_strip = item.harga_jual_2;
+      item.harga_box = item.harga_jual_3;
+      delete item.harga_member;
+      delete item.harga_grosir;
+      delete item.min_qty_grosir;
+      delete item.harga_faskes;
 
       item.stok_min = Math.max(0, sanitizeNum(item.stok_min, 10));
       item.stok_max = Math.max(1, sanitizeNum(item.stok_max, 100));
@@ -839,18 +857,33 @@
         const idx = db.master_obat.findIndex((o) => o.id_obat === p.id_obat);
         if (idx < 0) return;
         const m = db.master_obat[idx];
-        if (p.harga_umum !== undefined && Number(p.harga_umum) > 0) m.harga_umum = Math.round(Number(p.harga_umum));
-        if (p.harga_sedang !== undefined) m.harga_sedang = Math.round(Number(p.harga_sedang) || 0);
-        if (p.harga_besar !== undefined) m.harga_besar = Math.round(Number(p.harga_besar) || 0);
-        if (p.harga_strip !== undefined) m.harga_strip = Math.round(Number(p.harga_strip) || 0);
-        if (p.harga_box !== undefined) m.harga_box = Math.round(Number(p.harga_box) || 0);
-        m.harga_member = m.harga_umum;
-        m.harga_grosir = m.harga_umum;
-        m.harga_faskes = m.harga_umum;
+        if (p.harga_jual_1 !== undefined && Number(p.harga_jual_1) > 0) m.harga_jual_1 = Math.round(Number(p.harga_jual_1));
+        else if (p.harga_umum !== undefined && Number(p.harga_umum) > 0) m.harga_jual_1 = Math.round(Number(p.harga_umum));
+
+        if (p.harga_jual_2 !== undefined) m.harga_jual_2 = Math.round(Number(p.harga_jual_2) || 0);
+        else if (p.harga_sedang !== undefined) m.harga_jual_2 = Math.round(Number(p.harga_sedang) || 0);
+        else if (p.harga_strip !== undefined) m.harga_jual_2 = Math.round(Number(p.harga_strip) || 0);
+
+        if (p.harga_jual_3 !== undefined) m.harga_jual_3 = Math.round(Number(p.harga_jual_3) || 0);
+        else if (p.harga_besar !== undefined) m.harga_jual_3 = Math.round(Number(p.harga_besar) || 0);
+        else if (p.harga_box !== undefined) m.harga_jual_3 = Math.round(Number(p.harga_box) || 0);
+
+        m.harga_umum = m.harga_jual_1 || 0;
+        m.harga_sedang = m.harga_jual_2 || 0;
+        m.harga_besar = m.harga_jual_3 || 0;
+        m.harga_strip = m.harga_jual_2 || 0;
+        m.harga_box = m.harga_jual_3 || 0;
+        delete m.harga_member;
+        delete m.harga_grosir;
+        delete m.min_qty_grosir;
+        delete m.harga_faskes;
         m.updated_at = nowIso;
         updatedRows.push({
           id_obat: m.id_obat,
           nama_dagang: m.nama_dagang,
+          harga_jual_1: m.harga_jual_1,
+          harga_jual_2: m.harga_jual_2,
+          harga_jual_3: m.harga_jual_3,
           harga_umum: m.harga_umum,
           harga_sedang: m.harga_sedang,
           harga_besar: m.harga_besar
@@ -1905,16 +1938,16 @@
           (kfa && String(m.kode_kfa || '').trim() === kfa) ||
           (String(m.nama_dagang || '').trim().toLowerCase() === String(raw.nama_dagang).trim().toLowerCase())
         );
-        const satDasar = String(raw.satuan_dasar || raw.bentuk_sediaan || 'Tablet').trim();
-        const satSedang = String(raw.satuan_sedang || '').trim();
-        const satBesar = String(raw.satuan_besar || '').trim();
-        const rasSedang = satSedang ? Math.max(1, Number(raw.rasio_sedang || 1)) : 1;
-        const rasBesar = satBesar ? Math.max(1, Number(raw.rasio_besar || 1)) : 1;
-        const hrgUmum = Number(raw.harga_umum || 0);
-        const defHrgSed = (satSedang && rasSedang > 1) ? Math.round(hrgUmum * rasSedang) : 0;
-        const defHrgBes = (satBesar && rasBesar > 1) ? Math.round(hrgUmum * rasBesar) : 0;
-        const hrgSedang = satSedang ? Number(raw.harga_sedang !== undefined && raw.harga_sedang !== '' ? raw.harga_sedang : (raw.harga_strip || defHrgSed)) : 0;
-        const hrgBesar = satBesar ? Number(raw.harga_besar !== undefined && raw.harga_besar !== '' ? raw.harga_besar : (raw.harga_box || defHrgBes)) : 0;
+        const sat1 = String(raw.satuan_1 || raw.satuan_dasar || raw.bentuk_sediaan || 'Tablet').trim();
+        const sat2 = String(raw.satuan_2 !== undefined ? raw.satuan_2 : (raw.satuan_sedang || '')).trim();
+        const sat3 = String(raw.satuan_3 !== undefined ? raw.satuan_3 : (raw.satuan_besar || '')).trim();
+        const ras2 = sat2 ? Math.max(1, Number(raw.rasio_2 !== undefined ? raw.rasio_2 : (raw.rasio_sedang || 1))) : 1;
+        const ras3 = sat3 ? Math.max(1, Number(raw.rasio_3 !== undefined ? raw.rasio_3 : (raw.rasio_besar || 1))) : 1;
+        const hrg1 = Number(raw.harga_jual_1 !== undefined && raw.harga_jual_1 !== '' ? raw.harga_jual_1 : (raw.harga_umum || 0));
+        const defHrg2 = (sat2 && ras2 > 1) ? Math.round(hrg1 * ras2) : 0;
+        const defHrg3 = (sat3 && ras3 > 1) ? Math.round(hrg1 * ras3) : 0;
+        const hrg2 = sat2 ? Number(raw.harga_jual_2 !== undefined && raw.harga_jual_2 !== '' ? raw.harga_jual_2 : (raw.harga_sedang !== undefined && raw.harga_sedang !== '' ? raw.harga_sedang : (raw.harga_strip || defHrg2))) : 0;
+        const hrg3 = sat3 ? Number(raw.harga_jual_3 !== undefined && raw.harga_jual_3 !== '' ? raw.harga_jual_3 : (raw.harga_besar !== undefined && raw.harga_besar !== '' ? raw.harga_besar : (raw.harga_box || defHrg3))) : 0;
 
         if (existing) {
           targetId = existing.id_obat;
@@ -1923,20 +1956,28 @@
             const v = raw[k];
             if (v !== undefined && v !== null && v !== '') existing[k] = v;
           });
-          if (raw.satuan_dasar !== undefined) existing.satuan_dasar = satDasar;
-          if (raw.satuan_sedang !== undefined) existing.satuan_sedang = satSedang;
-          if (raw.satuan_besar !== undefined) existing.satuan_besar = satBesar;
-          existing.rasio_sedang = rasSedang;
-          existing.rasio_besar = rasBesar;
-          if (raw.harga_umum !== undefined && raw.harga_umum !== '') existing.harga_umum = hrgUmum;
-          existing.harga_sedang = hrgSedang;
-          existing.harga_besar = hrgBesar;
-          existing.harga_strip = hrgSedang;
-          existing.harga_box = hrgBesar;
-          existing.harga_member = existing.harga_umum;
-          existing.harga_grosir = existing.harga_umum;
-          existing.min_qty_grosir = 1;
-          existing.harga_faskes = existing.harga_umum;
+          existing.satuan_1 = sat1;
+          existing.satuan_2 = sat2;
+          existing.rasio_2 = ras2;
+          existing.satuan_3 = sat3;
+          existing.rasio_3 = ras3;
+          existing.harga_jual_1 = hrg1;
+          existing.harga_jual_2 = hrg2;
+          existing.harga_jual_3 = hrg3;
+          existing.satuan_dasar = sat1;
+          existing.satuan_sedang = sat2;
+          existing.satuan_besar = sat3;
+          existing.rasio_sedang = ras2;
+          existing.rasio_besar = ras3;
+          existing.harga_umum = hrg1;
+          existing.harga_sedang = hrg2;
+          existing.harga_besar = hrg3;
+          existing.harga_strip = hrg2;
+          existing.harga_box = hrg3;
+          delete existing.harga_member;
+          delete existing.harga_grosir;
+          delete existing.min_qty_grosir;
+          delete existing.harga_faskes;
           existing.updated_at = now;
           updated++;
         } else {
@@ -1948,29 +1989,33 @@
             zat_aktif: raw.zat_aktif || '',
             kekuatan: raw.kekuatan || '',
             golongan_bpom: raw.golongan_bpom || 'BEBAS',
-            bentuk_sediaan: raw.bentuk_sediaan || satDasar,
+            bentuk_sediaan: raw.bentuk_sediaan || sat1,
             nie_bpom: raw.nie_bpom || '',
             pabrikan: raw.pabrikan || '',
             suhu_simpan: raw.suhu_simpan || 'Suhu Ruang (15-25 C)',
             rak_lokasi: raw.rak_lokasi || 'RAK-A1',
-            satuan_dasar: satDasar,
-            satuan_sedang: satSedang,
-            rasio_sedang: rasSedang,
-            satuan_besar: satBesar,
-            rasio_besar: rasBesar,
+            satuan_1: sat1,
+            satuan_2: sat2,
+            rasio_2: ras2,
+            satuan_3: sat3,
+            rasio_3: ras3,
+            harga_jual_1: hrg1,
+            harga_jual_2: hrg2,
+            harga_jual_3: hrg3,
+            satuan_dasar: sat1,
+            satuan_sedang: sat2,
+            rasio_sedang: ras2,
+            satuan_besar: sat3,
+            rasio_besar: ras3,
             stok_min: Number(raw.stok_min !== undefined ? raw.stok_min : 10),
             stok_max: Number(raw.stok_max || 100),
             hpp_avg: Number(raw.hpp_avg || 0),
             hpp_terakhir: Number(raw.hpp_terakhir || raw.hpp_avg || 0),
-            harga_umum: hrgUmum,
-            harga_sedang: hrgSedang,
-            harga_besar: hrgBesar,
-            harga_strip: hrgSedang,
-            harga_box: hrgBesar,
-            harga_member: hrgUmum,
-            harga_grosir: hrgUmum,
-            min_qty_grosir: 1,
-            harga_faskes: hrgUmum,
+            harga_umum: hrg1,
+            harga_sedang: hrg2,
+            harga_besar: hrg3,
+            harga_strip: hrg2,
+            harga_box: hrg3,
             pbf_utama: raw.pbf_utama || '',
             status_aktif: 'AKTIF',
             substitusi_ids: raw.substitusi_ids || '',

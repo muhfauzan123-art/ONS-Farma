@@ -150,50 +150,76 @@
     </div>`, '420px');
   }
 
+  function formatKonversiRasio(sat1, sat2, ras2, sat3, ras3) {
+    const s1 = String(sat1 || 'Unit').trim();
+    const s2 = String(sat2 || '').trim();
+    const s3 = String(sat3 || '').trim();
+    const r2 = s2 ? Math.max(1, Number(ras2 || 1)) : 1;
+    const r3 = s3 ? Math.max(1, Number(ras3 || 1)) : 1;
+
+    const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+    const valid3 = Boolean(s3 && s3.toLowerCase() !== s1.toLowerCase() && (!valid2 || s3.toLowerCase() !== s2.toLowerCase()) && r3 > 1);
+
+    if (valid2 && valid3) {
+      return `1 ${s3} = ${r3} ${s1}  |  1 ${s2} = ${r2} ${s1}`;
+    }
+    if (valid3) {
+      return `1 ${s3} = ${r3} ${s1}`;
+    }
+    if (valid2) {
+      return `1 ${s2} = ${r2} ${s1}`;
+    }
+    return `Satuan Tunggal (${s1})`;
+  }
+  window.formatKonversiRasio = formatKonversiRasio;
+
   function _formatStockMultiSatuan(stok, o) {
-    const sDasar = String(o.satuan_dasar || 'Unit').trim();
-    const sSedang = String(o.satuan_sedang || '').trim();
-    const sBesar = String(o.satuan_besar || '').trim();
-    const rBesar = Number(o.rasio_besar || 0);
-    const rSedang = Number(o.rasio_sedang || 0);
+    const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+    const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
+    const s3 = String(o.satuan_3 || o.satuan_besar || '').trim();
+    const r2 = s2 ? Math.max(1, Number(o.rasio_2 || o.rasio_sedang || 1)) : 1;
+    const r3 = s3 ? Math.max(1, Number(o.rasio_3 || o.rasio_besar || 1)) : 1;
     const qty = Math.max(0, Number(stok || 0));
-    if (qty === 0) return `0 ${sDasar}`;
+    if (qty === 0) return `0 ${s1}`;
 
-    // Kasus 1: Punya Satuan Besar dan Satuan Sedang (cth: Tablet -> Strip -> Box)
-    if (sBesar && rBesar > 1 && sSedang && rSedang > 1 && rBesar > rSedang) {
-      const b = Math.floor(qty / rBesar);
-      const rem = qty % rBesar;
-      const s = Math.floor(rem / rSedang);
-      const d = rem % rSedang;
+    const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+    const valid3 = Boolean(s3 && s3.toLowerCase() !== s1.toLowerCase() && (!valid2 || s3.toLowerCase() !== s2.toLowerCase()) && r3 > 1);
+
+    // Kasus 1: Punya Satuan 3 dan Satuan 2 (cth: Tablet -> Strip -> Box)
+    if (valid3 && valid2 && r3 > r2) {
+      const b = Math.floor(qty / r3);
+      const rem = qty % r3;
+      const s = Math.floor(rem / r2);
+      const d = rem % r2;
       const parts = [];
-      if (b > 0) parts.push(`${b} ${sBesar}`);
-      if (s > 0) parts.push(`${s} ${sSedang}`);
-      if (d > 0 || parts.length === 0) parts.push(`${d} ${sDasar}`);
+      if (b > 0) parts.push(`${b} ${s3}`);
+      if (s > 0) parts.push(`${s} ${s2}`);
+      if (d > 0 || parts.length === 0) parts.push(`${d} ${s1}`);
       return parts.join(', ');
     }
 
-    // Kasus 2: Hanya punya Satuan Besar (cth: Strip -> Box, atau Botol -> Box)
-    if (sBesar && rBesar > 1) {
-      const b = Math.floor(qty / rBesar);
-      const d = qty % rBesar;
+    // Kasus 2: Hanya punya Satuan 3 (cth: Strip -> Box)
+    if (valid3) {
+      const b = Math.floor(qty / r3);
+      const d = qty % r3;
       const parts = [];
-      if (b > 0) parts.push(`${b} ${sBesar}`);
-      if (d > 0 || parts.length === 0) parts.push(`${d} ${sDasar}`);
+      if (b > 0) parts.push(`${b} ${s3}`);
+      if (d > 0 || parts.length === 0) parts.push(`${d} ${s1}`);
       return parts.join(', ');
     }
 
-    // Kasus 3: Hanya punya Satuan Sedang (cth: Tablet -> Strip)
-    if (sSedang && rSedang > 1) {
-      const s = Math.floor(qty / rSedang);
-      const d = qty % rSedang;
+    // Kasus 3: Hanya punya Satuan 2 (cth: Tablet -> Strip)
+    if (valid2) {
+      const s = Math.floor(qty / r2);
+      const d = qty % r2;
       const parts = [];
-      if (s > 0) parts.push(`${s} ${sSedang}`);
-      if (d > 0 || parts.length === 0) parts.push(`${d} ${sDasar}`);
+      if (s > 0) parts.push(`${s} ${s2}`);
+      if (d > 0 || parts.length === 0) parts.push(`${d} ${s1}`);
       return parts.join(', ');
     }
 
-    // Kasus 4: Satuan Tunggal (cth: hanya Strip, hanya Botol, hanya Tablet)
-    return `${qty.toLocaleString('id-ID')} ${sDasar}`;
+    // Kasus 4: Satuan Tunggal (cth: hanya Strip, hanya Botol)
+    return `${qty.toLocaleString('id-ID')} ${s1}`;
   }
   window._formatStockMultiSatuan = _formatStockMultiSatuan;
 
@@ -345,15 +371,17 @@
       ${filtered.map((m) => {
         const o = m.o;
         const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
-        const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
-        const sDasar = String(o.satuan_dasar || 'Unit').trim();
-        const sSedang = String(o.satuan_sedang || '').trim();
-        const sBesar = String(o.satuan_besar || '').trim();
-        const rSedang = Number(o.rasio_sedang || 0);
-        const rBesar = Number(o.rasio_besar || 0);
-        const hEceran = Number(o.harga_umum || 0);
-        const hStrip = Number(o.harga_sedang || o.harga_strip || (rSedang > 1 ? hEceran * rSedang : 0));
-        const hBox = Number(o.harga_besar || o.harga_box || (rBesar > 1 ? hEceran * rBesar : 0));
+        const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+        const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
+        const s3 = String(o.satuan_3 || o.satuan_besar || '').trim();
+        const r2 = s2 ? Math.max(1, Number(o.rasio_2 || o.rasio_sedang || 1)) : 1;
+        const r3 = s3 ? Math.max(1, Number(o.rasio_3 || o.rasio_besar || 1)) : 1;
+        const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+        const valid3 = Boolean(s3 && s3.toLowerCase() !== s1.toLowerCase() && (!valid2 || s3.toLowerCase() !== s2.toLowerCase()) && r3 > 1);
+        const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+        const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
+        const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
+        const hetVal = Math.round(h1 * 1.15);
         const sBreakdown = _formatStockMultiSatuan(m.stok, o);
         return `<div class="ons-product-card flex flex-col justify-between gap-2.5 ${!isAktifJual ? 'opacity-75' : ''}">
           <div class="space-y-1.5">
@@ -381,8 +409,8 @@
             <div class="p-2.5 rounded-lg border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
               <div class="flex items-center justify-between text-xs font-mono-num">
                 <div>
-                  <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(sDasar || 'Unit')}</span>
-                  ${m.stok > 0 && (rSedang > 1 || rBesar > 1) ? `<span class="text-[10px] text-slate-500 font-medium ml-1">(&approx; ${sBreakdown})</span>` : ''}
+                  <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(s1)}</span>
+                  ${m.stok > 0 && (valid2 || valid3) ? `<span class="text-[10px] text-slate-500 font-medium ml-1">(&approx; ${sBreakdown})</span>` : ''}
                 </div>
                 <span class="text-[10.5px] font-bold uppercase" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
               </div>
@@ -396,28 +424,23 @@
                 ⚡ + Defecta (Pesan ke PBF)
               </button>` : ''}
               <div class="text-[10.5px] font-mono-num pt-1 border-t border-slate-200 dark:border-slate-700" style="color:var(--ons-text-soft)">
-                ${sBesar && rBesar > 1 && sSedang && rSedang > 1 ? `1 ${S().esc(sBesar)} = ${rBesar} ${S().esc(sDasar)} &bull; 1 ${S().esc(sSedang)} = ${rSedang} ${S().esc(sDasar)}` : (sBesar && rBesar > 1 ? `1 ${S().esc(sBesar)} = ${rBesar} ${S().esc(sDasar)}` : (sSedang && rSedang > 1 ? `1 ${S().esc(sSedang)} = ${rSedang} ${S().esc(sDasar)}` : `Kemasan Tunggal: ${S().esc(sDasar)}`))}
+                ${formatKonversiRasio(s1, s2, r2, s3, r3)}
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-1.5 p-2 rounded-lg border text-[11px] font-mono-num" style="border-color:var(--ons-border)">
+            <div class="grid ${valid2 && valid3 ? 'grid-cols-3' : (valid2 || valid3 ? 'grid-cols-2' : 'grid-cols-1')} gap-1.5 p-2 rounded-lg border text-[11px] font-mono-num" style="border-color:var(--ons-border)">
               <div>
-                <span class="text-[10px] text-slate-400 block uppercase">Eceran (${S().esc(sDasar)})</span>
-                <span class="font-extrabold text-blue-600 text-sm">${S().rp(hEceran)}</span>
+                <span class="text-[10px] text-slate-400 block uppercase">Harga Jual 1 (${S().esc(s1)})</span>
+                <span class="font-extrabold text-blue-600 text-sm">${S().rp(h1)}</span>
               </div>
-              ${sSedang && rSedang > 1 ? `
+              ${valid2 ? `
               <div>
-                <span class="text-[10px] text-emerald-600 block uppercase">Per ${S().esc(sSedang)}</span>
-                <span class="font-bold text-emerald-600">${S().rp(hStrip)}</span>
+                <span class="text-[10px] text-emerald-600 block uppercase">Harga Jual 2 (${S().esc(s2)})</span>
+                <span class="font-bold text-emerald-600">${S().rp(h2)}</span>
               </div>` : ''}
-              ${sBesar && rBesar > 1 ? `
+              ${valid3 ? `
               <div>
-                <span class="text-[10px] text-purple-600 block uppercase">Per ${S().esc(sBesar)}</span>
-                <span class="font-bold text-purple-600">${S().rp(hBox)}</span>
-              </div>` : ''}
-              ${(!sSedang || rSedang <= 1) && (!sBesar || rBesar <= 1) ? `
-              <div>
-                <span class="text-[10px] text-slate-400 block uppercase">Kemasan</span>
-                <span class="font-medium text-slate-500">Satuan Tunggal</span>
+                <span class="text-[10px] text-purple-600 block uppercase">Harga Jual 3 (${S().esc(s3)})</span>
+                <span class="font-bold text-purple-600">${S().rp(h3)}</span>
               </div>` : ''}
             </div>
           </div>
@@ -459,15 +482,17 @@
               const o = m.o;
               const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
               const rugiWarn = seeCost && m.hpp > 0 && m.harga <= m.hpp;
-              const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
-              const sDasar = String(o.satuan_dasar || 'Unit').trim();
-              const sSedang = String(o.satuan_sedang || '').trim();
-              const sBesar = String(o.satuan_besar || '').trim();
-              const rSedang = Number(o.rasio_sedang || 0);
-              const rBesar = Number(o.rasio_besar || 0);
-              const hEceran = Number(o.harga_umum || 0);
-              const hStrip = Number(o.harga_sedang || o.harga_strip || (rSedang > 1 ? hEceran * rSedang : 0));
-              const hBox = Number(o.harga_besar || o.harga_box || (rBesar > 1 ? hEceran * rBesar : 0));
+              const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+              const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
+              const s3 = String(o.satuan_3 || o.satuan_besar || '').trim();
+              const r2 = s2 ? Math.max(1, Number(o.rasio_2 || o.rasio_sedang || 1)) : 1;
+              const r3 = s3 ? Math.max(1, Number(o.rasio_3 || o.rasio_besar || 1)) : 1;
+              const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+              const valid3 = Boolean(s3 && s3.toLowerCase() !== s1.toLowerCase() && (!valid2 || s3.toLowerCase() !== s2.toLowerCase()) && r3 > 1);
+              const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+              const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
+              const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
+              const hetVal = Math.round(h1 * 1.15);
               const sBreakdown = _formatStockMultiSatuan(m.stok, o);
               return `<tr class="${!isAktifJual ? 'opacity-70 bg-slate-500/5' : ''}">
                 <td class="font-mono-num text-xs text-center">${idx + 1}.</td>
@@ -505,10 +530,10 @@
                 </td>
                 <td class="text-xs min-w-[155px]">
                   <div class="flex items-center justify-between gap-1 text-[11px] font-mono-num">
-                    <span class="font-bold text-xs" style="color:${m.stokTone.color}">${m.stok} ${S().esc(sDasar || 'Unit')}</span>
+                    <span class="font-bold text-xs" style="color:${m.stokTone.color}">${m.stok} ${S().esc(s1)}</span>
                     <span class="text-[10px] uppercase font-bold" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
                   </div>
-                  ${m.stok > 0 && (rSedang > 1 || rBesar > 1) ? `
+                  ${m.stok > 0 && (valid2 || valid3) ? `
                   <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title="${sBreakdown}">&approx; ${sBreakdown}</div>
                   ` : ''}
                   <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
@@ -524,26 +549,24 @@
                   ` : ''}
                 </td>
                 <td class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">
-                  ${sBesar && rBesar > 1 ? `<div>1 ${S().esc(sBesar)} = ${rBesar} ${S().esc(sDasar)}</div>` : ''}
-                  ${sSedang && rSedang > 1 ? `<div>1 ${S().esc(sSedang)} = ${rSedang} ${S().esc(sDasar)}</div>` : ''}
-                  ${(!sBesar || rBesar <= 1) && (!sSedang || rSedang <= 1) ? `<div class="italic text-slate-400">Satuan Tunggal (${S().esc(sDasar)})</div>` : ''}
+                  ${formatKonversiRasio(s1, s2, r2, s3, r3)}
                 </td>
                 ${seeCost ? `<td class="font-mono-num text-xs font-semibold">${S().rp(o.hpp_avg || o.hpp_terakhir || 0)}</td>` : ''}
                 <td class="font-mono-num text-xs text-slate-400 line-through">${S().rp(hetVal)}</td>
                 <td class="font-mono-num text-xs min-w-[170px]">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="text-[10px] uppercase font-bold text-slate-400">Eceran:</span>
-                    <span class="font-bold text-blue-600 text-sm">${S().rp(hEceran)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(sDasar)}</span></span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Harga 1 (${S().esc(s1)}):</span>
+                    <span class="font-bold text-blue-600 text-sm">${S().rp(h1)}</span>
                   </div>
-                  ${sSedang && rSedang > 1 ? `
+                  ${valid2 ? `
                   <div class="flex items-center justify-between gap-1 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                    <span class="text-[9.5px] uppercase font-medium text-slate-400">${S().esc(sSedang)}:</span>
-                    <span class="font-semibold text-emerald-600">${S().rp(hStrip)} <span class="text-[9px] text-slate-400">(${rSedang} ${S().esc(sDasar)})</span></span>
+                    <span class="text-[9.5px] uppercase font-medium text-slate-400">Harga 2 (${S().esc(s2)}):</span>
+                    <span class="font-semibold text-emerald-600">${S().rp(h2)} <span class="text-[9px] text-slate-400">(${r2} ${S().esc(s1)})</span></span>
                   </div>` : ''}
-                  ${sBesar && rBesar > 1 ? `
+                  ${valid3 ? `
                   <div class="flex items-center justify-between gap-1 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                    <span class="text-[9.5px] uppercase font-medium text-slate-400">${S().esc(sBesar)}:</span>
-                    <span class="font-semibold text-purple-600">${S().rp(hBox)} <span class="text-[9px] text-slate-400">(${rBesar} ${S().esc(sDasar)})</span></span>
+                    <span class="text-[9.5px] uppercase font-medium text-slate-400">Harga 3 (${S().esc(s3)}):</span>
+                    <span class="font-semibold text-purple-600">${S().rp(h3)} <span class="text-[9px] text-slate-400">(${r3} ${S().esc(s1)})</span></span>
                   </div>` : ''}
                   ${seeCost && m.marginPct !== null ? `
                   <div class="flex items-center justify-between gap-1 pt-1 mt-1 border-t border-slate-200 dark:border-slate-700 text-[10.5px]">
@@ -3297,13 +3320,17 @@
   global.openShelfLabelModal = (idObat) => {
     const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
     if (!o) return;
-    const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
-    const rSedang = Number(o.rasio_sedang || 10);
-    const rBesar = Number(o.rasio_besar || 100);
-    const hEceran = Number(o.harga_umum || 0);
-    const hStrip = Number(o.harga_strip || (hEceran * rSedang));
-    const hBox = Number(o.harga_box || (hEceran * rBesar));
-    const hMem = Number(o.harga_member || hEceran);
+    const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+    const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
+    const s3 = String(o.satuan_3 || o.satuan_besar || '').trim();
+    const r2 = s2 ? Math.max(1, Number(o.rasio_2 || o.rasio_sedang || 1)) : 1;
+    const r3 = s3 ? Math.max(1, Number(o.rasio_3 || o.rasio_besar || 1)) : 1;
+    const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+    const valid3 = Boolean(s3 && s3.toLowerCase() !== s1.toLowerCase() && (!valid2 || s3.toLowerCase() !== s2.toLowerCase()) && r3 > 1);
+    const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+    const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
+    const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
+    const hetVal = Math.round(h1 * 1.15);
     const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
@@ -3321,29 +3348,30 @@
         </div>
         <div>
           <div class="text-[13.5px] font-black tracking-tight leading-snug text-slate-950 uppercase">${S().esc(o.nama_dagang)}</div>
-          <div class="text-[10px] text-slate-600 mt-0.5">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <b class="text-teal-700">${S().esc(o.bentuk_sediaan || o.satuan_dasar)}</b></div>
+          <div class="text-[10px] text-slate-600 mt-0.5">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <b class="text-teal-700">${S().esc(o.bentuk_sediaan || s1)}</b></div>
           <div class="text-[9px] text-slate-400 font-mono-num mt-0.5">NIE: ${S().esc(o.nie_bpom || '-')} &bull; Pabrik: ${S().esc(o.pabrikan || '-')}</div>
         </div>
-        <div class="p-2 rounded bg-slate-50 border border-slate-200 grid grid-cols-2 gap-2 text-xs">
+        <div class="p-2 rounded bg-slate-50 border border-slate-200 grid ${valid2 || valid3 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 text-xs">
           <div>
-            <div class="text-[9.5px] font-bold text-slate-500 uppercase">Harga Eceran / ${S().esc(o.satuan_dasar || 'Unit')}</div>
-            <div class="text-base font-black text-blue-700 font-mono-num">${S().rp(hEceran)}</div>
+            <div class="text-[9.5px] font-bold text-slate-500 uppercase">Harga Jual 1 / ${S().esc(s1)}</div>
+            <div class="text-base font-black text-blue-700 font-mono-num">${S().rp(h1)}</div>
             <div class="text-[9px] text-slate-400 line-through">HET: ${S().rp(hetVal)}</div>
           </div>
+          ${valid2 ? `
           <div>
-            <div class="text-[9.5px] font-bold text-emerald-700 uppercase">Khusus Member</div>
-            <div class="text-sm font-black text-emerald-600 font-mono-num">${S().rp(hMem)}</div>
-            <div class="text-[9px] text-emerald-600 font-medium">Hemat &amp; Poin PRB</div>
-          </div>
-          ${rSedang > 1 ? `
-          <div>
-            <div class="text-[9.5px] font-bold text-slate-500 uppercase">Per ${S().esc(o.satuan_sedang || 'Strip')} (${rSedang} ${S().esc(o.satuan_dasar)})</div>
-            <div class="text-xs font-bold text-slate-800 font-mono-num">${S().rp(hStrip)}</div>
+            <div class="text-[9.5px] font-bold text-emerald-700 uppercase">Harga Jual 2 / ${S().esc(s2)}</div>
+            <div class="text-sm font-black text-emerald-600 font-mono-num">${S().rp(h2)}</div>
+            <div class="text-[9px] text-slate-500 font-medium">Isi ${r2} ${S().esc(s1)}</div>
           </div>` : ''}
-          ${rBesar > 1 ? `
+          ${valid3 ? `
           <div>
-            <div class="text-[9.5px] font-bold text-slate-500 uppercase">Per ${S().esc(o.satuan_besar || 'Box')} (${rBesar} ${S().esc(o.satuan_dasar)})</div>
-            <div class="text-xs font-bold text-slate-800 font-mono-num">${S().rp(hBox)}</div>
+            <div class="text-[9.5px] font-bold text-purple-700 uppercase">Harga Jual 3 / ${S().esc(s3)}</div>
+            <div class="text-sm font-black text-purple-600 font-mono-num">${S().rp(h3)}</div>
+            <div class="text-[9px] text-slate-500 font-medium">Isi ${r3} ${S().esc(s1)}</div>
+          </div>` : ''}
+          ${!valid2 && !valid3 ? `
+          <div class="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200">
+            Satuan 1 Tunggal (${S().esc(s1)})
           </div>` : ''}
         </div>
         <div class="flex items-center justify-between pt-1 border-t border-slate-200 text-[9px] text-slate-400 font-mono-num">
@@ -3361,7 +3389,7 @@
         <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--ons-border)">
           <div>
             <h3 class="font-extrabold text-base">Cetak Label Harga Rak Display (Shelf Talker)</h3>
-            <p style="color:var(--ons-text-soft)">Etiket rak apotek standar dengan multi-satuan (Eceran, Strip, Box) &amp; harga member.</p>
+            <p style="color:var(--ons-text-soft)">Etiket rak apotek standar dengan multi-satuan konversi (Satuan 1 / 2 / 3).</p>
           </div>
           <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 leading-none">&times;</button>
         </div>
@@ -3384,13 +3412,17 @@
   global.printShelfTalker = (idObat) => {
     const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
     if (!o) return;
-    const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
-    const rSedang = Number(o.rasio_sedang || 10);
-    const rBesar = Number(o.rasio_besar || 100);
-    const hEceran = Number(o.harga_umum || 0);
-    const hStrip = Number(o.harga_strip || (hEceran * rSedang));
-    const hBox = Number(o.harga_box || (hEceran * rBesar));
-    const hMem = Number(o.harga_member || hEceran);
+    const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+    const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
+    const s3 = String(o.satuan_3 || o.satuan_besar || '').trim();
+    const r2 = s2 ? Math.max(1, Number(o.rasio_2 || o.rasio_sedang || 1)) : 1;
+    const r3 = s3 ? Math.max(1, Number(o.rasio_3 || o.rasio_besar || 1)) : 1;
+    const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+    const valid3 = Boolean(s3 && s3.toLowerCase() !== s1.toLowerCase() && (!valid2 || s3.toLowerCase() !== s2.toLowerCase()) && r3 > 1);
+    const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+    const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
+    const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
+    const hetVal = Math.round(h1 * 1.15);
     const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
@@ -3407,31 +3439,30 @@
           <div style="font-size:7.5pt;font-weight:bold;background:#F0FDFA;border:1px solid #99F6E4;padding:1px 4px;border-radius:2px;color:#0F766E;">${S().esc(o.rak_lokasi || 'RAK-UTAMA')}</div>
         </div>
         <div style="font-weight:900;font-size:11pt;line-height:1.2;text-transform:uppercase;margin-bottom:1.5mm;">${S().esc(o.nama_dagang)}</div>
-        <div style="font-size:7.5pt;color:#475569;margin-bottom:1mm;">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <b>${S().esc(o.bentuk_sediaan || o.satuan_dasar)}</b></div>
+        <div style="font-size:7.5pt;color:#475569;margin-bottom:1mm;">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''} &bull; <b>${S().esc(o.bentuk_sediaan || s1)}</b></div>
         <div style="font-size:6.5pt;color:#94A3B8;margin-bottom:2mm;">NIE: ${S().esc(o.nie_bpom || '-')} | Pabrik: ${S().esc(o.pabrikan || '-')}</div>
         <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:3px;padding:2mm;margin-bottom:2mm;">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1mm;">
-            <span style="font-size:7pt;color:#64748B;font-weight:bold;text-transform:uppercase;">Eceran / ${S().esc(o.satuan_dasar || 'Unit')}:</span>
-            <span style="font-size:12pt;font-weight:900;color:#1D4ED8;">${S().rp(hEceran)}</span>
+            <span style="font-size:7pt;color:#64748B;font-weight:bold;text-transform:uppercase;">Harga Jual 1 / ${S().esc(s1)}:</span>
+            <span style="font-size:12pt;font-weight:900;color:#1D4ED8;">${S().rp(h1)}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1mm;">
-            <span style="font-size:7pt;color:#059669;font-weight:bold;text-transform:uppercase;">Member Apotek:</span>
-            <span style="font-size:9.5pt;font-weight:800;color:#059669;">${S().rp(hMem)}</span>
-          </div>
-          ${rSedang > 1 ? `
-          <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:7pt;color:#334155;">
-            <span>Per ${S().esc(o.satuan_sedang || 'Strip')} (${rSedang} ${S().esc(o.satuan_dasar)}):</span>
-            <span style="font-weight:bold;">${S().rp(hStrip)}</span>
+          ${valid2 ? `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:7pt;color:#059669;margin-bottom:1mm;">
+            <span style="font-weight:bold;text-transform:uppercase;">Harga Jual 2 / ${S().esc(s2)} (${r2} ${S().esc(s1)}):</span>
+            <span style="font-weight:bold;">${S().rp(h2)}</span>
           </div>` : ''}
-          ${rBesar > 1 ? `
-          <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:7pt;color:#334155;margin-top:0.5mm;">
-            <span>Per ${S().esc(o.satuan_besar || 'Box')} (${rBesar} ${S().esc(o.satuan_dasar)}):</span>
-            <span style="font-weight:bold;">${S().rp(hBox)}</span>
+          ${valid3 ? `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:7pt;color:#7C3AED;margin-bottom:1mm;">
+            <span style="font-weight:bold;text-transform:uppercase;">Harga Jual 3 / ${S().esc(s3)} (${r3} ${S().esc(s1)}):</span>
+            <span style="font-weight:bold;">${S().rp(h3)}</span>
           </div>` : ''}
+          ${!valid2 && !valid3 ? `
+          <div style="font-size:7pt;color:#64748B;font-style:italic;">Satuan 1 Tunggal (${S().esc(s1)})</div>
+          ` : ''}
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:6.5pt;color:#94A3B8;border-top:1px dashed #CBD5E1;padding-top:1.5mm;">
-          <span>Barcode: ${S().esc(codeVal)}</span>
-          <span>Tgl: ${todayStr}</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #E2E8F0;padding-top:1.5mm;font-size:6pt;color:#94A3B8;">
+          <div><b>|||| ||| |||||</b> ${S().esc(codeVal)}</div>
+          <div>Cetak: ${todayStr}</div>
         </div>
       </div>
     `;
@@ -3507,8 +3538,20 @@
       if (hpp > 0) {
         let calc = hpp * (1 + pct / 100);
         calc = Math.round(calc / rnd) * rnd;
+        o.harga_jual_1 = calc;
         o.harga_umum = calc;
-        o.harga_member = Math.round((calc * 0.95) / 100) * 100;
+        const r2 = Number(o.rasio_2 || o.rasio_sedang || 1);
+        const r3 = Number(o.rasio_3 || o.rasio_besar || 1);
+        if (o.satuan_2 && r2 > 1) {
+          o.harga_jual_2 = calc * r2;
+          o.harga_sedang = o.harga_jual_2;
+          o.harga_strip = o.harga_jual_2;
+        }
+        if (o.satuan_3 && r3 > 1) {
+          o.harga_jual_3 = calc * r3;
+          o.harga_besar = o.harga_jual_3;
+          o.harga_box = o.harga_jual_3;
+        }
         count++;
       }
     });
@@ -3638,7 +3681,7 @@
       priceSpreadRp: maxHppItem && minHppItem ? (maxHppItem.hpp_unit - minHppItem.hpp_unit) : 0,
       priceSpreadPct: minHppItem && minHppItem.hpp_unit > 0 && maxHppItem ? Number((((maxHppItem.hpp_unit - minHppItem.hpp_unit) / minHppItem.hpp_unit) * 100).toFixed(1)) : 0,
       currentHargaUmum: hargaUmum,
-      currentHargaMember: Number(o.harga_member || Math.round(hargaUmum * 0.95)),
+      currentHarga1: hargaUmum,
       activeHpp,
       marginRp,
       marginPct,
@@ -3681,7 +3724,7 @@
       priceSpreadRp,
       priceSpreadPct,
       currentHargaUmum,
-      currentHargaMember,
+      currentHarga1,
       activeHpp,
       marginRp,
       marginPct,
@@ -3831,7 +3874,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
               <div>
                 <label class="font-bold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">
-                  Ketik Harga Jual Baru (Rp / ${satDasar}):
+                  Harga Jual 1 Baru (Rp / ${satDasar}):
                 </label>
                 <div class="relative">
                   <span class="absolute left-3 top-2.5 font-bold text-slate-400 text-xs">Rp</span>
@@ -3844,13 +3887,12 @@
 
               <div>
                 <label class="font-bold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">
-                  Harga Member Otomatis (Disc 5%):
+                  Proyeksi Harga Satuan Konversi:
                 </label>
-                <div class="relative">
-                  <span class="absolute left-3 top-2.5 font-bold text-slate-400 text-xs">Rp</span>
-                  <input id="simMemberPriceInp_${o.id_obat}" type="number" min="0" readonly
-                    class="ons-input pl-9 font-mono-num font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                    value="${currentHargaMember}"/>
+                <div class="p-2 rounded-lg border bg-slate-50 dark:bg-slate-800 text-[11px] font-mono-num text-slate-700 dark:text-slate-300 leading-tight">
+                  ${rasioBesar > 1 ? `<div>${satBesar}: <b class="text-purple-600">${S().rp(currentHargaUmum * rasioBesar)}</b></div>` : ''}
+                  ${rasioSedang > 1 ? `<div>${satSedang}: <b class="text-emerald-600">${S().rp(currentHargaUmum * rasioSedang)}</b></div>` : ''}
+                  ${rasioBesar <= 1 && rasioSedang <= 1 ? `<div class="italic text-slate-400">Kemasan Tunggal (${satDasar})</div>` : ''}
                 </div>
               </div>
 
@@ -4098,9 +4140,7 @@
     const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
     if (!o) return;
     const inpPrice = document.getElementById(`simPriceInp_${idObat}`);
-    const inpMember = document.getElementById(`simMemberPriceInp_${idObat}`);
     const newPrice = Number(inpPrice ? inpPrice.value : 0);
-    const newMember = Number(inpMember ? inpMember.value : Math.round((newPrice * 0.95) / 100) * 100);
 
     if (newPrice <= 0) {
       if (global.toast) global.toast('Masukkan nominal harga jual yang valid.', 'err');
@@ -4108,19 +4148,33 @@
     }
 
     const oldPrice = o.harga_umum || 0;
+    const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+    const r2 = Number(o.rasio_2 || o.rasio_sedang || 1);
+    const r3 = Number(o.rasio_3 || o.rasio_besar || 1);
+
+    o.harga_jual_1 = newPrice;
     o.harga_umum = newPrice;
-    o.harga_member = newMember;
+    if (o.satuan_2 && r2 > 1) {
+      o.harga_jual_2 = newPrice * r2;
+      o.harga_sedang = o.harga_jual_2;
+      o.harga_strip = o.harga_jual_2;
+    }
+    if (o.satuan_3 && r3 > 1) {
+      o.harga_jual_3 = newPrice * r3;
+      o.harga_besar = o.harga_jual_3;
+      o.harga_box = o.harga_jual_3;
+    }
 
     if (typeof S().saveState === 'function') S().saveState();
     if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
       try { API().callApi('obat.save', o, { isWrite: true }); } catch (e) {}
     }
     if (typeof S().logAuditEvent === 'function') {
-      S().logAuditEvent('UPDATE_HARGA_OBAT', `Penetapan harga jual baru ${o.nama_dagang} (${o.id_obat}): ${S().rp(oldPrice)} -> ${S().rp(newPrice)} (Member: ${S().rp(newMember)}) berdasarkan riwayat HPP faktur PBF.`);
+      S().logAuditEvent('UPDATE_HARGA_OBAT', `Penetapan harga jual 1 baru ${o.nama_dagang} (${o.id_obat}): ${S().rp(oldPrice)} -> ${S().rp(newPrice)} / ${s1}.`);
     }
 
     if (global.toast) {
-      global.toast(`✓ Harga jual ${o.nama_dagang} berhasil diperbarui ke ${S().rp(newPrice)} (Member: ${S().rp(newMember)}). Kasir langsung tersinkron.`, 'ok');
+      global.toast(`✓ Harga jual 1 ${o.nama_dagang} berhasil diperbarui ke ${S().rp(newPrice)} / ${s1}. Kasir langsung tersinkron.`, 'ok');
     }
 
     if (typeof global.openObatDetailModal === 'function') {
@@ -4144,13 +4198,17 @@
     const m = buildObatMeta(o);
     const seeCost = S().canSeeFinancialCost();
     const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
-    const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
-    const rSedang = Number(o.rasio_sedang || 10);
-    const rBesar = Number(o.rasio_besar || 100);
-    const hEceran = Number(o.harga_umum || 0);
-    const hStrip = Number(o.harga_strip || (hEceran * rSedang));
-    const hBox = Number(o.harga_box || (hEceran * rBesar));
-    const hMem = Number(o.harga_member || hEceran);
+    const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+    const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
+    const s3 = String(o.satuan_3 || o.satuan_besar || '').trim();
+    const r2 = s2 ? Math.max(1, Number(o.rasio_2 || o.rasio_sedang || 1)) : 1;
+    const r3 = s3 ? Math.max(1, Number(o.rasio_3 || o.rasio_besar || 1)) : 1;
+    const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+    const valid3 = Boolean(s3 && s3.toLowerCase() !== s1.toLowerCase() && (!valid2 || s3.toLowerCase() !== s2.toLowerCase()) && r3 > 1);
+    const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+    const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
+    const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
+    const hetVal = Math.round(h1 * 1.15);
     const isRiw = initialTab === 'riwayat-beli';
     const isBatch = initialTab === 'batch';
     const isHarga = initialTab === 'multi-satuan';
@@ -4181,7 +4239,7 @@
             ${nearEd.hasNearEd ? `<span class="badge-bpom bpom-prekursor">PROMO NEAR-ED -${nearEd.suggestedDiscPct}%</span>` : ''}
           </div>
           <h3 class="font-extrabold text-lg leading-snug text-slate-900 dark:text-white">${S().esc(o.nama_dagang)}</h3>
-          <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('&bull; ' + S().esc(o.kekuatan)) : ''} &bull; <span class="font-semibold text-blue-600">${S().esc(o.bentuk_sediaan || 'Sediaan Farmasi')}</span></p>
+          <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${S().esc(o.zat_aktif || '-')} ${o.kekuatan ? ('&bull; ' + S().esc(o.kekuatan)) : ''} &bull; <span class="font-semibold text-blue-600">${S().esc(o.bentuk_sediaan || s1)}</span></p>
         </div>
         <button type="button" onclick="ONSStore.closeDrawer()" class="text-2xl px-1 leading-none text-slate-400 hover:text-slate-700 dark:hover:text-white">&times;</button>
       </div>
@@ -4205,33 +4263,32 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
             <div style="color:var(--ons-text-soft)">Stok Aktif (${S().esc(st.cabangId || 'ONS-01')})</div>
-            <div class="text-base font-extrabold font-mono-num" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar || 'Unit')}</div>
+            <div class="text-base font-extrabold font-mono-num" style="color:${m.stokTone.color}">${m.stok} ${S().esc(s1)}</div>
             <div class="text-[10px] font-semibold mt-0.5" style="color:${m.stokTone.color}">${m.stokTone.label}</div>
           </div>
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div style="color:var(--ons-text-soft)">Harga Jual Eceran</div>
-            <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(hEceran)}</div>
-            <div class="text-[10px] text-slate-400">Per ${S().esc(o.satuan_dasar || 'Unit')}</div>
+            <div style="color:var(--ons-text-soft)">Harga Jual 1 (Terendah)</div>
+            <div class="text-base font-extrabold font-mono-num text-blue-600">${S().rp(h1)}</div>
+            <div class="text-[10px] text-slate-400">Per ${S().esc(s1)}</div>
           </div>
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div style="color:var(--ons-text-soft)">Harga Member</div>
-            <div class="text-base font-extrabold font-mono-num text-emerald-600">${S().rp(hMem)}</div>
-            <div class="text-[10px] text-emerald-600">Diskon Pelanggan</div>
+            <div style="color:var(--ons-text-soft)">Harga Jual 2 (Satuan 2)</div>
+            <div class="text-base font-extrabold font-mono-num ${valid2 ? 'text-emerald-600' : 'text-slate-400'}">${valid2 ? S().rp(h2) : '-'}</div>
+            <div class="text-[10px] text-slate-400">${valid2 ? ('Per ' + S().esc(s2) + ' (' + r2 + ' ' + S().esc(s1) + ')') : 'Tidak ada satuan 2'}</div>
           </div>
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div style="color:var(--ons-text-soft)">Harga Grosir (&ge;${Number(o.min_qty_grosir || 10)} ${S().esc(o.satuan_dasar || 'Unit')})</div>
-            <div class="text-sm font-extrabold font-mono-num text-blue-700 dark:text-blue-400">${S().rp(o.harga_grosir || o.harga_member || o.harga_umum)}</div>
-            <div class="text-[10px] text-slate-400">Pembelian Jumlah Banyak</div>
+            <div style="color:var(--ons-text-soft)">Harga Jual 3 (Satuan 3)</div>
+            <div class="text-base font-extrabold font-mono-num ${valid3 ? 'text-purple-600' : 'text-slate-400'}">${valid3 ? S().rp(h3) : '-'}</div>
+            <div class="text-[10px] text-slate-400">${valid3 ? ('Per ' + S().esc(s3) + ' (' + r3 + ' ' + S().esc(s1) + ')') : 'Tidak ada satuan 3'}</div>
           </div>
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div style="color:var(--ons-text-soft)">Harga Faskes / Mitra</div>
-            <div class="text-sm font-extrabold font-mono-num text-slate-700 dark:text-slate-200">${S().rp(o.harga_faskes || o.harga_grosir || o.harga_umum)}</div>
-            <div class="text-[10px] text-slate-400">Klinik &amp; Dokter Mitra</div>
-          </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div style="color:var(--ons-text-soft)">${seeCost ? 'HPP Modal Rata-rata' : 'Batas Buffer Min.'}</div>
-            <div class="text-sm font-extrabold font-mono-num">${seeCost ? S().rp(o.hpp_avg) : (m.min + ' ' + S().esc(o.satuan_dasar || 'Unit'))}</div>
+            <div style="color:var(--ons-text-soft)">${seeCost ? 'HPP Modal Beli (Satuan 1)' : 'Batas Buffer Min.'}</div>
+            <div class="text-sm font-extrabold font-mono-num">${seeCost ? S().rp(o.hpp_avg) : (m.min + ' ' + S().esc(s1))}</div>
             <div class="text-[10px] ${m.marginPct !== null ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${seeCost && m.marginPct !== null ? ('Markup +' + m.marginPct + '%') : 'Ambang Restok'}</div>
+          </div>
+          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div style="color:var(--ons-text-soft)">Konversi Multi-Satuan</div>
+            <div class="text-xs font-mono-num font-bold text-slate-800 dark:text-slate-200 mt-1">${formatKonversiRasio(s1, s2, r2, s3, r3)}</div>
           </div>
         </div>
 
@@ -4274,7 +4331,7 @@
             </div>
             <div class="sm:col-span-2 py-1 border-b border-slate-200 dark:border-slate-700">
               <span style="color:var(--ons-text-soft)">Konversi Multi-Satuan:</span>
-              <span class="font-mono-num font-semibold ml-2">1 ${S().esc(o.satuan_besar || 'Box')} = ${rBesar} ${S().esc(o.satuan_dasar || 'Unit')} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}</span>
+              <span class="font-mono-num font-semibold ml-2">${formatKonversiRasio(s1, s2, r2, s3, r3)}</span>
             </div>
             ${subNames.length ? `
             <div class="sm:col-span-2 py-1">
@@ -4304,55 +4361,38 @@
               <thead>
                 <tr>
                   <th>Tingkat Kemasan</th>
-                  <th>Rasio Isi</th>
+                  <th>Rasio Isi (Satuan 1)</th>
                   <th>HPP Beli Modal</th>
-                  <th>Harga Umum (Eceran)</th>
-                  <th>Harga Member</th>
+                  <th>Harga Jual</th>
                   <th>Margin Keuntungan</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td class="font-bold text-xs">Satuan Dasar (${S().esc(o.satuan_dasar || 'Unit')})</td>
-                  <td class="font-mono-num text-xs">1 ${S().esc(o.satuan_dasar || 'Unit')}</td>
+                  <td class="font-bold text-xs">Satuan 1: ${S().esc(s1)} (Terendah)</td>
+                  <td class="font-mono-num text-xs">1 ${S().esc(s1)}</td>
                   <td class="font-mono-num text-xs">${seeCost ? S().rp(o.hpp_avg || 0) : '-'}</td>
-                  <td class="font-mono-num font-bold text-blue-600 text-xs">${S().rp(hEceran)}</td>
-                  <td class="font-mono-num font-bold text-emerald-600 text-xs">${S().rp(hMem)}</td>
+                  <td class="font-mono-num font-bold text-blue-600 text-xs">${S().rp(h1)}</td>
                   <td class="font-mono-num text-xs">${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]">+${m.marginPct}%</span>` : '-'}</td>
                 </tr>
-                ${rSedang > 1 ? `
+                ${valid2 ? `
                 <tr>
-                  <td class="font-bold text-xs">Satuan Sedang (${S().esc(o.satuan_sedang || 'Strip')})</td>
-                  <td class="font-mono-num text-xs">${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}</td>
-                  <td class="font-mono-num text-xs">${seeCost ? S().rp(Number(o.hpp_avg || 0) * rSedang) : '-'}</td>
-                  <td class="font-mono-num font-bold text-slate-800 dark:text-slate-100 text-xs">${S().rp(hStrip)}</td>
-                  <td class="font-mono-num font-bold text-emerald-600 text-xs">${S().rp(Number(o.harga_member || hEceran) * rSedang)}</td>
+                  <td class="font-bold text-xs">Satuan 2: ${S().esc(s2)}</td>
+                  <td class="font-mono-num text-xs">${r2} ${S().esc(s1)}</td>
+                  <td class="font-mono-num text-xs">${seeCost ? S().rp(Number(o.hpp_avg || 0) * r2) : '-'}</td>
+                  <td class="font-mono-num font-bold text-emerald-600 text-xs">${S().rp(h2)}</td>
                   <td class="font-mono-num text-xs">${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]">+${m.marginPct}%</span>` : '-'}</td>
                 </tr>` : ''}
-                ${rBesar > 1 ? `
+                ${valid3 ? `
                 <tr>
-                  <td class="font-bold text-xs">Satuan Besar (${S().esc(o.satuan_besar || 'Box')})</td>
-                  <td class="font-mono-num text-xs">${rBesar} ${S().esc(o.satuan_dasar || 'Unit')}</td>
-                  <td class="font-mono-num text-xs">${seeCost ? S().rp(Number(o.hpp_avg || 0) * rBesar) : '-'}</td>
-                  <td class="font-mono-num font-bold text-slate-800 dark:text-slate-100 text-xs">${S().rp(hBox)}</td>
-                  <td class="font-mono-num font-bold text-emerald-600 text-xs">${S().rp(Number(o.harga_member || hEceran) * rBesar)}</td>
+                  <td class="font-bold text-xs">Satuan 3: ${S().esc(s3)}</td>
+                  <td class="font-mono-num text-xs">${r3} ${S().esc(s1)}</td>
+                  <td class="font-mono-num text-xs">${seeCost ? S().rp(Number(o.hpp_avg || 0) * r3) : '-'}</td>
+                  <td class="font-mono-num font-bold text-purple-600 text-xs">${S().rp(h3)}</td>
                   <td class="font-mono-num text-xs">${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]">+${m.marginPct}%</span>` : '-'}</td>
                 </tr>` : ''}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div class="p-3 rounded-xl border space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div class="text-[11px] font-bold text-slate-500 uppercase">Skema Grosir / Reseller B2B</div>
-            <div class="text-sm font-extrabold font-mono-num text-blue-700 dark:text-blue-400">${S().rp(o.harga_grosir || o.harga_member || o.harga_umum)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(o.satuan_dasar || 'Unit')}</span></div>
-            <div class="text-[10.5px] text-slate-500">Minimal Pembelian: <b>${Number(o.min_qty_grosir || 10)} ${S().esc(o.satuan_dasar || 'Unit')}</b></div>
-          </div>
-          <div class="p-3 rounded-xl border space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div class="text-[11px] font-bold text-slate-500 uppercase">Skema Faskes / Dokter Mitra</div>
-            <div class="text-sm font-extrabold font-mono-num text-slate-700 dark:text-slate-200">${S().rp(o.harga_faskes || o.harga_grosir || o.harga_umum)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(o.satuan_dasar || 'Unit')}</span></div>
-            <div class="text-[10.5px] text-slate-500">Tarif khusus klinik kerjasama &amp; dokter praktek mandiri.</div>
           </div>
         </div>
       </div>
@@ -4628,12 +4668,20 @@
       golongan_bpom: val('wGol', baseObj.golongan_bpom),
       suhu_simpan: val('wSuhu', baseObj.suhu_simpan),
       rak_lokasi: val('wRak', baseObj.rak_lokasi),
+      satuan_1: val('wSatDasar', baseObj.satuan_1 || baseObj.satuan_dasar),
+      satuan_2: val('wSatSed', baseObj.satuan_2 || baseObj.satuan_sedang),
+      rasio_2: num('wRasioSed', baseObj.rasio_2 || baseObj.rasio_sedang),
+      satuan_3: val('wSatBes', baseObj.satuan_3 || baseObj.satuan_besar),
+      rasio_3: num('wRasioBes', baseObj.rasio_3 || baseObj.rasio_besar),
       satuan_dasar: val('wSatDasar', baseObj.satuan_dasar),
       satuan_sedang: val('wSatSed', baseObj.satuan_sedang),
       rasio_sedang: num('wRasioSed', baseObj.rasio_sedang),
       satuan_besar: val('wSatBes', baseObj.satuan_besar),
       rasio_besar: num('wRasioBes', baseObj.rasio_besar),
       hpp_avg: num('wHpp', baseObj.hpp_avg),
+      harga_jual_1: num('wHrgUmum', baseObj.harga_jual_1 || baseObj.harga_umum),
+      harga_jual_2: num('wHrgSed', baseObj.harga_jual_2 || baseObj.harga_sedang),
+      harga_jual_3: num('wHrgBes', baseObj.harga_jual_3 || baseObj.harga_besar),
       harga_umum: num('wHrgUmum', baseObj.harga_umum),
       harga_sedang: num('wHrgSed', baseObj.harga_sedang),
       harga_besar: num('wHrgBes', baseObj.harga_besar),
@@ -4655,10 +4703,12 @@
     else wizardStep = 1;
     const baseDefault = (st.masterObat || []).find((x) => x.id_obat === editId) || {
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
-      nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1', satuan_dasar: 'Tablet',
-      satuan_sedang: '', rasio_sedang: 1, satuan_besar: '', rasio_besar: 1, stok_min: 10, stok_max: 100,
-      pabrikan: '', pbf_utama: '',
-      hpp_avg: 0, harga_umum: 0, harga_sedang: 0, harga_besar: 0, substitusi_ids: ''
+      nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1',
+      satuan_1: 'Tablet', satuan_2: '', rasio_2: 1, satuan_3: '', rasio_3: 1,
+      satuan_dasar: 'Tablet', satuan_sedang: '', rasio_sedang: 1, satuan_besar: '', rasio_besar: 1,
+      stok_min: 10, stok_max: 100, pabrikan: '', pbf_utama: '',
+      hpp_avg: 0, harga_jual_1: 0, harga_jual_2: 0, harga_jual_3: 0,
+      harga_umum: 0, harga_sedang: 0, harga_besar: 0, substitusi_ids: ''
     };
     const o = draftObj ? { ...baseDefault, ...draftObj } : baseDefault;
     wizardDraftSnapshot = o;
@@ -4666,8 +4716,8 @@
     const steps = [
       { n: 1, label: 'Identitas Produk', sub: 'Nama & Zat Aktif', req: 'Wajib: Nama' },
       { n: 2, label: 'Golongan & Rak', sub: 'BPOM & Rak Gudang', req: 'Wajib: Gol & Rak' },
-      { n: 3, label: 'Multi-Satuan', sub: 'Dasar / Sedang / Besar', req: 'Wajib: Satuan Dasar' },
-      { n: 4, label: 'Harga & Stok', sub: 'HPP & Harga per Kemasan', req: 'Wajib: HPP & Eceran' },
+      { n: 3, label: 'Satuan 1, 2, 3', sub: 'Konversi Kemasan', req: 'Wajib: Satuan 1' },
+      { n: 4, label: 'Harga Jual 1, 2, 3', sub: 'HPP & Harga Satuan', req: 'Wajib: HPP & Harga 1' },
       { n: 5, label: 'Tinjauan & Simpan', sub: 'Rangkuman & Terbitkan', req: 'Konfirmasi Terbit' }
     ];
     const golList = [
@@ -4682,12 +4732,12 @@
     const suhuPresets = ['Suhu Ruang (15-25°C)', 'Sejuk (8-15°C)', 'Cold Chain / Chiller (2-8°C)'];
     const rakPresets = ['RAK-A1', 'RAK-B2', 'RAK-OTC', 'LEMARI-OKT', 'CHILLER-01'];
     const unitPresets = [
-      { label: 'Tablet / Strip (10) / Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
-      { label: 'Hanya Strip (Eceran Strip Tunggal)', d: 'Strip', s: '', rs: 1, b: '', rb: 1 },
-      { label: 'Strip / Box (10)', d: 'Strip', s: '', rs: 1, b: 'Box', rb: 10 },
-      { label: 'Hanya Botol (Sirup Tunggal)', d: 'Botol', s: '', rs: 1, b: '', rb: 1 },
-      { label: 'Kapsul / Blister (10) / Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
-      { label: 'Hanya Tube (Salep Tunggal)', d: 'Tube', s: '', rs: 1, b: '', rb: 1 }
+      { label: 'Satuan 1: Tablet | Satuan 2: Strip (10) | Satuan 3: Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
+      { label: 'Satuan 1 Tunggal: Strip (Hanya Jual Strip)', d: 'Strip', s: '', rs: 1, b: '', rb: 1 },
+      { label: 'Satuan 1: Strip | Satuan 2: Box (10)', d: 'Strip', s: 'Box', rs: 10, b: '', rb: 1 },
+      { label: 'Satuan 1 Tunggal: Botol (Sirup)', d: 'Botol', s: '', rs: 1, b: '', rb: 1 },
+      { label: 'Satuan 1: Kapsul | Satuan 2: Blister (10) | Satuan 3: Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
+      { label: 'Satuan 1 Tunggal: Tube (Salep)', d: 'Tube', s: '', rs: 1, b: '', rb: 1 }
     ];
     const otherMeds = (S().AppState.masterObat || []).filter((m) => m.id_obat !== o.id_obat).slice(0, 10);
     const curSubs = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -4901,47 +4951,47 @@
                   <div class="flex items-center gap-2.5">
                     <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">3</span>
                     <div>
-                      <h3 class="font-extrabold text-sm md:text-base">Konversi Multi-Satuan (Dasar / Sedang / Besar)</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Memudahkan konversi otomatis ketika menerima Faktur PBF per Box dan menjual eceran di Kasir.</p>
+                      <h3 class="font-extrabold text-sm md:text-base">Konversi Satuan (Satuan 1, Satuan 2, Satuan 3)</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Satuan 1 adalah satuan terendah/terkecil dari yang dijual. Satuan 2 dan 3 adalah kemasan bertingkat konversi.</p>
                     </div>
                   </div>
                 </div>
                 <div class="p-5 md:p-6 space-y-4 text-xs">
                   <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 text-xs flex items-center gap-2">
                     <span class="text-base shrink-0">💡</span>
-                    <div><b>Fleksibel Satuan:</b> Jika obat hanya dijual per Strip (cth: Emturnas) atau botol sirup tanpa boks, cukup isi <b>Satuan Dasar</b> dan kosongkan Satuan Sedang / Besar. Sistem tidak akan memaksakan kemasan Box.</div>
+                    <div><b>Fleksibel Satuan:</b> Jika obat hanya dijual per Strip (cth: Emturnas) atau botol sirup tanpa boks, cukup isi <b>Satuan 1</b> dan kosongkan Satuan 2 &amp; 3. Sistem tidak akan memaksakan kemasan Box.</div>
                   </div>
                   <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Preset Rasio Cepat:</span>
+                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Preset Cepat Satuan:</span>
                     ${unitPresets.map((up) => `<button type="button" onclick="window.applyObatUnitPreset('${up.d}','${up.s}',${up.rs},'${up.b}',${up.rb})" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">${up.label}</button>`).join('')}
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 flex items-center justify-between">
-                        <span>Satuan Dasar (Eceran)</span>
+                        <span>Satuan 1 (Terendah)</span>
                         <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
                       </div>
                       <label class="font-semibold block">Nama Satuan Terkecil</label>
-                      <input id="wSatDasar" class="${inpCls}" value="${S().esc(o.satuan_dasar || 'Tablet')}" placeholder="Tablet / Strip / Botol / Tube"/>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Stok batch &amp; HPP dicatat per satuan ini.</div>
+                      <input id="wSatDasar" class="${inpCls}" value="${S().esc(o.satuan_1 || o.satuan_dasar || 'Tablet')}" placeholder="Tablet / Strip / Botol / Tube" oninput="window.updateObatWizardPreview();"/>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Satuan terendah yang dijual. HPP &amp; stok batch dihitung per Satuan 1.</div>
                     </div>
                     <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Sedang (Strip/Pack)</div>
-                      <label class="font-semibold block">Nama &amp; Isi per Satuan Dasar</label>
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">Satuan 2 (Kemasan 2)</div>
+                      <label class="font-semibold block">Nama &amp; Rasio Isi Satuan 1</label>
                       <div class="grid grid-cols-2 gap-2">
-                        <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_sedang || '')}" placeholder="Strip (opsional)"/>
-                        <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_sedang || 1}" placeholder="10"/>
+                        <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_2 || o.satuan_sedang || '')}" placeholder="Strip (opsional)" oninput="window.updateObatWizardPreview();"/>
+                        <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_2 || o.rasio_sedang || 1}" placeholder="10" oninput="window.updateObatWizardPreview();"/>
                       </div>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk ini tidak memiliki kemasan sedang.</div>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk hanya dijual dalam 1 satuan (cth: Strip Emturnas).</div>
                     </div>
                     <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Besar (Box/Dus)</div>
-                      <label class="font-semibold block">Nama &amp; Isi per Satuan Dasar</label>
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-purple-600">Satuan 3 (Kemasan 3)</div>
+                      <label class="font-semibold block">Nama &amp; Rasio Isi Satuan 1</label>
                       <div class="grid grid-cols-2 gap-2">
-                        <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_besar || '')}" placeholder="Box (opsional)"/>
-                        <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_besar || 1}" placeholder="100"/>
+                        <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_3 || o.satuan_besar || '')}" placeholder="Box (opsional)" oninput="window.updateObatWizardPreview();"/>
+                        <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_3 || o.rasio_besar || 1}" placeholder="100" oninput="window.updateObatWizardPreview();"/>
                       </div>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk ini tidak dijual / dikemas boks.</div>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk ini tidak dijual / dikemas boks besar.</div>
                     </div>
                   </div>
                 </div>
@@ -4953,8 +5003,8 @@
                   <div class="flex items-center gap-2.5">
                     <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">4</span>
                     <div>
-                      <h3 class="font-extrabold text-sm md:text-base">Harga Jual per Kemasan (Eceran / Strip / Box) &amp; Batas Stok</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Atur HPP modal, harga jual eceran satuan dasar, serta harga per strip atau box jika bertingkat.</p>
+                      <h3 class="font-extrabold text-sm md:text-base">Harga Jual per Satuan (Harga Jual 1, 2, 3) &amp; Batas Stok</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Atur HPP modal beli per Satuan 1, Harga Jual 1 (terendah), serta Harga Jual 2 &amp; 3 jika bertingkat.</p>
                     </div>
                   </div>
                   <div class="flex flex-wrap items-center gap-1.5">
@@ -4969,41 +5019,41 @@
                   
                   <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 text-xs flex items-center gap-2">
                     <span class="text-base shrink-0">💡</span>
-                    <div><b>Penetapan Harga Kemasan:</b> Harga eceran dihitung per satuan dasar. Jika harga per Strip atau Box dikosongkan, sistem otomatis mengalikan harga eceran x isi kemasan.</div>
+                    <div><b>Penetapan Harga Jual:</b> Harga Jual 1 adalah harga jual per Satuan 1 (terendah). Jika Harga Jual 2 atau 3 dikosongkan, sistem otomatis mengalikan Harga Jual 1 &times; Rasio Konversi.</div>
                   </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1 flex items-center justify-between">
-                        <span>HPP Beli Rata-Rata Modal (Rp)</span>
+                        <span>HPP Modal Beli (per Satuan 1)</span>
                         <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
                       </label>
                       <input id="wHpp" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold" value="${S().formatDots(o.hpp_avg)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Harga modal per satuan dasar.</div>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Harga modal pembelian per Satuan 1 (terendah).</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1 flex items-center justify-between">
-                        <span>Harga Eceran Satuan Dasar (Rp)</span>
+                        <span>Harga Jual 1 (Satuan 1 - Terendah)</span>
                         <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
                       </label>
-                      <input id="wHrgUmum" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-blue-600" value="${S().formatDots(o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
+                      <input id="wHrgUmum" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-blue-600" value="${S().formatDots(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
                       <div id="wizMarginUmumTxt" class="text-[11px] mt-1 font-semibold text-emerald-600">Margin: -</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1 flex items-center justify-between">
-                        <span>Harga Jual Satuan Sedang (Strip/Pack)</span>
+                        <span>Harga Jual 2 (Satuan 2)</span>
                         <span class="text-[10px] text-slate-500">(Opsional)</span>
                       </label>
-                      <input id="wHrgSed" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-emerald-600" value="${S().formatDots(o.harga_sedang || o.harga_strip || '')}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Eceran x Rasio)"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis mengikuti kelipatan eceran.</div>
+                      <input id="wHrgSed" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-emerald-600" value="${S().formatDots(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Jual 1 x Rasio 2)"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis = Harga Jual 1 &times; Rasio 2.</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1 flex items-center justify-between">
-                        <span>Harga Jual Satuan Besar (Box/Dus)</span>
+                        <span>Harga Jual 3 (Satuan 3)</span>
                         <span class="text-[10px] text-slate-500">(Opsional)</span>
                       </label>
-                      <input id="wHrgBes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-purple-600" value="${S().formatDots(o.harga_besar || o.harga_box || '')}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Eceran x Rasio)"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis mengikuti kelipatan eceran.</div>
+                      <input id="wHrgBes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-purple-600" value="${S().formatDots(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Jual 1 x Rasio 3)"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis = Harga Jual 1 &times; Rasio 3.</div>
                     </div>
                   </div>
                   <div id="wizStep4MarginHint" class="hidden p-3 rounded-xl border border-red-400 bg-red-500/10 text-red-600 font-semibold text-xs"></div>
@@ -5055,21 +5105,21 @@
                       </div>
                     </div>
 
-                    <!-- Box 2: Satuan & Multi-Tier Harga -->
+                    <!-- Box 2: Satuan 1, 2, 3 & Harga Jual 1, 2, 3 -->
                     <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <div class="font-extrabold text-xs uppercase tracking-wide text-emerald-600 flex items-center gap-1.5">
-                        <span>💰</span><span>Satuan &amp; Valuasi Harga</span>
+                        <span>💰</span><span>Satuan 1, 2, 3 &amp; Harga Jual 1, 2, 3</span>
                       </div>
                       <div class="space-y-1.5">
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Satuan Dasar:</span><b id="wSumSatD">-</b></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Konversi Kemasan:</span><span id="wSumRasio" class="font-mono-num">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">HPP Modal Beli:</span><b id="wSumHpp" class="font-mono-num">Rp 0</b></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Satuan 1 (Terendah):</span><b id="wSumSatD">-</b></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Konversi Kemasan:</span><span id="wSumRasio" class="font-mono-num font-bold text-blue-600">-</span></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">HPP Modal Beli (Satuan 1):</span><b id="wSumHpp" class="font-mono-num">Rp 0</b></div>
                         <div class="flex justify-between items-center pt-1 border-t" style="border-color:var(--ons-border)">
-                          <span class="font-bold text-blue-600">Harga Eceran Dasar:</span>
+                          <span class="font-bold text-blue-600">Harga Jual 1 (Satuan 1):</span>
                           <b id="wSumHrgUmum" class="font-mono-num text-blue-600 text-sm">Rp 0</b>
                         </div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Satuan Sedang:</span><span id="wSumHrgSed" class="font-mono-num">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Satuan Besar:</span><span id="wSumHrgBes" class="font-mono-num">-</span></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Jual 2 (Satuan 2):</span><span id="wSumHrgSed" class="font-mono-num font-bold text-emerald-600">-</span></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Jual 3 (Satuan 3):</span><span id="wSumHrgBes" class="font-mono-num font-bold text-purple-600">-</span></div>
                         <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Alert Defecta:</span><span id="wSumDefecta" class="font-mono-num">Min: 10, Max: 100</span></div>
                       </div>
                     </div>
@@ -5240,13 +5290,17 @@
     const rak = val('wRak');
     const satD = val('wSatDasar');
     const satS = val('wSatSed');
-    const rasS = satS ? Math.max(1, num('wRasioSed') || 10) : 1;
     const satB = val('wSatBes');
-    const rasB = satB ? Math.max(1, num('wRasioBes') || 100) : 1;
+    const rasS = satS ? Math.max(1, num('wRasioSed') || 1) : 1;
+    const rasB = satB ? Math.max(1, num('wRasioBes') || 1) : 1;
+
+    const valid2 = Boolean(satS && satS.toLowerCase() !== satD.toLowerCase() && rasS > 1);
+    const valid3 = Boolean(satB && satB.toLowerCase() !== satD.toLowerCase() && (!valid2 || satB.toLowerCase() !== satS.toLowerCase()) && rasB > 1);
+
     const hpp = Math.max(0, num('wHpp'));
     const umum = Math.max(0, num('wHrgUmum'));
-    const hSed = satS ? Math.max(0, num('wHrgSed') || (rasS > 1 ? umum * rasS : 0)) : 0;
-    const hBes = satB ? Math.max(0, num('wHrgBes') || (rasB > 1 ? umum * rasB : 0)) : 0;
+    const hSed = valid2 ? Math.max(0, num('wHrgSed') || (umum * rasS)) : 0;
+    const hBes = valid3 ? Math.max(0, num('wHrgBes') || (umum * rasB)) : 0;
     const stokMin = num('wStokMin') !== 0 ? Math.max(0, num('wStokMin')) : 0;
     const stokMax = Math.max(1, num('wStokMax') || 100);
 
@@ -5256,13 +5310,7 @@
     setTxt('wizPrevKode', `KFA: ${kfa || '-'} • NIE: ${nie || '-'}`);
     setTxt('wizPrevLokasi', `Rak: ${rak || '-'} • ${suhu}`);
 
-    const rasioTxt = (satB && rasB > 1 && satS && rasS > 1)
-      ? `1 ${satB} = ${rasB} ${satD || 'Unit'}  |  1 ${satS} = ${rasS} ${satD || 'Unit'}`
-      : (satB && rasB > 1
-        ? `1 ${satB} = ${rasB} ${satD || 'Unit'}`
-        : (satS && rasS > 1
-          ? `1 ${satS} = ${rasS} ${satD || 'Unit'}`
-          : `Satuan Tunggal (${satD || 'Unit'})`));
+    const rasioTxt = formatKonversiRasio(satD, satS, rasS, satB, rasB);
     setTxt('wizPrevRasio', rasioTxt);
     setTxt('wizPrevUmum', `${S().rp(umum)} / ${satD || 'Unit'}`);
     setTxt('wizPrevHpp', `HPP: ${S().rp(hpp)}`);
@@ -5279,8 +5327,8 @@
     setTxt('wSumRasio', rasioTxt);
     setTxt('wSumHpp', S().rp(hpp));
     setTxt('wSumHrgUmum', `${S().rp(umum)} / ${satD || 'Unit'}`);
-    setTxt('wSumHrgSed', satS && rasS > 1 ? `${S().rp(hSed)} / ${satS}` : '-');
-    setTxt('wSumHrgBes', satB && rasB > 1 ? `${S().rp(hBes)} / ${satB}` : '-');
+    setTxt('wSumHrgSed', valid2 ? `${S().rp(hSed)} / ${satS} (${rasS} ${satD || 'Unit'})` : '- (Tidak diisi)');
+    setTxt('wSumHrgBes', valid3 ? `${S().rp(hBes)} / ${satB} (${rasB} ${satD || 'Unit'})` : '- (Tidak diisi)');
     setTxt('wSumDefecta', `Min: ${stokMin}, Max: ${stokMax}`);
 
     const badge = document.getElementById('wizPrevBpom');
@@ -5310,7 +5358,7 @@
         mHint.textContent = umum < hpp ? `Rugi ${S().rp(hpp - umum)} (${marginPct}%) di bawah HPP!` : `Margin: +${marginPct}% (Laba ${S().rp(laba)}/${satD || 'Unit'})`;
         mHint.className = 'text-[11px] mt-1 font-semibold ' + (umum < hpp ? 'text-red-600' : 'text-emerald-600');
       } else {
-        mHint.textContent = 'Isi HPP & Harga Umum untuk melihat laba/margin.';
+        mHint.textContent = 'Isi HPP & Harga Jual 1 untuk melihat laba/margin.';
         mHint.className = 'text-[11px] mt-1';
       }
     }
@@ -5318,7 +5366,7 @@
     if (antiRugiEl) {
       if (isUnderHpp) {
         antiRugiEl.classList.remove('hidden');
-        antiRugiEl.textContent = `⚠️ Peringatan Anti-Rugi: Harga eceran (${S().rp(umum)}) lebih rendah dari HPP modal (${S().rp(hpp)}).`;
+        antiRugiEl.textContent = `⚠️ Peringatan Anti-Rugi: Harga Jual 1 (${S().rp(umum)}) lebih rendah dari HPP modal (${S().rp(hpp)}).`;
       } else {
         antiRugiEl.classList.add('hidden');
       }
@@ -5327,10 +5375,10 @@
     const tierGrid = document.getElementById('wizPrevTierGrid');
     if (tierGrid) {
       tierGrid.innerHTML = `
-        <div><div style="color:var(--ons-text-soft)">Eceran</div><div class="font-bold text-blue-600">${S().rp(umum)}</div></div>
-        ${satS && rasS > 1 ? `<div><div style="color:var(--ons-text-soft)">Per ${satS}</div><div class="font-bold text-emerald-600">${S().rp(hSed)}</div></div>` : ''}
-        ${satB && rasB > 1 ? `<div><div style="color:var(--ons-text-soft)">Per ${satB}</div><div class="font-bold text-purple-600">${S().rp(hBes)}</div></div>` : ''}
-        ${(!satS || rasS <= 1) && (!satB || rasB <= 1) ? `<div><div style="color:var(--ons-text-soft)">Kemasan</div><div class="font-semibold text-slate-500">Tunggal</div></div>` : ''}`;
+        <div><div style="color:var(--ons-text-soft)">Harga Jual 1</div><div class="font-bold text-blue-600">${S().rp(umum)}</div><div class="text-[9.5px] text-slate-400">/${satD || 'Unit'}</div></div>
+        ${valid2 ? `<div><div style="color:var(--ons-text-soft)">Harga Jual 2</div><div class="font-bold text-emerald-600">${S().rp(hSed)}</div><div class="text-[9.5px] text-slate-400">/${satS}</div></div>` : ''}
+        ${valid3 ? `<div><div style="color:var(--ons-text-soft)">Harga Jual 3</div><div class="font-bold text-purple-600">${S().rp(hBes)}</div><div class="text-[9.5px] text-slate-400">/${satB}</div></div>` : ''}
+        ${!valid2 && !valid3 ? `<div><div style="color:var(--ons-text-soft)">Kemasan</div><div class="font-semibold text-slate-500">Satuan 1 Tunggal</div></div>` : ''}`;
     }
 
     // 5 VALIDASI KOLOM WAJIB
@@ -5739,12 +5787,20 @@
         golongan_bpom: val('wGol') || 'BEBAS',
         suhu_simpan: val('wSuhu') || 'Suhu Ruang (15-25°C)',
         rak_lokasi: rak,
+        satuan_1: satDasar,
+        satuan_2: satSed,
+        rasio_2: rasioSedang,
+        satuan_3: satBes,
+        rasio_3: rasioBesar,
         satuan_dasar: satDasar,
         satuan_sedang: satSed,
         rasio_sedang: rasioSedang,
         satuan_besar: satBes,
         rasio_besar: rasioBesar,
         hpp_avg: hppVal,
+        harga_jual_1: hUmum,
+        harga_jual_2: hSed,
+        harga_jual_3: hBes,
         harga_umum: hUmum,
         harga_sedang: hSed,
         harga_besar: hBes,
@@ -5777,15 +5833,15 @@
     { key: 'pabrikan', label: 'pabrikan', ket: 'Nama produsen / pabrik farmasi (cth: Kimia Farma, Dexa Medica)' },
     { key: 'rak_lokasi', label: 'rak_lokasi', ket: 'Lokasi rak penyimpanan (cth: RAK-A1, LEMARI-KERAS)' },
     { key: 'suhu_simpan', label: 'suhu_simpan', ket: 'Suhu Ruang (15-25 C) | Kulkas (2-8 C) | Lemari Khusus' },
-    { key: 'satuan_dasar', label: 'satuan_dasar', ket: 'Satuan jual terkecil (Tablet, Strip, Botol, Tube, Kapsul, Pcs)' },
-    { key: 'satuan_sedang', label: 'satuan_sedang', ket: 'Satuan menengah (Strip, Blister, Pack). Kosongkan jika tidak ada' },
-    { key: 'rasio_sedang', label: 'rasio_sedang', ket: 'Jumlah satuan dasar per 1 satuan sedang (angka, default 1)' },
-    { key: 'satuan_besar', label: 'satuan_besar', ket: 'Satuan kemasan besar (Box, Dus, Karton). Kosongkan jika tidak ada' },
-    { key: 'rasio_besar', label: 'rasio_besar', ket: 'Jumlah satuan dasar per 1 satuan besar (angka, default 1)' },
-    { key: 'hpp_avg', label: 'hpp_avg', ket: 'Harga pokok modal pembelian per satuan dasar (angka tanpa titik/Rp)' },
-    { key: 'harga_umum', label: 'harga_umum', ket: 'Harga jual eceran satuan dasar (>= HPP modal)' },
-    { key: 'harga_sedang', label: 'harga_sedang', ket: 'Harga jual satuan sedang / per strip (opsional, jika kosong dihitung otomatis)' },
-    { key: 'harga_besar', label: 'harga_besar', ket: 'Harga jual satuan besar / per box (opsional, jika kosong dihitung otomatis)' },
+    { key: 'satuan_1', label: 'satuan_1', ket: 'Satuan 1 (terendah/terkecil dari yang dijual di apotek, cth: Tablet, Strip, Botol)' },
+    { key: 'satuan_2', label: 'satuan_2', ket: 'Satuan 2 (opsional, kemasan tingkat 2, cth: Strip, Blister, Pack). Kosongkan jika tidak ada' },
+    { key: 'rasio_2', label: 'rasio_2', ket: 'Rasio Satuan 2 (jumlah Satuan 1 dalam 1 Satuan 2, default 1)' },
+    { key: 'satuan_3', label: 'satuan_3', ket: 'Satuan 3 (opsional, kemasan tingkat 3, cth: Box, Dus). Kosongkan jika tidak ada' },
+    { key: 'rasio_3', label: 'rasio_3', ket: 'Rasio Satuan 3 (jumlah Satuan 1 dalam 1 Satuan 3, default 1)' },
+    { key: 'hpp_avg', label: 'hpp_avg', ket: 'Harga pokok modal pembelian per Satuan 1 (angka tanpa titik/Rp)' },
+    { key: 'harga_jual_1', label: 'harga_jual_1', ket: 'Harga Jual 1 (per Satuan 1 / terendah, >= HPP modal)' },
+    { key: 'harga_jual_2', label: 'harga_jual_2', ket: 'Harga Jual 2 (per Satuan 2, opsional, jika kosong dihitung otomatis)' },
+    { key: 'harga_jual_3', label: 'harga_jual_3', ket: 'Harga Jual 3 (per Satuan 3, opsional, jika kosong dihitung otomatis)' },
     { key: 'stok_min', label: 'stok_min', ket: 'Batas peringatan stok menipis (angka, default 10)' },
     { key: 'stok_max', label: 'stok_max', ket: 'Kapasitas stok maksimal yang disarankan (angka, default 100)' },
     { key: 'pbf_utama', label: 'pbf_utama', ket: 'Nama PBF / distributor pemasok utama' },
@@ -5909,15 +5965,15 @@
       pabrikan: 'pabrikan', pabrik: 'pabrikan', produsen: 'pabrikan', prinsipal: 'pabrikan', principal: 'pabrikan', manufaktur: 'pabrikan', manufacturer: 'pabrikan',
       rak_lokasi: 'rak_lokasi', rak: 'rak_lokasi', lokasi_rak: 'rak_lokasi', lokasi: 'rak_lokasi', posisi_rak: 'rak_lokasi', shelf: 'rak_lokasi',
       suhu_simpan: 'suhu_simpan', suhu: 'suhu_simpan', storage_temp: 'suhu_simpan', kondisi_simpan: 'suhu_simpan',
-      satuan_dasar: 'satuan_dasar', satuan: 'satuan_dasar', unit: 'satuan_dasar', uom: 'satuan_dasar', satuan_terkecil: 'satuan_dasar',
-      satuan_sedang: 'satuan_sedang', satuan_tengah: 'satuan_sedang', pack: 'satuan_sedang', kemasan_sedang: 'satuan_sedang',
-      rasio_sedang: 'rasio_sedang', isi_sedang: 'rasio_sedang', isi_per_strip: 'rasio_sedang', qty_sedang: 'rasio_sedang',
-      satuan_besar: 'satuan_besar', kemasan_besar: 'satuan_besar', dus: 'satuan_besar', box: 'satuan_besar',
-      rasio_besar: 'rasio_besar', isi_besar: 'rasio_besar', isi_per_box: 'rasio_besar', qty_besar: 'rasio_besar',
+      satuan_1: 'satuan_dasar', satuan1: 'satuan_dasar', satuan_terendah: 'satuan_dasar', satuan_dasar: 'satuan_dasar', satuan: 'satuan_dasar', unit: 'satuan_dasar', uom: 'satuan_dasar', satuan_terkecil: 'satuan_dasar',
+      satuan_2: 'satuan_sedang', satuan2: 'satuan_sedang', kemasan_2: 'satuan_sedang', satuan_sedang: 'satuan_sedang', satuan_tengah: 'satuan_sedang', pack: 'satuan_sedang', kemasan_sedang: 'satuan_sedang',
+      rasio_2: 'rasio_sedang', rasio2: 'rasio_sedang', rasio_konversi_2: 'rasio_sedang', konversi_2: 'rasio_sedang', rasio_sedang: 'rasio_sedang', isi_sedang: 'rasio_sedang', isi_per_strip: 'rasio_sedang', qty_sedang: 'rasio_sedang',
+      satuan_3: 'satuan_besar', satuan3: 'satuan_besar', kemasan_3: 'satuan_besar', satuan_besar: 'satuan_besar', kemasan_besar: 'satuan_besar', dus: 'satuan_besar', box: 'satuan_besar',
+      rasio_3: 'rasio_besar', rasio3: 'rasio_besar', rasio_konversi_3: 'rasio_besar', konversi_3: 'rasio_besar', rasio_besar: 'rasio_besar', isi_besar: 'rasio_besar', isi_per_box: 'rasio_besar', qty_besar: 'rasio_besar',
       hpp_avg: 'hpp_avg', hpp: 'hpp_avg', harga_beli: 'hpp_avg', hna: 'hpp_avg', modal: 'hpp_avg', beli: 'hpp_avg', harga_pokok: 'hpp_avg', harga_modal: 'hpp_avg', cost: 'hpp_avg', buy_price: 'hpp_avg', harga_netto: 'hpp_avg',
-      harga_umum: 'harga_umum', harga: 'harga_umum', harga_jual: 'harga_umum', hja: 'harga_umum', harga_eceran: 'harga_umum', eceran: 'harga_umum', retail_price: 'harga_umum', harga_konsumen: 'harga_umum', jual: 'harga_umum',
-      harga_sedang: 'harga_sedang', harga_strip: 'harga_sedang', strip: 'harga_sedang', per_strip: 'harga_sedang', pack_price: 'harga_sedang', harga_pack: 'harga_sedang',
-      harga_besar: 'harga_besar', harga_box: 'harga_besar', box_price: 'harga_besar', per_box: 'harga_besar', dus_price: 'harga_besar', harga_dus: 'harga_besar',
+      harga_jual_1: 'harga_umum', harga_jual1: 'harga_umum', harga_1: 'harga_umum', hrg_jual_1: 'harga_umum', hrg_1: 'harga_umum', harga_umum: 'harga_umum', harga: 'harga_umum', harga_jual: 'harga_umum', hja: 'harga_umum', harga_eceran: 'harga_umum', eceran: 'harga_umum', retail_price: 'harga_umum', harga_konsumen: 'harga_umum', jual: 'harga_umum',
+      harga_jual_2: 'harga_sedang', harga_jual2: 'harga_sedang', harga_2: 'harga_sedang', hrg_jual_2: 'harga_sedang', hrg_2: 'harga_sedang', harga_sedang: 'harga_sedang', harga_strip: 'harga_sedang', strip: 'harga_sedang', per_strip: 'harga_sedang', pack_price: 'harga_sedang', harga_pack: 'harga_sedang',
+      harga_jual_3: 'harga_besar', harga_jual3: 'harga_besar', harga_3: 'harga_besar', hrg_jual_3: 'harga_besar', hrg_3: 'harga_besar', harga_besar: 'harga_besar', harga_box: 'harga_besar', box_price: 'harga_besar', per_box: 'harga_besar', dus_price: 'harga_besar', harga_dus: 'harga_besar',
       harga_member: 'harga_member', member: 'harga_member', harga_langganan: 'harga_member', member_price: 'harga_member',
       harga_grosir: 'harga_grosir', grosir: 'harga_grosir', wholesale: 'harga_grosir', wholesale_price: 'harga_grosir',
       min_qty_grosir: 'min_qty_grosir', min_grosir: 'min_qty_grosir', min_qty: 'min_qty_grosir', minimal_grosir: 'min_qty_grosir',
@@ -6099,8 +6155,8 @@
     }
     const XS = global.ONSXlsxExport.STYLE;
     const c = global.ONSXlsxExport.cell;
-    const intCols = new Set(['rasio_sedang', 'rasio_besar', 'stok_min', 'stok_max', 'stok_awal']);
-    const curCols = new Set(['hpp_avg', 'harga_umum', 'harga_sedang', 'harga_besar']);
+    const intCols = new Set(['rasio_2', 'rasio_3', 'rasio_sedang', 'rasio_besar', 'stok_min', 'stok_max', 'stok_awal']);
+    const curCols = new Set(['hpp_avg', 'harga_jual_1', 'harga_jual_2', 'harga_jual_3', 'harga_umum', 'harga_sedang', 'harga_besar']);
     const headerRow = MASTER_OBAT_IMPORT_COLUMNS.map((col) => c(col.label, XS.HEADER));
     const dataRows = MASTER_OBAT_SAMPLE_ROWS.map((r, ri) => {
       const alt = ri % 2 === 1;
@@ -6202,15 +6258,17 @@
           if (!nama || /^total\b/i.test(nama)) return null;
           const rawGol = String(obj.golongan_bpom || 'BEBAS').toUpperCase().trim();
           const gol = VALID_GOL.has(rawGol) ? rawGol : 'BEBAS';
-          const satDasar = obj.satuan_dasar || 'Tablet';
-          const satSedang = String(obj.satuan_sedang || '').trim();
-          const satBesar = String(obj.satuan_besar || '').trim();
-          const rasioSedang = satSedang ? Math.max(1, _parseImportNum(obj.rasio_sedang, 1)) : 1;
-          const rasioBesar = satBesar ? Math.max(1, _parseImportNum(obj.rasio_besar, 1)) : 1;
+          const sat1 = String(obj.satuan_1 || obj.satuan_dasar || 'Tablet').trim();
+          const sat2 = String(obj.satuan_2 !== undefined ? obj.satuan_2 : (obj.satuan_sedang || '')).trim();
+          const sat3 = String(obj.satuan_3 !== undefined ? obj.satuan_3 : (obj.satuan_besar || '')).trim();
+          const rasio2 = sat2 ? Math.max(1, _parseImportNum(obj.rasio_2 !== undefined ? obj.rasio_2 : obj.rasio_sedang, 1)) : 1;
+          const rasio3 = sat3 ? Math.max(1, _parseImportNum(obj.rasio_3 !== undefined ? obj.rasio_3 : obj.rasio_besar, 1)) : 1;
           const hpp = Math.max(0, _parseImportNum(obj.hpp_avg, 0));
-          const hUmum = Math.max(0, _parseImportNum(obj.harga_umum, 0));
-          const hSed = satSedang ? Math.max(0, _parseImportNum(obj.harga_sedang || obj.harga_strip, rasioSedang > 1 ? hUmum * rasioSedang : 0)) : 0;
-          const hBes = satBesar ? Math.max(0, _parseImportNum(obj.harga_besar || obj.harga_box, rasioBesar > 1 ? hUmum * rasioBesar : 0)) : 0;
+          const hJual1 = Math.max(0, _parseImportNum(obj.harga_jual_1 !== undefined && obj.harga_jual_1 !== '' ? obj.harga_jual_1 : obj.harga_umum, 0));
+          const defH2 = (sat2 && rasio2 > 1) ? Math.round(hJual1 * rasio2) : 0;
+          const defH3 = (sat3 && rasio3 > 1) ? Math.round(hJual1 * rasio3) : 0;
+          const hJual2 = sat2 ? Math.max(0, _parseImportNum(obj.harga_jual_2 !== undefined && obj.harga_jual_2 !== '' ? obj.harga_jual_2 : (obj.harga_sedang || obj.harga_strip), defH2)) : 0;
+          const hJual3 = sat3 ? Math.max(0, _parseImportNum(obj.harga_jual_3 !== undefined && obj.harga_jual_3 !== '' ? obj.harga_jual_3 : (obj.harga_besar || obj.harga_box), defH3)) : 0;
           const stokAwal = Math.max(0, _parseImportNum(obj.stok_awal, 0));
           return {
             nama_dagang: nama,
@@ -6219,21 +6277,29 @@
             kode_kfa: (obj.kode_kfa === '-' ? '' : (obj.kode_kfa || '')),
             nie_bpom: (obj.nie_bpom === '-' ? '' : (obj.nie_bpom || '')),
             golongan_bpom: gol,
-            bentuk_sediaan: obj.bentuk_sediaan || satDasar,
+            bentuk_sediaan: obj.bentuk_sediaan || sat1,
             pabrikan: obj.pabrikan === '-' ? '' : (obj.pabrikan || ''),
             rak_lokasi: obj.rak_lokasi || 'RAK-A1',
             suhu_simpan: obj.suhu_simpan || 'Suhu Ruang (15-25 C)',
-            satuan_dasar: satDasar,
-            satuan_sedang: satSedang,
-            rasio_sedang: rasioSedang,
-            satuan_besar: satBesar,
-            rasio_besar: rasioBesar,
+            satuan_1: sat1,
+            satuan_2: sat2,
+            rasio_2: rasio2,
+            satuan_3: sat3,
+            rasio_3: rasio3,
+            harga_jual_1: hJual1,
+            harga_jual_2: hJual2,
+            harga_jual_3: hJual3,
+            satuan_dasar: sat1,
+            satuan_sedang: sat2,
+            rasio_sedang: rasio2,
+            satuan_besar: sat3,
+            rasio_besar: rasio3,
             hpp_avg: hpp,
-            harga_umum: hUmum,
-            harga_sedang: hSed,
-            harga_besar: hBes,
-            harga_strip: hSed,
-            harga_box: hBes,
+            harga_umum: hJual1,
+            harga_sedang: hJual2,
+            harga_besar: hJual3,
+            harga_strip: hJual2,
+            harga_box: hJual3,
             stok_min: Math.max(0, _parseImportNum(obj.stok_min, 10)),
             stok_max: Math.max(1, _parseImportNum(obj.stok_max, 100)),
             pbf_utama: obj.pbf_utama === '-' ? '' : (obj.pbf_utama || ''),
@@ -6245,23 +6311,23 @@
       if (!importObatBuffer.length) {
         throw new Error('Tidak ada baris produk dengan kolom nama_dagang yang terisi.');
       }
-      const warnMargin = importObatBuffer.filter((x) => x.hpp_avg > 0 && x.harga_umum > 0 && x.harga_umum < x.hpp_avg).length;
+      const warnMargin = importObatBuffer.filter((x) => x.hpp_avg > 0 && x.harga_jual_1 > 0 && x.harga_jual_1 < x.hpp_avg).length;
       const withStock = importObatBuffer.filter((x) => x.stok_awal > 0).length;
       box.innerHTML = `<div class="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div class="flex flex-wrap items-center gap-2">
             <span class="font-bold text-emerald-700 dark:text-emerald-400">&#9989; Terdeteksi ${importObatBuffer.length} produk valid</span>
             ${withStock ? `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">&#128230; ${withStock} item berisi stok awal</span>` : ''}
           </div>
-          ${warnMargin ? `<span class="text-amber-700 font-semibold">&#9888; ${warnMargin} item Harga Umum &lt; HPP</span>` : ''}
+          ${warnMargin ? `<span class="text-amber-700 font-semibold">&#9888; ${warnMargin} item Harga Jual 1 &lt; HPP</span>` : ''}
         </div>
         <div class="overflow-x-auto"><table class="w-full text-[11px] border-collapse">
           <thead><tr class="border-b" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
             <th class="text-left py-1 pr-2">#</th>
             <th class="text-left py-1 pr-2">Nama Dagang</th>
             <th class="text-left py-1 pr-2">Pabrikan</th>
-            <th class="text-left py-1 pr-2">Satuan</th>
+            <th class="text-left py-1 pr-2">Konversi Kemasan</th>
             <th class="text-right py-1 pr-2">HPP</th>
-            <th class="text-right py-1 pr-2">Harga Umum</th>
+            <th class="text-right py-1 pr-2">Harga Jual 1</th>
             <th class="text-right py-1 pr-2 text-emerald-700">Stok Awal</th>
             <th class="text-left py-1">Batch / ED</th>
           </tr></thead>
@@ -6269,10 +6335,10 @@
             <td class="py-1 pr-2 font-mono-num">${idx + 1}</td>
             <td class="py-1 pr-2 font-semibold">${S().esc(x.nama_dagang)}</td>
             <td class="py-1 pr-2" style="color:var(--ons-text-soft)">${S().esc(x.pabrikan || '-')}</td>
-            <td class="py-1 pr-2">${S().esc(x.satuan_dasar)}</td>
+            <td class="py-1 pr-2">${S().esc(formatKonversiRasio(x.satuan_1, x.satuan_2, x.rasio_2, x.satuan_3, x.rasio_3))}</td>
             <td class="py-1 pr-2 text-right font-mono-num">${S().rp(x.hpp_avg)}</td>
-            <td class="py-1 pr-2 text-right font-mono-num font-bold">${S().rp(x.harga_umum)}</td>
-            <td class="py-1 pr-2 text-right font-mono-num font-bold text-emerald-700">${x.stok_awal ? x.stok_awal.toLocaleString('id-ID') : '-'}</td>
+            <td class="py-1 pr-2 text-right font-mono-num font-bold text-blue-600">${S().rp(x.harga_jual_1)} / ${S().esc(x.satuan_1)}</td>
+            <td class="py-1 pr-2 text-right font-mono-num font-bold text-emerald-700">${x.stok_awal ? x.stok_awal.toLocaleString('id-ID') + ' ' + S().esc(x.satuan_1) : '-'}</td>
             <td class="py-1 font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${x.no_batch ? S().esc(x.no_batch) : '-'}${x.tgl_kadaluarsa ? ' (' + S().esc(x.tgl_kadaluarsa) + ')' : ''}</td>
           </tr>`).join('')}</tbody>
         </table></div>` +

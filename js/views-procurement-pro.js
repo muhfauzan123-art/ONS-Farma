@@ -86,7 +86,7 @@
   let priceRoundStep = 500; // 0 | 100 | 500 | 1000
   let priceFilterStatus = 'ACTION'; // SEMUA | ACTION | WAJIB_NAIK | BARU_NAIK
   let priceSearchQ = '';
-  let priceDraftEdits = {}; // { [id_obat]: { harga_umum, harga_member, harga_grosir, harga_faskes } }
+  let priceDraftEdits = {}; // { [id_obat]: { harga_jual_1, harga_jual_2, harga_jual_3 } }
 
   function parseSpItems(sp) {
     if (!sp) return [];
@@ -139,24 +139,33 @@
       ? Math.round(((hppLast - hppAvg) / hppAvg) * 1000) / 10
       : 0;
 
-    const hargaUmum = Number(obat.harga_umum || 0);
-    const hargaMember = Number(obat.harga_member || hargaUmum);
-    const hargaGrosir = Number(obat.harga_grosir || hargaMember);
-    const hargaFaskes = Number(obat.harga_faskes || hargaGrosir);
+    const sat1 = String(obat.satuan_1 || obat.satuan_dasar || 'Unit').trim();
+    const sat2 = String(obat.satuan_2 !== undefined ? obat.satuan_2 : (obat.satuan_sedang || '')).trim();
+    const sat3 = String(obat.satuan_3 !== undefined ? obat.satuan_3 : (obat.satuan_besar || '')).trim();
+    const ras2 = sat2 ? Math.max(1, Number(obat.rasio_2 !== undefined ? obat.rasio_2 : (obat.rasio_sedang || 1))) : 1;
+    const ras3 = sat3 ? Math.max(1, Number(obat.rasio_3 !== undefined ? obat.rasio_3 : (obat.rasio_besar || 1))) : 1;
 
-    const marginRp = hargaUmum - hppRef;
-    const marginPct = hargaUmum > 0 ? Math.round(((marginRp) / hargaUmum) * 1000) / 10 : -100;
+    const valid2 = Boolean(sat2 && sat2.toLowerCase() !== sat1.toLowerCase() && ras2 > 1);
+    const valid3 = Boolean(sat3 && sat3.toLowerCase() !== sat1.toLowerCase() && (!valid2 || sat3.toLowerCase() !== sat2.toLowerCase()) && ras3 > 1);
+
+    const hargaJual1 = Number(obat.harga_jual_1 !== undefined && obat.harga_jual_1 !== '' ? obat.harga_jual_1 : (obat.harga_umum || 0));
+    const defHrg2 = (valid2 && ras2 > 1) ? Math.round(hargaJual1 * ras2) : 0;
+    const defHrg3 = (valid3 && ras3 > 1) ? Math.round(hargaJual1 * ras3) : 0;
+    const hargaJual2 = valid2 ? Number(obat.harga_jual_2 !== undefined && obat.harga_jual_2 !== '' ? obat.harga_jual_2 : (obat.harga_sedang !== undefined && obat.harga_sedang !== '' ? obat.harga_sedang : (obat.harga_strip || defHrg2))) : 0;
+    const hargaJual3 = valid3 ? Number(obat.harga_jual_3 !== undefined && obat.harga_jual_3 !== '' ? obat.harga_jual_3 : (obat.harga_besar !== undefined && obat.harga_besar !== '' ? obat.harga_besar : (obat.harga_box || defHrg3))) : 0;
+
+    const hargaUmum = hargaJual1;
+
+    const marginRp = hargaJual1 - hppRef;
+    const marginPct = hargaJual1 > 0 ? Math.round(((marginRp) / hargaJual1) * 1000) / 10 : -100;
     const markupPct = hppRef > 0 ? Math.round(((marginRp) / hppRef) * 1000) / 10 : 0;
 
     const targetRatio = Math.min(0.85, Math.max(0.05, targetPct / 100));
-    const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : hargaUmum;
-    const saranUmum = hppRef > 0 ? Math.max(ceilToStep(rawTarget, roundStep), hppRef + (roundStep || 100)) : hargaUmum;
-
-    // Jaga hierarki harga tier agar tetap menguntungkan (> HPP + minimal 5%)
-    const minSafeFloor = hppRef > 0 ? ceilToStep(hppRef * 1.08, Math.min(roundStep || 100, 100)) : 0;
-    const saranMember = hppRef > 0 ? Math.max(minSafeFloor, ceilToStep(saranUmum * 0.96, Math.min(roundStep || 100, 100))) : hargaMember;
-    const saranGrosir = hppRef > 0 ? Math.max(minSafeFloor, ceilToStep(saranUmum * 0.92, Math.min(roundStep || 100, 100))) : hargaGrosir;
-    const saranFaskes = hppRef > 0 ? Math.max(minSafeFloor, ceilToStep(saranUmum * 0.90, Math.min(roundStep || 100, 100))) : hargaFaskes;
+    const rawTarget = hppRef > 0 ? (hppRef / (1 - targetRatio)) : hargaJual1;
+    const saranHarga1 = hppRef > 0 ? Math.max(ceilToStep(rawTarget, roundStep), hppRef + (roundStep || 100)) : hargaJual1;
+    const saranHarga2 = valid2 ? Math.round(saranHarga1 * ras2) : 0;
+    const saranHarga3 = valid3 ? Math.round(saranHarga1 * ras3) : 0;
+    const saranUmum = saranHarga1;
 
     const isAlerted = Boolean(alertMap[obat.id_obat]) || hppDiffPct >= 2;
     let status = 'PERTAHANKAN';
@@ -164,7 +173,7 @@
     let tone = 'bpom-bebas';
     let needsAction = false;
 
-    if (hppRef > 0 && (hargaUmum <= 0 || hppRef >= hargaUmum)) {
+    if (hppRef > 0 && (hargaJual1 <= 0 || hppRef >= hargaJual1)) {
       status = 'WAJIB_NAIK';
       label = 'WAJIB NAIK (Rugi / Di Bawah HPP)';
       tone = 'bpom-narkotika';
@@ -181,8 +190,8 @@
       needsAction = false;
     }
 
-    const deltaNaikRp = Math.max(0, saranUmum - hargaUmum);
-    const deltaNaikPct = hargaUmum > 0 ? Math.round(((saranUmum - hargaUmum) / hargaUmum) * 1000) / 10 : 0;
+    const deltaNaikRp = Math.max(0, saranHarga1 - hargaJual1);
+    const deltaNaikPct = hargaJual1 > 0 ? Math.round(((saranHarga1 - hargaJual1) / hargaJual1) * 1000) / 10 : 0;
 
     return {
       hppRef,
@@ -190,17 +199,24 @@
       hppAvg,
       hppDiffPct,
       isAlerted,
+      sat1,
+      sat2,
+      ras2,
+      sat3,
+      ras3,
+      valid2,
+      valid3,
+      hargaJual1,
+      hargaJual2,
+      hargaJual3,
       hargaUmum,
-      hargaMember,
-      hargaGrosir,
-      hargaFaskes,
       marginRp,
       marginPct,
       markupPct,
+      saranHarga1,
+      saranHarga2,
+      saranHarga3,
       saranUmum,
-      saranMember,
-      saranGrosir,
-      saranFaskes,
       deltaNaikRp,
       deltaNaikPct,
       status,
@@ -320,7 +336,7 @@
                 <th>HPP Modal</th>
                 <th>Harga Jual Lama</th>
                 <th>Status Keputusan</th>
-                <th>Harga Baru (Umum / Tier)</th>
+                <th>Harga Jual Baru (Satuan 1, 2, 3)</th>
                 <th>Margin Baru</th>
                 <th>Aksi Cepat</th>
               </tr>
@@ -328,43 +344,49 @@
             <tbody>
               ${filtered.length ? filtered.map(({ o, calc }) => {
                 const draft = priceDraftEdits[o.id_obat] || {};
-                const curUmum = draft.harga_umum !== undefined ? Number(draft.harga_umum) : calc.hargaUmum;
-                const curMember = draft.harga_member !== undefined ? Number(draft.harga_member) : calc.hargaMember;
-                const curGrosir = draft.harga_grosir !== undefined ? Number(draft.harga_grosir) : calc.hargaGrosir;
-                const curFaskes = draft.harga_faskes !== undefined ? Number(draft.harga_faskes) : calc.hargaFaskes;
-                const newMarginPct = curUmum > 0 ? Math.round(((curUmum - calc.hppRef) / curUmum) * 1000) / 10 : -100;
-                const isDirty = draft.harga_umum !== undefined || draft.harga_member !== undefined || draft.harga_grosir !== undefined || draft.harga_faskes !== undefined;
+                const curH1 = draft.harga_jual_1 !== undefined ? Number(draft.harga_jual_1) : (draft.harga_umum !== undefined ? Number(draft.harga_umum) : calc.hargaJual1);
+                const curH2 = draft.harga_jual_2 !== undefined ? Number(draft.harga_jual_2) : (draft.harga_sedang !== undefined ? Number(draft.harga_sedang) : calc.hargaJual2);
+                const curH3 = draft.harga_jual_3 !== undefined ? Number(draft.harga_jual_3) : (draft.harga_besar !== undefined ? Number(draft.harga_besar) : calc.hargaJual3);
+                const newMarginPct = curH1 > 0 ? Math.round(((curH1 - calc.hppRef) / curH1) * 1000) / 10 : -100;
+                const isDirty = draft.harga_jual_1 !== undefined || draft.harga_jual_2 !== undefined || draft.harga_jual_3 !== undefined || draft.harga_umum !== undefined;
                 return `<tr>
                   <td>
                     <div class="font-bold text-xs">${S().esc(o.nama_dagang)}</div>
-                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(o.satuan_dasar || 'Unit')} &bull; ${S().esc(o.pbf_utama || '-')}</div>
+                    <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(window.formatKonversiRasio ? window.formatKonversiRasio(calc.sat1, calc.sat2, calc.ras2, calc.sat3, calc.ras3) : calc.sat1)} &bull; ${S().esc(o.pbf_utama || '-')}</div>
                   </td>
                   <td class="font-mono-num text-xs">
                     <div class="font-bold">${S().rp(calc.hppRef)}</div>
                     <div class="text-[10px]" style="color:var(--ons-text-soft)">Avg: ${S().rp(calc.hppAvg)} ${calc.hppDiffPct > 0 ? `<span class="text-red-600 font-bold">(+${calc.hppDiffPct}%)</span>` : ''}</div>
                   </td>
                   <td class="font-mono-num text-xs">
-                    <div>${S().rp(calc.hargaUmum)}</div>
-                    <div class="text-[10px] ${calc.marginPct < priceTargetMargin ? 'text-red-600 font-bold' : 'text-emerald-600'}">Margin: ${calc.marginPct}%</div>
+                    <div><b>${S().rp(calc.hargaJual1)}</b> <span class="text-[10px] text-slate-500">/${S().esc(calc.sat1)}</span></div>
+                    ${calc.valid2 ? `<div class="text-[10.5px] text-emerald-600">${S().rp(calc.hargaJual2)} <span class="text-[9.5px]">/${S().esc(calc.sat2)}</span></div>` : ''}
+                    ${calc.valid3 ? `<div class="text-[10.5px] text-purple-600">${S().rp(calc.hargaJual3)} <span class="text-[9.5px]">/${S().esc(calc.sat3)}</span></div>` : ''}
+                    <div class="text-[10px] ${calc.marginPct < priceTargetMargin ? 'text-red-600 font-bold' : 'text-emerald-600'}">Margin 1: ${calc.marginPct}%</div>
                   </td>
                   <td>
                     <span class="badge-bpom ${calc.tone}">${calc.label}</span>
-                    <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Saran: <b class="text-blue-600">${S().rp(calc.saranUmum)}</b> ${calc.deltaNaikRp > 0 ? `(+${S().rp(calc.deltaNaikRp)} / +${calc.deltaNaikPct}%)` : ''}</div>
+                    <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Saran 1: <b class="text-blue-600">${S().rp(calc.saranHarga1)}</b> / ${S().esc(calc.sat1)} ${calc.deltaNaikRp > 0 ? `(+${S().rp(calc.deltaNaikRp)} / +${calc.deltaNaikPct}%)` : ''}</div>
+                    ${calc.valid2 ? `<div class="text-[10px] font-mono-num text-emerald-600">Saran 2: ${S().rp(calc.saranHarga2)} / ${S().esc(calc.sat2)}</div>` : ''}
+                    ${calc.valid3 ? `<div class="text-[10px] font-mono-num text-purple-600">Saran 3: ${S().rp(calc.saranHarga3)} / ${S().esc(calc.sat3)}</div>` : ''}
                   </td>
                   <td>
-                    <div class="grid grid-cols-2 gap-1 min-w-[200px]">
-                      <label class="text-[10px]" style="color:var(--ons-text-soft)">Umum
-                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num font-bold py-1 min-h-0 mt-0.5" value="${S().formatDots(curUmum)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_umum',this.value)"/>
+                    <div class="flex flex-col gap-1 min-w-[210px]">
+                      <label class="text-[10px] flex items-center justify-between gap-1" style="color:var(--ons-text-soft)">
+                        <span class="font-bold text-blue-600">Harga 1 (${S().esc(calc.sat1)}):</span>
+                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num font-bold py-1 px-2 w-32 min-h-0 text-right" value="${S().formatDots(curH1)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_jual_1',this.value)"/>
                       </label>
-                      <label class="text-[10px]" style="color:var(--ons-text-soft)">Member
-                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${S().formatDots(curMember)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_member',this.value)"/>
-                      </label>
-                      <label class="text-[10px]" style="color:var(--ons-text-soft)">Grosir
-                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${S().formatDots(curGrosir)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_grosir',this.value)"/>
-                      </label>
-                      <label class="text-[10px]" style="color:var(--ons-text-soft)">Faskes
-                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 min-h-0 mt-0.5" value="${S().formatDots(curFaskes)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_faskes',this.value)"/>
-                      </label>
+                      ${calc.valid2 ? `
+                      <label class="text-[10px] flex items-center justify-between gap-1" style="color:var(--ons-text-soft)">
+                        <span class="font-bold text-emerald-600">Harga 2 (${S().esc(calc.sat2)}):</span>
+                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 px-2 w-32 min-h-0 text-right" value="${S().formatDots(curH2)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_jual_2',this.value)"/>
+                      </label>` : ''}
+                      ${calc.valid3 ? `
+                      <label class="text-[10px] flex items-center justify-between gap-1" style="color:var(--ons-text-soft)">
+                        <span class="font-bold text-purple-600">Harga 3 (${S().esc(calc.sat3)}):</span>
+                        <input type="text" inputmode="numeric" class="ons-input ons-currency-input text-xs font-mono-num py-1 px-2 w-32 min-h-0 text-right" value="${S().formatDots(curH3)}" oninput="window.maskNumberInput(this)" onchange="window.setPriceDraftField('${S().esc(o.id_obat)}','harga_jual_3',this.value)"/>
+                      </label>` : ''}
+                      ${!calc.valid2 && !calc.valid3 ? `<div class="text-[9.5px] text-slate-400 italic">Satuan 1 Tunggal (${S().esc(calc.sat1)})</div>` : ''}
                     </div>
                   </td>
                   <td class="font-mono-num text-xs">
@@ -1757,12 +1779,14 @@
     if (!o) return;
     const calc = computePriceDecision(o);
     priceDraftEdits[idObat] = {
-      harga_umum: calc.saranUmum,
-      harga_member: calc.saranMember,
-      harga_grosir: calc.saranGrosir,
-      harga_faskes: calc.saranFaskes
+      harga_jual_1: calc.saranHarga1,
+      harga_jual_2: calc.saranHarga2,
+      harga_jual_3: calc.saranHarga3,
+      harga_umum: calc.saranHarga1,
+      harga_sedang: calc.saranHarga2,
+      harga_besar: calc.saranHarga3
     };
-    global.toast('Saran harga (' + S().rp(calc.saranUmum) + ') diisi ke baris ' + o.nama_dagang + '. Klik Simpan Harga untuk menerapkan.', 'info');
+    global.toast(`Saran Harga 1 (${S().rp(calc.saranHarga1)} / ${calc.sat1}) diisi ke baris ${o.nama_dagang}. Klik Simpan Harga untuk menerapkan.`, 'info');
     global.renderActiveView();
   };
 
@@ -1771,17 +1795,22 @@
     if (!o) return;
     const calc = computePriceDecision(o);
     const d = priceDraftEdits[idObat] || {};
+    const h1 = d.harga_jual_1 !== undefined ? Number(d.harga_jual_1) : (d.harga_umum !== undefined ? Number(d.harga_umum) : calc.saranHarga1);
+    const h2 = d.harga_jual_2 !== undefined ? Number(d.harga_jual_2) : (d.harga_sedang !== undefined ? Number(d.harga_sedang) : calc.saranHarga2);
+    const h3 = d.harga_jual_3 !== undefined ? Number(d.harga_jual_3) : (d.harga_besar !== undefined ? Number(d.harga_besar) : calc.saranHarga3);
     const payload = {
       id_obat: idObat,
-      harga_umum: d.harga_umum !== undefined ? Number(d.harga_umum) : calc.saranUmum,
-      harga_member: d.harga_member !== undefined ? Number(d.harga_member) : calc.saranMember,
-      harga_grosir: d.harga_grosir !== undefined ? Number(d.harga_grosir) : calc.saranGrosir,
-      harga_faskes: d.harga_faskes !== undefined ? Number(d.harga_faskes) : calc.saranFaskes
+      harga_jual_1: h1,
+      harga_jual_2: h2,
+      harga_jual_3: h3,
+      harga_umum: h1,
+      harga_sedang: h2,
+      harga_besar: h3
     };
     try {
       await API().callApi('obat.updatePrices', { items: [payload], catatan: 'Analisa Harga & Margin Satuan' }, { isWrite: true });
       delete priceDraftEdits[idObat];
-      global.toast('Harga jual ' + o.nama_dagang + ' berhasil diperbarui ke ' + S().rp(payload.harga_umum) + '!', 'ok');
+      global.toast(`Harga jual ${o.nama_dagang} (Harga 1 / ${calc.sat1}) berhasil diperbarui ke ${S().rp(h1)}!`, 'ok');
       await global.bootLoadState(true);
     } catch (e) {
       global.toast(e.message, 'err');
@@ -1792,13 +1821,15 @@
     const st = S().AppState;
     const items = (st.masterObat || []).map((o) => {
       const calc = computePriceDecision(o);
-      if (!calc.needsAction || calc.saranUmum <= calc.hargaUmum) return null;
+      if (!calc.needsAction || calc.saranHarga1 <= calc.hargaJual1) return null;
       return {
         id_obat: o.id_obat,
-        harga_umum: calc.saranUmum,
-        harga_member: calc.saranMember,
-        harga_grosir: calc.saranGrosir,
-        harga_faskes: calc.saranFaskes
+        harga_jual_1: calc.saranHarga1,
+        harga_jual_2: calc.saranHarga2,
+        harga_jual_3: calc.saranHarga3,
+        harga_umum: calc.saranHarga1,
+        harga_sedang: calc.saranHarga2,
+        harga_besar: calc.saranHarga3
       };
     }).filter(Boolean);
     if (!items.length) return global.toast('Tidak ada produk yang perlu dinaikkan saat ini.', 'info');

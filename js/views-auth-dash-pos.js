@@ -5878,32 +5878,32 @@
 
   function _repriceCartItem(obat, it, tierMode) {
     if (!obat || !it) return;
-    const baseSat = String(obat.satuan_dasar || 'Unit').trim();
-    const satSed = String(obat.satuan_sedang || '').trim();
-    const satBes = String(obat.satuan_besar || '').trim();
-    const rSed = satSed ? Math.max(1, Number(obat.rasio_sedang || 1)) : 1;
-    const rBes = satBes ? Math.max(1, Number(obat.rasio_besar || 1)) : 1;
+    const baseSat = String(obat.satuan_1 || obat.satuan_dasar || 'Unit').trim();
+    const satSed = String(obat.satuan_2 !== undefined ? obat.satuan_2 : (obat.satuan_sedang || '')).trim();
+    const satBes = String(obat.satuan_3 !== undefined ? obat.satuan_3 : (obat.satuan_besar || '')).trim();
+    const rSed = satSed ? Math.max(1, Number(obat.rasio_2 !== undefined ? obat.rasio_2 : (obat.rasio_sedang || 1))) : 1;
+    const rBes = satBes ? Math.max(1, Number(obat.rasio_3 !== undefined ? obat.rasio_3 : (obat.rasio_besar || 1))) : 1;
 
-    const hrgUmum = Number(obat.harga_umum || 0);
-    const defHrgSed = (satSed && rSed > 1) ? Math.round(hrgUmum * rSed) : 0;
-    const defHrgBes = (satBes && rBes > 1) ? Math.round(hrgUmum * rBes) : 0;
-    const hrgSed = satSed ? Number(obat.harga_sedang !== undefined && obat.harga_sedang !== '' ? obat.harga_sedang : (obat.harga_strip || defHrgSed)) : 0;
-    const hrgBes = satBes ? Number(obat.harga_besar !== undefined && obat.harga_besar !== '' ? obat.harga_besar : (obat.harga_box || defHrgBes)) : 0;
+    const hrg1 = Number(obat.harga_jual_1 !== undefined && obat.harga_jual_1 !== '' ? obat.harga_jual_1 : (obat.harga_umum || 0));
+    const defHrgSed = (satSed && rSed > 1) ? Math.round(hrg1 * rSed) : 0;
+    const defHrgBes = (satBes && rBes > 1) ? Math.round(hrg1 * rBes) : 0;
+    const hrg2 = satSed ? Number(obat.harga_jual_2 !== undefined && obat.harga_jual_2 !== '' ? obat.harga_jual_2 : (obat.harga_sedang !== undefined && obat.harga_sedang !== '' ? obat.harga_sedang : (obat.harga_strip || defHrgSed))) : 0;
+    const hrg3 = satBes ? Number(obat.harga_jual_3 !== undefined && obat.harga_jual_3 !== '' ? obat.harga_jual_3 : (obat.harga_besar !== undefined && obat.harga_besar !== '' ? obat.harga_besar : (obat.harga_box || defHrgBes))) : 0;
 
     const uOpts = [];
     uOpts.push({
       label: baseSat,
       faktor: 1,
-      harga: hrgUmum,
-      displayText: `${baseSat} (${S().rp(hrgUmum)})`
+      harga: hrg1,
+      displayText: `${baseSat} (${S().rp(hrg1)})`
     });
 
     if (satSed && satSed.toLowerCase() !== baseSat.toLowerCase() && rSed > 1) {
       uOpts.push({
         label: satSed,
         faktor: rSed,
-        harga: hrgSed,
-        displayText: `${satSed} (isi ${rSed} • ${S().rp(hrgSed)})`
+        harga: hrg2,
+        displayText: `${satSed} (isi ${rSed} ${baseSat} • ${S().rp(hrg2)})`
       });
     }
 
@@ -5911,8 +5911,8 @@
       uOpts.push({
         label: satBes,
         faktor: rBes,
-        harga: hrgBes,
-        displayText: `${satBes} (isi ${rBes} • ${S().rp(hrgBes)})`
+        harga: hrg3,
+        displayText: `${satBes} (isi ${rBes} ${baseSat} • ${S().rp(hrg3)})`
       });
     }
 
@@ -6044,10 +6044,7 @@
     const existing = cart.items.find((i) => i.id_obat === idObat && i.faktor_konversi === 1);
     if (existing) {
       existing.qty++;
-      const effUp = _repriceCartItem(obat, existing, tierMode);
-      if (effUp && effUp.isGrosirAuto) {
-        global.toast('Harga Grosir Otomatis aktif (>= ' + (obat.min_qty_grosir || 10) + ' ' + obat.satuan_dasar + ')!', 'ok');
-      }
+      _repriceCartItem(obat, existing, tierMode);
     } else {
       const eff = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, 1, tierMode) : { harga: Number(obat.harga_umum || 0), tierApplied: tierMode };
       const itemObj = {
@@ -6168,10 +6165,7 @@
     const ob = S().AppState.masterObat.find((o) => o.id_obat === it.id_obat);
     const tierMode = cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM');
     const wasAuto = it.tier_applied === 'GROSIR_AUTO';
-    const eff = _repriceCartItem(ob, it, tierMode);
-    if (eff && eff.isGrosirAuto && !wasAuto) {
-      global.toast('Harga Grosir Otomatis aktif (>= ' + ((ob && ob.min_qty_grosir) || 10) + ' ' + ((ob && ob.satuan_dasar) || 'unit') + ')!', 'ok');
-    }
+    _repriceCartItem(ob, it, tierMode);
     global.renderActiveView();
   };
 
