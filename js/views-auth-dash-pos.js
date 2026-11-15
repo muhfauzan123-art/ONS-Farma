@@ -3963,7 +3963,8 @@
         <td class="align-top">
           <div class="flex flex-wrap gap-1.5">
             <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">${ret.isFullRetur ? 'Bukti Retur' : 'Rincian Item'}</button>
-            <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ${ret.isFullRetur ? 'ons-btn-ghost' : 'ons-btn-primary'} text-[11px] py-1 px-2.5">${ret.isFullRetur ? 'Nota Void' : 'Struk Thermal'}</button>
+            <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ${ret.isFullRetur ? 'ons-btn-ghost' : 'ons-btn-primary'} text-[11px] py-1 px-2.5">${ret.isFullRetur ? 'Nota Void' : 'Struk'}</button>
+            <button type="button" onclick="window.printFakturPenjualanA4('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Faktur Penjualan Resmi A4">Faktur A4</button>
             ${!ret.isFullRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(p.no_invoice)}', ${Number(p.grand_total || 0)})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2.5">Retur/Void PIN</button>` : ''}
           </div>
         </td>
@@ -5393,7 +5394,8 @@
           <span class="text-base font-mono-num ${ret.isFullRetur ? 'line-through text-red-600' : 'text-blue-600'}">${S().rp(trx.grand_total || 0)}</span>
         </div>
         <div class="flex flex-wrap gap-2 pt-1">
-          <button type="button" onclick="window.openPosReprintModal('${S().esc(noInvoice)}')" class="ons-btn ons-btn-primary flex-1 text-xs">${ret.isFullRetur ? 'Cetak Nota Void (Thermal)' : 'Cetak Ulang Struk'}</button>
+          <button type="button" onclick="window.openPosReprintModal('${S().esc(noInvoice)}')" class="ons-btn ons-btn-primary flex-1 text-xs">${ret.isFullRetur ? 'Cetak Nota Void' : 'Struk Thermal'}</button>
+          <button type="button" onclick="window.printFakturPenjualanA4('${S().esc(noInvoice)}')" class="ons-btn ons-btn-ghost flex-1 text-xs">🖨️ Cetak Faktur A4</button>
           ${!ret.isFullRetur ? `<button type="button" onclick="window.openPosVoidReturnModal('${S().esc(noInvoice)}', ${Number(trx.grand_total || 0)})" class="ons-btn ons-btn-danger flex-1 text-xs">Proses Retur / Void PIN</button>` : ''}
         </div>
       </div>`, '660px');
@@ -6292,6 +6294,145 @@
     if (!p || !global.StrukEngine) return;
     const htmlList = p.itemsForEtiket.map((it) => `<div style="margin-bottom:14px;">${global.StrukEngine.buildEtiketHtml(it, p.strukData.PELANGGAN, it.ATURAN_PAKAI || it.aturan_pakai || 'Sesuai Anjuran Apoteker', p.strukData.APJ_SIPA)}</div>`).join('');
     S().printHtmlZone(htmlList);
+  };
+
+  
+  global.printFakturPenjualanA4 = (noInvoice) => {
+    try {
+      const st = S().AppState;
+      const trx = (st.penjualan || []).find((p) => p.no_invoice === noInvoice) || {};
+      const mem = (st.members || []).find((m) => m.id_member === trx.id_member);
+      let items = _getPosItemsForTrx(st, trx);
+      if (!items.length && Array.isArray(st.detailPenjualan)) {
+        items = st.detailPenjualan.filter((d) => d.no_invoice === noInvoice);
+      }
+      const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+      const apotekName = prof.nama_usaha || 'APOTEK ONS FARMA';
+      const apotekAlamat = [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10';
+      const siaNo = prof.no_sia || '-';
+      const sipaApj = prof.sipa_pemilik || prof.no_sipa || '-';
+      const apjNama = prof.nama_pemilik || prof.nama_apj || 'Apoteker Penanggung Jawab';
+      const customerName = mem ? mem.nama_pasien : (trx.pelanggan_nama || (trx.id_member && trx.id_member !== 'UMUM' ? trx.id_member : 'Pasien Umum'));
+      const statusBayar = String(trx.status_trx || 'LUNAS').toUpperCase();
+
+      const docHtml = `
+        <div style="font-family:'Inter',Arial,sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#0f172a;line-height:1.4;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #0f172a;padding-bottom:12px;margin-bottom:16px;">
+            <div>
+              <div style="font-size:20px;font-weight:900;color:#0050CA;letter-spacing:0.5px;">${S().esc(apotekName.toUpperCase())}</div>
+              <div style="font-size:11px;color:#475569;margin-top:2px;">${S().esc(apotekAlamat)} &bull; Telp/WA: ${S().esc(prof.wa_usaha || prof.telepon_usaha || '0811-0000-990')}</div>
+              <div style="font-size:10px;color:#64748b;margin-top:2px;">No. SIA: ${S().esc(siaNo)} &bull; SIPA APJ: ${S().esc(sipaApj)} (${S().esc(apjNama)})</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:16px;font-weight:900;color:#0f172a;">FAKTUR PENJUALAN RESMI</div>
+              <div style="font-size:12px;font-family:monospace;font-weight:bold;color:#0050CA;margin-top:2px;">No: ${S().esc(noInvoice)}</div>
+              <div style="font-size:10px;color:#64748b;margin-top:2px;">Tgl: ${S().formatTgl(trx.tanggal, true)}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px;">
+            <div style="width:48%;">
+              <div style="color:#64748b;font-size:10px;text-transform:uppercase;font-weight:bold;margin-bottom:2px;">Informasi Pasien / Pembeli</div>
+              <div style="font-size:13px;font-weight:bold;color:#0f172a;">${S().esc(customerName)}</div>
+              <div style="color:#475569;margin-top:2px;">${mem ? ('ID: ' + S().esc(mem.id_member) + (mem.no_hp ? ' &bull; HP: ' + S().esc(mem.no_hp) : '')) : 'Pelanggan Walk-In / Umum'}</div>
+              ${trx.dokter_nama ? `<div style="color:#0369a1;margin-top:2px;">Dokter: <b>dr. ${S().esc(trx.dokter_nama)}</b></div>` : ''}
+            </div>
+            <div style="width:48%;text-align:right;">
+              <div style="color:#64748b;font-size:10px;text-transform:uppercase;font-weight:bold;margin-bottom:2px;">Informasi Transaksi</div>
+              <div>Metode Pembayaran: <b style="color:#0050CA;">${S().esc(trx.metode_bayar || 'TUNAI')}</b></div>
+              <div>Kanal Penjualan: <b>${S().esc(trx.channel || 'Toko Fisik')}</b></div>
+              <div>Kasir: <b>${S().esc(trx.kasir_id || '-')}</b></div>
+              <div style="margin-top:3px;"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-weight:bold;font-size:10px;${statusBayar === 'LUNAS' ? 'background:#dcfce7;color:#166534;' : 'background:#fef3c7;color:#92400e;'}">${statusBayar === 'LUNAS' ? 'LUNAS' : 'TEMPO / PIUTANG'}</span></div>
+            </div>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11px;">
+            <thead>
+              <tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1;text-align:left;">
+                <th style="padding:8px 6px;width:30px;">No</th>
+                <th style="padding:8px 6px;">Nama Produk Obat &amp; Kekuatan</th>
+                <th style="padding:8px 6px;text-align:center;">Batch &amp; ED</th>
+                <th style="padding:8px 6px;text-align:center;">Qty</th>
+                <th style="padding:8px 6px;text-align:right;">Harga Satuan</th>
+                <th style="padding:8px 6px;text-align:right;">Diskon</th>
+                <th style="padding:8px 6px;text-align:right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.length ? items.map((it, idx) => {
+                const qtyOrig = Number(it.qty || 1);
+                const harga = Number(it.harga_jual || 0);
+                const disc = Number(it.diskon_item || 0);
+                const sub = Number(it.subtotal_item || (qtyOrig * harga - disc));
+                return `
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:8px 6px;color:#64748b;">${idx + 1}</td>
+                    <td style="padding:8px 6px;">
+                      <div style="font-weight:bold;color:#0f172a;">${S().esc(it.nama_dagang || it.id_obat)}</div>
+                      ${it.aturan_pakai ? `<div style="font-size:10px;color:#0284c7;font-style:italic;">Signa: ${S().esc(it.aturan_pakai)}</div>` : ''}
+                    </td>
+                    <td style="padding:8px 6px;text-align:center;font-family:monospace;font-size:10px;">
+                      <div>${S().esc(it.no_batch || it.id_batch || '-')}</div>
+                      ${it.tgl_kadaluarsa ? `<div style="color:#64748b;">ED: ${S().esc(String(it.tgl_kadaluarsa).slice(0, 10))}</div>` : ''}
+                    </td>
+                    <td style="padding:8px 6px;text-align:center;font-weight:bold;">${qtyOrig} ${S().esc(it.satuan || '')}</td>
+                    <td style="padding:8px 6px;text-align:right;font-family:monospace;">${S().rp(harga)}</td>
+                    <td style="padding:8px 6px;text-align:right;font-family:monospace;color:#10b981;">${disc > 0 ? '-' + S().rp(disc) : '-'}</td>
+                    <td style="padding:8px 6px;text-align:right;font-family:monospace;font-weight:bold;color:#0f172a;">${S().rp(sub)}</td>
+                  </tr>
+                `;
+              }).join('') : `<tr><td colspan="7" style="text-align:center;padding:16px;color:#64748b;">Rincian transaksi POS ${S().esc(noInvoice)}</td></tr>`}
+            </tbody>
+          </table>
+
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+            <div style="width:55%;font-size:11px;color:#475569;">
+              <div style="font-weight:bold;color:#0f172a;margin-bottom:3px;">Keterangan &amp; Ketentuan:</div>
+              <div>1. Periksa kembali nama obat, kuantitas, nomor batch, dan tanggal kadaluarsa saat serah terima.</div>
+              <div>2. Obat keras &amp; antibiotik hanya diserahkan berdasarkan resep dokter resmi.</div>
+              <div>3. Simpan obat di tempat sejuk (&lt; 25&deg;C) dan terhindar dari paparan sinar matahari langsung.</div>
+            </div>
+            <div style="width:40%;font-size:11px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="color:#64748b;">Subtotal:</span>
+                <span style="font-family:monospace;font-weight:bold;">${S().rp(trx.subtotal || trx.grand_total || 0)}</span>
+              </div>
+              ${Number(trx.diskon_total || 0) > 0 ? `
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#10b981;">
+                  <span>Diskon Nota:</span>
+                  <span style="font-family:monospace;font-weight:bold;">-${S().rp(trx.diskon_total)}</span>
+                </div>
+              ` : ''}
+              ${Number(trx.pajak_ppn || 0) > 0 ? `
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span>PPN (11%):</span>
+                  <span style="font-family:monospace;">${S().rp(trx.pajak_ppn)}</span>
+                </div>
+              ` : ''}
+              <div style="display:flex;justify-content:space-between;border-top:2px solid #cbd5e1;padding-top:6px;margin-top:4px;font-size:13px;font-weight:900;">
+                <span style="color:#0f172a;">TOTAL TAGIHAN:</span>
+                <span style="font-family:monospace;color:#0050CA;">${S().rp(trx.grand_total || 0)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:36px;">
+            <div style="text-align:center;width:220px;">
+              <div>Penerima / Pasien,</div>
+              <div style="height:55px;"></div>
+              <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(${S().esc(customerName)})</div>
+            </div>
+            <div style="text-align:center;width:220px;">
+              <div>Petugas Kasir / Farmasi,</div>
+              <div style="height:55px;"></div>
+              <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(${S().esc((st.user && st.user.nama) || trx.kasir_id || 'Kasir Apotek')})</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      return S().printHtmlZone(docHtml, 'Faktur Penjualan - ' + noInvoice);
+    } catch (e) { global.toast(e.message, 'err'); }
   };
 
   global.openPosReprintModal = async (noInvoice) => {

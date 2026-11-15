@@ -10528,6 +10528,125 @@
     </div>`;
   }
 
+  
+  global.printFakturPembelianA4 = (idBeliOrNoFaktur) => {
+    const st = S().AppState;
+    const f = (st.fakturPbf || []).find((x) => x.id_beli === idBeliOrNoFaktur || x.no_faktur_pbf === idBeliOrNoFaktur) || {};
+    if (!f.no_faktur_pbf && !f.id_beli) return global.toast('Data faktur pembelian tidak ditemukan.', 'warn');
+
+    const pbf = (st.supplierPbf || []).find((s) => s.id_pbf === f.id_pbf || s.nama_pbf === f.id_pbf || s.nama_pbf === f.nama_pbf) || { nama_pbf: f.nama_pbf || f.id_pbf || 'PBF Distributor' };
+    const items = (st.stokBatch || []).filter((b) => b.no_faktur_pbf === f.no_faktur_pbf);
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'APOTEK ONS FARMA';
+    const apotekAlamat = [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10';
+    const siaNo = prof.no_sia || '-';
+    const sipaApj = prof.sipa_pemilik || prof.no_sipa || '-';
+    const apjNama = prof.nama_pemilik || prof.nama_apj || 'Apoteker Penanggung Jawab';
+
+    const docHtml = `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#0f172a;line-height:1.4;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #0f172a;padding-bottom:12px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:20px;font-weight:900;color:#0050CA;letter-spacing:0.5px;">${S().esc(apotekName.toUpperCase())}</div>
+            <div style="font-size:11px;color:#475569;margin-top:2px;">${S().esc(apotekAlamat)} &bull; No. SIA: ${S().esc(siaNo)}</div>
+            <div style="font-size:10px;color:#64748b;margin-top:2px;">APJ: ${S().esc(apjNama)} &bull; SIPA: ${S().esc(sipaApj)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:#059669;">BUKTI PENERIMAAN BARANG (GRN)</div>
+            <div style="font-size:12px;font-family:monospace;font-weight:bold;color:#0f172a;margin-top:2px;">Faktur: ${S().esc(f.no_faktur_pbf)}</div>
+            <div style="font-size:10px;color:#64748b;margin-top:2px;">Tgl Terima: ${S().formatTgl(f.tgl_faktur || f.created_at, true)}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px;">
+          <div style="width:48%;">
+            <div style="color:#64748b;font-size:10px;text-transform:uppercase;font-weight:bold;margin-bottom:2px;">Distributor Resmi (PBF)</div>
+            <div style="font-size:13px;font-weight:bold;color:#0f172a;">${S().esc(pbf.nama_pbf)}</div>
+            <div style="color:#475569;margin-top:2px;">${S().esc(pbf.alamat || 'Alamat Distributor')} &bull; Telp: ${S().esc(pbf.no_telp || '-')}</div>
+          </div>
+          <div style="width:48%;text-align:right;">
+            <div style="color:#64748b;font-size:10px;text-transform:uppercase;font-weight:bold;margin-bottom:2px;">Parameter Tagihan</div>
+            <div>No. SP Asal: <b>${S().esc(f.no_sp || '-')}</b></div>
+            <div>Sistem Bayar: <b>${S().esc(f.metode_bayar || (f.sisa_hutang > 0 ? 'TEMPO' : 'TUNAI'))}</b></div>
+            <div>Jatuh Tempo: <b style="color:${f.sisa_hutang > 0 ? '#dc2626' : '#166534'};">${S().esc(f.tgl_jatuh_tempo || '-')}</b></div>
+            <div style="margin-top:3px;"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-weight:bold;font-size:10px;${f.status_bayar === 'LUNAS' ? 'background:#dcfce7;color:#166534;' : 'background:#fee2e2;color:#991b1b;'}">${S().esc(f.status_bayar || 'BELUM_LUNAS')}</span></div>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11px;">
+          <thead>
+            <tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1;text-align:left;">
+              <th style="padding:8px 6px;width:30px;">No</th>
+              <th style="padding:8px 6px;">Nama Produk Farmasi</th>
+              <th style="padding:8px 6px;text-align:center;">No. Batch Pabrik</th>
+              <th style="padding:8px 6px;text-align:center;">Kadaluarsa (ED)</th>
+              <th style="padding:8px 6px;text-align:center;">Qty Masuk</th>
+              <th style="padding:8px 6px;text-align:right;">Harga Beli (HPP)</th>
+              <th style="padding:8px 6px;text-align:right;">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.length ? items.map((b, idx) => {
+              const obat = (st.masterObat || []).find((o) => o.id_obat === b.id_obat) || {};
+              const q = Number(b.qty_sisa || b.qty_awal || 0);
+              const hpp = Number(b.hpp_beli || 0);
+              return `
+                <tr style="border-bottom:1px solid #e2e8f0;">
+                  <td style="padding:8px 6px;color:#64748b;">${idx + 1}</td>
+                  <td style="padding:8px 6px;font-weight:bold;">${S().esc(obat.nama_dagang || b.id_obat)}</td>
+                  <td style="padding:8px 6px;text-align:center;font-family:monospace;font-weight:bold;">${S().esc(b.no_batch)}</td>
+                  <td style="padding:8px 6px;text-align:center;font-family:monospace;">${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))}</td>
+                  <td style="padding:8px 6px;text-align:center;font-weight:bold;">${q}</td>
+                  <td style="padding:8px 6px;text-align:right;font-family:monospace;">${S().rp(hpp)}</td>
+                  <td style="padding:8px 6px;text-align:right;font-family:monospace;font-weight:bold;">${S().rp(q * hpp)}</td>
+                </tr>
+              `;
+            }).join('') : `
+              <tr>
+                <td colspan="7" style="text-align:center;padding:16px;color:#64748b;">Item batch telah tercatat pada database kartu stok Apotek ONS Farma.</td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+          <div style="width:55%;font-size:11px;color:#475569;">
+            <div>Catatan: Barang telah diperiksa kesesuaian fisik, nomor batch, tanggal kadaluarsa (ED), dan sertifikat analisis (CoA) sesuai Cara Distribusi Obat yang Baik (CDOB) dan standar Farmakope Indonesia.</div>
+          </div>
+          <div style="width:40%;font-size:11px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:#64748b;">Total Netto Tagihan:</span>
+              <span style="font-family:monospace;font-weight:bold;">${S().rp(f.netto_hutang || f.total_bruto || 0)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#dc2626;">
+              <span>Sisa Hutang:</span>
+              <span style="font-family:monospace;font-weight:bold;">${S().rp(f.sisa_hutang || 0)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-top:2px solid #cbd5e1;padding-top:6px;margin-top:4px;font-size:12px;font-weight:bold;color:#166534;">
+              <span>Status Pelunasan:</span>
+              <span>${S().esc(f.status_bayar || 'BELUM_LUNAS')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:36px;">
+          <div style="text-align:center;width:220px;">
+            <div>Pengirim (Kurir PBF),</div>
+            <div style="height:55px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(............................................)</div>
+          </div>
+          <div style="text-align:center;width:220px;">
+            <div>Petugas Gudang / APJ Penerima,</div>
+            <div style="height:55px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(${S().esc((st.user && st.user.nama) || 'Petugas Gudang')})</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return S().printHtmlZone(docHtml, 'Bukti Terima Barang - ' + (f.no_faktur_pbf || f.id_beli));
+  };
+
   global.setFakturTab = (t) => {
     if (t === 'hutang') {
       if (typeof global.navigateView === 'function') global.navigateView('finance', 'hutang');
