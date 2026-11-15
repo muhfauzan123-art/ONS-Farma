@@ -4441,11 +4441,11 @@
         <div class="grid grid-cols-2 gap-2 pt-1.5">
           <button id="posBayarPrimaryBtn" type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-btn ons-btn-emerald py-2.5 text-xs font-extrabold shadow-sm justify-center">
             <span>Bayar</span>
-            <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F4</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F2</span>
           </button>
           <button id="posTundaPrimaryBtn" type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-primary py-2.5 text-xs font-extrabold shadow-sm justify-center">
             <span>Tunda</span>
-            <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F9</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F4</span>
           </button>
         </div>
 
@@ -7597,7 +7597,7 @@
       const activeModal = document.querySelector('.ons-modal-box, .ons-ws-modal');
       if (activeModal && e.key !== 'Escape') return;
 
-      if (e.key === 'F1') {
+      if (e.key === 'F1' || (e.shiftKey && e.key === 'Enter')) {
         const inp = document.getElementById('posSearchInput');
         if (inp) { e.preventDefault(); inp.focus(); inp.select(); }
       } else if (e.key === 'F2') {
@@ -7610,9 +7610,15 @@
         const tundaBtn = document.getElementById('posTundaPrimaryBtn');
         if (tundaBtn) tundaBtn.click();
         else if (window.openHoldCartModal) window.openHoldCartModal();
+      } else if (e.key === 'F7') {
+        e.preventDefault();
+        if (window.openPosQuickAddCustomerModal) window.openPosQuickAddCustomerModal();
       } else if (e.key === 'F8') {
         e.preventDefault();
         if (window.openRacikanModalFromPos) window.openRacikanModalFromPos();
+      } else if (e.key === 'F9') {
+        e.preventDefault();
+        if (window.openPosDeliveryModal) window.openPosDeliveryModal();
       }
     });
   }
