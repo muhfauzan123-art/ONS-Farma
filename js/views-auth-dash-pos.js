@@ -399,9 +399,11 @@
                 <div class="ons-tab-bar">
                   <button type="button" onclick="window.setPublicCatalogFilter('SEMUA')" data-pcat="SEMUA" class="ons-tab-btn active">Semua Produk</button>
                   <button type="button" onclick="window.setPublicCatalogFilter('TERSEDIA')" data-pcat="TERSEDIA" class="ons-tab-btn">Stok Tersedia</button>
-                  <button type="button" onclick="window.setPublicCatalogFilter('BEBAS')" data-pcat="BEBAS" class="ons-tab-btn">Obat Bebas (OTC)</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('BEBAS')" data-pcat="BEBAS" class="ons-tab-btn">Obat Bebas</button>
                   <button type="button" onclick="window.setPublicCatalogFilter('TERBATAS')" data-pcat="TERBATAS" class="ons-tab-btn">Bebas Terbatas</button>
-                  <button type="button" onclick="window.setPublicCatalogFilter('KERAS')" data-pcat="KERAS" class="ons-tab-btn">Obat Resep (Keras)</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('KERAS')" data-pcat="KERAS" class="ons-tab-btn">Obat Keras (K)</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('PREKURSOR')" data-pcat="PREKURSOR" class="ons-tab-btn">Prekursor</button>
+                  <button type="button" onclick="window.setPublicCatalogFilter('OOT')" data-pcat="OOT" class="ons-tab-btn">OOT</button>
                 </div>
                 <div class="flex items-center gap-2">
                   <select id="pubKatSort" onchange="window.setPublicSortMode(this.value)" aria-label="Urutkan Katalog" class="ons-select text-xs py-1">
@@ -585,7 +587,7 @@
           if (q && !`${o.nama_dagang} ${o.zat_aktif} ${o.bentuk_sediaan || ''} ${itemKat}`.toLowerCase().includes(q)) return false;
           const gol = String(o.golongan_bpom || '').toUpperCase();
           if (cat === 'TERSEDIA' && Number(o.stok_tersedia || 0) <= 0) return false;
-          if ((cat === 'BEBAS' || cat === 'TERBATAS' || cat === 'KERAS') && !gol.includes(cat)) return false;
+          if ((cat === 'BEBAS' || cat === 'TERBATAS' || cat === 'KERAS' || cat === 'PREKURSOR' || cat === 'OOT') && !gol.includes(cat)) return false;
           if (katNeed !== 'SEMUA' && itemKat !== katNeed) return false;
           return true;
         }).slice();
@@ -3929,9 +3931,15 @@
     const batchMatchIds = findBatchMatchObatIds(q);
 
     const list = (st.masterObat || []).filter((o) => {
-      if (fGol && String(o.golongan_bpom || '').toUpperCase() !== fGol) return false;
+      if (fGol) {
+        const oG = String(o.golongan_bpom || 'BEBAS').toUpperCase().trim();
+        const tG = String(fGol).toUpperCase().trim();
+        const normO = (oG === 'TERBATAS' || oG === 'BEBAS TERBATAS' || oG === 'BEBAS_TERBATAS') ? 'TERBATAS' : oG;
+        const normT = (tG === 'TERBATAS' || tG === 'BEBAS TERBATAS' || tG === 'BEBAS_TERBATAS') ? 'TERBATAS' : tG;
+        if (normO !== normT) return false;
+      }
       if (q) {
-        const hay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.kode_kfa || ''} ${o.id_obat || ''} ${o.rak_lokasi || ''}`.toLowerCase();
+        const hay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.id_obat || ''} ${o.rak_lokasi || ''}`.toLowerCase();
         if (!hay.includes(q) && !batchMatchIds[o.id_obat]) return false;
       }
       const sellStok = S().getSellableStok(o.id_obat);
@@ -5087,7 +5095,7 @@
             ${posCatalogExpanded ? `
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex gap-1.5 flex-wrap items-center">
-                  ${['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR'].map((g) => `
+                  ${['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].map((g) => `
                     <button type="button" onclick="ONSStore.AppState.posFilterGol='${g}';window.refreshPosCatalogView();" class="ons-pos-chip ${fGol === g ? 'is-active' : ''}">${g || 'Semua BPOM'}</button>
                   `).join('')}
                 </div>

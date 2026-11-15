@@ -906,6 +906,36 @@
       return { updated: updatedRows.length, items: updatedRows };
     }
 
+    if (action === 'obat.updateBatch') {
+      const list = Array.isArray(d.items) ? d.items : [];
+      let updatedCount = 0;
+      list.forEach((p) => {
+        if (!p || !p.id_obat) return;
+        const idx = db.master_obat.findIndex((o) => o.id_obat === p.id_obat);
+        if (idx < 0) return;
+        const m = db.master_obat[idx];
+        if (p.golongan_bpom) m.golongan_bpom = p.golongan_bpom;
+        if (p.kategori) m.kategori = p.kategori;
+        if (p.bentuk_sediaan) m.bentuk_sediaan = p.bentuk_sediaan;
+        m.updated_at = nowIso;
+        updatedCount++;
+      });
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(),
+        timestamp: nowIso,
+        user_id: userId,
+        role,
+        cabang_id: d.cabang_id || cabang || 'ONS-01',
+        aksi: 'OBAT_BATCH_UPDATE',
+        entitas: 'MASTER_OBAT',
+        entitas_id: 'BATCH-' + updatedCount,
+        diff_sesudah_json: JSON.stringify({ count: updatedCount, reason: String(d.catatan || 'Sinkronisasi Otomatis') })
+      });
+      db.epoch++;
+      saveDb(db);
+      return { success: true, count: updatedCount };
+    }
+
     if (action === 'pos.checkout') {
       const itemsReq = Array.isArray(d.items) ? d.items : [];
       if (!itemsReq.length) throw new Error('Keranjang POS masih kosong.');
@@ -2026,7 +2056,7 @@
             nama_dagang: String(raw.nama_dagang).trim(),
             zat_aktif: raw.zat_aktif || '',
             kekuatan: raw.kekuatan || '',
-            golongan_bpom: raw.golongan_bpom || 'BEBAS',
+            golongan_bpom: raw.golongan_bpom && raw.golongan_bpom !== 'BEBAS' ? raw.golongan_bpom : (typeof global.autoDetectGolonganBpom === 'function' ? global.autoDetectGolonganBpom(raw) : (raw.golongan_bpom || 'BEBAS')),
             bentuk_sediaan: raw.bentuk_sediaan || sat1,
             nie_bpom: raw.nie_bpom || '',
             pabrikan: raw.pabrikan || '',

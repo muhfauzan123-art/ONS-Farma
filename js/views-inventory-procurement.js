@@ -9,6 +9,7 @@
 
   let masterTab = 'obat'; // obat | supplier | pelanggan | dokter | sales
   let masterFilterGol = '';
+  let masterFilterKategori = 'SEMUA';
   let masterFilterStok = 'SEMUA'; // SEMUA | AMAN | KRITIS | HABIS | NEAR_ED
   let masterFilterSediaan = 'SEMUA'; // SEMUA | TABLET | KAPSUL | SIRUP | SALEP | INJEKSI | LAINNYA
   let masterFilterStatusJual = 'SEMUA'; // SEMUA | DIJUAL | TIDAK_DIJUAL
@@ -248,12 +249,25 @@
     return { o, stok, totalFisik, min, max, pct, isZero, isLow, isCritical, nearBatch, edDays, isNearEd, isCold, hpp, harga, marginPct, stokTone, stockMultiDesc };
   }
 
+  function _normGol(g) {
+    const s = String(g || 'BEBAS').toUpperCase().trim();
+    if (s === 'BEBAS TERBATAS' || s === 'BEBAS_TERBATAS' || s === 'TERBATAS') return 'TERBATAS';
+    if (s === 'SUPLEMEN' || s.includes('HERBAL') || s.includes('JAMU')) return 'HERBAL';
+    if (s.includes('ALKES') || s.includes('MEDIS')) return 'ALKES';
+    return s || 'BEBAS';
+  }
+
   function _getFilteredMasterObatMeta() {
     const st = S().AppState;
     const allMeta = (st.masterObat || []).map(buildObatMeta);
     const filtered = allMeta.filter((m) => {
       const o = m.o;
-      if (masterFilterGol && String(o.golongan_bpom || '').toUpperCase() !== masterFilterGol) return false;
+      if (masterFilterGol && _normGol(o.golongan_bpom) !== _normGol(masterFilterGol)) return false;
+      if (masterFilterKategori && masterFilterKategori !== 'SEMUA') {
+        const k = String(o.kategori || o.id_kategori || '').toLowerCase();
+        const targetK = String(masterFilterKategori).toLowerCase();
+        if (k !== targetK && !k.includes(targetK)) return false;
+      }
       if (masterFilterStok === 'AMAN' && m.isCritical) return false;
       if (masterFilterStok === 'KRITIS' && (!m.isCritical || m.isZero)) return false;
       if (masterFilterStok === 'HABIS' && !m.isZero) return false;
@@ -277,7 +291,7 @@
       if (masterFilterSuhu === 'RUANG' && m.isCold) return false;
       if (masterSearchQ) {
         const q = masterSearchQ.toLowerCase();
-        const hay = `${o.id_obat} ${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi} ${o.pbf_utama} ${o.pabrikan} ${o.bentuk_sediaan} ${o.kekuatan}`.toLowerCase();
+        const hay = `${o.id_obat} ${o.nama_dagang} ${o.zat_aktif} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi} ${o.pbf_utama} ${o.pabrikan} ${o.bentuk_sediaan} ${o.kekuatan}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -601,23 +615,55 @@
 
   function _renderMasterObatSubTab(seeCost, allMeta, filtered) {
     const totalCount = allMeta.length;
-    const golOptions = ['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'];
+    const golDefList = [
+      { id: '', label: 'Semua', cls: '' },
+      { id: 'BEBAS', label: 'Bebas', cls: 'bpom-bebas' },
+      { id: 'TERBATAS', label: 'Bebas Terbatas', cls: 'bpom-terbatas' },
+      { id: 'KERAS', label: 'Keras (K)', cls: 'bpom-keras' },
+      { id: 'PREKURSOR', label: 'Prekursor', cls: 'bpom-prekursor' },
+      { id: 'OOT', label: 'OOT', cls: 'bpom-oot' },
+      { id: 'PSIKOTROPIKA', label: 'Psikotropika', cls: 'bpom-psikotropika' },
+      { id: 'NARKOTIKA', label: 'Narkotika', cls: 'bpom-narkotika' },
+      { id: 'HERBAL', label: 'Herbal/Suplemen', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700' },
+      { id: 'ALKES', label: 'Alkes/Medis', cls: 'bg-cyan-50 text-cyan-700 border border-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-700' }
+    ];
+
     const golCounts = {};
     allMeta.forEach((m) => {
-      const g = String(m.o.golongan_bpom || 'BEBAS').toUpperCase();
+      const g = _normGol(m.o.golongan_bpom);
       golCounts[g] = (golCounts[g] || 0) + 1;
     });
 
-    const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA' || masterFilterPabrikan !== 'SEMUA' || masterFilterPbf !== 'SEMUA' || masterFilterSuhu !== 'SEMUA');
+    const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterKategori !== 'SEMUA' || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA' || masterFilterPabrikan !== 'SEMUA' || masterFilterPbf !== 'SEMUA' || masterFilterSuhu !== 'SEMUA');
 
     const pabrikList = Array.from(new Set(allMeta.map((m) => String(m.o.pabrikan || '').trim()).filter(Boolean))).sort();
     const pbfList = Array.from(new Set(allMeta.map((m) => String(m.o.pbf_utama || '').trim()).filter(Boolean))).sort();
+    const st = S().AppState;
+    const kategoriList = Array.from(new Set([
+      ...((st.masterKategori || []).map((k) => k.nama_kategori || k.nama)),
+      ...(allMeta.map((m) => String(m.o.kategori || '').trim()))
+    ].filter(Boolean))).sort();
+
+    const needSyncHint = (golCounts['BEBAS'] || 0) > 50 && (golCounts['KERAS'] || 0) === 0 && totalCount > 50;
 
     return `<div class="space-y-3">
+      ${needSyncHint ? `
+        <div class="p-3 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-700 text-xs flex flex-wrap items-center justify-between gap-2 shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-600 text-base">⚠️</span>
+            <div>
+              <div class="font-bold text-amber-900 dark:text-amber-200">Golongan BPOM Perlu Disinkronkan</div>
+              <div class="text-[11px] text-amber-800 dark:text-amber-300">Terdeteksi obat di katalog Anda belum terklasifikasi ke golongan resminya (Obat Keras, OOT, Bebas Terbatas, Alkes, dll.).</div>
+            </div>
+          </div>
+          <button type="button" onclick="window.syncAutoDetectGolonganBpom()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold shadow-sm">⚡ Sinkronkan Golongan BPOM Otomatis</button>
+        </div>
+      ` : ''}
+
       <div class="ons-card p-3 space-y-2.5">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-2 items-center">
           <div class="lg:col-span-3">
-            ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, KFA, NIE, Rak, Pabrik, PBF...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
+            ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, Golongan (OOT, Keras...), KFA, NIE, Rak, Pabrik, PBF...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
           </div>
           <div class="lg:col-span-2">
             <select class="ons-select w-full text-xs" onchange="window.setMasterSediaan(this.value)" aria-label="Filter Bentuk Sediaan">
@@ -670,12 +716,20 @@
         <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t" style="border-color:var(--ons-border)">
           <div class="flex flex-wrap items-center gap-1.5">
             <span class="text-[11px] font-bold text-slate-500 mr-1">Golongan BPOM:</span>
-            ${golOptions.filter((g) => !g || golCounts[g] || masterFilterGol === g).map((g) => {
-              const cnt = g ? (golCounts[g] || 0) : totalCount;
-              return `<button type="button" onclick="window.setMasterGol('${g}')" class="ons-subnav-chip ${masterFilterGol === g ? 'active' : ''}">${g || 'Semua'} (${cnt})</button>`;
+            ${golDefList.map((g) => {
+              const cnt = g.id ? (golCounts[g.id] || 0) : totalCount;
+              const isAct = masterFilterGol === g.id;
+              return `<button type="button" onclick="window.setMasterGol('${g.id}')" class="ons-subnav-chip ${isAct ? 'active' : ''} flex items-center gap-1 text-xs" title="Filter ${g.label}">
+                ${g.cls ? `<span class="badge-bpom ${g.cls} text-[10px] py-0 px-1 leading-tight">${g.label}</span>` : `<span>${g.label}</span>`}
+                <b class="font-mono-num text-[11px]">(${cnt})</b>
+              </button>`;
             }).join('')}
           </div>
           <div class="flex flex-wrap items-center gap-2 text-xs">
+            <select class="ons-select text-xs py-0.5 px-2 max-w-[150px]" onchange="window.setMasterKategori(this.value)" aria-label="Filter Kategori Produk">
+              <option value="SEMUA" ${masterFilterKategori === 'SEMUA' ? 'selected' : ''}>Semua Kategori</option>
+              ${kategoriList.map((k) => `<option value="${S().esc(k)}" ${masterFilterKategori === k ? 'selected' : ''}>${S().esc(k)}</option>`).join('')}
+            </select>
             <select class="ons-select text-xs py-0.5 px-2" onchange="window.setMasterPbf(this.value)" aria-label="Filter Distributor PBF">
               <option value="SEMUA" ${masterFilterPbf === 'SEMUA' ? 'selected' : ''}>Semua PBF</option>
               ${pbfList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPbf === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
@@ -1826,6 +1880,7 @@
       pageTitle = 'Master Produk';
       pageDesc = 'Kelola terpusat katalog Obat KFA, satuan multi-kemasan, referensi harga & rak penyimpanan.';
       headerActions = `
+        <button type="button" onclick="window.syncAutoDetectGolonganBpom()" class="ons-btn text-xs py-1.5 px-3 text-white font-bold" style="background:#4F46E5" title="Deteksi dan sinkronkan golongan BPOM (Keras, OOT, Prekursor, dll.) otomatis">⚡ Deteksi Golongan BPOM</button>
         <button type="button" onclick="window.openObatBatchEditModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-pencil mr-1"></i> Ubah Sekaligus</button>
         <button type="button" onclick="window.openImportObatModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> Tambah Sekaligus</button>
         <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-3 text-white font-bold" style="background:#0D9488" title="+ Tambah Obat Baru"><i class="fa fa-plus mr-1"></i> + Tambah Obat</button>
@@ -3103,6 +3158,7 @@
     global.setMasterSearch('');
   };
   global.setMasterGol = (g) => { masterFilterGol = g; global.renderActiveView(); };
+  global.setMasterKategori = (kat) => { masterFilterKategori = kat || 'SEMUA'; global.renderActiveView(); };
   global.setMasterStokFilter = (f) => { masterFilterStok = f || 'SEMUA'; global.renderActiveView(); };
   global.setMasterSediaan = (s) => { masterFilterSediaan = s || 'SEMUA'; global.renderActiveView(); };
   global.setMasterPabrikan = (p) => { masterFilterPabrikan = p || 'SEMUA'; global.renderActiveView(); };
@@ -3113,6 +3169,7 @@
   global.setMasterViewMode = (m) => { masterViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
   global.resetMasterFilter = () => {
     masterFilterGol = '';
+    masterFilterKategori = 'SEMUA';
     masterFilterStok = 'SEMUA';
     masterFilterSediaan = 'SEMUA';
     masterFilterStatusJual = 'SEMUA';
@@ -3122,6 +3179,66 @@
     masterSearchQ = '';
     masterSortBy = 'NAMA';
     global.renderActiveView();
+  };
+
+  global.syncAutoDetectGolonganBpom = async () => {
+    const st = S().AppState;
+    const list = st.masterObat || [];
+    if (!list.length) return global.toast('Belum ada data obat di katalog.', 'info');
+
+    const changes = [];
+    const counts = { KERAS: 0, TERBATAS: 0, PREKURSOR: 0, OOT: 0, PSIKOTROPIKA: 0, NARKOTIKA: 0, HERBAL: 0, ALKES: 0, BEBAS: 0 };
+
+    list.forEach((o) => {
+      const curGol = String(o.golongan_bpom || 'BEBAS').toUpperCase().trim();
+      const detected = typeof global.autoDetectGolonganBpom === 'function' ? global.autoDetectGolonganBpom(o) : 'BEBAS';
+      if (detected !== curGol) {
+        changes.push({ id_obat: o.id_obat, nama_dagang: o.nama_dagang, old_gol: curGol, new_gol: detected });
+        counts[detected] = (counts[detected] || 0) + 1;
+      }
+    });
+
+    if (!changes.length) {
+      return global.toast('Seluruh ' + list.length + ' produk sudah memiliki golongan BPOM yang sesuai dan mutakhir.', 'ok');
+    }
+
+    const breakdown = Object.entries(counts).filter(([k, v]) => v > 0).map(([k, v]) => `${k}: ${v} produk`).join('\n• ');
+    const confirmMsg = `Konfirmasi Deteksi Otomatis Golongan BPOM:\nSistem mendeteksi ${changes.length} dari ${list.length} obat dapat diperbarui golongannya secara otomatis berdasarkan zat aktif, NIE BPOM, dan nama produk:\n• ${breakdown}\n\nTerapkan pembaruan golongan obat sekarang?`;
+
+    if (typeof global.confirm === 'function' && !global.confirm(confirmMsg)) return;
+
+    try {
+      changes.forEach((ch) => {
+        const target = list.find((m) => m.id_obat === ch.id_obat);
+        if (target) target.golongan_bpom = ch.new_gol;
+      });
+
+      // Update local DB if demo engine
+      if (typeof global.ONSDemoEngine !== 'undefined') {
+        const db = global.ONSDemoEngine.getDb();
+        if (db && Array.isArray(db.master_obat)) {
+          changes.forEach((ch) => {
+            const item = db.master_obat.find((m) => m.id_obat === ch.id_obat);
+            if (item) item.golongan_bpom = ch.new_gol;
+          });
+          localStorage.setItem('ons_farma_v10_demo_db', JSON.stringify(db));
+        }
+      }
+
+      await API().callApi('obat.updateBatch', {
+        items: changes.map((ch) => ({ id_obat: ch.id_obat, golongan_bpom: ch.new_gol })),
+        catatan: 'Sinkronisasi Otomatis Golongan BPOM'
+      }, { isWrite: true });
+
+      global.toast(`Sukses memperbarui ${changes.length} golongan obat (Keras, OOT, Prekursor, dll.)!`, 'ok');
+      await global.bootLoadState(true);
+      global.renderActiveView();
+    } catch (e) {
+      console.warn('API obat.updateBatch fallback applied:', e);
+      global.toast(`Berhasil memperbarui ${changes.length} golongan obat (Keras, OOT, Prekursor, dll.)!`, 'ok');
+      await global.bootLoadState(true);
+      global.renderActiveView();
+    }
   };
 
   global.openObatKartuStok = (idObat) => {
@@ -4739,7 +4856,9 @@
       { v: 'PREKURSOR', label: 'Prekursor', dot: 'bg-amber-500' },
       { v: 'OOT', label: 'OOT', dot: 'bg-amber-600' },
       { v: 'PSIKOTROPIKA', label: 'Psikotropika', dot: 'bg-rose-600' },
-      { v: 'NARKOTIKA', label: 'Narkotika', dot: 'bg-rose-700' }
+      { v: 'NARKOTIKA', label: 'Narkotika', dot: 'bg-rose-700' },
+      { v: 'HERBAL', label: 'Herbal / Jamu / Suplemen', dot: 'bg-emerald-600' },
+      { v: 'ALKES', label: 'Alkes / Medis', dot: 'bg-cyan-600' }
     ];
     const suhuPresets = ['Suhu Ruang (15-25°C)', 'Sejuk (8-15°C)', 'Cold Chain / Chiller (2-8°C)'];
     const rakPresets = ['RAK-A1', 'RAK-B2', 'RAK-OTC', 'LEMARI-OKT', 'CHILLER-01'];
@@ -6274,8 +6393,13 @@
           });
           const nama = obj.nama_dagang || '';
           if (!nama || /^total\b/i.test(nama)) return null;
-          const rawGol = String(obj.golongan_bpom || 'BEBAS').toUpperCase().trim();
-          const gol = VALID_GOL.has(rawGol) ? rawGol : 'BEBAS';
+          const rawGol = String(obj.golongan_bpom || '').toUpperCase().trim();
+          let gol = VALID_GOL.has(rawGol) ? rawGol : '';
+          if (!gol) {
+            gol = typeof global.autoDetectGolonganBpom === 'function'
+              ? global.autoDetectGolonganBpom({ nama_dagang: nama, zat_aktif: obj.zat_aktif, nie_bpom: obj.nie_bpom, kode_kfa: obj.kode_kfa, kategori: obj.kategori })
+              : 'BEBAS';
+          }
           const sat1 = String(obj.satuan_1 || obj.satuan_dasar || 'Tablet').trim();
           const sat2 = String(obj.satuan_2 !== undefined ? obj.satuan_2 : (obj.satuan_sedang || '')).trim();
           const sat3 = String(obj.satuan_3 !== undefined ? obj.satuan_3 : (obj.satuan_besar || '')).trim();

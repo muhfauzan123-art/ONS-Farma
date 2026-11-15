@@ -414,9 +414,35 @@
   }
 
   function bpomBadge(gol) {
-    const g = String(gol || 'BEBAS').toUpperCase();
-    const cls = g === 'KERAS' ? 'bpom-keras' : (g === 'TERBATAS' ? 'bpom-terbatas' : (g === 'PREKURSOR' || g === 'OOT' ? 'bpom-prekursor' : (g === 'NARKOTIKA' || g === 'PSIKOTROPIKA' ? 'bpom-narkotika' : 'bpom-bebas')));
-    return `<span class="badge-bpom ${cls}">${esc(g)}</span>`;
+    const g = String(gol || 'BEBAS').toUpperCase().trim();
+    let cls = 'bpom-bebas';
+    let label = g || 'BEBAS';
+    if (g === 'KERAS') {
+      cls = 'bpom-keras';
+      label = 'KERAS (K)';
+    } else if (g === 'TERBATAS' || g === 'BEBAS TERBATAS' || g === 'BEBAS_TERBATAS') {
+      cls = 'bpom-terbatas';
+      label = 'TERBATAS';
+    } else if (g === 'PREKURSOR') {
+      cls = 'bpom-prekursor';
+      label = 'PREKURSOR';
+    } else if (g === 'OOT') {
+      cls = 'bpom-oot';
+      label = 'OOT';
+    } else if (g === 'PSIKOTROPIKA') {
+      cls = 'bpom-psikotropika';
+      label = 'PSIKOTROPIKA';
+    } else if (g === 'NARKOTIKA') {
+      cls = 'bpom-narkotika';
+      label = 'NARKOTIKA';
+    } else if (g === 'HERBAL' || g === 'SUPLEMEN') {
+      cls = 'bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700';
+      label = 'HERBAL';
+    } else if (g === 'ALKES') {
+      cls = 'bg-cyan-50 text-cyan-700 border border-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-700';
+      label = 'ALKES';
+    }
+    return `<span class="badge-bpom ${cls}">${esc(label)}</span>`;
   }
 
   /**
@@ -1717,18 +1743,14 @@
   ];
 
   /**
-   * Helper Regulasi BPOM CDOB:
-   * Menentukan jenis Surat Pesanan (SP) resmi untuk obat.
-   * Obat Bebas/Reguler, Prekursor, OOT, Psikotropika, dan Narkotika
-   * WAJIB menggunakan SP terpisah masing-masing dan tidak boleh dicampur.
+   * Helper Regulasi BPOM Cerdas:
+   * Mendeteksi golongan resmi BPOM (BEBAS, TERBATAS, KERAS, PREKURSOR, OOT, PSIKOTROPIKA, NARKOTIKA, HERBAL, ALKES)
+   * secara akurat dari NIE BPOM, kandungan zat aktif, nama dagang, dan komposisi produk.
    */
-  function resolveObatJenisSp(obat) {
-    if (!obat) return 'REGULER';
-    const gol = String(obat.golongan_bpom || obat.jenis_sp || obat.golongan || '').trim().toUpperCase();
-    if (gol === 'NARKOTIKA') return 'NARKOTIKA';
-    if (gol === 'PSIKOTROPIKA') return 'PSIKOTROPIKA';
-    if (gol === 'PREKURSOR') return 'PREKURSOR';
-    if (gol === 'OOT') return 'OOT';
+  function autoDetectGolonganBpom(obat) {
+    if (!obat) return 'BEBAS';
+    const raw = String(obat.golongan_bpom || obat.jenis_sp || obat.golongan || '').toUpperCase().trim();
+    const nie = String(obat.nie_bpom || '').toUpperCase().trim();
 
     const text = [
       obat.nama_dagang || '',
@@ -1736,31 +1758,85 @@
       obat.nama || '',
       obat.zat_aktif || '',
       obat.komposisi || '',
+      obat.kode_kfa || '',
       obat.kategori || ''
     ].join(' ').toLowerCase();
 
-    // 1. Narkotika
-    if (/(kodein|codeine|morfin|morphine|petidin|pethidine|fentanil|fentanyl|oksikodon|oxycodone)/i.test(text)) {
+    // 1. Narkotika (NIE Awalan DNL/GNL atau mengandung zat narkotika)
+    if (/^[DG]N[LI]/i.test(nie) || raw === 'NARKOTIKA' || /(kodein|codeine|morfin|morphine|petidin|pethidine|fentanil|fentanyl|oksikodon|oxycodone|metadon|methadone)/i.test(text)) {
       return 'NARKOTIKA';
     }
-    // 2. Psikotropika
-    if (/(diazepam|alprazolam|lorazepam|clobazam|clonazepam|midazolam|phenobarbital|nitrazepam|zolpidem|chlordiazepoxide|estazolam)/i.test(text)) {
+
+    // 2. Psikotropika (NIE Awalan DPL/GPL atau mengandung zat psikotropika)
+    if (/^[DG]P[LI]/i.test(nie) || raw === 'PSIKOTROPIKA' || /(diazepam|alprazolam|lorazepam|clobazam|clonazepam|midazolam|phenobarbital|nitrazepam|zolpidem|chlordiazepoxide|estazolam)/i.test(text)) {
       return 'PSIKOTROPIKA';
     }
+
     // 3. Prekursor Farmasi (PerBPOM No. 24/2021)
-    if (/(pseudoefedrin|pseudoephedrine|efedrin|ephedrine|fenilpropanolamin|phenylpropanolamine|\bppa\b|ergotamin|ergotamine|ergometrin|ergometrine|kalium\s*permanganat)/i.test(text)) {
+    if (raw === 'PREKURSOR' || /(pseudoefedrin|pseudoephedrine|efedrin|ephedrine|fenilpropanolamin|phenylpropanolamine|\bppa\b|ergotamin|ergotamine|ergometrin|ergometrine|kalium\s*permanganat)/i.test(text)) {
       return 'PREKURSOR';
     }
+
     // 4. Obat-Obat Tertentu (OOT) (PerBPOM No. 10/2019)
-    if (/(tramadol|triheksifenidil|trihexyphenidyl|klorpromazin|chlorpromazine|amitriptilin|amitriptyline|haloperidol|dekstrometorfan|dextromethorphan)/i.test(text)) {
+    if (raw === 'OOT' || /(tramadol|triheksifenidil|trihexyphenidyl|klorpromazin|chlorpromazine|amitriptilin|amitriptyline|haloperidol|dekstrometorfan|dextromethorphan)/i.test(text)) {
       return 'OOT';
     }
 
+    // 5. Alat Kesehatan (Alkes) & Medis (NIE AKD/AKL/PKD/PKL atau nama produk alkes)
+    if (/^(AKD|AKL|PKD|PKL)/i.test(nie) || raw === 'ALKES' ||
+        /(spuit|syringe|jarum|kasa|perban|plester|hansaplast|kapas|alkohol\s*70|rivanol|povidone|betadine|handscoon|sarung\s*tangan|infus\s*set|abocath|catheter|termometer|tensimeter|testpack|masker|oxygen|regulator|kantong\s*urin|urin\s*bag)/i.test(text)) {
+      return 'ALKES';
+    }
+
+    // 6. Herbal, Jamu, OHT, Suplemen & Vitamin (NIE TR/TL/TI/HT/FF/SD/SI atau herbal)
+    if (/^(TR|TL|TI|HT|FF|SD|SI)/i.test(nie) || raw === 'HERBAL' || raw === 'SUPLEMEN' ||
+        /(tolak\s*angin|antangin|imboost|stimuno|curcuma|madu|minyak\s*telon|minyak\s*kayu\s*putih|enervon|redoxon|\bcdr\b|hemaviton|fitofarmaka|herbal|jamu)/i.test(text)) {
+      return 'HERBAL';
+    }
+
+    // 7. Obat Keras (K / Lingkaran Merah: NIE DKL/GKL atau antibiotik, kardiovaskular, diabetes, dll.)
+    const isNieKeras = /^[DG]K[LI]/i.test(nie);
+    const isHardDrugPattern = /(amoxicillin|ampicillin|cefa|cefi|cipro|levo|azithro|erythro|cotrim|doxy|metronid|thiamfen|gentamicin|streptomycin|amikacin|clinda|acyclovir|asiklovir|valacyclovir|fluconazole|flukonazol|itraconazole|ketoconazole|griseofulvin|captopril|amlodipine|amlodipin|candesartan|valsartan|bisoprolol|propranolol|furosemide|furosemid|spironolactone|diltiazem|lisinopril|ramipril|nifedipine|metformin|glimepiride|glibenclamide|acarbose|pioglitazone|simvastatin|atorvastatin|rosuvastatin|fenofibrate|gemfibrozil|allopurinol|febuxostat|omeprazole|lansoprazole|pantoprazole|esomeprazole|sucralfate|domperidone|ondansetron|asam\s*mefenamat|diklofenak|diclofenac|meloxicam|ketorolac|piroxicam|celecoxib|dexamethasone|deksametason|prednisone|prednison|methylprednisolone|metilprednisolon|betamethasone|triamcinolone|cetirizine|setirisin|loratadine|salbutamol|terbutaline|aminophylline|budesonide)/i.test(text);
+
+    if (isNieKeras || isHardDrugPattern || raw === 'KERAS') {
+      return 'KERAS';
+    }
+
+    // 8. Obat Bebas Terbatas (Lingkaran Biru: NIE DTL/GTL atau CTM, antimo, flu, dll.)
+    const isNieTerbatas = /^[DG]T[LI]/i.test(nie);
+    const isTerbatasPattern = /(chlorpheniramine|\bctm\b|difenhidramin|dimenhidrinat|antimo|paramex|bodrex|komix|vicks|woods|obh|decolsin|benacol|siladex|paratusin|flucadex|hufagrip)/i.test(text);
+
+    if (isNieTerbatas || isTerbatasPattern || raw === 'TERBATAS' || raw === 'BEBAS TERBATAS' || raw === 'BEBAS_TERBATAS') {
+      return 'TERBATAS';
+    }
+
+    if (raw && ['BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA', 'HERBAL', 'ALKES'].includes(raw)) {
+      return raw;
+    }
+
+    return 'BEBAS';
+  }
+  global.autoDetectGolonganBpom = autoDetectGolonganBpom;
+
+  /**
+   * Helper Regulasi BPOM CDOB:
+   * Menentukan jenis Surat Pesanan (SP) resmi untuk obat.
+   * Obat Bebas/Reguler, Prekursor, OOT, Psikotropika, dan Narkotika
+   * WAJIB menggunakan SP terpisah masing-masing dan tidak boleh dicampur.
+   */
+  function resolveObatJenisSp(obat) {
+    if (!obat) return 'REGULER';
+    const detected = autoDetectGolonganBpom(obat);
+    if (detected === 'NARKOTIKA') return 'NARKOTIKA';
+    if (detected === 'PSIKOTROPIKA') return 'PSIKOTROPIKA';
+    if (detected === 'PREKURSOR') return 'PREKURSOR';
+    if (detected === 'OOT') return 'OOT';
     return 'REGULER';
   }
   global.resolveObatJenisSp = resolveObatJenisSp;
 
   global.ONSStore = {
+    autoDetectGolonganBpom,
     resolveObatJenisSp,
     AppState,
     defaultStoreProfile,
