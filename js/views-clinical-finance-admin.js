@@ -7876,6 +7876,7 @@ S. prn 3 dd 1 tab</textarea>
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
+  global.setAnalisisTab = global.setAnlTab;
 
   global.setAnlParetoMode = (m) => { anlParetoMode = m || 'penjualan'; global.renderActiveView(); };
   global.setAnlParetoSearch = (q) => { anlParetoSearchQ = q || ''; global.renderActiveView(); };
