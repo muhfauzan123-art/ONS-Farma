@@ -1363,6 +1363,85 @@
     }
   };
 
+
+  const SETTINGS_CACHE_KEY = 'ons_farma_store_settings_v1';
+
+  function defaultStoreSettings() {
+    return {
+      pembukuan_pkp: false,
+      sembunyikan_trx_batal: true,
+      cegah_pembukuan_mundur: false,
+      tgl_tutup_buku: '',
+      format_no_transaksi: 'STANDAR',
+
+      sembunyikan_saldo_kas_non_admin: true,
+      sembunyikan_omzet_non_admin: false,
+      sembunyikan_hpp_non_admin: true,
+      cegah_ubah_harga_non_admin: true,
+
+      allow_negative_stock: false,
+      allow_neg_mutasi: false,
+      allow_neg_batal: true,
+
+      peringatan_rugi: 'KLIK_BAYAR',
+      cegah_penjualan_rugi: true,
+      tempo_piutang_hari: 30,
+      cegah_jual_piutang_macet: true,
+
+      auto_save_hold_server: true,
+      allow_split_payment: true,
+      pembulatan_kasir: 100,
+      arah_pembulatan: 'TERDEKAT',
+      blind_cash_count: true,
+      max_active_shifts: 2,
+
+      pos_show_embalase: true,
+      pos_show_tuslah: true,
+      pos_show_diskon_faktur: true,
+      pos_show_voucher: true,
+      pos_show_ongkir: true,
+      pos_show_biaya_lain: true,
+      pos_show_add_pelanggan: true,
+      pos_show_add_dokter: true,
+      pos_show_sales: true,
+      pos_show_kanal_jual: true,
+      pos_show_resep: true,
+      pos_show_piutang: true,
+
+      min_ed_terima_bulan: 6,
+      min_ed_jual_bulan: 3,
+
+      blind_stock_opname: true,
+      opname_routine_days: 14,
+      opname_per_shift: false,
+
+      wajib_foto_presensi: true,
+      wajib_gps_presensi: true,
+      toleransi_terlambat_menit: 15,
+      zona_waktu: 'WITA'
+    };
+  }
+
+  function getStoreSettings() {
+    if (AppState.storeSettings) return AppState.storeSettings;
+    try {
+      const raw = localStorage.getItem(SETTINGS_CACHE_KEY);
+      if (raw) {
+        AppState.storeSettings = Object.assign({}, defaultStoreSettings(), JSON.parse(raw));
+        return AppState.storeSettings;
+      }
+    } catch (e) {}
+    AppState.storeSettings = defaultStoreSettings();
+    return AppState.storeSettings;
+  }
+
+  function setStoreSettings(s) {
+    const merged = Object.assign({}, defaultStoreSettings(), AppState.storeSettings || {}, s || {});
+    AppState.storeSettings = merged;
+    try { localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(merged)); } catch (e) {}
+    return merged;
+  }
+
   function getStoreProfile() {
     return _normalizeProfileObject(AppState.storeProfile);
   }
@@ -1656,6 +1735,9 @@
     sanitizeLegacyOwnerName,
     getStoreProfile,
     setStoreProfile,
+    defaultStoreSettings,
+    getStoreSettings,
+    setStoreSettings,
     getProfileCompleteness,
     compressImageFile,
     normalizeWa62,

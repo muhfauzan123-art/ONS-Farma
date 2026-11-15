@@ -11534,7 +11534,7 @@ S. prn 3 dd 1 tab</textarea>
     global.loadSettingsBundle();
     const st = S().AppState;
     settingsTab = (st.subTabs && st.subTabs.settings) || settingsTab || 'profil';
-    if (!['profil', 'metode-bayar', 'akun', 'struk', 'vault', 'audit'].includes(settingsTab)) settingsTab = 'profil';
+    if (!['profil', 'konfigurasi', 'metode-bayar', 'akun', 'struk', 'vault', 'audit'].includes(settingsTab)) settingsTab = 'profil';
     const secrets = settingsCache.secrets || {};
     const audit = settingsCache.audit || [];
     const users = settingsCache.users || [];
@@ -11557,6 +11557,7 @@ S. prn 3 dd 1 tab</textarea>
 
       <div class="ons-tab-bar">
         <button onclick="window.setSettingsTab('profil')" class="ons-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">Profil Bisnis (Profil Pemilik &amp; Usaha)</button>
+        <button onclick="window.setSettingsTab('konfigurasi')" class="ons-tab-btn ${settingsTab === 'konfigurasi' ? 'active font-bold shadow-sm' : ''}">⚙️ Konfigurasi Sistem</button>
         <button onclick="window.setSettingsTab('metode-bayar')" class="ons-tab-btn ${settingsTab === 'metode-bayar' ? 'active' : ''}">Metode Pembayaran</button>
         <button onclick="window.setSettingsTab('akun')" class="ons-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">Pengguna &amp; Akses (${users.length})</button>
         <button onclick="window.setSettingsTab('struk')" class="ons-tab-btn ${settingsTab === 'struk' ? 'active' : ''}">Desain Struk Thermal</button>
@@ -11565,6 +11566,7 @@ S. prn 3 dd 1 tab</textarea>
       </div>
 
       ${settingsTab === 'profil' ? renderProfileTabHtml(prof, canEditProfile) : ''}
+      ${settingsTab === 'konfigurasi' ? renderConfigurationTabHtml(canEditProfile) : ''}
       ${settingsTab === 'metode-bayar' ? renderPaymentMethodsTabHtml(canEditProfile) : ''}
 
       ${settingsTab === 'akun' ? (isOwner ? (() => {
@@ -14106,4 +14108,260 @@ S. prn 3 dd 1 tab</textarea>
     if (!sh) return;
     lastClosedZReport = sh;
     if (typeof global.printShiftZReport === 'function') global.printShiftZReport();
+  };
+
+  function renderConfigurationTabHtml(canEdit) {
+    const cfg = S().getStoreSettings ? S().getStoreSettings() : {};
+
+    return `<div class="space-y-4 ons-view-enter text-xs">
+      <div class="ons-card p-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-transparent border-l-4 border-l-blue-600">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-extrabold text-sm text-blue-700 dark:text-blue-300">Pusat Konfigurasi Operasional &amp; Kebijakan Toko (Standar Apotek Digital)</h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Kendalikan aturan stok minus, pembulatan kasir, proteksi blind count shift, expired date guard, dan tata kelola pembukuan.</p>
+          </div>
+          <button type="button" onclick="window.saveStoreSettings()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2 shadow-sm">💾 Simpan Konfigurasi</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- 1. Kebijakan Stok & Anti-Rugi -->
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b font-bold text-sm" style="border-color:var(--ons-border)">
+            <span>📦</span><span>1. Kebijakan Stok &amp; Pencegahan Rugi</span>
+          </div>
+          <div class="space-y-2.5">
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="cfg_allow_negative_stock" class="mt-0.5 rounded" ${cfg.allow_negative_stock ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block">Tetap izinkan menjual produk meskipun stok tidak mencukupi (Stok Minus)</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Jika dimatikan (default), kasir dilarang memproses transaksi apabila stok obat bernilai 0.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="cfg_cegah_penjualan_rugi" class="mt-0.5 rounded" ${cfg.cegah_penjualan_rugi ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block">Cegah Penjualan Produk Berpotensi Rugi</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Memblokir checkout kasir apabila harga jual obat di bawah Harga Pokok Pembelian (HPP).</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="cfg_cegah_jual_piutang_macet" class="mt-0.5 rounded" ${cfg.cegah_jual_piutang_macet ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block">Cegah penjualan kredit jika pelanggan punya piutang jatuh tempo</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis mengunci opsi tempo kasir bagi member yang memiliki tagihan macet.</span>
+              </div>
+            </label>
+            <div>
+              <label class="font-semibold block mb-1">Batas Default Tempo Piutang Pelanggan (Hari)</label>
+              <input type="number" id="cfg_tempo_piutang_hari" min="1" max="180" class="ons-input font-mono-num text-xs w-32" value="${cfg.tempo_piutang_hari || 30}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Kasir POS & Pembulatan Harga -->
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b font-bold text-sm" style="border-color:var(--ons-border)">
+            <span>🛒</span><span>2. Kasir POS &amp; Pembulatan Harga</span>
+          </div>
+          <div class="space-y-2.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="font-semibold block mb-1">Pembulatan Total di Kasir</label>
+                <select id="cfg_pembulatan_kasir" class="ons-select text-xs">
+                  <option value="0" ${Number(cfg.pembulatan_kasir) === 0 ? 'selected' : ''}>Tanpa Pembulatan (Satuan)</option>
+                  <option value="10" ${Number(cfg.pembulatan_kasir) === 10 ? 'selected' : ''}>Kelipatan 10</option>
+                  <option value="50" ${Number(cfg.pembulatan_kasir) === 50 ? 'selected' : ''}>Kelipatan 50</option>
+                  <option value="100" ${Number(cfg.pembulatan_kasir) === 100 ? 'selected' : ''}>Kelipatan 100 (Default)</option>
+                  <option value="500" ${Number(cfg.pembulatan_kasir) === 500 ? 'selected' : ''}>Kelipatan 500</option>
+                  <option value="1000" ${Number(cfg.pembulatan_kasir) === 1000 ? 'selected' : ''}>Kelipatan 1.000</option>
+                </select>
+              </div>
+              <div>
+                <label class="font-semibold block mb-1">Arah Pembulatan</label>
+                <select id="cfg_arah_pembulatan" class="ons-select text-xs">
+                  <option value="TERDEKAT" ${cfg.arah_pembulatan === 'TERDEKAT' ? 'selected' : ''}>Pembulatan Terdekat</option>
+                  <option value="ATAS" ${cfg.arah_pembulatan === 'ATAS' ? 'selected' : ''}>Pembulatan Ke Atas</option>
+                  <option value="BAWAH" ${cfg.arah_pembulatan === 'BAWAH' ? 'selected' : ''}>Pembulatan Ke Bawah</option>
+                </select>
+              </div>
+            </div>
+            <label class="flex items-start gap-2.5 cursor-pointer pt-1">
+              <input type="checkbox" id="cfg_allow_split_payment" class="mt-0.5 rounded" ${cfg.allow_split_payment ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block">Izinkan Split Payment (Multi-Metode Pembayaran)</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Pelanggan dapat membayar sebagian uang tunai dan sisanya via QRIS / Transfer.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="cfg_auto_save_hold_server" class="mt-0.5 rounded" ${cfg.auto_save_hold_server ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block">Sinkronisasi Penjualan Tertunda (Hold Order) ke Server</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Keranjang hold order kasir dapat dibuka dari komputer kasir lain.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. Blind Cash Count & Manajemen Shift -->
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b font-bold text-sm" style="border-color:var(--ons-border)">
+            <span>🔒</span><span>3. Blind Cash Count &amp; Kontrol Shift Kasir</span>
+          </div>
+          <div class="space-y-2.5">
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="cfg_blind_cash_count" class="mt-0.5 rounded" ${cfg.blind_cash_count ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block text-blue-700 dark:text-blue-300">Blind Cash Count saat Tutup Shift (Anti-Fraud)</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Kasir wajib menghitung uang fisik laci secara jujur tanpa melihat target saldo sistem.</span>
+              </div>
+            </label>
+            <div>
+              <label class="font-semibold block mb-1">Maksimal Jumlah Shift Kasir yang Buka Bersamaan</label>
+              <input type="number" id="cfg_max_active_shifts" min="1" max="5" class="ons-input font-mono-num text-xs w-28" value="${cfg.max_active_shifts || 2}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Peringatan Kadaluarsa (ED Guard) -->
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b font-bold text-sm" style="border-color:var(--ons-border)">
+            <span>⏳</span><span>4. Peringatan &amp; Batas Kadaluarsa (ED Guard)</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="font-semibold block mb-1">Min. Jarak ED Terima Barang PBF</label>
+              <div class="flex items-center gap-1.5">
+                <input type="number" id="cfg_min_ed_terima_bulan" min="1" max="36" class="ons-input font-mono-num text-xs w-24" value="${cfg.min_ed_terima_bulan || 6}" />
+                <span style="color:var(--ons-text-soft)">Bulan</span>
+              </div>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Min. Jarak ED Peringatan Jual Kasir</label>
+              <div class="flex items-center gap-1.5">
+                <input type="number" id="cfg_min_ed_jual_bulan" min="1" max="12" class="ons-input font-mono-num text-xs w-24" value="${cfg.min_ed_jual_bulan || 3}" />
+                <span style="color:var(--ons-text-soft)">Bulan</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Tampilan Elemen Kasir POS -->
+        <div class="ons-card p-4 space-y-3 lg:col-span-2">
+          <div class="flex items-center justify-between pb-2 border-b font-bold text-sm" style="border-color:var(--ons-border)">
+            <div class="flex items-center gap-2"><span>🖥️</span><span>5. Tampilan Elemen &amp; Tombol Kasir POS</span></div>
+            <span class="text-[11px] font-normal" style="color:var(--ons-text-soft)">Centang untuk menampilkan elemen di layar kasir</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+            ${[
+              { id: 'cfg_pos_show_embalase', label: 'Form Embalase', k: 'pos_show_embalase' },
+              { id: 'cfg_pos_show_tuslah', label: 'Jasa Racik / Tuslah', k: 'pos_show_tuslah' },
+              { id: 'cfg_pos_show_diskon_faktur', label: 'Diskon Nota POS', k: 'pos_show_diskon_faktur' },
+              { id: 'cfg_pos_show_voucher', label: 'Voucher Diskon', k: 'pos_show_voucher' },
+              { id: 'cfg_pos_show_ongkir', label: 'Ongkos Kirim', k: 'pos_show_ongkir' },
+              { id: 'cfg_pos_show_biaya_lain', label: 'Biaya Tambahan', k: 'pos_show_biaya_lain' },
+              { id: 'cfg_pos_show_add_pelanggan', label: 'Tombol Member (F7)', k: 'pos_show_add_pelanggan' },
+              { id: 'cfg_pos_show_add_dokter', label: 'Pilihan Dokter Mitra', k: 'pos_show_add_dokter' },
+              { id: 'cfg_pos_show_sales', label: 'Pilihan Sales Pelayan', k: 'pos_show_sales' },
+              { id: 'cfg_pos_show_kanal_jual', label: 'Opsi Kanal Penjualan', k: 'pos_show_kanal_jual' },
+              { id: 'cfg_pos_show_resep', label: 'Tombol Resep (F8)', k: 'pos_show_resep' },
+              { id: 'cfg_pos_show_piutang', label: 'Metode Tempo / Kredit', k: 'pos_show_piutang' }
+            ].map((el) => `
+              <label class="flex items-center gap-2 p-2 rounded-lg border bg-slate-50 dark:bg-slate-800/50 cursor-pointer text-xs" style="border-color:var(--ons-border)">
+                <input type="checkbox" id="${el.id}" class="rounded" ${cfg[el.k] !== false ? 'checked' : ''} />
+                <span class="font-medium">${el.label}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 6. Presensi & Pembukuan Transaksi -->
+        <div class="ons-card p-4 space-y-3 lg:col-span-2">
+          <div class="flex items-center gap-2 pb-2 border-b font-bold text-sm" style="border-color:var(--ons-border)">
+            <span>⏰</span><span>6. Presensi Karyawan &amp; Kebijakan Pembukuan</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" id="cfg_wajib_foto_presensi" class="mt-0.5 rounded" ${cfg.wajib_foto_presensi ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block">Wajib Foto Selfie Presensi</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Kamera depan aktif saat absen masuk.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" id="cfg_wajib_gps_presensi" class="mt-0.5 rounded" ${cfg.wajib_gps_presensi ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block">Wajib Geolocation GPS</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Mencatat koordinat fisik apotek.</span>
+              </div>
+            </label>
+            <div>
+              <label class="font-semibold block mb-1">Zona Waktu Operasional</label>
+              <select id="cfg_zona_waktu" class="ons-select text-xs">
+                <option value="WITA" ${cfg.zona_waktu === 'WITA' ? 'selected' : ''}>WITA (Makassar / GMT+8)</option>
+                <option value="WIB" ${cfg.zona_waktu === 'WIB' ? 'selected' : ''}>WIB (Jakarta / GMT+7)</option>
+                <option value="WIT" ${cfg.zona_waktu === 'WIT' ? 'selected' : ''}>WIT (Jayapura / GMT+9)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="window.saveStoreSettings()" class="ons-btn ons-btn-emerald text-xs font-bold px-5 py-2.5 shadow-sm">💾 Simpan Seluruh Konfigurasi Sistem</button>
+      </div>
+    </div>`;
+  }
+
+  global.saveStoreSettings = () => {
+    try {
+      const getVal = (id, isNum, isBool) => {
+        const el = document.getElementById(id);
+        if (!el) return undefined;
+        if (isBool) return Boolean(el.checked);
+        if (isNum) return Number(el.value || 0);
+        return el.value;
+      };
+
+      const updated = {
+        allow_negative_stock: getVal('cfg_allow_negative_stock', false, true),
+        cegah_penjualan_rugi: getVal('cfg_cegah_penjualan_rugi', false, true),
+        cegah_jual_piutang_macet: getVal('cfg_cegah_jual_piutang_macet', false, true),
+        tempo_piutang_hari: getVal('cfg_tempo_piutang_hari', true, false),
+
+        pembulatan_kasir: getVal('cfg_pembulatan_kasir', true, false),
+        arah_pembulatan: getVal('cfg_arah_pembulatan', false, false),
+        allow_split_payment: getVal('cfg_allow_split_payment', false, true),
+        auto_save_hold_server: getVal('cfg_auto_save_hold_server', false, true),
+
+        blind_cash_count: getVal('cfg_blind_cash_count', false, true),
+        max_active_shifts: getVal('cfg_max_active_shifts', true, false),
+
+        min_ed_terima_bulan: getVal('cfg_min_ed_terima_bulan', true, false),
+        min_ed_jual_bulan: getVal('cfg_min_ed_jual_bulan', true, false),
+
+        pos_show_embalase: getVal('cfg_pos_show_embalase', false, true),
+        pos_show_tuslah: getVal('cfg_pos_show_tuslah', false, true),
+        pos_show_diskon_faktur: getVal('cfg_pos_show_diskon_faktur', false, true),
+        pos_show_voucher: getVal('cfg_pos_show_voucher', false, true),
+        pos_show_ongkir: getVal('cfg_pos_show_ongkir', false, true),
+        pos_show_biaya_lain: getVal('cfg_pos_show_biaya_lain', false, true),
+        pos_show_add_pelanggan: getVal('cfg_pos_show_add_pelanggan', false, true),
+        pos_show_add_dokter: getVal('cfg_pos_show_add_dokter', false, true),
+        pos_show_sales: getVal('cfg_pos_show_sales', false, true),
+        pos_show_kanal_jual: getVal('cfg_pos_show_kanal_jual', false, true),
+        pos_show_resep: getVal('cfg_pos_show_resep', false, true),
+        pos_show_piutang: getVal('cfg_pos_show_piutang', false, true),
+
+        wajib_foto_presensi: getVal('cfg_wajib_foto_presensi', false, true),
+        wajib_gps_presensi: getVal('cfg_wajib_gps_presensi', false, true),
+        zona_waktu: getVal('cfg_zona_waktu', false, false)
+      };
+
+      if (S().setStoreSettings) S().setStoreSettings(updated);
+      global.toast('Konfigurasi operasional toko berhasil disimpan & disinkronkan!', 'ok');
+      global.renderActiveView();
+    } catch (e) {
+      global.toast(e.message || 'Gagal menyimpan konfigurasi.', 'err');
+    }
   };
