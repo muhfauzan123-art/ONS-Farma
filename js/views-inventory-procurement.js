@@ -151,29 +151,51 @@
   }
 
   function _formatStockMultiSatuan(stok, o) {
-    const sDasar = o.satuan_dasar || 'Unit';
-    const sSedang = o.satuan_sedang || 'Strip';
-    const sBesar = o.satuan_besar || 'Box';
+    const sDasar = String(o.satuan_dasar || 'Unit').trim();
+    const sSedang = String(o.satuan_sedang || '').trim();
+    const sBesar = String(o.satuan_besar || '').trim();
     const rBesar = Number(o.rasio_besar || 0);
     const rSedang = Number(o.rasio_sedang || 0);
     const qty = Math.max(0, Number(stok || 0));
     if (qty === 0) return `0 ${sDasar}`;
-    if (rBesar > 1 && qty >= rBesar) {
+
+    // Kasus 1: Punya Satuan Besar dan Satuan Sedang (cth: Tablet -> Strip -> Box)
+    if (sBesar && rBesar > 1 && sSedang && rSedang > 1 && rBesar > rSedang) {
       const b = Math.floor(qty / rBesar);
       const rem = qty % rBesar;
-      if (rSedang > 1 && rem >= rSedang) {
-        const s = Math.floor(rem / rSedang);
-        const d = rem % rSedang;
-        return `${b} ${sBesar} ${s} ${sSedang}${d > 0 ? ` ${d} ${sDasar}` : ''}`;
-      }
-      return `${b} ${sBesar}${rem > 0 ? ` ${rem} ${sDasar}` : ''}`;
-    } else if (rSedang > 1 && qty >= rSedang) {
+      const s = Math.floor(rem / rSedang);
+      const d = rem % rSedang;
+      const parts = [];
+      if (b > 0) parts.push(`${b} ${sBesar}`);
+      if (s > 0) parts.push(`${s} ${sSedang}`);
+      if (d > 0 || parts.length === 0) parts.push(`${d} ${sDasar}`);
+      return parts.join(', ');
+    }
+
+    // Kasus 2: Hanya punya Satuan Besar (cth: Strip -> Box, atau Botol -> Box)
+    if (sBesar && rBesar > 1) {
+      const b = Math.floor(qty / rBesar);
+      const d = qty % rBesar;
+      const parts = [];
+      if (b > 0) parts.push(`${b} ${sBesar}`);
+      if (d > 0 || parts.length === 0) parts.push(`${d} ${sDasar}`);
+      return parts.join(', ');
+    }
+
+    // Kasus 3: Hanya punya Satuan Sedang (cth: Tablet -> Strip)
+    if (sSedang && rSedang > 1) {
       const s = Math.floor(qty / rSedang);
       const d = qty % rSedang;
-      return `${s} ${sSedang}${d > 0 ? ` ${d} ${sDasar}` : ''}`;
+      const parts = [];
+      if (s > 0) parts.push(`${s} ${sSedang}`);
+      if (d > 0 || parts.length === 0) parts.push(`${d} ${sDasar}`);
+      return parts.join(', ');
     }
-    return `${qty} ${sDasar}`;
+
+    // Kasus 4: Satuan Tunggal (cth: hanya Strip, hanya Botol, hanya Tablet)
+    return `${qty.toLocaleString('id-ID')} ${sDasar}`;
   }
+  window._formatStockMultiSatuan = _formatStockMultiSatuan;
 
   function buildObatMeta(o) {
     const stok = S().getSellableStok(o.id_obat);
@@ -324,12 +346,14 @@
         const o = m.o;
         const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
         const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
-        const rSedang = Number(o.rasio_sedang || 10);
-        const rBesar = Number(o.rasio_besar || 100);
+        const sDasar = String(o.satuan_dasar || 'Unit').trim();
+        const sSedang = String(o.satuan_sedang || '').trim();
+        const sBesar = String(o.satuan_besar || '').trim();
+        const rSedang = Number(o.rasio_sedang || 0);
+        const rBesar = Number(o.rasio_besar || 0);
         const hEceran = Number(o.harga_umum || 0);
-        const hStrip = Number(o.harga_strip || (hEceran * rSedang));
-        const hBox = Number(o.harga_box || (hEceran * rBesar));
-        const hMem = Number(o.harga_member || hEceran);
+        const hStrip = Number(o.harga_sedang || o.harga_strip || (rSedang > 1 ? hEceran * rSedang : 0));
+        const hBox = Number(o.harga_besar || o.harga_box || (rBesar > 1 ? hEceran * rBesar : 0));
         const sBreakdown = _formatStockMultiSatuan(m.stok, o);
         return `<div class="ons-product-card flex flex-col justify-between gap-2.5 ${!isAktifJual ? 'opacity-75' : ''}">
           <div class="space-y-1.5">
@@ -357,7 +381,7 @@
             <div class="p-2.5 rounded-lg border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
               <div class="flex items-center justify-between text-xs font-mono-num">
                 <div>
-                  <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar || 'Unit')}</span>
+                  <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(sDasar || 'Unit')}</span>
                   ${m.stok > 0 && (rSedang > 1 || rBesar > 1) ? `<span class="text-[10px] text-slate-500 font-medium ml-1">(&approx; ${sBreakdown})</span>` : ''}
                 </div>
                 <span class="text-[10.5px] font-bold uppercase" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
@@ -372,27 +396,28 @@
                 ⚡ + Defecta (Pesan ke PBF)
               </button>` : ''}
               <div class="text-[10.5px] font-mono-num pt-1 border-t border-slate-200 dark:border-slate-700" style="color:var(--ons-text-soft)">
-                1 ${S().esc(o.satuan_besar || 'Box')} = ${rBesar} ${S().esc(o.satuan_dasar || 'Unit')} &bull; 1 ${S().esc(o.satuan_sedang || 'Strip')} = ${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}
+                ${sBesar && rBesar > 1 && sSedang && rSedang > 1 ? `1 ${S().esc(sBesar)} = ${rBesar} ${S().esc(sDasar)} &bull; 1 ${S().esc(sSedang)} = ${rSedang} ${S().esc(sDasar)}` : (sBesar && rBesar > 1 ? `1 ${S().esc(sBesar)} = ${rBesar} ${S().esc(sDasar)}` : (sSedang && rSedang > 1 ? `1 ${S().esc(sSedang)} = ${rSedang} ${S().esc(sDasar)}` : `Kemasan Tunggal: ${S().esc(sDasar)}`))}
               </div>
             </div>
             <div class="grid grid-cols-2 gap-1.5 p-2 rounded-lg border text-[11px] font-mono-num" style="border-color:var(--ons-border)">
               <div>
-                <span class="text-[10px] text-slate-400 block uppercase">Eceran</span>
+                <span class="text-[10px] text-slate-400 block uppercase">Eceran (${S().esc(sDasar)})</span>
                 <span class="font-extrabold text-blue-600 text-sm">${S().rp(hEceran)}</span>
               </div>
+              ${sSedang && rSedang > 1 ? `
               <div>
-                <span class="text-[10px] text-emerald-600 block uppercase">Member</span>
-                <span class="font-bold text-emerald-600">${S().rp(hMem)}</span>
-              </div>
-              ${rSedang > 1 ? `
-              <div>
-                <span class="text-[9.5px] text-slate-400 block uppercase">Per ${S().esc(o.satuan_sedang || 'Strip')}</span>
-                <span class="font-semibold text-slate-700 dark:text-slate-300">${S().rp(hStrip)}</span>
+                <span class="text-[10px] text-emerald-600 block uppercase">Per ${S().esc(sSedang)}</span>
+                <span class="font-bold text-emerald-600">${S().rp(hStrip)}</span>
               </div>` : ''}
-              ${rBesar > 1 ? `
+              ${sBesar && rBesar > 1 ? `
               <div>
-                <span class="text-[9.5px] text-slate-400 block uppercase">Per ${S().esc(o.satuan_besar || 'Box')}</span>
-                <span class="font-semibold text-slate-700 dark:text-slate-300">${S().rp(hBox)}</span>
+                <span class="text-[10px] text-purple-600 block uppercase">Per ${S().esc(sBesar)}</span>
+                <span class="font-bold text-purple-600">${S().rp(hBox)}</span>
+              </div>` : ''}
+              ${(!sSedang || rSedang <= 1) && (!sBesar || rBesar <= 1) ? `
+              <div>
+                <span class="text-[10px] text-slate-400 block uppercase">Kemasan</span>
+                <span class="font-medium text-slate-500">Satuan Tunggal</span>
               </div>` : ''}
             </div>
           </div>
@@ -424,7 +449,7 @@
               <th>Multi-Kemasan</th>
               ${seeCost ? '<th title="Referensi Harga Beli / Harga Pokok (HPP)">HPP Modal</th>' : ''}
               <th>HET Kemenkes</th>
-              <th>Harga Jual Bertingkat (Eceran / Strip / Box / Member)</th>
+              <th>Harga Jual Kemasan (Eceran / Sedang / Besar)</th>
               <th class="text-center">Status</th>
               <th class="text-right">Aksi</th>
             </tr>
@@ -435,12 +460,14 @@
               const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
               const rugiWarn = seeCost && m.hpp > 0 && m.harga <= m.hpp;
               const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
-              const rSedang = Number(o.rasio_sedang || 10);
-              const rBesar = Number(o.rasio_besar || 100);
+              const sDasar = String(o.satuan_dasar || 'Unit').trim();
+              const sSedang = String(o.satuan_sedang || '').trim();
+              const sBesar = String(o.satuan_besar || '').trim();
+              const rSedang = Number(o.rasio_sedang || 0);
+              const rBesar = Number(o.rasio_besar || 0);
               const hEceran = Number(o.harga_umum || 0);
-              const hStrip = Number(o.harga_strip || (hEceran * rSedang));
-              const hBox = Number(o.harga_box || (hEceran * rBesar));
-              const hMem = Number(o.harga_member || hEceran);
+              const hStrip = Number(o.harga_sedang || o.harga_strip || (rSedang > 1 ? hEceran * rSedang : 0));
+              const hBox = Number(o.harga_besar || o.harga_box || (rBesar > 1 ? hEceran * rBesar : 0));
               const sBreakdown = _formatStockMultiSatuan(m.stok, o);
               return `<tr class="${!isAktifJual ? 'opacity-70 bg-slate-500/5' : ''}">
                 <td class="font-mono-num text-xs text-center">${idx + 1}.</td>
@@ -478,7 +505,7 @@
                 </td>
                 <td class="text-xs min-w-[155px]">
                   <div class="flex items-center justify-between gap-1 text-[11px] font-mono-num">
-                    <span class="font-bold text-xs" style="color:${m.stokTone.color}">${m.stok} ${S().esc(o.satuan_dasar || 'Unit')}</span>
+                    <span class="font-bold text-xs" style="color:${m.stokTone.color}">${m.stok} ${S().esc(sDasar || 'Unit')}</span>
                     <span class="text-[10px] uppercase font-bold" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
                   </div>
                   ${m.stok > 0 && (rSedang > 1 || rBesar > 1) ? `
@@ -497,30 +524,32 @@
                   ` : ''}
                 </td>
                 <td class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">
-                  <div>1 ${S().esc(o.satuan_besar || 'Box')} = ${rBesar} ${S().esc(o.satuan_dasar || 'Unit')}</div>
-                  <div>1 ${S().esc(o.satuan_sedang || 'Strip')} = ${rSedang} ${S().esc(o.satuan_dasar || 'Unit')}</div>
+                  ${sBesar && rBesar > 1 ? `<div>1 ${S().esc(sBesar)} = ${rBesar} ${S().esc(sDasar)}</div>` : ''}
+                  ${sSedang && rSedang > 1 ? `<div>1 ${S().esc(sSedang)} = ${rSedang} ${S().esc(sDasar)}</div>` : ''}
+                  ${(!sBesar || rBesar <= 1) && (!sSedang || rSedang <= 1) ? `<div class="italic text-slate-400">Satuan Tunggal (${S().esc(sDasar)})</div>` : ''}
                 </td>
                 ${seeCost ? `<td class="font-mono-num text-xs font-semibold">${S().rp(o.hpp_avg || o.hpp_terakhir || 0)}</td>` : ''}
                 <td class="font-mono-num text-xs text-slate-400 line-through">${S().rp(hetVal)}</td>
                 <td class="font-mono-num text-xs min-w-[170px]">
                   <div class="flex items-center justify-between gap-1">
                     <span class="text-[10px] uppercase font-bold text-slate-400">Eceran:</span>
-                    <span class="font-bold text-blue-600 text-sm">${S().rp(hEceran)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(o.satuan_dasar || 'Unit')}</span></span>
+                    <span class="font-bold text-blue-600 text-sm">${S().rp(hEceran)} <span class="text-[10px] font-normal text-slate-500">/${S().esc(sDasar)}</span></span>
                   </div>
-                  ${rSedang > 1 ? `
+                  ${sSedang && rSedang > 1 ? `
                   <div class="flex items-center justify-between gap-1 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                    <span class="text-[9.5px] uppercase font-medium text-slate-400">Strip:</span>
-                    <span class="font-semibold">${S().rp(hStrip)} <span class="text-[9px] text-slate-400">(${rSedang} ${S().esc(o.satuan_dasar)})</span></span>
+                    <span class="text-[9.5px] uppercase font-medium text-slate-400">${S().esc(sSedang)}:</span>
+                    <span class="font-semibold text-emerald-600">${S().rp(hStrip)} <span class="text-[9px] text-slate-400">(${rSedang} ${S().esc(sDasar)})</span></span>
                   </div>` : ''}
-                  ${rBesar > 1 ? `
+                  ${sBesar && rBesar > 1 ? `
                   <div class="flex items-center justify-between gap-1 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                    <span class="text-[9.5px] uppercase font-medium text-slate-400">Box:</span>
-                    <span class="font-semibold">${S().rp(hBox)} <span class="text-[9px] text-slate-400">(${rBesar} ${S().esc(o.satuan_dasar)})</span></span>
+                    <span class="text-[9.5px] uppercase font-medium text-slate-400">${S().esc(sBesar)}:</span>
+                    <span class="font-semibold text-purple-600">${S().rp(hBox)} <span class="text-[9px] text-slate-400">(${rBesar} ${S().esc(sDasar)})</span></span>
                   </div>` : ''}
+                  ${seeCost && m.marginPct !== null ? `
                   <div class="flex items-center justify-between gap-1 pt-1 mt-1 border-t border-slate-200 dark:border-slate-700 text-[10.5px]">
-                    <span class="text-emerald-600 font-semibold">Mbr: ${S().rp(hMem)}</span>
-                    ${seeCost && m.marginPct !== null ? `<span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[9.5px]">+${m.marginPct}%</span>` : ''}
-                  </div>
+                    <span class="text-slate-400">Margin Modal</span>
+                    <span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[9.5px]">+${m.marginPct}%</span>
+                  </div>` : ''}
                   ${seeCost && rugiWarn ? '<div class="text-[10px] font-bold text-red-600 mt-0.5">⚠️ Di Bawah HPP</div>' : ''}
                 </td>
                 <td class="text-center">
@@ -4422,11 +4451,14 @@
       const marginDecimal = (seeCost && Number(o.hpp_avg || 0) > 0 && Number(o.harga_umum || 0) > 0)
         ? Number((((Number(o.harga_umum || 0) - Number(o.hpp_avg || 0)) / Number(o.hpp_avg || 0)) * 100).toFixed(1))
         : 0;
-      const rSedang = Number(o.rasio_sedang || 10);
-      const rBesar = Number(o.rasio_besar || 100);
+      const sDasar = String(o.satuan_dasar || 'Unit').trim();
+      const sSedang = String(o.satuan_sedang || '').trim();
+      const sBesar = String(o.satuan_besar || '').trim();
+      const rSedang = sSedang ? Number(o.rasio_sedang || 1) : 1;
+      const rBesar = sBesar ? Number(o.rasio_besar || 1) : 1;
       const hEceran = Number(o.harga_umum || 0);
-      const hStrip = Number(o.harga_strip || (hEceran * rSedang));
-      const hBox = Number(o.harga_box || (hEceran * rBesar));
+      const hStrip = Number(o.harga_sedang || o.harga_strip || (sSedang && rSedang > 1 ? hEceran * rSedang : 0));
+      const hBox = Number(o.harga_besar || o.harga_box || (sBesar && rBesar > 1 ? hEceran * rBesar : 0));
       return {
         no: i + 1,
         kode_kfa: o.kode_kfa || o.id_obat || '',
@@ -4439,10 +4471,10 @@
         pabrikan: o.pabrikan || '-',
         rak_lokasi: o.rak_lokasi || 'RAK-A1',
         suhu_simpan: o.suhu_simpan || 'Suhu Ruang (15-25 C)',
-        satuan_dasar: o.satuan_dasar || 'Tablet',
-        satuan_sedang: o.satuan_sedang || 'Strip',
+        satuan_dasar: sDasar,
+        satuan_sedang: sSedang,
         rasio_sedang: rSedang,
-        satuan_besar: o.satuan_besar || 'Box',
+        satuan_besar: sBesar,
         rasio_besar: rBesar,
         stok_jual: Number(m.stok || 0),
         stok_min: Number(o.stok_min || 10),
@@ -4453,12 +4485,8 @@
         valuasi_modal: valModal,
         margin_pct: marginDecimal,
         harga_umum: hEceran,
-        harga_strip: hStrip,
-        harga_box: hBox,
-        harga_member: Number(o.harga_member || o.harga_umum || 0),
-        harga_grosir: Number(o.harga_grosir || o.harga_member || o.harga_umum || 0),
-        min_qty_grosir: Number(o.min_qty_grosir || 10),
-        harga_faskes: Number(o.harga_faskes || o.harga_grosir || o.harga_umum || 0),
+        harga_sedang: hStrip,
+        harga_besar: hBox,
         pbf_utama: o.pbf_utama || '-',
         ed_pdf: edIso ? `${edIso} (${m.edDays <= 0 ? 'ED' : m.edDays + 'h'})` : '-'
       };
@@ -4477,8 +4505,9 @@
       { key: 'status_stok', label: 'Status', type: 'status', width: 11 },
       { key: 'ed_pdf', label: 'ED Terdekat', type: 'text', width: 16 },
       ...(seeCost ? [{ key: 'hpp_avg', label: 'HPP Avg (Rp)', type: 'currency', width: 15 }] : []),
-      { key: 'harga_umum', label: 'Harga Umum (Rp)', type: 'currency', width: 15 },
-      { key: 'harga_member', label: 'Member (Rp)', type: 'currency', width: 15 }
+      { key: 'harga_umum', label: 'Harga Eceran (Rp)', type: 'currency', width: 15 },
+      { key: 'harga_sedang', label: 'Harga Sedang (Rp)', type: 'currency', width: 15 },
+      { key: 'harga_besar', label: 'Harga Besar (Rp)', type: 'currency', width: 15 }
     ] : [
       { key: 'kode_kfa', label: 'Kode KFA', type: 'text', width: 15 },
       { key: 'nama_dagang', label: 'Nama Dagang', type: 'wrap', width: 30 },
@@ -4506,12 +4535,8 @@
         { key: 'margin_pct', label: 'Margin (%)', type: 'percent', width: 12 }
       ] : []),
       { key: 'harga_umum', label: 'Harga Eceran (Rp)', type: 'currency', width: 16 },
-      { key: 'harga_strip', label: 'Harga Strip (Rp)', type: 'currency', width: 16 },
-      { key: 'harga_box', label: 'Harga Box (Rp)', type: 'currency', width: 16 },
-      { key: 'harga_member', label: 'Harga Member (Rp)', type: 'currency', width: 16 },
-      { key: 'harga_grosir', label: 'Harga Grosir (Rp)', type: 'currency', width: 16 },
-      { key: 'min_qty_grosir', label: 'Min Grosir', type: 'int', width: 12 },
-      { key: 'harga_faskes', label: 'Harga Faskes (Rp)', type: 'currency', width: 16 },
+      { key: 'harga_sedang', label: 'Harga Sedang (Rp)', type: 'currency', width: 16 },
+      { key: 'harga_besar', label: 'Harga Besar (Rp)', type: 'currency', width: 16 },
       { key: 'pbf_utama', label: 'PBF Utama', type: 'text', width: 20 }
     ];
 
@@ -4610,10 +4635,8 @@
       rasio_besar: num('wRasioBes', baseObj.rasio_besar),
       hpp_avg: num('wHpp', baseObj.hpp_avg),
       harga_umum: num('wHrgUmum', baseObj.harga_umum),
-      harga_member: num('wHrgMem', baseObj.harga_member),
-      harga_grosir: num('wHrgGrosir', baseObj.harga_grosir),
-      min_qty_grosir: num('wMinQtyGrosir', baseObj.min_qty_grosir),
-      harga_faskes: num('wHrgFaskes', baseObj.harga_faskes),
+      harga_sedang: num('wHrgSed', baseObj.harga_sedang),
+      harga_besar: num('wHrgBes', baseObj.harga_besar),
       stok_min: num('wStokMin', baseObj.stok_min),
       stok_max: num('wStokMax', baseObj.stok_max),
       pabrikan: val('wPabrikan', baseObj.pabrikan),
@@ -4633,9 +4656,9 @@
     const baseDefault = (st.masterObat || []).find((x) => x.id_obat === editId) || {
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1', satuan_dasar: 'Tablet',
-      satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 10, stok_max: 100,
+      satuan_sedang: '', rasio_sedang: 1, satuan_besar: '', rasio_besar: 1, stok_min: 10, stok_max: 100,
       pabrikan: '', pbf_utama: '',
-      hpp_avg: 0, harga_umum: 0, harga_member: 0, harga_grosir: 0, min_qty_grosir: 10, harga_faskes: 0, substitusi_ids: ''
+      hpp_avg: 0, harga_umum: 0, harga_sedang: 0, harga_besar: 0, substitusi_ids: ''
     };
     const o = draftObj ? { ...baseDefault, ...draftObj } : baseDefault;
     wizardDraftSnapshot = o;
@@ -4644,7 +4667,7 @@
       { n: 1, label: 'Identitas Produk', sub: 'Nama & Zat Aktif', req: 'Wajib: Nama' },
       { n: 2, label: 'Golongan & Rak', sub: 'BPOM & Rak Gudang', req: 'Wajib: Gol & Rak' },
       { n: 3, label: 'Multi-Satuan', sub: 'Dasar / Sedang / Besar', req: 'Wajib: Satuan Dasar' },
-      { n: 4, label: 'Harga & Stok', sub: 'HPP Modal & Harga Jual', req: 'Wajib: HPP & Jual' },
+      { n: 4, label: 'Harga & Stok', sub: 'HPP & Harga per Kemasan', req: 'Wajib: HPP & Eceran' },
       { n: 5, label: 'Tinjauan & Simpan', sub: 'Rangkuman & Terbitkan', req: 'Konfirmasi Terbit' }
     ];
     const golList = [
@@ -4660,9 +4683,11 @@
     const rakPresets = ['RAK-A1', 'RAK-B2', 'RAK-OTC', 'LEMARI-OKT', 'CHILLER-01'];
     const unitPresets = [
       { label: 'Tablet / Strip (10) / Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
+      { label: 'Hanya Strip (Eceran Strip Tunggal)', d: 'Strip', s: '', rs: 1, b: '', rb: 1 },
+      { label: 'Strip / Box (10)', d: 'Strip', s: '', rs: 1, b: 'Box', rb: 10 },
+      { label: 'Hanya Botol (Sirup Tunggal)', d: 'Botol', s: '', rs: 1, b: '', rb: 1 },
       { label: 'Kapsul / Blister (10) / Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
-      { label: 'Botol / Paket (1) / Box (12)', d: 'Botol', s: 'Paket', rs: 1, b: 'Box', rb: 12 },
-      { label: 'Tube / Pcs Tunggal', d: 'Tube', s: 'Pack', rs: 5, b: 'Box', rb: 25 }
+      { label: 'Hanya Tube (Salep Tunggal)', d: 'Tube', s: '', rs: 1, b: '', rb: 1 }
     ];
     const otherMeds = (S().AppState.masterObat || []).filter((m) => m.id_obat !== o.id_obat).slice(0, 10);
     const curSubs = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -4882,6 +4907,10 @@
                   </div>
                 </div>
                 <div class="p-5 md:p-6 space-y-4 text-xs">
+                  <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 text-xs flex items-center gap-2">
+                    <span class="text-base shrink-0">💡</span>
+                    <div><b>Fleksibel Satuan:</b> Jika obat hanya dijual per Strip (cth: Emturnas) atau botol sirup tanpa boks, cukup isi <b>Satuan Dasar</b> dan kosongkan Satuan Sedang / Besar. Sistem tidak akan memaksakan kemasan Box.</div>
+                  </div>
                   <div class="flex flex-wrap items-center gap-1.5">
                     <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Preset Rasio Cepat:</span>
                     ${unitPresets.map((up) => `<button type="button" onclick="window.applyObatUnitPreset('${up.d}','${up.s}',${up.rs},'${up.b}',${up.rb})" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">${up.label}</button>`).join('')}
@@ -4893,26 +4922,26 @@
                         <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
                       </div>
                       <label class="font-semibold block">Nama Satuan Terkecil</label>
-                      <input id="wSatDasar" class="${inpCls}" value="${S().esc(o.satuan_dasar || 'Tablet')}" placeholder="Tablet / Botol / Tube / Kapsul"/>
+                      <input id="wSatDasar" class="${inpCls}" value="${S().esc(o.satuan_dasar || 'Tablet')}" placeholder="Tablet / Strip / Botol / Tube"/>
                       <div class="text-[11px]" style="color:var(--ons-text-soft)">Stok batch &amp; HPP dicatat per satuan ini.</div>
                     </div>
                     <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Sedang</div>
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Sedang (Strip/Pack)</div>
                       <label class="font-semibold block">Nama &amp; Isi per Satuan Dasar</label>
                       <div class="grid grid-cols-2 gap-2">
-                        <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_sedang || 'Strip')}" placeholder="Strip"/>
-                        <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_sedang || 10}" placeholder="10"/>
+                        <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_sedang || '')}" placeholder="Strip (opsional)"/>
+                        <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_sedang || 1}" placeholder="10"/>
                       </div>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Misal: 1 Strip = 10 Tablet.</div>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk ini tidak memiliki kemasan sedang.</div>
                     </div>
                     <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Besar (Boks PBF)</div>
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Satuan Besar (Box/Dus)</div>
                       <label class="font-semibold block">Nama &amp; Isi per Satuan Dasar</label>
                       <div class="grid grid-cols-2 gap-2">
-                        <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_besar || 'Box')}" placeholder="Box"/>
-                        <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_besar || 100}" placeholder="100"/>
+                        <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_besar || '')}" placeholder="Box (opsional)"/>
+                        <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_besar || 1}" placeholder="100"/>
                       </div>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Misal: 1 Box = 100 Tablet.</div>
+                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk ini tidak dijual / dikemas boks.</div>
                     </div>
                   </div>
                 </div>
@@ -4924,12 +4953,12 @@
                   <div class="flex items-center gap-2.5">
                     <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">4</span>
                     <div>
-                      <h3 class="font-extrabold text-sm md:text-base">Valuasi Harga Bertingkat (4 Tier) &amp; Batas Stok</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Atur HPP modal, 4 kategori harga jual otomatis di POS, serta batas minimum alert Defecta.</p>
+                      <h3 class="font-extrabold text-sm md:text-base">Harga Jual per Kemasan (Eceran / Strip / Box) &amp; Batas Stok</h3>
+                      <p class="text-xs" style="color:var(--ons-text-soft)">Atur HPP modal, harga jual eceran satuan dasar, serta harga per strip atau box jika bertingkat.</p>
                     </div>
                   </div>
                   <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Hitung Harga Otomatis:</span>
+                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Hitung Markup Otomatis:</span>
                     <button type="button" onclick="window.applyObatMarkupHelper(20)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+20% Margin</button>
                     <button type="button" onclick="window.applyObatMarkupHelper(25)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+25% Margin</button>
                     <button type="button" onclick="window.applyObatMarkupHelper(35)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+35% Margin</button>
@@ -4940,42 +4969,41 @@
                   
                   <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 text-xs flex items-center gap-2">
                     <span class="text-base shrink-0">💡</span>
-                    <div><b>Panduan Format Harga:</b> Ketik angka (misal <code>5000</code>), sistem otomatis memformat menjadi <code>5.000</code> dengan titik ribuan dan akan tersimpan sebagai <b>Rp 5.000</b>.</div>
+                    <div><b>Penetapan Harga Kemasan:</b> Harga eceran dihitung per satuan dasar. Jika harga per Strip atau Box dikosongkan, sistem otomatis mengalikan harga eceran x isi kemasan.</div>
                   </div>
 
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1 flex items-center justify-between">
-                        <span>HPP Beli Rata-Rata (Rp)</span>
+                        <span>HPP Beli Rata-Rata Modal (Rp)</span>
                         <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
                       </label>
                       <input id="wHpp" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold" value="${S().formatDots(o.hpp_avg)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Harga pokok modal per satuan dasar.</div>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Harga modal per satuan dasar.</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                       <label class="font-bold block mb-1 flex items-center justify-between">
-                        <span>Harga Umum / Reguler (Rp)</span>
+                        <span>Harga Eceran Satuan Dasar (Rp)</span>
                         <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
                       </label>
                       <input id="wHrgUmum" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-blue-600" value="${S().formatDots(o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
                       <div id="wizMarginUmumTxt" class="text-[11px] mt-1 font-semibold text-emerald-600">Margin: -</div>
                     </div>
                     <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <label class="font-bold block mb-1">Harga Member (Rp)</label>
-                      <input id="wHrgMem" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold" value="${S().formatDots(o.harga_member || o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Aktif otomatis untuk pelanggan member terdaftar.</div>
+                      <label class="font-bold block mb-1 flex items-center justify-between">
+                        <span>Harga Jual Satuan Sedang (Strip/Pack)</span>
+                        <span class="text-[10px] text-slate-500">(Opsional)</span>
+                      </label>
+                      <input id="wHrgSed" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-emerald-600" value="${S().formatDots(o.harga_sedang || o.harga_strip || '')}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Eceran x Rasio)"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis mengikuti kelipatan eceran.</div>
                     </div>
-                    <div>
-                      <label class="font-bold block mb-1.5">Harga Grosir / B2B (Rp)</label>
-                      <input id="wHrgGrosir" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num" value="${S().formatDots(o.harga_grosir || o.harga_member || o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
-                    </div>
-                    <div>
-                      <label class="font-bold block mb-1.5">Minimal Qty Grosir</label>
-                      <input id="wMinQtyGrosir" type="number" min="1" class="${inpCls} font-mono-num" value="${o.min_qty_grosir || 10}"/>
-                    </div>
-                    <div>
-                      <label class="font-bold block mb-1.5">Harga Faskes / Klinik Mitra (Rp)</label>
-                      <input id="wHrgFaskes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num" value="${S().formatDots(o.harga_faskes || o.harga_grosir || o.harga_member || o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
+                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <label class="font-bold block mb-1 flex items-center justify-between">
+                        <span>Harga Jual Satuan Besar (Box/Dus)</span>
+                        <span class="text-[10px] text-slate-500">(Opsional)</span>
+                      </label>
+                      <input id="wHrgBes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-purple-600" value="${S().formatDots(o.harga_besar || o.harga_box || '')}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Eceran x Rasio)"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis mengikuti kelipatan eceran.</div>
                     </div>
                   </div>
                   <div id="wizStep4MarginHint" class="hidden p-3 rounded-xl border border-red-400 bg-red-500/10 text-red-600 font-semibold text-xs"></div>
@@ -5034,15 +5062,14 @@
                       </div>
                       <div class="space-y-1.5">
                         <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Satuan Dasar:</span><b id="wSumSatD">-</b></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Rasio Kemasan:</span><span id="wSumRasio" class="font-mono-num">-</span></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Konversi Kemasan:</span><span id="wSumRasio" class="font-mono-num">-</span></div>
                         <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">HPP Modal Beli:</span><b id="wSumHpp" class="font-mono-num">Rp 0</b></div>
                         <div class="flex justify-between items-center pt-1 border-t" style="border-color:var(--ons-border)">
-                          <span class="font-bold text-blue-600">Harga Jual Umum:</span>
+                          <span class="font-bold text-blue-600">Harga Eceran Dasar:</span>
                           <b id="wSumHrgUmum" class="font-mono-num text-blue-600 text-sm">Rp 0</b>
                         </div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Member:</span><span id="wSumHrgMem" class="font-mono-num">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Grosir:</span><span id="wSumHrgGrosir" class="font-mono-num">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Faskes:</span><span id="wSumHrgFaskes" class="font-mono-num">-</span></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Satuan Sedang:</span><span id="wSumHrgSed" class="font-mono-num">-</span></div>
+                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Satuan Besar:</span><span id="wSumHrgBes" class="font-mono-num">-</span></div>
                         <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Alert Defecta:</span><span id="wSumDefecta" class="font-mono-num">Min: 10, Max: 100</span></div>
                       </div>
                     </div>
@@ -5212,16 +5239,14 @@
     const suhu = val('wSuhu') || 'Suhu Ruang (15-25°C)';
     const rak = val('wRak');
     const satD = val('wSatDasar');
-    const satS = val('wSatSed') || 'Strip';
-    const rasS = Math.max(1, num('wRasioSed') || 10);
-    const satB = val('wSatBes') || 'Box';
-    const rasB = Math.max(1, num('wRasioBes') || 100);
+    const satS = val('wSatSed');
+    const rasS = satS ? Math.max(1, num('wRasioSed') || 10) : 1;
+    const satB = val('wSatBes');
+    const rasB = satB ? Math.max(1, num('wRasioBes') || 100) : 1;
     const hpp = Math.max(0, num('wHpp'));
     const umum = Math.max(0, num('wHrgUmum'));
-    const mem = Math.max(0, num('wHrgMem') || umum);
-    const grosir = Math.max(0, num('wHrgGrosir') || umum);
-    const faskes = Math.max(0, num('wHrgFaskes') || umum);
-    const minGrosir = Math.max(2, num('wMinQtyGrosir') || 10);
+    const hSed = satS ? Math.max(0, num('wHrgSed') || (rasS > 1 ? umum * rasS : 0)) : 0;
+    const hBes = satB ? Math.max(0, num('wHrgBes') || (rasB > 1 ? umum * rasB : 0)) : 0;
     const stokMin = num('wStokMin') !== 0 ? Math.max(0, num('wStokMin')) : 0;
     const stokMax = Math.max(1, num('wStokMax') || 100);
 
@@ -5230,7 +5255,15 @@
     setTxt('wizPrevZat', zat || 'Zat aktif & kekuatan belum diisi');
     setTxt('wizPrevKode', `KFA: ${kfa || '-'} • NIE: ${nie || '-'}`);
     setTxt('wizPrevLokasi', `Rak: ${rak || '-'} • ${suhu}`);
-    setTxt('wizPrevRasio', `1 ${satB} = ${rasB} ${satD || 'Unit'}  |  1 ${satS} = ${rasS} ${satD || 'Unit'}`);
+
+    const rasioTxt = (satB && rasB > 1 && satS && rasS > 1)
+      ? `1 ${satB} = ${rasB} ${satD || 'Unit'}  |  1 ${satS} = ${rasS} ${satD || 'Unit'}`
+      : (satB && rasB > 1
+        ? `1 ${satB} = ${rasB} ${satD || 'Unit'}`
+        : (satS && rasS > 1
+          ? `1 ${satS} = ${rasS} ${satD || 'Unit'}`
+          : `Satuan Tunggal (${satD || 'Unit'})`));
+    setTxt('wizPrevRasio', rasioTxt);
     setTxt('wizPrevUmum', `${S().rp(umum)} / ${satD || 'Unit'}`);
     setTxt('wizPrevHpp', `HPP: ${S().rp(hpp)}`);
 
@@ -5243,12 +5276,11 @@
     setTxt('wSumRak', rak || '- (Belum diisi)');
     setTxt('wSumSuhu', suhu);
     setTxt('wSumSatD', satD || '- (Belum diisi)');
-    setTxt('wSumRasio', `1 ${satB} = ${rasB} ${satD || 'Unit'} | 1 ${satS} = ${rasS} ${satD || 'Unit'}`);
+    setTxt('wSumRasio', rasioTxt);
     setTxt('wSumHpp', S().rp(hpp));
     setTxt('wSumHrgUmum', `${S().rp(umum)} / ${satD || 'Unit'}`);
-    setTxt('wSumHrgMem', S().rp(mem));
-    setTxt('wSumHrgGrosir', `${S().rp(grosir)} (Min ${minGrosir})`);
-    setTxt('wSumHrgFaskes', S().rp(faskes));
+    setTxt('wSumHrgSed', satS && rasS > 1 ? `${S().rp(hSed)} / ${satS}` : '-');
+    setTxt('wSumHrgBes', satB && rasB > 1 ? `${S().rp(hBes)} / ${satB}` : '-');
     setTxt('wSumDefecta', `Min: ${stokMin}, Max: ${stokMax}`);
 
     const badge = document.getElementById('wizPrevBpom');
@@ -5284,10 +5316,9 @@
     }
     const antiRugiEl = document.getElementById('wizStep4MarginHint');
     if (antiRugiEl) {
-      const below = hpp > 0 && ((umum > 0 && umum < hpp) || (mem > 0 && mem < hpp) || (grosir > 0 && grosir < hpp) || (faskes > 0 && faskes < hpp));
-      if (below) {
+      if (isUnderHpp) {
         antiRugiEl.classList.remove('hidden');
-        antiRugiEl.textContent = `⚠️ Peringatan Anti-Rugi: Ada harga tier (${S().rp(Math.min(umum || Infinity, mem || Infinity, grosir || Infinity, faskes || Infinity))}) yang lebih rendah dari HPP modal (${S().rp(hpp)}).`;
+        antiRugiEl.textContent = `⚠️ Peringatan Anti-Rugi: Harga eceran (${S().rp(umum)}) lebih rendah dari HPP modal (${S().rp(hpp)}).`;
       } else {
         antiRugiEl.classList.add('hidden');
       }
@@ -5296,9 +5327,10 @@
     const tierGrid = document.getElementById('wizPrevTierGrid');
     if (tierGrid) {
       tierGrid.innerHTML = `
-        <div><div style="color:var(--ons-text-soft)">Member</div><div class="font-bold">${S().rp(mem)}</div></div>
-        <div><div style="color:var(--ons-text-soft)">Grosir</div><div class="font-bold">${S().rp(grosir)}</div></div>
-        <div><div style="color:var(--ons-text-soft)">Faskes</div><div class="font-bold">${S().rp(faskes)}</div></div>`;
+        <div><div style="color:var(--ons-text-soft)">Eceran</div><div class="font-bold text-blue-600">${S().rp(umum)}</div></div>
+        ${satS && rasS > 1 ? `<div><div style="color:var(--ons-text-soft)">Per ${satS}</div><div class="font-bold text-emerald-600">${S().rp(hSed)}</div></div>` : ''}
+        ${satB && rasB > 1 ? `<div><div style="color:var(--ons-text-soft)">Per ${satB}</div><div class="font-bold text-purple-600">${S().rp(hBes)}</div></div>` : ''}
+        ${(!satS || rasS <= 1) && (!satB || rasB <= 1) ? `<div><div style="color:var(--ons-text-soft)">Kemasan</div><div class="font-semibold text-slate-500">Tunggal</div></div>` : ''}`;
     }
 
     // 5 VALIDASI KOLOM WAJIB
@@ -5494,14 +5526,15 @@
     }
     const rnd = (x) => Math.max(100, Math.round(x / 100) * 100);
     const umum = rnd(hpp * (1 + Number(pct || 25) / 100));
-    const mem = rnd(Math.max(hpp, umum * 0.94));
-    const grosir = rnd(Math.max(hpp, umum * 0.88));
-    const faskes = rnd(Math.max(hpp, umum * 0.90));
+    const rasS = Math.max(1, parseNum('wRasioSed') || 1);
+    const rasB = Math.max(1, parseNum('wRasioBes') || 1);
+    const satS = (document.getElementById('wSatSed') || {}).value || '';
+    const satB = (document.getElementById('wSatBes') || {}).value || '';
+
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = S().formatDots(v); };
     set('wHrgUmum', umum);
-    set('wHrgMem', mem);
-    set('wHrgGrosir', grosir);
-    set('wHrgFaskes', faskes);
+    if (satS && rasS > 1) set('wHrgSed', rnd(umum * rasS * 0.98));
+    if (satB && rasB > 1) set('wHrgBes', rnd(umum * rasB * 0.95));
     global.updateObatWizardPreview();
   };
 
@@ -5520,7 +5553,7 @@
       set('wGol', 'KERAS');
       set('wSuhu', 'Suhu Ruang (15-25°C)');
       set('wRak', 'RAK-B2');
-      global.applyObatUnitPreset('Botol', 'Paket', 1, 'Box', 12);
+      global.applyObatUnitPreset('Botol', '', 1, '', 1);
     } else if (tpl === 'chiller') {
       set('wNamaDagang', 'Insulin Glargine 100 IU/ml FlexPen');
       set('wZatAktif', 'Insulin Glargine 100 IU/ml');
@@ -5576,14 +5609,14 @@
         return;
       }
       if (wizardStep === 3 && !val('wSatDasar')) {
-        global.toast('Satuan Dasar Eceran (Tablet/Kapsul/dll) wajib diisi sebelum lanjut!', 'warn');
+        global.toast('Satuan Dasar Eceran (Tablet/Strip/Botol/dll) wajib diisi sebelum lanjut!', 'warn');
         const el = document.getElementById('wSatDasar');
         if (el) { el.focus(); el.classList.add('ring-2', 'ring-red-500'); setTimeout(() => el.classList.remove('ring-2', 'ring-red-500'), 2500); }
         return;
       }
       if (wizardStep === 4) {
         if (num('wHrgUmum') <= 0) {
-          global.toast('Harga Jual Umum wajib diisi (> Rp 0) sebelum lanjut!', 'warn');
+          global.toast('Harga Eceran Satuan Dasar wajib diisi (> Rp 0) sebelum lanjut!', 'warn');
           const el = document.getElementById('wHrgUmum');
           if (el) { el.focus(); el.classList.add('ring-2', 'ring-red-500'); setTimeout(() => el.classList.remove('ring-2', 'ring-red-500'), 2500); }
           return;
@@ -5665,11 +5698,16 @@
       const satDasar = val('wSatDasar');
       if (!satDasar) {
         global.setObatWizardStep(3, true);
-        global.toast('Satuan Dasar Eceran (Tablet/Kapsul/dll) wajib diisi!', 'warn');
+        global.toast('Satuan Dasar Eceran (Tablet/Strip/Botol/dll) wajib diisi!', 'warn');
         const el = document.getElementById('wSatDasar');
         if (el) { el.focus(); el.classList.add('ring-2', 'ring-red-500'); }
         return;
       }
+
+      const satSed = val('wSatSed');
+      const satBes = val('wSatBes');
+      const rasioSedang = satSed ? Math.max(1, parseNum('wRasioSed', 1)) : 1;
+      const rasioBesar = satBes ? Math.max(1, parseNum('wRasioBes', 1)) : 1;
 
       const hppVal = parseNum('wHpp', 0);
       const hUmum = parseNum('wHrgUmum', 0);
@@ -5681,18 +5719,14 @@
         return;
       }
 
-      const hMem = parseNum('wHrgMem', 0) || hUmum;
-      const hGrosir = parseNum('wHrgGrosir', 0) || hUmum;
-      const minQtyGrosir = Math.max(2, parseNum('wMinQtyGrosir', 10));
-      const hFaskes = parseNum('wHrgFaskes', 0) || (hGrosir || hMem || hUmum);
+      const hSed = satSed ? parseNum('wHrgSed', rasioSedang > 1 ? hUmum * rasioSedang : 0) : 0;
+      const hBes = satBes ? parseNum('wHrgBes', rasioBesar > 1 ? hUmum * rasioBesar : 0) : 0;
 
-      if (hppVal > 0 && ((hUmum > 0 && hUmum < hppVal) || (hMem > 0 && hMem < hppVal) || (hGrosir > 0 && hGrosir < hppVal) || (hFaskes > 0 && hFaskes < hppVal))) {
-        const ok = global.confirm('PERINGATAN MARGIN (ANTI-RUGI): Terdapat tier harga jual di bawah HPP (' + S().rp(hppVal) + '). Tetap simpan?');
+      if (hppVal > 0 && hUmum < hppVal) {
+        const ok = global.confirm('PERINGATAN MARGIN (ANTI-RUGI): Harga jual eceran di bawah HPP (' + S().rp(hppVal) + '). Tetap simpan?');
         if (!ok) return;
       }
 
-      const rasioSedang = Math.max(1, parseNum('wRasioSed', 10));
-      const rasioBesar = Math.max(1, parseNum('wRasioBes', 100));
       const stokMin = parseNum('wStokMin', 10);
       const stokMax = Math.max(1, parseNum('wStokMax', 100));
 
@@ -5706,16 +5740,16 @@
         suhu_simpan: val('wSuhu') || 'Suhu Ruang (15-25°C)',
         rak_lokasi: rak,
         satuan_dasar: satDasar,
-        satuan_sedang: val('wSatSed') || 'Strip',
+        satuan_sedang: satSed,
         rasio_sedang: rasioSedang,
-        satuan_besar: val('wSatBes') || 'Box',
+        satuan_besar: satBes,
         rasio_besar: rasioBesar,
         hpp_avg: hppVal,
         harga_umum: hUmum,
-        harga_member: hMem,
-        harga_grosir: hGrosir,
-        min_qty_grosir: minQtyGrosir,
-        harga_faskes: hFaskes,
+        harga_sedang: hSed,
+        harga_besar: hBes,
+        harga_strip: hSed,
+        harga_box: hBes,
         stok_min: stokMin,
         stok_max: stokMax,
         pabrikan: val('wPabrikan'),
@@ -5743,17 +5777,15 @@
     { key: 'pabrikan', label: 'pabrikan', ket: 'Nama produsen / pabrik farmasi (cth: Kimia Farma, Dexa Medica)' },
     { key: 'rak_lokasi', label: 'rak_lokasi', ket: 'Lokasi rak penyimpanan (cth: RAK-A1, LEMARI-KERAS)' },
     { key: 'suhu_simpan', label: 'suhu_simpan', ket: 'Suhu Ruang (15-25 C) | Kulkas (2-8 C) | Lemari Khusus' },
-    { key: 'satuan_dasar', label: 'satuan_dasar', ket: 'Satuan jual terkecil (Tablet, Kapsul, Botol, Tube, Pcs)' },
-    { key: 'satuan_sedang', label: 'satuan_sedang', ket: 'Satuan menengah (Strip, Blister, Botol)' },
-    { key: 'rasio_sedang', label: 'rasio_sedang', ket: 'Jumlah satuan dasar per 1 satuan sedang (angka, cth: 10)' },
-    { key: 'satuan_besar', label: 'satuan_besar', ket: 'Satuan kemasan besar (Box, Karton, Dus)' },
-    { key: 'rasio_besar', label: 'rasio_besar', ket: 'Jumlah satuan dasar per 1 satuan besar (angka, cth: 100)' },
-    { key: 'hpp_avg', label: 'hpp_avg', ket: 'Harga pokok pembelian rata-rata per satuan dasar (angka tanpa titik/Rp)' },
-    { key: 'harga_umum', label: 'harga_umum', ket: 'Harga jual eceran umum per satuan dasar (>= HPP)' },
-    { key: 'harga_member', label: 'harga_member', ket: 'Harga jual khusus pelanggan member terdaftar (>= HPP)' },
-    { key: 'harga_grosir', label: 'harga_grosir', ket: 'Harga jual grosir minimal qty tertentu (>= HPP)' },
-    { key: 'min_qty_grosir', label: 'min_qty_grosir', ket: 'Minimal beli untuk harga grosir (angka >= 2, default 10)' },
-    { key: 'harga_faskes', label: 'harga_faskes', ket: 'Harga jual khusus klinik / bidan / faskes mitra' },
+    { key: 'satuan_dasar', label: 'satuan_dasar', ket: 'Satuan jual terkecil (Tablet, Strip, Botol, Tube, Kapsul, Pcs)' },
+    { key: 'satuan_sedang', label: 'satuan_sedang', ket: 'Satuan menengah (Strip, Blister, Pack). Kosongkan jika tidak ada' },
+    { key: 'rasio_sedang', label: 'rasio_sedang', ket: 'Jumlah satuan dasar per 1 satuan sedang (angka, default 1)' },
+    { key: 'satuan_besar', label: 'satuan_besar', ket: 'Satuan kemasan besar (Box, Dus, Karton). Kosongkan jika tidak ada' },
+    { key: 'rasio_besar', label: 'rasio_besar', ket: 'Jumlah satuan dasar per 1 satuan besar (angka, default 1)' },
+    { key: 'hpp_avg', label: 'hpp_avg', ket: 'Harga pokok modal pembelian per satuan dasar (angka tanpa titik/Rp)' },
+    { key: 'harga_umum', label: 'harga_umum', ket: 'Harga jual eceran satuan dasar (>= HPP modal)' },
+    { key: 'harga_sedang', label: 'harga_sedang', ket: 'Harga jual satuan sedang / per strip (opsional, jika kosong dihitung otomatis)' },
+    { key: 'harga_besar', label: 'harga_besar', ket: 'Harga jual satuan besar / per box (opsional, jika kosong dihitung otomatis)' },
     { key: 'stok_min', label: 'stok_min', ket: 'Batas peringatan stok menipis (angka, default 10)' },
     { key: 'stok_max', label: 'stok_max', ket: 'Kapasitas stok maksimal yang disarankan (angka, default 100)' },
     { key: 'pbf_utama', label: 'pbf_utama', ket: 'Nama PBF / distributor pemasok utama' },
@@ -5763,11 +5795,11 @@
   ];
 
   const MASTER_OBAT_SAMPLE_ROWS = [
-    ['93001105', 'Paracetamol 500mg Kaplet KF', 'Paracetamol', '500 mg', 'BEBAS', 'Kaplet', 'GBL9812416804A1', 'Kimia Farma', 'RAK-A1', 'Suhu Ruang (15-25 C)', 'Kaplet', 'Strip', 10, 'Box', 100, 185, 350, 300, 260, 10, 250, 50, 500, 'PT Kimia Farma Trading', 100, 'BTC-PCT-2026', '2028-12-31'],
-    ['93002110', 'Cetirizine 10mg Dexa', 'Cetirizine HCl', '10 mg', 'TERBATAS', 'Tablet', 'GKL1405048817A1', 'Dexa Medica', 'RAK-A2', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 350, 700, 600, 520, 10, 500, 30, 300, 'PT Anugerah Argon Medica', 50, 'BTC-CTZ-2026', '2028-10-15'],
-    ['93003340', 'Amoxsan 500mg Kapsul', 'Amoxicillin Trihydrate', '500 mg', 'KERAS', 'Kapsul', 'DKL8622205901A1', 'Sanbe Farma', 'RAK-B1', 'Suhu Ruang (15-25 C)', 'Kapsul', 'Strip', 10, 'Box', 100, 3400, 4800, 4500, 4100, 10, 4000, 20, 200, 'PT Enseval Putera Megatrading', 40, 'BTC-AMX-2026', '2027-11-20'],
-    ['93004821', 'Rhinos SR Kapsul', 'Loratadine + Pseudoephedrine HCl', '5 mg + 120 mg', 'PREKURSOR', 'Kapsul SR', 'DKL9905029103A1', 'Dexa Medica', 'LEMARI-PREKURSOR', 'Suhu Ruang (15-25 C)', 'Kapsul', 'Strip', 10, 'Box', 50, 6800, 8900, 8400, 7800, 10, 7600, 15, 100, 'PT Anugerah Argon Medica', 30, 'BTC-RHN-2026', '2028-06-30'],
-    ['92004512', 'Neurobion Forte Tablet', 'Vitamin B1, B6, B12', '100/100/5000 mcg', 'BEBAS', 'Tablet Salut', 'DBL7215806416B1', 'Merck / P&G', 'RAK-C1', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 2800, 3900, 3600, 3300, 10, 3200, 20, 200, 'PT Parit Padang Global', 80, 'BTC-NRB-2026', '2028-09-01']
+    ['93001105', 'Paracetamol 500mg Kaplet KF', 'Paracetamol', '500 mg', 'BEBAS', 'Kaplet', 'GBL9812416804A1', 'Kimia Farma', 'RAK-A1', 'Suhu Ruang (15-25 C)', 'Kaplet', 'Strip', 10, 'Box', 100, 185, 350, 3200, 30000, 50, 500, 'PT Kimia Farma Trading', 100, 'BTC-PCT-2026', '2028-12-31'],
+    ['93002110', 'Cetirizine 10mg Dexa', 'Cetirizine HCl', '10 mg', 'TERBATAS', 'Tablet', 'GKL1405048817A1', 'Dexa Medica', 'RAK-A2', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 350, 700, 6500, 30000, 30, 300, 'PT Anugerah Argon Medica', 50, 'BTC-CTZ-2026', '2028-10-15'],
+    ['93003340', 'Emturnas 500mg Strip', 'Paracetamol', '500 mg', 'BEBAS', 'Strip', 'DBL8622205901A1', 'Kalbe Farma', 'RAK-B1', 'Suhu Ruang (15-25 C)', 'Strip', '', 1, '', 1, 2150, 4000, 0, 0, 20, 200, 'PT Enseval Putera Megatrading', 40, 'BTC-EMT-2026', '2027-11-20'],
+    ['93004821', 'Rhinos SR Kapsul', 'Loratadine + Pseudoephedrine HCl', '5 mg + 120 mg', 'PREKURSOR', 'Kapsul SR', 'DKL9905029103A1', 'Dexa Medica', 'LEMARI-PREKURSOR', 'Suhu Ruang (15-25 C)', 'Strip', '', 1, 'Box', 10, 68000, 89000, 0, 850000, 15, 100, 'PT Anugerah Argon Medica', 30, 'BTC-RHN-2026', '2028-06-30'],
+    ['92004512', 'Sanmol Sirup 120mg/5ml 60ml', 'Paracetamol', '120 mg/5 mL', 'BEBAS', 'Botol', 'DBL7215806416B1', 'Sanbe Farma', 'RAK-SIRUP', 'Suhu Ruang (15-25 C)', 'Botol', '', 1, '', 1, 16500, 22000, 0, 0, 10, 50, 'PT Parit Padang Global', 25, 'BTC-SNM-2026', '2028-09-01']
   ];
 
   function _csvSafeVal(val) {
@@ -5884,6 +5916,8 @@
       rasio_besar: 'rasio_besar', isi_besar: 'rasio_besar', isi_per_box: 'rasio_besar', qty_besar: 'rasio_besar',
       hpp_avg: 'hpp_avg', hpp: 'hpp_avg', harga_beli: 'hpp_avg', hna: 'hpp_avg', modal: 'hpp_avg', beli: 'hpp_avg', harga_pokok: 'hpp_avg', harga_modal: 'hpp_avg', cost: 'hpp_avg', buy_price: 'hpp_avg', harga_netto: 'hpp_avg',
       harga_umum: 'harga_umum', harga: 'harga_umum', harga_jual: 'harga_umum', hja: 'harga_umum', harga_eceran: 'harga_umum', eceran: 'harga_umum', retail_price: 'harga_umum', harga_konsumen: 'harga_umum', jual: 'harga_umum',
+      harga_sedang: 'harga_sedang', harga_strip: 'harga_sedang', strip: 'harga_sedang', per_strip: 'harga_sedang', pack_price: 'harga_sedang', harga_pack: 'harga_sedang',
+      harga_besar: 'harga_besar', harga_box: 'harga_besar', box_price: 'harga_besar', per_box: 'harga_besar', dus_price: 'harga_besar', harga_dus: 'harga_besar',
       harga_member: 'harga_member', member: 'harga_member', harga_langganan: 'harga_member', member_price: 'harga_member',
       harga_grosir: 'harga_grosir', grosir: 'harga_grosir', wholesale: 'harga_grosir', wholesale_price: 'harga_grosir',
       min_qty_grosir: 'min_qty_grosir', min_grosir: 'min_qty_grosir', min_qty: 'min_qty_grosir', minimal_grosir: 'min_qty_grosir',
@@ -5917,9 +5951,9 @@
       <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
         <div class="space-y-0.5">
           <div class="font-bold flex items-center gap-1.5">
-            <span>1. Unduh Contoh File &amp; Template (27 Kolom Lengkap)</span>
+            <span>1. Unduh Contoh File &amp; Template (25 Kolom Lengkap)</span>
           </div>
-          <div style="color:var(--ons-text-soft)">Berisi 5 contoh obat standar BPOM lengkap dengan satuan berjenjang, harga, rak, dan stok awal.</div>
+          <div style="color:var(--ons-text-soft)">Berisi 5 contoh obat standar BPOM lengkap dengan multi-kemasan fleksibel (eceran, strip-only, botol-only, box), harga, rak, dan stok awal.</div>
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" onclick="window.downloadTemplateImportObat()" class="ons-btn ons-btn-ghost">&#128196; Unduh Contoh CSV (.csv)</button>
@@ -5938,8 +5972,9 @@
         <div class="mt-3 pt-3 border-t space-y-2.5" style="border-color:var(--ons-border)">
           <div class="p-2.5 rounded-lg border text-[11px] leading-relaxed bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
             <b>&#10003; Cukup 1 Kolom Wajib:</b> <code>nama_dagang</code> (atau <i>Nama Obat / Nama Barang / Item</i>). Kolom lain opsional dan otomatis diberi nilai aman jika kosong.<br/>
-            <b>&#10003; Smart Auto-Mapping:</b> Jika kolom file Anda bernama <i>HNA / Modal / Beli</i>, otomatis jadi <b>HPP</b>. Jika bernama <i>Harga Jual / Eceran</i>, otomatis jadi <b>Harga Umum</b>. Jika ada <i>Qty / Stok / Saldo</i>, otomatis jadi <b>Stok Awal</b>.<br/>
-            <b>&#10003; Format Angka Fleksibel:</b> Boleh menggunakan format <code>15000</code> atau <code>Rp 15.000</code> (titik/koma/simbol Rp otomatis dibersihkan).
+            <b>&#10003; Multi-Kemasan Fleksibel:</b> Jika produk hanya dijual per Strip (cth: Emturnas) atau Sirup botol tanpa box, kosongkan kolom <i>satuan_sedang</i> dan <i>satuan_besar</i>. Sistem tidak akan membuat Box otomatis.<br/>
+            <b>&#10003; Smart Auto-Mapping:</b> Kolom <i>HNA / Modal / Beli</i> otomatis jadi <b>HPP</b>. Kolom <i>Harga Jual / Eceran</i> otomatis jadi <b>Harga Umum</b>. Kolom <i>Qty / Stok / Saldo</i> otomatis jadi <b>Stok Awal</b>.<br/>
+            <b>&#10003; Format Angka Fleksibel:</b> Boleh format angka biasa <code>15000</code> atau <code>Rp 15.000</code>.
           </div>
           <div class="overflow-x-auto max-h-48 border rounded-lg" style="border-color:var(--ons-border)">
             <table class="w-full text-[11px] border-collapse bg-white dark:bg-neutral-900">
@@ -5979,36 +6014,36 @@
                 </tr>
                 <tr class="border-b" style="border-color:var(--ons-border)">
                   <td class="p-1.5 font-mono-num">3</td>
-                  <td class="p-1.5 font-bold">Amoxsan 500mg Kapsul</td>
-                  <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800">KERAS</span></td>
-                  <td class="p-1.5">Sanbe Farma</td>
-                  <td class="p-1.5">Kapsul</td>
-                  <td class="p-1.5 text-right font-mono-num">Rp 3.400</td>
-                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 4.800</td>
+                  <td class="p-1.5 font-bold">Emturnas 500mg Strip</td>
+                  <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800">BEBAS</span></td>
+                  <td class="p-1.5">Kalbe Farma</td>
+                  <td class="p-1.5 font-semibold text-blue-600">Strip (Tunggal)</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 2.150</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 4.000</td>
                   <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">40</td>
-                  <td class="p-1.5 font-mono-num text-[10px]">BTC-AMX-2026 (2027-11-20)</td>
+                  <td class="p-1.5 font-mono-num text-[10px]">BTC-EMT-2026 (2027-11-20)</td>
                 </tr>
                 <tr class="border-b" style="border-color:var(--ons-border)">
                   <td class="p-1.5 font-mono-num">4</td>
                   <td class="p-1.5 font-bold">Rhinos SR Kapsul</td>
                   <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800">PREKURSOR</span></td>
                   <td class="p-1.5">Dexa Medica</td>
-                  <td class="p-1.5">Kapsul</td>
-                  <td class="p-1.5 text-right font-mono-num">Rp 6.800</td>
-                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 8.900</td>
+                  <td class="p-1.5">Strip (Box)</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 68.000</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 89.000</td>
                   <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">30</td>
                   <td class="p-1.5 font-mono-num text-[10px]">BTC-RHN-2026 (2028-06-30)</td>
                 </tr>
                 <tr>
                   <td class="p-1.5 font-mono-num">5</td>
-                  <td class="p-1.5 font-bold">Neurobion Forte Tablet</td>
+                  <td class="p-1.5 font-bold">Sanmol Sirup 120mg/5ml 60ml</td>
                   <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800">BEBAS</span></td>
-                  <td class="p-1.5">Merck / P&G</td>
-                  <td class="p-1.5">Tablet</td>
-                  <td class="p-1.5 text-right font-mono-num">Rp 2.800</td>
-                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 3.900</td>
-                  <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">80</td>
-                  <td class="p-1.5 font-mono-num text-[10px]">BTC-NRB-2026 (2028-09-01)</td>
+                  <td class="p-1.5">Sanbe Farma</td>
+                  <td class="p-1.5 font-semibold text-blue-600">Botol (Tunggal)</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 16.500</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 22.000</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">25</td>
+                  <td class="p-1.5 font-mono-num text-[10px]">BTC-SNM-2026 (2028-09-01)</td>
                 </tr>
               </tbody>
             </table>
@@ -6053,7 +6088,7 @@
     const csv = '\uFEFF' + [headerLine, ...bodyLines].join('\r\n') + '\r\n';
     S().downloadFile(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'Template_Import_Master_Obat_ONS.csv');
     if (typeof global.toast === 'function') {
-      global.toast('Contoh CSV Master Obat (UTF-8 Excel, 27 kolom & 5 contoh obat) berhasil diunduh.', 'ok');
+      global.toast('Contoh CSV Master Obat (UTF-8 Excel, 25 kolom & 5 contoh kemasan) berhasil diunduh.', 'ok');
     }
     return csv;
   };
@@ -6064,8 +6099,8 @@
     }
     const XS = global.ONSXlsxExport.STYLE;
     const c = global.ONSXlsxExport.cell;
-    const intCols = new Set(['rasio_sedang', 'rasio_besar', 'min_qty_grosir', 'stok_min', 'stok_max', 'stok_awal']);
-    const curCols = new Set(['hpp_avg', 'harga_umum', 'harga_member', 'harga_grosir', 'harga_faskes']);
+    const intCols = new Set(['rasio_sedang', 'rasio_besar', 'stok_min', 'stok_max', 'stok_awal']);
+    const curCols = new Set(['hpp_avg', 'harga_umum', 'harga_sedang', 'harga_besar']);
     const headerRow = MASTER_OBAT_IMPORT_COLUMNS.map((col) => c(col.label, XS.HEADER));
     const dataRows = MASTER_OBAT_SAMPLE_ROWS.map((r, ri) => {
       const alt = ri % 2 === 1;
@@ -6077,7 +6112,7 @@
         return c(val, alt ? XS.TEXT_ALT : XS.TEXT);
       });
     });
-    const widths = [14, 28, 26, 16, 16, 15, 19, 22, 18, 22, 14, 14, 14, 13, 13, 14, 14, 14, 14, 15, 14, 11, 11, 28, 12, 16, 14];
+    const widths = [14, 28, 26, 16, 16, 15, 19, 22, 18, 22, 14, 14, 14, 14, 14, 14, 14, 14, 14, 11, 11, 28, 12, 16, 14];
     const rowHeights = { 1: 24 };
     const colGuideRows = [
       [c('PANDUAN PENGISIAN TEMPLATE IMPORT MASTER OBAT ONS FARMA', XS.TITLE), '', ''],
@@ -6097,7 +6132,7 @@
       {
         name: 'Template_Master_Obat',
         freezeRows: 1,
-        autoFilter: 'A1:AA' + (1 + dataRows.length),
+        autoFilter: 'A1:Y' + (1 + dataRows.length),
         widths,
         rowHeights,
         rows: [headerRow, ...dataRows]
@@ -6115,7 +6150,7 @@
       creator: 'Apotek ONS Farma'
     });
     if (typeof global.toast === 'function') {
-      global.toast('Contoh Excel (.xlsx) 2 sheet (27 kolom + panduan) berhasil diunduh.', 'ok');
+      global.toast('Contoh Excel (.xlsx) 2 sheet (25 kolom + panduan) berhasil diunduh.', 'ok');
     }
     return true;
   };
@@ -6167,11 +6202,15 @@
           if (!nama || /^total\b/i.test(nama)) return null;
           const rawGol = String(obj.golongan_bpom || 'BEBAS').toUpperCase().trim();
           const gol = VALID_GOL.has(rawGol) ? rawGol : 'BEBAS';
+          const satDasar = obj.satuan_dasar || 'Tablet';
+          const satSedang = String(obj.satuan_sedang || '').trim();
+          const satBesar = String(obj.satuan_besar || '').trim();
+          const rasioSedang = satSedang ? Math.max(1, _parseImportNum(obj.rasio_sedang, 1)) : 1;
+          const rasioBesar = satBesar ? Math.max(1, _parseImportNum(obj.rasio_besar, 1)) : 1;
           const hpp = Math.max(0, _parseImportNum(obj.hpp_avg, 0));
           const hUmum = Math.max(0, _parseImportNum(obj.harga_umum, 0));
-          const hMem = Math.max(0, _parseImportNum(obj.harga_member, hUmum));
-          const hGrosir = Math.max(0, _parseImportNum(obj.harga_grosir, hMem || hUmum));
-          const hFaskes = Math.max(0, _parseImportNum(obj.harga_faskes, hGrosir || hUmum));
+          const hSed = satSedang ? Math.max(0, _parseImportNum(obj.harga_sedang || obj.harga_strip, rasioSedang > 1 ? hUmum * rasioSedang : 0)) : 0;
+          const hBes = satBesar ? Math.max(0, _parseImportNum(obj.harga_besar || obj.harga_box, rasioBesar > 1 ? hUmum * rasioBesar : 0)) : 0;
           const stokAwal = Math.max(0, _parseImportNum(obj.stok_awal, 0));
           return {
             nama_dagang: nama,
@@ -6180,21 +6219,21 @@
             kode_kfa: (obj.kode_kfa === '-' ? '' : (obj.kode_kfa || '')),
             nie_bpom: (obj.nie_bpom === '-' ? '' : (obj.nie_bpom || '')),
             golongan_bpom: gol,
-            bentuk_sediaan: obj.bentuk_sediaan || obj.satuan_dasar || 'Tablet',
+            bentuk_sediaan: obj.bentuk_sediaan || satDasar,
             pabrikan: obj.pabrikan === '-' ? '' : (obj.pabrikan || ''),
             rak_lokasi: obj.rak_lokasi || 'RAK-A1',
             suhu_simpan: obj.suhu_simpan || 'Suhu Ruang (15-25 C)',
-            satuan_dasar: obj.satuan_dasar || 'Tablet',
-            satuan_sedang: obj.satuan_sedang || 'Strip',
-            rasio_sedang: Math.max(1, _parseImportNum(obj.rasio_sedang, 10)),
-            satuan_besar: obj.satuan_besar || 'Box',
-            rasio_besar: Math.max(1, _parseImportNum(obj.rasio_besar, 100)),
+            satuan_dasar: satDasar,
+            satuan_sedang: satSedang,
+            rasio_sedang: rasioSedang,
+            satuan_besar: satBesar,
+            rasio_besar: rasioBesar,
             hpp_avg: hpp,
             harga_umum: hUmum,
-            harga_member: hMem,
-            harga_grosir: hGrosir,
-            min_qty_grosir: Math.max(2, _parseImportNum(obj.min_qty_grosir, 10)),
-            harga_faskes: hFaskes,
+            harga_sedang: hSed,
+            harga_besar: hBes,
+            harga_strip: hSed,
+            harga_box: hBes,
             stok_min: Math.max(0, _parseImportNum(obj.stok_min, 10)),
             stok_max: Math.max(1, _parseImportNum(obj.stok_max, 100)),
             pbf_utama: obj.pbf_utama === '-' ? '' : (obj.pbf_utama || ''),

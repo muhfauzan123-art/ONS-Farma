@@ -795,14 +795,28 @@
         status_aktif: 'AKTIF',
         updated_at: nowIso
       }, d);
+      item.satuan_dasar = String(item.satuan_dasar || 'Tablet').trim();
+      item.satuan_sedang = String(item.satuan_sedang || '').trim();
+      item.satuan_besar = String(item.satuan_besar || '').trim();
+      item.rasio_sedang = item.satuan_sedang ? Math.max(1, sanitizeNum(item.rasio_sedang, 1)) : 1;
+      item.rasio_besar = item.satuan_besar ? Math.max(1, sanitizeNum(item.rasio_besar, 1)) : 1;
+
       item.hpp_avg = sanitizeNum(item.hpp_avg, 0);
       item.harga_umum = sanitizeNum(item.harga_umum, 0);
-      item.harga_member = sanitizeNum(item.harga_member, item.harga_umum);
-      item.harga_grosir = sanitizeNum(item.harga_grosir, item.harga_umum);
-      item.min_qty_grosir = Math.max(2, sanitizeNum(item.min_qty_grosir, 10));
-      item.harga_faskes = sanitizeNum(item.harga_faskes, item.harga_grosir || item.harga_member || item.harga_umum);
-      item.rasio_sedang = Math.max(1, sanitizeNum(item.rasio_sedang, 10));
-      item.rasio_besar = Math.max(1, sanitizeNum(item.rasio_besar, 100));
+
+      const defHrgSed = (item.satuan_sedang && item.rasio_sedang > 1) ? Math.round(item.harga_umum * item.rasio_sedang) : 0;
+      const defHrgBes = (item.satuan_besar && item.rasio_besar > 1) ? Math.round(item.harga_umum * item.rasio_besar) : 0;
+      item.harga_sedang = item.satuan_sedang ? sanitizeNum(item.harga_sedang !== undefined && item.harga_sedang !== '' ? item.harga_sedang : item.harga_strip, defHrgSed) : 0;
+      item.harga_besar = item.satuan_besar ? sanitizeNum(item.harga_besar !== undefined && item.harga_besar !== '' ? item.harga_besar : item.harga_box, defHrgBes) : 0;
+      item.harga_strip = item.harga_sedang;
+      item.harga_box = item.harga_besar;
+
+      // Harga member, grosir, faskes disetarakan ke harga kemasan konversi (tanpa tiering pelanggan)
+      item.harga_member = item.harga_umum;
+      item.harga_grosir = item.harga_umum;
+      item.min_qty_grosir = 1;
+      item.harga_faskes = item.harga_umum;
+
       item.stok_min = Math.max(0, sanitizeNum(item.stok_min, 10));
       item.stok_max = Math.max(1, sanitizeNum(item.stok_max, 100));
       item.pabrikan = String(item.pabrikan || '').trim();
@@ -826,17 +840,20 @@
         if (idx < 0) return;
         const m = db.master_obat[idx];
         if (p.harga_umum !== undefined && Number(p.harga_umum) > 0) m.harga_umum = Math.round(Number(p.harga_umum));
-        if (p.harga_member !== undefined && Number(p.harga_member) > 0) m.harga_member = Math.round(Number(p.harga_member));
-        if (p.harga_grosir !== undefined && Number(p.harga_grosir) > 0) m.harga_grosir = Math.round(Number(p.harga_grosir));
-        if (p.harga_faskes !== undefined && Number(p.harga_faskes) > 0) m.harga_faskes = Math.round(Number(p.harga_faskes));
+        if (p.harga_sedang !== undefined) m.harga_sedang = Math.round(Number(p.harga_sedang) || 0);
+        if (p.harga_besar !== undefined) m.harga_besar = Math.round(Number(p.harga_besar) || 0);
+        if (p.harga_strip !== undefined) m.harga_strip = Math.round(Number(p.harga_strip) || 0);
+        if (p.harga_box !== undefined) m.harga_box = Math.round(Number(p.harga_box) || 0);
+        m.harga_member = m.harga_umum;
+        m.harga_grosir = m.harga_umum;
+        m.harga_faskes = m.harga_umum;
         m.updated_at = nowIso;
         updatedRows.push({
           id_obat: m.id_obat,
           nama_dagang: m.nama_dagang,
           harga_umum: m.harga_umum,
-          harga_member: m.harga_member,
-          harga_grosir: m.harga_grosir,
-          harga_faskes: m.harga_faskes
+          harga_sedang: m.harga_sedang,
+          harga_besar: m.harga_besar
         });
       });
       if (!updatedRows.length) throw new Error('Produk Master Obat tidak ditemukan untuk pembaruan harga.');
@@ -1888,6 +1905,17 @@
           (kfa && String(m.kode_kfa || '').trim() === kfa) ||
           (String(m.nama_dagang || '').trim().toLowerCase() === String(raw.nama_dagang).trim().toLowerCase())
         );
+        const satDasar = String(raw.satuan_dasar || raw.bentuk_sediaan || 'Tablet').trim();
+        const satSedang = String(raw.satuan_sedang || '').trim();
+        const satBesar = String(raw.satuan_besar || '').trim();
+        const rasSedang = satSedang ? Math.max(1, Number(raw.rasio_sedang || 1)) : 1;
+        const rasBesar = satBesar ? Math.max(1, Number(raw.rasio_besar || 1)) : 1;
+        const hrgUmum = Number(raw.harga_umum || 0);
+        const defHrgSed = (satSedang && rasSedang > 1) ? Math.round(hrgUmum * rasSedang) : 0;
+        const defHrgBes = (satBesar && rasBesar > 1) ? Math.round(hrgUmum * rasBesar) : 0;
+        const hrgSedang = satSedang ? Number(raw.harga_sedang !== undefined && raw.harga_sedang !== '' ? raw.harga_sedang : (raw.harga_strip || defHrgSed)) : 0;
+        const hrgBesar = satBesar ? Number(raw.harga_besar !== undefined && raw.harga_besar !== '' ? raw.harga_besar : (raw.harga_box || defHrgBes)) : 0;
+
         if (existing) {
           targetId = existing.id_obat;
           Object.keys(raw).forEach((k) => {
@@ -1895,6 +1923,20 @@
             const v = raw[k];
             if (v !== undefined && v !== null && v !== '') existing[k] = v;
           });
+          if (raw.satuan_dasar !== undefined) existing.satuan_dasar = satDasar;
+          if (raw.satuan_sedang !== undefined) existing.satuan_sedang = satSedang;
+          if (raw.satuan_besar !== undefined) existing.satuan_besar = satBesar;
+          existing.rasio_sedang = rasSedang;
+          existing.rasio_besar = rasBesar;
+          if (raw.harga_umum !== undefined && raw.harga_umum !== '') existing.harga_umum = hrgUmum;
+          existing.harga_sedang = hrgSedang;
+          existing.harga_besar = hrgBesar;
+          existing.harga_strip = hrgSedang;
+          existing.harga_box = hrgBesar;
+          existing.harga_member = existing.harga_umum;
+          existing.harga_grosir = existing.harga_umum;
+          existing.min_qty_grosir = 1;
+          existing.harga_faskes = existing.harga_umum;
           existing.updated_at = now;
           updated++;
         } else {
@@ -1906,25 +1948,29 @@
             zat_aktif: raw.zat_aktif || '',
             kekuatan: raw.kekuatan || '',
             golongan_bpom: raw.golongan_bpom || 'BEBAS',
-            bentuk_sediaan: raw.bentuk_sediaan || raw.satuan_dasar || 'Tablet',
+            bentuk_sediaan: raw.bentuk_sediaan || satDasar,
             nie_bpom: raw.nie_bpom || '',
             pabrikan: raw.pabrikan || '',
             suhu_simpan: raw.suhu_simpan || 'Suhu Ruang (15-25 C)',
             rak_lokasi: raw.rak_lokasi || 'RAK-A1',
-            satuan_dasar: raw.satuan_dasar || 'Tablet',
-            satuan_sedang: raw.satuan_sedang || 'Strip',
-            rasio_sedang: Number(raw.rasio_sedang || 10),
-            satuan_besar: raw.satuan_besar || 'Box',
-            rasio_besar: Number(raw.rasio_besar || 100),
+            satuan_dasar: satDasar,
+            satuan_sedang: satSedang,
+            rasio_sedang: rasSedang,
+            satuan_besar: satBesar,
+            rasio_besar: rasBesar,
             stok_min: Number(raw.stok_min !== undefined ? raw.stok_min : 10),
             stok_max: Number(raw.stok_max || 100),
             hpp_avg: Number(raw.hpp_avg || 0),
             hpp_terakhir: Number(raw.hpp_terakhir || raw.hpp_avg || 0),
-            harga_umum: Number(raw.harga_umum || 0),
-            harga_member: Number(raw.harga_member || raw.harga_umum || 0),
-            harga_grosir: Number(raw.harga_grosir || raw.harga_member || raw.harga_umum || 0),
-            min_qty_grosir: Math.max(2, Number(raw.min_qty_grosir || 10)),
-            harga_faskes: Number(raw.harga_faskes || raw.harga_grosir || raw.harga_umum || 0),
+            harga_umum: hrgUmum,
+            harga_sedang: hrgSedang,
+            harga_besar: hrgBesar,
+            harga_strip: hrgSedang,
+            harga_box: hrgBesar,
+            harga_member: hrgUmum,
+            harga_grosir: hrgUmum,
+            min_qty_grosir: 1,
+            harga_faskes: hrgUmum,
             pbf_utama: raw.pbf_utama || '',
             status_aktif: 'AKTIF',
             substitusi_ids: raw.substitusi_ids || '',

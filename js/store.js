@@ -832,30 +832,11 @@
   }
 
   /**
-   * Smart Pricing Bertingkat (Umum / Member / Grosir Min-Qty / Faskes) & Promo Near-ED
+   * Harga Jual Satuan Dasar & Konversi Kemasan (Umum / Bebas Tiering Pelanggan)
    */
   function getEffectiveObatPrice(obat, qtyBase = 1, tierMode = 'UMUM') {
     if (!obat) return { harga: 0, tierApplied: 'UMUM', isGrosirAuto: false };
-    const mode = String(tierMode || 'UMUM').toUpperCase();
     const hUmum = Number(obat.harga_umum || 0);
-    const hMember = Number(obat.harga_member || hUmum || 0);
-    const hGrosir = Number(obat.harga_grosir || hMember || hUmum || 0);
-    const hFaskes = Number(obat.harga_faskes || hGrosir || hMember || hUmum || 0);
-    const minGrosir = Math.max(1, Number(obat.min_qty_grosir || 10));
-    const q = Math.max(1, Number(qtyBase || 1));
-    if (mode === 'FASKES') {
-      return { harga: hFaskes, tierApplied: 'FASKES', isGrosirAuto: false };
-    }
-    if (mode === 'GROSIR') {
-      return { harga: hGrosir, tierApplied: 'GROSIR', isGrosirAuto: false };
-    }
-    const baseTarget = mode === 'MEMBER' ? hMember : hUmum;
-    if (Number(obat.harga_grosir || 0) > 0 && q >= minGrosir && hGrosir > 0 && hGrosir < baseTarget) {
-      return { harga: hGrosir, tierApplied: 'GROSIR_AUTO', isGrosirAuto: true };
-    }
-    if (mode === 'MEMBER') {
-      return { harga: hMember, tierApplied: 'MEMBER', isGrosirAuto: false };
-    }
     return { harga: hUmum, tierApplied: 'UMUM', isGrosirAuto: false };
   }
 

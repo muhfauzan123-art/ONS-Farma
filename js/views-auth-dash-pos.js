@@ -4038,7 +4038,8 @@
           <div class="flex flex-wrap gap-1 mt-1.5">
             ${nearEd.hasNearEd ? `<span class="badge-bpom bpom-prekursor text-[10px]">Promo Near-ED &le;${nearEd.minDays}h: -${nearEd.suggestedDiscPct}%</span>` : ''}
             ${isLow ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300">Stok Menipis</span>' : ''}
-            ${o.min_qty_grosir && o.harga_grosir ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300">Grosir &ge;${o.min_qty_grosir}: ${S().rp(o.harga_grosir)}</span>` : ''}
+            ${o.satuan_sedang && (o.harga_sedang || o.harga_strip) ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300">${S().esc(o.satuan_sedang)}: ${S().rp(o.harga_sedang || o.harga_strip)}</span>` : ''}
+            ${o.satuan_besar && (o.harga_besar || o.harga_box) ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">${S().esc(o.satuan_besar)}: ${S().rp(o.harga_besar || o.harga_box)}</span>` : ''}
           </div>
         </div>
         <div class="flex items-center justify-between pt-2 border-t gap-2" style="border-color:var(--ons-border)">
@@ -5007,11 +5008,10 @@
                 <thead>
                   <tr>
                     <th class="w-10">No.</th>
-                    <th>Produk</th>
+                    <th>Produk & Signa</th>
                     <th>Kuantitas</th>
-                    <th>Satuan</th>
-                    <th>Opsi Harga</th>
-                    <th class="text-right">Harga Jual</th>
+                    <th>Satuan / Kemasan</th>
+                    <th class="text-right">Harga Satuan</th>
                     <th class="text-right">Sub Total</th>
                     <th class="w-10"></th>
                   </tr>
@@ -5024,11 +5024,10 @@
                     const netLine = Math.max(0, grossLine - Number(it.diskon_item || 0));
                     const hppLine = Number((ob && ob.hpp_avg) || 0) * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1));
                     const itemBelowHpp = hppLine > 0 && netLine < hppLine;
-                    const itemTier = String(it.tier_applied || cart.tier_harga || 'UMUM').replace('_AUTO', '');
                     return `<tr>
                       <td class="text-xs font-mono-num align-top">${idx + 1}</td>
                       <td class="text-xs align-top min-w-[180px]">
-                        <div class="font-bold leading-snug">${S().esc(it.nama_dagang)} ${it.tier_applied === 'GROSIR_AUTO' ? '<span class="badge-bpom bpom-bebas text-[9px]">GROSIR AUTO</span>' : ''}</div>
+                        <div class="font-bold leading-snug">${S().esc(it.nama_dagang)}</div>
                         ${it.racikan_nama ? `<div class="mt-0.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 inline-flex items-center gap-1">&#128138; ${S().esc(it.racikan_nama)}</span></div>` : ''}
                         <div class="flex flex-wrap items-center gap-1 mt-1">
                           <select aria-label="Aturan Pakai" onchange="window.posSetAturanPakai(${idx}, this.value);renderActiveView();" class="ons-select text-[10px] py-0.5 px-1.5 min-h-0 h-6 max-w-[175px]">
@@ -5047,20 +5046,10 @@
                         </div>
                       </td>
                       <td class="align-top">
-                        <select aria-label="Satuan Jual" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] font-bold py-1 px-1.5 min-h-0 h-8 min-w-[115px] max-w-[150px] bg-blue-50/70 dark:bg-slate-800 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 shadow-sm cursor-pointer" title="Klik untuk ubah satuan jual (Box/Strip/Tablet)">
+                        <select aria-label="Satuan Jual" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] font-bold py-1 px-1.5 min-h-0 h-8 min-w-[125px] max-w-[170px] bg-blue-50/70 dark:bg-slate-800 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 shadow-sm cursor-pointer" title="Klik untuk ubah satuan jual (Eceran / Strip / Box)">
                           ${(it.unitOptions || []).map((u) => `<option value="${S().esc(u.label)}" ${u.label === it.satuan ? 'selected' : ''}>${S().esc(u.displayText || u.label)}</option>`).join('')}
                         </select>
                         ${Number(it.faktor_konversi || 1) > 1 ? `<div class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 font-mono-num">(1 ${S().esc(it.satuan)} = ${it.faktor_konversi} ${ob ? S().esc(ob.satuan_dasar || 'unit') : 'unit'})</div>` : ''}
-                      </td>
-                      <td class="align-top">
-                        <select aria-label="Opsi Harga" onchange="window.posChangeItemTier(${idx}, this.value)" class="ons-select text-[11px] py-1 px-1.5 min-h-0 h-8 w-28">
-                          ${[
-                            { id: 'UMUM', lbl: 'Reguler' },
-                            { id: 'MEMBER', lbl: 'Member' },
-                            { id: 'GROSIR', lbl: 'Grosir' },
-                            { id: 'FASKES', lbl: 'Faskes' }
-                          ].map((t) => `<option value="${t.id}" ${itemTier === t.id ? 'selected' : ''}>${t.lbl}</option>`).join('')}
-                        </select>
                       </td>
                       <td class="text-right font-mono-num text-xs align-top">
                         <div>${S().rp(it.harga_jual)}</div>
@@ -5072,7 +5061,7 @@
                       </td>
                     </tr>`;
                   }).join('') : `<tr>
-                    <td colspan="8" class="text-center py-10 text-sm" style="color:var(--ons-text-soft)">
+                    <td colspan="7" class="text-center py-10 text-sm" style="color:var(--ons-text-soft)">
                       <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 mb-2.5">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                       </div>
@@ -5107,15 +5096,6 @@
                 <span id="posCatalogMeta" class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${catalog.length} dari ${st.masterObat.length} item</span>
               </div>
               <div class="flex flex-wrap items-center gap-1.5">
-                <label class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Tier Harga:</label>
-                <select aria-label="Tier Harga Global" onchange="window.setPosPriceTier(this.value)" class="ons-select text-[11px] py-0.5 px-2 min-h-0 h-7">
-                  ${[
-                    { id: 'UMUM', lbl: 'Opsi: Reguler' },
-                    { id: 'MEMBER', lbl: 'Opsi: Member' },
-                    { id: 'GROSIR', lbl: 'Opsi: Grosir' },
-                    { id: 'FASKES', lbl: 'Opsi: Faskes' }
-                  ].map((t) => `<option value="${t.id}" ${(cart.tier_harga || (cart.id_member !== 'UMUM' ? 'MEMBER' : 'UMUM')) === t.id ? 'selected' : ''}>${t.lbl}</option>`).join('')}
-                </select>
                 <button type="button" onclick="window.togglePosCatalogViewMode()" class="ons-btn ons-btn-ghost text-[11px] py-0.5 px-2.5 min-h-0 h-7">${posCatalogView === 'LIST' ? 'Tampilan Kartu' : 'Daftar Cepat'}</button>
               </div>
             </div>
@@ -5898,26 +5878,27 @@
 
   function _repriceCartItem(obat, it, tierMode) {
     if (!obat || !it) return;
-    const totalBaseQty = Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1));
-    const eff = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, totalBaseQty, tierMode) : { harga: Number(obat.harga_umum || 0), tierApplied: 'UMUM', isGrosirAuto: false };
-    it.harga_jual = eff.harga * Math.max(1, Number(it.faktor_konversi || 1));
-    it.tier_applied = eff.tierApplied;
+    const baseSat = String(obat.satuan_dasar || 'Unit').trim();
+    const satSed = String(obat.satuan_sedang || '').trim();
+    const satBes = String(obat.satuan_besar || '').trim();
+    const rSed = satSed ? Math.max(1, Number(obat.rasio_sedang || 1)) : 1;
+    const rBes = satBes ? Math.max(1, Number(obat.rasio_besar || 1)) : 1;
 
-    const baseSat = obat.satuan_dasar || 'Unit';
-    const baseEff1 = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, 1, tierMode).harga : Number(obat.harga_umum || 0);
+    const hrgUmum = Number(obat.harga_umum || 0);
+    const defHrgSed = (satSed && rSed > 1) ? Math.round(hrgUmum * rSed) : 0;
+    const defHrgBes = (satBes && rBes > 1) ? Math.round(hrgUmum * rBes) : 0;
+    const hrgSed = satSed ? Number(obat.harga_sedang !== undefined && obat.harga_sedang !== '' ? obat.harga_sedang : (obat.harga_strip || defHrgSed)) : 0;
+    const hrgBes = satBes ? Number(obat.harga_besar !== undefined && obat.harga_besar !== '' ? obat.harga_besar : (obat.harga_box || defHrgBes)) : 0;
+
     const uOpts = [];
     uOpts.push({
       label: baseSat,
       faktor: 1,
-      harga: baseEff1,
-      displayText: `${baseSat} (${S().rp(baseEff1)})`
+      harga: hrgUmum,
+      displayText: `${baseSat} (${S().rp(hrgUmum)})`
     });
 
-    const rSed = Number(obat.rasio_sedang || 0);
-    const satSed = String(obat.satuan_sedang || '').trim();
-    if (satSed && satSed !== baseSat && rSed > 1) {
-      const baseEffSed = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rSed, tierMode).harga : baseEff1;
-      const hrgSed = baseEffSed * rSed;
+    if (satSed && satSed.toLowerCase() !== baseSat.toLowerCase() && rSed > 1) {
       uOpts.push({
         label: satSed,
         faktor: rSed,
@@ -5926,11 +5907,7 @@
       });
     }
 
-    const rBes = Number(obat.rasio_besar || 0);
-    const satBes = String(obat.satuan_besar || '').trim();
-    if (satBes && satBes !== baseSat && satBes !== satSed && rBes > 1) {
-      const baseEffBes = S().getEffectiveObatPrice ? S().getEffectiveObatPrice(obat, rBes, tierMode).harga : baseEff1;
-      const hrgBes = baseEffBes * rBes;
+    if (satBes && satBes.toLowerCase() !== baseSat.toLowerCase() && satBes.toLowerCase() !== satSed.toLowerCase() && rBes > 1) {
       uOpts.push({
         label: satBes,
         faktor: rBes,
@@ -5940,8 +5917,22 @@
     }
 
     it.unitOptions = uOpts;
-    return eff;
+
+    // Reprice current selected unit
+    const curSat = String(it.satuan || baseSat).trim();
+    let chosen = uOpts.find((u) => u.label.toLowerCase() === curSat.toLowerCase());
+    if (!chosen) {
+      chosen = uOpts[0];
+      it.satuan = chosen.label;
+    }
+    it.satuan = chosen.label;
+    it.faktor_konversi = chosen.faktor;
+    it.harga_jual = chosen.harga;
+    it.tier_applied = 'UMUM';
+
+    return { harga: it.harga_jual, tierApplied: 'UMUM', isGrosirAuto: false };
   }
+  window._repriceCartItem = _repriceCartItem;
 
   global.onPosMemberChange = (memberId) => {
     const cart = S().AppState.carts[S().AppState.activeCartIdx];
