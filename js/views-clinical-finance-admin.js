@@ -5077,6 +5077,106 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     </div>`;
   }
 
+    global.openShiftTimelineModal = () => {
+    const st = S().AppState;
+    const actShift = st.activeShift || (st.shiftHistory || []).find((sh) => String(sh.status_shift || '').toUpperCase() === 'TERBUKA') || null;
+    const history = (st.shiftHistory || []).filter((sh) => String(sh.status_shift || '').toUpperCase() !== 'TERBUKA');
+    const todaySales = (st.penjualan || []).slice(-10);
+
+    const timelineItems = [];
+    if (actShift) {
+      timelineItems.push({
+        time: actShift.tgl_buka ? S().formatTgl(actShift.tgl_buka, true) : 'Hari Ini',
+        title: 'Shift Kasir Dibuka (Sesi Aktif)',
+        user: (actShift.kasir_nama || actShift.kasir_id || 'Kasir') + ' (Kasir Jaga)',
+        desc: 'Modal awal laci disiapkan: ' + S().rp(actShift.modal_awal || 300000),
+        dotColor: 'bg-emerald-500'
+      });
+    }
+    if (todaySales.length > 0) {
+      const firstSale = todaySales[0];
+      const lastSale = todaySales[todaySales.length - 1];
+      timelineItems.push({
+        time: firstSale.tanggal ? S().formatTgl(firstSale.tanggal, true) : 'Hari Ini',
+        title: 'Transaksi Penjualan Dimulai',
+        user: firstSale.kasir_nama || 'Kasir',
+        desc: 'Nota pertama: ' + (firstSale.id_transaksi || firstSale.no_invoice || 'INV') + ' (' + S().rp(firstSale.grand_total || 0) + ')',
+        dotColor: 'bg-blue-500'
+      });
+      if (todaySales.length > 1) {
+        timelineItems.push({
+          time: lastSale.tanggal ? S().formatTgl(lastSale.tanggal, true) : 'Hari Ini',
+          title: 'Transaksi Terakhir Kasir',
+          user: lastSale.kasir_nama || 'Kasir',
+          desc: 'Nota terkini: ' + (lastSale.id_transaksi || lastSale.no_invoice || 'INV') + ' (' + S().rp(lastSale.grand_total || 0) + ')',
+          dotColor: 'bg-sky-500'
+        });
+      }
+    }
+    history.slice(0, 3).forEach((sh) => {
+      timelineItems.push({
+        time: sh.tgl_tutup ? S().formatTgl(sh.tgl_tutup, true) : '-',
+        title: 'Sesi Shift Sebelumnya Ditutup (' + (sh.id_shift || 'Shift') + ')',
+        user: (sh.kasir_id || 'Kasir') + ' &bull; Supervisor: ' + (sh.supervisor_id || 'APJ'),
+        desc: 'Fisik: ' + S().rp(sh.aktual_tunai || 0) + ' &bull; Selisih: ' + (Number(sh.selisih_kas || 0) === 0 ? 'Klop Rp 0' : S().rp(sh.selisih_kas || 0)),
+        dotColor: 'bg-slate-400'
+      });
+    });
+
+    S().openModal(`
+      <div class="p-5 space-y-4 text-xs">
+        <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-sm">⏱️</span>
+            <div>
+              <h3 class="font-bold text-sm" style="color:var(--ons-text-main)">Riwayat &amp; Timeline Sesi Kasir</h3>
+              <p class="text-[11px]" style="color:var(--ons-text-soft)">Kronologi aktivitas shift dan serah terima kasir</p>
+            </div>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-xl font-bold leading-none text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <div class="space-y-4 relative pl-4 before:content-[''] before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
+          ${timelineItems.map((item) => `
+            <div class="relative pl-4 space-y-1">
+              <span class="absolute -left-[18px] top-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-800 ${item.dotColor}"></span>
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-bold text-xs" style="color:var(--ons-text-main)">${S().esc(item.title)}</span>
+                <span class="text-[10px] font-mono-num text-slate-500">${S().esc(item.time)}</span>
+              </div>
+              <div class="text-[11px] font-semibold text-blue-600 dark:text-blue-400">${item.user}</div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">${item.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="pt-3 border-t flex justify-end" style="border-color:var(--ons-border)">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+        </div>
+      </div>
+    `, '480px');
+  };
+
+  global.confirmSubmitCloseShift = (tunai, qris, trf, kasMasuk, kasKeluar) => {
+    S().openModal(`
+      <div class="p-6 text-center space-y-4 max-w-sm mx-auto text-xs">
+        <div class="w-16 h-16 rounded-full bg-amber-500/15 text-amber-600 mx-auto flex items-center justify-center text-3xl font-extrabold shadow-sm">
+          !
+        </div>
+        <div class="space-y-1.5">
+          <h3 class="text-base font-extrabold" style="color:var(--ons-text-main)">Yakin Mau Tutup Shift Kasir?</h3>
+          <p class="text-xs leading-relaxed" style="color:var(--ons-text-soft)">
+            Setelah sesi ditutup, laporan penjualan dan mutasi laci akan <b>dikunci permanen</b>, dan struk Z-Report resmi langsung diterbitkan.
+          </p>
+        </div>
+        <div class="pt-2 flex items-center justify-center gap-2.5">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs flex-1 py-2 font-semibold">Batal</button>
+          <button type="button" onclick="ONSStore.closeModal(); window.submitCloseShift(${tunai}, ${qris}, ${trf}, ${kasMasuk}, ${kasKeluar});" class="ons-btn ons-btn-emerald text-xs flex-1 py-2 font-bold shadow-md">Lanjut Tutup Shift!</button>
+        </div>
+      </div>
+    `, '420px');
+  };
+
   function renderTutupShiftView(opts) {
     const st = S().AppState;
     const todayIso = new Date().toISOString().slice(0, 10);
@@ -5138,69 +5238,95 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     return `<div class="space-y-4 ons-view-enter">
       ${(opts && opts.subTabHeader) ? opts.subTabHeader : ''}
 
-      <!-- 3-Step Guided Workflow Banner (Standard Apotek Digital) -->
-      <div class="ons-card p-3 bg-gradient-to-r from-blue-500/10 via-emerald-500/10 to-transparent border-l-4 border-l-blue-600">
-        <div class="flex items-center justify-between text-xs font-semibold gap-2 overflow-x-auto pb-0.5">
-          <div class="flex items-center gap-2 shrink-0 text-blue-600 dark:text-blue-400">
-            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[11px]">1</span>
-            <span>Hitung Fisik Laci (Kertas &amp; Koin)</span>
-          </div>
-          <span class="text-gray-300 dark:text-gray-600">&rarr;</span>
-          <div class="flex items-center gap-2 shrink-0 text-emerald-600 dark:text-emerald-400">
-            <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px]">2</span>
-            <span>Sisihkan Modal Shift Depan &amp; Setoran</span>
-          </div>
-          <span class="text-gray-300 dark:text-gray-600">&rarr;</span>
-          <div class="flex items-center gap-2 shrink-0 text-slate-700 dark:text-slate-300">
-            <span class="w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-[11px]">3</span>
-            <span>Otorisasi PIN &amp; Terbitkan Z-Report</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Shift Status Workstation Header -->
-      <div class="ons-pos-bar p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div class="flex flex-wrap items-center gap-3 min-w-0">
-          ${actShift
-            ? `<span class="ons-pos-live-dot"></span>`
-            : `<span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>`}
-          <div class="min-w-0 space-y-0.5">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="badge-bpom ${actShift ? 'bpom-bebas' : 'bpom-prekursor'}">${actShift ? 'SHIFT TERBUKA' : 'BELUM BUKA SHIFT'}</span>
-              <h1 class="text-base sm:text-lg font-extrabold tracking-tight">Tutup Shift &amp; Rekonsiliasi Laci Kas</h1>
+      <!-- 1. Header Identitas Sesi Kasir & Status Workstation (Apotek Digital Style) -->
+      <div class="ons-card p-4 sm:p-5 border-l-4 ${actShift ? 'border-l-emerald-500' : 'border-l-amber-500'} bg-gradient-to-r from-blue-500/5 via-emerald-500/5 to-transparent shadow-sm space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-start gap-3.5 min-w-0">
+            <div class="w-12 h-12 rounded-2xl ${actShift ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'} flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg>
             </div>
-            <p class="text-[11px] truncate" style="color:var(--ons-text-soft)">
-              ${actShift
-                ? `<span class="font-mono-num font-bold">${S().esc(actShift.id_shift)}</span> &bull; Kasir: <b>${S().esc(actShift.kasir_id || '-')}</b> &bull; Buka: ${S().formatTgl(actShift.tgl_buka, true)} (${_shiftDurationText(actShift.tgl_buka)}) &bull; Modal Laci: <b class="font-mono-num text-emerald-600">${S().rp(modalDefault)}</b>`
-                : 'Belum ada shift aktif dibuka. Anda dapat membuka shift baru atau langsung melakukan penutupan kas harian.'}
-            </p>
+            <div class="min-w-0 space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${actShift ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'}">
+                  <span class="w-2 h-2 rounded-full ${actShift ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
+                  ${actShift ? 'SESI SHIFT AKTIF (OPEN)' : 'BELUM ADA SHIFT BUKA'}
+                </span>
+                <span class="font-mono-num font-extrabold text-xs px-2.5 py-0.5 rounded-md bg-slate-500/10 text-slate-700 dark:text-slate-300">
+                  Kode Sesi: ${actShift ? S().esc(actShift.id_shift) : 'SESI-OFFLINE'}
+                </span>
+              </div>
+              <h1 class="text-lg sm:text-xl font-extrabold tracking-tight" style="color:var(--ons-text-main)">
+                Tutup Shift Kasir &amp; Rekonsiliasi Kas Laci
+              </h1>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style="color:var(--ons-text-soft)">
+                <span>Kasir: <b style="color:var(--ons-text-main)">${actShift ? S().esc(actShift.kasir_nama || actShift.kasir_id || 'Kasir Utama') : 'Belum Ditentukan'}</b></span>
+                <span aria-hidden="true">&bull;</span>
+                <span>Waktu Buka: ${actShift ? S().formatTgl(actShift.tgl_buka, true) : '-'}</span>
+                <span aria-hidden="true">&bull;</span>
+                <span class="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
+                  <span>⏱️ Durasi:</span> ${actShift ? _shiftDurationText(actShift.tgl_buka) : '-'}
+                </span>
+                <span aria-hidden="true">&bull;</span>
+                <span>Modal Awal: <b class="font-mono-num text-emerald-600">${S().rp(modalDefault)}</b></span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 shrink-0">
-          ${!actShift && typeof global.openBukaShiftModal === 'function'
-            ? `<button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs">+ Buka Shift Baru</button>`
-            : ''}
-          ${canReveal
-            ? `<button type="button" onclick="window.toggleShiftBlindView()" class="ons-btn ${shiftBlindRevealed ? 'ons-btn-amber' : 'ons-btn-ghost'} text-xs" title="Pemilik/APJ dapat membuka target sistem untuk mencocokkan selisih">${shiftBlindRevealed ? 'Sembunyikan Target Sistem' : 'Intip Target Sistem (APJ/Pemilik)'}</button>`
-            : `<span class="badge-bpom bpom-terbatas">Blind Count Terjaga</span>`}
-          ${latestClosed
-            ? `<button type="button" onclick="window.openZReportModal(0)" class="ons-btn ons-btn-ghost text-xs">Z-Report Terakhir</button>`
-            : ''}
+
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button type="button" onclick="window.openShiftTimelineModal()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5" title="Lihat Kronologi &amp; Riwayat Shift">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Riwayat Shift</span>
+            </button>
+            ${!actShift && typeof global.openBukaShiftModal === 'function'
+              ? `<button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Buka Shift Baru</button>`
+              : ''}
+            ${canReveal
+              ? `<button type="button" onclick="window.toggleShiftBlindView()" class="ons-btn ${shiftBlindRevealed ? 'ons-btn-amber font-bold' : 'ons-btn-ghost'} text-xs" title="Pemilik/APJ dapat melihat target kas sistem untuk pencocokan">${shiftBlindRevealed ? '👁️ Sembunyikan Target' : '👁️ Intip Target (APJ/Owner)'}</button>`
+              : `<span class="badge-bpom bpom-terbatas font-semibold" title="Kasir menghitung fisik uang secara mandiri tanpa melihat saldo buku">🔒 Blind Count Aktif</span>`}
+            ${latestClosed
+              ? `<button type="button" onclick="window.openZReportModal(0)" class="ons-btn ons-btn-ghost text-xs font-semibold">📄 Z-Report Terakhir</button>`
+              : ''}
+          </div>
         </div>
       </div>
 
-      <!-- 5 Tender Reconciliation Cards (Apotek Digital Standard) -->
+      <!-- 2. Panduan Alur Kerja 3-Langkah Terpandu (Guided Stepper Banner) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+        <div class="ons-card p-3.5 border-l-4 border-l-blue-600 flex items-center gap-3 bg-blue-500/5">
+          <span class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shrink-0 shadow-sm">1</span>
+          <div class="min-w-0">
+            <div class="font-bold text-xs" style="color:var(--ons-text-main)">Hitung Fisik Laci</div>
+            <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">Kertas &amp; koin pada kalkulator rupiah</div>
+          </div>
+        </div>
+        <div class="ons-card p-3.5 border-l-4 border-l-emerald-600 flex items-center gap-3 bg-emerald-500/5">
+          <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-extrabold text-sm shrink-0 shadow-sm">2</span>
+          <div class="min-w-0">
+            <div class="font-bold text-xs" style="color:var(--ons-text-main)">Alokasi Modal &amp; Setoran</div>
+            <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">Sisihkan modal laci &amp; setoran brankas</div>
+          </div>
+        </div>
+        <div class="ons-card p-3.5 border-l-4 border-l-purple-600 flex items-center gap-3 bg-purple-500/5">
+          <span class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-extrabold text-sm shrink-0 shadow-sm">3</span>
+          <div class="min-w-0">
+            <div class="font-bold text-xs" style="color:var(--ons-text-main)">Otorisasi PIN &amp; Z-Report</div>
+            <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">Pengesahan APJ &amp; cetak struk rekap</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Lima Kartu Rekapitulasi Multikanal (Tender KPI Cards) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 text-xs">
         <div class="ons-kpi-card is-blue">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Penjualan Tunai (${todayIso})</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Penjualan Tunai (${todayIso})</div>
               <div class="text-xl font-extrabold font-mono-num mt-1 text-blue-600 truncate">${S().rp(sisTunai)}</div>
             </div>
             <span class="ons-kpi-ico bg-blue-500/10 text-blue-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           </div>
-          <div class="mt-2 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-            <span>${validToday.length} nota valid</span>
+          <div class="mt-2.5 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <span class="font-semibold">${validToday.length} nota tunai</span>
             <span>Omzet: ${S().rp(totalBruto)}</span>
           </div>
         </div>
@@ -5208,12 +5334,12 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="ons-kpi-card is-emerald">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Non-Tunai (QRIS &amp; EDC)</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Non-Tunai (QRIS &amp; EDC)</div>
               <div class="text-xl font-extrabold font-mono-num mt-1 text-emerald-600 truncate">${S().rp(sisQris + sisTransfer)}</div>
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7h-7z"/></svg></span>
           </div>
-          <div class="mt-2 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+          <div class="mt-2.5 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
             <span>QRIS: ${S().rp(sisQris)}</span>
             <span>EDC: ${S().rp(sisTransfer)}</span>
           </div>
@@ -5222,7 +5348,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="ons-kpi-card is-amber">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Mutasi Kas Laci (Petty Cash)</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Mutasi Kas Laci (Petty Cash)</div>
               <div class="text-xs font-extrabold font-mono-num mt-1 space-y-0.5">
                 <div class="text-emerald-600 font-bold">+ Masuk: ${S().rp(totalKasMasuk)}</div>
                 <div class="text-rose-600 font-bold">&minus; Keluar: ${S().rp(totalKasKeluar)}</div>
@@ -5230,8 +5356,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </div>
             <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           </div>
-          <div class="mt-2 pt-2 border-t text-[11px] flex justify-between items-center" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-            <span>${todayDrawerTx.length} mutasi laci</span>
+          <div class="mt-2.5 pt-2 border-t text-[11px] flex justify-between items-center" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <span>${todayDrawerTx.length} mutasi shift</span>
             <div class="flex gap-1.5">
               <button type="button" onclick="window.openKasMasukModal()" class="text-[10.5px] text-emerald-600 font-bold hover:underline">+ Masuk</button>
               <button type="button" onclick="window.openKasKeluarModal()" class="text-[10.5px] text-rose-600 font-bold hover:underline">&minus; Keluar</button>
@@ -5242,68 +5368,85 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="ons-kpi-card is-blue">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Modal Awal Laci</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Modal Awal Laci</div>
               <div class="text-xl font-extrabold font-mono-num mt-1 truncate">${S().rp(modalDefault)}</div>
             </div>
             <span class="ons-kpi-ico bg-sky-500/10 text-sky-600"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
           </div>
-          <div class="mt-2 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Uang kembalian awal kasir</div>
+          <div class="mt-2.5 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Uang kembalian awal kasir</div>
         </div>
 
         <div class="ons-kpi-card ${canReveal && shiftBlindRevealed ? 'is-emerald' : 'is-amber'}">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div style="color:var(--ons-text-soft)">Target Kas Tunai Laci</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Target Kas Tunai Laci</div>
               <div class="text-xl font-extrabold font-mono-num mt-1 truncate ${canReveal && shiftBlindRevealed ? 'text-emerald-600' : 'text-amber-600'}">
-                ${(canReveal && shiftBlindRevealed) ? S().rp(expectedTunai) : 'Blind Count'}
+                ${(canReveal && shiftBlindRevealed) ? S().rp(expectedTunai) : '🔒 Blind Count'}
               </div>
             </div>
             <span class="ons-kpi-ico ${canReveal && shiftBlindRevealed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
           </div>
-          <div class="mt-2 pt-2 border-t text-[11px] truncate" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+          <div class="mt-2.5 pt-2 border-t text-[11px] truncate" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
             ${(canReveal && shiftBlindRevealed) ? ('Modal + Tunai + Masuk &minus; Keluar') : 'Hitung fisik uang terlebih dahulu'}
           </div>
         </div>
       </div>
 
-      <!-- Workspace 2-Kolom Ergonomis: Pecahan Rupiah vs Rekonsiliasi & Setoran -->
+      <!-- 4. Workspace 2-Kolom Ergonomis: Kalkulator Pecahan vs Alokasi Setoran -->
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+        <!-- Kolom Kiri: Kalkulator Pecahan Uang Fisik Laci (Denomination Sheet) -->
         <div class="ons-card p-5 xl:col-span-7 space-y-4 text-xs">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b" style="border-color:var(--ons-border)">
             <div>
-              <h2 class="font-bold text-sm">1. Kalkulator Pecahan Uang Fisik Laci (Rupiah)</h2>
-              <p class="text-[11px]" style="color:var(--ons-text-soft)">Ketuk tombol <b>+1 / +5</b> atau isi jumlah lembar &amp; keping. Total fisik otomatis tersinkron.</p>
+              <h2 class="font-bold text-sm flex items-center gap-2" style="color:var(--ons-text-main)">
+                <span class="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-xs">1</span>
+                <span>Kalkulator Pecahan Uang Fisik Laci (Rupiah)</span>
+              </h2>
+              <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Ketuk tombol <b>+1 / +5</b> atau ketik lembar/keping. Total fisik otomatis tersinkron.</p>
             </div>
-            <button type="button" onclick="window.resetShiftDenom()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Reset 0</button>
+            <button type="button" onclick="window.resetShiftDenom()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5" title="Reset Semua Hitungan ke 0">&#x21bb; Reset 0</button>
           </div>
 
           <div class="space-y-2">
-            <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Uang Kertas</div>
+            <div class="text-[11px] font-bold uppercase tracking-wider flex items-center justify-between" style="color:var(--ons-text-soft)">
+              <span>Uang Kertas (Lembaran)</span>
+              <span class="text-[10px] font-normal">7 Pecahan Utama</span>
+            </div>
             <div class="space-y-1.5">
               ${SHIFT_BILLS.map((item) => renderDenomRowHtml(item)).join('')}
             </div>
           </div>
 
-          <div class="space-y-2 pt-1">
-            <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Uang Koin / Receh</div>
+          <div class="space-y-2 pt-2 border-t" style="border-color:var(--ons-border)">
+            <div class="text-[11px] font-bold uppercase tracking-wider flex items-center justify-between" style="color:var(--ons-text-soft)">
+              <span>Uang Koin (Receh)</span>
+              <span class="text-[10px] font-normal">4 Pecahan Koin</span>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               ${SHIFT_COINS.map((item) => renderDenomRowHtml(item)).join('')}
             </div>
           </div>
 
-          <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="p-4 rounded-2xl border flex flex-wrap items-center justify-between gap-3 shadow-sm" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
             <div>
-              <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Hitungan Pecahan Laci</div>
-              <div id="denomTotalPreview" class="text-xl font-extrabold font-mono-num text-blue-600">${S().rp(denomSum)}</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Hitungan Fisik Laci</div>
+              <div id="denomTotalPreview" class="text-2xl font-extrabold font-mono-num text-blue-600 tracking-tight mt-0.5">${S().rp(denomSum)}</div>
             </div>
-            <button type="button" onclick="window.applyDenomToAktual()" class="ons-btn ons-btn-primary text-xs">Salin ke Fisik Aktual &rarr;</button>
+            <button type="button" onclick="window.applyDenomToAktual()" class="ons-btn ons-btn-primary text-xs font-bold px-4 py-2 shadow-sm flex items-center gap-1.5">
+              <span>Salin ke Fisik Aktual</span>
+              <span aria-hidden="true">&rarr;</span>
+            </button>
           </div>
         </div>
 
+        <!-- Kolom Kanan: Alokasi Setoran, Evaluasi Selisih, Handover, & PIN -->
         <div class="ons-card p-5 xl:col-span-5 space-y-4 text-xs">
-          <div class="pb-2 border-b" style="border-color:var(--ons-border)">
-            <h2 class="font-bold text-sm">2. Alokasi Setoran, Audit Selisih &amp; Pengesahan Z-Report</h2>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Tentukan modal receh yang ditinggal di laci dan setoran kas untuk Pemilik.</p>
+          <div class="pb-2.5 border-b" style="border-color:var(--ons-border)">
+            <h2 class="font-bold text-sm flex items-center gap-2" style="color:var(--ons-text-main)">
+              <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">2</span>
+              <span>Alokasi Setoran &amp; Pengesahan Z-Report</span>
+            </h2>
+            <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Tentukan modal receh yang ditinggal di laci dan setoran kas ke Pemilik.</p>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -5312,45 +5455,47 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               <input id="shModal" type="number" min="0" oninput="window.onShiftModalChange(this.value)" class="ons-input font-mono-num" value="${modalDefault}"/>
             </div>
             <div>
-              <label class="font-semibold block mb-1">Fisik Tunai Laci Aktual (Rp) *</label>
+              <label class="font-semibold block mb-1 text-blue-600 dark:text-blue-400">Fisik Tunai Laci Aktual (Rp) *</label>
               <input id="shAktual" type="number" min="0" oninput="window.onShiftAktualManualInput(this.value)" class="ons-input font-mono-num font-extrabold text-base text-blue-600" value="${currentAktual}"/>
             </div>
           </div>
 
-          <!-- Cash Management Split Wizard -->
+          <!-- Cash Management Split Wizard: Float vs Setoran -->
           <div class="ons-shift-split-card space-y-3">
             <div class="flex items-center justify-between gap-2">
-              <span class="font-bold text-xs">Pembagian Uang Laci (Float vs Setoran)</span>
+              <span class="font-bold text-xs flex items-center gap-1.5" style="color:var(--ons-text-main)">
+                <span>🏦 Pembagian Kas Laci</span>
+              </span>
               <span class="badge-bpom bpom-bebas text-[10px]">Anti-Keliru Setoran</span>
             </div>
             <div>
-              <label class="font-semibold block mb-1">Sisakan Modal Shift Berikutnya / Float (Rp)</label>
+              <label class="font-semibold block mb-1" style="color:var(--ons-text-soft)">Sisakan Modal Shift Berikutnya / Float (Rp)</label>
               <input id="shFloatNext" type="number" min="0" oninput="window.onShiftFloatChange(this.value)" class="ons-input font-mono-num font-bold" value="${floatDefault}"/>
-              <div class="flex flex-wrap gap-1.5 mt-1.5">
-                ${[0, 200000, 300000, 500000].map((v) => `<button type="button" onclick="window.setShiftFloatPreset(${v})" class="ons-quick-denom">${v === 0 ? 'Rp 0' : S().rp(v)}</button>`).join('')}
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                ${[0, 200000, 300000, 500000].map((v) => `<button type="button" onclick="window.setShiftFloatPreset(${v})" class="ons-quick-denom text-[11px] py-1 px-2.5 rounded-lg border font-mono-num font-semibold hover:border-emerald-500">${v === 0 ? 'Rp 0' : S().rp(v)}</button>`).join('')}
               </div>
             </div>
-            <div class="p-3 rounded-xl border flex items-center justify-between gap-2" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="p-3.5 rounded-xl border flex items-center justify-between gap-2 bg-emerald-500/10 border-emerald-500/30">
               <div>
-                <div class="font-bold">Setoran Kas ke Brankas / Pemilik</div>
-                <div class="text-[10px]" style="color:var(--ons-text-soft)">Fisik Tunai &minus; Modal Shift Berikutnya</div>
+                <div class="font-bold text-xs text-emerald-800 dark:text-emerald-200">Setoran Kas ke Brankas / Pemilik</div>
+                <div class="text-[10px] text-emerald-700 dark:text-emerald-300">Fisik Tunai &minus; Modal Shift Berikutnya</div>
               </div>
-              <div id="shBankDropPreview" class="text-lg font-extrabold font-mono-num text-emerald-600">${S().rp(bankDrop)}</div>
+              <div id="shBankDropPreview" class="text-xl font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(bankDrop)}</div>
             </div>
           </div>
 
-          <!-- Blind / Variance Evaluation -->
-          <div class="p-3 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <!-- Live Evaluasi Selisih Kasir -->
+          <div class="p-3.5 rounded-xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
             <div class="flex items-center justify-between gap-2">
-              <span class="font-bold">Evaluasi Selisih Kas</span>
+              <span class="font-bold text-xs" style="color:var(--ons-text-main)">Evaluasi Selisih Kasir</span>
               ${(canReveal && shiftBlindRevealed)
                 ? `<span id="shLiveVariancePreview" class="font-mono-num font-extrabold text-xs">${liveDiff === 0 ? '<span class="badge-bpom bpom-bebas font-bold">✓ KAS PAS (SELISIH RP 0)</span>' : (liveDiff > 0 ? `<span class="badge-bpom bpom-terbatas font-bold">▲ KAS LEBIH (+${S().rp(liveDiff)})</span>` : `<span class="badge-bpom bpom-keras font-bold">▼ KAS KURANG (-${S().rp(Math.abs(liveDiff))})</span>`)}</span>`
                 : `<span id="shLiveVariancePreview" class="badge-bpom bpom-terbatas">Dihitung Otomatis Saat Simpan</span>`}
             </div>
             <div>
-              <label class="font-semibold block mb-1">Keterangan / Alasan Selisih (Bila Ada)</label>
+              <label class="font-semibold block mb-1 text-[11px]" style="color:var(--ons-text-soft)">Keterangan / Alasan Selisih (Bila Ada)</label>
               <select id="shVarianceReason" onchange="window.onShiftReasonChange(this.value)" class="ons-select text-xs">
-                <option value="" ${!shiftVarianceReason ? 'selected' : ''}>Tidak ada selisih / hitung fisik normal</option>
+                <option value="" ${!shiftVarianceReason ? 'selected' : ''}>Tidak ada selisih / hitung fisik klop normal</option>
                 <option value="Kembalian selisih receh" ${shiftVarianceReason === 'Kembalian selisih receh' ? 'selected' : ''}>Kembalian selisih uang receh</option>
                 <option value="Pengeluaran kas kecil belum dicatat" ${shiftVarianceReason === 'Pengeluaran kas kecil belum dicatat' ? 'selected' : ''}>Pengeluaran kas kecil / ongkir belum dicatat</option>
                 <option value="Salah metode QRIS / Transfer tercatat Tunai" ${shiftVarianceReason === 'Salah metode QRIS / Transfer tercatat Tunai' ? 'selected' : ''}>Salah metode pembayaran (QRIS / Transfer)</option>
@@ -5360,36 +5505,59 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </div>
 
           <div>
-            <label class="font-semibold block mb-1">Catatan Serah Terima (Handover Shift Berikutnya)</label>
-            <textarea id="shNote" rows="2" class="ons-textarea" placeholder="Serah terima kunci laci, modal receh &amp; catatan penting untuk kasir berikutnya..."></textarea>
+            <label class="font-semibold block mb-1" style="color:var(--ons-text-soft)">Catatan Serah Terima (Handover Shift Berikutnya)</label>
+            <textarea id="shNote" rows="2" class="ons-textarea text-xs" placeholder="Serah terima kunci laci, modal receh &amp; catatan penting untuk kasir berikutnya..."></textarea>
           </div>
 
-          <div class="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-2">
-            <div class="font-bold text-amber-700 dark:text-amber-300">Otorisasi PIN 6 Digit APJ / Pemilik</div>
-            <input id="shPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num font-bold tracking-widest" placeholder="Masukkan 6 Digit PIN${API().isDemoMode() ? ' (Demo: 123456)' : ''}"/>
+          <div class="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-1.5">
+            <div class="font-bold text-amber-800 dark:text-amber-200 flex items-center justify-between">
+              <span>Otorisasi PIN 6 Digit APJ / Pemilik</span>
+              <span class="text-[10px] text-amber-700 dark:text-amber-300 font-normal">Wajib untuk Z-Report</span>
+            </div>
+            <input id="shPin" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num font-bold tracking-widest text-center" placeholder="Masukkan 6 Digit PIN${API().isDemoMode() ? ' (Demo: 123456)' : ''}"/>
           </div>
 
-          <button type="button" onclick="window.submitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer}, ${totalKasMasuk}, ${totalKasKeluar})" class="ons-btn ons-btn-emerald w-full py-3 font-bold text-xs shadow-sm">Tutup Shift, Simpan &amp; Terbitkan Z-Report</button>
-          <p class="text-[10px] text-center" style="color:var(--ons-text-soft)">Setelah ditutup, Z-Report resmi langsung terbit dan rekap terkirim ke email/WA Pemilik.</p>
+          <button type="button" onclick="window.confirmSubmitCloseShift(${sisTunai}, ${sisQris}, ${sisTransfer}, ${totalKasMasuk}, ${totalKasKeluar})" class="ons-btn ons-btn-emerald w-full py-3.5 font-extrabold text-sm shadow-md flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            <span>Tutup Shift, Simpan &amp; Terbitkan Z-Report</span>
+          </button>
+          <p class="text-[10px] text-center" style="color:var(--ons-text-soft)">Setelah ditutup, sesi akan dikunci, laporan Z-Report resmi langsung terbit, dan rekap terkirim ke Pemilik.</p>
         </div>
       </div>
 
-      <!-- Arsip Riwayat Tutup Shift & Cetak Z-Report -->
+      <!-- 5. Arsip Riwayat Tutup Shift & Sesi (/sessions Apotek Digital Standard) -->
       <div class="ons-card p-5 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2.5">
           <div>
-            <h3 class="font-bold text-sm">Arsip Riwayat Tutup Shift &amp; Z-Report (${shiftHist.length})</h3>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Klik tombol <b>Z-Report</b> untuk rincian tender, atau <b>🖨️ Cetak</b> untuk mencetak ulang struk rekap thermal 58/80mm.</p>
+            <h3 class="font-bold text-sm flex items-center gap-2" style="color:var(--ons-text-main)">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              <span>Daftar Riwayat Shift &amp; Sesi Kasir (${shiftHist.length})</span>
+            </h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Arsip data penutupan kasir lengkap dengan evaluasi selisih dan cetak ulang struk thermal.</p>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button type="button" onclick="window.setShiftHistFilter('ALL')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'ALL' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">Semua (${shiftHist.length})</button>
-            <button type="button" onclick="window.setShiftHistFilter('KLOP')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'KLOP' ? 'ons-btn-emerald font-bold shadow-sm' : 'ons-btn-ghost'}">✓ Klop Rp 0 (${shiftHist.filter((s) => Number(s.selisih_kas || 0) === 0).length})</button>
-            <button type="button" onclick="window.setShiftHistFilter('SELISIH')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'SELISIH' ? 'ons-btn-amber font-bold shadow-sm' : 'ons-btn-ghost'}">⚠ Ada Selisih (${shiftHist.filter((s) => Number(s.selisih_kas || 0) !== 0).length})</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1.5 text-xs">
+              <button type="button" onclick="window.setShiftHistFilter('ALL')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'ALL' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">Semua (${shiftHist.length})</button>
+              <button type="button" onclick="window.setShiftHistFilter('KLOP')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'KLOP' ? 'ons-btn-emerald font-bold shadow-sm' : 'ons-btn-ghost'}">✓ Klop Rp 0 (${shiftHist.filter((s) => Number(s.selisih_kas || 0) === 0).length})</button>
+              <button type="button" onclick="window.setShiftHistFilter('SELISIH')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'SELISIH' ? 'ons-btn-amber font-bold shadow-sm' : 'ons-btn-ghost'}">⚠ Ada Selisih (${shiftHist.filter((s) => Number(s.selisih_kas || 0) !== 0).length})</button>
+            </div>
           </div>
         </div>
+
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>ID Shift &amp; Waktu Tutup</th><th>Kasir / Supervisor</th><th>Penjualan Sistem</th><th>Tunai Aktual</th><th>Selisih Kas</th><th>Catatan Handover</th><th class="text-right">Aksi</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Kode Shift &amp; Waktu</th>
+                <th>Kasir / SPV</th>
+                <th>Penjualan Sistem</th>
+                <th>Fisik Tunai</th>
+                <th>Selisih Kasir</th>
+                <th>Status</th>
+                <th>Catatan Handover</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
             <tbody>
               ${(() => {
                 const filtered = shiftHist.filter((s) => {
@@ -5398,23 +5566,33 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                   if (shiftHistFilter === 'SELISIH') return d !== 0;
                   return true;
                 });
-                if (!filtered.length) return '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Tidak ada arsip shift yang sesuai filter.</td></tr>';
+                if (!filtered.length) return '<tr><td colspan="8" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Tidak ada arsip shift yang sesuai filter.</td></tr>';
                 return filtered.slice(0, 30).map((sh, idx) => {
                   const diff = Number(sh.selisih_kas || 0);
                   const sysTot = Number(sh.sistem_tunai || 0) + Number(sh.sistem_qris || 0) + Number(sh.sistem_transfer || 0);
                   const diffBadgeCls = diff === 0 ? 'bpom-bebas' : (diff > 0 ? 'bpom-terbatas' : 'bpom-keras');
                   const diffTxt = diff === 0 ? '✓ Klop Rp 0' : ((diff > 0 ? '▲ +' : '▼ -') + S().rp(Math.abs(diff)));
                   return `<tr>
-                    <td class="font-mono-num text-xs"><b>${S().esc(sh.id_shift)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sh.tgl_tutup, true)}</span></td>
-                    <td class="text-xs"><b>${S().esc(sh.kasir_id || '-')}</b><br/><span style="color:var(--ons-text-soft)">SPV: ${S().esc(sh.supervisor_id || '-')}</span></td>
-                    <td class="font-mono-num text-xs"><b>${S().rp(sysTot)}</b><br/><span class="text-[10px]" style="color:var(--ons-text-soft)">T:${S().rp(sh.sistem_tunai || 0)} &bull; Q:${S().rp(sh.sistem_qris || 0)}</span></td>
-                    <td class="font-mono-num text-xs font-bold">${S().rp(sh.aktual_tunai || 0)}</td>
+                    <td class="font-mono-num text-xs">
+                      <b style="color:var(--ons-text-main)">${S().esc(sh.id_shift)}</b>
+                      <div class="text-[10px]" style="color:var(--ons-text-soft)">${S().formatTgl(sh.tgl_tutup, true)}</div>
+                    </td>
+                    <td class="text-xs">
+                      <b>${S().esc(sh.kasir_id || '-')}</b>
+                      <div class="text-[10px]" style="color:var(--ons-text-soft)">SPV: ${S().esc(sh.supervisor_id || '-')}</div>
+                    </td>
+                    <td class="font-mono-num text-xs">
+                      <b>${S().rp(sysTot)}</b>
+                      <div class="text-[10px]" style="color:var(--ons-text-soft)">T:${S().rp(sh.sistem_tunai || 0)} &bull; Q:${S().rp(sh.sistem_qris || 0)}</div>
+                    </td>
+                    <td class="font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${S().rp(sh.aktual_tunai || 0)}</td>
                     <td><span class="badge-bpom ${diffBadgeCls} font-mono-num font-bold">${diffTxt}</span></td>
-                    <td class="text-xs max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(sh.catatan_handover || '-')}</td>
+                    <td><span class="badge-bpom bpom-terbatas font-mono-num">Closed</span></td>
+                    <td class="text-xs max-w-[200px] truncate" style="color:var(--ons-text-soft)" title="${S().esc(sh.catatan_handover || '-')}">${S().esc(sh.catatan_handover || '-')}</td>
                     <td class="text-right">
                       <div class="flex items-center justify-end gap-1.5">
-                        <button type="button" onclick="window.openZReportModal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Z-Report</button>
-                        <button type="button" onclick="window.printShiftRowThermal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-bold text-blue-600" title="Cetak Ulang Struk Rekap Shift Thermal 58/80mm">🖨️ Cetak</button>
+                        <button type="button" onclick="window.openZReportModal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-semibold">Z-Report</button>
+                        <button type="button" onclick="window.printShiftRowThermal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-bold text-blue-600" title="Cetak Ulang Struk Rekap Shift Thermal 58/80mm">🖨️ Cetak</button>
                       </div>
                     </td>
                   </tr>`;
@@ -5426,6 +5604,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       </div>
     </div>`;
   }
+
 
   function _refreshDenomRowDom(denomVal) {
     const qty = Number(shiftDenomCounts[denomVal] || 0);
