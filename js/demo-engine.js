@@ -3207,7 +3207,9 @@
           'ONS_MANUAL_UTANG_V1', 'ONS_MANUAL_PIUTANG_V1', 'ONS_TTF_PIUTANG_V1',
           'ONS_PURCHASE_PLANS_V1', 'ONS_FAKTUR_DRAFTS_V1', 'ONS_KONSINYASI_DRAFTS_V1',
           'ONS_RETUR_DRAFTS_V1', 'ONS_SP_DRAFTS_V1', 'ons_sp_drafts_v1',
-          'ons_farma_offline_queue', 'ons_farma_v10_offline_queue'
+          'ONS_INTERNAL_TRANSFERS_V1', 'ONS_TRANSFER_DRAFTS_V1', 'ONS_ADJ_META_V1',
+          'ONS_OPNAME_HIST_V1', 'ONS_SALES_STAFF_V1', 'ons_pub_recent_orders_v1',
+          'ons_pub_customer_v1', 'ons_farma_offline_queue', 'ons_farma_v10_offline_queue'
         ].forEach((k) => {
           try { localStorage.removeItem(k); } catch (_) {}
         });

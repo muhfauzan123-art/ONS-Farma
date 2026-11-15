@@ -6437,34 +6437,7 @@
 
   function _getCombinedTransferRows(st) {
     let internalList = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
-    if (!Array.isArray(internalList) || !internalList.length) {
-      internalList = [
-        {
-          id: 'TRF-INT-01',
-          timestamp: new Date().toISOString().slice(0, 10) + 'T08:30:00Z',
-          no_transaksi: 'TRF/INT/2026/001',
-          asal: 'Gudang Utama (RAK-K1)',
-          tujuan: 'Etalase Depan (RAK-B1)',
-          nama_dagang: 'Amoxicillin Trihydrate 500mg',
-          qty: 20,
-          total_nilai: 9600,
-          petugas: 'Budi Santoso',
-          catatan: 'Pengisian stok etalase depan kasir'
-        },
-        {
-          id: 'TRF-INT-02',
-          timestamp: new Date().toISOString().slice(0, 10) + 'T10:00:00Z',
-          no_transaksi: 'TRF/INT/2026/002',
-          asal: 'Gudang Utama (RAK-KERAS-2)',
-          tujuan: 'Chiller Obat (CHILLER-01)',
-          nama_dagang: 'Amlodipine Besylate 10mg',
-          qty: 30,
-          total_nilai: 12300,
-          petugas: 'apt. Siti Rahma, S.Farm',
-          catatan: 'Rotasi penyimpanan persediaan'
-        }
-      ];
-    }
+    if (!Array.isArray(internalList)) internalList = [];
     const branches = (st.mutasiCabang || []).map((tr) => {
       let trLines = [];
       if (Array.isArray(tr.items) && tr.items.length) trLines = tr.items;
