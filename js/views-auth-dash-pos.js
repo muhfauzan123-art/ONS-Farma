@@ -1614,6 +1614,128 @@
     return list;
   }
 
+  
+  function _getDashRecentActivities(st, cabId, limit = 5) {
+    const acts = [];
+    const sales = (st.penjualan || []).filter((p) => sameCabang_(p, cabId));
+    sales.slice(-8).forEach((p) => {
+      acts.push({
+        dt: new Date(p.tanggal || p.created_at || Date.now()),
+        type: 'POS',
+        badge: 'POS',
+        badgeCls: 'bpom-bebas',
+        title: 'Penjualan Kasir POS',
+        user: p.kasir_nama || p.dibuat_oleh || 'Kasir',
+        desc: (p.id_transaksi || 'Nota') + ' \u2022 ' + (p.metode_bayar || 'TUNAI') + ' \u2022 ' + S().rp(p.grand_total || 0),
+        actionView: 'pos',
+        actionSub: 'riwayat'
+      });
+    });
+
+    const faktu = (st.fakturPbf || []).filter((f) => sameCabang_(f, cabId));
+    faktu.slice(-6).forEach((f) => {
+      acts.push({
+        dt: new Date(f.tgl_faktur || f.created_at || Date.now()),
+        type: 'FAKTUR',
+        badge: 'PBF',
+        badgeCls: 'bpom-terbatas',
+        title: 'Penerimaan Faktur PBF',
+        user: f.penerima || 'Petugas Gudang',
+        desc: (f.no_faktur || f.id_faktur || 'Faktur') + ' \u2022 ' + (f.nama_supplier || 'Supplier') + ' \u2022 ' + S().rp(f.total_bruto || f.grand_total || 0),
+        actionView: 'faktur',
+        actionSub: 'faktur'
+      });
+    });
+
+    const shifts = (st.riwayatShift || []).filter((s) => sameCabang_(s, cabId));
+    shifts.slice(-4).forEach((s) => {
+      const selisih = Number(s.selisih_kas || 0);
+      acts.push({
+        dt: new Date(s.waktu_tutup || s.tanggal || Date.now()),
+        type: 'SHIFT',
+        badge: 'SHIFT',
+        badgeCls: selisih === 0 ? 'bpom-bebas' : 'bpom-keras',
+        title: 'Rekap Tutup Shift Kasir',
+        user: s.kasir_nama || 'Kasir',
+        desc: (s.id_shift || 'Shift') + ' \u2022 Kas Fisik ' + S().rp(s.kas_fisik_dihitung || 0) + ' \u2022 Selisih ' + (selisih >= 0 ? '+' : '') + S().rp(selisih),
+        actionView: 'pos',
+        actionSub: 'tutup-shift'
+      });
+    });
+
+    const hutangs = (st.pembayaranHutang || st.riwayatHutang || []).filter((h) => sameCabang_(h, cabId));
+    hutangs.slice(-4).forEach((h) => {
+      acts.push({
+        dt: new Date(h.tanggal_bayar || h.tanggal || Date.now()),
+        type: 'HUTANG',
+        badge: 'UTANG',
+        badgeCls: 'bpom-prekursor',
+        title: 'Pelunasan Utang PBF',
+        user: h.operator || 'Keuangan',
+        desc: (h.id_bayar || 'Bayar Utang') + ' \u2022 ' + (h.nama_supplier || 'PBF') + ' \u2022 ' + S().rp(h.nominal_bayar || 0),
+        actionView: 'finance',
+        actionSub: 'hutang'
+      });
+    });
+
+    const konsi = (st.konsinyasi || []).filter((k) => sameCabang_(k, cabId));
+    konsi.slice(-4).forEach((k) => {
+      acts.push({
+        dt: new Date(k.tgl_masuk || k.tanggal || Date.now()),
+        type: 'KONSINYASI',
+        badge: 'KONSINYASI',
+        badgeCls: 'bpom-terbatas',
+        title: 'Konsinyasi Masuk',
+        user: k.penerima || 'Petugas Gudang',
+        desc: (k.no_konsinyasi || k.id_konsinyasi || 'Konsinyasi') + ' \u2022 ' + (k.nama_principal || 'Principal'),
+        actionView: 'konsinyasi',
+        actionSub: 'masuk'
+      });
+    });
+
+    if (acts.length === 0) {
+      acts.push({
+        dt: new Date(),
+        type: 'SISTEM',
+        badge: 'SISTEM',
+        badgeCls: 'bpom-bebas',
+        title: 'Sesi Aplikasi Aktif',
+        user: S().getRole(),
+        desc: 'Sistem ONS Farma Digital sinkron dan siap melayani',
+        actionView: 'dashboard',
+        actionSub: 'umum'
+      });
+    }
+
+    acts.sort((a, b) => b.dt.getTime() - a.dt.getTime());
+    return acts.slice(0, limit);
+  }
+
+  function _renderDashRecentActivitiesHtml(st, cabId) {
+    const list = _getDashRecentActivities(st, cabId, 5);
+    if (!list.length) {
+      return '<div class="py-6 text-center text-xs rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Belum ada aktivitas tercatat hari ini.</div>';
+    }
+    return list.map((act) => {
+      const timeStr = act.dt instanceof Date && !isNaN(act.dt.getTime())
+        ? act.dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+        : '-';
+      return '<div class="p-2.5 rounded-xl border transition hover:border-blue-500 flex items-center justify-between gap-3 text-xs" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">' +
+        '<div class="flex items-center gap-2.5 min-w-0">' +
+          '<span class="badge-bpom ' + act.badgeCls + ' shrink-0 text-[10px] font-bold font-mono">' + act.badge + '</span>' +
+          '<div class="min-w-0">' +
+            '<div class="font-bold truncate" style="color:var(--ons-text-main)">' + S().esc(act.title) + '</div>' +
+            '<div class="text-[11px] truncate" style="color:var(--ons-text-soft)">Oleh <b>' + S().esc(act.user) + '</b> &bull; ' + S().esc(act.desc) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="shrink-0 flex items-center gap-2">' +
+          '<span class="text-[10px] font-mono-num font-semibold text-slate-500">' + timeStr + '</span>' +
+          (act.actionView ? '<button type="button" onclick="navigateView(\'' + act.actionView + '\',\'' + (act.actionSub || '') + '\')" class="ons-btn ons-btn-ghost text-[10px] py-0.5 px-2 font-semibold">Buka &rsaquo;</button>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
   function renderDashboardView() {
     const st = S().AppState;
     const cabId = st.cabangId || 'ONS-01';
@@ -1983,9 +2105,11 @@
         </div>
         <div class="pt-3.5 border-t flex flex-wrap items-center justify-between gap-2.5" style="border-color:var(--ons-border)">
           <div class="flex flex-wrap items-center gap-2">
-            ${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-4 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>Buka Kasir POS (F2)</span></button>` : ''}
-            ${canPoct ? `<button onclick="navigateView('pemeriksaan','semua')" class="ons-btn ons-btn-ghost text-xs">Pemeriksaan Pasien</button>` : ''}
-            ${canObat ? `<button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-xs">Master Obat (${st.masterObat.length})</button>` : ''}
+            ${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-3.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>+ Kasir POS (F2)</span></button>` : ''}
+            ${canFaktur && seeCost ? `<button onclick="navigateView('faktur','faktur')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span>+ Faktur PBF</span></button>` : ''}
+            ${canDefecta && seeCost ? `<button onclick="navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>+ Surat Pesanan</span></button>` : ''}
+            ${canGudang ? `<button onclick="navigateView('gudang','opname')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>+ Stok Opname</span></button>` : ''}
+            ${canPoct ? `<button onclick="navigateView('pemeriksaan','semua')" class="ons-btn ons-btn-ghost text-xs">Pemeriksaan POCT</button>` : ''}
             <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs" title="Pusat Pencarian &amp; Navigasi Cepat">Cari Cepat <span class="ons-shortcut-kbd ml-1">Ctrl+K</span></button>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -2475,6 +2599,75 @@
             </tbody>
           </table>
         </div>` : `<div class="py-6 text-center text-xs rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border)">Belum ada stok batch aktif${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? (' pada cabang ' + S().esc(cabId)) : ''}.</div>`}
+      </div>
+
+      <!-- SEKSI APOTEK DIGITAL: Aktivitas Terakhir Akun & Catatan Pembaruan Sistem -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Kolom Kiri: Aktivitas Terakhir Akun (Audit Trail Terkini) -->
+        <div class="ons-card p-5 lg:col-span-7 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                <span>Aktivitas Terakhir Akun &amp; Transaksi Terkini</span>
+              </h3>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Log audit transaksi riil staf apotek secara real-time</div>
+            </div>
+            ${S().canAccessView('settings') ? `<button type="button" onclick="navigateView('settings','audit')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Semua Log Audit &rarr;</button>` : ''}
+          </div>
+          <div class="space-y-2.5">
+            ${_renderDashRecentActivitiesHtml(st, cabId)}
+          </div>
+        </div>
+
+        <!-- Kolom Kanan: Status Sistem, Pintasan Cepat & Bantuan -->
+        <div class="ons-card p-5 lg:col-span-5 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <h3 class="font-bold text-sm flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span>Pusat Kendali &amp; Status Sistem</span>
+              </h3>
+              <span class="badge-bpom bpom-bebas font-mono-num text-[10px]">v9.1.2 STABLE</span>
+            </div>
+            <div class="text-[11px] leading-relaxed space-y-1.5" style="color:var(--ons-text-soft)">
+              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+                <span>Arsitektur Sistem</span>
+                <b class="text-emerald-600">Client SPA + GAS REST API</b>
+              </div>
+              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+                <span>Database Cloud</span>
+                <b>Google Sheets (Multi-Sheet)</b>
+              </div>
+              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+                <span>Konektivitas &amp; PWA</span>
+                <span class="inline-flex items-center gap-1.5 text-emerald-600 font-semibold">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Online / LocalStorage Ready
+                </span>
+              </div>
+              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+                <span>Proteksi Data Kasir</span>
+                <b>Blind Count &amp; PIN Supervisor</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t" style="border-color:var(--ons-border)">
+            <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Aksi Bantuan Cepat</div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <button type="button" onclick="window.testAllPrintCapabilities ? window.testAllPrintCapabilities() : (window.ONSStore && window.ONSStore.printHtmlZone ? window.ONSStore.printHtmlZone('<h3>Tes Cetak ONS Farma</h3><p>Printer Thermal &amp; A4 Berfungsi Normal</p>','Tes Cetak') : window.print())" class="ons-btn ons-btn-ghost text-xs flex items-center justify-center gap-1.5 py-1.5" title="Uji Coba Cetak Thermal / A4">
+                <span>🖨️ Tes Cetak</span>
+              </button>
+              <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs flex items-center justify-center gap-1.5 py-1.5" title="Buka Pintasan Keyboard">
+                <span>⌨️ Pintasan (Ctrl+K)</span>
+              </button>
+              ${S().canAccessView('settings') ? `<button type="button" onclick="navigateView('settings','konfigurasi')" class="ons-btn ons-btn-ghost text-xs flex items-center justify-center gap-1.5 py-1.5 col-span-2" title="Buka Pengaturan &amp; Kebijakan Toko">
+                <span>⚙️ Konfigurasi Kebijakan Apotek &rarr;</span>
+              </button>` : ''}
+            </div>
+          </div>
+        </div>
       </div>
     </div>`;
   }
