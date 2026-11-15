@@ -794,32 +794,51 @@ html.dark .ons-wiz-chip:hover {
 }
 
 /* Hidden print zone on screen: MUST NEVER BE DISPLAYED IN BROWSER VIEW */
-#onsPrintZone {
-  display: none !important;
+@media screen {
+  #onsPrintZone {
+    display: none !important;
+  }
 }
 
 /* Print Layout (A4 Laporan / Kwitansi / Etiket Putih & Biru 50x30mm / Thermal Struk) */
 @media print {
-  body * { visibility: hidden !important; }
+  /* Saat mencetak dokumen ONS Farma, sembunyikan seluruh antarmuka web UI */
+  body.ons-is-printing > :not(#onsPrintZone),
+  body.ons-is-printing #appRoot,
+  .ons-modal-backdrop,
+  .ons-sidebar,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Jika print zone kosong, sembunyikan */
+  #onsPrintZone:empty {
+    display: none !important;
+  }
+
+  /* Pastikan #onsPrintZone tampil penuh, bersih, dan tajam di atas kertas */
+  #onsPrintZone {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    opacity: 1 !important;
+  }
+
   #onsPrintZone, #onsPrintZone * {
     visibility: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  #onsPrintZone {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    background: #FFFFFF !important;
-    color: #0F172A !important;
-  }
+
   #onsPrintZone table { page-break-inside: auto; }
   #onsPrintZone tr { page-break-inside: avoid; break-inside: avoid; }
   #onsPrintZone thead { display: table-header-group; }
-  .no-print { display: none !important; }
 }
 
 /* Zero-specificity :where() PWA Offline Fallback (jika CDN Tailwind tidak tersedia offline) */

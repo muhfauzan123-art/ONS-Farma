@@ -1291,21 +1291,28 @@
     if (!zone) {
       zone = document.createElement('div');
       zone.id = 'onsPrintZone';
+      zone.setAttribute('aria-hidden', 'true');
       document.body.appendChild(zone);
     }
+    zone.removeAttribute('style');
     zone.innerHTML = htmlContent;
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.add('ons-is-printing');
+    }
+    const cleanup = () => {
+      if (zone) zone.innerHTML = '';
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.remove('ons-is-printing');
+      }
+    };
     setTimeout(() => {
       if (typeof window !== 'undefined' && typeof window.print === 'function') {
         window.print();
-        setTimeout(() => {
-          if (zone) zone.innerHTML = '';
-        }, 800);
+        setTimeout(cleanup, 1200);
       }
     }, 150);
     if (typeof window !== 'undefined') {
-      window.addEventListener('afterprint', () => {
-        if (zone) zone.innerHTML = '';
-      }, { once: true });
+      window.addEventListener('afterprint', cleanup, { once: true });
     }
   }
 
@@ -1666,6 +1673,7 @@
     exportDataset,
     downloadFile: _triggerDownload,
     printHtmlZone,
+    printHtml: printHtmlZone,
     ThermalPrinter,
     _isLegacySensitive,
     sanitizeLegacyOwnerName

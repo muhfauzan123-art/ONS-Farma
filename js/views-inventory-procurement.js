@@ -1271,7 +1271,7 @@
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
           <button type="button" onclick="window.exportMasterKategoriExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+          <button type="button" onclick="window.printMasterKategoriA4()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak Dokumen Resmi A4"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
         </div>
       </div>
       <div class="p-4 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
@@ -1405,7 +1405,7 @@
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
           <button type="button" onclick="window.exportMasterSatuanExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+          <button type="button" onclick="window.printMasterSatuanA4()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak Dokumen Resmi A4"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
         </div>
       </div>
       <div class="ons-table-wrap">
@@ -1479,7 +1479,7 @@
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
           <button type="button" onclick="window.exportMasterRakExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+          <button type="button" onclick="window.printMasterRakA4()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak Dokumen Resmi A4"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
         </div>
       </div>
       <div class="ons-table-wrap">
@@ -1548,7 +1548,7 @@
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
           <button type="button" onclick="window.exportMasterGudangExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+          <button type="button" onclick="window.printMasterGudangA4()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak Dokumen Resmi A4"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
         </div>
       </div>
       <div class="ons-table-wrap">
@@ -1617,7 +1617,7 @@
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
           <button type="button" onclick="window.exportMasterKatPelangganExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+          <button type="button" onclick="window.printMasterKatPelangganA4()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak Dokumen Resmi A4"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
         </div>
       </div>
       <div class="ons-table-wrap">
@@ -1688,7 +1688,7 @@
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan Data"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
           <button type="button" onclick="window.exportMasterPajakExcel()" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-          <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+          <button type="button" onclick="window.printMasterPajakA4()" class="ons-btn ons-btn-ghost text-xs p-2" title="Cetak Dokumen Resmi A4"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
         </div>
       </div>
       <div class="ons-table-wrap">
@@ -2046,7 +2046,7 @@
     global.toast('Kategori berhasil dihapus', 'ok');
     global.renderActiveView();
   };
-  global.exportMasterKategoriExcel = () => {
+  global.exportMasterKategoriExcel = (fmt = 'xlsx') => {
     const list = _getMasterKategoriList();
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -2055,8 +2055,9 @@
       { key: 'status', label: 'Status', width: 14 }
     ];
     const rows = list.map((k, i) => ({ no: i + 1, nama_kategori: k.nama_kategori, status: k.status || 'Aktif' }));
-    return S().exportDataset('xlsx', 'Daftar Kategori Produk', 'Master_Kategori_ONS_' + dateTag, headers, rows, { sheetName: 'Kategori' });
+    return S().exportDataset(fmt, 'Daftar Kategori Produk', 'Master_Kategori_ONS_' + dateTag, headers, rows, { sheetName: 'Kategori' });
   };
+  global.printMasterKategoriA4 = () => global.exportMasterKategoriExcel('pdf');
 
   global.setSatuanSearch = (v) => { mdSatuanSearchQ = v || ''; global.renderActiveView(); };
   global.openAddSatuanModal = (id) => {
@@ -2124,7 +2125,7 @@
     global.toast('Satuan kemasan berhasil dihapus', 'ok');
     global.renderActiveView();
   };
-  global.exportMasterSatuanExcel = () => {
+  global.exportMasterSatuanExcel = (fmt = 'xlsx') => {
     const list = _getMasterSatuanList();
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -2133,8 +2134,9 @@
       { key: 'status', label: 'Status', width: 14 }
     ];
     const rows = list.map((s, i) => ({ no: i + 1, nama_satuan: s.nama_satuan, status: s.status || 'Aktif' }));
-    return S().exportDataset('xlsx', 'Daftar Satuan Kemasan', 'Master_Satuan_ONS_' + dateTag, headers, rows, { sheetName: 'Satuan' });
+    return S().exportDataset(fmt, 'Daftar Satuan Kemasan', 'Master_Satuan_ONS_' + dateTag, headers, rows, { sheetName: 'Satuan' });
   };
+  global.printMasterSatuanA4 = () => global.exportMasterSatuanExcel('pdf');
 
   global.setRakSearch = (v) => { mdRakSearchQ = v || ''; global.renderActiveView(); };
   global.openAddRakModal = (id) => {
@@ -2202,7 +2204,7 @@
     global.toast('Rak berhasil dihapus', 'ok');
     global.renderActiveView();
   };
-  global.exportMasterRakExcel = () => {
+  global.exportMasterRakExcel = (fmt = 'xlsx') => {
     const list = _getMasterRakList();
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -2211,8 +2213,9 @@
       { key: 'status', label: 'Status', width: 14 }
     ];
     const rows = list.map((r, i) => ({ no: i + 1, nama_rak: r.nama_rak, status: r.status || 'Aktif' }));
-    return S().exportDataset('xlsx', 'Daftar Rak Penyimpanan', 'Master_Rak_ONS_' + dateTag, headers, rows, { sheetName: 'Rak' });
+    return S().exportDataset(fmt, 'Daftar Rak Penyimpanan', 'Master_Rak_ONS_' + dateTag, headers, rows, { sheetName: 'Rak' });
   };
+  global.printMasterRakA4 = () => global.exportMasterRakExcel('pdf');
 
   global.setGudangSearch = (v) => { mdGudangSearchQ = v || ''; global.renderActiveView(); };
   global.openAddGudangModal = (id) => {
@@ -2280,7 +2283,7 @@
     global.toast('Gudang berhasil dihapus', 'ok');
     global.renderActiveView();
   };
-  global.exportMasterGudangExcel = () => {
+  global.exportMasterGudangExcel = (fmt = 'xlsx') => {
     const list = _getMasterGudangList();
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -2289,8 +2292,9 @@
       { key: 'status', label: 'Status', width: 14 }
     ];
     const rows = list.map((g, i) => ({ no: i + 1, nama_gudang: g.nama_gudang, status: g.status || 'Aktif' }));
-    return S().exportDataset('xlsx', 'Daftar Gudang', 'Master_Gudang_ONS_' + dateTag, headers, rows, { sheetName: 'Gudang' });
+    return S().exportDataset(fmt, 'Daftar Gudang', 'Master_Gudang_ONS_' + dateTag, headers, rows, { sheetName: 'Gudang' });
   };
+  global.printMasterGudangA4 = () => global.exportMasterGudangExcel('pdf');
 
   global.setKatPelangganSearch = (v) => { mdKatPelangganSearchQ = v || ''; global.renderActiveView(); };
   global.openAddKatPelangganModal = (id) => {
@@ -2363,7 +2367,7 @@
     global.toast('Kategori pelanggan berhasil dihapus', 'ok');
     global.renderActiveView();
   };
-  global.exportMasterKatPelangganExcel = () => {
+  global.exportMasterKatPelangganExcel = (fmt = 'xlsx') => {
     const list = _getMasterKatPelangganList();
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -2373,8 +2377,9 @@
       { key: 'status', label: 'Status', width: 14 }
     ];
     const rows = list.map((kp, i) => ({ no: i + 1, nama_kategori: kp.nama_kategori, kode: kp.kode, status: kp.status || 'Aktif' }));
-    return S().exportDataset('xlsx', 'Daftar Kategori Pelanggan', 'Master_Kategori_Pelanggan_ONS_' + dateTag, headers, rows, { sheetName: 'KategoriPelanggan' });
+    return S().exportDataset(fmt, 'Daftar Kategori Pelanggan', 'Master_Kategori_Pelanggan_ONS_' + dateTag, headers, rows, { sheetName: 'KategoriPelanggan' });
   };
+  global.printMasterKatPelangganA4 = () => global.exportMasterKatPelangganExcel('pdf');
 
   global.setPajakSearch = (v) => { mdPajakSearchQ = v || ''; global.renderActiveView(); };
   global.openAddPajakModal = (id) => {
@@ -2439,7 +2444,7 @@
     global.toast('Pajak berhasil dihapus', 'ok');
     global.renderActiveView();
   };
-  global.exportMasterPajakExcel = () => {
+  global.exportMasterPajakExcel = (fmt = 'xlsx') => {
     const list = _getMasterPajakList();
     const dateTag = new Date().toISOString().slice(0, 10);
     const headers = [
@@ -2448,8 +2453,9 @@
       { key: 'nilai_pajak', label: 'Nilai Pajak (%)', type: 'int', width: 16 }
     ];
     const rows = list.map((p, i) => ({ no: i + 1, nama_pajak: p.nama_pajak, nilai_pajak: Number(p.nilai_pajak || 0) }));
-    return S().exportDataset('xlsx', 'Master Pajak', 'Master_Pajak_ONS_' + dateTag, headers, rows, { sheetName: 'Pajak' });
+    return S().exportDataset(fmt, 'Master Pajak', 'Master_Pajak_ONS_' + dateTag, headers, rows, { sheetName: 'Pajak' });
   };
+  global.printMasterPajakA4 = () => global.exportMasterPajakExcel('pdf');
   global.setMasterSupplierSearch = (v) => {
     supplierSearchQ = v || '';
     _patchMasterResults(_renderMasterSupplierResultsHtml, supplierSearchQ, 'mdSupplierClearBtn');
@@ -3181,6 +3187,41 @@
     }
   };
 
+  global.printProductBarcodeDirect = (idObat) => {
+    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
+    if (!o) return;
+    const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
+    const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+
+    const stickerHtml = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;width:54mm;padding:3mm;border:1px solid #000;color:#000;box-sizing:border-box;margin:0 auto;text-align:center;background:#fff;">
+        <div style="font-size:8pt;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#0050CA;border-bottom:1px solid #ccc;padding-bottom:1mm;margin-bottom:1.5mm;">${S().esc(usahaNama)}</div>
+        <div style="font-size:9pt;font-weight:bold;line-height:1.2;margin-bottom:1mm;text-align:left;">${S().esc(o.nama_dagang)}</div>
+        <div style="font-size:7pt;color:#555;margin-bottom:1.5mm;text-align:left;">${S().esc(o.zat_aktif || '')} ${o.kekuatan ? ('(' + S().esc(o.kekuatan) + ')') : ''}</div>
+        <div style="padding:2mm 0;text-align:center;">
+          <div style="font-family:monospace;font-size:16pt;font-weight:bold;letter-spacing:2px;line-height:1;">||| |||| || ||||| |||</div>
+          <div style="font-family:monospace;font-size:8pt;font-weight:bold;letter-spacing:1px;margin-top:1mm;">${S().esc(codeVal)}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ccc;padding-top:1.5mm;margin-top:1.5mm;font-size:8pt;">
+          <span style="font-size:6.5pt;color:#666;">HET: <strike>${S().rp(hetVal)}</strike></span>
+          <span style="font-size:10pt;font-weight:900;color:#0050CA;">${S().rp(o.harga_umum || 0)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:6pt;color:#777;margin-top:1mm;">
+          <span>Rak: ${S().esc(o.rak_lokasi || 'RAK-A1')}</span>
+          <span>Sat: ${S().esc(o.satuan_dasar || 'Unit')}</span>
+        </div>
+      </div>
+    `;
+
+    if (typeof S().printHtmlZone === 'function') {
+      S().printHtmlZone(stickerHtml, { widthMm: 58 });
+    } else if (typeof S().printHtml === 'function') {
+      S().printHtml(stickerHtml, { widthMm: 58 });
+    }
+  };
+
   global.openProductBarcodeModal = (idObat) => {
     const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
     if (!o) return;
@@ -3218,7 +3259,7 @@
 
         <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
           <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
-          <button type="button" onclick="window.print()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2">🖨️ Cetak ke Thermal Printer</button>
+          <button type="button" onclick="window.printProductBarcodeDirect('${S().esc(idObat)}')" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2">🖨️ Cetak ke Thermal Printer</button>
         </div>
       </div>
     `, '440px');
@@ -3366,9 +3407,11 @@
       </div>
     `;
 
-    if (S().printHtml) {
+    if (typeof S().printHtmlZone === 'function') {
+      S().printHtmlZone(printHtml, { widthMm: 75 });
+    } else if (typeof S().printHtml === 'function') {
       S().printHtml(printHtml, { widthMm: 75 });
-    } else {
+    } else if (typeof window.print === 'function') {
       window.print();
     }
   };

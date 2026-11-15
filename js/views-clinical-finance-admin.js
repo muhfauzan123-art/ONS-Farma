@@ -6786,6 +6786,44 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     ], rows, { sheetName: 'LabaRugi' });
   };
 
+  global.doPrintLaporanKeuangan = () => {
+    const el = document.getElementById('lapKeuDocCard');
+    if (!el) {
+      if (typeof window.print === 'function') window.print();
+      return;
+    }
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'Apotek ONS Farma';
+    const dTag = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const html = `
+      <div style="font-family:Arial,sans-serif;padding:24px;color:#0F172A;max-width:800px;margin:0 auto;">
+        <div style="text-align:center;border-bottom:2px solid #0050CA;padding-bottom:12px;margin-bottom:18px;">
+          <h2 style="margin:0;font-size:18px;font-weight:900;color:#0050CA;letter-spacing:0.5px;">${S().esc(apotekName)}</h2>
+          <div style="font-size:11px;color:#475569;margin-top:2px;">${S().esc(prof.alamat_usaha || 'Jl. Raya Apotek No. 1')}, ${S().esc(prof.kota || 'Indonesia')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
+          <h3 style="margin:10px 0 0 0;font-size:14px;font-weight:bold;color:#0F172A;text-transform:uppercase;">Laporan Keuangan &amp; Laba Rugi</h3>
+        </div>
+        ${el.innerHTML}
+        <div style="margin-top:36px;display:flex;justify-content:space-between;font-size:11px;color:#334155;padding:0 20px;">
+          <div style="text-align:center;">
+            <div>Dicetak Sistem: ${dTag}</div>
+            <div style="height:40px;"></div>
+            <div style="font-weight:bold;border-top:1px solid #CBD5E1;padding-top:4px;">Bagian Keuangan / Kasir</div>
+          </div>
+          <div style="text-align:center;">
+            <div>Mengetahui,</div>
+            <div style="height:40px;"></div>
+            <div style="font-weight:bold;border-top:1px solid #CBD5E1;padding-top:4px;">${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    if (typeof S().printHtmlZone === 'function') {
+      S().printHtmlZone(html);
+    } else if (typeof S().printHtml === 'function') {
+      S().printHtml(html);
+    }
+  };
+
   global.printLaporanKeuangan = () => {
     const el = document.getElementById('lapKeuDocCard');
     if (!el) {
@@ -6800,7 +6838,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div>${el.outerHTML}</div>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
-        <button type="button" onclick="window.print()" class="ons-btn ons-btn-primary text-xs">Cetak / Simpan PDF</button>
+        <button type="button" onclick="window.doPrintLaporanKeuangan()" class="ons-btn ons-btn-primary text-xs">Cetak / Simpan PDF</button>
       </div>
     </div>`, '760px');
   };
