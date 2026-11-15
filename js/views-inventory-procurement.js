@@ -9334,51 +9334,20 @@
       return global.toast('Tidak ada produk yang perlu restok saat ini.', 'info');
     }
 
-    // Jika targetPbf spesifik dipilih: terbitkan SP untuk PBF tersebut
-    if (targetPbf) {
-      const pbfItems = lowAll.filter((o) => (o.pbf_utama || 'PBF Reguler') === targetPbf);
-      const pickedItems = pbfItems.length ? pbfItems : lowAll.slice(0, 1);
-      const pbfObj = (st.supplierPbf || []).find((p) => p.nama_pbf === targetPbf || p.id_pbf === targetPbf);
-      const spItems = pickedItems.map((o) => {
-        const s = S().getSellableStok(o.id_obat);
-        const q = defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - s);
-        return {
-          id_obat: o.id_obat,
-          nama_dagang: o.nama_dagang,
-          golongan_bpom: o.golongan_bpom || 'BEBAS',
-          qty: q,
-          satuan_dasar: o.satuan_dasar || 'Unit',
-          hpp_unit: Number(o.hpp_terakhir || o.hpp_avg || 0)
-        };
-      });
-      const golList = spItems.map((x) => String(x.golongan_bpom || '').toUpperCase());
-      const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
-      try {
-        const res = await API().callApi('sp.save', {
-          id_pbf: pbfObj ? pbfObj.id_pbf : '',
-          nama_pbf: targetPbf,
-          golongan_sp: golSp,
-          items: spItems,
-          create_doc: false,
-          catatan: 'SP dibuat otomatis dari analisa Defecta Apotek (' + targetPbf + ')'
-        }, { isWrite: true });
-        global.toast('SP Resmi (' + res.item.no_sp + ') tersimpan! Siap Preview, Edit & Print A4.', 'ok');
-        await global.bootLoadState(true);
-        if (res && res.item && res.item.id_sp && typeof global.openSpA4PreviewModal === 'function') {
-          global.setDefectaTab('sp');
-          global.openSpA4PreviewModal(res.item.id_sp);
-        }
-      } catch (e) { global.toast(e.message, 'err'); }
-      return;
+    // MULTI-SUPPLIER & REGULATION BATCH ENGINE (STANDAR BPOM CDOB)
+    // Obat Bebas/Reguler, Prekursor, OOT, Psikotropika, dan Narkotika WAJIB SP terpisah!
+    const targetItems = targetPbf
+      ? lowAll.filter((o) => (o.pbf_utama || 'PBF Reguler') === targetPbf)
+      : lowAll;
+
+    if (!targetItems.length) {
+      return global.toast('Tidak ada produk yang perlu restok untuk PBF ' + targetPbf + '.', 'info');
     }
 
-    // MULTI-SUPPLIER & REGULATION BATCH ENGINE (STANDAR APOTEK DIGITAL)
-    // Kelompokkan ratusan obat defecta berdasarkan PBF Utama dan Jenis SP Regulasi BPOM
     const groupKeyMap = {};
-    lowAll.forEach((o) => {
+    targetItems.forEach((o) => {
       const pbfName = o.pbf_utama || ((st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PBF Reguler');
-      const gol = String(o.golongan_bpom || 'BEBAS').toUpperCase();
-      const jenisSp = gol === 'NARKOTIKA' ? 'NARKOTIKA' : (gol === 'PSIKOTROPIKA' ? 'PSIKOTROPIKA' : (gol === 'PREKURSOR' ? 'PREKURSOR' : (gol === 'OOT' ? 'OOT' : 'REGULER')));
+      const jenisSp = typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(o) : (S().resolveObatJenisSp ? S().resolveObatJenisSp(o) : 'REGULER');
       const key = pbfName + '|||' + jenisSp;
       if (!groupKeyMap[key]) groupKeyMap[key] = { pbfName, jenisSp, items: [] };
       const s = S().getSellableStok(o.id_obat);
@@ -9386,7 +9355,7 @@
       groupKeyMap[key].items.push({
         id_obat: o.id_obat,
         nama_dagang: o.nama_dagang,
-        golongan_bpom: o.golongan_bpom || 'BEBAS',
+        golongan_bpom: jenisSp,
         qty: q,
         satuan_dasar: o.satuan_dasar || 'Unit',
         hpp_unit: Number(o.hpp_terakhir || o.hpp_avg || 0)
@@ -9394,29 +9363,42 @@
     });
 
     const groups = Object.values(groupKeyMap);
-    if (!confirm('Terbitkan ' + groups.length + ' Surat Pesanan (SP) otomatis untuk seluruh distributor PBF terdaftar sesuai regulasi pemisahan BPOM?')) return;
+    const summaryList = groups.map((g) => `${g.pbfName} [SP ${g.jenisSp}]: ${g.items.length} item`).join('\n• ');
+    const confirmMsg = targetPbf
+      ? `Konfirmasi Terbitkan SP untuk ${targetPbf}:\nSesuai regulasi BPOM CDOB, pesanan dipisahkan menjadi ${groups.length} lembar SP resmi terpisah (obat bebas/reguler, OOT, dan Prekursor tidak dicampur):\n• ${summaryList}\n\nLanjutkan terbitkan SP?`
+      : `Terbitkan ${groups.length} Surat Pesanan (SP) otomatis untuk seluruh distributor PBF sesuai pemisahan regulasi BPOM (Reguler, Prekursor, OOT masing-masing SP terpisah)?\n\n• ${summaryList}`;
+
+    if (!confirm(confirmMsg)) return;
 
     let createdCount = 0;
+    let lastCreatedSp = null;
     for (const grp of groups) {
       const pbfObj = (st.supplierPbf || []).find((p) => p.nama_pbf === grp.pbfName || p.id_pbf === grp.pbfName);
       try {
-        await API().callApi('sp.save', {
+        const res = await API().callApi('sp.save', {
           id_pbf: pbfObj ? pbfObj.id_pbf : '',
           nama_pbf: grp.pbfName,
           golongan_sp: grp.jenisSp,
           items: grp.items,
           create_doc: false,
-          catatan: 'SP Terbit Otomatis via Batch Defecta Engine [' + grp.jenisSp + ']'
+          catatan: 'SP Terbit Otomatis via Batch Defecta [' + grp.jenisSp + ']'
         }, { isWrite: true });
         createdCount++;
+        if (res && res.item) lastCreatedSp = res.item;
       } catch (err) {
-        console.error('Gagal membuat SP untuk ' + grp.pbfName, err);
+        console.error('Gagal membuat SP untuk ' + grp.pbfName + ' [' + grp.jenisSp + ']', err);
+        global.toast(err.message || ('Gagal membuat SP ' + grp.jenisSp), 'err');
       }
     }
 
-    global.toast('Berhasil menerbitkan ' + createdCount + ' Surat Pesanan (SP) otomatis ke antrean SP!', 'ok');
+    global.toast('Berhasil menerbitkan ' + createdCount + ' Surat Pesanan (SP) terpisah resmi sesuai regulasi BPOM!', 'ok');
     await global.bootLoadState(true);
-    if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+    if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+    else if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
+
+    if (createdCount === 1 && lastCreatedSp && lastCreatedSp.id_sp && typeof global.openSpA4PreviewModal === 'function') {
+      global.openSpA4PreviewModal(lastCreatedSp.id_sp);
+    }
   };
 
   global.toggleDefectaSelect = (idObat, isChecked) => {
@@ -10018,7 +10000,11 @@
                   <td><span class="ons-badge ons-badge-indigo text-[10px]">${S().esc(sp.golongan_sp || 'REGULER')}</span></td>
                   <td><span class="ons-badge ${sp.status_sp === 'SELESAI' ? 'ons-badge-emerald' : 'ons-badge-amber'} text-[10px]">${S().esc(sp.status_sp || 'MENUNGGU')}</span></td>
                   <td class="text-right">
-                    <button type="button" class="ons-btn ons-btn-ghost text-xs py-1 px-2" onclick="event.stopPropagation(); typeof window.openSpDetailModal === 'function' ? window.openSpDetailModal('${S().esc(sp.id_sp)}') : null">Detail</button>
+                    <div class="flex items-center justify-end gap-1.5">
+                      <button type="button" class="ons-btn ons-btn-ghost text-xs py-1 px-2" onclick="event.stopPropagation(); typeof window.openSpDetailModal === 'function' ? window.openSpDetailModal('${S().esc(sp.id_sp)}') : null">Detail</button>
+                      <button type="button" class="ons-btn ons-btn-ghost text-xs py-1 px-2" onclick="event.stopPropagation(); typeof window.openEditSpModal === 'function' ? window.openEditSpModal('${S().esc(sp.id_sp)}') : null">Edit SP</button>
+                      <button type="button" class="ons-btn text-xs py-1 px-2 text-rose-600 hover:bg-rose-50 font-bold border border-rose-200" onclick="event.stopPropagation(); typeof window.deleteSp === 'function' ? window.deleteSp('${S().esc(sp.id_sp)}') : null">Hapus</button>
+                    </div>
                   </td>
                 </tr>
               `).join('')}
@@ -11347,23 +11333,81 @@
     const plans = _readLocalList(PLANS_KEY);
     const p = plans.find((x) => x.id_plan === idPlan);
     if (!p) return global.toast('Item rencana tidak ditemukan.', 'warn');
+    const jenis = typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(p) : (p.jenis_sp || 'REGULER');
+    p.jenis_sp = jenis;
     if (typeof global.openSpModalFromPlans === 'function') {
       _writeLocalList(PLANS_KEY, plans.filter((x) => x.id_plan !== idPlan));
-      global.openSpModalFromPlans(p.nama_supplier, p.jenis_sp, [p], 'Dari Rencana Pembelian: ' + (p.keterangan || ''));
+      global.openSpModalFromPlans(p.nama_supplier, jenis, [p], 'Dari Rencana Pembelian: ' + (p.keterangan || ''));
     }
   };
 
-  global.convertSelectedPlansToSp = () => {
+  global.convertSelectedPlansToSp = async () => {
     const plans = _readLocalList(PLANS_KEY);
     const picked = plans.filter((p) => p.selected);
     if (!picked.length) return global.toast('Centang minimal 1 produk pada Rencana Pembelian.', 'warn');
-    const firstSup = picked[0].nama_supplier;
-    const golList = picked.map((x) => String(x.jenis_sp || 'REGULER').toUpperCase());
-    const golSp = golList.includes('NARKOTIKA') ? 'NARKOTIKA' : (golList.includes('PSIKOTROPIKA') ? 'PSIKOTROPIKA' : (golList.includes('PREKURSOR') ? 'PREKURSOR' : (golList.includes('OOT') ? 'OOT' : 'REGULER')));
-    _writeLocalList(PLANS_KEY, plans.filter((p) => !p.selected));
-    if (typeof global.openSpModalFromPlans === 'function') {
-      global.openSpModalFromPlans(firstSup, golSp, picked, 'Konversi ' + picked.length + ' item Rencana Pembelian');
+
+    // Kelompokkan secara ketat per Supplier PBF dan per Jenis SP Regulasi BPOM
+    // (Obat Bebas/Reguler, Prekursor, OOT tidak boleh tercampur dalam satu SP)
+    const groupKeyMap = {};
+    picked.forEach((p) => {
+      const sup = p.nama_supplier || 'PBF Reguler';
+      const jenis = typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(p) : (p.jenis_sp || 'REGULER');
+      const key = sup + '|||' + jenis;
+      if (!groupKeyMap[key]) groupKeyMap[key] = { sup, jenis, items: [] };
+      groupKeyMap[key].items.push(p);
+    });
+
+    const groups = Object.values(groupKeyMap);
+
+    // Jika seluruh produk yang dipilih adalah 1 PBF dan 1 Jenis SP yang sama: buka editor modal
+    if (groups.length === 1) {
+      const grp = groups[0];
+      _writeLocalList(PLANS_KEY, plans.filter((p) => !p.selected));
+      if (typeof global.openSpModalFromPlans === 'function') {
+        global.openSpModalFromPlans(grp.sup, grp.jenis, grp.items, 'Konversi ' + grp.items.length + ' item Rencana Pembelian [' + grp.jenis + ']');
+      }
+      return;
     }
+
+    // Jika produk yang dipilih terdiri dari beragam PBF atau beragam golongan regulasi BPOM:
+    const summary = groups.map((g) => `${g.sup} [SP ${g.jenis}]: ${g.items.length} item`).join('\n• ');
+    const msg = `Pemisahan Regulasi Farmasi BPOM:\nSesuai aturan CDOB, obat Bebas/Reguler, Prekursor, OOT, dan Psikotropika TIDAK BOLEH dicampur dalam 1 lembar SP.\n\nSistem memisahkan ${picked.length} item terpilih menjadi ${groups.length} Surat Pesanan resmi terpisah:\n• ${summary}\n\nLanjutkan terbitkan ${groups.length} Surat Pesanan terpisah?`;
+
+    if (!confirm(msg)) return;
+
+    let createdCount = 0;
+    const st = S().AppState;
+    for (const grp of groups) {
+      const pbfObj = (st.supplierPbf || []).find((p) => p.nama_pbf === grp.sup || p.id_pbf === grp.sup);
+      const spItems = grp.items.map((it) => ({
+        id_obat: it.id_obat || ('PLAN-' + it.id_plan),
+        nama_dagang: it.nama_produk || it.nama_dagang,
+        golongan_bpom: grp.jenis,
+        qty: Number(it.kuantitas || 1),
+        satuan_dasar: it.satuan || 'Unit',
+        hpp_unit: Number(it.harga_beli || 0),
+        keterangan: it.keterangan || ''
+      }));
+
+      try {
+        await API().callApi('sp.save', {
+          id_pbf: pbfObj ? pbfObj.id_pbf : '',
+          nama_pbf: grp.sup,
+          golongan_sp: grp.jenis,
+          items: spItems,
+          create_doc: false,
+          catatan: 'Dikonversi otomatis dari Rencana Pembelian [' + grp.jenis + ']'
+        }, { isWrite: true });
+        createdCount++;
+      } catch (err) {
+        console.error('Gagal membuat SP untuk ' + grp.sup + ' [' + grp.jenis + ']', err);
+      }
+    }
+
+    _writeLocalList(PLANS_KEY, plans.filter((p) => !p.selected));
+    global.toast(`Berhasil menerbitkan ${createdCount} Surat Pesanan resmi terpisah sesuai regulasi BPOM!`, 'ok');
+    await global.bootLoadState(true);
+    if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
   };
 
   global.openRopCalculatorModal = (targetDaysParam, bufferDaysParam) => {

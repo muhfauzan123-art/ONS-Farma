@@ -662,8 +662,11 @@
             <button type="button" onclick="window.setSpViewMode('PRODUK')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'PRODUK' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#128230; Rincian Produk Dipesan</button>
             <button type="button" onclick="window.setSpViewMode('SUPPLIER')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'SUPPLIER' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#127970; Rekap per Supplier PBF</button>
           </div>
-          <div class="text-xs font-semibold text-slate-500">
-            Terpilih: <b>${spSelectedIds.size}</b> SP &bull; Total Nilai: <b class="text-blue-600">${S().rp(totalNilaiPesanan)}</b>
+          <div class="flex items-center gap-2">
+            ${spSelectedIds.size ? `<button type="button" onclick="window.deleteBulkSelectedSp()" class="ons-btn text-xs py-1 px-2.5 text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700 font-bold" title="Hapus seluruh SP yang dicentang">🗑 Hapus ${spSelectedIds.size} SP Terpilih</button>` : ''}
+            <div class="text-xs font-semibold text-slate-500">
+              Terpilih: <b>${spSelectedIds.size}</b> SP &bull; Total Nilai: <b class="text-blue-600">${S().rp(totalNilaiPesanan)}</b>
+            </div>
           </div>
         </div>
 
@@ -824,14 +827,15 @@
                       <div class="flex flex-wrap gap-1.5">
                         <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-bold">Detail</button>
                         <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Preview &amp; Cetak A4</button>
-                        ${!isBatal ? `<button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Edit SP</button>` : ''}
+                        ${!done && !isBatal ? `<button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-semibold" title="Edit isi atau supplier SP">✏️ Edit SP</button>` : ''}
                         <button type="button" onclick="window.duplicateSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Duplikat SP">&#128203; Duplikat</button>
                         <button type="button" onclick="window.sendSpViaWa('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">WA PBF</button>
                         ${!done && !isBatal ? `
                           <button type="button" onclick="window.markSpClosed('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-emerald-600 font-semibold" title="Tandai Selesai">&#10003; Selesai</button>
-                          <button type="button" onclick="window.confirmCancelSp('${S().esc(sp.id_sp)}')" class="ons-btn text-[11px] py-1 px-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Batal</button>
+                          <button type="button" onclick="window.confirmCancelSp('${S().esc(sp.id_sp)}')" class="ons-btn text-[11px] py-1 px-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 font-semibold">Batal</button>
                           <button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Barang Tiba &rarr; Faktur</button>
                         ` : ''}
+                        ${!done ? `<button type="button" onclick="window.deleteSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 font-bold border border-rose-300 dark:border-rose-800" title="Hapus SP jika salah buat">🗑 Hapus</button>` : ''}
                       </div>
                     </td>
                   </tr>`;
@@ -868,10 +872,15 @@
     if (!spDraftPemesan) spDraftPemesan = prof.nama_pemilik || prof.nama_apj || (st.user && st.user.nama) || 'Apoteker Penanggung Jawab';
     const isEdit = Boolean(spEditingId);
     const dq = spDraftSearch.trim().toLowerCase();
+    const resolver = typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp : null;
     const candidates = (st.masterObat || []).filter((o) => {
       if (!dq) return true;
       return `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.pbf_utama || ''}`.toLowerCase().includes(dq);
-    }).slice(0, 14);
+    }).sort((a, b) => {
+      const aMatch = resolver && resolver(a) === spDraftGol ? 0 : 1;
+      const bMatch = resolver && resolver(b) === spDraftGol ? 0 : 1;
+      return aMatch - bMatch;
+    }).slice(0, 16);
     const pendingMap = buildPendingSpQtyMap(st);
     const estTotal = spDraftItems.reduce((s, x) => s + (Number(x.qty || 0) * Number(x.hpp_terakhir || x.hpp_unit || 0)), 0);
 
@@ -887,6 +896,15 @@
         </div>
       </div>
       <div class="ons-ws-body space-y-4">
+        <!-- Banner Edukasi Regulasi BPOM CDOB -->
+        <div class="p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 ${spDraftGol === 'REGULER' ? 'bg-blue-50/70 border-blue-200 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-200' : 'bg-amber-50/80 border-amber-300 text-amber-900 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200'}">
+          <div class="flex items-center gap-2">
+            <span class="text-base">${spDraftGol === 'REGULER' ? '📋' : '⚠️'}</span>
+            <span><b>Regulasi Farmasi BPOM CDOB:</b> Ini formulir <b>SP ${spDraftGol}</b>. Obat Bebas/Reguler, OOT, dan Prekursor WAJIB menggunakan lembar SP terpisah masing-masing dan sistem mencegah pencampuran secara otomatis.</span>
+          </div>
+          <span class="badge-bpom ${spDraftGol === 'REGULER' ? 'bpom-bebas' : 'bpom-keras'} shrink-0">${spDraftGol}</span>
+        </div>
+
         <div class="ons-card p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs">
           <div class="lg:col-span-2">
             <label class="text-[11px] font-bold block mb-1">Supplier *</label>
@@ -940,12 +958,21 @@
               ${candidates.map((o) => {
                 const stok = S().getSellableStok(o.id_obat);
                 const sedang = Number(pendingMap[o.id_obat] || 0);
-                return `<div class="p-2 rounded-lg border flex items-center justify-between gap-2 text-xs" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                const oGol = resolver ? resolver(o) : (o.golongan_bpom || 'REGULER');
+                const isMatch = oGol === spDraftGol;
+                return `<div class="p-2 rounded-lg border flex items-center justify-between gap-2 text-xs" style="border-color:${isMatch ? 'var(--ons-border)' : 'rgba(239, 68, 68, 0.35)'};background:var(--ons-bg-subtle)">
                   <div class="min-w-0">
-                    <div class="font-bold truncate">${S().esc(o.nama_dagang)}</div>
+                    <div class="font-bold truncate flex items-center gap-1.5">
+                      <span class="truncate">${S().esc(o.nama_dagang)}</span>
+                      <span class="badge-bpom ${isMatch ? (oGol === 'REGULER' ? 'bpom-bebas' : 'bpom-keras') : 'bpom-terbatas'} text-[9px] shrink-0">${oGol}</span>
+                    </div>
                     <div class="text-[10px]" style="color:var(--ons-text-soft)">Stok: <b>${stok}</b> &bull; Dipesan: <b>${sedang}</b> &bull; HPP: ${S().rp(o.hpp_terakhir || o.hpp_avg || 0)}</div>
                   </div>
-                  <button type="button" onclick="window.addSpDraftItem('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 shrink-0">+ Tambah</button>
+                  ${isMatch ? `
+                    <button type="button" onclick="window.addSpDraftItem('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 shrink-0">+ Tambah</button>
+                  ` : `
+                    <button type="button" onclick="window.addSpDraftItem('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2 text-rose-600 border border-rose-300 dark:border-rose-800 shrink-0 font-semibold" title="Obat ${oGol} tidak boleh masuk ke SP ${spDraftGol}">⛔ Beda SP</button>
+                  `}
                 </div>`;
               }).join('')}
             </div>
@@ -1211,7 +1238,15 @@
     const pbfName = pbf ? pbf.nama_pbf : '';
     const lowAll = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
     const filtered = pbfName ? lowAll.filter((o) => o.pbf_utama === pbfName) : lowAll;
-    const picked = filtered.length ? filtered : (lowAll.length ? lowAll : (st.masterObat || []).slice(0, 3));
+    const pool = filtered.length ? filtered : lowAll;
+    // Strict BPOM compliance: Only include drugs matching current SP category (spDraftGol)
+    const picked = pool.filter((o) => {
+      const g = typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(o) : 'REGULER';
+      return g === spDraftGol;
+    });
+    if (!picked.length) {
+      return global.toast(`Tidak ada obat stok menipis dengan kategori regulasi ${spDraftGol} untuk distributor ini.`, 'info');
+    }
     let added = 0;
     picked.forEach((o) => {
       if (!spDraftItems.some((x) => x.id_obat === o.id_obat)) {
@@ -1220,7 +1255,7 @@
           id_obat: o.id_obat,
           nama_dagang: o.nama_dagang,
           zat_aktif: o.zat_aktif || '',
-          golongan_bpom: o.golongan_bpom || 'BEBAS',
+          golongan_bpom: spDraftGol,
           satuan_dasar: o.satuan_dasar || 'Unit',
           qty: Math.max(10, Number(o.stok_max || 100) - s),
           hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0),
@@ -1229,7 +1264,7 @@
         added++;
       }
     });
-    global.toast(added ? `${added} produk stok menipis ditambahkan sekaligus.` : 'Semua produk rekomendasi sudah ada di daftar pesanan.', added ? 'ok' : 'info');
+    global.toast(added ? `${added} produk ${spDraftGol} stok menipis ditambahkan sekaligus.` : 'Semua produk rekomendasi sudah ada di daftar pesanan.', added ? 'ok' : 'info');
     S().openModal(buildCreateSpModalHtml(), 'full');
   };
 
@@ -1239,20 +1274,30 @@
     const matchedPbf = pbfs.find((p) => p.nama_pbf === pbfName || p.id_pbf === pbfName) || pbfs[0] || {};
     spEditingId = '';
     spActiveDraftLocalId = '';
-    spDraftNoSp = '';
+    spDraftGol = String(golSp || 'REGULER').toUpperCase();
+    spDraftNoSp = generateSpNumber(spDraftGol);
     spDraftTanggal = new Date().toISOString().slice(0, 10);
     spDraftPbfId = matchedPbf.id_pbf || '';
-    spDraftGol = String(golSp || 'REGULER').toUpperCase();
     spDraftPayMethod = 'KREDIT';
     spDraftDueDate = computeSpDueFromPbf(spDraftPbfId, spDraftTanggal);
     spDraftPemesan = '';
     spDraftCatatan = catatan || 'Dibuat dari Rencana Pembelian Apotek';
     spDraftSearch = '';
-    spDraftItems = (itemsArr || []).map((it) => ({
+    
+    // BPOM CDOB Guard: Only import items matching this specific SP category
+    const filteredItems = (itemsArr || []).filter((it) => {
+      const o = (st.masterObat || []).find((m) => m.id_obat === it.id_obat);
+      const itemGol = o && typeof global.resolveObatJenisSp === 'function'
+        ? global.resolveObatJenisSp(o)
+        : (it.golongan_bpom || it.jenis_sp || spDraftGol);
+      return itemGol === spDraftGol;
+    });
+
+    spDraftItems = filteredItems.map((it) => ({
       id_obat: it.id_obat || ('CUSTOM-' + Date.now().toString().slice(-4)),
       nama_dagang: it.nama_dagang || it.nama_produk || 'Produk',
       zat_aktif: it.zat_aktif || '',
-      golongan_bpom: it.golongan_bpom || it.jenis_sp || spDraftGol,
+      golongan_bpom: spDraftGol,
       satuan_dasar: it.satuan_dasar || it.satuan || 'Unit',
       qty: Math.max(1, Number(it.qty || it.kuantitas || 1)),
       hpp_terakhir: Math.max(0, Number(it.hpp_terakhir || it.hpp_unit || it.harga_beli || 0)),
@@ -1318,8 +1363,30 @@
     } else if (key === 'pbf') {
       spDraftPbfId = val;
       if (spDraftPayMethod !== 'TUNAI') spDraftDueDate = computeSpDueFromPbf(val, spDraftTanggal);
-    } else if (key === 'gol') spDraftGol = val;
-    else if (key === 'pay_method') {
+    } else if (key === 'gol') {
+      const newGol = String(val || 'REGULER').toUpperCase();
+      if (spDraftItems.length > 0) {
+        const mismatched = spDraftItems.filter((it) => {
+          const o = (S().AppState.masterObat || []).find((m) => m.id_obat === it.id_obat);
+          const itGol = o && typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(o) : (it.golongan_bpom || 'REGULER');
+          return itGol !== newGol;
+        });
+        if (mismatched.length > 0) {
+          const proceed = typeof global.confirm === 'function'
+            ? global.confirm(`Perhatian Regulasi BPOM:\nMengubah jenis SP menjadi ${newGol} akan menghapus ${mismatched.length} item obat yang tidak sesuai dengan regulasi SP ini (${mismatched.map((x) => x.nama_dagang).slice(0, 3).join(', ')}...).\n\nLanjutkan perubahan jenis SP?`)
+            : true;
+          if (!proceed) {
+            S().openModal(buildCreateSpModalHtml(), 'full');
+            return;
+          }
+          spDraftItems = spDraftItems.filter((it) => !mismatched.includes(it));
+        }
+      }
+      spDraftGol = newGol;
+      if (!spEditingId) {
+        spDraftNoSp = generateSpNumber(newGol);
+      }
+    } else if (key === 'pay_method') {
       spDraftPayMethod = val;
       spDraftDueDate = val === 'TUNAI' ? '' : computeSpDueFromPbf(spDraftPbfId, spDraftTanggal);
     } else if (key === 'due_date') spDraftDueDate = val;
@@ -1351,6 +1418,10 @@
   global.addSpDraftItem = (idObat) => {
     const o = (S().AppState.masterObat || []).find((m) => m.id_obat === idObat);
     if (!o) return;
+    const itemGol = typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(o) : 'REGULER';
+    if (itemGol !== spDraftGol) {
+      return global.toast(`Pelanggaran Regulasi BPOM: Obat "${o.nama_dagang}" (${itemGol}) TIDAK BOLEH dicampur ke dalam SP ${spDraftGol}! Silakan buat SP ${itemGol} tersendiri.`, 'err');
+    }
     const exist = spDraftItems.find((x) => x.id_obat === idObat);
     if (exist) {
       exist.qty = Number(exist.qty || 0) + 10;
@@ -1359,7 +1430,7 @@
         id_obat: o.id_obat,
         nama_dagang: o.nama_dagang,
         zat_aktif: o.zat_aktif || '',
-        golongan_bpom: o.golongan_bpom || 'BEBAS',
+        golongan_bpom: itemGol,
         satuan_dasar: o.satuan_dasar || 'Unit',
         qty: Math.max(10, Number(o.stok_min || 10)),
         hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0),
@@ -1400,6 +1471,16 @@
       if (dueEl) spDraftDueDate = String(dueEl.value || '').trim();
       if (pemEl) spDraftPemesan = String(pemEl.value || '').trim();
       const pbf = (S().AppState.supplierPbf || []).find((p) => p.id_pbf === spDraftPbfId) || {};
+
+      // BPOM CDOB Segregation check: All items must match spDraftGol
+      for (const it of spDraftItems) {
+        const o = (S().AppState.masterObat || []).find((m) => m.id_obat === it.id_obat);
+        const itemGol = o && typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(o) : (it.golongan_bpom || 'REGULER');
+        if (itemGol !== spDraftGol) {
+          throw new Error(`Pelanggaran Regulasi BPOM: Obat "${it.nama_dagang}" terdeteksi golongan ${itemGol}, TIDAK BOLEH dicampur ke dalam SP ${spDraftGol}. Harap hapus item tersebut dan terbitkan SP tersendiri.`);
+        }
+      }
+
       const payload = {
         id_pbf: pbf.id_pbf || '',
         nama_pbf: pbf.nama_pbf || 'PBF Reguler',
@@ -1582,6 +1663,7 @@
     const st = S().AppState;
     const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
     if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    const done = String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA';
     const items = parseSpItems(sp);
     const pbf = (st.supplierPbf || []).find((p) => p.id_pbf === sp.id_pbf || p.nama_pbf === sp.nama_pbf) || {};
 
@@ -1593,8 +1675,9 @@
         </div>
         <div class="flex items-center gap-2">
           <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(idSp)}')" class="ons-btn ons-btn-primary text-xs font-bold">&#128424; Cetak / Preview A4</button>
-          <button type="button" onclick="window.openEditSpModal('${S().esc(idSp)}')" class="ons-btn ons-btn-amber text-xs">&#9998; Edit SP</button>
+          ${!done ? `<button type="button" onclick="window.openEditSpModal('${S().esc(idSp)}')" class="ons-btn ons-btn-amber text-xs">&#9998; Edit SP</button>` : ''}
           <button type="button" onclick="window.duplicateSp('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">&#128203; Duplikat</button>
+          ${!done ? `<button type="button" onclick="window.deleteSp('${S().esc(idSp)}')" class="ons-btn text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 font-bold border border-rose-300 dark:border-rose-800" title="Hapus SP">🗑 Hapus SP</button>` : ''}
           <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
         </div>
       </div>
@@ -1684,6 +1767,7 @@
             <button type="button" onclick="window.confirmCancelSp('${S().esc(idSp)}')" class="ons-btn text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Batalkan SP</button>
             <button type="button" onclick="window.ONSStore.closeModal();window.loadSpIntoGrn('${S().esc(idSp)}')" class="ons-btn ons-btn-ghost text-xs">Barang Tiba &rarr; Terima Faktur</button>
           ` : ''}
+          ${!done ? `<button type="button" onclick="window.deleteSp('${S().esc(idSp)}')" class="ons-btn text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 font-bold border border-rose-300 dark:border-rose-800" title="Hapus SP">🗑 Hapus SP</button>` : ''}
           <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
         </div>
       </div>
@@ -1692,6 +1776,56 @@
       </div>
     </div>`;
     S().openModal(modalHtml, 'full');
+  };
+
+  global.deleteSp = async (idSp) => {
+    const st = S().AppState;
+    const sp = (st.suratPesanan || []).find((x) => x.id_sp === idSp);
+    if (!sp) return global.toast('Surat Pesanan tidak ditemukan.', 'warn');
+    if (String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA') {
+      return global.toast('Surat Pesanan yang sudah selesai diterima / berfaktur tidak dapat dihapus.', 'warn');
+    }
+    const confirmMsg = `Konfirmasi Penghapusan SP:\nApakah Anda yakin ingin MENGHAPUS PERMANEN Surat Pesanan:\n• No. SP: ${sp.no_sp || idSp}\n• Supplier: ${sp.nama_pbf || '-'}\n• Golongan: ${sp.golongan_sp || 'REGULER'}\n\nData yang dihapus tidak dapat dikembalikan.`;
+    if (typeof global.confirm === 'function' && !global.confirm(confirmMsg)) return;
+
+    try {
+      await API().callApi('sp.delete', { id_sp: idSp }, { isWrite: true });
+      spSelectedIds.delete(idSp);
+      global.toast(`Surat Pesanan ${sp.no_sp || idSp} berhasil dihapus.`, 'ok');
+      await global.bootLoadState(true);
+      if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+      else global.renderActiveView();
+      if (S().isModalOpen()) S().closeModal();
+    } catch (e) {
+      global.toast('Gagal menghapus Surat Pesanan: ' + e.message, 'err');
+    }
+  };
+
+  global.deleteBulkSelectedSp = async () => {
+    if (!spSelectedIds.size) return global.toast('Pilih minimal 1 Surat Pesanan untuk dihapus.', 'warn');
+    const st = S().AppState;
+    const selectedList = Array.from(spSelectedIds).map((id) => (st.suratPesanan || []).find((x) => x.id_sp === id)).filter(Boolean);
+    const nonDeletable = selectedList.filter((x) => String(x.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA');
+    if (nonDeletable.length > 0) {
+      return global.toast(`${nonDeletable.length} SP yang sudah SELESAI/berfaktur tidak dapat dihapus. Hapus centang pada SP tersebut.`, 'warn');
+    }
+    const confirmMsg = `Konfirmasi Hapus Massal:\nApakah Anda yakin ingin MENGHAPUS ${selectedList.length} Surat Pesanan yang dipilih sekaligus?\n\nTindakan ini tidak dapat dibatalkan.`;
+    if (typeof global.confirm === 'function' && !global.confirm(confirmMsg)) return;
+
+    let successCount = 0;
+    for (const sp of selectedList) {
+      try {
+        await API().callApi('sp.delete', { id_sp: sp.id_sp }, { isWrite: true });
+        spSelectedIds.delete(sp.id_sp);
+        successCount++;
+      } catch (err) {
+        console.error('Failed to delete SP:', sp.id_sp, err);
+      }
+    }
+    global.toast(`${successCount} dari ${selectedList.length} Surat Pesanan berhasil dihapus.`, 'ok');
+    await global.bootLoadState(true);
+    if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
+    else global.renderActiveView();
   };
 
   global.toggleSpA4PricePreview = (idSp, checked) => {

@@ -1302,6 +1302,18 @@
       const golSp = String(d.golongan_sp || (existing && existing.golongan_sp) || 'REGULER').toUpperCase();
       const estTotal = spItems.reduce((s, it) => s + (Number(it.qty || it.qty_order || 0) * Number(it.hpp_unit || it.hpp_terakhir || 0)), 0);
 
+      // Validasi Pemisahan Regulasi BPOM CDOB:
+      // Obat Bebas/Reguler, Prekursor, OOT, Psikotropika, dan Narkotika WAJIB SP terpisah!
+      const resolver = (typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp : null);
+      if (resolver) {
+        for (const it of spItems) {
+          const itemGol = resolver(it);
+          if (itemGol !== golSp) {
+            throw new Error('Pelanggaran Regulasi BPOM CDOB: Obat "' + (it.nama_dagang || it.id_obat) + '" (' + itemGol + ') tidak boleh dicampur ke dalam SP ' + golSp + '! Obat bebas/reguler, OOT, dan Prekursor harus menggunakan SP masing-masing.');
+          }
+        }
+      }
+
       let docObj = null;
       if (!isUpdate && d.create_doc !== false) {
         docObj = {
@@ -1398,6 +1410,32 @@
       db.epoch++;
       saveDb(db);
       return { success: true, item: existing };
+    }
+
+    if (action === 'sp.delete') {
+      const idSp = d.id_sp;
+      if (!idSp) throw new Error('ID Surat Pesanan wajib disertakan.');
+      const idx = db.surat_pesanan.findIndex((s) => s.id_sp === idSp || s.no_sp === idSp);
+      if (idx < 0) throw new Error('Surat Pesanan tidak ditemukan.');
+      const existing = db.surat_pesanan[idx];
+      if (String(existing.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA') {
+        throw new Error('Surat Pesanan yang sudah selesai diterima dan masuk faktur tidak dapat dihapus.');
+      }
+      db.surat_pesanan.splice(idx, 1);
+      db.audit_log.unshift({
+        id_audit: 'AUD-' + Date.now(),
+        timestamp: nowIso,
+        user_id: userId,
+        role,
+        cabang_id: 'ONS-01',
+        aksi: 'SURAT_PESANAN_HAPUS',
+        entitas: 'SURAT_PESANAN',
+        entitas_id: idSp,
+        diff_sebelum_json: JSON.stringify({ no_sp: existing.no_sp, pbf: existing.nama_pbf })
+      });
+      db.epoch++;
+      saveDb(db);
+      return { success: true, id_sp: idSp };
     }
     if (action === 'pengadaan.fakturSave') {
       if (!String(d.no_faktur_pbf || '').trim()) throw new Error('Nomor faktur PBF wajib diisi.');

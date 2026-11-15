@@ -1716,7 +1716,52 @@
     { id_pajak: 'TAX-002', nama_pajak: 'Tanpa Pajak', nilai_pajak: 0, status: 'Aktif' }
   ];
 
+  /**
+   * Helper Regulasi BPOM CDOB:
+   * Menentukan jenis Surat Pesanan (SP) resmi untuk obat.
+   * Obat Bebas/Reguler, Prekursor, OOT, Psikotropika, dan Narkotika
+   * WAJIB menggunakan SP terpisah masing-masing dan tidak boleh dicampur.
+   */
+  function resolveObatJenisSp(obat) {
+    if (!obat) return 'REGULER';
+    const gol = String(obat.golongan_bpom || obat.jenis_sp || obat.golongan || '').trim().toUpperCase();
+    if (gol === 'NARKOTIKA') return 'NARKOTIKA';
+    if (gol === 'PSIKOTROPIKA') return 'PSIKOTROPIKA';
+    if (gol === 'PREKURSOR') return 'PREKURSOR';
+    if (gol === 'OOT') return 'OOT';
+
+    const text = [
+      obat.nama_dagang || '',
+      obat.nama_produk || '',
+      obat.nama || '',
+      obat.zat_aktif || '',
+      obat.komposisi || '',
+      obat.kategori || ''
+    ].join(' ').toLowerCase();
+
+    // 1. Narkotika
+    if (/(kodein|codeine|morfin|morphine|petidin|pethidine|fentanil|fentanyl|oksikodon|oxycodone)/i.test(text)) {
+      return 'NARKOTIKA';
+    }
+    // 2. Psikotropika
+    if (/(diazepam|alprazolam|lorazepam|clobazam|clonazepam|midazolam|phenobarbital|nitrazepam|zolpidem|chlordiazepoxide|estazolam)/i.test(text)) {
+      return 'PSIKOTROPIKA';
+    }
+    // 3. Prekursor Farmasi (PerBPOM No. 24/2021)
+    if (/(pseudoefedrin|pseudoephedrine|efedrin|ephedrine|fenilpropanolamin|phenylpropanolamine|\bppa\b|ergotamin|ergotamine|ergometrin|ergometrine|kalium\s*permanganat)/i.test(text)) {
+      return 'PREKURSOR';
+    }
+    // 4. Obat-Obat Tertentu (OOT) (PerBPOM No. 10/2019)
+    if (/(tramadol|triheksifenidil|trihexyphenidyl|klorpromazin|chlorpromazine|amitriptilin|amitriptyline|haloperidol|dekstrometorfan|dextromethorphan)/i.test(text)) {
+      return 'OOT';
+    }
+
+    return 'REGULER';
+  }
+  global.resolveObatJenisSp = resolveObatJenisSp;
+
   global.ONSStore = {
+    resolveObatJenisSp,
     AppState,
     defaultStoreProfile,
     DEFAULT_MASTER_KATEGORI,
