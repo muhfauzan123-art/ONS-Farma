@@ -27,6 +27,7 @@
   let hutangSearchQ = '';
   let hutangDueFilter = '';
   let hutangStatusFilter = 'SEMUA';
+  let hutangGroupingMode = 'TAGIHAN'; // TAGIHAN | SUPPLIER
   let piutangSubView = 'list'; // list | ttf | riwayat
   let piutangSearchQ = '';
   let piutangDueFilter = '';
@@ -2882,7 +2883,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <button onclick="window.setFinanceTab('akun-kas')" class="ons-tab-btn ${financeTab === 'akun-kas' ? 'active' : ''}">Daftar Akun Kas (${kasAccounts.length})</button>
           <button onclick="window.setFinanceTab('jurnal')" class="ons-tab-btn ${financeTab === 'jurnal' ? 'active' : ''}">Buku Kas &amp; Lock (${jurnalScoped.length})</button>
           <button onclick="window.setFinanceTab('piutang')" class="ons-tab-btn ${financeTab === 'piutang' ? 'active' : ''}">Piutang Pelanggan (${openPiutang.length})</button>
-          <button onclick="window.setFinanceTab('hutang')" class="ons-tab-btn ${financeTab === 'hutang' ? 'active' : ''}">Hutang Faktur PBF (${combinedOpenUtang.length})</button>
+          <button onclick="window.setFinanceTab('hutang')" class="ons-tab-btn ${financeTab === 'hutang' ? 'active' : ''}">Utang Usaha (${combinedOpenUtang.length})</button>
           <button onclick="window.setFinanceTab('pajak')" class="ons-tab-btn ${financeTab === 'pajak' ? 'active' : ''}">Pajak &amp; Slip Gaji</button>
         </div>
       </div>
@@ -3272,7 +3273,11 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </div>`;
         }
         const filteredUtang = combinedOpenUtang.filter((u) => {
-          if (hutangStatusFilter === 'TEMPO_7H' && S().daysUntil(u.tgl_jatuh_tempo) > 7) return false;
+          const days = S().daysUntil(u.tgl_jatuh_tempo);
+          if (hutangStatusFilter === 'OVERDUE' && days >= 0) return false;
+          if (hutangStatusFilter === 'TEMPO_7H' && days > 7) return false;
+          if (hutangStatusFilter === 'TEMPO_14H' && days > 14) return false;
+          if (hutangStatusFilter === 'TEMPO_30H' && days > 30) return false;
           if (hutangDueFilter && String(u.tgl_jatuh_tempo || '').slice(0, 10) > hutangDueFilter) return false;
           if (hutangSearchQ) {
             const hay = `${u.kreditur} ${u.no_faktur} ${u.keterangan}`.toLowerCase();
@@ -3281,6 +3286,24 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           return true;
         });
         const totalUtangFiltered = filteredUtang.reduce((s, u) => s + Number(u.nominal_sisa || 0), 0);
+
+        // Grouping by Supplier (Apotek Digital pattern: Tagihan vs Supplier)
+        const supplierMap = {};
+        filteredUtang.forEach((u) => {
+          const k = u.kreditur || 'Lainnya';
+          if (!supplierMap[k]) {
+            supplierMap[k] = { kreditur: k, count: 0, totalAwal: 0, totalSisa: 0, earliestDue: u.tgl_jatuh_tempo || '', items: [] };
+          }
+          supplierMap[k].count++;
+          supplierMap[k].totalAwal += Number(u.nominal_awal || 0);
+          supplierMap[k].totalSisa += Number(u.nominal_sisa || 0);
+          if (u.tgl_jatuh_tempo && (!supplierMap[k].earliestDue || u.tgl_jatuh_tempo < supplierMap[k].earliestDue)) {
+            supplierMap[k].earliestDue = u.tgl_jatuh_tempo;
+          }
+          supplierMap[k].items.push(u);
+        });
+        const supplierGroups = Object.values(supplierMap).sort((a, b) => b.totalSisa - a.totalSisa);
+
         return `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div class="ons-card p-4 lg:col-span-4">
             <h3 class="font-bold text-sm mb-3">Proyeksi AP Outflow 4 Minggu</h3>
@@ -3302,7 +3325,14 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </div>
           <div class="ons-card p-4 lg:col-span-8 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-base">Utang Usaha (${filteredUtang.length} Aktif)</h3>
+              <div class="flex items-center gap-3">
+                <h3 class="font-bold text-base">Utang Usaha (${filteredUtang.length} Aktif)</h3>
+                <!-- Toggle Mode: Tagihan vs Supplier (Apotek Digital Pattern) -->
+                <div class="flex items-center p-0.5 rounded-lg border text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                  <button type="button" onclick="window.setHutangGroupingMode('TAGIHAN')" class="px-2.5 py-1 rounded-md font-semibold transition-colors ${hutangGroupingMode === 'TAGIHAN' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 font-bold' : 'text-slate-600 dark:text-slate-300 hover:text-blue-500'}">📄 Tagihan (${filteredUtang.length})</button>
+                  <button type="button" onclick="window.setHutangGroupingMode('SUPPLIER')" class="px-2.5 py-1 rounded-md font-semibold transition-colors ${hutangGroupingMode === 'SUPPLIER' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 font-bold' : 'text-slate-600 dark:text-slate-300 hover:text-blue-500'}">🏢 Supplier (${supplierGroups.length})</button>
+                </div>
+              </div>
               <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="window.setHutangSubView('riwayat')" class="ons-btn ons-btn-emerald text-xs">Riwayat Pembayaran</button>
                 <button type="button" onclick="window.openImportUtangInfoModal()" class="ons-btn ons-btn-ghost text-xs">Import</button>
@@ -3311,37 +3341,105 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </div>
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
-                <input class="ons-input text-xs w-44" placeholder="Cari kreditur / faktur..." value="${S().esc(hutangSearchQ)}" oninput="window.setHutangSearchQ(this.value)"/>
+                <input class="ons-input text-xs w-48" placeholder="Cari kreditur / no faktur..." value="${S().esc(hutangSearchQ)}" oninput="window.setHutangSearchQ(this.value)"/>
                 <input type="date" class="ons-input text-xs w-36" title="Tgl. Jatuh Tempo maks" value="${S().esc(hutangDueFilter)}" onchange="window.setHutangDueFilter(this.value)"/>
-                <select class="ons-select text-xs w-36" onchange="window.setHutangStatusFilter(this.value)">
-                  <option value="SEMUA" ${hutangStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Tempo</option>
+                <select class="ons-select text-xs w-44" onchange="window.setHutangStatusFilter(this.value)">
+                  <option value="SEMUA" ${hutangStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Jatuh Tempo</option>
+                  <option value="OVERDUE" ${hutangStatusFilter === 'OVERDUE' ? 'selected' : ''}>⚠️ Lewat Jatuh Tempo</option>
                   <option value="TEMPO_7H" ${hutangStatusFilter === 'TEMPO_7H' ? 'selected' : ''}>Tempo &le; 7 Hari</option>
+                  <option value="TEMPO_14H" ${hutangStatusFilter === 'TEMPO_14H' ? 'selected' : ''}>Tempo &le; 14 Hari</option>
+                  <option value="TEMPO_30H" ${hutangStatusFilter === 'TEMPO_30H' ? 'selected' : ''}>Tempo &le; 30 Hari</option>
                 </select>
               </div>
               <button type="button" onclick="window.exportUtangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
             </div>
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>Waktu Transaksi</th><th>Kreditur &amp; No. Faktur</th><th>Keterangan</th><th>Jatuh Tempo</th><th class="text-right">Nominal Awal</th><th class="text-right">Nominal Sisa</th><th>Actions</th></tr></thead>
-                <tbody>
-                  ${filteredUtang.length ? filteredUtang.map((u) => `<tr>
-                    <td class="font-mono-num text-xs">${S().esc(u.waktu_trx || '-')}</td>
-                    <td class="text-xs"><b>${S().esc(u.no_faktur)}</b><div style="color:var(--ons-text-soft)">${S().esc(u.kreditur)}</div></td>
-                    <td class="text-xs">${S().esc(u.keterangan || '-')}</td>
-                    <td class="font-mono-num text-xs">${S().esc(u.tgl_jatuh_tempo || '-')}</td>
-                    <td class="text-right font-mono-num text-xs">${S().rp(u.nominal_awal)}</td>
-                    <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(u.nominal_sisa)}</td>
-                    <td>
-                      <div class="flex flex-wrap gap-1">
-                        ${u.is_manual ? `
-                          <button type="button" onclick="window.payManualUtang('${S().esc(u.id_row)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Bayar Lunas</button>
-                        ` : `
-                          <button onclick="window.openPayHutangModal('${S().esc(u.id_row)}','${S().esc(u.no_faktur)}',${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Cicil</button>
-                          <button onclick="window.payHutangPbfNow('${S().esc(u.id_row)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Bayar Lunas</button>
-                        `}
-                      </div>
-                    </td>
-                  </tr>`).join('') : '<tr><td colspan="7" class="text-xs text-center py-6">Seluruh hutang faktur PBF telah lunas.</td></tr>'}
+
+            ${hutangGroupingMode === 'SUPPLIER' ? `
+              <div class="ons-table-wrap">
+                <table class="ons-table">
+                  <thead>
+                    <tr>
+                      <th style="width:40px;">No</th>
+                      <th>Nama Kreditur / Distributor (PBF)</th>
+                      <th class="text-center">Tagihan Belum Lunas</th>
+                      <th>Jatuh Tempo Terdekat</th>
+                      <th class="text-right">Total Tagihan Awal</th>
+                      <th class="text-right">Total Sisa Utang</th>
+                      <th class="text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${supplierGroups.length ? supplierGroups.map((sg, idx) => {
+                      const days = S().daysUntil(sg.earliestDue);
+                      const isOverdue = days < 0;
+                      const isNear = days >= 0 && days <= 7;
+                      return `<tr>
+                        <td class="font-mono-num text-xs">${idx + 1}</td>
+                        <td class="text-xs">
+                          <div class="font-bold text-slate-800 dark:text-slate-100">${S().esc(sg.kreditur)}</div>
+                          <div class="text-[10px]" style="color:var(--ons-text-soft)">Kreditur Terdaftar</div>
+                        </td>
+                        <td class="text-center text-xs font-mono-num font-bold">
+                          <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">${sg.count} Faktur</span>
+                        </td>
+                        <td class="font-mono-num text-xs">
+                          <span class="${isOverdue ? 'text-red-600 font-bold' : (isNear ? 'text-amber-600 font-semibold' : '')}">
+                            ${S().esc(sg.earliestDue || '-')}
+                            ${isOverdue ? ' (Lewat ' + Math.abs(days) + 'h)' : (isNear ? ' (' + days + 'h lagi)' : '')}
+                          </span>
+                        </td>
+                        <td class="text-right font-mono-num text-xs">${S().rp(sg.totalAwal)}</td>
+                        <td class="text-right font-mono-num text-xs font-black text-amber-600 dark:text-amber-400">${S().rp(sg.totalSisa)}</td>
+                        <td class="text-center">
+                          <div class="flex items-center justify-center gap-1.5">
+                            <button type="button" onclick="window.paySupplierAllOpenFaktur('${S().esc(sg.kreditur)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 font-bold shadow-sm" title="Bayar / cicil tagihan supplier ini">💳 Bayar</button>
+                            <button type="button" onclick="window.setHutangGroupingMode('TAGIHAN'); window.setHutangSearchQ('${S().esc(sg.kreditur)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Rincian faktur supplier ini">Lihat Faktur &rarr;</button>
+                          </div>
+                        </td>
+                      </tr>`;
+                    }).join('') : '<tr><td colspan="7" class="text-xs text-center py-6">Tidak ada supplier dengan tagihan aktif.</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <div class="ons-table-wrap">
+                <table class="ons-table">
+                  <thead><tr><th>Waktu Transaksi</th><th>Kreditur &amp; No. Faktur</th><th>Keterangan</th><th>Jatuh Tempo</th><th class="text-right">Nominal Awal</th><th class="text-right">Nominal Sisa</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    ${filteredUtang.length ? filteredUtang.map((u) => {
+                      const days = S().daysUntil(u.tgl_jatuh_tempo);
+                      const isOverdue = days < 0;
+                      const isNear = days >= 0 && days <= 7;
+                      return `<tr>
+                        <td class="font-mono-num text-xs">${S().esc(u.waktu_trx || '-')}</td>
+                        <td class="text-xs">
+                          <b>${S().esc(u.no_faktur)}</b>
+                          <div style="color:var(--ons-text-soft)">${S().esc(u.kreditur)}</div>
+                        </td>
+                        <td class="text-xs">${S().esc(u.keterangan || '-')}</td>
+                        <td class="font-mono-num text-xs ${isOverdue ? 'text-red-600 font-bold' : (isNear ? 'text-amber-600 font-semibold' : '')}">
+                          ${S().esc(u.tgl_jatuh_tempo || '-')}
+                          ${isOverdue ? ' (Lewat ' + Math.abs(days) + 'h)' : (isNear ? ' (' + days + 'h)' : '')}
+                        </td>
+                        <td class="text-right font-mono-num text-xs">${S().rp(u.nominal_awal)}</td>
+                        <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(u.nominal_sisa)}</td>
+                        <td>
+                          <div class="flex flex-wrap gap-1">
+                            ${u.is_manual ? `
+                              <button type="button" onclick="window.payManualUtang('${S().esc(u.id_row)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Bayar Lunas</button>
+                            ` : `
+                              <button onclick="window.openPayHutangModal('${S().esc(u.id_row)}','${S().esc(u.no_faktur)}',${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Cicil</button>
+                              <button onclick="window.payHutangPbfNow('${S().esc(u.id_row)}', ${Number(u.nominal_sisa || 0)})" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Bayar Lunas</button>
+                              <button type="button" onclick="window.printKuitansiPembayaranUtangA4('${S().esc(u.id_row)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Bukti Pembayaran">🖨️ Kuitansi</button>
+                            `}
+                          </div>
+                        </td>
+                      </tr>`;
+                    }).join('') : '<tr><td colspan="7" class="text-xs text-center py-6">Seluruh hutang faktur PBF telah lunas.</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+            `}
                 </tbody>
               </table>
             </div>
@@ -4194,6 +4292,83 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     });
   };
 
+
+  global.setHutangGroupingMode = (mode) => {
+    hutangGroupingMode = mode === 'SUPPLIER' ? 'SUPPLIER' : 'TAGIHAN';
+    global.renderActiveView();
+  };
+  global.setHutangDuePresetFilter = (preset) => {
+    hutangStatusFilter = preset || 'SEMUA';
+    global.renderActiveView();
+  };
+  global.paySupplierAllOpenFaktur = (supplierName) => {
+    const st = S().AppState;
+    const allFaktur = (st.fakturPbf || []).filter((f) => (f.id_pbf === supplierName || f.nama_pbf === supplierName) && Number(f.sisa_hutang || 0) > 0);
+    if (!allFaktur.length) return global.toast('Tidak ada tagihan aktif untuk supplier ' + supplierName, 'info');
+    const totSisa = allFaktur.reduce((s, f) => s + Number(f.sisa_hutang || 0), 0);
+    const fakIds = allFaktur.map((f) => f.no_faktur_pbf || f.id_beli).join(', ');
+    global.openPayHutangModal(allFaktur[0].id_beli, fakIds, totSisa);
+  };
+  global.printKuitansiPembayaranUtangA4 = (idJurnalOrRef) => {
+    const st = S().AppState;
+    const jurnalAll = st.jurnalKeuangan || [];
+    const j = jurnalAll.find((x) => x.id_jurnal === idJurnalOrRef || x.referensi_id === idJurnalOrRef) || jurnalAll.filter((x) => String(x.jenis_trx || '').includes('PEMBAYARAN_PBF'))[0];
+    if (!j) return global.toast('Data transaksi pembayaran utang tidak ditemukan.', 'warn');
+
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'APOTEK ONS FARMA';
+    const apotekAlamat = [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10';
+    const siaNo = prof.no_sia || '-';
+
+    const docHtml = `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:780px;margin:0 auto;padding:24px;color:#0f172a;line-height:1.4;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #0f172a;padding-bottom:12px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:18px;font-weight:900;color:#0f172a;">${S().esc(apotekName.toUpperCase())}</div>
+            <div style="font-size:11px;color:#475569;margin-top:2px;">${S().esc(apotekAlamat)} &bull; No. SIA: ${S().esc(siaNo)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:800;color:#059669;">BUKTI PENGELUARAN KAS / PEMBAYARAN UTANG</div>
+            <div style="font-size:11px;font-family:monospace;color:#334155;margin-top:3px;">No: ${S().esc(j.id_jurnal || 'BKK-001')}</div>
+            <div style="font-size:10px;color:#64748b;">Tgl: ${S().esc(String(j.tanggal || '').slice(0, 10))}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:11px;background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:14px;">
+          <div>
+            <div style="color:#64748b;">Dibayarkan Kepada (Kreditur / PBF):</div>
+            <div style="font-size:14px;font-weight:800;color:#0f172a;">${S().esc(j.kategori || j.referensi_id || 'Distributor Rekanan')}</div>
+            <div style="color:#475569;margin-top:4px;">No. Referensi Faktur: <b>${S().esc(j.referensi_id || '-')}</b></div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#64748b;">Total Pembayaran Utang:</div>
+            <div style="font-size:18px;font-weight:900;color:#059669;font-family:monospace;">${S().rp(j.nominal || 0)}</div>
+            <div style="color:#475569;margin-top:4px;">Akun Kas: <b>${S().esc(j.metode || 'TRANSFER_BANK')}</b></div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:#334155;margin-bottom:24px;">
+          <div>Keterangan: Pembayaran / pelunasan faktur pembelian perbekalan farmasi kepada distributor resmi PBF. Beban utang dagang berkurang dan telah dicatat dalam Buku Kas &amp; Jurnal Pengeluaran Kas.</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:36px;">
+          <div style="text-align:center;width:200px;">
+            <div>Kasir / Bagian Keuangan,</div>
+            <div style="height:55px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(${S().esc((st.user && st.user.nama) || 'Bagian Keuangan')})</div>
+          </div>
+          <div style="text-align:center;width:200px;">
+            <div>Penerima Pembayaran (PBF),</div>
+            <div style="height:55px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(............................................)</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return S().printHtmlZone(docHtml, 'Kuitansi Pembayaran Utang - ' + (j.id_jurnal || 'BKK'));
+  };
+
   global.openPayHutangModal = (idBeli, noFak, sisaMax) => {
     const st = S().AppState;
     const f = (st.fakturPbf || []).find((x) => x.id_beli === idBeli || x.no_faktur_pbf === noFak || x.no_faktur_pbf === idBeli) || {};
@@ -4272,6 +4447,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       await API().callApi('finance.payHutangPbf', { id_beli: idBeli, nominal_bayar: amt, metode: met, ref_no: ref }, { isWrite: true });
       S().closeModal();
       global.toast('Pembayaran hutang PBF sebesar ' + S().rp(amt) + ' berhasil dibukukan!', 'ok');
+      setTimeout(() => { if (typeof global.printKuitansiPembayaranUtangA4 === 'function') global.printKuitansiPembayaranUtangA4(idBeli); }, 400);
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };

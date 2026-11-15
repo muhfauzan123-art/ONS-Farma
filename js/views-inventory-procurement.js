@@ -9858,7 +9858,7 @@
             <button onclick="window.setFakturTab('sp')" class="ons-tab-btn ${fakturTab === 'sp' ? 'active font-bold' : ''}">📄 Pesanan Pembelian (${(st.suratPesanan || []).length})</button>
             <button onclick="window.setFakturTab('faktur')" class="ons-tab-btn ${fakturTab === 'faktur' || fakturTab === 'input' || fakturTab === 'daftar' || fakturTab === 'harga' ? 'active font-bold' : ''}">📥 Faktur Pembelian (${allFaktur.length})</button>
             <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active font-bold' : ''}">🔄 Retur Pembelian (${nearEdBatches.length})</button>
-            <button onclick="window.setFakturTab('hutang')" class="ons-tab-btn ${fakturTab === 'hutang' ? 'active font-bold' : ''}">💳 Pembayaran Utang (${totalSisaHutang > 0 ? allFaktur.filter(f => f.status_bayar !== 'LUNAS').length : 0})</button>
+            
             <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active font-bold' : ''}">🤝 Konsinyasi Masuk</button>
           </div>
         </div>
@@ -10391,7 +10391,7 @@
                 <span class="w-2 h-2 rounded-full ${totalSisaHutang > 0 ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}"></span>
               </div>
               <div class="text-xl font-black font-mono-num mt-1 ${totalSisaHutang > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(totalSisaHutang)}</div>
-              <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Klik: Filter Belum Lunas</div>
+              <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Filter Belum Lunas &bull; <a href="javascript:void(0)" onclick="event.stopPropagation();window.navigateView('finance','hutang')" class="text-blue-600 font-bold hover:underline">&rarr; Kelola di Keuangan</a></div>
             </div>
             <div class="ons-card p-3.5 border-l-4 ${dueSoonCount > 0 ? 'border-l-amber-500 ring-1 ring-amber-500/20' : 'border-l-emerald-500'} cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturListFilter('JATUH_TEMPO')">
               <div class="flex items-center justify-between">
@@ -10529,6 +10529,10 @@
   }
 
   global.setFakturTab = (t) => {
+    if (t === 'hutang') {
+      if (typeof global.navigateView === 'function') global.navigateView('finance', 'hutang');
+      return;
+    }
     if (t === 'order' || t === 'defecta') {
       t = 'rencana';
       rencanaSubMode = 'DEFECTA';
