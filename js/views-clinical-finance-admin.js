@@ -2364,6 +2364,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
   global.saveKlinisSubmit = async () => {
     try {
+      const psn = (document.getElementById('klPasien') || {}).value || 'Pasien';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Simpan catatan rekam klinis & SOAP untuk pasien "' + psn + '"?')) return;
       await API().callApi('klinis.save', {
         nama_pasien: document.getElementById('klPasien').value,
         dokter_asal: document.getElementById('klDokter').value,
@@ -2675,6 +2677,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       const memId = document.getElementById('skrMemId').value;
       const m = S().AppState.members.find((x) => x.id_member === memId);
       if (!m) throw new Error('Pasien tidak ditemukan.');
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Simpan hasil skrining kesehatan pasien ini?')) return;
       let arr = [];
       try { arr = JSON.parse(m.riwayat_skrining_json || '[]'); } catch (e) {}
       if (!Array.isArray(arr)) arr = [];
@@ -2709,6 +2712,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
   global.saveMemberPrbSubmit = async () => {
     try {
+      const nama = ((document.getElementById('mbNama') || {}).value || '').trim() || 'Pasien';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Daftarkan pasien/member baru "' + nama + '"?')) return;
       await API().callApi('member.save', {
         nama_pasien: document.getElementById('mbNama').value,
         no_hp: document.getElementById('mbHp').value,
@@ -3618,6 +3623,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.saveAkunKasModal = () => {
     const nama = String((document.getElementById('akNamaInp') || {}).value || '').trim();
     if (!nama) return global.toast('Nama Akun Kas wajib diisi.', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Tambahkan Akun Kas baru "' + nama + '"?')) return;
     const list = _getKasAccountsList();
     list.push({
       id_akun: 'KAS-' + Date.now().toString().slice(-5),
@@ -3793,6 +3799,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       const accounts = _getKasAccountsList();
       const akFrom = accounts.find((a) => a.id_akun === fromId) || { nama: fromId };
       const akTo = accounts.find((a) => a.id_akun === toId) || { nama: toId };
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Transfer Kas:\nPindahkan ' + S().rp(amt) + ' dari ' + akFrom.nama + ' ke ' + akTo.nama + '?')) return;
       const refCode = 'TRF-' + Date.now().toString().slice(-6);
       const per = new Date().toISOString().slice(0, 7);
       await API().callApi('finance.saveJurnal', { jenis_trx: 'KELUAR_TRANSFER_KAS', kategori: `Transfer ke ${akTo.nama}${note ? ' (' + note + ')' : ''}`, nominal: amt, metode: akFrom.nama, referensi_id: `${refCode} [AKUN:${fromId}]`, periode_bulan: per }, { isWrite: true });
@@ -3901,6 +3908,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       if (nom <= 0) throw new Error('Nilai bayar harus lebih dari 0.');
       const accounts = _getKasAccountsList();
       const akObj = accounts.find((a) => a.id_akun === akunId) || { nama: 'Kas Utama' };
+      const jenisTxt = kasTrxTabTemp === 'MASUK' ? 'Kas Masuk' : 'Kas Keluar';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Catat transaksi ' + jenisTxt + ' sebesar ' + S().rp(nom) + ' (' + kat + ')?')) return;
       const fullKat = `${kat}${ket ? ' - ' + ket : ''}${fileName ? ' [Bukti: ' + fileName + ']' : ''}`;
       await API().callApi('finance.saveJurnal', {
         tanggal: waktu.length === 16 ? waktu + ':00Z' : waktu,
@@ -4018,6 +4027,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.submitCatatUtangModal = () => {
     const amt = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('cuJumlah') || {}).value || 0) : Number((document.getElementById('cuJumlah') || {}).value || 0));
     if (amt <= 0) return global.toast('Jumlah Utang harus lebih dari 0.', 'warn');
+    const sup = (document.getElementById('cuSupplier') || {}).value || 'Supplier';
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Catat utang usaha baru sebesar ' + S().rp(amt) + ' kepada ' + sup + '?')) return;
     const list = _readFinLocalList(MANUAL_UTANG_KEY);
     list.unshift({
       id_utang: 'UTG-' + Date.now().toString().slice(-6),
@@ -4146,6 +4157,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const amt = Math.max(0, window.parseNumber ? window.parseNumber((document.getElementById('cpJumlah') || {}).value || 0) : Number((document.getElementById('cpJumlah') || {}).value || 0));
     if (!cust) return global.toast('Customer wajib diisi.', 'warn');
     if (amt <= 0) return global.toast('Jumlah Piutang harus lebih dari 0.', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Catat piutang baru sebesar ' + S().rp(amt) + ' untuk ' + cust + '?')) return;
     const list = _readFinLocalList(MANUAL_PIUTANG_KEY);
     list.unshift({
       id_piutang: 'PTGM-' + Date.now().toString().slice(-6),
@@ -4453,6 +4465,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       const met = document.getElementById('payHutangMetode').value || 'TRANSFER_BANK';
       const ref = (document.getElementById('payHutangRef') || {}).value || '';
       if (amt <= 0) throw new Error('Nominal bayar harus > 0.');
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Bayar hutang faktur ' + idBeli + ' sebesar ' + S().rp(amt) + ' (' + met + ')?')) return;
       await API().callApi('finance.payHutangPbf', { id_beli: idBeli, nominal_bayar: amt, metode: met, ref_no: ref }, { isWrite: true });
       S().closeModal();
       global.toast('Pembayaran hutang PBF sebesar ' + S().rp(amt) + ' berhasil dibukukan!', 'ok');
@@ -8175,6 +8188,7 @@ S. prn 3 dd 1 tab</textarea>
     const ras3 = sat3 ? Math.max(1, Number(o.rasio_3 !== undefined ? o.rasio_3 : (o.rasio_besar || 1))) : 1;
     const h2 = (sat2 && ras2 > 1) ? Math.round(newPrice * ras2) : 0;
     const h3 = (sat3 && ras3 > 1) ? Math.round(newPrice * ras3) : 0;
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Perubahan Harga:\nPerbarui harga jual obat "' + o.nama_dagang + '" (' + sat1 + ') menjadi ' + S().rp(newPrice) + '?')) return;
     try {
       await API().callApi('obat.updatePrices', {
         items: [{
@@ -8236,6 +8250,8 @@ S. prn 3 dd 1 tab</textarea>
         harga_besar: h3
       };
     });
+
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Kenaikan Harga Massal:\nTerapkan pembaruan harga jual untuk ' + items.length + ' produk terpilih?')) return;
 
     try {
       await API().callApi('obat.updatePrices', { items, catatan: 'Update Sekaligus Target Margin ' + anlHargaTargetMarkup + '%' }, { isWrite: true });
@@ -10843,6 +10859,7 @@ S. prn 3 dd 1 tab</textarea>
     try {
       const name = (document.getElementById('modalRoleName') || {}).value.trim();
       if (!name) throw new Error('Nama role wajib diisi.');
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Simpan peran & hak akses "' + name + '"?')) return;
       const checkedPerms = Array.from(document.querySelectorAll('.role-perm-toggle:checked')).map((c) => c.value);
 
       const customRoles = getCustomRoles().slice();
@@ -11585,6 +11602,7 @@ S. prn 3 dd 1 tab</textarea>
 
       if (!nama) throw new Error('Nama metode pembayaran wajib diisi.');
       if (!deskripsi) throw new Error('Deskripsi metode pembayaran wajib diisi.');
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Simpan konfigurasi saluran pembayaran "' + nama + '"?')) return;
 
       const list = getPaymentChannelsList();
       if (id) {
@@ -12490,6 +12508,7 @@ S. prn 3 dd 1 tab</textarea>
       ONSStore.toast('Nama Pemilik dan Nama Tempat Usaha wajib diisi.', 'err');
       return;
     }
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Simpan perubahan data Profil Apotek dan Berkas Legalitas?')) return;
     try {
       const res = await API().callApi('profil.save', payload, { isWrite: true });
       const rawProf = (res && (res.profile || res.item)) || (res && res.nama_usaha ? res : null);
@@ -12680,6 +12699,7 @@ S. prn 3 dd 1 tab</textarea>
       global.toast('Username dan Nama ' + targetRole + ' wajib diisi.', 'err');
       return;
     }
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Perbarui data staf ' + targetRole + ' (' + nama + ')?')) return;
     const existing = (settingsCache.users || []).find((u) => u.id_user === idUser || u.role === targetRole) || {};
     try {
       const res = await API().callApi('users.save', {
@@ -12722,6 +12742,8 @@ S. prn 3 dd 1 tab</textarea>
   global.submitAddUserNow = async () => {
     try {
       const idUser = (document.getElementById('usrEditId') || {}).value || '';
+      const nama = document.getElementById('usrFull').value.trim();
+      if (typeof global.confirm === 'function' && !global.confirm(idUser ? 'Konfirmasi: Simpan perubahan data pengguna "' + nama + '"?' : 'Konfirmasi: Daftarkan pengguna baru "' + nama + '"?')) return;
       const perms = Array.from(document.querySelectorAll('.usr-perm-chk:checked')).map((c) => c.value);
       const payload = {
         id_user: idUser || undefined,
@@ -12829,6 +12851,8 @@ S. prn 3 dd 1 tab</textarea>
           return;
         }
       }
+      const targetUser = document.getElementById('credTargetUser').value;
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Perbarui kata sandi / PIN untuk pengguna "' + targetUser + '"?')) return;
       const res = await API().callApi('users.changeCredentials', payload, { isWrite: true });
       if (res && res.new_token) {
         const curSes = API().getSession() || {};
@@ -14521,6 +14545,7 @@ S. prn 3 dd 1 tab</textarea>
 
   global.saveStoreSettings = () => {
     try {
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Simpan seluruh konfigurasi operasional sistem apotek?')) return;
       const getVal = (id, isNum, isBool) => {
         const el = document.getElementById(id);
         if (!el) return undefined;

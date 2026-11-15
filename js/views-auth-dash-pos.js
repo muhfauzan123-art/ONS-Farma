@@ -5466,6 +5466,7 @@
     const wa = ((document.getElementById('posQuickCustWa') || {}).value || '').trim();
     const alergi = ((document.getElementById('posQuickCustAlergi') || {}).value || 'Tidak Ada').trim();
     if (!nama) return global.toast('Nama pelanggan wajib diisi.', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Daftarkan pelanggan baru "' + nama + '"?')) return;
     try {
       const res = await API().callApi('member.save', {
         nama_pasien: nama,
@@ -5505,6 +5506,7 @@
     const nama = ((document.getElementById('posQuickDokNama') || {}).value || '').trim();
     const spec = ((document.getElementById('posQuickDokSpec') || {}).value || '').trim();
     if (!nama) return global.toast('Nama dokter wajib diisi.', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Daftarkan dokter baru "' + nama + '"?')) return;
     try {
       await API().callApi('dokter.save', { nama_dokter: nama, spesialisasi: spec }, { isWrite: true });
     } catch (e) {}
@@ -6154,7 +6156,12 @@
   };
 
   global.posRemoveItem = (idx) => {
-    S().AppState.carts[S().AppState.activeCartIdx].items.splice(idx, 1);
+    const cart = S().AppState.carts[S().AppState.activeCartIdx];
+    if (!cart || !cart.items || !cart.items[idx]) return;
+    const item = cart.items[idx];
+    const nama = item.nama_dagang || item.id_obat || 'item';
+    if (typeof global.confirm === 'function' && !global.confirm('Hapus "' + nama + '" dari keranjang belanja?')) return;
+    cart.items.splice(idx, 1);
     global.renderActiveView();
   };
 
@@ -7026,6 +7033,8 @@
     try {
       const modeEl = document.querySelector('input[name="voidMode"]:checked');
       const mode = modeEl ? modeEl.value : 'FULL';
+      const promptMode = mode === 'PARTIAL' ? 'Retur Sebagian' : 'Void / Retur Penuh';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Sah-kan ' + promptMode + ' untuk nota ' + noInvoice + '?')) return;
       const payload = {
         no_invoice: noInvoice,
         alasan: (document.getElementById('voidAlasanInp') || {}).value || 'Retur PIN',
@@ -7358,6 +7367,10 @@
 
     if (metode === 'PIUTANG' && (!cart.id_member || cart.id_member === 'UMUM') && !piutangNama) {
       global.toast('Pembayaran Piutang/Tempo wajib memilih Member/Mitra atau mengisi Nama Penanggung Jawab!', 'err');
+      return;
+    }
+
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Pembayaran:\nSelesaikan transaksi kasir (' + metode + ') sebesar ' + S().rp(grandTotal) + '?')) {
       return;
     }
 

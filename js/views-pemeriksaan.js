@@ -1908,6 +1908,12 @@
       wa_pesan: queueFonnte ? buildPemeriksaanWaText(draft) : ''
     });
 
+    const isEdit = Boolean(draft.id_periksa && !String(draft.id_periksa).startsWith('CHK-DRAFT'));
+    const confirmPeriksaMsg = isEdit
+      ? ('Konfirmasi: Simpan perubahan hasil pemeriksaan pasien "' + draft.nama_pasien + '"?')
+      : ('Konfirmasi: Simpan data rekam pemeriksaan kesehatan pasien "' + draft.nama_pasien + '"?');
+    if (typeof global.confirm === 'function' && !global.confirm(confirmPeriksaMsg)) return;
+
     try {
       const res = await API().callApi('pemeriksaan.save', payload, { isWrite: true });
       const saved = (res && res.item) || payload;

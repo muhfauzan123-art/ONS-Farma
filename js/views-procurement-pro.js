@@ -1199,6 +1199,7 @@
   };
 
   global.deleteSpDraftFromLocal = (draftId) => {
+    if (typeof global.confirm === 'function' && !global.confirm('Hapus draf Surat Pesanan ini?')) return;
     const next = loadSpLocalDrafts().filter((x) => x.id_draft !== draftId);
     saveSpLocalDrafts(next);
     global.openSpDraftModal();
@@ -1414,6 +1415,10 @@
       if (spEditingId) payload.id_sp = spEditingId;
       if (spDraftNoSp) payload.no_sp = spDraftNoSp;
       const wasEdit = Boolean(spEditingId);
+      const confirmSpMsg = wasEdit
+        ? ('Konfirmasi: Simpan perubahan Surat Pesanan (SP) untuk ' + (pbf.nama_pbf || 'PBF') + '?')
+        : ('Konfirmasi: Terbitkan Surat Pesanan (SP) baru untuk ' + (pbf.nama_pbf || 'PBF') + ' (' + spDraftItems.length + ' item)?');
+      if (typeof global.confirm === 'function' && !global.confirm(confirmSpMsg)) return;
       const res = await API().callApi('sp.save', payload, { isWrite: true });
       if (spActiveDraftLocalId) {
         saveSpLocalDrafts(loadSpLocalDrafts().filter((x) => x.id_draft !== spActiveDraftLocalId));
@@ -1798,6 +1803,7 @@
     const h1 = d.harga_jual_1 !== undefined ? Number(d.harga_jual_1) : (d.harga_umum !== undefined ? Number(d.harga_umum) : calc.saranHarga1);
     const h2 = d.harga_jual_2 !== undefined ? Number(d.harga_jual_2) : (d.harga_sedang !== undefined ? Number(d.harga_sedang) : calc.saranHarga2);
     const h3 = d.harga_jual_3 !== undefined ? Number(d.harga_jual_3) : (d.harga_besar !== undefined ? Number(d.harga_besar) : calc.saranHarga3);
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Perubahan Harga:\nPerbarui harga jual obat "' + o.nama_dagang + '" (' + calc.sat1 + ') menjadi ' + S().rp(h1) + '?')) return;
     const payload = {
       id_obat: idObat,
       harga_jual_1: h1,
@@ -1833,6 +1839,7 @@
       };
     }).filter(Boolean);
     if (!items.length) return global.toast('Tidak ada produk yang perlu dinaikkan saat ini.', 'info');
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Kenaikan Harga Massal:\nTerapkan pembaruan harga jual untuk ' + items.length + ' produk sesuai target margin ' + priceTargetMargin + '%?')) return;
     try {
       await API().callApi('obat.updatePrices', { items, catatan: 'Penyesuaian Massal Target Margin ' + priceTargetMargin + '%' }, { isWrite: true });
       priceDraftEdits = {};

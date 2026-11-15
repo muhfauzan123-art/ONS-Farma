@@ -2064,6 +2064,7 @@
     const nama = ((document.getElementById('kategoriNamaInp') || {}).value || '').trim();
     const status = ((document.getElementById('kategoriStatusInp') || {}).value || 'Aktif').trim();
     if (!nama) return global.toast('Nama kategori wajib diisi!', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm(id ? 'Konfirmasi: Simpan perubahan kategori "' + nama + '"?' : 'Konfirmasi: Tambahkan kategori baru "' + nama + '"?')) return;
     const list = _getMasterKategoriList().slice();
     if (id) {
       const idx = list.findIndex((k) => k.id_kategori === id);
@@ -2143,6 +2144,7 @@
     const nama = ((document.getElementById('satuanNamaInp') || {}).value || '').trim();
     const status = ((document.getElementById('satuanStatusInp') || {}).value || 'Aktif').trim();
     if (!nama) return global.toast('Nama satuan kemasan wajib diisi!', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm(id ? 'Konfirmasi: Simpan perubahan satuan "' + nama + '"?' : 'Konfirmasi: Tambahkan satuan baru "' + nama + '"?')) return;
     const list = _getMasterSatuanList().slice();
     if (id) {
       const idx = list.findIndex((s) => s.id_satuan === id);
@@ -2222,6 +2224,7 @@
     const nama = ((document.getElementById('rakNamaInp') || {}).value || '').trim();
     const status = ((document.getElementById('rakStatusInp') || {}).value || 'Aktif').trim();
     if (!nama) return global.toast('Nama rak wajib diisi!', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm(id ? 'Konfirmasi: Simpan perubahan lokasi rak "' + nama + '"?' : 'Konfirmasi: Tambahkan lokasi rak baru "' + nama + '"?')) return;
     const list = _getMasterRakList().slice();
     if (id) {
       const idx = list.findIndex((r) => r.id_rak === id);
@@ -2301,6 +2304,7 @@
     const nama = ((document.getElementById('gudangNamaInp') || {}).value || '').trim();
     const status = ((document.getElementById('gudangStatusInp') || {}).value || 'Aktif').trim();
     if (!nama) return global.toast('Nama gudang wajib diisi!', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm(id ? 'Konfirmasi: Simpan perubahan gudang "' + nama + '"?' : 'Konfirmasi: Tambahkan gudang baru "' + nama + '"?')) return;
     const list = _getMasterGudangList().slice();
     if (id) {
       const idx = list.findIndex((g) => g.id_gudang === id);
@@ -2385,6 +2389,7 @@
     const kode = (((document.getElementById('katPelangganKodeInp') || {}).value || '').trim() || 'REG').toUpperCase();
     const status = ((document.getElementById('katPelangganStatusInp') || {}).value || 'Aktif').trim();
     if (!nama) return global.toast('Nama kategori pelanggan wajib diisi!', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm(id ? 'Konfirmasi: Simpan perubahan kategori pelanggan "' + nama + '"?' : 'Konfirmasi: Tambahkan kategori pelanggan baru "' + nama + '"?')) return;
     const list = _getMasterKatPelangganList().slice();
     if (id) {
       const idx = list.findIndex((kp) => kp.id_kat_pelanggan === id);
@@ -2462,6 +2467,7 @@
     const nama = ((document.getElementById('pajakNamaInp') || {}).value || '').trim();
     const nilai = Number((document.getElementById('pajakNilaiInp') || {}).value || 0);
     if (!nama) return global.toast('Nama pajak wajib diisi!', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm(id ? 'Konfirmasi: Simpan perubahan data pajak "' + nama + '" (' + nilai + '%)?' : 'Konfirmasi: Tambahkan data pajak baru "' + nama + '" (' + nilai + '%)?')) return;
     const list = _getMasterPajakList().slice();
     if (id) {
       const idx = list.findIndex((p) => p.id_pajak === id);
@@ -2716,6 +2722,8 @@
     try {
       const nama = ((document.getElementById('mdPelNama') || {}).value || '').trim();
       if (!nama) throw new Error('Nama pelanggan wajib diisi!');
+      const isEdit = Boolean(idMember);
+      if (typeof global.confirm === 'function' && !global.confirm(isEdit ? 'Konfirmasi: Simpan perubahan data pelanggan "' + nama + '"?' : 'Konfirmasi: Daftarkan pelanggan baru "' + nama + '"?')) return;
       const rawRm = ((document.getElementById('mdPelNoRm') || {}).value || '').trim();
       const rawKode = ((document.getElementById('mdPelKode') || {}).value || '').trim();
       const autoSeed = String(Date.now()).slice(-6);
@@ -2815,6 +2823,8 @@
     try {
       const nama = ((document.getElementById('mdDokNama') || {}).value || '').trim();
       if (!nama) throw new Error('Nama dokter wajib diisi!');
+      const isEdit = Boolean(idDokter);
+      if (typeof global.confirm === 'function' && !global.confirm(isEdit ? 'Konfirmasi: Simpan perubahan data dokter "' + nama + '"?' : 'Konfirmasi: Daftarkan dokter baru "' + nama + '"?')) return;
       const nikSatuSehat = ((document.getElementById('mdDokNik') || {}).value || '').trim();
       _saveExtraRecord(DOKTER_EXTRA_KEY, idDokter, nama, { nik_satusehat: nikSatuSehat });
       await API().callApi('dokter.save', {
@@ -3123,6 +3133,8 @@
     const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
     if (!o) return;
     const isAktif = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
+    const nextStatus = isAktif ? 'NONAKTIF (Tidak Dijual)' : 'AKTIF (Dijual)';
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Ubah status produk "' + o.nama_dagang + '" menjadi ' + nextStatus + '?')) return;
     o.status_aktif = isAktif ? 'NONAKTIF' : 'AKTIF';
     if (typeof S().saveState === 'function') S().saveState();
     if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
@@ -5775,6 +5787,12 @@
         if (!ok) return;
       }
 
+      const isEditObat = Boolean(val('wObatId'));
+      const confirmObatMsg = isEditObat
+        ? ('Konfirmasi: Simpan perubahan data produk "' + nama + '"?')
+        : ('Konfirmasi: Tambahkan produk baru "' + nama + '" ke Master Data Obat?');
+      if (typeof global.confirm === 'function' && !global.confirm(confirmObatMsg)) return;
+
       const stokMin = parseNum('wStokMin', 10);
       const stokMax = Math.max(1, parseNum('wStokMax', 100));
 
@@ -8302,6 +8320,11 @@
       const qtyFisik = Math.max(0, Number((document.getElementById('adjNewQtyInp') || {}).value || 0));
       const penyebab = (document.getElementById('adjPenyebabInp') || {}).value || 'Penyesuaian Manual';
       const note = ((document.getElementById('adjNoteInp') || {}).value || '').trim() || penyebab;
+      const bObj = (S().AppState.stokBatch || []).find((b) => b.id_batch === idBatch);
+      const oObj = bObj ? (S().AppState.masterObat || []).find((o) => o.id_obat === bObj.id_obat) : null;
+      const namaObat = oObj ? oObj.nama_dagang : (bObj ? bObj.no_batch : 'Batch');
+      const sat = oObj ? (oObj.satuan_1 || oObj.satuan_dasar || 'unit') : 'unit';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Penyesuaian Stok:\nUbah stok fisik "' + namaObat + '" (Batch: ' + (bObj ? bObj.no_batch : '-') + ') menjadi ' + qtyFisik + ' ' + sat + '?\nPenyebab: ' + penyebab)) return;
       const res = await API().callApi('stok.opnameSave', {
         is_adjustment: true,
         penyebab,
@@ -8437,6 +8460,7 @@
       const tujuan = mode === 'CABANG' ? (document.getElementById('mvTujuanCab') || {}).value : (document.getElementById('mvTujuanInt') || {}).value;
 
       if (asDraft) {
+        if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Simpan draf perpindahan stok ' + qty + ' unit "' + (ob.nama_dagang || idObat) + '"?')) return;
         const drafts = _readJsonLs('ONS_TRANSFER_DRAFTS_V1', []);
         drafts.unshift({
           id: 'DRF-' + Date.now().toString().slice(-6),
@@ -8451,6 +8475,7 @@
       }
 
       if (mode === 'CABANG') {
+        if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Mutasi Antar-Cabang:\nKirim ' + qty + ' unit "' + (ob.nama_dagang || idObat) + '" dari cabang ' + asal + ' ke ' + tujuan + '?')) return;
         const res = await API().callApi('cabang.transferSend', { cabang_asal: asal, cabang_tujuan: tujuan, items: [{ id_obat: idObat, qty }], catatan }, { isWrite: true });
         S().closeModal();
         global.toast('Surat Jalan ' + (res.item ? res.item.no_surat_jalan : 'Mutasi') + ' terkirim!', 'ok');
@@ -8461,6 +8486,7 @@
       if (asal === tujuan) throw new Error('Lokasi tujuan wajib berbeda dari lokasi asal.');
       const avStok = S().getSellableStok(idObat);
       if (avStok < qty) throw new Error(`Stok tersedia hanya ${avStok} ${ob.satuan_dasar || 'unit'}.`);
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Perpindahan Stok:\nPindahkan ' + qty + ' ' + (ob.satuan_1 || ob.satuan_dasar || 'unit') + ' "' + (ob.nama_dagang || idObat) + '" dari ' + asal + ' ke ' + tujuan + '?')) return;
       const hppUnit = Number(ob.hpp_avg || ob.hpp_terakhir || 0);
       const list = _readJsonLs('ONS_INTERNAL_TRANSFERS_V1', []);
       const noTrx = 'TRF-INT/' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '/' + String(list.length + 1).padStart(3, '0');
@@ -8648,6 +8674,7 @@
       .filter((id) => opnameDraftQty[id] !== '' && opnameDraftQty[id] !== undefined)
       .map((id) => ({ id_batch: id, qty_fisik: Number(opnameDraftQty[id]), penyebab: 'Stok Opname', catatan: reasonText, alasan: reasonText }));
     if (!entries.length) { global.toast('Isi minimal 1 hitungan fisik batch sebelum menyimpan!', 'warn'); return; }
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Stok Opname:\nSimpan ' + entries.length + ' hitungan fisik batch dan sinkronkan ke Kartu Stok?')) return;
     try {
       const res = await API().callApi('stok.opnameSave', { entries, penyebab: 'Stok Opname', catatan: reasonText }, { isWrite: true });
       const hist = _readJsonLs('ONS_OPNAME_HIST_V1', []);
@@ -8794,6 +8821,7 @@
       if (inp.value !== '') entries.push({ id_batch: inp.getAttribute('data-opname-batch'), qty_fisik: Number(inp.value) });
     });
     if (!entries.length) { global.toast('Isi minimal 1 batch fisik.', 'warn'); return; }
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Stok Opname:\nSimpan ' + entries.length + ' hitungan fisik batch dan sinkronkan ke Kartu Stok?')) return;
     try {
       const res = await API().callApi('stok.opnameSave', { entries }, { isWrite: true });
       S().closeModal();
@@ -9271,6 +9299,8 @@
     try {
       const namaPbf = ((document.getElementById('pbfNamaInp') || {}).value || '').trim();
       if (!namaPbf) throw new Error('Nama supplier PBF wajib diisi!');
+      const isEdit = Boolean(idPbf);
+      if (typeof global.confirm === 'function' && !global.confirm(isEdit ? 'Konfirmasi: Simpan perubahan data supplier PBF "' + namaPbf + '"?' : 'Konfirmasi: Daftarkan supplier PBF baru "' + namaPbf + '"?')) return;
       _saveExtraRecord(SUPPLIER_EXTRA_KEY, idPbf, namaPbf, {
         min_order: Math.max(0, Number((document.getElementById('pbfMinOrderInp') || {}).value || 0)),
         alamat: ((document.getElementById('pbfAlamatInp') || {}).value || '').trim()
@@ -12457,6 +12487,7 @@
       );
       const jenisPenerimaan = grnHeader.jenis_penerimaan || 'BELI_PUTUS';
       const stUser = (S().AppState && S().AppState.user && S().AppState.user.nama) || 'APJ / Pemilik';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Penerimaan Barang:\nSimpan Faktur ' + grnHeader.no_faktur_pbf.trim() + ' (' + grnItems.length + ' item, Total ' + S().rp(netto) + ') dan masukkan ke stok FEFO?')) return;
       const res = await API().callApi('pengadaan.fakturSave', {
         id_sp: grnHeader.id_sp || '',
         sp_status: grnHeader.id_sp ? (grnHeader.sp_status || 'SELESAI_DITERIMA') : '',
@@ -12682,6 +12713,7 @@
     const qty = Number(qtyEl ? qtyEl.value : 0);
     const alasan = reasonEl ? reasonEl.value : 'Retur Batch ED Dekat';
     if (!qty || qty <= 0) return global.toast('Qty retur harus lebih dari 0.', 'warn');
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Retur Barang:\nKeluarkan ' + qty + ' unit batch ini untuk retur ke PBF?\nAlasan: ' + alasan)) return;
     S().closeModal();
     await window.prosesReturBar(idBatch, qty, alasan);
   };
@@ -12975,6 +13007,7 @@
       if (catEl) returFormState.catatan = String(catEl.value || '').trim();
       if (!returFormState.items.length) throw new Error('Tambahkan minimal 1 batch produk untuk diretur.');
       const noBar = returFormState.no_bar || ('BAR-' + (returFormState.tanggal || new Date().toISOString().slice(0, 10)).replace(/-/g, '') + '-' + String(Date.now()).slice(-3));
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Retur Pembelian ke PBF:\nProses retur ' + returFormState.items.length + ' item produk (No. BAR: ' + noBar + ')?')) return;
       const fullAlasan = `${returFormState.alasan} [${returFormState.metode}] ${returFormState.catatan || ''}`.trim();
       let totalCut = 0;
       for (let i = 0; i < returFormState.items.length; i++) {
@@ -13171,6 +13204,8 @@
     try {
       const qtyRet = Number((document.getElementById('knsReturQty') || {}).value || 0);
       const alasan = (document.getElementById('knsReturAlasan') || {}).value || '';
+      if (!qtyRet || qtyRet <= 0) return global.toast('Kuantitas penarikan harus lebih dari 0!', 'warn');
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Tarik Konsinyasi:\nTarik ' + qtyRet + ' unit barang konsinyasi dari etalase/gudang?\nAlasan: ' + alasan)) return;
       const res = await API().callApi('konsinyasi.returnUnsold', {
         id_batch: idBatch,
         qty_retur: qtyRet,

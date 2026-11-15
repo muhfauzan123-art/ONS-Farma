@@ -196,6 +196,8 @@
 
   async function submitUpdateOmni(idOrder) {
     try {
+      const stBaru = (document.getElementById('updOmStatus') || {}).value || '';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Perbarui status pesanan menjadi "' + stBaru + '"?')) return;
       const res = await API().callApi('omni.updateStatus', {
         id_order: idOrder,
         status_order: document.getElementById('updOmStatus').value,
@@ -344,6 +346,8 @@
 
   async function submitAddCrm() {
     try {
+      const nama = ((document.getElementById('crmAddNama') || {}).value || '').trim() || 'Kontak';
+      if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Daftarkan kontak CRM baru "' + nama + '"?')) return;
       await API().callApi('crm.save', {
         nama: document.getElementById('crmAddNama').value,
         no_wa: document.getElementById('crmAddWa').value,
@@ -367,6 +371,7 @@
     const pesan = (document.getElementById('blastPesanTxt').value || '').trim();
     const seg = document.getElementById('blastSegmen').value;
     if (!pesan) { global.toast('Tulis isi pesan broadcast terlebih dahulu.', 'warn'); return; }
+    if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi Broadcast WhatsApp:\nKirim pesan siaran massal ke seluruh kontak segmen "' + seg + '"?')) return;
     try {
       const res = await API().callApi('crm.blastWa', { segmen: seg, pesan }, { isWrite: true });
       crmTab = 'antrean';
