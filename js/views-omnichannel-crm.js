@@ -11,8 +11,9 @@
   const OMNI_STATUS_FLOW = {
     BARU: { badge: 'bpom-terbatas', label: 'BARU' },
     DIRACIK_APJ: { badge: 'bpom-prekursor', label: 'DIRACIK APJ' },
-    SIAP_KIRIM: { badge: 'bpom-bebas', label: 'SIAP KIRIM' },
-    DIKIRIM_KURIR: { badge: 'bpom-terbatas', label: 'DIKIRIM KURIR' },
+    SIAP_DIAMBIL: { badge: 'bpom-bebas', label: 'SIAP DIAMBIL' },
+    SIAP_KIRIM: { badge: 'bpom-bebas', label: 'SIAP DIAMBIL' },
+    DIKIRIM_KURIR: { badge: 'bpom-bebas', label: 'SIAP DIAMBIL' },
     SELESAI: { badge: 'bpom-bebas', label: 'SELESAI' },
     BATAL: { badge: 'bpom-keras', label: 'BATAL' }
   };
@@ -102,27 +103,22 @@
     }).join('');
     S().openModal(`<div class="p-6 space-y-4 text-sm">
       <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base">Catat Order WA / Delivery / Marketplace</h3>
+        <h3 class="font-bold text-base">Catat Pesanan Masuk (Ambil di Apotek)</h3>
         <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div><label class="text-xs font-bold block mb-1">Nama Pelanggan *</label><input id="omNama" class="ons-input" placeholder="Ny. Rina Marlina"/></div>
         <div><label class="text-xs font-bold block mb-1">No WhatsApp *</label><input id="omWa" class="ons-input" placeholder="081234567890"/></div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs font-bold block mb-1">Channel Order</label>
-          <select id="omChannel" class="ons-select">
-            <option value="WhatsApp Apotek">WhatsApp Apotek</option>
-            <option value="E-Apotek Web">E-Apotek Web</option>
-            <option value="Halodoc / Mitra">Halodoc / Mitra</option>
-            <option value="GrabHealth / GoMed">GrabHealth / GoMed</option>
-            <option value="Shopee / Tokopedia">Shopee / Tokopedia</option>
-          </select>
-        </div>
-        <div><label class="text-xs font-bold block mb-1">Ongkos Kirim Kurir (Rp)</label><input id="omOngkir" type="number" class="ons-input font-mono-num" value="10000" min="0"/></div>
+      <div>
+        <label class="text-xs font-bold block mb-1">Kanal Pesanan</label>
+        <select id="omChannel" class="ons-select">
+          <option value="WhatsApp Apotek">WhatsApp Apotek</option>
+          <option value="E-Apotek Web">E-Apotek Web (Ambil di Apotek)</option>
+          <option value="Telepon Apotek">Telepon Apotek</option>
+          <option value="Resep Dokter Langsung">Resep Dokter Langsung</option>
+        </select>
       </div>
-      <div><label class="text-xs font-bold block mb-1">Alamat Pengantaran</label><textarea id="omAlamat" class="ons-textarea" rows="2" placeholder="Jl. Kesehatan No. 12..."></textarea></div>
       <div class="p-3 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle)">
         <div class="text-xs font-bold">Item Obat Utama</div>
         <div class="flex gap-2">
@@ -130,10 +126,10 @@
           <input id="omQtyPick" type="number" class="ons-input w-20 font-mono-num" value="1" min="1"/>
         </div>
       </div>
-      <div><label class="text-xs font-bold block mb-1">Catatan Keluhan / Kurir</label><input id="omCatatan" class="ons-input" placeholder="Minta antar sore / sertakan struk fisik"/></div>
+      <div><label class="text-xs font-bold block mb-1">Catatan Resep / Instruksi Pengambilan</label><input id="omCatatan" class="ons-input" placeholder="Cth: Ambil sore hari / bawa resep fisik"/></div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
-        <button onclick="ONSViewsOmniCrm.submitNewOmni()" class="ons-btn ons-btn-primary text-xs">Simpan Order &amp; Masuk Antrean</button>
+        <button onclick="ONSViewsOmniCrm.submitNewOmni()" class="ons-btn ons-btn-primary text-xs">Simpan Pesanan &amp; Masuk Antrean</button>
       </div>
     </div>`, '580px');
   }
@@ -154,8 +150,8 @@
         nama_pelanggan: nama,
         no_wa: wa,
         channel: document.getElementById('omChannel').value,
-        alamat: document.getElementById('omAlamat').value,
-        ongkir: Number(document.getElementById('omOngkir').value || 0),
+        alamat: 'Ambil Langsung di Apotek',
+        ongkir: 0,
         total_estimasi: estTotal,
         catatan: document.getElementById('omCatatan').value,
         items_json: JSON.stringify(itemArr)
@@ -170,25 +166,24 @@
   function openUpdateOmniModal(idOrder) {
     const ord = (S().AppState.omnichannelOrders || []).find((x) => x.id_order === idOrder);
     if (!ord) return;
-    const flowOrder = ['BARU', 'DIRACIK_APJ', 'SIAP_KIRIM', 'DIKIRIM_KURIR', 'SELESAI', 'BATAL'];
+    const flowOrder = ['BARU', 'DIRACIK_APJ', 'SIAP_DIAMBIL', 'SELESAI', 'BATAL'];
     const curIdx = flowOrder.indexOf(ord.status_order);
-    const nextSuggested = (curIdx >= 0 && curIdx < 4) ? flowOrder[curIdx + 1] : ord.status_order;
+    const nextSuggested = (curIdx >= 0 && curIdx < 3) ? flowOrder[curIdx + 1] : ord.status_order;
     S().openModal(`<div class="p-6 space-y-4 text-sm">
       <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base">Perbarui Status &amp; Kurir — ${S().esc(ord.no_order)}</h3>
+        <h3 class="font-bold text-base">Perbarui Status Pesanan — ${S().esc(ord.no_order)}</h3>
         <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
       </div>
       <div class="p-3 rounded-lg text-xs" style="background:var(--ons-bg-subtle)">
         Pelanggan: <strong>${S().esc(ord.nama_pelanggan)}</strong> (${S().esc(ord.no_wa)})<br/>
-        Total Estimasi + Ongkir: <strong>${S().rp(Number(ord.total_estimasi || 0) + Number(ord.ongkir || 0))}</strong>
+        Total Tagihan: <strong>${S().rp(Number(ord.total_estimasi || 0))}</strong> &bull; Metode: <strong>Ambil di Apotek</strong>
       </div>
       <div>
         <label class="text-xs font-bold block mb-1">Status Baru</label>
         <select id="updOmStatus" class="ons-select">
-          ${flowOrder.map((st) => `<option value="${st}" ${st === nextSuggested ? 'selected' : ''}>${st}</option>`).join('')}
+          ${flowOrder.map((st) => `<option value="${st}" ${st === nextSuggested ? 'selected' : ''}>${st.replace('_', ' ')}</option>`).join('')}
         </select>
       </div>
-      <div><label class="text-xs font-bold block mb-1">Nama Kurir / No Resi Instant</label><input id="updOmKurir" class="ons-input" value="${S().esc(ord.kurir || '')}" placeholder="GoSend Instant / Kurir Apotek"/></div>
       <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer">
         <input id="updOmSendWa" type="checkbox" checked class="w-4 h-4"/> Antrikan Notifikasi Update Status ke WhatsApp Pelanggan
       </label>
@@ -204,7 +199,6 @@
       const res = await API().callApi('omni.updateStatus', {
         id_order: idOrder,
         status_order: document.getElementById('updOmStatus').value,
-        kurir: document.getElementById('updOmKurir').value,
         kirim_wa: document.getElementById('updOmSendWa').checked
       }, { isWrite: true });
       const arr = S().AppState.omnichannelOrders || [];
@@ -228,40 +222,40 @@
     const orders = st.omnichannelOrders || [];
     const cntBaru = orders.filter((x) => x.status_order === 'BARU').length;
     const cntRacik = orders.filter((x) => x.status_order === 'DIRACIK_APJ').length;
-    const cntSiap = orders.filter((x) => x.status_order === 'SIAP_KIRIM' || x.status_order === 'DIKIRIM_KURIR').length;
+    const cntSiap = orders.filter((x) => x.status_order === 'SIAP_DIAMBIL' || x.status_order === 'SIAP_KIRIM' || x.status_order === 'DIKIRIM_KURIR').length;
     const cntSelesai = orders.filter((x) => x.status_order === 'SELESAI').length;
 
     const filtered = orders.filter((o) => {
       const okStat = omniFilterStatus === 'SEMUA' || o.status_order === omniFilterStatus;
       const q = omniSearchQ.toLowerCase();
-      const okQ = !q || [o.no_order, o.nama_pelanggan, o.no_wa, o.channel, o.kurir].some((v) => String(v || '').toLowerCase().includes(q));
+      const okQ = !q || [o.no_order, o.nama_pelanggan, o.no_wa, o.channel].some((v) => String(v || '').toLowerCase().includes(q));
       return okStat && okQ;
     });
 
     return `<div class="space-y-5 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Omnichannel Delivery Hub &amp; Pesanan Online</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Terintegrasi real-time dengan Etalase Publik E-Apotek (?katalog=1), WhatsApp Order, &amp; Kasir POS FEFO.</p>
+          <h1 class="text-xl font-extrabold">Pesanan Masuk Online &amp; WhatsApp (Ambil di Apotek)</h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">Terintegrasi real-time dengan Etalase Publik E-Apotek (?katalog=1), WhatsApp Order, &amp; Kasir POS FEFO (Pick Up langsung di apotek).</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <a href="./index.html?katalog=1" target="_blank" class="ons-btn ons-btn-ghost text-xs">&#128722; Etalase Publik (?katalog=1)</a>
           <button onclick="ONSViewsOmniCrm.copyKatalogLink()" class="ons-btn ons-btn-ghost text-xs">Salin Link Order</button>
-          <button onclick="ONSViewsOmniCrm.openNewOmniOrderModal()" class="ons-btn ons-btn-primary text-xs">+ Catat Order WA / Mitra</button>
+          <button onclick="ONSViewsOmniCrm.openNewOmniOrderModal()" class="ons-btn ons-btn-primary text-xs">+ Catat Pesanan Masuk</button>
         </div>
       </div>
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Order Baru Masuk</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${cntBaru}</div></div>
-        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Sedang Disiapkan / Racik</div><div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${cntRacik}</div></div>
-        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Siap / Dalam Pengiriman</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${cntSiap}</div></div>
+        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Pesanan Baru Masuk</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${cntBaru}</div></div>
+        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Sedang Disiapkan APJ</div><div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${cntRacik}</div></div>
+        <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Siap Diambil di Apotek</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${cntSiap}</div></div>
         <div class="ons-card p-3.5 ons-card-interactive"><div class="text-xs" style="color:var(--ons-text-soft)">Selesai &amp; Lunas POS</div><div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${cntSelesai}</div></div>
       </div>
 
       <div class="ons-card p-4 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="ons-tab-bar">
-            ${['SEMUA', 'BARU', 'DIRACIK_APJ', 'SIAP_KIRIM', 'DIKIRIM_KURIR', 'SELESAI'].map((st) =>
+            ${['SEMUA', 'BARU', 'DIRACIK_APJ', 'SIAP_DIAMBIL', 'SELESAI'].map((st) =>
               `<button onclick="ONSViewsOmniCrm.setOmniFilter('${st}')" class="ons-tab-btn ${omniFilterStatus === st ? 'active' : ''}">${st.replace('_', ' ')}</button>`
             ).join('')}
           </div>
@@ -272,35 +266,34 @@
         </div>
 
         <div class="space-y-2.5">
-          ${filtered.length === 0 ? `<div class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Belum ada order omnichannel pada filter ini.</div>` : filtered.map((o) => {
+          ${filtered.length === 0 ? `<div class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Belum ada pesanan masuk pada filter ini.</div>` : filtered.map((o) => {
             const items = parseItemsJson(o.items_json);
             const flow = OMNI_STATUS_FLOW[o.status_order] || OMNI_STATUS_FLOW.BARU;
-            const grandEst = Number(o.total_estimasi || 0) + Number(o.ongkir || 0);
+            const grandEst = Number(o.total_estimasi || 0);
             return `<div class="p-3.5 rounded-xl border flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div class="space-y-1 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="font-mono-num font-extrabold text-xs">${S().esc(o.no_order)}</span>
-                  <span class="badge-bpom ${flow.badge}">${S().esc(o.status_order)}</span>
+                  <span class="badge-bpom ${flow.badge}">${S().esc((flow.label || o.status_order).replace('_', ' '))}</span>
                   <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-500/10">${S().esc(o.channel || 'WhatsApp')}</span>
                   <span class="text-[11px]" style="color:var(--ons-text-soft)">${S().formatTgl(o.tanggal, true)}</span>
                 </div>
                 <div class="text-sm font-bold">${S().esc(o.nama_pelanggan)} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">&bull; ${S().esc(o.no_wa)}</span></div>
-                <div class="text-xs" style="color:var(--ons-text-soft)">${S().esc(o.alamat || 'Ambil di Apotek (Self Pickup)')}</div>
+                <div class="text-xs" style="color:var(--ons-text-soft)">Metode: <b>Ambil Langsung di Apotek (Pick Up)</b></div>
                 <div class="text-xs">
                   Item: ${items.map((it) => `${S().esc(it.nama || it.id_obat)} x${it.qty}`).join(', ') || 'Lihat catatan resep'}
-                  ${o.kurir ? ` &bull; Kurir: <strong>${S().esc(o.kurir)}</strong>` : ''}
                   ${o.no_invoice_pos ? ` &bull; Nota POS: <span class="font-mono-num text-emerald-600 font-bold">${S().esc(o.no_invoice_pos)}</span>` : ''}
                 </div>
               </div>
               <div class="flex flex-wrap lg:flex-col items-end justify-between gap-2 shrink-0">
                 <div class="text-right">
-                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Estimasi + Ongkir</div>
+                  <div class="text-[11px]" style="color:var(--ons-text-soft)">Total Tagihan</div>
                   <div class="text-base font-extrabold text-emerald-600">${S().rp(grandEst)}</div>
                 </div>
                 <div class="flex flex-wrap gap-1.5">
-                  <a href="${waHref(o.no_wa, 'Halo Kak ' + o.nama_pelanggan + ', pesanan ' + o.no_order + ' di Apotek ONS Farma berstatus: ' + o.status_order)}" target="_blank" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Chat WA</a>
+                  <a href="${waHref(o.no_wa, 'Halo Kak ' + o.nama_pelanggan + ', pesanan ' + o.no_order + ' di Apotek ONS Farma siap diambil di apotek.')}" target="_blank" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Chat WA</a>
                   ${o.status_order !== 'SELESAI' && o.status_order !== 'BATAL' ? `
-                    <button onclick="ONSViewsOmniCrm.openUpdateOmniModal('${S().esc(o.id_order)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Update Kurir/Status</button>
+                    <button onclick="ONSViewsOmniCrm.openUpdateOmniModal('${S().esc(o.id_order)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Update Status</button>
                     <button onclick="ONSViewsOmniCrm.loadOmniOrderToPos('${S().esc(o.id_order)}')" class="ons-btn ons-btn-primary text-xs py-1 px-3">Muat ke POS &rarr;</button>
                   ` : ''}
                 </div>
@@ -702,7 +695,7 @@
                   badgeText = '⛔ Terlewat ' + Math.abs(p.sisaHari) + ' hari';
                 }
 
-                const reminderMsg = `Halo Ibu/Bpk ${p.nama_pasien}, salam sehat dari ${usahaNama}. Berdasarkan pemantauan apotek kami, persediaan obat rutin Anda (${p.nama_obat} - ${p.aturan_pakai}) diperkirakan habis ${p.sisaHari === 0 ? 'hari ini' : (p.sisaHari < 0 ? 'beberapa hari lalu' : ('dalam ' + p.sisaHari + ' hari lagi (tgl ' + p.tgl_habis + ')'))}. Mohon jangan lewatkan jadwal kontrol dan penyiapan obat kembali agar kondisi kesehatan tetap optimal. Kami siap membantu penyiapan obat Anda secara langsung maupun delivery. Terima kasih.`;
+                const reminderMsg = `Halo Ibu/Bpk ${p.nama_pasien}, salam sehat dari ${usahaNama}. Berdasarkan pemantauan apotek kami, persediaan obat rutin Anda (${p.nama_obat} - ${p.aturan_pakai}) diperkirakan habis ${p.sisaHari === 0 ? 'hari ini' : (p.sisaHari < 0 ? 'beberapa hari lalu' : ('dalam ' + p.sisaHari + ' hari lagi (tgl ' + p.tgl_habis + ')'))}. Mohon jangan lewatkan jadwal kontrol dan penyiapan obat kembali agar kondisi kesehatan tetap optimal. Kami siap membantu penyiapan obat Anda langsung di apotek. Terima kasih.`;
 
                 const waUrl = S().buildWaUrl ? S().buildWaUrl(p.no_wa, reminderMsg) : ('https://wa.me/?text=' + encodeURIComponent(reminderMsg));
 

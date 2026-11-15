@@ -1380,7 +1380,7 @@
       pos_show_tuslah: true,
       pos_show_diskon_faktur: true,
       pos_show_voucher: true,
-      pos_show_ongkir: true,
+      pos_show_ongkir: false,
       pos_show_biaya_lain: true,
       pos_show_add_pelanggan: true,
       pos_show_add_dokter: true,

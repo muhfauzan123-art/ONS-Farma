@@ -558,9 +558,9 @@
         }
         return { id_obat: it.id_obat || '', nama: String(it.nama || it.nama_dagang || 'Obat'), satuan: String(it.satuan || 'Unit'), harga: Math.max(0, Number(it.harga_jual || it.harga || 0)), qty };
       });
-      const ongkir = Math.max(0, Number(d.ongkir || d.biaya_kirim || 0));
+      const ongkir = 0;
       const itemSum = cleanItems.reduce((s, it) => s + Number(it.harga || 0) * Number(it.qty || 1), 0);
-      const totalEst = itemSum > 0 ? (itemSum + ongkir) : (Math.max(0, Number(d.total_estimasi || 0)) + ongkir);
+      const totalEst = itemSum > 0 ? itemSum : Math.max(0, Number(d.total_estimasi || 0));
       const noOrder = 'ONL-' + isoToday.replace(/-/g, '') + '-' + String(db.omnichannel_orders.length + 1).padStart(2, '0');
       const ord = {
         id_order: 'ORD-' + Date.now().toString().slice(-5),
@@ -571,12 +571,12 @@
         channel: 'E-Apotek Web',
         nama_pelanggan: d.nama_pelanggan,
         no_wa: String(d.no_wa).replace(/[^0-9]/g, ''),
-        alamat: d.alamat || '',
-        kurir: String(d.alamat || '').toLowerCase().includes('ambil') ? 'Ambil di Apotek' : 'Kurir Lokal',
+        alamat: 'Ambil Langsung di Apotek',
+        kurir: 'Ambil di Apotek',
         items_json: JSON.stringify(cleanItems),
         catatan: d.catatan || '',
         total_estimasi: totalEst,
-        ongkir: ongkir,
+        ongkir: 0,
         status_order: 'BARU',
         no_invoice_pos: '',
         petugas_id: 'Public Storefront'
@@ -622,8 +622,8 @@
           updated_at: match.updated_at || match.tanggal,
           status_order: match.status_order || 'BARU',
           channel: match.channel || 'E-Apotek Web',
-          kurir: match.kurir || (String(match.alamat || '').toLowerCase().includes('ambil') ? 'Ambil di Apotek' : 'Kurir Lokal'),
-          biaya_kirim: Number(match.ongkir || 0),
+          kurir: 'Ambil di Apotek',
+          biaya_kirim: 0,
           total_estimasi: Number(match.total_estimasi || 0),
           no_invoice_pos: match.no_invoice_pos || '',
           nama_masked: maskName(match.nama_pelanggan),
