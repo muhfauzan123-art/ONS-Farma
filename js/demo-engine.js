@@ -655,7 +655,7 @@
       const spv = (reqU && (db.users || []).find((x) => (x.role === 'APJ' || x.role === 'Pemilik') && String(x.status_aktif || 'AKTIF') === 'AKTIF' && String(x.username || '').toLowerCase() === reqU))
         || (db.users || []).find((x) => x.role === 'APJ' && String(x.status_aktif || 'AKTIF') === 'AKTIF')
         || (db.users || []).find((x) => x.role === 'Pemilik' && String(x.status_aktif || 'AKTIF') === 'AKTIF')
-        || { id_user: 'USR-002', nama_lengkap: 'apt. Siti Rahma, S.Farm', role: 'APJ' };
+        || { id_user: 'USR-002', nama_lengkap: 'Apoteker Penanggung Jawab', role: 'APJ' };
       return { verified: true, supervisor_id: spv.id_user, supervisor_nama: spv.nama_lengkap, supervisor_role: spv.role };
     }
 
@@ -1592,7 +1592,7 @@
       if (row) {
         Object.assign(row, {
           tgl_tutup: nowIso,
-          supervisor_id: 'apt. Siti Rahma, S.Farm',
+          supervisor_id: 'Apoteker Penanggung Jawab',
           modal_awal: modal,
           sistem_tunai: sisTunai,
           sistem_qris: sisQris,
@@ -1611,7 +1611,7 @@
           tgl_buka: d.tgl_buka || nowIso,
           tgl_tutup: nowIso,
           kasir_id: userNama,
-          supervisor_id: 'apt. Siti Rahma, S.Farm',
+          supervisor_id: 'Apoteker Penanggung Jawab',
           modal_awal: modal,
           sistem_tunai: sisTunai,
           sistem_qris: sisQris,
@@ -2192,7 +2192,7 @@
       const nextSub = isFull ? oldSub : Math.max(0, oldSub - subRed);
       const nextHpp = isFull ? oldHpp : Math.max(0, oldHpp - Math.round(totalHppRestored));
       trx.status_trx = nextStatus;
-      trx.apj_override_id = 'apt. Siti Rahma, S.Farm';
+      trx.apj_override_id = 'Apoteker Penanggung Jawab';
       trx.retur_alasan = String(d.alasan || 'Retur/Void PIN');
       trx.tgl_retur = nowIso;
       if (!isFull) {
@@ -2251,7 +2251,7 @@
       db.audit_log.unshift({ id_audit: 'AUD-' + Date.now(), timestamp: nowIso, user_id: userId, role, cabang_id: 'ONS-01', aksi: isFull ? 'POS_VOID_RETURN' : 'POS_PARTIAL_RETURN', entitas: 'PENJUALAN', entitas_id: trx.no_invoice, diff_sesudah_json: JSON.stringify({ alasan: d.alasan || '-', status_trx: nextStatus, restored_qty: totalQtyRun, nominal_kas_dikembalikan: nominalReversal }) });
       db.epoch++;
       saveDb(db);
-      return { ok: true, no_invoice: trx.no_invoice, status_trx: nextStatus, is_partial: !isFull, restored_items: restoredLines, restored_qty: totalQtyRun, authorized_by: 'apt. Siti Rahma, S.Farm', nominal_kas_dikembalikan: nominalReversal, grand_total_baru: nextGrand };
+      return { ok: true, no_invoice: trx.no_invoice, status_trx: nextStatus, is_partial: !isFull, restored_items: restoredLines, restored_qty: totalQtyRun, authorized_by: 'Apoteker Penanggung Jawab', nominal_kas_dikembalikan: nominalReversal, grand_total_baru: nextGrand };
     }
     if (action === 'konsinyasi.summary') {
       return _computeDemoKonsinyasiSummary(db, d && d.id_pbf);
@@ -2314,7 +2314,7 @@
       const kl = db.rekam_klinis.find((x) => x.id_klinis === d.id_klinis);
       if (!kl) throw new Error('Rekam klinis tidak ditemukan.');
       kl.status_klinis = d.status_klinis || 'TERVERIFIKASI_APJ';
-      kl.apj_pin_verified_by = 'apt. Siti Rahma, S.Farm (SIPA Verified)';
+      kl.apj_pin_verified_by = 'Apoteker Penanggung Jawab (SIPA Verified)';
       if (d.catatan_apoteker) kl.soap_notes = (kl.soap_notes || '') + '\n[Verifikasi APJ] ' + d.catatan_apoteker;
       db.epoch++;
       saveDb(db);

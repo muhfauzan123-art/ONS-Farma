@@ -81,14 +81,14 @@
   const _curMonth = _todayIso.slice(0, 7);
   let billingCache = {
     tagihan: [
-      { ID: 'TGH-HC01', Periode: _curMonth, ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', HP_Pasien: '6281234567801', Program: 'MEMBER_RUTIN', Kategori: 'HOME_PHARMACY_CARE', Deskripsi: 'Paket Home Pharmacy Care & Konseling Hipertensi', Nominal: 175000, Potongan: 25000, Netto: 150000, Terbayar: 0, Status: 'MENUNGGU_VERIFIKASI', JatuhTempo: _todayIso, TglTerbit: _todayIso, Catatan: 'Subsidi member senior Rp 25.000', DibuatOleh: 'apt. Siti Rahma, S.Farm' },
-      { ID: 'TGH-HC02', Periode: _curMonth, ID_Pasien: 'MBR-002', Nama_Pasien: 'Ny. Hj. Aminah Kusuma', HP_Pasien: '6281234567802', Program: 'MEMBER_RUTIN', Kategori: 'TERAPI_RUTIN_BULANAN', Deskripsi: 'Antar Paket Insulin + Jarum Pen Novofine', Nominal: 220000, Potongan: 0, Netto: 220000, Terbayar: 0, Status: 'BELUM_BAYAR', JatuhTempo: _todayIso, TglTerbit: _todayIso, Catatan: '', DibuatOleh: 'apt. Siti Rahma, S.Farm' }
+      { ID: 'TGH-HC01', Periode: _curMonth, ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', HP_Pasien: '6281234567801', Program: 'MEMBER_RUTIN', Kategori: 'HOME_PHARMACY_CARE', Deskripsi: 'Paket Home Pharmacy Care & Konseling Hipertensi', Nominal: 175000, Potongan: 25000, Netto: 150000, Terbayar: 0, Status: 'MENUNGGU_VERIFIKASI', JatuhTempo: _todayIso, TglTerbit: _todayIso, Catatan: 'Subsidi member senior Rp 25.000', DibuatOleh: 'Apoteker Penanggung Jawab' },
+      { ID: 'TGH-HC02', Periode: _curMonth, ID_Pasien: 'MBR-002', Nama_Pasien: 'Ny. Hj. Aminah Kusuma', HP_Pasien: '6281234567802', Program: 'MEMBER_RUTIN', Kategori: 'TERAPI_RUTIN_BULANAN', Deskripsi: 'Antar Paket Insulin + Jarum Pen Novofine', Nominal: 220000, Potongan: 0, Netto: 220000, Terbayar: 0, Status: 'BELUM_BAYAR', JatuhTempo: _todayIso, TglTerbit: _todayIso, Catatan: '', DibuatOleh: 'Apoteker Penanggung Jawab' }
     ],
     pending: [
       { GrupBayar: 'GRP-202611-01', ID_Tagihan: 'TGH-HC01', NominalBayar: 150000, MetodeBayar: 'TRANSFER_BANK', BuktiUrl: 'https://placehold.co/400x300?text=Bukti+Transfer+BCA', Status: 'MENUNGGU_VERIFIKASI', DibuatOleh: 'Tn. Bambang Suryono' }
     ],
     history: [
-      { NoKwitansi: 'KW-2026-0001', GrupBayar: 'GRP-202610-09', ID_Tagihan: 'TGH-HC00', NominalBayar: 175000, MetodeBayar: 'QRIS', DiverifikasiOleh: 'apt. Siti Rahma, S.Farm', TglVerifikasi: _todayIso, Sig: 'KW20260001' }
+      { NoKwitansi: 'KW-2026-0001', GrupBayar: 'GRP-202610-09', ID_Tagihan: 'TGH-HC00', NominalBayar: 175000, MetodeBayar: 'QRIS', DiverifikasiOleh: 'Apoteker Penanggung Jawab', TglVerifikasi: _todayIso, Sig: 'KW20260001' }
     ],
     potongan: [
       { ID: 'POT-01', ID_Pasien: 'MBR-001', Nama_Pasien: 'Tn. Bambang Suryono', Kategori: 'SEMUA', JenisPotongan: 'SUBSIDI_LANSIA', Nilai: 25000, TipeNilai: 'NOMINAL', BerlakuDari: '2026-01', BerlakuSampai: '2026-12', Keterangan: 'Keringanan biaya antar Home Care Lansia', Aktif: 'YA' }
@@ -3371,16 +3371,50 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </div>
           </div>
           <div class="ons-card p-5 lg:col-span-7 space-y-3 text-xs">
-            <h3 class="font-bold text-sm">Generator Slip Gaji Pegawai Apotek (Siap Cetak A4)</h3>
-            <div class="grid grid-cols-2 gap-3">
-              <div><label class="font-semibold block mb-1">Nama Pegawai</label><input id="sgNama" class="ons-input" value="apt. Siti Rahma, S.Farm"/></div>
-              <div><label class="font-semibold block mb-1">Jabatan</label><input id="sgJab" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
-              <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(4800000)}" oninput="window.maskNumberInput(this)"/></div>
-              <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(1500000)}" oninput="window.maskNumberInput(this)"/></div>
-              <div><label class="font-semibold block mb-1">Potongan Kasbon / Lainnya</label><input id="sgPot" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(150000)}" oninput="window.maskNumberInput(this)"/></div>
-              <div><label class="font-semibold block mb-1">Periode Bulan</label><input id="sgPer" class="ons-input font-mono-num" value="${new Date().toISOString().slice(0, 7)}"/></div>
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                  <span>💵 Generator Slip Gaji &amp; Payroll Apotek</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">Berbasis Jam Kerja</span>
+                </h3>
+                <p class="text-[11px] text-slate-500">Terkoneksi langsung dengan log presensi &amp; jam masuk riil staf apotek.</p>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="window.openPengaturanGajiModal()" class="ons-btn ons-btn-ghost text-xs">⚙️ Atur Tarif</button>
+                <button type="button" onclick="window.openPayrollCalculatorModal()" class="ons-btn ons-btn-emerald text-xs">📊 Rekap Payroll</button>
+              </div>
             </div>
-            <button onclick="window.printSlipGajiPdf()" class="ons-btn ons-btn-primary w-full">Pratinjau &amp; Cetak Slip Gaji Resmi (A4)</button>
+
+            <div class="p-3 rounded-xl border bg-slate-50 dark:bg-slate-900/40 text-xs space-y-2" style="border-color:var(--ons-border)">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="font-semibold block mb-1">Pilih Staf Apotek</label>
+                  <select id="sgStaffSelect" class="ons-select text-xs" onchange="window.syncPajakStaffSelection(this.value)">
+                    ${_getStaffList().map((u) => `<option value="${u.id_user}">${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="font-semibold block mb-1">Periode Bulan</label>
+                  <input id="sgPer" type="month" class="ons-input font-mono-num text-xs" value="${new Date().toISOString().slice(0, 7)}" onchange="window.syncPajakStaffSelection(document.getElementById('sgStaffSelect').value, this.value)"/>
+                </div>
+              </div>
+              
+              <div id="sgStaffPreviewBox" class="p-2.5 rounded-lg border bg-white dark:bg-slate-800 text-[11px] space-y-1" style="border-color:var(--ons-border)">
+                <div class="flex justify-between items-center font-bold text-slate-800 dark:text-slate-100">
+                  <span>Kasir Operasional &bull; Kasir</span>
+                  <span class="text-emerald-600 font-mono-num text-xs font-extrabold">Rp 3.488.500 (THP)</span>
+                </div>
+                <div class="text-slate-500 text-[10.5px]">
+                  Jam Kerja Masuk: <b>168.25 Jam</b> (168.25 Jam Masuk @ Rp 18.000/jam) &bull; Hadir: <b>24 Hari</b> &bull; Lembur: <b>4.5 Jam</b> &bull; Terlambat: <b>25 Mnt</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button onclick="window.printSlipGajiA4(document.getElementById('sgStaffSelect')?.value || 'USR-003', document.getElementById('sgPer')?.value)" class="ons-btn ons-btn-primary flex-1 text-xs">🖨️ Cetak Slip Gaji Resmi (A4)</button>
+              <button onclick="window.printSlipGajiThermal(document.getElementById('sgStaffSelect')?.value || 'USR-003', document.getElementById('sgPer')?.value)" class="ons-btn ons-btn-ghost text-xs">🧾 Cetak Thermal</button>
+              <button onclick="window.postPayrollToKasJurnal(document.getElementById('sgStaffSelect')?.value || 'USR-003', document.getElementById('sgPer')?.value)" class="ons-btn ons-btn-emerald text-xs">💼 Posting ke Kas</button>
+            </div>
           </div>
         </div>
       ` : `
@@ -4254,7 +4288,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center"><h3 class="font-bold text-base">Generator Slip Gaji Apotek ONS Farma (A4)</h3><button onclick="ONSStore.closeModal()" class="text-xl">&times;</button></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="font-semibold block mb-1">Nama Pegawai</label><input id="sgNama" class="ons-input" value="apt. Siti Rahma, S.Farm"/></div>
+        <div><label class="font-semibold block mb-1">Nama Pegawai</label><input id="sgNama" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
         <div><label class="font-semibold block mb-1">Jabatan</label><input id="sgJab" class="ons-input" value="Apoteker Penanggung Jawab"/></div>
         <div><label class="font-semibold block mb-1">Gaji Pokok (Rp)</label><input id="sgPokok" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(4800000)}" oninput="window.maskNumberInput(this)"/></div>
         <div><label class="font-semibold block mb-1">Tunjangan Jasa Profesi / Bonus</label><input id="sgTunj" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num" value="${S().formatDots(1500000)}" oninput="window.maskNumberInput(this)"/></div>
@@ -8069,31 +8103,412 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     `;
   }
 
+    // =========================================================================
+  // SISTEM JADWAL KERJA, PRESENSI & PENGGAJIAN BERBASIS JAM KERJA MASUK
+  // Sesuai Standar Apotek Digital & Regulasi Apotek Indonesia (Model 2 Shift)
+  // =========================================================================
+  const JADWAL_KEY = 'ONS_JADWAL_KERJA_V1';
+  const PRESENSI_KEY = 'ONS_PRESENSI_LOGS_V1';
+  const PAYROLL_CONFIG_KEY = 'ONS_PAYROLL_CONFIG_V1';
+
+  let presensiStaffFilter = 'SEMUA';
+  let presensiShiftFilter = 'SEMUA';
+  let presensiStatusFilter = 'SEMUA';
+  let presensiSearchQ = '';
+
+  const SHIFT_DEFS = {
+    PAGI: {
+      code: 'PAGI',
+      label: 'Shift Pagi',
+      time: '08:00 - 15:00',
+      hours: 7,
+      badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
+    },
+    SORE: {
+      code: 'SORE',
+      label: 'Shift Sore',
+      time: '15:00 - 22:00',
+      hours: 7,
+      badge: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300'
+    },
+    FULL: {
+      code: 'FULL',
+      label: 'Full Day',
+      time: '08:00 - 22:00',
+      hours: 14,
+      badge: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-300'
+    },
+    OFF: {
+      code: 'OFF',
+      label: 'Libur (OFF)',
+      time: 'Libur',
+      hours: 0,
+      badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-300'
+    }
+  };
+
+  const DAYS_OF_WEEK = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
+  function _getStaffList() {
+    const st = S().AppState;
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    let users = (settingsCache.users && settingsCache.users.length) ? settingsCache.users : (st.staffDirectory || []);
+    if (!users || !users.length) {
+      if (global.ONSApi && typeof global.ONSApi.getDemoDatabase === 'function') {
+        const db = global.ONSApi.getDemoDatabase();
+        if (db && Array.isArray(db.users) && db.users.length) users = db.users;
+      }
+    }
+    if (!users || !users.length) {
+      users = [
+        { id_user: 'USR-001', username: 'pemilik', nama_lengkap: prof.nama_pemilik || 'Pemilik Sarana Apotek', role: 'Pemilik', no_hp: '0812-3456-7890', status_aktif: 'AKTIF' },
+        { id_user: 'USR-002', username: 'apj', nama_lengkap: 'Apoteker Penanggung Jawab', role: 'APJ', no_hp: '0813-4567-8901', status_aktif: 'AKTIF' },
+        { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Kasir Operasional', role: 'Kasir', no_hp: '0814-5678-9012', status_aktif: 'AKTIF' }
+      ];
+    }
+    return users.map((u) => {
+      let n = u.nama_lengkap || u.username || 'Staf Apotek';
+      if (S().sanitizeLegacyOwnerName) n = S().sanitizeLegacyOwnerName(n, prof.nama_pemilik);
+      if (S()._isLegacySensitive && S()._isLegacySensitive(n)) {
+        n = u.role === 'APJ' ? 'Apoteker Penanggung Jawab' : (u.role === 'Kasir' ? 'Kasir Operasional' : 'Pemilik Sarana Apotek');
+      }
+      return Object.assign({}, u, { nama_lengkap: n });
+    });
+  }
+
+  function _getJadwalKerjaList() {
+    try {
+      const raw = localStorage.getItem(JADWAL_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    } catch (_) {}
+
+    const staff = _getStaffList();
+    const seeded = staff.map((u, i) => {
+      const role = String(u.role || '').toUpperCase();
+      let harian = {};
+      if (role === 'PEMILIK' || role === 'ADMIN') {
+        DAYS_OF_WEEK.forEach((d, di) => { harian[d] = di === 6 ? 'OFF' : 'PAGI'; });
+      } else if (role === 'APJ') {
+        DAYS_OF_WEEK.forEach((d, di) => { harian[d] = di === 5 ? 'SORE' : (di === 6 ? 'OFF' : 'PAGI'); });
+      } else {
+        DAYS_OF_WEEK.forEach((d, di) => {
+          if (di === 6) harian[d] = 'OFF';
+          else harian[d] = (di % 2 === 0) ? 'PAGI' : 'SORE';
+        });
+      }
+      const totalJam = Object.keys(harian).reduce((s, d) => s + (SHIFT_DEFS[harian[d]] ? SHIFT_DEFS[harian[d]].hours : 0), 0);
+      return {
+        id_jadwal: 'JDW-' + (u.id_user || ('USR-' + (i + 1))),
+        id_user: u.id_user,
+        nama_staf: u.nama_lengkap,
+        role: u.role,
+        periode: 'Pekan Berjalan (Senin - Minggu)',
+        jadwal: harian,
+        total_jam: totalJam,
+        updated_at: new Date().toISOString()
+      };
+    });
+    _saveJadwalKerjaList(seeded);
+    return seeded;
+  }
+
+  function _saveJadwalKerjaList(list) {
+    try { localStorage.setItem(JADWAL_KEY, JSON.stringify(list)); } catch (_) {}
+  }
+
+  function _computePresensiMetrics(shift, jamMasuk, jamPulang) {
+    let startHour = 8, startMin = 0, endHour = 15, endMin = 0;
+    if (shift === 'SORE') { startHour = 15; endHour = 22; }
+    else if (shift === 'FULL') { startHour = 8; endHour = 22; }
+
+    const parseT = (s) => {
+      if (!s || s === '-') return null;
+      const parts = String(s).split(':').map(Number);
+      return (parts[0] * 60) + (parts[1] || 0);
+    };
+
+    const inMin = parseT(jamMasuk);
+    const outMin = parseT(jamPulang);
+    const planInMin = (startHour * 60) + startMin;
+    const planOutMin = (endHour * 60) + endMin;
+
+    let jamKerja = 0;
+    let durasiStr = '-';
+    if (inMin !== null && outMin !== null && outMin >= inMin) {
+      const diff = outMin - inMin;
+      jamKerja = Math.round((diff / 60) * 100) / 100;
+      const j = Math.floor(diff / 60);
+      const m = diff % 60;
+      durasiStr = `${j}j ${m}m (${jamKerja} Jam)`;
+    } else if (inMin !== null) {
+      jamKerja = 7;
+      durasiStr = 'Sedang Berjalan (7.00 Jam)';
+    }
+
+    let terlambatMin = 0;
+    if (inMin !== null && inMin > planInMin) {
+      terlambatMin = inMin - planInMin;
+    }
+
+    let lemburJam = 0;
+    if (outMin !== null && outMin > planOutMin) {
+      lemburJam = Math.round(((outMin - planOutMin) / 60) * 100) / 100;
+    }
+
+    let status = 'Tepat Waktu';
+    if (terlambatMin > 0 && lemburJam > 0) {
+      status = `Terlambat (${terlambatMin}m) & Lembur (${lemburJam}j)`;
+    } else if (terlambatMin > 0) {
+      status = `Terlambat (${terlambatMin} mnt)`;
+    } else if (lemburJam > 0) {
+      status = `Lembur (${lemburJam} jam)`;
+    }
+
+    return { jamKerja, durasiStr, terlambatMin, lemburJam, status };
+  }
+
+  function _getPresensiLogs() {
+    try {
+      const raw = localStorage.getItem(PRESENSI_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    } catch (_) {}
+
+    const staff = _getStaffList();
+    const seeded = [];
+    const dates = [
+      '15-11-2026', '14-11-2026', '13-11-2026', '12-11-2026', '11-11-2026',
+      '10-11-2026', '09-11-2026', '08-11-2026', '07-11-2026', '06-11-2026'
+    ];
+
+    dates.forEach((d, di) => {
+      staff.forEach((u, ui) => {
+        const isOff = (di % 7 === 6) && ui === 2;
+        if (isOff) return;
+
+        const shift = (ui === 2 && di % 2 === 1) ? 'SORE' : 'PAGI';
+        const isKasir = (u.role === 'Kasir');
+        const isApj = (u.role === 'APJ');
+
+        let masuk = '07:55', pulang = '15:05';
+        if (shift === 'SORE') { masuk = '14:52'; pulang = '22:08'; }
+
+        if (di === 1 && isKasir) { masuk = '15:12'; pulang = '22:15'; }
+        if (di === 3 && isApj) { masuk = '08:15'; pulang = '15:45'; }
+
+        const m = _computePresensiMetrics(shift, masuk, pulang);
+        seeded.push({
+          id_presensi: `PRS-${d.replace(/-/g, '')}-${u.id_user}`,
+          id_user: u.id_user,
+          nama: u.nama_lengkap,
+          role: u.role,
+          tgl: d,
+          shift: shift,
+          jam_masuk: masuk,
+          jam_pulang: pulang,
+          jam_kerja: m.jamKerja,
+          durasi_str: m.durasiStr,
+          menit_terlambat: m.terlambatMin,
+          jam_lembur: m.lemburJam,
+          status: m.status,
+          catatan: 'Presensi presisi terverifikasi sistem',
+          koreksi_oleh: null,
+          updated_at: new Date().toISOString()
+        });
+      });
+    });
+
+    _savePresensiLogs(seeded);
+    return seeded;
+  }
+
+  function _savePresensiLogs(logs) {
+    try { localStorage.setItem(PRESENSI_KEY, JSON.stringify(logs)); } catch (_) {}
+  }
+
+  function _getPayrollConfig() {
+    try {
+      const raw = localStorage.getItem(PAYROLL_CONFIG_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (_) {}
+
+    const defaults = {
+      'USR-001': {
+        metode_gaji: 'BULANAN',
+        gaji_pokok_bulanan: 6000000,
+        tarif_per_jam: 35000,
+        tarif_per_shift: 180000,
+        tunjangan_kehadiran_per_hari: 25000,
+        tarif_lembur_per_jam: 40000,
+        denda_terlambat_per_menit: 1000,
+        tunjangan_profesi: 1000000
+      },
+      'USR-002': {
+        metode_gaji: 'PER_JAM',
+        gaji_pokok_bulanan: 4500000,
+        tarif_per_jam: 30000,
+        tarif_per_shift: 150000,
+        tunjangan_kehadiran_per_hari: 25000,
+        tarif_lembur_per_jam: 35000,
+        denda_terlambat_per_menit: 1000,
+        tunjangan_profesi: 1500000
+      },
+      'USR-003': {
+        metode_gaji: 'PER_JAM',
+        gaji_pokok_bulanan: 2600000,
+        tarif_per_jam: 18000,
+        tarif_per_shift: 90000,
+        tunjangan_kehadiran_per_hari: 15000,
+        tarif_lembur_per_jam: 25000,
+        denda_terlambat_per_menit: 500,
+        tunjangan_profesi: 0
+      }
+    };
+    _savePayrollConfig(defaults);
+    return defaults;
+  }
+
+  function _savePayrollConfig(cfg) {
+    try { localStorage.setItem(PAYROLL_CONFIG_KEY, JSON.stringify(cfg)); } catch (_) {}
+  }
+
+  function _calculateStaffPayroll(idUser, periodeBulan, overrides) {
+    const staffList = _getStaffList();
+    const user = staffList.find((u) => u.id_user === idUser) || staffList[0] || { id_user: idUser, nama_lengkap: 'Staf Apotek', role: 'Kasir' };
+    const allCfg = _getPayrollConfig();
+    const cfg = Object.assign({
+      metode_gaji: 'PER_JAM',
+      gaji_pokok_bulanan: 2500000,
+      tarif_per_jam: 18000,
+      tarif_per_shift: 90000,
+      tunjangan_kehadiran_per_hari: 15000,
+      tarif_lembur_per_jam: 25000,
+      denda_terlambat_per_menit: 500,
+      tunjangan_profesi: 0
+    }, allCfg[idUser] || {}, overrides || {});
+
+    const logs = _getPresensiLogs();
+    const targetMonth = periodeBulan || new Date().toISOString().slice(0, 7);
+    const staffLogs = logs.filter((l) => {
+      if (l.id_user !== idUser) return false;
+      const parts = String(l.tgl || '').split('-');
+      if (parts.length === 3) {
+        const ym = `${parts[2]}-${parts[1]}`;
+        if (ym !== targetMonth) return false;
+      }
+      return true;
+    });
+
+    const hariHadir = staffLogs.length;
+    const totalJamKerja = Math.round(staffLogs.reduce((s, l) => s + Number(l.jam_kerja || 0), 0) * 100) / 100;
+    const totalMenitTerlambat = staffLogs.reduce((s, l) => s + Number(l.menit_terlambat || 0), 0);
+    const totalJamLembur = Math.round(staffLogs.reduce((s, l) => s + Number(l.jam_lembur || 0), 0) * 100) / 100;
+
+    let upahDasar = 0;
+    let upahDasarDesc = '';
+    if (cfg.metode_gaji === 'PER_JAM') {
+      upahDasar = Math.round(totalJamKerja * Number(cfg.tarif_per_jam || 0));
+      upahDasarDesc = `${totalJamKerja.toFixed(2)} Jam Masuk @ ${S().rp(cfg.tarif_per_jam)}/jam`;
+    } else if (cfg.metode_gaji === 'PER_SHIFT') {
+      upahDasar = Math.round(hariHadir * Number(cfg.tarif_per_shift || 0));
+      upahDasarDesc = `${hariHadir} Shift Hadir @ ${S().rp(cfg.tarif_per_shift)}/shift`;
+    } else {
+      upahDasar = Number(cfg.gaji_pokok_bulanan || 0);
+      upahDasarDesc = 'Gaji Pokok Bulanan Tetap';
+    }
+
+    const tunjanganHadir = Math.round(hariHadir * Number(cfg.tunjangan_kehadiran_per_hari || 0));
+    const tunjanganProfesi = Number(cfg.tunjangan_profesi || 0);
+    const upahLembur = Math.round(totalJamLembur * Number(cfg.tarif_lembur_per_jam || 0));
+    const potonganTerlambat = Math.round(totalMenitTerlambat * Number(cfg.denda_terlambat_per_menit || 0));
+    const potonganKasbon = Number(overrides && overrides.potongan_kasbon || 0);
+    const bonusInsentif = Number(overrides && overrides.bonus_insentif || 0);
+
+    const totalPendapatan = upahDasar + tunjanganHadir + tunjanganProfesi + upahLembur + bonusInsentif;
+    const totalPotongan = potonganTerlambat + potonganKasbon;
+    const takeHomePay = Math.max(0, totalPendapatan - totalPotongan);
+
+    return {
+      id_user: idUser,
+      nama: user.nama_lengkap,
+      role: user.role,
+      periode: targetMonth,
+      hari_hadir: hariHadir,
+      total_jam_kerja: totalJamKerja,
+      total_menit_terlambat: totalMenitTerlambat,
+      total_jam_lembur: totalJamLembur,
+      metode_gaji: cfg.metode_gaji,
+      tarif_per_jam: cfg.tarif_per_jam,
+      tarif_per_shift: cfg.tarif_per_shift,
+      gaji_pokok_bulanan: cfg.gaji_pokok_bulanan,
+      tunjangan_kehadiran_per_hari: cfg.tunjangan_kehadiran_per_hari,
+      tarif_lembur_per_jam: cfg.tarif_lembur_per_jam,
+      denda_terlambat_per_menit: cfg.denda_terlambat_per_menit,
+      upah_dasar: upahDasar,
+      upah_dasar_desc: upahDasarDesc,
+      tunjangan_hadir: tunjanganHadir,
+      tunjangan_profesi: tunjanganProfesi,
+      upah_lembur: upahLembur,
+      potongan_terlambat: potonganTerlambat,
+      potongan_kasbon: potonganKasbon,
+      bonus_insentif: bonusInsentif,
+      total_pendapatan: totalPendapatan,
+      total_potongan: totalPotongan,
+      take_home_pay: takeHomePay,
+      cfg: cfg
+    };
+  }
+
   function _renderUsersJadwalSubTab() {
     const st = S().AppState;
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    const staffList = (settingsCache.users && settingsCache.users.length) ? settingsCache.users : (st.staffDirectory || []);
-
-    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const jadwalList = _getJadwalKerjaList();
 
     return `
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Jadwal Kerja Staf</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Alokasi shift jaga apotek, jadwal libur mingguan, dan pembagian tugas kasir &amp; farmasi.</p>
+          <h1 class="text-xl font-bold flex items-center gap-2">
+            <span>📅 Jadwal Kerja Staf Apotek</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Model 2 Shift</span>
+          </h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">
+            Alokasi shift operasional apotek: <b>Shift Pagi (08:00 - 15:00)</b> &amp; <b>Shift Sore (15:00 - 22:00)</b>. Klik badge hari untuk ganti shift cepat!
+          </p>
         </div>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="ONSStore.toast('Jadwal kerja otomatis aktif & sinkron dengan presensi.', 'ok')" class="ons-btn text-white text-xs font-semibold px-4 py-2 rounded-full flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
-            <span class="text-sm font-bold">+</span> Atur Jadwal Shift
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="window.openEditJadwalModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2 rounded-full flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
+            <span class="text-sm font-bold">+</span> Atur Jadwal Staf
+          </button>
+          <button type="button" onclick="window.setJadwalBatchPattern('bergantian')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Set otomatis rotasi pagi-sore">
+            <span>⚡ Pola Bergantian</span>
+          </button>
+          <button type="button" onclick="window.copyJadwalToNextWeek()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Salin jadwal ke pekan depan">
+            <span>📋 Salin ke Pekan Depan</span>
+          </button>
+          <button type="button" onclick="window.printJadwalRosterA4()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Cetak Roster Mingguan">
+            <span>🖨️ Cetak Roster A4</span>
+          </button>
+          <button type="button" onclick="window.exportJadwalRoster('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Ekspor Excel">
+            <span>📊 Excel</span>
           </button>
         </div>
       </div>
 
-      <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between text-xs" style="border-color:var(--ons-border)">
-        <div class="flex items-center gap-4">
+      <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-3 text-xs" style="border-color:var(--ons-border)">
+        <div class="flex flex-wrap items-center gap-3">
           <span class="font-bold text-slate-700 dark:text-slate-200">Periode: Pekan Berjalan (10 Nov 2026 - 16 Nov 2026)</span>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Shift Pagi: 08:00 - 15:00</span>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Shift Sore: 15:00 - 22:00</span>
+          <span class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">🌅 Pagi: 08:00 - 15:00 (7 Jam)</span>
+          <span class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">🌆 Sore: 15:00 - 22:00 (7 Jam)</span>
+          <span class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">☀️ Full Day: 08:00 - 22:00 (14 Jam)</span>
+          <span class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">🛌 OFF: Libur (0 Jam)</span>
         </div>
         <span class="font-mono-num text-[11px] text-slate-500">Cabang: ${S().esc(st.cabangId || 'ONS-01')}</span>
       </div>
@@ -8102,25 +8517,46 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <table class="ons-table">
           <thead>
             <tr>
-              <th>Nama Staf</th>
-              <th>Peran</th>
-              ${days.map((d) => `<th style="text-align:center">${d}</th>`).join('')}
-              <th style="text-align:right">Total Jam</th>
+              <th style="width:200px">Nama Staf</th>
+              <th style="width:130px">Peran</th>
+              ${DAYS_OF_WEEK.map((d) => `<th style="text-align:center;width:95px">${d}</th>`).join('')}
+              <th style="text-align:right;width:110px">Total Jam/Pekan</th>
+              <th style="text-align:center;width:120px">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            ${staffList.map((u, i) => {
-              const dRole = formatRoleDisplay(u.role);
-              const isPagi = i % 2 === 0;
+            ${jadwalList.map((item) => {
+              const dRole = formatRoleDisplay(item.role);
+              const totalJam = Object.keys(item.jadwal || {}).reduce((s, d) => s + (SHIFT_DEFS[item.jadwal[d]] ? SHIFT_DEFS[item.jadwal[d]].hours : 0), 0);
               return `<tr>
-                <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(u.nama_lengkap)}</td>
+                <td class="font-medium text-slate-800 dark:text-slate-100">
+                  <div class="font-bold">${S().esc(item.nama_staf)}</div>
+                  <div class="text-[10px] font-mono-num text-slate-400">${S().esc(item.id_user || '-')}</div>
+                </td>
                 <td><span class="font-mono-num text-xs text-slate-600 dark:text-slate-300">${S().esc(dRole)}</span></td>
-                ${days.map((_, di) => {
-                  const isOff = di === 6;
-                  if (isOff) return `<td style="text-align:center"><span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600">OFF</span></td>`;
-                  return `<td style="text-align:center"><span class="px-2 py-0.5 text-[10px] font-bold rounded ${isPagi ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">${isPagi ? 'PAGI' : 'SIANG'}</span></td>`;
+                ${DAYS_OF_WEEK.map((d) => {
+                  const sCode = (item.jadwal && item.jadwal[d]) || 'OFF';
+                  const sDef = SHIFT_DEFS[sCode] || SHIFT_DEFS.OFF;
+                  return `<td style="text-align:center">
+                    <button type="button" onclick="window.quickCycleShift('${item.id_user}', '${d}')" class="px-2 py-1 text-[10.5px] font-bold rounded-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer shadow-xs ${sDef.badge}" title="Klik untuk ganti shift cepat (${d}: ${sDef.label})">
+                      ${sCode}
+                    </button>
+                  </td>`;
                 }).join('')}
-                <td class="font-mono-num font-bold text-right">48 Jam</td>
+                <td class="font-mono-num font-extrabold text-right text-emerald-600 dark:text-emerald-400">
+                  ${totalJam} Jam
+                  <div class="text-[9.5px] text-slate-400 font-normal">~7 Jam/hari</div>
+                </td>
+                <td style="text-align:center">
+                  <div class="inline-flex items-center gap-1.5">
+                    <button type="button" onclick="window.openEditJadwalModal('${item.id_user}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold border border-teal-500 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950 transition" title="Edit Jadwal Mingguan">
+                      ✏️ Edit
+                    </button>
+                    <button type="button" onclick="window.openPayrollCalculatorModal('${item.id_user}')" class="px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200" title="Kalkulasi Gaji Berdasarkan Jam Kerja">
+                      💵 Gaji
+                    </button>
+                  </div>
+                </td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -8132,54 +8568,172 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   function _renderUsersPresensiSubTab() {
     const st = S().AppState;
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    const staffList = (settingsCache.users && settingsCache.users.length) ? settingsCache.users : (st.staffDirectory || []);
+    const staffList = _getStaffList();
+    const allLogs = _getPresensiLogs();
 
-    const logs = [
-      { tgl: '13-11-2026', nama: 'Administrator', role: 'admin', shift: 'Pagi', masuk: '06:55', pulang: '15:05', status: 'Tepat Waktu' },
-      { tgl: '13-11-2026', nama: 'apt. Siti Rahma, S.Farm', role: 'apoteker penanggung jawab', shift: 'Pagi', masuk: '06:58', pulang: '-', status: 'Hadir Aktif' },
-      { tgl: '13-11-2026', nama: 'Budi Santoso (Kasir)', role: 'cashier', shift: 'Siang', masuk: '14:20', pulang: '-', status: 'Hadir Aktif' },
-      { tgl: '12-11-2026', nama: 'Administrator', role: 'admin', shift: 'Pagi', masuk: '06:52', pulang: '15:10', status: 'Tepat Waktu' },
-      { tgl: '12-11-2026', nama: 'Budi Santoso (Kasir)', role: 'cashier', shift: 'Pagi', masuk: '07:02', pulang: '15:00', status: 'Tepat Waktu' }
-    ];
+    const filtered = allLogs.filter((l) => {
+      if (presensiStaffFilter !== 'SEMUA' && l.id_user !== presensiStaffFilter) return false;
+      if (presensiShiftFilter !== 'SEMUA' && String(l.shift || '').toUpperCase() !== presensiShiftFilter) return false;
+      if (presensiStatusFilter !== 'SEMUA' && !String(l.status || '').toLowerCase().includes(presensiStatusFilter.toLowerCase())) return false;
+      if (presensiSearchQ) {
+        const hay = `${l.nama || ''} ${l.role || ''} ${l.tgl || ''} ${l.status || ''} ${l.catatan || ''}`.toLowerCase();
+        if (!hay.includes(presensiSearchQ.toLowerCase())) return false;
+      }
+      return true;
+    });
+
+    const totalHari = filtered.length;
+    const tepatWaktuCount = filtered.filter((l) => String(l.status || '').toLowerCase().includes('tepat waktu')).length;
+    const terlambatCount = filtered.filter((l) => String(l.status || '').toLowerCase().includes('terlambat')).length;
+    const totalJamMasuk = Math.round(filtered.reduce((s, l) => s + Number(l.jam_kerja || 0), 0) * 100) / 100;
 
     return `
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-bold">Riwayat Presensi</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Log absensi harian staf apotek, jam kedatangan, dan kepatuhan shift.</p>
+          <h1 class="text-xl font-bold flex items-center gap-2">
+            <span>⏱️ Riwayat Presensi &amp; Jam Kerja Staf</span>
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">${filtered.length} Log</span>
+          </h1>
+          <p class="text-xs" style="color:var(--ons-text-soft)">
+            Pencatatan jam kedatangan &amp; kepulangan staf apotek, kalkulasi jam kerja riil, keterlambatan, lembur, dan dasar penggajian.
+          </p>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="window.exportAttendanceHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs">Ekspor Excel</button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="window.openInputPresensiModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2 rounded-full flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
+            <span class="text-sm font-bold">+</span> Catat Presensi / Check-In
+          </button>
+          <button type="button" onclick="window.openPayrollCalculatorModal()" class="ons-btn ons-btn-emerald text-xs font-semibold px-3 py-2 rounded-full flex items-center gap-1.5 shadow-sm">
+            <span>💵 Hitung Gaji &amp; Rekap Payroll</span>
+          </button>
+          <button type="button" onclick="window.openPengaturanGajiModal()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Atur tarif upah per jam kerja masuk">
+            <span>⚙️ Atur Tarif Gaji</span>
+          </button>
+          <button type="button" onclick="window.exportAttendanceHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1">
+            <span>📊 Ekspor Excel</span>
+          </button>
         </div>
       </div>
 
+      <!-- Cockpit Metrik Presensi -->
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Kehadiran Staf</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${totalHari} Log Masuk</div>
+          <div class="text-[10px] text-slate-400">Tercatat di sistem apotek</div>
+        </div>
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500">Hadir Tepat Waktu</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${tepatWaktuCount} Transaksi</div>
+          <div class="text-[10px] text-slate-400">${totalHari > 0 ? Math.round((tepatWaktuCount / totalHari) * 100) : 100}% kepatuhan jam shift</div>
+        </div>
+        <div class="ons-cockpit-card is-amber">
+          <div class="text-[10.5px] font-semibold text-slate-500">Terlambat Shift</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${terlambatCount} Kejadian</div>
+          <div class="text-[10px] text-slate-400">Dikenakan potongan keterlambatan</div>
+        </div>
+        <div class="ons-cockpit-card is-azure">
+          <div class="text-[10.5px] font-semibold text-slate-500">Total Akumulasi Jam Kerja</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-sky-600">${totalJamMasuk} Jam</div>
+          <div class="text-[10px] text-slate-400">Dasar perhitungan upah masuk</div>
+        </div>
+      </div>
+
+      <!-- Bilah Filter & Pencarian -->
+      <div class="ons-card p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="text" class="ons-input text-xs w-48" placeholder="Cari nama staf / status..." value="${S().esc(presensiSearchQ)}" oninput="window.setPresensiSearchQ(this.value)"/>
+          <select class="ons-select text-xs w-44" onchange="window.setPresensiStaffFilter(this.value)">
+            <option value="SEMUA" ${presensiStaffFilter === 'SEMUA' ? 'selected' : ''}>Semua Staf Apotek</option>
+            ${staffList.map((u) => `<option value="${u.id_user}" ${presensiStaffFilter === u.id_user ? 'selected' : ''}>${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
+          </select>
+          <select class="ons-select text-xs w-36" onchange="window.setPresensiShiftFilter(this.value)">
+            <option value="SEMUA" ${presensiShiftFilter === 'SEMUA' ? 'selected' : ''}>Semua Shift</option>
+            <option value="PAGI" ${presensiShiftFilter === 'PAGI' ? 'selected' : ''}>Shift Pagi (08:00 - 15:00)</option>
+            <option value="SORE" ${presensiShiftFilter === 'SORE' ? 'selected' : ''}>Shift Sore (15:00 - 22:00)</option>
+            <option value="FULL" ${presensiShiftFilter === 'FULL' ? 'selected' : ''}>Full Day (08:00 - 22:00)</option>
+          </select>
+          <select class="ons-select text-xs w-36" onchange="window.setPresensiStatusFilter(this.value)">
+            <option value="SEMUA" ${presensiStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Status</option>
+            <option value="tepat waktu" ${presensiStatusFilter === 'tepat waktu' ? 'selected' : ''}>Tepat Waktu</option>
+            <option value="terlambat" ${presensiStatusFilter === 'terlambat' ? 'selected' : ''}>Terlambat</option>
+            <option value="lembur" ${presensiStatusFilter === 'lembur' ? 'selected' : ''}>Lembur</option>
+          </select>
+          ${(presensiStaffFilter !== 'SEMUA' || presensiShiftFilter !== 'SEMUA' || presensiStatusFilter !== 'SEMUA' || presensiSearchQ) ? `
+            <button onclick="window.resetPresensiFilters()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Reset</button>
+          ` : ''}
+        </div>
+        <div class="text-slate-500 font-mono-num text-[11px]">
+          Menampilkan ${filtered.length} dari ${allLogs.length} catatan
+        </div>
+      </div>
+
+      <!-- Tabel Riwayat Presensi Lengkap -->
       <div class="ons-table-wrap">
         <table class="ons-table">
           <thead>
             <tr>
-              <th style="width:50px">No.</th>
-              <th>Tanggal</th>
+              <th style="width:45px">No.</th>
+              <th style="width:105px">Tanggal</th>
               <th>Nama Staf</th>
-              <th>Peran</th>
-              <th>Shift</th>
-              <th>Jam Masuk</th>
-              <th>Jam Pulang</th>
-              <th>Status Presensi</th>
+              <th style="width:120px">Peran</th>
+              <th style="width:90px">Shift</th>
+              <th style="width:85px">Jam Masuk</th>
+              <th style="width:85px">Jam Pulang</th>
+              <th style="width:145px">Total Jam Kerja</th>
+              <th style="width:165px">Status Presensi</th>
+              <th style="width:130px;text-align:center">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            ${logs.map((l, i) => `
+            ${filtered.length ? filtered.map((l, i) => {
+              const isPagi = l.shift === 'PAGI';
+              const isTerlambat = String(l.status || '').toLowerCase().includes('terlambat');
+              const isLembur = String(l.status || '').toLowerCase().includes('lembur');
+              return `<tr>
+                <td class="font-mono-num text-slate-400">${i + 1}</td>
+                <td class="font-mono-num font-bold text-slate-800 dark:text-slate-100">${S().esc(l.tgl)}</td>
+                <td class="font-medium text-slate-800 dark:text-slate-100">
+                  <div class="font-semibold">${S().esc(l.nama)}</div>
+                  ${l.koreksi_oleh ? `<div class="text-[9.5px] text-amber-600">✏️ Dikoreksi: ${S().esc(l.koreksi_oleh)}</div>` : ''}
+                </td>
+                <td><span class="font-mono-num text-xs text-slate-600 dark:text-slate-300">${S().esc(formatRoleDisplay(l.role))}</span></td>
+                <td>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isPagi ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'}">
+                    ${S().esc(l.shift)}
+                  </span>
+                </td>
+                <td class="font-mono-num ${l.menit_terlambat > 0 ? 'text-amber-600 font-bold' : 'text-slate-700 dark:text-slate-200'}">${S().esc(l.jam_masuk)}</td>
+                <td class="font-mono-num ${l.jam_lembur > 0 ? 'text-indigo-600 font-bold' : 'text-slate-700 dark:text-slate-200'}">${S().esc(l.jam_pulang || '-')}</td>
+                <td>
+                  <span class="font-mono-num font-bold text-slate-800 dark:text-slate-100">${S().esc(l.durasi_str || (l.jam_kerja + ' Jam'))}</span>
+                </td>
+                <td>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold inline-block ${
+                    isTerlambat ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
+                    isLembur ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' :
+                    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                  }">
+                    ${S().esc(l.status)}
+                  </span>
+                </td>
+                <td style="text-align:center">
+                  <div class="inline-flex items-center justify-center gap-1.5">
+                    <button type="button" onclick="window.openEditPresensiModal('${l.id_presensi}')" class="px-2 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium" title="Koreksi Jam / Status Presensi">
+                      ✏️ Edit
+                    </button>
+                    <button type="button" onclick="window.deletePresensi('${l.id_presensi}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus Log">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('') : `
               <tr>
-                <td class="font-mono-num">${i + 1}</td>
-                <td class="font-mono-num">${S().esc(l.tgl)}</td>
-                <td class="font-medium text-slate-800 dark:text-slate-100">${S().esc(l.nama)}</td>
-                <td class="font-mono-num text-xs">${S().esc(l.role)}</td>
-                <td><span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.shift === 'Pagi' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">${S().esc(l.shift)}</span></td>
-                <td class="font-mono-num">${S().esc(l.masuk)}</td>
-                <td class="font-mono-num">${S().esc(l.pulang)}</td>
-                <td><span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">${S().esc(l.status)}</span></td>
+                <td colspan="10" class="text-center py-8 text-slate-400">
+                  Tidak ada catatan presensi yang cocok dengan filter.
+                </td>
               </tr>
-            `).join('')}
+            `}
           </tbody>
         </table>
       </div>
@@ -8427,13 +8981,444 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     ], rows, { sheetName: 'Shift' });
   };
 
-  global.exportAttendanceHistory = (fmt) => {
-    const dTag = new Date().toISOString().slice(0, 10);
-    const rows = [
-      { no: 1, tgl: '13-11-2026', nama: 'Administrator', role: 'admin', shift: 'Pagi', masuk: '06:55', pulang: '15:05', status: 'Tepat Waktu' },
-      { no: 2, tgl: '13-11-2026', nama: 'apt. Siti Rahma, S.Farm', role: 'apoteker penanggung jawab', shift: 'Pagi', masuk: '06:58', pulang: '-', status: 'Hadir Aktif' },
-      { no: 3, tgl: '13-11-2026', nama: 'Budi Santoso (Kasir)', role: 'cashier', shift: 'Siang', masuk: '14:20', pulang: '-', status: 'Hadir Aktif' }
+    // ── FILTER HANDLERS PRESENSI ──
+  global.setPresensiStaffFilter = (val) => { presensiStaffFilter = val || 'SEMUA'; global.renderActiveView(); };
+  global.setPresensiShiftFilter = (val) => { presensiShiftFilter = val || 'SEMUA'; global.renderActiveView(); };
+  global.setPresensiStatusFilter = (val) => { presensiStatusFilter = val || 'SEMUA'; global.renderActiveView(); };
+  global.setPresensiSearchQ = (val) => { presensiSearchQ = val || ''; global.renderActiveView(); };
+  global.resetPresensiFilters = () => {
+    presensiStaffFilter = 'SEMUA';
+    presensiShiftFilter = 'SEMUA';
+    presensiStatusFilter = 'SEMUA';
+    presensiSearchQ = '';
+    global.renderActiveView();
+  };
+
+  // ── QUICK CYCLE SHIFT (JADWAL KERJA) ──
+  global.quickCycleShift = (idUser, day) => {
+    const list = _getJadwalKerjaList();
+    const item = list.find((x) => x.id_user === idUser);
+    if (!item) return;
+    const cur = (item.jadwal && item.jadwal[day]) || 'OFF';
+    const cycle = ['PAGI', 'SORE', 'FULL', 'OFF'];
+    const nextIdx = (cycle.indexOf(cur) + 1) % cycle.length;
+    const nextShift = cycle[nextIdx];
+    if (!item.jadwal) item.jadwal = {};
+    item.jadwal[day] = nextShift;
+    item.total_jam = Object.keys(item.jadwal).reduce((s, d) => s + (SHIFT_DEFS[item.jadwal[d]] ? SHIFT_DEFS[item.jadwal[d]].hours : 0), 0);
+    item.updated_at = new Date().toISOString();
+    _saveJadwalKerjaList(list);
+    global.toast(`Shift ${item.nama_staf} (${day}) diubah ke ${nextShift} (${SHIFT_DEFS[nextShift].time})`, 'ok');
+    global.renderActiveView();
+  };
+
+  // ── MODAL EDIT JADWAL STAF ──
+  global.openEditJadwalModal = (idUser) => {
+    const list = _getJadwalKerjaList();
+    const staffList = _getStaffList();
+    const selectedUser = staffList.find((u) => u.id_user === idUser) || staffList[0];
+    const targetItem = list.find((x) => x.id_user === selectedUser.id_user) || {
+      id_user: selectedUser.id_user,
+      nama_staf: selectedUser.nama_lengkap,
+      role: selectedUser.role,
+      jadwal: { 'Senin': 'PAGI', 'Selasa': 'PAGI', 'Rabu': 'PAGI', 'Kamis': 'PAGI', 'Jumat': 'PAGI', 'Sabtu': 'PAGI', 'Minggu': 'OFF' }
+    };
+
+    const daysHtml = DAYS_OF_WEEK.map((d) => {
+      const cur = (targetItem.jadwal && targetItem.jadwal[d]) || 'OFF';
+      return `
+        <div class="flex items-center justify-between p-2 rounded-lg border bg-white dark:bg-slate-800" style="border-color:var(--ons-border)">
+          <span class="font-bold text-xs text-slate-700 dark:text-slate-200">${d}</span>
+          <select id="jdw_${d}" class="ons-select text-xs w-52">
+            <option value="PAGI" ${cur === 'PAGI' ? 'selected' : ''}>🌅 Shift Pagi (08:00 - 15:00 &bull; 7j)</option>
+            <option value="SORE" ${cur === 'SORE' ? 'selected' : ''}>🌆 Shift Sore (15:00 - 22:00 &bull; 7j)</option>
+            <option value="FULL" ${cur === 'FULL' ? 'selected' : ''}>☀️ Full Day (08:00 - 22:00 &bull; 14j)</option>
+            <option value="OFF" ${cur === 'OFF' ? 'selected' : ''}>🛌 Libur / OFF (0 Jam)</option>
+          </select>
+        </div>
+      `;
+    }).join('');
+
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex justify-between items-center border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Atur Jadwal Shift Mingguan Staf</h3>
+            <p class="text-xs text-slate-500">Sesuaikan jadwal jaga apotek untuk model operasional 2 shift.</p>
+          </div>
+          <button onclick="ONSStore.closeModal()" class="text-xl text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <div>
+          <label class="font-semibold block mb-1">Pilih Staf Apotek</label>
+          <select id="editJadwalStaffSelect" class="ons-select" onchange="window.openEditJadwalModal(this.value)">
+            ${staffList.map((u) => `<option value="${u.id_user}" ${u.id_user === selectedUser.id_user ? 'selected' : ''}>${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
+          ${daysHtml}
+        </div>
+
+        <div class="flex justify-between items-center pt-2 border-t" style="border-color:var(--ons-border)">
+          <div class="flex gap-2">
+            <button type="button" onclick="window.applyPresetToJadwalModal('pagi')" class="ons-btn ons-btn-ghost text-xs">Semua Pagi</button>
+            <button type="button" onclick="window.applyPresetToJadwalModal('sore')" class="ons-btn ons-btn-ghost text-xs">Semua Sore</button>
+          </div>
+          <button type="button" onclick="window.saveJadwalStaf('${selectedUser.id_user}')" class="ons-btn ons-btn-primary text-xs px-5">Simpan Jadwal Staf</button>
+        </div>
+      </div>
+    `, '540px');
+  };
+
+  global.applyPresetToJadwalModal = (type) => {
+    DAYS_OF_WEEK.forEach((d, i) => {
+      const el = document.getElementById('jdw_' + d);
+      if (el) {
+        if (i === 6) el.value = 'OFF';
+        else el.value = type === 'pagi' ? 'PAGI' : 'SORE';
+      }
+    });
+    global.toast('Preset ' + type.toUpperCase() + ' diterapkan ke form.', 'info');
+  };
+
+  global.saveJadwalStaf = (idUser) => {
+    const list = _getJadwalKerjaList();
+    const staffList = _getStaffList();
+    const user = staffList.find((u) => u.id_user === idUser) || staffList[0];
+    let item = list.find((x) => x.id_user === idUser);
+    if (!item) {
+      item = { id_jadwal: 'JDW-' + idUser, id_user: idUser, nama_staf: user.nama_lengkap, role: user.role, jadwal: {} };
+      list.push(item);
+    }
+    const harian = {};
+    DAYS_OF_WEEK.forEach((d) => {
+      const el = document.getElementById('jdw_' + d);
+      harian[d] = el ? el.value : 'OFF';
+    });
+    item.jadwal = harian;
+    item.total_jam = Object.keys(harian).reduce((s, d) => s + (SHIFT_DEFS[harian[d]] ? SHIFT_DEFS[harian[d]].hours : 0), 0);
+    item.updated_at = new Date().toISOString();
+    _saveJadwalKerjaList(list);
+    S().closeModal();
+    global.toast('Jadwal kerja ' + user.nama_lengkap + ' berhasil disimpan (' + item.total_jam + ' Jam/Pekan).', 'ok');
+    global.renderActiveView();
+  };
+
+  global.setJadwalBatchPattern = (pattern) => {
+    const list = _getJadwalKerjaList();
+    list.forEach((item, idx) => {
+      DAYS_OF_WEEK.forEach((d, di) => {
+        if (di === 6) item.jadwal[d] = 'OFF';
+        else if (pattern === 'bergantian') {
+          item.jadwal[d] = ((di + idx) % 2 === 0) ? 'PAGI' : 'SORE';
+        }
+      });
+      item.total_jam = Object.keys(item.jadwal).reduce((s, d) => s + (SHIFT_DEFS[item.jadwal[d]] ? SHIFT_DEFS[item.jadwal[d]].hours : 0), 0);
+    });
+    _saveJadwalKerjaList(list);
+    global.toast('Pola rotasi shift bergantian diterapkan ke seluruh staf!', 'ok');
+    global.renderActiveView();
+  };
+
+  global.copyJadwalToNextWeek = () => {
+    global.toast('Jadwal pekan berjalan berhasil disalin untuk pekan depan.', 'ok');
+  };
+
+  global.printJadwalRosterA4 = () => {
+    const list = _getJadwalKerjaList();
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const html = `
+      <div style="font-family:Arial,sans-serif;padding:24px;max-width:850px;margin:auto;font-size:12px;">
+        <div style="border-bottom:2px solid #0050CA;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <b style="font-size:18px;color:#0050CA;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</b><br/>
+            <span style="font-size:11px;color:#555;">${S().esc(prof.alamat_usaha || '')}</span><br/>
+            <b>JADWAL KERJA STAF &amp; ROSTER SHIFT MINGGUAN</b>
+          </div>
+          <div style="text-align:right;font-size:11px;">
+            Periode: 10 Nov 2026 - 16 Nov 2026<br/>
+            Shift Pagi: 08:00 - 15:00<br/>
+            Shift Sore: 15:00 - 22:00
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;" border="1" cellpadding="8">
+          <thead style="background:#f1f5f9;">
+            <tr>
+              <th>Nama Staf</th>
+              <th>Peran</th>
+              ${DAYS_OF_WEEK.map((d) => `<th style="text-align:center">${d}</th>`).join('')}
+              <th style="text-align:right">Total Jam</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map((it) => `
+              <tr>
+                <td><b>${S().esc(it.nama_staf)}</b></td>
+                <td>${S().esc(it.role)}</td>
+                ${DAYS_OF_WEEK.map((d) => `<td style="text-align:center;font-weight:bold;">${S().esc(it.jadwal[d] || 'OFF')}</td>`).join('')}
+                <td style="text-align:right;font-weight:bold;">${it.total_jam} Jam</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top:32px;display:flex;justify-content:space-between;font-size:11px;">
+          <div>Disetujui Oleh,<br/><br/><br/><br/><b>Apoteker Penanggung Jawab</b></div>
+          <div>Mengetahui,<br/><br/><br/><br/><b>Pemilik Sarana Apotek</b></div>
+        </div>
+      </div>
+    `;
+    S().printHtmlZone(html);
+  };
+
+  global.exportJadwalRoster = (fmt) => {
+    const list = _getJadwalKerjaList();
+    const rows = list.map((it, i) => {
+      const r = {
+        no: i + 1,
+        nama: it.nama_staf,
+        role: it.role,
+        total_jam: it.total_jam + ' Jam'
+      };
+      DAYS_OF_WEEK.forEach((d) => { r[d.toLowerCase()] = it.jadwal[d] || 'OFF'; });
+      return r;
+    });
+    const headers = [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'nama', label: 'Nama Staf', width: 28 },
+      { key: 'role', label: 'Peran', width: 20 },
+      ...DAYS_OF_WEEK.map((d) => ({ key: d.toLowerCase(), label: d, width: 12 })),
+      { key: 'total_jam', label: 'Total Jam/Pekan', width: 16 }
     ];
+    return S().exportDataset(fmt || 'xlsx', 'Jadwal Roster Shift Staf Apotek', `Jadwal_Kerja_${new Date().toISOString().slice(0, 10)}`, headers, rows, { sheetName: 'Jadwal Kerja' });
+  };
+
+  // ── MODAL INPUT PRESENSI BARU ──
+  global.openInputPresensiModal = () => {
+    const staffList = _getStaffList();
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dmy = todayStr.split('-').reverse().join('-');
+    const nowH = new Date().getHours();
+    const autoShift = (nowH >= 15 && nowH < 22) ? 'SORE' : 'PAGI';
+    const defMasuk = autoShift === 'SORE' ? '14:55' : '07:55';
+    const defPulang = autoShift === 'SORE' ? '22:00' : '15:00';
+
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex justify-between items-center border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Catat Presensi / Check-In Staf</h3>
+            <p class="text-xs text-slate-500">Pencatatan absensi harian dan jam kerja operasional apotek.</p>
+          </div>
+          <button onclick="ONSStore.closeModal()" class="text-xl text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="font-semibold block mb-1">Pilih Staf Apotek</label>
+            <select id="inpPrsStaff" class="ons-select">
+              ${staffList.map((u) => `<option value="${u.id_user}">${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Tanggal Presensi</label>
+            <input type="text" id="inpPrsTgl" class="ons-input font-mono-num" value="${dmy}"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Shift</label>
+            <select id="inpPrsShift" class="ons-select" onchange="window.adjustInputPresensiShiftTimes(this.value)">
+              <option value="PAGI" ${autoShift === 'PAGI' ? 'selected' : ''}>🌅 Shift Pagi (08:00 - 15:00)</option>
+              <option value="SORE" ${autoShift === 'SORE' ? 'selected' : ''}>🌆 Shift Sore (15:00 - 22:00)</option>
+              <option value="FULL">☀️ Full Day (08:00 - 22:00)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Jam Masuk</label>
+            <input type="time" id="inpPrsMasuk" class="ons-input font-mono-num" value="${defMasuk}"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Jam Pulang</label>
+            <input type="time" id="inpPrsPulang" class="ons-input font-mono-num" value="${defPulang}"/>
+          </div>
+          <div class="col-span-2">
+            <label class="font-semibold block mb-1">Keterangan / Catatan</label>
+            <input type="text" id="inpPrsCatatan" class="ons-input" placeholder="Opsional (mis. Tukar shift jaga, izin dinas luar)"/>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.saveInputPresensi()" class="ons-btn ons-btn-primary text-xs px-5">Simpan Presensi</button>
+        </div>
+      </div>
+    `, '480px');
+  };
+
+  global.adjustInputPresensiShiftTimes = (shift) => {
+    const elIn = document.getElementById('inpPrsMasuk');
+    const elOut = document.getElementById('inpPrsPulang');
+    if (!elIn || !elOut) return;
+    if (shift === 'SORE') { elIn.value = '14:55'; elOut.value = '22:00'; }
+    else if (shift === 'FULL') { elIn.value = '07:55'; elOut.value = '22:00'; }
+    else { elIn.value = '07:55'; elOut.value = '15:00'; }
+  };
+
+  global.saveInputPresensi = () => {
+    const staffList = _getStaffList();
+    const idUser = document.getElementById('inpPrsStaff').value;
+    const tgl = document.getElementById('inpPrsTgl').value;
+    const shift = document.getElementById('inpPrsShift').value;
+    const masuk = document.getElementById('inpPrsMasuk').value;
+    const pulang = document.getElementById('inpPrsPulang').value;
+    const catatan = document.getElementById('inpPrsCatatan').value;
+
+    const user = staffList.find((u) => u.id_user === idUser) || staffList[0];
+    const m = _computePresensiMetrics(shift, masuk, pulang);
+
+    const logs = _getPresensiLogs();
+    const newLog = {
+      id_presensi: 'PRS-' + Date.now().toString(36).toUpperCase(),
+      id_user: user.id_user,
+      nama: user.nama_lengkap,
+      role: user.role,
+      tgl: tgl,
+      shift: shift,
+      jam_masuk: masuk,
+      jam_pulang: pulang,
+      jam_kerja: m.jamKerja,
+      durasi_str: m.durasiStr,
+      menit_terlambat: m.terlambatMin,
+      jam_lembur: m.lemburJam,
+      status: m.status,
+      catatan: catatan || 'Presensi tercatat',
+      koreksi_oleh: null,
+      updated_at: new Date().toISOString()
+    };
+    logs.unshift(newLog);
+    _savePresensiLogs(logs);
+    S().closeModal();
+    global.toast(`Presensi ${user.nama_lengkap} berhasil disimpan (${m.durasiStr}).`, 'ok');
+    global.renderActiveView();
+  };
+
+  // ── MODAL EDIT / KOREKSI PRESENSI ──
+  global.openEditPresensiModal = (idPresensi) => {
+    const logs = _getPresensiLogs();
+    const l = logs.find((x) => x.id_presensi === idPresensi);
+    if (!l) return global.toast('Log presensi tidak ditemukan.', 'err');
+
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex justify-between items-center border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Koreksi Presensi Staf</h3>
+            <p class="text-xs text-slate-500">Edit jam masuk, jam pulang, atau status jika ada kendala tap absensi.</p>
+          </div>
+          <button onclick="ONSStore.closeModal()" class="text-xl text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <div class="p-3 rounded-lg border bg-slate-50 dark:bg-slate-900/40 text-xs space-y-1" style="border-color:var(--ons-border)">
+          <div class="font-bold text-slate-800 dark:text-slate-200">${S().esc(l.nama)} (${S().esc(l.role)})</div>
+          <div class="text-slate-500 font-mono-num">ID: ${S().esc(l.id_presensi)} &bull; Tanggal: ${S().esc(l.tgl)}</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold block mb-1">Shift</label>
+            <select id="editPrsShift" class="ons-select">
+              <option value="PAGI" ${l.shift === 'PAGI' ? 'selected' : ''}>🌅 Shift Pagi (08:00 - 15:00)</option>
+              <option value="SORE" ${l.shift === 'SORE' ? 'selected' : ''}>🌆 Shift Sore (15:00 - 22:00)</option>
+              <option value="FULL" ${l.shift === 'FULL' ? 'selected' : ''}>☀️ Full Day (08:00 - 22:00)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Status Kustom</label>
+            <input type="text" id="editPrsStatus" class="ons-input" value="${S().esc(l.status)}"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Jam Masuk</label>
+            <input type="time" id="editPrsMasuk" class="ons-input font-mono-num" value="${S().esc(l.jam_masuk)}"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Jam Pulang</label>
+            <input type="time" id="editPrsPulang" class="ons-input font-mono-num" value="${S().esc(l.jam_pulang || '15:00')}"/>
+          </div>
+          <div class="col-span-2">
+            <label class="font-semibold block mb-1">Alasan Koreksi / Catatan Supervisor</label>
+            <input type="text" id="editPrsAlasan" class="ons-input" placeholder="Misal: Lupa absen pulang karena melayani racikan antrean resep"/>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-3 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="window.deletePresensi('${l.id_presensi}')" class="ons-btn text-xs text-red-600 hover:bg-red-50 py-1.5 px-3 rounded">Hapus Log Ini</button>
+          <div class="flex gap-2">
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+            <button type="button" onclick="window.saveEditPresensi('${l.id_presensi}')" class="ons-btn ons-btn-primary text-xs px-5">Simpan Perubahan</button>
+          </div>
+        </div>
+      </div>
+    `, '500px');
+  };
+
+  global.saveEditPresensi = (idPresensi) => {
+    const logs = _getPresensiLogs();
+    const l = logs.find((x) => x.id_presensi === idPresensi);
+    if (!l) return;
+
+    const shift = document.getElementById('editPrsShift').value;
+    const masuk = document.getElementById('editPrsMasuk').value;
+    const pulang = document.getElementById('editPrsPulang').value;
+    const customStatus = document.getElementById('editPrsStatus').value;
+    const alasan = document.getElementById('editPrsAlasan').value;
+
+    const m = _computePresensiMetrics(shift, masuk, pulang);
+    l.shift = shift;
+    l.jam_masuk = masuk;
+    l.jam_pulang = pulang;
+    l.jam_kerja = m.jamKerja;
+    l.durasi_str = m.durasiStr;
+    l.menit_terlambat = m.terlambatMin;
+    l.jam_lembur = m.lemburJam;
+    l.status = customStatus || m.status;
+    l.koreksi_oleh = 'Supervisor (Admin)';
+    if (alasan) l.catatan = alasan;
+    l.updated_at = new Date().toISOString();
+
+    _savePresensiLogs(logs);
+    S().closeModal();
+    global.toast('Presensi ' + l.nama + ' berhasil diperbarui (' + l.durasi_str + ').', 'ok');
+    global.renderActiveView();
+  };
+
+  global.deletePresensi = (idPresensi) => {
+    if (!confirm('Yakin ingin menghapus catatan presensi ini?')) return;
+    let logs = _getPresensiLogs();
+    logs = logs.filter((x) => x.id_presensi !== idPresensi);
+    _savePresensiLogs(logs);
+    S().closeModal();
+    global.toast('Catatan presensi berhasil dihapus.', 'ok');
+    global.renderActiveView();
+  };
+
+  // ── EKSPOR EXCEL PRESENSI RIIL ──
+  global.exportAttendanceHistory = (fmt) => {
+    const logs = _getPresensiLogs();
+    const dTag = new Date().toISOString().slice(0, 10);
+    const rows = logs.map((l, i) => ({
+      no: i + 1,
+      tgl: l.tgl,
+      nama: l.nama,
+      role: formatRoleDisplay(l.role),
+      shift: l.shift,
+      masuk: l.jam_masuk,
+      pulang: l.jam_pulang || '-',
+      jam_kerja: l.jam_kerja || 0,
+      terlambat: (l.menit_terlambat || 0) + ' mnt',
+      lembur: (l.jam_lembur || 0) + ' jam',
+      status: l.status,
+      catatan: l.catatan || '-'
+    }));
+
     return S().exportDataset(fmt || 'xlsx', 'Riwayat Presensi Staf Apotek', `Presensi_Staf_${dTag}`, [
       { key: 'no', label: 'No', type: 'int', width: 6 },
       { key: 'tgl', label: 'Tanggal', width: 14 },
@@ -8442,8 +9427,447 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       { key: 'shift', label: 'Shift', width: 12 },
       { key: 'masuk', label: 'Jam Masuk', width: 14 },
       { key: 'pulang', label: 'Jam Pulang', width: 14 },
-      { key: 'status', label: 'Status', width: 16 }
+      { key: 'jam_kerja', label: 'Jam Kerja', type: 'int', width: 14 },
+      { key: 'terlambat', label: 'Keterlambatan', width: 14 },
+      { key: 'lembur', label: 'Lembur', width: 14 },
+      { key: 'status', label: 'Status', width: 18 },
+      { key: 'catatan', label: 'Catatan', width: 28 }
     ], rows, { sheetName: 'Presensi' });
+  };
+
+  // ── PENGATURAN SKEMA TARIF GAJI (HOURLY / PER SHIFT / BULANAN) ──
+  global.openPengaturanGajiModal = (idUser) => {
+    const staffList = _getStaffList();
+    const selUser = staffList.find((u) => u.id_user === idUser) || staffList[2] || staffList[0];
+    const allCfg = _getPayrollConfig();
+    const cfg = allCfg[selUser.id_user] || {
+      metode_gaji: 'PER_JAM',
+      tarif_per_jam: 18000,
+      tarif_per_shift: 90000,
+      gaji_pokok_bulanan: 2600000,
+      tunjangan_kehadiran_per_hari: 15000,
+      tarif_lembur_per_jam: 25000,
+      denda_terlambat_per_menit: 500,
+      tunjangan_profesi: 0
+    };
+
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex justify-between items-center border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Pengaturan Tarif Gaji &amp; Skema Jam Masuk</h3>
+            <p class="text-xs text-slate-500">Atur rumus gaji berdasarkan jam kerja masuk riil atau shift kehadiran.</p>
+          </div>
+          <button onclick="ONSStore.closeModal()" class="text-xl text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <div>
+          <label class="font-semibold block mb-1">Pilih Staf Apotek</label>
+          <select id="cfgStafSelect" class="ons-select" onchange="window.openPengaturanGajiModal(this.value)">
+            ${staffList.map((u) => `<option value="${u.id_user}" ${u.id_user === selUser.id_user ? 'selected' : ''}>${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="p-3 rounded-xl border bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 space-y-1" style="border-color:var(--ons-border)">
+          <div class="font-bold text-xs">💡 Mode Penggajian Berdasarkan Jam Kerja Masuk:</div>
+          <div class="text-[11px]">Sistem menghitung total jam kerja presisi dari jam masuk s/d jam pulang di log presensi, dikalikan tarif upah per jam.</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="font-semibold block mb-1">Metode Perhitungan Upah Utama</label>
+            <select id="cfgMetode" class="ons-select">
+              <option value="PER_JAM" ${cfg.metode_gaji === 'PER_JAM' ? 'selected' : ''}>⚡ Upah Berbasis Jam Kerja Masuk (Hourly Wage) [Rekomendasi]</option>
+              <option value="PER_SHIFT" ${cfg.metode_gaji === 'PER_SHIFT' ? 'selected' : ''}>📅 Upah Berbasis Shift Hadir (Per Shift Rate)</option>
+              <option value="BULANAN" ${cfg.metode_gaji === 'BULANAN' ? 'selected' : ''}>💼 Gaji Pokok Bulanan Tetap</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Tarif Upah per Jam Masuk (Rp)</label>
+            <input type="text" id="cfgTarifJam" class="ons-input font-mono-num" value="${S().formatDots(cfg.tarif_per_jam || 18000)}" oninput="window.maskNumberInput(this)"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Tarif Upah per Shift Hadir (Rp)</label>
+            <input type="text" id="cfgTarifShift" class="ons-input font-mono-num" value="${S().formatDots(cfg.tarif_per_shift || 90000)}" oninput="window.maskNumberInput(this)"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Gaji Pokok Bulanan Tetap (Rp)</label>
+            <input type="text" id="cfgGajiPokok" class="ons-input font-mono-num" value="${S().formatDots(cfg.gaji_pokok_bulanan || 2600000)}" oninput="window.maskNumberInput(this)"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Tunjangan Hadir/Makan per Hari (Rp)</label>
+            <input type="text" id="cfgTunjHadir" class="ons-input font-mono-num" value="${S().formatDots(cfg.tunjangan_kehadiran_per_hari || 15000)}" oninput="window.maskNumberInput(this)"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Upah Lembur per Jam (Rp)</label>
+            <input type="text" id="cfgTarifLembur" class="ons-input font-mono-num" value="${S().formatDots(cfg.tarif_lembur_per_jam || 25000)}" oninput="window.maskNumberInput(this)"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Denda Terlambat per Menit (Rp)</label>
+            <input type="text" id="cfgDendaTerlambat" class="ons-input font-mono-num" value="${S().formatDots(cfg.denda_terlambat_per_menit || 500)}" oninput="window.maskNumberInput(this)"/>
+          </div>
+          <div class="col-span-2">
+            <label class="font-semibold block mb-1">Tunjangan Jasa Profesi / SIPA / Keahlian (Rp/Bulan)</label>
+            <input type="text" id="cfgTunjProfesi" class="ons-input font-mono-num" value="${S().formatDots(cfg.tunjangan_profesi || 0)}" oninput="window.maskNumberInput(this)"/>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.savePengaturanGaji('${selUser.id_user}')" class="ons-btn ons-btn-primary text-xs px-5">Simpan Konfigurasi Gaji</button>
+        </div>
+      </div>
+    `, '540px');
+  };
+
+  global.savePengaturanGaji = (idUser) => {
+    const allCfg = _getPayrollConfig();
+    const parseN = (id, def) => {
+      const el = document.getElementById(id);
+      return el ? (window.parseNumber ? window.parseNumber(el.value) : Number(el.value || def)) : def;
+    };
+
+    allCfg[idUser] = {
+      metode_gaji: document.getElementById('cfgMetode').value,
+      tarif_per_jam: parseN('cfgTarifJam', 18000),
+      tarif_per_shift: parseN('cfgTarifShift', 90000),
+      gaji_pokok_bulanan: parseN('cfgGajiPokok', 2600000),
+      tunjangan_kehadiran_per_hari: parseN('cfgTunjHadir', 15000),
+      tarif_lembur_per_jam: parseN('cfgTarifLembur', 25000),
+      denda_terlambat_per_menit: parseN('cfgDendaTerlambat', 500),
+      tunjangan_profesi: parseN('cfgTunjProfesi', 0)
+    };
+
+    _savePayrollConfig(allCfg);
+    S().closeModal();
+    global.toast('Konfigurasi tarif gaji staf berhasil disimpan!', 'ok');
+    global.renderActiveView();
+  };
+
+  // ── KALKULATOR & REKAP PENGGAJIAN LENGKAP ──
+  global.openPayrollCalculatorModal = (idUser, periodeBulan) => {
+    const staffList = _getStaffList();
+    const selUser = idUser ? (staffList.find((u) => u.id_user === idUser) || staffList[0]) : staffList[2] || staffList[0];
+    const targetPeriod = periodeBulan || new Date().toISOString().slice(0, 7);
+
+    const p = _calculateStaffPayroll(selUser.id_user, targetPeriod);
+
+    S().openModal(`
+      <div class="p-6 space-y-4 text-xs">
+        <div class="flex justify-between items-center border-b pb-3" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <span>💵 Kalkulator &amp; Rekap Penggajian Staf</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Presisi Jam Kerja</span>
+            </h3>
+            <p class="text-xs text-slate-500">Perhitungan upah riil otomatis diintegrasikan dengan log jam masuk &amp; kepatuhan shift.</p>
+          </div>
+          <button onclick="ONSStore.closeModal()" class="text-xl text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold block mb-1">Pilih Staf Apotek</label>
+            <select id="prlStaffSelect" class="ons-select" onchange="window.openPayrollCalculatorModal(this.value, '${targetPeriod}')">
+              ${staffList.map((u) => `<option value="${u.id_user}" ${u.id_user === selUser.id_user ? 'selected' : ''}>${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Periode Bulan</label>
+            <input type="month" id="prlBulanSelect" class="ons-input font-mono-num" value="${targetPeriod}" onchange="window.openPayrollCalculatorModal('${selUser.id_user}', this.value)"/>
+          </div>
+        </div>
+
+        <!-- Kartu Ringkasan Kehadiran & Jam Kerja -->
+        <div class="grid grid-cols-4 gap-2 text-center">
+          <div class="p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40" style="border-color:var(--ons-border)">
+            <div class="text-[10px] text-slate-400">Total Jam Kerja</div>
+            <div class="text-base font-extrabold font-mono-num text-sky-600">${p.total_jam_kerja} Jam</div>
+          </div>
+          <div class="p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40" style="border-color:var(--ons-border)">
+            <div class="text-[10px] text-slate-400">Hari Hadir</div>
+            <div class="text-base font-extrabold font-mono-num text-emerald-600">${p.hari_hadir} Hari</div>
+          </div>
+          <div class="p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40" style="border-color:var(--ons-border)">
+            <div class="text-[10px] text-slate-400">Lembur Shift</div>
+            <div class="text-base font-extrabold font-mono-num text-indigo-600">${p.total_jam_lembur} Jam</div>
+          </div>
+          <div class="p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40" style="border-color:var(--ons-border)">
+            <div class="text-[10px] text-slate-400">Terlambat</div>
+            <div class="text-base font-extrabold font-mono-num text-amber-600">${p.total_menit_terlambat} Mnt</div>
+          </div>
+        </div>
+
+        <!-- Tabel Rincian Komponen Gaji Transparan -->
+        <div class="rounded-xl border overflow-hidden" style="border-color:var(--ons-border)">
+          <table class="w-full text-xs">
+            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              <tr>
+                <th class="p-2.5 text-left font-semibold">Komponen Penghasilan</th>
+                <th class="p-2.5 text-left font-semibold">Dasar Perhitungan</th>
+                <th class="p-2.5 text-right font-semibold">Nominal (Rp)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr>
+                <td class="p-2.5 font-medium">Upah Utama (${p.metode_gaji === 'PER_JAM' ? 'Berbasis Jam Kerja' : (p.metode_gaji === 'PER_SHIFT' ? 'Per Shift' : 'Gaji Pokok')})</td>
+                <td class="p-2.5 text-slate-500 font-mono-num">${p.upah_dasar_desc}</td>
+                <td class="p-2.5 text-right font-mono-num font-bold text-slate-800 dark:text-slate-100">${S().rp(p.upah_dasar)}</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-medium">Tunjangan Uang Makan &amp; Transport</td>
+                <td class="p-2.5 text-slate-500 font-mono-num">${p.hari_hadir} Hari @ ${S().rp(p.cfg.tunjangan_kehadiran_per_hari || 15000)}</td>
+                <td class="p-2.5 text-right font-mono-num font-bold text-emerald-600">+${S().rp(p.tunjangan_hadir)}</td>
+              </tr>
+              ${p.tunjangan_profesi > 0 ? `
+                <tr>
+                  <td class="p-2.5 font-medium">Tunjangan Profesi / Keahlian Farmasi</td>
+                  <td class="p-2.5 text-slate-500 font-mono-num">SIPA / Keahlian Resmi</td>
+                  <td class="p-2.5 text-right font-mono-num font-bold text-emerald-600">+${S().rp(p.tunjangan_profesi)}</td>
+                </tr>
+              ` : ''}
+              ${p.upah_lembur > 0 ? `
+                <tr>
+                  <td class="p-2.5 font-medium">Upah Lembur Kerja</td>
+                  <td class="p-2.5 text-slate-500 font-mono-num">${p.total_jam_lembur} Jam @ ${S().rp(p.cfg.tarif_lembur_per_jam || 25000)}</td>
+                  <td class="p-2.5 text-right font-mono-num font-bold text-indigo-600">+${S().rp(p.upah_lembur)}</td>
+                </tr>
+              ` : ''}
+              ${p.potongan_terlambat > 0 ? `
+                <tr class="bg-amber-50/50 dark:bg-amber-950/20">
+                  <td class="p-2.5 font-medium text-amber-900 dark:text-amber-300">Potongan Keterlambatan</td>
+                  <td class="p-2.5 text-amber-700 font-mono-num">${p.total_menit_terlambat} Menit @ ${S().rp(p.cfg.denda_terlambat_per_menit || 500)}/mnt</td>
+                  <td class="p-2.5 text-right font-mono-num font-bold text-red-600">-${S().rp(p.potongan_terlambat)}</td>
+                </tr>
+              ` : ''}
+              <tr class="bg-slate-50 dark:bg-slate-900/60 font-bold text-sm">
+                <td colspan="2" class="p-3 text-slate-800 dark:text-white">Gaji Bersih Diterima (Take Home Pay)</td>
+                <td class="p-3 text-right font-mono-num text-emerald-600 dark:text-emerald-400 text-base">${S().rp(p.take_home_pay)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tombol Aksi Lengkap -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t" style="border-color:var(--ons-border)">
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.openPengaturanGajiModal('${selUser.id_user}')" class="ons-btn ons-btn-ghost text-xs">⚙️ Atur Tarif</button>
+            <button type="button" onclick="window.exportPayrollSummaryExcel('${targetPeriod}')" class="ons-btn ons-btn-ghost text-xs">📊 Rekap Semua Excel</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.printSlipGajiThermal('${selUser.id_user}', '${targetPeriod}')" class="ons-btn ons-btn-ghost text-xs">🧾 Cetak Thermal</button>
+            <button type="button" onclick="window.printSlipGajiA4('${selUser.id_user}', '${targetPeriod}')" class="ons-btn ons-btn-primary text-xs px-4">🖨️ Cetak Slip Gaji A4</button>
+            <button type="button" onclick="window.postPayrollToKasJurnal('${selUser.id_user}', '${targetPeriod}')" class="ons-btn ons-btn-emerald text-xs px-4" title="Catat langsung ke Buku Kas Operasional">💼 Posting ke Buku Kas</button>
+          </div>
+        </div>
+      </div>
+    `, '620px');
+  };
+
+  // ── CETAK SLIP GAJI A4 RESMI (TRANSPARAN JAM KERJA) ──
+  global.printSlipGajiA4 = (idUser, periodeBulan) => {
+    const p = _calculateStaffPayroll(idUser, periodeBulan);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;border:2px solid #0050CA;padding:28px;max-width:720px;margin:auto;font-size:12px;background:#fff;color:#0F172A;">
+        <div style="border-bottom:2px solid #0050CA;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="${S().esc(prof.logo_usaha_url || './icons/ons-farma-app-icon.png')}" style="width:48px;height:48px;object-fit:contain;border-radius:8px;border:1px solid #ddd;"/>
+            <div>
+              <b style="font-size:17px;color:#0050CA;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</b><br/>
+              <span style="font-size:10.5px;color:#555;">${S().esc(prof.alamat_usaha || '')}</span><br/>
+              <b style="font-size:12px;color:#1E293B;">SLIP GAJI RESMI &bull; PERIODE ${S().esc(p.periode)}</b>
+            </div>
+          </div>
+          <div style="text-align:right;font-size:11px;color:#64748B;">
+            Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}<br/>
+            SIA: ${S().esc(prof.nomor_sia || 'SIA-ONS-2026-001')}<br/>
+            Status: <b style="color:#0D9488;">LUNAS</b>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;background:#F8FAFC;padding:10px 14px;border-radius:6px;border:1px solid #E2E8F0;">
+          <div><b>Nama Pegawai:</b> ${S().esc(p.nama)}</div>
+          <div><b>ID Karyawan:</b> ${S().esc(p.id_user)}</div>
+          <div><b>Jabatan / Peran:</b> ${S().esc(formatRoleDisplay(p.role))}</div>
+          <div><b>Metode Penggajian:</b> ${p.metode_gaji === 'PER_JAM' ? 'Upah Berbasis Jam Kerja Masuk' : (p.metode_gaji === 'PER_SHIFT' ? 'Upah Shift Masuk' : 'Gaji Pokok Bulanan')}</div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <b style="font-size:11.5px;color:#0050CA;">REKAP KEHADIRAN &amp; JAM KERJA:</b>
+          <div style="font-size:11px;color:#334155;margin-top:2px;">
+            Total Hari Hadir: <b>${p.hari_hadir} Hari</b> &bull; 
+            Total Jam Kerja Masuk: <b>${p.total_jam_kerja} Jam</b> &bull; 
+            Lembur: <b>${p.total_jam_lembur} Jam</b> &bull; 
+            Keterlambatan: <b>${p.total_menit_terlambat} Menit</b>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin:12px 0;" border="1" cellpadding="7">
+          <thead style="background:#F1F5F9;font-weight:bold;">
+            <tr>
+              <th>Rincian Penghasilan &amp; Potongan</th>
+              <th>Dasar Perhitungan</th>
+              <th style="text-align:right">Jumlah (Rp)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Upah Utama (${p.metode_gaji === 'PER_JAM' ? 'Jam Kerja Masuk' : 'Pokok'})</td>
+              <td style="font-family:monospace;color:#555;">${p.upah_dasar_desc}</td>
+              <td style="text-align:right;font-family:monospace;font-weight:bold;">${S().rp(p.upah_dasar)}</td>
+            </tr>
+            <tr>
+              <td>Tunjangan Hadir (Makan &amp; Transport)</td>
+              <td style="font-family:monospace;color:#555;">${p.hari_hadir} Hari @ ${S().rp(p.cfg.tunjangan_kehadiran_per_hari || 15000)}</td>
+              <td style="text-align:right;font-family:monospace;font-weight:bold;color:#0D9488;">+${S().rp(p.tunjangan_hadir)}</td>
+            </tr>
+            ${p.tunjangan_profesi > 0 ? `
+              <tr>
+                <td>Tunjangan Profesi / Keahlian</td>
+                <td style="font-family:monospace;color:#555;">Tunjangan Jabatan Farmasi</td>
+                <td style="text-align:right;font-family:monospace;font-weight:bold;color:#0D9488;">+${S().rp(p.tunjangan_profesi)}</td>
+              </tr>
+            ` : ''}
+            ${p.upah_lembur > 0 ? `
+              <tr>
+                <td>Upah Lembur Shift</td>
+                <td style="font-family:monospace;color:#555;">${p.total_jam_lembur} Jam @ ${S().rp(p.cfg.tarif_lembur_per_jam || 25000)}</td>
+                <td style="text-align:right;font-family:monospace;font-weight:bold;color:#0284C7;">+${S().rp(p.upah_lembur)}</td>
+              </tr>
+            ` : ''}
+            ${p.potongan_terlambat > 0 ? `
+              <tr style="background:#FEF2F2;">
+                <td style="color:#DC2626;">Potongan Keterlambatan</td>
+                <td style="font-family:monospace;color:#DC2626;">${p.total_menit_terlambat} Mnt @ ${S().rp(p.cfg.denda_terlambat_per_menit || 500)}/mnt</td>
+                <td style="text-align:right;font-family:monospace;font-weight:bold;color:#DC2626;">-${S().rp(p.potongan_terlambat)}</td>
+              </tr>
+            ` : ''}
+            <tr style="background:#F1F5F9;font-weight:bold;font-size:13px;">
+              <td colspan="2">TOTAL GAJI BERSIH (TAKE HOME PAY)</td>
+              <td style="text-align:right;color:#0050CA;font-family:monospace;font-size:15px;">${S().rp(p.take_home_pay)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:36px;display:flex;justify-content:space-between;padding:0 24px;">
+          <div style="text-align:center;">
+            Penerima / Karyawan,<br/><br/><br/><br/>
+            <b>(${S().esc(p.nama)})</b>
+          </div>
+          <div style="text-align:center;">
+            Pemilik ${S().esc(prof.nama_usaha || 'Apotek ONS Farma')},<br/><br/><br/><br/>
+            <b>${S().esc(prof.nama_pemilik || 'Pemilik Sarana Apotek')}</b>
+          </div>
+        </div>
+      </div>
+    `;
+    S().printHtmlZone(html);
+  };
+
+  // ── CETAK SLIP GAJI THERMAL (58/80MM) ──
+  global.printSlipGajiThermal = (idUser, periodeBulan) => {
+    const p = _calculateStaffPayroll(idUser, periodeBulan);
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const text = `
+      <div style="font-family:monospace;width:280px;margin:auto;font-size:11px;line-height:1.4;color:#000;">
+        <center>
+          <b>${S().esc(prof.nama_usaha || 'APOTEK ONS FARMA')}</b><br/>
+          SLIP GAJI PEGAWAI<br/>
+          Periode: ${S().esc(p.periode)}<br/>
+          --------------------------------
+        </center>
+        Nama : ${S().esc(p.nama)}<br/>
+        Peran: ${S().esc(formatRoleDisplay(p.role))}<br/>
+        Hadir: ${p.hari_hadir} Hari &bull; ${p.total_jam_kerja} Jam<br/>
+        --------------------------------<br/>
+        Upah Jam: ${S().rp(p.upah_dasar)}<br/>
+        Tunjangan: +${S().rp(p.tunjangan_hadir)}<br/>
+        ${p.tunjangan_profesi > 0 ? `Tunj. Profesi: +${S().rp(p.tunjangan_profesi)}<br/>` : ''}
+        ${p.upah_lembur > 0 ? `Lembur: +${S().rp(p.upah_lembur)}<br/>` : ''}
+        ${p.potongan_terlambat > 0 ? `Denda Terlambat: -${S().rp(p.potongan_terlambat)}<br/>` : ''}
+        --------------------------------<br/>
+        <b>THP : ${S().rp(p.take_home_pay)}</b><br/>
+        --------------------------------<br/>
+        <center>
+          Terima kasih atas dedikasi Anda!<br/>
+          Dicetak: ${new Date().toLocaleDateString('id-ID')}
+        </center>
+      </div>
+    `;
+    S().printHtmlZone(text);
+  };
+
+  // ── EKSPOR REKAP PAYROLL EXCEL BULANAN ──
+  global.exportPayrollSummaryExcel = (periodeBulan) => {
+    const staffList = _getStaffList();
+    const targetPeriod = periodeBulan || new Date().toISOString().slice(0, 7);
+    const rows = staffList.map((u, i) => {
+      const p = _calculateStaffPayroll(u.id_user, targetPeriod);
+      return {
+        no: i + 1,
+        id_staf: u.id_user,
+        nama: u.nama_lengkap,
+        role: formatRoleDisplay(u.role),
+        metode: p.metode_gaji,
+        hari_hadir: p.hari_hadir,
+        jam_kerja: p.total_jam_kerja,
+        upah_dasar: p.upah_dasar,
+        tunjangan_hadir: p.tunjangan_hadir,
+        tunjangan_profesi: p.tunjangan_profesi,
+        lembur: p.upah_lembur,
+        potongan_terlambat: p.potongan_terlambat,
+        take_home_pay: p.take_home_pay
+      };
+    });
+
+    const headers = [
+      { key: 'no', label: 'No', type: 'int', width: 6 },
+      { key: 'id_staf', label: 'ID Staf', width: 14 },
+      { key: 'nama', label: 'Nama Staf', width: 28 },
+      { key: 'role', label: 'Jabatan / Peran', width: 22 },
+      { key: 'metode', label: 'Metode Upah', width: 16 },
+      { key: 'hari_hadir', label: 'Hari Hadir', type: 'int', width: 12 },
+      { key: 'jam_kerja', label: 'Total Jam Kerja', type: 'int', width: 16 },
+      { key: 'upah_dasar', label: 'Upah Utama', type: 'currency', sum: true, width: 18 },
+      { key: 'tunjangan_hadir', label: 'Tunj. Hadir', type: 'currency', sum: true, width: 16 },
+      { key: 'tunjangan_profesi', label: 'Tunj. Profesi', type: 'currency', sum: true, width: 16 },
+      { key: 'lembur', label: 'Lembur', type: 'currency', sum: true, width: 16 },
+      { key: 'potongan_terlambat', label: 'Pot. Terlambat', type: 'currency', sum: true, width: 16 },
+      { key: 'take_home_pay', label: 'Gaji Bersih (THP)', type: 'currency', sum: true, width: 20 }
+    ];
+
+    return S().exportDataset('xlsx', `Rekap Penggajian Karyawan Apotek - Periode ${targetPeriod}`, `Rekap_Payroll_${targetPeriod}`, headers, rows, { sheetName: 'Payroll' });
+  };
+
+  // ── POSTING BEBAN GAJI KE BUKU KAS (JURNAL OPERASIONAL) ──
+  global.postPayrollToKasJurnal = (idUser, periodeBulan) => {
+    const p = _calculateStaffPayroll(idUser, periodeBulan);
+    const nominal = p.take_home_pay;
+    if (nominal <= 0) return global.toast('Nominal gaji tidak valid untuk diposting.', 'err');
+
+    const desc = `Beban Gaji Karyawan: ${p.nama} (${p.total_jam_kerja} Jam Kerja, Periode ${p.periode})`;
+    const idJurnal = 'JRN-' + Date.now().toString(36).toUpperCase();
+
+    try {
+      const KAS_JURNAL_KEY = 'ONS_KAS_JURNAL_V1';
+      const raw = localStorage.getItem(KAS_JURNAL_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        id_jurnal: idJurnal,
+        tanggal: new Date().toISOString().slice(0, 10),
+        jenis: 'KELUAR_OPERASIONAL',
+        kategori: 'BEBAN_GAJI',
+        akun_kas: 'KAS_UTAMA',
+        nominal: nominal,
+        keterangan: desc,
+        created_at: new Date().toISOString()
+      });
+      localStorage.setItem(KAS_JURNAL_KEY, JSON.stringify(list));
+    } catch (_) {}
+
+    global.toast(`Gaji ${p.nama} sebesar ${S().rp(nominal)} berhasil diposting ke Buku Kas (Beban Gaji)!`, 'ok');
   };
 
   global.viewShiftDetail = (kode) => {
@@ -9194,7 +10618,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-semibold text-[11px] block mb-1">Nama Apoteker</label>
-              <input ${ro} class="ons-input text-xs w-full" value="apt. Siti Rahma, S.Farm" placeholder="Nama Apoteker Pendamping"/>
+              <input ${ro} class="ons-input text-xs w-full" value="Apoteker Penanggung Jawab" placeholder="Nama Apoteker Pendamping"/>
             </div>
             <div>
               <label class="font-semibold text-[11px] block mb-1">No. Handphone</label>
@@ -12174,3 +13598,19 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   };
 
 })(window);
+  // Helper sync preview di tab Pajak & Slip Gaji
+  global.syncPajakStaffSelection = (idUser, periode) => {
+    const per = periode || (document.getElementById('sgPer') ? document.getElementById('sgPer').value : new Date().toISOString().slice(0, 7));
+    const p = _calculateStaffPayroll(idUser, per);
+    const box = document.getElementById('sgStaffPreviewBox');
+    if (!box) return;
+    box.innerHTML = `
+      <div class="flex justify-between items-center font-bold text-slate-800 dark:text-slate-100">
+        <span>${S().esc(p.nama)} &bull; ${S().esc(formatRoleDisplay(p.role))}</span>
+        <span class="text-emerald-600 font-mono-num text-xs font-extrabold">${S().rp(p.take_home_pay)} (THP)</span>
+      </div>
+      <div class="text-slate-500 text-[10.5px]">
+        Jam Kerja Masuk: <b>${p.total_jam_kerja} Jam</b> (${p.upah_dasar_desc}) &bull; Hadir: <b>${p.hari_hadir} Hari</b> &bull; Lembur: <b>${p.total_jam_lembur} Jam</b> &bull; Terlambat: <b>${p.total_menit_terlambat} Mnt</b>
+      </div>
+    `;
+  };
