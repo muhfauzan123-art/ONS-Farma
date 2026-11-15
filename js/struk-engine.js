@@ -31,7 +31,8 @@
 {{/DISKON}}{{?TUSLAH}}[LR]Jasa Racik/Tuslah||{{TUSLAH|rp}}
 {{/TUSLAH}}{{?EMBALASE}}[LR]Embalase/Kemasan||{{EMBALASE|rp}}
 {{/EMBALASE}}{{?PPN}}[LR]PPN/Pajak||{{PPN|rp}}
-{{/PPN}}[LR][B]TOTAL BAYAR||{{TOTAL|rp}}[/B]
+{{/PPN}}{{?PEMBULATAN}}[LR]Pembulatan||{{PEMBULATAN|rp}}
+{{/PEMBULATAN}}[LR][B]TOTAL BAYAR||{{TOTAL|rp}}[/B]
 [LR]Dibayar||{{DIBAYAR|rp}}
 {{?KEMBALI}}[LR]Kembali||{{KEMBALI|rp}}
 {{/KEMBALI}}[=]
@@ -65,7 +66,8 @@
 [LR]Subtotal||{{SUBTOTAL|rp}}
 {{?DISKON}}[LR]Diskon||-{{DISKON|rp}}
 {{/DISKON}}{{?PPN}}[LR]PPN/Pajak||{{PPN|rp}}
-{{/PPN}}[LR][B][2]TOTAL BAYAR||{{TOTAL|rp}}[/2][/B]
+{{/PPN}}{{?PEMBULATAN}}[LR]Pembulatan||{{PEMBULATAN|rp}}
+{{/PEMBULATAN}}[LR][B][2]TOTAL BAYAR||{{TOTAL|rp}}[/2][/B]
 [LR]Dibayar||{{DIBAYAR|rp}}
 {{?KEMBALI}}[LR]Kembalian||{{KEMBALI|rp}}
 {{/KEMBALI}}[=]

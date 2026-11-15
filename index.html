@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.16.0"/>
+  <meta name="application-version" content="v18.17.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.16.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.17.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.16.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.17.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.16.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.16.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.16.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.17.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.17.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.17.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.16.0"></script>
-  <script src="./js/struk-engine.js?v=18.16.0"></script>
-  <script src="./js/demo-engine.js?v=18.16.0"></script>
-  <script src="./js/api-turbo.js?v=18.16.0"></script>
-  <script src="./js/store.js?v=18.16.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.16.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.16.0"></script>
+  <script src="./js/config.js?v=18.17.0"></script>
+  <script src="./js/struk-engine.js?v=18.17.0"></script>
+  <script src="./js/demo-engine.js?v=18.17.0"></script>
+  <script src="./js/api-turbo.js?v=18.17.0"></script>
+  <script src="./js/store.js?v=18.17.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.17.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.17.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.16.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.16.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.16.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.16.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.16.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.16.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.17.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.17.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.17.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.17.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.17.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.17.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -255,7 +255,8 @@
               tabs: [
                 { subTab: 'kontak', label: 'Daftar Kontak Pasien', kw: 'kontak crm pasien wa 08 62 opt out riwayat' },
                 { subTab: 'blast', label: 'Broadcast WhatsApp', kw: 'broadcast blast wa reminder pengingat edukasi' },
-                { subTab: 'antrean', label: 'Antrean Notifikasi', kw: 'antrean log wa fonnte email status antrean' }
+                { subTab: 'antrean', label: 'Antrean Notifikasi', kw: 'antrean log wa fonnte email status antrean' },
+                { subTab: 'tele-refill', label: 'Pantauan Obat Rutin (Tele-Refill)', kw: 'tele refill kronis prb obat rutin pengingat h-3 wa hipertensi diabetes', badge: 'H-3' }
               ]
             }
           ]

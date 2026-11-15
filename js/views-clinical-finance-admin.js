@@ -1882,6 +1882,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <button onclick="window.setKlinisTab('pio')" class="ons-tab-btn ${klinisTab === 'pio' ? 'active' : ''}">Kartu PIO &amp; Jadwal</button>
             <button onclick="window.setKlinisTab('meso')" class="ons-tab-btn ${klinisTab === 'meso' ? 'active' : ''}">MESO (Naranjo) (${mesoList.length})</button>
           </div>
+          <button onclick="window.openCreateCopyResepDirectModal()" class="ons-btn ons-btn-ghost text-xs text-blue-700 font-semibold" title="Buat Salinan Resep Baru">+ Buat Copy Resep (p.c.c)</button>
           <button onclick="window.openCopyResepArchiveModal()" class="ons-btn ons-btn-ghost text-xs">Arsip Copy Resep (${(st.copyResep || []).length})</button>
           <button onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs">+ Input SOAP Klinis</button>
         </div>
@@ -5535,6 +5536,146 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
+
+  global.openCreateCopyResepDirectModal = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const prof = (typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {}) || {};
+    const doctors = S().AppState.masterDokter || [];
+    const members = S().AppState.members || [];
+    const noSalinanBaru = 'CR-' + new Date().getFullYear() + '-' + String((S().AppState.copyResep || []).length + 1).padStart(3, '0');
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center pb-2.5 border-b" style="border-color:var(--ons-border)">
+        <div>
+          <h3 class="font-extrabold text-base flex items-center gap-2">
+            <span>📝 Buat Salinan Resep Resmi (Apograph / p.c.c)</span>
+            <span class="badge-bpom bpom-bebas">PMK 73/2016</span>
+          </h3>
+          <p style="color:var(--ons-text-soft)">Terbitkan salinan resep resmi ber-KOP Apotek ONS Farma untuk resep berulang (iter) atau tebus sebagian.</p>
+        </div>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        <div>
+          <label class="font-semibold block mb-1">No. Salinan Resep *</label>
+          <input id="crNoSalinan" class="ons-input font-mono-num text-xs font-bold text-blue-700" value="${noSalinanBaru}"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Tanggal Salinan *</label>
+          <input id="crTgl" type="date" value="${today}" class="ons-input font-mono-num text-xs"/>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">No. Resep Asli *</label>
+          <input id="crNoAsal" class="ons-input font-mono-num text-xs" value="RX-2026-008" placeholder="No. Resep Asal"/>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        <div>
+          <label class="font-semibold block mb-1">Nama Pasien *</label>
+          <input id="crPasien" list="crMemberList" class="ons-input text-xs font-semibold" value="Budi Santoso" placeholder="Pilih atau ketik nama pasien"/>
+          <datalist id="crMemberList">
+            ${members.map(m => `<option value="${S().esc(m.nama_pasien)}">`).join('')}
+          </datalist>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Umur Pasien</label>
+          <input id="crUmur" class="ons-input text-xs" value="45 tahun" placeholder="Contoh: 45 tahun"/>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        <div>
+          <label class="font-semibold block mb-1">Dokter Penulis Resep *</label>
+          <input id="crDokter" list="crDocList" class="ons-input text-xs font-semibold" value="dr. Andi Pratama, Sp.PD"/>
+          <datalist id="crDocList">
+            ${doctors.map(d => `<option value="${S().esc(d.nama_dokter)}">`).join('')}
+          </datalist>
+        </div>
+        <div>
+          <label class="font-semibold block mb-1">Tanda Iterasi Resep</label>
+          <select id="crIter" class="ons-select text-xs">
+            <option value="-">Tanpa Iterasi (Biasa)</option>
+            <option value="iter 1x">iter 1x (Boleh Ditebus 2 Kali Total)</option>
+            <option value="iter 2x">iter 2x (Boleh Ditebus 3 Kali Total)</option>
+            <option value="iter 3x">iter 3x (Boleh Ditebus 4 Kali Total)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="font-semibold block">Daftar R/ Obat &amp; Status Penyerahan (det / ne det)</label>
+          <span class="text-[10px] text-slate-500">Format: R/ [Nama Obat] No. [Qty] - [Status: det / ne det / det 10] - Signa</span>
+        </div>
+        <textarea id="crRincian" rows="4" class="ons-textarea font-mono-num text-xs">R/ Cefixime 200mg No. X (det 10)
+S. 2 dd 1 tab d.c
+--
+R/ Paracetamol 500mg No. X (det 10)
+S. prn 3 dd 1 tab</textarea>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <div class="text-[11px] text-slate-500">Apoteker: <b>${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')}</b> (SIPA: ${S().esc(prof.sipa_pemilik || '-')})</div>
+        <div class="flex gap-2">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="window.submitDirectCopyResep()" class="ons-btn ons-btn-primary text-xs font-bold px-4">Simpan &amp; Cetak Salinan (p.c.c)</button>
+        </div>
+      </div>
+    </div>`, '620px');
+  };
+
+  global.submitDirectCopyResep = () => {
+    const noSalinan = ((document.getElementById('crNoSalinan') || {}).value || '').trim();
+    const tgl = (document.getElementById('crTgl') || {}).value || new Date().toISOString().slice(0, 10);
+    const noAsal = ((document.getElementById('crNoAsal') || {}).value || '').trim();
+    const pasien = ((document.getElementById('crPasien') || {}).value || '').trim();
+    const umur = ((document.getElementById('crUmur') || {}).value || '').trim();
+    const dokter = ((document.getElementById('crDokter') || {}).value || '').trim();
+    const iter = (document.getElementById('crIter') || {}).value || '-';
+    const rincian = ((document.getElementById('crRincian') || {}).value || '').trim();
+
+    if (!noSalinan || !pasien || !dokter) return global.toast('No. Salinan, nama pasien, dan dokter wajib diisi!', 'warn');
+
+    const prof = (typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {}) || {};
+    const items = rincian.split('--').map((block, idx) => {
+      const lines = block.trim().split('\n');
+      const firstLine = lines[0] || ('Obat ' + (idx + 1));
+      const secondLine = lines.slice(1).join(' ') || '-';
+      return {
+        nama_dagang: firstLine.replace(/^R\/\s*/i, ''),
+        qty_resep: 10,
+        qty_ambil: 10,
+        signa: secondLine.replace(/^S\.\s*/i, ''),
+        flag: firstLine.includes('ne det') ? 'ne det' : (firstLine.includes('det') ? 'det' : 'det')
+      };
+    });
+
+    const newObj = {
+      no_salinan: noSalinan,
+      tanggal: tgl,
+      no_resep_asal: noAsal,
+      nama_pasien: pasien,
+      umur_pasien: umur,
+      nama_dokter: dokter,
+      apoteker_nama: prof.nama_pemilik || 'Apoteker Penanggung Jawab',
+      no_sipa: prof.sipa_pemilik || '-',
+      items_json: items,
+      status_serah: 'DET_ORIG',
+      tanda_iterasi: iter
+    };
+
+    if (!Array.isArray(S().AppState.copyResep)) S().AppState.copyResep = [];
+    S().AppState.copyResep.unshift(newObj);
+    S().closeModal();
+    global.toast('Salinan Resep ' + noSalinan + ' tersimpan!', 'ok');
+
+    if (typeof global.printCopyResepDocument === 'function') {
+      global.printCopyResepDocument(newObj);
+    }
+  };
+
   global.openCopyResepArchiveModal = () => {
     const list = S().AppState.copyResep || [];
     S().openModal(`<div class="p-6 space-y-3 text-xs">
@@ -6784,6 +6925,28 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       { key: 'keterangan', label: 'Keterangan', width: 30 },
       { key: 'nominal', label: 'Nominal (Rp)', type: 'currency', width: 20 }
     ], rows, { sheetName: 'LabaRugi' });
+  };
+
+
+  global.simulasiPosRounding = () => {
+    const nom = Number((document.getElementById('cfgRoundNominal') || {}).value || 100);
+    const arah = (document.getElementById('cfgRoundArah') || {}).value || 'terdekat';
+    const amount = Number((document.getElementById('cfgRoundSimInp') || {}).value || 0);
+    const diff = typeof S().calculateRounding === 'function' ? S().calculateRounding(amount, { nominal: nom, arah }) : 0;
+    const resEl = document.getElementById('cfgRoundSimResult');
+    if (resEl) {
+      const finalVal = amount + diff;
+      resEl.textContent = 'Hasil: ' + S().rp(finalVal) + ' (Pembulatan: ' + (diff > 0 ? '+' : '') + S().rp(diff) + ')';
+    }
+  };
+
+  global.savePosRoundingSettings = () => {
+    const nom = Number((document.getElementById('cfgRoundNominal') || {}).value || 100);
+    const arah = (document.getElementById('cfgRoundArah') || {}).value || 'terdekat';
+    if (typeof S().savePosRoundingConfig === 'function') {
+      S().savePosRoundingConfig({ nominal: nom, arah });
+    }
+    global.toast('Aturan pembulatan kasir POS berhasil disimpan!', 'ok');
   };
 
   global.doPrintLaporanKeuangan = () => {
@@ -11427,6 +11590,59 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                   ${STRUK_TOKEN_SNIPPETS.map((c, idx) => `<button type="button" onclick="window.insertStrukToken(${idx})" class="ons-struk-chip">${S().esc(c.label)}</button>`).join('')}
                 </div>
               </div>
+            </div>
+
+
+            <!-- Aturan Pembulatan Kasir POS Otomatis (Apotek Digital Adoption) -->
+            <div class="ons-card p-5 space-y-4 text-xs">
+              <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
+                <div>
+                  <h3 class="font-bold text-sm flex items-center gap-2">
+                    <span>🪙 Aturan Pembulatan Kasir POS Otomatis</span>
+                    <span class="badge-bpom bpom-bebas">Apotek Pro</span>
+                  </h3>
+                  <p style="color:var(--ons-text-soft)">Atur kelipatan pembulatan total tagihan kasir (misal kelipatan Rp 100 terdekat) untuk efisiensi uang receh kembalian.</p>
+                </div>
+                <button type="button" onclick="window.savePosRoundingSettings()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3">Simpan Aturan Pembulatan</button>
+              </div>
+
+              ${(() => {
+                const roundCfg = typeof S().getPosRoundingConfig === 'function' ? S().getPosRoundingConfig() : { nominal: 100, arah: 'terdekat' };
+                return `
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label class="font-semibold block mb-1">Kelipatan Pembulatan *</label>
+                      <select id="cfgRoundNominal" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
+                        <option value="1" ${Number(roundCfg.nominal) === 1 ? 'selected' : ''}>Nonaktif (Tanpa Pembulatan / Rp 1)</option>
+                        <option value="50" ${Number(roundCfg.nominal) === 50 ? 'selected' : ''}>Kelipatan Rp 50</option>
+                        <option value="100" ${Number(roundCfg.nominal) === 100 ? 'selected' : ''}>Kelipatan Rp 100 (Rekomendasi Standar)</option>
+                        <option value="500" ${Number(roundCfg.nominal) === 500 ? 'selected' : ''}>Kelipatan Rp 500</option>
+                        <option value="1000" ${Number(roundCfg.nominal) === 1000 ? 'selected' : ''}>Kelipatan Rp 1.000</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="font-semibold block mb-1">Arah / Metode Pembulatan *</label>
+                      <select id="cfgRoundArah" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
+                        <option value="terdekat" ${roundCfg.arah === 'terdekat' ? 'selected' : ''}>Bulat Terdekat (Round: &lt;50 ke bawah, &gt;=50 ke atas)</option>
+                        <option value="keatas" ${roundCfg.arah === 'keatas' ? 'selected' : ''}>Selalu Bulat Ke Atas (Ceil)</option>
+                        <option value="kebawah" ${roundCfg.arah === 'kebawah' ? 'selected' : ''}>Selalu Bulat Ke Bawah (Floor)</option>
+                      </select>
+                    </div>
+
+                    <div class="p-3 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                      <div class="font-bold text-blue-700 dark:text-blue-300">Live Simulator Pembulatan:</div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-slate-500">Contoh Tagihan:</span>
+                        <input id="cfgRoundSimInp" type="number" value="12340" oninput="window.simulasiPosRounding()" class="ons-input font-mono-num text-xs w-24 py-1 text-right"/>
+                      </div>
+                      <div id="cfgRoundSimResult" class="font-mono-num font-extrabold text-xs text-emerald-600">
+                        Hasil: Rp 12.300 (Pembulatan: -Rp 40)
+                      </div>
+                    </div>
+                  </div>
+                `;
+              })()}
             </div>
 
             <div class="lg:col-span-5 space-y-2.5">

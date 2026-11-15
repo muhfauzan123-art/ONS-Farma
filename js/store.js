@@ -1539,6 +1539,42 @@
     return lines.join('\n');
   }
 
+  const POS_ROUNDING_KEY = 'ons_farma_pos_rounding_v1';
+  function getPosRoundingConfig() {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(POS_ROUNDING_KEY) : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {}
+    return { nominal: 100, arah: 'terdekat' };
+  }
+
+  function savePosRoundingConfig(cfg) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(POS_ROUNDING_KEY, JSON.stringify(cfg || { nominal: 100, arah: 'terdekat' }));
+      }
+    } catch (e) {}
+  }
+
+  function calculateRounding(amount, cfg) {
+    const c = cfg || getPosRoundingConfig();
+    const nom = Number(c.nominal || 1);
+    if (nom <= 1) return 0;
+    const arah = String(c.arah || 'terdekat').toLowerCase();
+    let rounded = amount;
+    if (arah === 'keatas') {
+      rounded = Math.ceil(amount / nom) * nom;
+    } else if (arah === 'kebawah') {
+      rounded = Math.floor(amount / nom) * nom;
+    } else {
+      rounded = Math.round(amount / nom) * nom;
+    }
+    return rounded - amount;
+  }
+
   function renderDokterDatalistHtml(listId) {
     const id = String(listId || 'onsDokterDatalist');
     const docs = (AppState.masterDokter || []).filter((d) => String(d.status_dokter || 'AKTIF').toUpperCase() !== 'NONAKTIF');
@@ -1675,6 +1711,9 @@
     printHtmlZone,
     printHtml: printHtmlZone,
     ThermalPrinter,
+    getPosRoundingConfig,
+    savePosRoundingConfig,
+    calculateRounding,
     _isLegacySensitive,
     sanitizeLegacyOwnerName
   };

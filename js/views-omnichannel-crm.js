@@ -439,6 +439,7 @@
             <button onclick="ONSViewsOmniCrm.setCrmTab('kontak')" class="ons-tab-btn ${crmTab === 'kontak' ? 'active' : ''}">Kontak &amp; Opt-Out</button>
             <button onclick="ONSViewsOmniCrm.setCrmTab('blast')" class="ons-tab-btn ${crmTab === 'blast' ? 'active' : ''}">Broadcast WA Massal</button>
             <button onclick="ONSViewsOmniCrm.setCrmTab('antrean')" class="ons-tab-btn ${crmTab === 'antrean' ? 'active' : ''}">Antrean Notifikasi (${pendingQ.length})</button>
+            <button onclick="ONSViewsOmniCrm.setCrmTab('tele-refill')" class="ons-tab-btn ${crmTab === 'tele-refill' ? 'active' : ''}">💊 Pantauan Obat Rutin (Tele-Refill H-3)</button>
           </div>
           <button onclick="ONSViewsOmniCrm.loadCrmAndQueue()" class="ons-btn ons-btn-ghost text-xs">Muat Data Server</button>
         </div>
@@ -544,6 +545,195 @@
     </div>`;
   }
 
+
+  const TELE_REFILL_KEY = 'ons_farma_tele_refill_patients_v2';
+
+  function _getTeleRefillSeed() {
+    const today = new Date();
+    const dMinus1 = new Date(Date.now() - 1 * 86400000).toISOString().slice(0, 10);
+    const dPlus2 = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+    const dPlus8 = new Date(Date.now() + 8 * 86400000).toISOString().slice(0, 10);
+    const dPlus20 = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
+
+    return [
+      { id: 'TRF-001', nama_pasien: 'Ny. Ratna Juwita', no_wa: '08129876543', nama_obat: 'Amlodipine 10mg', aturan_pakai: '1x1 Pagi', tgl_tebus: '2026-10-18', tgl_habis: dPlus2, status_prb: 'Hipertensi', hari_sisa: 2 },
+      { id: 'TRF-002', nama_pasien: 'Tn. Hendra Gunawan', no_wa: '08134455667', nama_obat: 'Metformin 500mg & Glimepiride 2mg', aturan_pakai: '2x1 Sesudah Makan', tgl_tebus: '2026-10-16', tgl_habis: new Date().toISOString().slice(0, 10), status_prb: 'Diabetes Melitus', hari_sisa: 0 },
+      { id: 'TRF-003', nama_pasien: 'Ibu Siti Aisyah', no_wa: '08198877665', nama_obat: 'Candesartan 8mg', aturan_pakai: '1x1 Malam', tgl_tebus: '2026-10-28', tgl_habis: dPlus8, status_prb: 'Hipertensi', hari_sisa: 8 },
+      { id: 'TRF-004', nama_pasien: 'Bpk. Bambang Wijaya', no_wa: '08213344556', nama_obat: 'Atorvastatin 20mg', aturan_pakai: '1x1 Malam', tgl_tebus: '2026-10-14', tgl_habis: dMinus1, status_prb: 'Dislipidemia / Kolesterol', hari_sisa: -1 }
+    ];
+  }
+
+  function _getTeleRefillList() {
+    try {
+      const raw = localStorage.getItem(TELE_REFILL_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return arr;
+      }
+    } catch (e) {}
+    const seed = _getTeleRefillSeed();
+    _saveTeleRefillList(seed);
+    return seed;
+  }
+
+  function _saveTeleRefillList(list) {
+    try {
+      localStorage.setItem(TELE_REFILL_KEY, JSON.stringify(list || []));
+    } catch (e) {}
+  }
+
+  let teleRefillSearchQ = '';
+  let teleRefillFilterStatus = 'SEMUA';
+
+  function _renderTeleRefillSubTab() {
+    const allList = _getTeleRefillList();
+    const today = new Date().toISOString().slice(0, 10);
+    const todayMs = new Date(today + 'T00:00:00').getTime();
+
+    // Recalculate countdown days
+    const computed = allList.map((p) => {
+      const hMs = new Date(String(p.tgl_habis || today) + 'T00:00:00').getTime();
+      const diffDays = Math.round((hMs - todayMs) / (86400000));
+      let statusGroup = 'AMAN';
+      if (diffDays < 0) statusGroup = 'OVERDUE';
+      else if (diffDays === 0) statusGroup = 'H0';
+      else if (diffDays <= 3) statusGroup = 'H3';
+      return Object.assign({}, p, { sisaHari: diffDays, statusGroup });
+    });
+
+    const urgentCount = computed.filter((p) => p.statusGroup === 'H3' || p.statusGroup === 'H0').length;
+    const overdueCount = computed.filter((p) => p.statusGroup === 'OVERDUE').length;
+    const safeCount = computed.filter((p) => p.statusGroup === 'AMAN').length;
+    const totalCount = computed.length;
+    const compliancePct = totalCount ? Math.round(((totalCount - overdueCount) / totalCount) * 100) : 100;
+
+    const q = teleRefillSearchQ.trim().toLowerCase();
+    const filtered = computed.filter((p) => {
+      if (teleRefillFilterStatus !== 'SEMUA' && p.statusGroup !== teleRefillFilterStatus) return false;
+      if (q) {
+        const hay = `${p.nama_pasien} ${p.no_wa} ${p.nama_obat} ${p.status_prb}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const prof = (typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {}) || {};
+    const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+
+    return `
+      <div class="space-y-4 text-xs">
+        <!-- Cockpit Tracker -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#0D9488">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Total Pasien Terapi Rutin</div>
+            <div class="text-2xl font-extrabold font-mono-num mt-1">${totalCount} Pasien</div>
+            <div class="text-[10px] text-teal-600 dark:text-teal-400 mt-0.5">Hipertensi, DM, Jantung &amp; PRB</div>
+          </div>
+          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#F59E0B">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Prioritas Refill Segera (H-3 s.d H-0)</div>
+            <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${urgentCount} Pasien</div>
+            <div class="text-[10px] text-amber-600 mt-0.5">Obat hampir/sudah habis</div>
+          </div>
+          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#EF4444">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Terlewat Jadwal Tebus (Overdue)</div>
+            <div class="text-2xl font-extrabold font-mono-num text-red-600 mt-1">${overdueCount} Pasien</div>
+            <div class="text-[10px] text-red-500 mt-0.5">Potensi putus terapi</div>
+          </div>
+          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#10B981">
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">Tingkat Kepatuhan Minum Obat</div>
+            <div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${compliancePct}%</div>
+            <div class="text-[10px] text-emerald-600 mt-0.5">Target kepatuhan terapi &gt;90%</div>
+          </div>
+        </div>
+
+        <!-- Action Header & Filters -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${[
+              { id: 'SEMUA', lbl: 'Semua (' + totalCount + ')' },
+              { id: 'H3', lbl: '⚠️ Segera Habis H-3 (' + computed.filter(p => p.statusGroup === 'H3').length + ')' },
+              { id: 'H0', lbl: '🔴 Habis Hari Ini (' + computed.filter(p => p.statusGroup === 'H0').length + ')' },
+              { id: 'OVERDUE', lbl: '⛔ Terlewat (' + overdueCount + ')' },
+              { id: 'AMAN', lbl: '🟢 Aman (' + safeCount + ')' }
+            ].map(f => `
+              <button type="button" onclick="ONSViewsOmniCrm.setTeleRefillFilter('${f.id}')" class="ons-btn ${teleRefillFilterStatus === f.id ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3">${f.lbl}</button>
+            `).join('')}
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input class="ons-input w-56 text-xs" value="${S().esc(teleRefillSearchQ)}" oninput="ONSViewsOmniCrm.setTeleRefillSearch(this.value)" placeholder="Cari pasien / nomor WA / obat..."/>
+            <button type="button" onclick="ONSViewsOmniCrm.printTeleRefillReportA4()" class="ons-btn ons-btn-ghost text-xs" title="Cetak Rekap A4">&#128424; Cetak Rekap A4</button>
+            <button type="button" onclick="ONSViewsOmniCrm.openAddTeleRefillModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Pasien Terapi Rutin</button>
+          </div>
+        </div>
+
+        <!-- Tabel Pantauan Terapi -->
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead>
+              <tr>
+                <th>Pasien</th>
+                <th>Obat Rutin Terapi</th>
+                <th>Tgl Tebus Terakhir</th>
+                <th>Perkiraan Habis</th>
+                <th>Status Countdown</th>
+                <th>Aksi WhatsApp Pengingat Refill</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filtered.length === 0 ? `
+                <tr><td colspan="6" class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Tidak ada data pasien terapi rutin pada filter ini.</td></tr>
+              ` : filtered.map((p, idx) => {
+                let badgeCls = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                let badgeText = '🟢 Aman (' + p.sisaHari + ' hari)';
+                if (p.statusGroup === 'H3') {
+                  badgeCls = 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse font-bold';
+                  badgeText = '⚠️ Sisa ' + p.sisaHari + ' hari (Segera Habis)';
+                } else if (p.statusGroup === 'H0') {
+                  badgeCls = 'bg-rose-100 text-rose-900 border-rose-300 font-extrabold';
+                  badgeText = '🔴 HABIS HARI INI';
+                } else if (p.statusGroup === 'OVERDUE') {
+                  badgeCls = 'bg-red-100 text-red-900 border-red-300 font-bold';
+                  badgeText = '⛔ Terlewat ' + Math.abs(p.sisaHari) + ' hari';
+                }
+
+                const reminderMsg = `Halo Ibu/Bpk ${p.nama_pasien}, salam sehat dari ${usahaNama}. Berdasarkan pemantauan apotek kami, persediaan obat rutin Anda (${p.nama_obat} - ${p.aturan_pakai}) diperkirakan habis ${p.sisaHari === 0 ? 'hari ini' : (p.sisaHari < 0 ? 'beberapa hari lalu' : ('dalam ' + p.sisaHari + ' hari lagi (tgl ' + p.tgl_habis + ')'))}. Mohon jangan lewatkan jadwal kontrol dan penyiapan obat kembali agar kondisi kesehatan tetap optimal. Kami siap membantu penyiapan obat Anda secara langsung maupun delivery. Terima kasih.`;
+
+                const waUrl = S().buildWaUrl ? S().buildWaUrl(p.no_wa, reminderMsg) : ('https://wa.me/?text=' + encodeURIComponent(reminderMsg));
+
+                return `
+                  <tr>
+                    <td>
+                      <div class="font-bold text-slate-900 dark:text-slate-100">${S().esc(p.nama_pasien)}</div>
+                      <div class="text-[11px] font-mono-num text-slate-500">${S().esc(p.no_wa)} &bull; <span class="text-teal-700 dark:text-teal-300 font-semibold">${S().esc(p.status_prb || 'Rutin')}</span></div>
+                    </td>
+                    <td>
+                      <div class="font-semibold text-slate-800 dark:text-slate-200">${S().esc(p.nama_obat)}</div>
+                      <div class="text-[11px] text-slate-500">Signa: ${S().esc(p.aturan_pakai || 'Sesuai Anjuran')}</div>
+                    </td>
+                    <td class="font-mono-num text-xs whitespace-nowrap">${S().esc(p.tgl_tebus)}</td>
+                    <td class="font-mono-num text-xs font-bold whitespace-nowrap text-blue-700 dark:text-blue-300">${S().esc(p.tgl_habis)}</td>
+                    <td>
+                      <span class="px-2.5 py-1 rounded-full text-[11px] border inline-block ${badgeCls}">${badgeText}</span>
+                    </td>
+                    <td>
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <a href="${S().esc(waUrl)}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 shadow-sm flex items-center gap-1" title="Kirim Pesan WhatsApp Personal">
+                          <span>📲 Kirim WA H-3</span>
+                        </a>
+                        <button type="button" onclick="ONSViewsOmniCrm.renewTeleRefill('${S().esc(p.id)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Catat Penebusan Baru (+30 Hari)">+30 Hari</button>
+                        <button type="button" onclick="ONSViewsOmniCrm.deleteTeleRefill('${S().esc(p.id)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-1.5" title="Hapus">&times;</button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
   global.ONSViewsOmniCrm = {
     renderOmnichannelView,
     renderCrmWaView,
@@ -561,6 +751,143 @@
       if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
     },
     setOmniSearch: (q) => { omniSearchQ = q; if (typeof global.renderActiveView === 'function') global.renderActiveView(); },
+    setTeleRefillSearch: (q) => { teleRefillSearchQ = q || ''; if (typeof global.renderActiveView === 'function') global.renderActiveView(); },
+    setTeleRefillFilter: (st) => { teleRefillFilterStatus = st || 'SEMUA'; if (typeof global.renderActiveView === 'function') global.renderActiveView(); },
+    renewTeleRefill: (id) => {
+      const list = _getTeleRefillList();
+      const item = list.find((x) => x.id === id);
+      if (!item) return;
+      const today = new Date().toISOString().slice(0, 10);
+      const nextHabis = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+      item.tgl_tebus = today;
+      item.tgl_habis = nextHabis;
+      _saveTeleRefillList(list);
+      global.toast('Jadwal refill ' + item.nama_pasien + ' diperbarui +30 hari!', 'ok');
+      if (typeof global.renderActiveView === 'function') global.renderActiveView();
+    },
+    deleteTeleRefill: (id) => {
+      const list = _getTeleRefillList().filter((x) => x.id !== id);
+      _saveTeleRefillList(list);
+      global.toast('Pasien dihapus dari pantauan terapi rutin.', 'ok');
+      if (typeof global.renderActiveView === 'function') global.renderActiveView();
+    },
+    openAddTeleRefillModal: () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const nextHabis = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+      const members = S().AppState.members || [];
+      const drugs = S().AppState.masterObat || [];
+
+      S().openModal(`<div class="p-6 space-y-3.5 text-xs">
+        <div class="flex justify-between items-center pb-2 border-b" style="border-color:var(--ons-border)">
+          <h3 class="font-bold text-base">Tambah Pasien Terapi Rutin (Tele-Refill Tracker)</h3>
+          <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="font-semibold block mb-1">Nama Pasien *</label>
+            <input id="trfNama" list="trfMemberList" class="ons-input" placeholder="Ketik nama pasien atau pilih member"/>
+            <datalist id="trfMemberList">
+              ${members.map(m => `<option value="${S().esc(m.nama_pasien)}">${S().esc(m.no_hp || '')}</option>`).join('')}
+            </datalist>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Nomor WhatsApp Aktif *</label>
+            <input id="trfWa" class="ons-input font-mono-num" placeholder="08xxxxxxxxxx atau 628xxxxxxxx"/>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-semibold block mb-1">Nama Obat Rutin *</label>
+              <input id="trfObat" list="trfDrugList" class="ons-input" placeholder="Contoh: Amlodipine 10mg"/>
+              <datalist id="trfDrugList">
+                ${drugs.map(o => `<option value="${S().esc(o.nama_dagang)}">`).join('')}
+              </datalist>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Aturan Pakai / Dosis *</label>
+              <input id="trfSigna" class="ons-input" value="1x1 Pagi Hari" placeholder="Contoh: 1x1 Pagi"/>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-semibold block mb-1">Tanggal Tebus Terakhir *</label>
+              <input id="trfTglTebus" type="date" value="${today}" class="ons-input font-mono-num"/>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Perkiraan Obat Habis *</label>
+              <input id="trfTglHabis" type="date" value="${nextHabis}" class="ons-input font-mono-num"/>
+            </div>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Diagnosa / Program Terapi</label>
+            <select id="trfProg" class="ons-select">
+              <option value="Hipertensi">Hipertensi (Tekanan Darah Tinggi)</option>
+              <option value="Diabetes Melitus">Diabetes Melitus (Gula Darah)</option>
+              <option value="Jantung / Kardiovaskular">Jantung / Kardiovaskular</option>
+              <option value="Dislipidemia / Kolesterol">Dislipidemia / Kolesterol</option>
+              <option value="Asma / PPOK">Asma / PPOK</option>
+              <option value="PRB Lainnya">Program Rujuk Balik (PRB) Lainnya</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+          <button type="button" onclick="ONSViewsOmniCrm.submitAddTeleRefill()" class="ons-btn ons-btn-primary text-xs font-bold">Simpan Pasien</button>
+        </div>
+      </div>`, '540px');
+    },
+    submitAddTeleRefill: () => {
+      const nama = ((document.getElementById('trfNama') || {}).value || '').trim();
+      const wa = ((document.getElementById('trfWa') || {}).value || '').trim();
+      const obat = ((document.getElementById('trfObat') || {}).value || '').trim();
+      const signa = ((document.getElementById('trfSigna') || {}).value || '').trim();
+      const tglTebus = (document.getElementById('trfTglTebus') || {}).value || '';
+      const tglHabis = (document.getElementById('trfTglHabis') || {}).value || '';
+      const prog = (document.getElementById('trfProg') || {}).value || 'Hipertensi';
+
+      if (!nama || !wa || !obat) return global.toast('Nama pasien, nomor WA, dan obat wajib diisi!', 'warn');
+
+      const list = _getTeleRefillList();
+      const newId = 'TRF-' + Date.now().toString(36).toUpperCase();
+      list.push({
+        id: newId,
+        nama_pasien: nama,
+        no_wa: wa,
+        nama_obat: obat,
+        aturan_pakai: signa || '1x1 Sehari',
+        tgl_tebus: tglTebus,
+        tgl_habis: tglHabis,
+        status_prb: prog
+      });
+      _saveTeleRefillList(list);
+      S().closeModal();
+      global.toast('Pasien ' + nama + ' berhasil ditambahkan ke Tele-Refill Tracker!', 'ok');
+      if (typeof global.renderActiveView === 'function') global.renderActiveView();
+    },
+    printTeleRefillReportA4: () => {
+      const list = _getTeleRefillList();
+      const dateTag = new Date().toISOString().slice(0, 10);
+      const headers = [
+        { key: 'no', label: 'No.', type: 'int', width: 6 },
+        { key: 'nama_pasien', label: 'Nama Pasien', width: 24 },
+        { key: 'no_wa', label: 'No. WhatsApp', width: 16 },
+        { key: 'nama_obat', label: 'Obat Rutin', width: 26 },
+        { key: 'aturan_pakai', label: 'Signa', width: 18 },
+        { key: 'tgl_tebus', label: 'Tgl Tebus', width: 14 },
+        { key: 'tgl_habis', label: 'Est. Habis', width: 14 },
+        { key: 'status_prb', label: 'Diagnosa / Terapi', width: 18 }
+      ];
+      const rows = list.map((p, i) => ({
+        no: i + 1,
+        nama_pasien: p.nama_pasien,
+        no_wa: p.no_wa,
+        nama_obat: p.nama_obat,
+        aturan_pakai: p.aturan_pakai,
+        tgl_tebus: p.tgl_tebus,
+        tgl_habis: p.tgl_habis,
+        status_prb: p.status_prb
+      }));
+      return S().exportDataset('pdf', 'Laporan Pantauan Pasien Terapi Rutin & Tele-Refill', 'Laporan_Tele_Refill_ONS_' + dateTag, headers, rows, { sheetName: 'TeleRefill' });
+    },
     setCrmTab: (t) => {
       crmTab = t || 'kontak';
       if (S().AppState.subTabs) S().AppState.subTabs['crm-wa'] = crmTab;

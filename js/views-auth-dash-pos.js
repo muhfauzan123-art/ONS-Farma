@@ -3509,7 +3509,7 @@
 
   function computePosCartTotals(cart) {
     if (!cart) {
-      return { subtotal: 0, itemDiscTotal: 0, subAfterItemDisc: 0, diskonGlobal: 0, biayaServis: 0, biayaEmbalase: 0, ongkosKirim: 0, biayaLainnya: 0, totalBiayaTambahan: 0, grandTotal: 0 };
+      return { subtotal: 0, itemDiscTotal: 0, subAfterItemDisc: 0, diskonGlobal: 0, biayaServis: 0, biayaEmbalase: 0, ongkosKirim: 0, biayaLainnya: 0, totalBiayaTambahan: 0, pembulatan: 0, grandTotal: 0 };
     }
     const subtotal = (cart.items || []).reduce((s, it) => s + Number(it.harga_jual || 0) * Number(it.qty || 0), 0);
     const itemDiscTotal = (cart.items || []).reduce((s, it) => s + Number(it.diskon_item || 0), 0);
@@ -3525,7 +3525,10 @@
     const ongkosKirim = Math.max(0, Number(cart.ongkos_kirim || 0));
     const biayaLainnya = Math.max(0, Number(cart.biaya_lainnya || 0));
     const totalBiayaTambahan = biayaServis + biayaEmbalase + ongkosKirim + biayaLainnya;
-    const grandTotal = Math.max(0, subAfterItemDisc - Number(cart.diskon_global || 0) + totalBiayaTambahan);
+    const rawTotal = Math.max(0, subAfterItemDisc - Number(cart.diskon_global || 0) + totalBiayaTambahan);
+    const roundCfg = typeof S().getPosRoundingConfig === 'function' ? S().getPosRoundingConfig() : { nominal: 100, arah: 'terdekat' };
+    const pembulatan = typeof S().calculateRounding === 'function' ? S().calculateRounding(rawTotal, roundCfg) : 0;
+    const grandTotal = Math.max(0, rawTotal + pembulatan);
     return {
       subtotal,
       itemDiscTotal,
@@ -3536,6 +3539,7 @@
       ongkosKirim,
       biayaLainnya,
       totalBiayaTambahan,
+      pembulatan,
       grandTotal
     };
   }
@@ -4418,6 +4422,15 @@
           <span class="font-semibold" style="color:var(--ons-text-soft)">Biaya Lainnya</span>
           <input id="posBiayaLainnyaInp" type="number" min="0" value="${Number(cart.biaya_lainnya || 0)}" oninput="window.onPosFeeChange('biaya_lainnya', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
         </div>
+
+        ${totals.pembulatan !== 0 ? `
+        <div class="ons-pos-fee-row font-semibold" style="color:#0050CA;">
+          <span class="flex items-center gap-1.5">
+            <span>Pembulatan Kasir</span>
+            <span class="text-[9px] px-1 py-0.2 rounded bg-blue-100 text-blue-800 font-normal">Auto</span>
+          </span>
+          <span class="font-mono-num text-right text-xs font-bold">${totals.pembulatan > 0 ? '+' : ''}${S().rp(totals.pembulatan)}</span>
+        </div>` : ''}
 
         ${seeCost && cart.items.length ? `<div class="flex justify-between text-[11px] font-mono-num pt-1 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
           <span>Est. Laba Kotor (HPP ${S().rp(estHppCart)})</span>
@@ -6906,6 +6919,7 @@
       biaya_embalase: tots.biayaEmbalase,
       ongkos_kirim: tots.ongkosKirim,
       biaya_lainnya: tots.biayaLainnya,
+      pembulatan: tots.pembulatan || 0,
       id_order: cart.id_order || '',
       metode_bayar: metode,
       detail_split: detailSplit,
@@ -6968,6 +6982,7 @@
         ITEM: itemsCopy,
         SUBTOTAL: payload.subtotal,
         DISKON: payload.diskon_total,
+        PEMBULATAN: tots.pembulatan,
         PPN: 0,
         TOTAL: grandTotal,
         DIBAYAR: metode === 'PIUTANG' ? piutangDp : tunaiBayar,
