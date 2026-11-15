@@ -61,75 +61,211 @@
       const notaNo = search.get('nota');
       const totParam = Number(search.get('tot') || 0);
       const tglParam = search.get('tgl') || '';
-      const waInit = S().buildWaUrl ? S().buildWaUrl(prof.wa_usaha || '628110000990', `Halo Apoteker ${usahaNama}, saya ingin konsultasi cara minum / aturan pakai obat untuk Nota ${notaNo}.`) : 'https://wa.me/';
-      root.innerHTML = `<div class="min-h-screen flex items-center justify-center p-4" style="background:linear-gradient(135deg,#09202A,#0F172A);">
-        <div class="ons-card max-w-lg w-full p-6 space-y-4">
-          <div class="flex items-center gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
-            <img id="pubNotaLogo" src="${S().esc(usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-12 h-12 rounded-xl border object-cover bg-white"/>
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <h1 id="pubNotaApotek" class="font-extrabold text-base truncate">${S().esc(usahaNama)}</h1>
-                <span class="badge-bpom bpom-bebas">RESMI BPOM</span>
+
+      // 1. Cek apakah ada struk di localStorage browser ini
+      let cachedReceipt = null;
+      try {
+        if (global.localStorage) {
+          const raw = global.localStorage.getItem('ons_pub_receipt_' + notaNo);
+          if (raw) cachedReceipt = JSON.parse(raw);
+        }
+      } catch (_) {}
+
+      // 2. Fallback cek di AppState.penjualan
+      if (!cachedReceipt && S().AppState && Array.isArray(S().AppState.penjualan)) {
+        const found = S().AppState.penjualan.find((p) => p && p.no_invoice === notaNo);
+        if (found) {
+          const items = _getPosItemsForTrx ? _getPosItemsForTrx(S().AppState, found) : [];
+          cachedReceipt = {
+            NOTA: found.no_invoice,
+            TANGGAL: S().formatTgl ? S().formatTgl(found.tanggal, true) : found.tanggal,
+            PELANGGAN: found.pelanggan_nama || 'Pasien Umum',
+            KASIR: found.kasir_id || 'Kasir',
+            METODE: found.metode_bayar || 'TUNAI',
+            TOTAL: found.grand_total,
+            SUBTOTAL: found.subtotal || found.grand_total,
+            DISKON: found.diskon_total || 0,
+            PPN: found.pajak_ppn || 0,
+            PEMBULATAN: found.pembulatan || 0,
+            DIBAYAR: found.tunai_diterima || found.grand_total,
+            KEMBALI: found.kembalian || 0,
+            POIN: found.poin_didapat || 0,
+            ITEM: items.map((it) => ({
+              NAMA: it.nama_dagang || it.id_obat,
+              QTY: it.qty,
+              SATUAN: it.satuan,
+              HARGA: it.harga_jual,
+              SUBTOTAL: it.subtotal_item || (it.qty * it.harga_jual),
+              ATURAN_PAKAI: it.aturan_pakai || ''
+            })),
+            CATATAN: found.catatan || ''
+          };
+        }
+      }
+
+      function _renderPublicReceiptHtml(d) {
+        const data = d || {};
+        const pApotek = data.apotek || prof;
+        const trx = data.penjualan || data;
+        const items = data.items || data.ITEM || [];
+        const namaApotek = (pApotek.nama_usaha || pApotek.nama || usahaNama || 'Apotek ONS Farma').toUpperCase();
+        const almtApotek = [pApotek.alamat_usaha, pApotek.kota].filter(Boolean).join(', ') || 'Jl. Kesehatan Raya No. 88';
+        const apjNama = pApotek.nama_pemilik || data.APJ_NAMA || 'Apoteker Penanggung Jawab';
+        const apjSia = pApotek.no_sia || data.SIA_TOKO || '-';
+        const apjSipa = pApotek.sipa_pemilik || data.APJ_SIPA || '-';
+        const logoUrl = pApotek.logo_usaha_url || usahaLogo;
+        const waNum = pApotek.wa_usaha || pApotek.wa_admin || pApotek.telepon_usaha || prof.wa_usaha || '628110000990';
+        const waKonsul = S().buildWaUrl ? S().buildWaUrl(waNum, `Halo Apoteker ${namaApotek}, saya pasien Nota ${notaNo} ingin konsultasi aturan pakai obat.`) : ('https://wa.me/?text=' + encodeURIComponent(`Halo Apoteker ${namaApotek}, saya ingin konsultasi Nota ${notaNo}`));
+
+        const grandTot = Number(trx.TOTAL != null ? trx.TOTAL : (trx.grand_total != null ? trx.grand_total : totParam));
+        const subTot = Number(trx.SUBTOTAL != null ? trx.SUBTOTAL : (trx.subtotal != null ? trx.subtotal : grandTot));
+        const diskonRp = Number(trx.DISKON != null ? trx.DISKON : (trx.diskon_total != null ? trx.diskon_total : 0));
+        const ppnRp = Number(trx.PPN != null ? trx.PPN : (trx.pajak_ppn != null ? trx.pajak_ppn : 0));
+        const pembulatanRp = Number(trx.PEMBULATAN != null ? trx.PEMBULATAN : (trx.pembulatan != null ? trx.pembulatan : 0));
+        const dibayarRp = Number(trx.DIBAYAR != null ? trx.DIBAYAR : (trx.tunai_diterima != null ? trx.tunai_diterima : grandTot));
+        const kembaliRp = Number(trx.KEMBALI != null ? trx.KEMBALI : (trx.kembalian != null ? trx.kembalian : 0));
+        const tglStr = trx.TANGGAL || (trx.tanggal ? (S().formatTgl ? S().formatTgl(trx.tanggal, true) : trx.tanggal) : (tglParam || new Date().toLocaleDateString('id-ID')));
+        const pelangganNama = trx.PELANGGAN || trx.pelanggan_nama || 'Pasien Umum';
+        const kasirNama = trx.KASIR || trx.kasir_id || '-';
+        const metodeBayar = trx.METODE || trx.metode_bayar || 'TUNAI';
+
+        return `<div class="min-h-screen py-6 px-3 sm:px-6 flex items-center justify-center" style="background: radial-gradient(circle at 50% 10%, #0d2331 0%, #061117 100%);">
+          <div class="ons-card max-w-xl w-full p-5 sm:p-7 space-y-5 shadow-2xl rounded-2xl border border-emerald-500/30 bg-slate-900/95 text-slate-100">
+            <!-- Header Apotek -->
+            <div class="flex items-start justify-between gap-3 pb-4 border-b border-slate-700">
+              <div class="flex items-center gap-3">
+                <img src="${S().esc(logoUrl)}" alt="${S().esc(namaApotek)}" class="w-14 h-14 rounded-2xl border border-emerald-500/40 object-cover bg-white p-0.5 shadow-md"/>
+                <div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <h1 class="text-base sm:text-lg font-black tracking-wide text-emerald-400">${S().esc(namaApotek)}</h1>
+                    <span class="badge-bpom bpom-bebas text-[10px] py-0.5 px-2 font-bold">RESMI BPOM</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-0.5">${S().esc(almtApotek)}</p>
+                  <p class="text-[11px] text-slate-400 font-mono-num mt-0.5">SIA: <b>${S().esc(apjSia)}</b> &bull; SIPA: <b>${S().esc(apjSipa)}</b></p>
+                  <p class="text-[11px] text-emerald-300 font-medium">APJ: ${S().esc(apjNama)}</p>
+                </div>
               </div>
-              <div id="pubNotaApj" class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIA: ${S().esc(prof.no_sia || '-')}</div>
+            </div>
+
+            <!-- Struk Header Badge -->
+            <div class="p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/40 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-300 uppercase tracking-wider">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Bukti Pembelian Sah &amp; Resmi
+                </span>
+                <span class="px-2.5 py-0.5 rounded-md font-mono-num font-extrabold text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">${S().esc(notaNo)}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-emerald-500/20 font-mono-num">
+                <div><span class="text-slate-400">Waktu:</span> <span class="text-slate-200">${S().esc(tglStr)}</span></div>
+                <div><span class="text-slate-400">Kasir:</span> <span class="text-slate-200">${S().esc(kasirNama)}</span></div>
+                <div><span class="text-slate-400">Pasien:</span> <span class="font-bold text-slate-100">${S().esc(pelangganNama)}</span></div>
+                <div><span class="text-slate-400">Bayar:</span> <span class="font-bold text-emerald-300">${S().esc(metodeBayar)} (LUNAS)</span></div>
+              </div>
+            </div>
+
+            <!-- Rincian Item Belanja -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <span>💊</span> Rincian Item Obat &amp; Produk (${items.length} item)
+                </div>
+                <span class="text-[11px] text-emerald-400 font-semibold">Harga Resmi Toko</span>
+              </div>
+              ${items.length ? `
+              <div class="divide-y divide-slate-800 border-y border-slate-800 font-mono-num text-xs">
+                ${items.map((it, idx) => {
+                  const qty = Number(it.QTY != null ? it.QTY : (it.qty || 1));
+                  const sat = it.SATUAN || it.satuan || 'Unit';
+                  const hrg = Number(it.HARGA != null ? it.HARGA : (it.harga_jual || 0));
+                  const sub = Number(it.SUBTOTAL != null ? it.SUBTOTAL : (it.subtotal_item || (qty * hrg) || 0));
+                  const aturan = String(it.ATURAN_PAKAI || it.aturan_pakai || '').trim();
+                  return `<div class="py-2.5 flex items-start justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="font-bold text-slate-100 text-xs sm:text-sm leading-snug">${idx + 1}. ${S().esc(it.NAMA || it.nama_dagang || it.nama || 'Item')}</div>
+                      <div class="text-[11px] text-slate-400 mt-0.5">${qty} ${S().esc(sat)} &times; ${S().rp(hrg)}</div>
+                      ${aturan ? `<div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">
+                        <span>💊</span> Aturan Pakai: ${S().esc(aturan)}
+                      </div>` : ''}
+                    </div>
+                    <div class="font-bold text-slate-100 text-right whitespace-nowrap pt-0.5">${S().rp(sub)}</div>
+                  </div>`;
+                }).join('')}
+              </div>` : `
+              <div class="p-3 rounded-lg border border-slate-800 text-center text-xs text-slate-400 font-mono-num">
+                Total Transaksi: <b>${S().rp(grandTot)}</b>
+              </div>`}
+            </div>
+
+            <!-- Rekap Finansial -->
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1.5 font-mono-num text-xs">
+              <div class="flex justify-between text-slate-400"><span>Subtotal:</span> <span>${S().rp(subTot)}</span></div>
+              ${diskonRp > 0 ? `<div class="flex justify-between text-emerald-400"><span>Diskon:</span> <span>-${S().rp(diskonRp)}</span></div>` : ''}
+              ${pembulatanRp !== 0 ? `<div class="flex justify-between text-slate-400"><span>Pembulatan:</span> <span>${pembulatanRp > 0 ? '+' : ''}${S().rp(pembulatanRp)}</span></div>` : ''}
+              ${ppnRp > 0 ? `<div class="flex justify-between text-slate-400"><span>PPN:</span> <span>${S().rp(ppnRp)}</span></div>` : ''}
+              <div class="flex justify-between items-center text-sm sm:text-base font-extrabold text-white pt-2 border-t border-slate-800">
+                <span class="text-emerald-400">TOTAL BAYAR:</span>
+                <span class="text-emerald-400 text-lg">${S().rp(grandTot)}</span>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-400 pt-1">
+                <span>Diterima (${S().esc(metodeBayar)}): ${S().rp(dibayarRp)}</span>
+                ${kembaliRp > 0 ? `<span class="text-emerald-300 font-bold">Kembalian: ${S().rp(kembaliRp)}</span>` : '<span class="text-emerald-400">✓ Lunas</span>'}
+              </div>
+            </div>
+
+            <!-- Catatan Edukasi Obat -->
+            <div class="p-3 rounded-xl border border-slate-800 bg-slate-950/40 text-[11px] text-slate-400 space-y-1">
+              <div class="font-bold text-slate-300 flex items-center gap-1">
+                <span>🛡️</span> Informasi Keamanan &amp; Penyimpanan Obat
+              </div>
+              <p>Simpan obat pada tempat sejuk &amp; kering (&lt;25&deg;C), terhindar dari paparan sinar matahari langsung, dan jauhkan dari jangkauan anak-anak. Jangan hentikan konsumsi antibiotik sebelum habis tanpa izin dokter/apoteker.</p>
+            </div>
+
+            <!-- Tombol Aksi Pasien -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <a href="${S().esc(waKonsul)}" target="_blank" rel="noopener" class="ons-btn text-white text-xs font-bold py-2.5 px-3 rounded-xl text-center shadow flex items-center justify-center gap-1.5" style="background:linear-gradient(135deg, #25D366 0%, #128C7E 100%);">
+                <span>💬</span> <span>Konsultasi Apoteker (WA)</span>
+              </a>
+              <button type="button" onclick="window.print()" class="ons-btn ons-btn-ghost text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 border border-slate-700 hover:border-slate-500">
+                <span>🖨️</span> <span>Cetak / Simpan PDF</span>
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800 text-slate-400">
+              <a href="./index.html?katalog=1" class="text-emerald-400 hover:underline font-semibold flex items-center gap-1">
+                <span>🛍️</span> Pesan Obat Lagi Online
+              </a>
+              <a href="./index.html" class="hover:underline text-slate-400">Portal Staf Apotek &rarr;</a>
             </div>
           </div>
-          <div class="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 space-y-1.5 text-xs">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-bold text-emerald-700 dark:text-emerald-300 text-sm">&#9989; Nota Pembelian Digital</span>
-              <span class="font-mono-num font-bold text-emerald-700 dark:text-emerald-300">${S().esc(notaNo)}</span>
-            </div>
-            ${totParam > 0 ? `<div class="font-mono-num"><b>Total Transaksi:</b> ${S().rp(totParam)}${tglParam ? (' &bull; ' + S().esc(tglParam)) : ''}</div>` : ''}
-            <div id="pubNotaDetailBox" class="pt-1 text-[11px]" style="color:var(--ons-text-soft)">Memeriksa rincian item &amp; info apotek...</div>
+        </div>`;
+      }
+
+      if (cachedReceipt) {
+        root.innerHTML = _renderPublicReceiptHtml(cachedReceipt);
+        return true;
+      }
+
+      // Render skeleton card while querying public.struk API
+      root.innerHTML = `<div class="min-h-screen py-8 px-4 flex items-center justify-center" style="background: radial-gradient(circle at 50% 10%, #0d2331 0%, #061117 100%);">
+        <div id="pubNotaContainer" class="ons-card max-w-xl w-full p-6 space-y-4 rounded-2xl border border-emerald-500/30 bg-slate-900/90 text-slate-100">
+          <div class="text-center py-6 space-y-3">
+            <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div class="font-bold text-emerald-400 text-sm">Memuat Rincian Struk Digital Resmi...</div>
+            <div class="text-xs text-slate-400 font-mono-num">Nota: ${S().esc(notaNo)}</div>
           </div>
-          <div class="p-3 rounded-xl border text-xs space-y-1" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div class="font-bold">Edukasi Penyimpanan &amp; Keamanan Obat</div>
-            <p style="color:var(--ons-text-soft)">Simpan obat di tempat sejuk &amp; kering (suhu &lt;25&deg;C), terlindung dari sinar matahari langsung, dan jauhkan dari jangkauan anak-anak.</p>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <a id="pubNotaWaLink" target="_blank" rel="noopener" href="${S().esc(waInit)}" class="ons-btn ons-btn-emerald text-xs font-bold py-2.5 text-center">Tanya Apoteker (WA Gratis)</a>
-            <a href="./index.html?katalog=1" class="ons-btn ons-btn-primary text-xs font-bold py-2.5 text-center">Pesan Lagi / Refill Obat</a>
-          </div>
-          <a href="./index.html" class="block text-center text-xs underline" style="color:var(--ons-text-soft)">Masuk ke Portal Staf Apotek</a>
         </div>
       </div>`;
 
-      API().callApi('public.catalog', { cabang_id: 'ONS-01' }, { token: '' }).then((res) => {
-        if (res && res.apotek) {
-          const ap = res.apotek;
-          const logoEl = document.getElementById('pubNotaLogo');
-          const namEl = document.getElementById('pubNotaApotek');
-          const apjEl = document.getElementById('pubNotaApj');
-          const waEl = document.getElementById('pubNotaWaLink');
-          if (logoEl && ap.logo_usaha_url) logoEl.src = ap.logo_usaha_url;
-          if (namEl && ap.nama) namEl.textContent = ap.nama;
-          if (apjEl) apjEl.textContent = (ap.nama_pemilik || 'Apoteker Penanggung Jawab') + (ap.no_sia ? ' • SIA: ' + ap.no_sia : '');
-          if (waEl && S().buildWaUrl) {
-            waEl.href = S().buildWaUrl(ap.wa_admin || prof.wa_usaha || '628110000990', `Halo Apoteker ${ap.nama || usahaNama}, saya pasien Nota ${notaNo} ingin konsultasi aturan pakai obat.`);
-          }
+      API().callApi('public.struk', { no_invoice: notaNo }, { token: '' }).then((res) => {
+        if (res && res.ok && res.penjualan) {
+          root.innerHTML = _renderPublicReceiptHtml(res);
+        } else {
+          root.innerHTML = _renderPublicReceiptHtml({ NOTA: notaNo, TOTAL: totParam });
         }
-      }).catch(() => {});
-
-      const detBox = document.getElementById('pubNotaDetailBox');
-      const sess = API().getSession ? API().getSession() : null;
-      const hasAuth = Boolean((sess && sess.token) || API().isDemoMode());
-      if (hasAuth && detBox) {
-        API().callApi('pos.details', { no_invoice: notaNo }).then((d) => {
-          const items = (d && d.items) || [];
-          const trx = (d && d.penjualan) || {};
-          if (!items.length && !trx.no_invoice) {
-            detBox.textContent = 'Struk digital terbit resmi. Tunjukkan QR atau Nomor Nota ini saat konsultasi atau penukaran retur di apotek.';
-            return;
-          }
-          detBox.innerHTML = `
-            <div class="font-semibold mb-1">Tanggal: ${S().formatTgl(trx.tanggal, true)} &bull; Total: <b>${S().rp(trx.grand_total || totParam)}</b> (${S().esc(trx.metode_bayar || 'LUNAS')})</div>
-            ${items.length ? `<ul class="list-disc pl-4 space-y-0.5">${items.map((it) => `<li><b>${S().esc(it.nama_dagang || it.id_obat)}</b> (${it.qty} ${S().esc(it.satuan || '')}) — ${S().rp(it.subtotal_item || (Number(it.qty) * Number(it.harga_jual)))}</li>`).join('')}</ul>` : ''}`;
-        }).catch(() => {
-          if (detBox) detBox.textContent = 'Struk digital terbit resmi dari Apotek. Hubungi Apoteker via WhatsApp di bawah bila membutuhkan informasi dosis.';
-        });
-      } else if (detBox) {
-        detBox.textContent = 'Struk digital terbit resmi. Hubungi Apoteker kami via WhatsApp gratis di bawah bila membutuhkan informasi cara minum obat.';
-      }
+      }).catch(() => {
+        root.innerHTML = _renderPublicReceiptHtml({ NOTA: notaNo, TOTAL: totParam });
+      });
       return true;
     }
 
@@ -6375,6 +6511,22 @@
     const normData = (global.StrukEngine && typeof global.StrukEngine.enrichStrukData === 'function')
       ? global.StrukEngine.enrichStrukData(strukData)
       : strukData;
+
+    // Pastikan QR_URL dan Link Struk Digital publik selalu terisi
+    const digitalStrukUrl = normData.QR_URL || (global.location ? (global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(normData.NOTA || '') + '&tot=' + encodeURIComponent(String(normData.TOTAL || 0))) : '');
+    normData.QR_URL = digitalStrukUrl;
+
+    // Simpan struk ke localStorage agar bisa diakses cepat dan instan tanpa server
+    try {
+      if (global.localStorage && normData && normData.NOTA) {
+        global.localStorage.setItem('ons_pub_receipt_' + normData.NOTA, JSON.stringify(normData));
+        const historyJson = global.localStorage.getItem('ons_recent_receipts') || '[]';
+        const history = JSON.parse(historyJson);
+        const nextHist = [normData].concat(history.filter((r) => r && r.NOTA !== normData.NOTA)).slice(0, 30);
+        global.localStorage.setItem('ons_recent_receipts', JSON.stringify(nextHist));
+      }
+    } catch (_) {}
+
     const htmlPaper = global.StrukEngine ? global.StrukEngine.renderHtml(tplText, normData, targetMm) : '<pre>Struk OK</pre>';
     const plainTxt = global.StrukEngine ? global.StrukEngine.formatPlainText(tplText, normData, targetMm) : '';
     const waText = S().formatStrukWaMessage ? S().formatStrukWaMessage(normData) : plainTxt;
@@ -6384,46 +6536,178 @@
     const btLabel = btConnected ? ('Terhubung: ' + (S().ThermalPrinter.deviceName || 'Bluetooth')) : 'Bluetooth';
     global._lastStrukPayload = { tplText, strukData: normData, lebarMm: targetMm, plainTxt, waText, waTarget: cleanWa, itemsForEtiket: itemsForEtiket || [] };
 
-    S().openModal(`<div class="p-5 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-2">
+    S().openModal(`<div class="p-4 sm:p-5 space-y-3.5">
+      <!-- Header Nota Sukses -->
+      <div class="flex items-center justify-between pb-2.5 border-b" style="border-color:var(--ons-border)">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center font-extrabold text-lg border border-emerald-500/30">✓</div>
+          <div>
+            <div class="font-extrabold text-sm sm:text-base text-emerald-600">Transaksi Kasir Berhasil &bull; Lunas</div>
+            <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">
+              Nota: <b class="text-slate-800 dark:text-slate-200">${S().esc(normData.NOTA)}</b> &bull; Total: <b class="text-emerald-600">${S().rp(normData.TOTAL)}</b> (${S().esc(normData.METODE || 'TUNAI')})
+            </div>
+          </div>
+        </div>
+        <button onclick="ONSStore.closeModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+      </div>
+
+      <!-- HERO CARD: 1-KLIK KIRIM STRUK KE WHATSAPP PASIEN (RAMAH LINGKUNGAN & HEMAT KERTAS) -->
+      <div class="p-4 rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent space-y-3 shadow-sm">
         <div>
-          <div class="text-emerald-600 font-bold text-base">&#9989; Nota ${S().esc(normData.NOTA)}</div>
-          <div class="text-[11px]" style="color:var(--ons-text-soft)">Kertas Thermal ${targetMm} mm (${targetMm === 80 ? '46' : '32'} kolom) &bull; Siap cetak &amp; kirim WA</div>
+          <div class="flex items-center gap-1.5 font-bold text-sm text-emerald-700 dark:text-emerald-300">
+            <span class="text-base">📲</span>
+            <span>Kirim Struk Digital ke WhatsApp Pasien</span>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">1-Klik Resmi</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+            <b>Hemat kertas thermal &amp; ramah lingkungan 🌿</b> Pasien langsung menerima rincian belanja digital resmi dan tautan struk interaktif tanpa risiko struk pudar atau hilang.
+          </p>
         </div>
-        <div class="flex items-center gap-1.5">
-          <button onclick="window.switchStrukPreviewWidth(58)" class="ons-btn ${targetMm !== 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5">58mm</button>
-          <button onclick="window.switchStrukPreviewWidth(80)" class="ons-btn ${targetMm === 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5">80mm</button>
-          <button onclick="ONSStore.closeModal()" class="text-xl px-1.5">&times;</button>
+
+        <div class="space-y-2 pt-0.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Nomor WhatsApp Pasien / Pembeli:</label>
+            <div class="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-emerald-500">
+              <span class="px-3 py-2 text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 flex items-center gap-1 select-none">
+                <span>🇮🇩</span> +62
+              </span>
+              <input id="strukWaTargetInput" type="tel" class="w-full px-3 py-2 text-xs font-mono-num font-bold bg-transparent outline-none placeholder:text-slate-400" value="${S().esc(cleanWa)}" oninput="window.syncStrukWaHref(this.value)" placeholder="Contoh: 081234567890 (atau 812...)" />
+              ${cleanWa ? `<button type="button" onclick="document.getElementById('strukWaTargetInput').value='';window.syncStrukWaHref('');document.getElementById('strukWaTargetInput').focus();" class="px-2.5 py-1 text-slate-400 hover:text-slate-600 text-xs" title="Hapus nomor">&times;</button>` : ''}
+            </div>
+          </div>
+
+          <!-- Tombol Utama 1-Klik Hijau WhatsApp -->
+          <button id="strukWaManualBtn" type="button" onclick="window.sendStrukToWhatsAppPatient()" class="ons-btn w-full py-3 px-4 rounded-xl font-bold text-white text-xs sm:text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition duration-150" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);">
+            <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 6.46 17.5 2 12.04 2M12.05 3.67C16.58 3.67 20.28 7.37 20.28 11.91C20.28 16.45 16.58 20.16 12.05 20.16C10.53 20.16 9.07 19.74 7.82 18.96L7.49 18.76L4.37 19.58L5.2 16.54L4.98 16.19C4.13 14.85 3.68 13.4 3.68 11.91C3.68 7.37 7.38 3.67 12.05 3.67M9.25 7.15C9.07 7.15 8.78 7.22 8.53 7.49C8.28 7.76 7.56 8.43 7.56 9.8C7.56 11.17 8.56 12.49 8.7 12.67C8.84 12.85 10.74 15.78 13.64 17.03C14.33 17.33 14.86 17.51 15.28 17.64C15.97 17.86 16.6 17.83 17.1 17.76C17.65 17.68 18.8 17.06 19.04 16.38C19.28 15.7 19.28 15.12 19.21 15C19.14 14.88 18.95 14.81 18.66 14.67C18.37 14.53 17 13.85 16.74 13.76C16.48 13.67 16.3 13.62 16.12 13.9C15.94 14.18 15.42 14.8 15.26 14.98C15.1 15.16 14.94 15.18 14.65 15.04C14.36 14.9 13.14 14.49 11.7 13.21C10.58 12.21 9.82 10.98 9.6 10.61C9.38 10.24 9.58 10.04 9.72 9.9C9.85 9.77 10.01 9.56 10.15 9.39C10.29 9.22 10.34 9.09 10.43 8.91C10.52 8.73 10.48 8.57 10.41 8.43C10.34 8.29 9.79 6.94 9.56 6.39C9.34 5.86 9.12 5.93 8.95 5.92L8.53 5.91L9.25 7.15Z"/></svg>
+            <span>Kirim Struk ke WhatsApp Pasien (1-Klik)</span>
+          </button>
         </div>
-      </div>
-      <div class="ons-struk-paper-tray max-h-[48vh] overflow-y-auto">${htmlPaper}</div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
-        <button onclick="window.printStrukWebBt()" class="ons-btn ons-btn-primary py-1.5" title="Cetak langsung via Web Bluetooth ESC/POS">${S().esc(btLabel)}</button>
-        <button onclick="window.printStrukRawBt()" class="ons-btn ons-btn-ghost py-1.5">RawBT HP</button>
-        <button onclick="window.printStrukBrowser()" class="ons-btn ons-btn-ghost py-1.5">Print / PDF</button>
-        <button onclick="window.downloadStrukPngNow()" class="ons-btn ons-btn-ghost py-1.5">Unduh PNG</button>
-      </div>
-      <div class="p-3 rounded-xl border space-y-2 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-        <div class="flex items-center justify-between gap-2">
-          <span class="font-bold text-emerald-600">Kirim Struk ke WhatsApp (Manual Gratis)</span>
-          <span class="text-[11px]" style="color:var(--ons-text-soft)">Buka WA tanpa token berbayar</span>
+
+        <!-- Tombol Aksi Salin & Share -->
+        <div class="grid grid-cols-3 gap-1.5 pt-0.5 text-center">
+          <button type="button" onclick="window.copyStrukDigitalLink()" class="ons-btn ons-btn-ghost text-[11px] py-1.5 px-2 flex items-center justify-center gap-1 font-semibold border" style="border-color:var(--ons-border)" title="Salin URL struk online">
+            <span>🔗</span> <span>Salin Link</span>
+          </button>
+          <button type="button" onclick="window.copyStrukWaText()" class="ons-btn ons-btn-ghost text-[11px] py-1.5 px-2 flex items-center justify-center gap-1 font-semibold border" style="border-color:var(--ons-border)" title="Salin pesan WA lengkap">
+            <span>📋</span> <span>Salin Pesan</span>
+          </button>
+          <button type="button" onclick="window.shareStrukDigital()" class="ons-btn ons-btn-ghost text-[11px] py-1.5 px-2 flex items-center justify-center gap-1 font-semibold border" style="border-color:var(--ons-border)" title="Bagikan ke WhatsApp/Telegram">
+            <span>📤</span> <span>Bagikan</span>
+          </button>
         </div>
-        <div class="flex flex-wrap gap-1.5 items-center">
-          <input id="strukWaTargetInput" type="tel" class="ons-input font-mono-num text-xs flex-1 min-w-[170px]" value="${S().esc(cleanWa)}" oninput="window.syncStrukWaHref(this.value)" placeholder="No. WA 08xx/628xx (kosong = pilih kontak di WA)"/>
-          <button type="button" onclick="window.copyStrukWaText()" class="ons-btn ons-btn-ghost text-xs py-2 px-3">Salin Teks</button>
-        </div>
-        <div class="flex flex-wrap gap-1.5">
-          <a id="strukWaManualBtn" target="_blank" rel="noopener" onclick="return window.launchStrukWaManual()" href="${S().esc(waHref)}" class="ons-btn ons-btn-emerald flex-1 text-xs py-2 font-bold">Kirim Struk ke WhatsApp (Gratis)</a>
-          ${(itemsForEtiket && itemsForEtiket.length) ? `<button onclick="window.printAllEtiketObat()" class="ons-btn ons-btn-ghost text-xs">Cetak Etiket (${itemsForEtiket.length})</button>` : ''}
-        </div>
-        <details class="text-[11px]">
-          <summary class="cursor-pointer font-semibold" style="color:var(--ons-text-soft)">Lihat Pratinjau Teks Pesan WA</summary>
-          <pre class="mt-1.5 p-2 rounded border font-mono-num whitespace-pre-wrap text-[11px] max-h-36 overflow-auto" style="background:var(--ons-bg-card);border-color:var(--ons-border)">${S().esc(waText)}</pre>
+
+        <details class="text-[11px] pt-1">
+          <summary class="cursor-pointer text-slate-500 font-semibold hover:text-emerald-600 transition flex items-center gap-1">
+            <span>👁️</span> <span>Lihat Pratinjau Teks Pesan WhatsApp</span>
+          </summary>
+          <pre class="mt-2 p-2.5 rounded-xl border font-mono-num whitespace-pre-wrap text-[11px] max-h-36 overflow-auto" style="background:var(--ons-bg-card);border-color:var(--ons-border)">${S().esc(waText)}</pre>
         </details>
       </div>
-      <button onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost w-full text-xs">Tutup &amp; Siap Transaksi Berikutnya</button>
-    </div>`, '560px');
+
+      <!-- CETAK KERTAS THERMAL (OPSIONAL) -->
+      <div class="p-3.5 rounded-2xl border space-y-2 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <span class="text-sm">🖨️</span>
+            <span class="font-bold text-slate-700 dark:text-slate-300">Cetak Kertas Thermal (Bila Pasien Membutuhkan Kertas)</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="window.switchStrukPreviewWidth(58)" class="ons-btn ${targetMm !== 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[10px] py-0.5 px-2">58mm</button>
+            <button onclick="window.switchStrukPreviewWidth(80)" class="ons-btn ${targetMm === 80 ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[10px] py-0.5 px-2">80mm</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
+          <button onclick="window.printStrukWebBt()" class="ons-btn ons-btn-primary py-1.5 text-[11px]" title="Cetak langsung via Web Bluetooth ESC/POS">${S().esc(btLabel)}</button>
+          <button onclick="window.printStrukRawBt()" class="ons-btn ons-btn-ghost py-1.5 text-[11px]">RawBT HP</button>
+          <button onclick="window.printStrukBrowser()" class="ons-btn ons-btn-ghost py-1.5 text-[11px]">Print / PDF</button>
+          <button onclick="window.downloadStrukPngNow()" class="ons-btn ons-btn-ghost py-1.5 text-[11px]">Unduh PNG</button>
+        </div>
+
+        ${(itemsForEtiket && itemsForEtiket.length) ? `
+        <div class="pt-0.5">
+          <button onclick="window.printAllEtiketObat()" class="ons-btn ons-btn-ghost w-full py-1.5 text-[11px] flex items-center justify-center gap-1 font-semibold text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+            <span>🏷️</span> Cetak Etiket Obat (${itemsForEtiket.length} item)
+          </button>
+        </div>` : ''}
+
+        <details class="text-[11px] pt-1">
+          <summary class="cursor-pointer text-slate-500 font-medium hover:text-slate-700">Lihat Pratinjau Kertas Thermal (${targetMm} mm)</summary>
+          <div class="ons-struk-paper-tray max-h-[30vh] overflow-y-auto mt-2 p-2 border rounded-xl bg-white shadow-inner">${htmlPaper}</div>
+        </details>
+      </div>
+
+      <!-- FOOTER: TRANSAKSI BARU -->
+      <button id="btnNewTrxAfterStruk" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2 border border-slate-300 dark:border-slate-700 hover:border-emerald-500">
+        <span class="text-emerald-600 text-sm">➕</span>
+        <span>Tutup &amp; Siap Transaksi Baru (Enter / Spasi)</span>
+      </button>
+    </div>`, '580px');
   }
+
+  global.sendStrukToWhatsAppPatient = () => {
+    const p = global._lastStrukPayload;
+    if (!p) return;
+    const inp = document.getElementById('strukWaTargetInput');
+    const rawVal = inp ? inp.value.trim() : (p.waTarget || '');
+    p.waTarget = rawVal;
+
+    let digits = rawVal.replace(/[^0-9]/g, '');
+    if (!digits || digits.length < 7) {
+      global.toast('Mohon masukkan nomor WhatsApp pasien yang valid (contoh: 081234567890)', 'warn');
+      if (inp) inp.focus();
+      return;
+    }
+    if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+    else if (digits.startsWith('8')) digits = '62' + digits;
+
+    const waUrl = 'https://wa.me/' + digits + '?text=' + encodeURIComponent(p.waText || '');
+    if (typeof global.open === 'function') {
+      global.open(waUrl, '_blank');
+    }
+    const btn = document.getElementById('strukWaManualBtn');
+    if (btn) {
+      btn.innerHTML = `<span>✓</span> <span>Struk Terkirim ke WhatsApp (+${digits})!</span>`;
+      btn.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+    }
+    global.toast('Struk digital resmi berhasil dibuka di WhatsApp pasien!', 'ok');
+  };
+
+  global.copyStrukDigitalLink = () => {
+    const p = global._lastStrukPayload;
+    const link = (p && p.strukData && p.strukData.QR_URL) || (global.location ? (global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent((p && p.strukData && p.strukData.NOTA) || '')) : '');
+    if (!link) {
+      global.toast('Tautan struk digital tidak tersedia.', 'warn');
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        global.toast('Link struk digital disalin! Siap dibagikan ke pasien.', 'ok');
+      }).catch(() => {
+        global.toast('Link: ' + link, 'ok');
+      });
+    } else {
+      global.toast('Link: ' + link, 'ok');
+    }
+  };
+
+  global.shareStrukDigital = async () => {
+    const p = global._lastStrukPayload;
+    if (!p) return;
+    const link = (p.strukData && p.strukData.QR_URL) || (global.location ? (global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(p.strukData.NOTA || '')) : '');
+    const title = 'Struk Belanja Digital - ' + (p.strukData.NAMA_TOKO || 'Apotek ONS Farma');
+    const text = 'Berikut rincian struk belanja digital resmi untuk Nota ' + (p.strukData.NOTA || '') + ' di ' + (p.strukData.NAMA_TOKO || 'Apotek ONS Farma');
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url: link });
+        global.toast('Struk berhasil dibagikan!', 'ok');
+      } catch (err) {
+        if (err.name !== 'AbortError') global.copyStrukDigitalLink();
+      }
+    } else {
+      global.copyStrukDigitalLink();
+    }
+  };
 
   global.syncStrukWaHref = (rawPhone) => {
     const p = global._lastStrukPayload;
@@ -6431,12 +6715,11 @@
     p.waTarget = String(rawPhone || '').trim();
     const btn = document.getElementById('strukWaManualBtn');
     if (btn && S().buildWaUrl) {
-      btn.href = S().buildWaUrl(p.waTarget, p.waText);
+      btn.setAttribute('data-target-phone', p.waTarget);
     }
   };
   global.launchStrukWaManual = () => {
-    const inp = document.getElementById('strukWaTargetInput');
-    if (inp) global.syncStrukWaHref(inp.value);
+    global.sendStrukToWhatsAppPatient();
     return true;
   };
   global.copyStrukWaText = () => {

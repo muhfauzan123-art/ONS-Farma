@@ -1528,19 +1528,25 @@
   function formatStrukWaMessage(d) {
     const s = d || {};
     const prof = getStoreProfile();
+    const namaApotek = (s.NAMA_TOKO || prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase();
     const lines = [
-      '*STRUK PEMBELIAN DIGITAL*',
-      '*' + (s.NAMA_TOKO || prof.nama_usaha || 'APOTEK ONS FARMA') + '*'
+      '🌿 *STRUK BELANJA DIGITAL RESMI*',
+      '*' + namaApotek + '*'
     ];
     const almt = s.ALAMAT_TOKO || [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ');
     if (almt) lines.push(almt);
-    if (prof.no_sia) lines.push('SIA: ' + prof.no_sia);
-    lines.push('--------------------------------');
-    lines.push('No. Nota  : *' + (s.NOTA || '-') + '*');
-    lines.push('Tanggal   : ' + (s.TANGGAL || new Date().toLocaleString('id-ID')));
-    lines.push('Pelanggan : ' + (s.PELANGGAN || 'Pasien Umum'));
-    lines.push('Kasir     : ' + (s.KASIR || '-'));
-    lines.push('--------------------------------');
+    if (prof.no_sia || s.SIA_TOKO) lines.push('SIA: ' + (prof.no_sia || s.SIA_TOKO));
+    const apjNama = prof.nama_pemilik || s.APJ_NAMA || '';
+    const apjSipa = prof.sipa_pemilik || s.APJ_SIPA || '';
+    if (apjNama && apjNama !== '-') lines.push('Apoteker: ' + apjNama + (apjSipa && apjSipa !== '-' ? (' (SIPA: ' + apjSipa + ')') : ''));
+    lines.push('----------------------------------------');
+    lines.push('No. Nota    : *' + (s.NOTA || '-') + '*');
+    lines.push('Tanggal     : ' + (s.TANGGAL || new Date().toLocaleString('id-ID')));
+    lines.push('Pelanggan   : ' + (s.PELANGGAN || 'Pasien Umum'));
+    lines.push('Kasir       : ' + (s.KASIR || '-'));
+    lines.push('Metode Bayar: ' + (s.METODE || 'TUNAI'));
+    lines.push('----------------------------------------');
+    lines.push('*RINCIAN ITEM BELANJA:*');
     (s.ITEM || []).forEach((it, idx) => {
       const qty = Number(it.QTY || it.qty || 1);
       const sat = it.SATUAN || it.satuan || 'Unit';
@@ -1549,21 +1555,27 @@
       const aturan = String(it.ATURAN_PAKAI || it.aturan_pakai || '').trim();
       lines.push((idx + 1) + '. ' + (it.NAMA || it.nama || 'Item'));
       lines.push('   ' + qty + ' ' + sat + ' x ' + rp(hrg) + ' = *' + rp(sub) + '*');
-      if (aturan) lines.push('   _Aturan pakai: ' + aturan + '_');
+      if (aturan) lines.push('   _💊 Aturan pakai: ' + aturan + '_');
     });
-    lines.push('--------------------------------');
-    lines.push('Subtotal  : ' + rp(s.SUBTOTAL || s.TOTAL || 0));
-    if (Number(s.DISKON || 0) > 0) lines.push('Diskon    : -' + rp(s.DISKON));
-    if (Number(s.PPN || 0) > 0) lines.push('PPN       : ' + rp(s.PPN));
-    lines.push('*TOTAL    : ' + rp(s.TOTAL || 0) + '*');
-    lines.push('Bayar (' + (s.METODE || 'TUNAI') + ') : ' + rp(s.DIBAYAR || s.TOTAL || 0));
-    if (Number(s.KEMBALI || 0) > 0) lines.push('Kembali   : ' + rp(s.KEMBALI));
-    if (Number(s.POIN || 0) > 0) lines.push('Poin (+)  : +' + s.POIN + ' poin');
-    lines.push('--------------------------------');
+    lines.push('----------------------------------------');
+    lines.push('Subtotal    : ' + rp(s.SUBTOTAL || s.TOTAL || 0));
+    if (Number(s.DISKON || 0) > 0) lines.push('Diskon      : -' + rp(s.DISKON));
+    if (Number(s.PEMBULATAN || 0) !== 0) lines.push('Pembulatan  : ' + (Number(s.PEMBULATAN) > 0 ? '+' : '') + rp(s.PEMBULATAN));
+    if (Number(s.PPN || 0) > 0) lines.push('PPN         : ' + rp(s.PPN));
+    lines.push('*TOTAL AKHIR: ' + rp(s.TOTAL || 0) + '*');
+    if (s.DIBAYAR != null) lines.push('Bayar / Uang: ' + rp(s.DIBAYAR));
+    if (Number(s.KEMBALI || 0) > 0) lines.push('Kembali     : ' + rp(s.KEMBALI));
+    if (Number(s.POIN || 0) > 0) lines.push('Poin Member : +' + s.POIN + ' poin');
+    lines.push('----------------------------------------');
+    const strukUrl = s.QR_URL || (typeof window !== 'undefined' && window.location ? (window.location.origin + window.location.pathname + '?nota=' + encodeURIComponent(s.NOTA || '') + '&tot=' + encodeURIComponent(String(s.TOTAL || 0))) : '');
+    if (strukUrl) {
+      lines.push('📄 *Buka Link Struk Digital Resmi (Tanpa Kertas):*');
+      lines.push(strukUrl);
+      lines.push('');
+    }
     if (s.CATATAN) lines.push('Catatan: ' + s.CATATAN);
-    if (s.QR_URL) lines.push('Verifikasi Nota: ' + s.QR_URL);
-    lines.push('APJ/Pemilik: ' + (prof.nama_pemilik || 'Apoteker Penanggung Jawab'));
-    lines.push('_Terima kasih, semoga lekas sembuh!_');
+    lines.push('_Struk digital ini adalah bukti transaksi yang sah & resmi._');
+    lines.push('_Terima kasih telah berbelanja di ' + (prof.nama_usaha || 'Apotek ONS Farma') + '. Semoga lekas sembuh!_ 🙏');
     return lines.join('\n');
   }
 

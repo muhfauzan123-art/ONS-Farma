@@ -624,6 +624,59 @@
       };
     }
 
+    // --- STRUK DIGITAL RESMI PUBLIK (1-Klik WhatsApp Pasien & Paperless) ---
+    if (action === 'public.struk' || action === 'pos.publicStruk') {
+      const qInv = String((d && (d.no_invoice || d.nota)) || '').trim();
+      if (!qInv) throw new Error('Nomor nota/invoice wajib diisi.');
+      const trx = (db.penjualan || []).find((p) => p && String(p.no_invoice || '').trim() === qInv);
+      if (!trx) throw new Error('Struk transaksi dengan nomor ' + qInv + ' tidak ditemukan.');
+      const dets = (db.detail_penjualan || []).filter((dt) => String(dt.id_transaksi) === String(trx.id_transaksi));
+      const items = dets.map((dt) => {
+        const o = (db.master_obat || []).find((x) => x.id_obat === dt.id_obat) || {};
+        return {
+          id_obat: dt.id_obat,
+          nama_dagang: o.nama_dagang || dt.id_obat,
+          qty: Number(dt.qty || 0),
+          satuan: dt.satuan || o.satuan_terkecil || 'Unit',
+          harga_jual: Number(dt.harga_jual || 0),
+          subtotal_item: Number(dt.subtotal_item || (dt.qty * dt.harga_jual) || 0),
+          aturan_pakai: dt.aturan_pakai || ''
+        };
+      });
+      const prof = db.store_profile || {};
+      return {
+        ok: true,
+        penjualan: {
+          no_invoice: trx.no_invoice,
+          tanggal: trx.tanggal,
+          pelanggan_nama: trx.pelanggan_nama || 'Pasien Umum',
+          metode_bayar: trx.metode_bayar || 'TUNAI',
+          subtotal: Number(trx.subtotal || trx.grand_total || 0),
+          diskon_total: Number(trx.diskon_total || 0),
+          pajak_ppn: Number(trx.pajak_ppn || 0),
+          pembulatan: Number(trx.pembulatan || 0),
+          grand_total: Number(trx.grand_total || 0),
+          tunai_diterima: Number(trx.tunai_diterima || trx.grand_total || 0),
+          kembalian: Number(trx.kembalian || 0),
+          status_trx: trx.status_trx || 'LUNAS',
+          kasir_id: trx.kasir_id || 'Kasir',
+          catatan: trx.catatan || ''
+        },
+        items: items,
+        apotek: {
+          nama_usaha: prof.nama_usaha || 'Apotek ONS Farma',
+          alamat_usaha: prof.alamat_usaha || '',
+          kota: prof.kota || '',
+          telepon_usaha: prof.telepon_usaha || '',
+          wa_usaha: prof.wa_usaha || prof.wa_admin || '',
+          no_sia: prof.no_sia || '',
+          nama_pemilik: prof.nama_pemilik || '',
+          sipa_pemilik: prof.sipa_pemilik || '',
+          logo_usaha_url: prof.logo_usaha_url || ''
+        }
+      };
+    }
+
     if (action === 'auth.login') {
       const u = db.users.find((x) => x.username.toLowerCase() === String(d.username || '').toLowerCase());
       if (!u) throw new Error('Username tidak ditemukan (gunakan: pemilik / apj / kasir).');
