@@ -12666,11 +12666,33 @@
   global.openInputKonsinyasi = () => {
     grnHeader.jenis_penerimaan = 'KONSINYASI';
     grnHeader.status_bayar = 'KONSINYASI';
-    global.setFakturTab('input');
+    grnHeader.tgl_terima = new Date().toISOString().slice(0, 10);
+    grnHeader.tgl_jatuh_tempo = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    if (!grnHeader.no_faktur_pbf) {
+      grnHeader.no_faktur_pbf = 'KNS/' + new Date().toISOString().slice(0, 7).replace('-', '') + '/' + Math.floor(100 + Math.random() * 900);
+    }
+    const st = S().AppState;
+    if (st) {
+      st.activeView = 'konsinyasi';
+      if (!st.subTabs) st.subTabs = {};
+      st.subTabs.konsinyasi = 'input';
+      st.activeSubTab = 'input';
+    }
+    konsSubTab = 'input';
+    global.renderActiveView();
+    if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
   global.setKonsSubTab = (tab) => {
-    konsSubTab = ['status', 'masuk', 'retur', 'stok'].includes(tab) ? tab : 'status';
+    konsSubTab = ['status', 'masuk', 'retur', 'stok', 'input'].includes(tab) ? tab : 'masuk';
+    const st = S().AppState;
+    if (st) {
+      st.activeView = 'konsinyasi';
+      if (!st.subTabs) st.subTabs = {};
+      st.subTabs.konsinyasi = konsSubTab;
+      st.activeSubTab = konsSubTab;
+    }
     global.renderActiveView();
+    if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
   global.setKonsSearchQ = (val) => {
     konsSearchQ = val || '';
@@ -12807,14 +12829,7 @@
         <div style="text-align:right">Sales / Kurir Supplier,<br/><br/><br/><b>(................................)</b></div>
       </div>
     </div>`;
-    S().openModal(`<div class="p-6 space-y-3">
-      <div class="flex justify-between items-center"><h3 class="font-bold text-base">Bukti Retur Konsinyasi</h3><button type="button" onclick="window.ONSStore.closeModal()" class="text-xl px-1">&times;</button></div>
-      <div id="konsReturPrintArea">${html}</div>
-      <div class="flex justify-end gap-2">
-        <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
-        <button type="button" onclick="ONSStore.printHtmlZone(document.getElementById('konsReturPrintArea').innerHTML,'Bukti Retur Konsinyasi')" class="ons-btn ons-btn-primary text-xs font-bold">Cetak / Print</button>
-      </div>
-    </div>`, { mode: 'spotlight', maxWidth: '760px' });
+    return S().printHtmlZone(html, 'Bukti Retur Konsinyasi - ' + (row.id_mutasi || 'RETUR'));
   };
   global.exportKonsinyasiData = (mode) => {
     const st = S().AppState;
@@ -13390,7 +13405,628 @@
     global.renderActiveView();
   };
 
-  global.ONSViewsInventoryProcurement = { renderMasterObatView, renderKontakView, renderGudangView, renderDefectaView, renderFakturView };
+  
+  // =========================================================================
+  // DEDICATED KONSINYASI VIEW & OFFICIAL A4 PRINT ENGINE (APOTEK DIGITAL COMPATIBLE)
+  // =========================================================================
+
+  function renderKonsinyasiView(subTab) {
+    const st = S().AppState;
+    if (subTab && ['masuk', 'status', 'retur', 'stok', 'input'].includes(subTab)) {
+      konsSubTab = subTab;
+      if (st) {
+        if (!st.subTabs) st.subTabs = {};
+        st.subTabs.konsinyasi = konsSubTab;
+        st.activeSubTab = konsSubTab;
+      }
+    } else {
+      konsSubTab = (st && st.activeSubTab) || (st && st.subTabs && st.subTabs.konsinyasi) || konsSubTab || 'masuk';
+      if (konsSubTab === 'konsinyasi') konsSubTab = 'masuk';
+    }
+
+    const sum = st.konsinyasiSummary || { items: [], settlements: [], totals: { qty_terjual: 0, qty_sisa: 0, tagihan_belum_bayar: 0, sudah_dibayar: 0 } };
+    const allItems = Array.isArray(sum.items) ? sum.items : [];
+    const knsDrafts = _readLocalList(KONSINYASI_DRAFTS_KEY);
+    const masukRows = _getKonsinyasiMasukRows(st, allItems);
+    const returRows = _getKonsinyasiReturRows(st, allItems);
+    const stokRows = allItems.filter((it) => Number(it.qty_sisa || 0) > 0);
+    const pendingTagihan = Number((sum.totals && sum.totals.tagihan_belum_bayar) || 0);
+
+    // Navigasi Tab Konsinyasi Modern (Matching Apotek Digital)
+    const topBarHtml = `
+      <div class="ons-card p-3 flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setKonsSubTab('masuk')"
+            class="ons-tab-btn flex items-center gap-1.5 ${konsSubTab === 'masuk' ? 'active font-bold shadow-sm' : ''}">
+            <span>📥</span>
+            <span>Konsinyasi Masuk</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 font-mono-num font-semibold">${masukRows.length}</span>
+          </button>
+          <button type="button" onclick="window.setKonsSubTab('status')"
+            class="ons-tab-btn flex items-center gap-1.5 ${konsSubTab === 'status' ? 'active font-bold shadow-sm' : ''}">
+            <span>⚖️</span>
+            <span>Status Konsinyasi</span>
+            ${pendingTagihan > 0
+              ? `<span class="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 font-bold">${S().rp(pendingTagihan)}</span>`
+              : `<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 font-semibold">Selesai</span>`}
+          </button>
+          <button type="button" onclick="window.setKonsSubTab('retur')"
+            class="ons-tab-btn flex items-center gap-1.5 ${konsSubTab === 'retur' ? 'active font-bold shadow-sm' : ''}">
+            <span>🔄</span>
+            <span>Retur Konsinyasi</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 font-mono-num font-semibold">${returRows.length}</span>
+          </button>
+          <button type="button" onclick="window.setKonsSubTab('stok')"
+            class="ons-tab-btn flex items-center gap-1.5 ${konsSubTab === 'stok' ? 'active font-bold shadow-sm' : ''}">
+            <span>📦</span>
+            <span>Stok Konsinyasi</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 font-mono-num font-semibold">${stokRows.length}</span>
+          </button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3">
+            Draft (${knsDrafts.length})
+          </button>
+          <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3 shadow-sm">
+            + Input Konsinyasi
+          </button>
+        </div>
+      </div>
+    `;
+
+    let bodyHtml = '';
+    if (konsSubTab === 'input') {
+      bodyHtml = _renderDedicatedInputKonsinyasiHtml(st);
+    } else {
+      bodyHtml = renderKonsinyasiTabHtml(st, true);
+    }
+
+    return `
+      <div class="space-y-4 ons-view-enter">
+        <!-- Header Banner Konsinyasi -->
+        <div class="ons-card p-4 flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-indigo-600">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🤝</span>
+              <h1 class="text-lg font-black text-slate-900 dark:text-white">
+                ${konsSubTab === 'masuk' ? 'Konsinyasi Masuk' :
+                  (konsSubTab === 'status' ? 'Status Konsinyasi & Rekonsiliasi Setoran' :
+                  (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang)' :
+                  (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi & Monitoring ED' : 'Form Penerimaan Barang Konsinyasi')))}
+              </h1>
+              <span class="badge-bpom bpom-bebas">Titip Jual Bebas Hutang Awal</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              ${konsSubTab === 'masuk' ? 'Pencatatan nota barang titipan distributor/supplier. Stok fisik bertambah di kasir tanpa membentuk utang dagang.' :
+                (konsSubTab === 'status' ? 'Prinsip Apotek Digital: Tagihan supplier terbentuk otomatis HANYA ketika obat titipan laku terjual di Kasir POS.' :
+                (konsSubTab === 'retur' ? 'Arsip pengembalian fisik barang titip jual yang tak laku atau menjelang expired date kepada pihak penitip.' :
+                (konsSubTab === 'stok' ? 'Audit sediaan fisik konsinyasi, lokasi rak penyimpanan di apotek, dan pemantauan masa simpan batch.' :
+                'Masukkan faktur/surat jalan konsinyasi baru ke persediaan apotek.')))}
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Muat ulang & sinkronkan data server">🔄 Sinkron</button>
+            <button type="button" onclick="window.printKonsinyasiStokA4()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-bold">🖨️ Cetak Rekap Stok A4</button>
+          </div>
+        </div>
+
+        ${topBarHtml}
+        ${bodyHtml}
+      </div>
+    `;
+  }
+
+  function _renderDedicatedInputKonsinyasiHtml(st) {
+    const suppliers = (st.supplierPbf || []).slice();
+    const allObat = (st.masterObat || []).slice();
+
+    return `
+      <div class="ons-card p-5 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b" style="border-color:var(--ons-border)">
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.setKonsSubTab('masuk')" class="ons-btn ons-btn-ghost text-xs font-bold py-1 px-2.5">← Kembali</button>
+            <h2 class="text-base font-bold text-slate-900 dark:text-white">Penerimaan Barang Konsinyasi Masuk Baru</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+              Hutang Awal: Rp 0 (Laku Baru Bayar)
+            </span>
+          </div>
+        </div>
+
+        <!-- Form Header Dokumen -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div>
+            <label class="font-bold block mb-1">Tanggal Terima *</label>
+            <input type="date" id="knsInpTglTerima" class="ons-input text-xs" value="${S().esc(grnHeader.tgl_terima || new Date().toISOString().slice(0, 10))}"/>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Penitip / Supplier PBF *</label>
+            <select id="knsInpSupplier" class="ons-select text-xs">
+              <option value="">-- Pilih Supplier Penitip --</option>
+              ${suppliers.map((s) => `<option value="${S().esc(s.nama_pbf || s.id_pbf)}" ${grnHeader.id_pbf === (s.nama_pbf || s.id_pbf) ? 'selected' : ''}>${S().esc(s.nama_pbf || s.id_pbf)}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">No. Surat Jalan / Faktur Konsinyasi *</label>
+            <input type="text" id="knsInpNoFaktur" class="ons-input text-xs font-mono-num font-bold" placeholder="Misal: KNS-202611-001" value="${S().esc(grnHeader.no_faktur_pbf || '')}"/>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Tanggal Jatuh Tempo Setoran</label>
+            <input type="date" id="knsInpTglTempo" class="ons-input text-xs" value="${S().esc(grnHeader.tgl_jatuh_tempo || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10))}"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div>
+            <label class="font-bold block mb-1">Jenis Pembayaran</label>
+            <input type="text" class="ons-input text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold" value="KONSINYASI (Bagi Hasil / Laku Bayar)" readonly/>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Gudang Penyimpanan</label>
+            <select id="knsInpGudang" class="ons-select text-xs">
+              <option value="Gudang Utama">Gudang Utama (Etalase Apotek)</option>
+              <option value="Gudang Transit">Gudang Transit Konsinyasi</option>
+              <option value="Chiller">Chiller / Kulkas 2-8°C</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold block mb-1">Catatan Dokumen</label>
+            <input type="text" id="knsInpCatatan" class="ons-input text-xs" placeholder="Memo perjanjian konsinyasi..." value="${S().esc(grnHeader.catatan || '')}"/>
+          </div>
+        </div>
+
+        <!-- Tabel Item Barang Titipan -->
+        <div class="space-y-2 pt-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300">Rincian Obat Titip Jual</h3>
+            <button type="button" onclick="window.addGrnItemRow()" class="ons-btn ons-btn-emerald text-xs py-1 px-3 font-bold">+ Tambah Baris Obat</button>
+          </div>
+          <div class="ons-table-wrap">
+            <table class="ons-table">
+              <thead>
+                <tr>
+                  <th style="width:40px">#</th>
+                  <th>Nama Obat / Produk</th>
+                  <th style="width:130px">No. Batch</th>
+                  <th style="width:130px">Expired Date</th>
+                  <th style="width:100px" class="text-right">Qty Masuk</th>
+                  <th style="width:90px">Satuan</th>
+                  <th style="width:130px" class="text-right">HPP Titipan (Rp)</th>
+                  <th style="width:140px" class="text-right">Subtotal</th>
+                  <th style="width:50px"></th>
+                </tr>
+              </thead>
+              <tbody id="knsGrnItemsTableBody">
+                ${grnItems.length ? grnItems.map((it, idx) => {
+                  const subTot = Math.max(0, Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0));
+                  return `
+                    <tr>
+                      <td class="font-mono-num text-xs text-center">${idx + 1}</td>
+                      <td>
+                        <select onchange="window.onGrnProductChange(${idx}, this.value)" class="ons-select text-xs w-full">
+                          <option value="">-- Pilih Obat --</option>
+                          ${allObat.map((o) => `<option value="${S().esc(o.id_obat)}" ${it.id_obat === o.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)} (${S().esc(o.satuan_dasar || 'Unit')})</option>`).join('')}
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" oninput="window.updateGrnItemField(${idx}, 'no_batch', this.value)" value="${S().esc(it.no_batch || '')}" placeholder="BATCH..." class="ons-input text-xs font-mono-num"/>
+                      </td>
+                      <td>
+                        <input type="date" onchange="window.updateGrnItemField(${idx}, 'tgl_kadaluarsa', this.value)" value="${S().esc(it.tgl_kadaluarsa || '')}" class="ons-input text-xs"/>
+                      </td>
+                      <td>
+                        <input type="number" min="1" oninput="window.updateGrnItemField(${idx}, 'qty_dasar', this.value)" value="${Number(it.qty_dasar || 1)}" class="ons-input text-xs font-mono-num text-right"/>
+                      </td>
+                      <td>
+                        <input type="text" value="${S().esc(it.satuan || 'Unit')}" readonly class="ons-input text-xs bg-slate-100 dark:bg-slate-800 text-slate-500"/>
+                      </td>
+                      <td>
+                        <input type="number" min="0" oninput="window.updateGrnItemField(${idx}, 'hpp_unit', this.value)" value="${Number(it.hpp_unit || 0)}" class="ons-input text-xs font-mono-num text-right"/>
+                      </td>
+                      <td class="text-right font-mono-num font-bold text-xs text-blue-600">
+                        ${S().rp(subTot)}
+                      </td>
+                      <td class="text-center">
+                        <button type="button" onclick="window.removeGrnItemRow(${idx})" class="text-red-500 hover:text-red-700 text-base font-bold">&times;</button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('') : `
+                  <tr>
+                    <td colspan="9" class="text-center py-6 text-xs text-slate-400">
+                      Belum ada baris obat. Klik <b>+ Tambah Baris Obat</b> di kanan atas.
+                    </td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Footer Total & Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t" style="border-color:var(--ons-border)">
+          <div class="text-xs">
+            <span class="text-slate-500">Estimasi Nilai Barang Dititipkan:</span>
+            <b class="text-sm font-mono-num text-blue-600 ml-1">
+              ${S().rp(grnItems.reduce((s, it) => s + (Number(it.qty_dasar || 0) * Number(it.hpp_unit || 0)), 0))}
+            </b>
+            <span class="text-slate-400 ml-2">(${grnItems.length} item)</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="window.saveKonsinyasiDraftToLocal()" class="ons-btn ons-btn-ghost text-xs font-bold py-2 px-3.5">
+              💾 Simpan Draft
+            </button>
+            <button type="button" onclick="window.submitDedicatedKonsinyasiMasuk()" class="ons-btn ons-btn-emerald text-xs font-bold py-2 px-5 shadow-md">
+              ✅ Simpan &amp; Masukkan ke Stok Konsinyasi
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  global.saveKonsinyasiDraftToLocal = () => {
+    const noFaktur = (document.getElementById('knsInpNoFaktur') || {}).value || grnHeader.no_faktur_pbf || 'KNS-DRAFT';
+    const idPbf = (document.getElementById('knsInpSupplier') || {}).value || grnHeader.id_pbf || '';
+    const tglTerima = (document.getElementById('knsInpTglTerima') || {}).value || grnHeader.tgl_terima || '';
+    const tglTempo = (document.getElementById('knsInpTglTempo') || {}).value || grnHeader.tgl_jatuh_tempo || '';
+    const gudang = (document.getElementById('knsInpGudang') || {}).value || 'Gudang Utama';
+    const catatan = (document.getElementById('knsInpCatatan') || {}).value || '';
+
+    grnHeader.no_faktur_pbf = noFaktur;
+    grnHeader.id_pbf = idPbf;
+    grnHeader.tgl_terima = tglTerima;
+    grnHeader.tgl_jatuh_tempo = tglTempo;
+    grnHeader.gudang = gudang;
+    grnHeader.catatan = catatan;
+    grnHeader.jenis_penerimaan = 'KONSINYASI';
+    grnHeader.status_bayar = 'KONSINYASI';
+
+    const drafts = _readLocalList(KONSINYASI_DRAFTS_KEY);
+    const draftId = grnActiveDraftId || ('DFT-' + Date.now());
+    const existingIdx = drafts.findIndex((d) => d.id_draft === draftId);
+    const draftObj = {
+      id_draft: draftId,
+      header: Object.assign({}, grnHeader),
+      items: grnItems.slice(),
+      saved_at: new Date().toISOString()
+    };
+    if (existingIdx >= 0) drafts[existingIdx] = draftObj;
+    else drafts.unshift(draftObj);
+
+    _writeLocalList(KONSINYASI_DRAFTS_KEY, drafts);
+    global.toast('Draft penerimaan konsinyasi berhasil disimpan.', 'ok');
+  };
+
+  global.submitDedicatedKonsinyasiMasuk = async () => {
+    try {
+      const noFaktur = String((document.getElementById('knsInpNoFaktur') || {}).value || '').trim();
+      const idPbf = String((document.getElementById('knsInpSupplier') || {}).value || '').trim();
+      const tglTerima = (document.getElementById('knsInpTglTerima') || {}).value || new Date().toISOString().slice(0, 10);
+      const tglTempo = (document.getElementById('knsInpTglTempo') || {}).value || '';
+      const gudang = (document.getElementById('knsInpGudang') || {}).value || 'Gudang Utama';
+      const catatan = (document.getElementById('knsInpCatatan') || {}).value || '';
+
+      if (!noFaktur) throw new Error('No. Surat Jalan / Faktur Konsinyasi wajib diisi.');
+      if (!idPbf) throw new Error('Supplier / Penitip barang konsinyasi wajib dipilih.');
+      if (!grnItems.length) throw new Error('Minimal harus ada 1 baris item obat titip jual.');
+
+      for (let i = 0; i < grnItems.length; i++) {
+        const it = grnItems[i];
+        if (!it.id_obat) throw new Error('Baris #' + (i + 1) + ': Obat wajib dipilih.');
+        if (!String(it.no_batch || '').trim()) throw new Error('Baris #' + (i + 1) + ': Nomor batch sediaan wajib diisi.');
+        if (!String(it.tgl_kadaluarsa || '').trim()) throw new Error('Baris #' + (i + 1) + ': Tanggal kadaluarsa (ED) wajib diisi.');
+        if (Number(it.qty_dasar || 0) <= 0) throw new Error('Baris #' + (i + 1) + ': Kuantitas masuk harus lebih dari 0.');
+      }
+
+      grnHeader.no_faktur_pbf = noFaktur;
+      grnHeader.id_pbf = idPbf;
+      grnHeader.tgl_terima = tglTerima;
+      grnHeader.tgl_faktur = tglTerima;
+      grnHeader.tgl_jatuh_tempo = tglTempo;
+      grnHeader.gudang = gudang;
+      grnHeader.catatan = catatan;
+      grnHeader.jenis_penerimaan = 'KONSINYASI';
+      grnHeader.status_bayar = 'KONSINYASI';
+
+      // Submit via global.submitGrnFaktur
+      await global.submitGrnFaktur();
+
+      // Clear draft if it was loaded
+      if (grnActiveDraftId) {
+        _writeLocalList(KONSINYASI_DRAFTS_KEY, _readLocalList(KONSINYASI_DRAFTS_KEY).filter((d) => d.id_draft !== grnActiveDraftId));
+        grnActiveDraftId = '';
+      }
+
+      // Set subtab to 'masuk'
+      konsSubTab = 'masuk';
+      const st = S().AppState;
+      if (st) {
+        st.activeView = 'konsinyasi';
+        if (!st.subTabs) st.subTabs = {};
+        st.subTabs.konsinyasi = 'masuk';
+        st.activeSubTab = 'masuk';
+      }
+
+      global.toast('Penerimaan Konsinyasi ' + noFaktur + ' sukses masuk stok!', 'ok');
+      global.renderActiveView();
+
+      // Offer print
+      setTimeout(() => {
+        global.printKonsinyasiMasukBukti(noFaktur);
+      }, 500);
+    } catch (e) {
+      global.toast(e.message, 'err');
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // OFFICIAL A4 PRINT FUNCTIONS: TANDA TERIMA, SETTLEMENT, RETUR & STOK
+  // -------------------------------------------------------------------------
+
+  global.printKonsinyasiMasukBukti = (noFaktur) => {
+    const st = S().AppState;
+    const allItems = ((st.konsinyasiSummary || {}).items || []);
+    const matchingBatches = allItems.filter((it) => it.no_faktur_pbf === noFaktur || String(it.no_faktur_pbf).toLowerCase() === String(noFaktur).toLowerCase());
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'APOTEK ONS FARMA';
+    const apotekAlamat = [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10';
+    const siaNo = prof.no_sia || '-';
+    const sipaPemilik = prof.sipa_pemilik || '-';
+    const apjNama = prof.nama_pemilik || (st.user && st.user.nama) || 'Apoteker Penanggung Jawab';
+
+    const supName = matchingBatches.length ? matchingBatches[0].id_pbf : 'Supplier Konsinyasi';
+    const tglMasuk = matchingBatches.length ? (matchingBatches[0].tgl_terima || new Date().toISOString().slice(0, 10)) : new Date().toISOString().slice(0, 10);
+    const totalNilai = matchingBatches.reduce((s, it) => s + (Number(it.qty_awal || it.qty_sisa || 0) * Number(it.hpp_beli || 0)), 0);
+
+    const rowsHtml = matchingBatches.length ? matchingBatches.map((it, idx) => `
+      <tr>
+        <td style="border:1px solid #334155;padding:6px;text-align:center;">${idx + 1}</td>
+        <td style="border:1px solid #334155;padding:6px;font-weight:bold;">${S().esc(it.nama_dagang)}</td>
+        <td style="border:1px solid #334155;padding:6px;text-align:center;font-family:monospace;">${S().esc(it.no_batch)}</td>
+        <td style="border:1px solid #334155;padding:6px;text-align:center;font-family:monospace;">${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</td>
+        <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;font-weight:bold;">${it.qty_awal || it.qty_sisa} ${S().esc(it.satuan_dasar || 'unit')}</td>
+        <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;">${S().rp(it.hpp_beli)}</td>
+        <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;font-weight:bold;">${S().rp((it.qty_awal || it.qty_sisa) * it.hpp_beli)}</td>
+      </tr>
+    `).join('') : `
+      <tr>
+        <td colspan="7" style="border:1px solid #334155;padding:12px;text-align:center;">Rincian batch faktur ${S().esc(noFaktur)} tidak ditemukan di riwayat.</td>
+      </tr>
+    `;
+
+    const docHtml = `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#0f172a;line-height:1.4;">
+        <!-- KOP RESMI -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #0f172a;padding-bottom:12px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:18px;font-weight:900;letter-spacing:0.5px;color:#0f172a;">${S().esc(apotekName.toUpperCase())}</div>
+            <div style="font-size:11px;color:#475569;margin-top:2px;">${S().esc(apotekAlamat)}</div>
+            <div style="font-size:11px;color:#475569;">No. SIA: ${S().esc(siaNo)} &bull; SIPA: ${S().esc(sipaPemilik)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:800;color:#0284c7;">SURAT TANDA TERIMA KONSINYASI</div>
+            <div style="font-size:11px;font-family:monospace;color:#334155;margin-top:3px;">No: ${S().esc(noFaktur)}</div>
+            <div style="font-size:10px;color:#64748b;">Tgl Terima: ${S().esc(tglMasuk)}</div>
+          </div>
+        </div>
+
+        <!-- IDENTITAS PENITIP -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:11px;background:#f8fafc;padding:10px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:14px;">
+          <div>
+            <div style="color:#64748b;">Supplier / Pihak Penitip:</div>
+            <div style="font-size:13px;font-weight:800;color:#0f172a;">${S().esc(supName)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#64748b;">Status Pembayaran:</div>
+            <div style="font-size:12px;font-weight:800;color:#059669;">KONSINYASI (Bagi Hasil / Laku Bayar)</div>
+          </div>
+        </div>
+
+        <!-- TABEL RINCIAN -->
+        <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="border:1px solid #334155;padding:6px;text-align:center;width:30px;">No</th>
+              <th style="border:1px solid #334155;padding:6px;text-align:left;">Nama Produk / Sediaan Farmasi</th>
+              <th style="border:1px solid #334155;padding:6px;text-align:center;width:90px;">No. Batch</th>
+              <th style="border:1px solid #334155;padding:6px;text-align:center;width:80px;">ED</th>
+              <th style="border:1px solid #334155;padding:6px;text-align:right;width:80px;">Kuantitas</th>
+              <th style="border:1px solid #334155;padding:6px;text-align:right;width:90px;">HPP Titipan</th>
+              <th style="border:1px solid #334155;padding:6px;text-align:right;width:100px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc;font-weight:bold;">
+              <td colspan="6" style="border:1px solid #334155;padding:6px;text-align:right;">Total Nilai Barang Konsinyasi:</td>
+              <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;font-size:12px;color:#0284c7;">${S().rp(totalNilai)}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- PERNYATAAN PERJANJIAN TITIP JUAL -->
+        <div style="font-size:10px;color:#475569;border-left:3px solid #0284c7;padding:6px 10px;background:#f0f9ff;margin-bottom:20px;">
+          <b>Ketentuan Penerimaan Konsinyasi:</b> Barang di atas telah diterima dalam kondisi fisik dan segel utuh sebagai barang titip jual (konsinyasi). Kepemilikan barang tetap berada pada pihak Supplier/Penitip hingga barang tersebut berhasil laku terjual di Apotek. Pembayaran/setoran hasil penjualan akan diselesaikan secara berkala sesuai realisasi penjualan kasir.
+        </div>
+
+        <!-- TANDA TANGAN DUA BELAH PIHAK -->
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:24px;">
+          <div style="text-align:center;width:200px;">
+            <div>Yang Menyerahkan (Distributor/Penitip),</div>
+            <div style="height:60px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(............................................)</div>
+            <div style="font-size:9.5px;color:#64748b;">Sales / Kurir Pengantar</div>
+          </div>
+          <div style="text-align:center;width:200px;">
+            <div>Yang Menerima (Pihak Apotek),</div>
+            <div style="height:60px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(${S().esc(apjNama)})</div>
+            <div style="font-size:9.5px;color:#64748b;">Apoteker / Petugas Penerima</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return S().printHtmlZone(docHtml, 'Tanda Terima Konsinyasi - ' + noFaktur);
+  };
+
+  global.printKonsinyasiSettlementBukti = (noSettlement) => {
+    const st = S().AppState;
+    const settlements = ((st.konsinyasiSummary || {}).settlements || []);
+    const sr = settlements.find((s) => s.no_settlement === noSettlement) || settlements[0];
+    if (!sr) return global.toast('Data bukti settlement konsinyasi tidak ditemukan.', 'warn');
+
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'APOTEK ONS FARMA';
+    const apotekAlamat = [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10';
+    const siaNo = prof.no_sia || '-';
+
+    const docHtml = `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#0f172a;line-height:1.4;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #0f172a;padding-bottom:12px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:18px;font-weight:900;color:#0f172a;">${S().esc(apotekName.toUpperCase())}</div>
+            <div style="font-size:11px;color:#475569;margin-top:2px;">${S().esc(apotekAlamat)} &bull; SIA: ${S().esc(siaNo)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:800;color:#059669;">BUKTI REKONSILIASI &amp; SETORAN KONSINYASI</div>
+            <div style="font-size:11px;font-family:monospace;color:#334155;margin-top:3px;">No: ${S().esc(sr.no_settlement || 'STL-001')}</div>
+            <div style="font-size:10px;color:#64748b;">Tgl: ${S().esc(String(sr.tanggal || '').slice(0, 10))}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:11px;background:#f0fdf4;padding:12px;border-radius:6px;border:1px solid #bbf7d0;margin-bottom:14px;">
+          <div>
+            <div style="color:#166534;">Dibayarkan Kepada (Penitip):</div>
+            <div style="font-size:14px;font-weight:800;color:#0f172a;">${S().esc(sr.id_pbf)}</div>
+            <div style="color:#475569;margin-top:4px;">Metode Pembayaran: <b>${S().esc(sr.metode_bayar || 'TRANSFER_BANK')}</b></div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#166534;">Total Setoran Terbayar:</div>
+            <div style="font-size:18px;font-weight:900;color:#059669;font-family:monospace;">${S().rp(sr.total_nilai_hpp || 0)}</div>
+            <div style="color:#475569;margin-top:4px;">Status: <b style="color:#059669;">LUNAS DISETOR</b></div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:#334155;margin-bottom:18px;">
+          <div>Rincian: Telah disetorkan hasil penjualan produk konsinyasi sebanyak <b>${sr.total_qty_terjual || 0} unit</b> barang titipan yang telah laku terjual di etalase/kasir ONS Farma.</div>
+          ${sr.catatan ? `<div style="margin-top:4px;font-style:italic;color:#64748b;">Catatan: "${S().esc(sr.catatan)}"</div>` : ''}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:36px;">
+          <div style="text-align:center;width:200px;">
+            <div>Kasir / Bag. Keuangan Apotek,</div>
+            <div style="height:55px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(${S().esc((st.user && st.user.nama) || 'Bagian Keuangan')})</div>
+          </div>
+          <div style="text-align:center;width:200px;">
+            <div>Penerima Setoran (Distributor),</div>
+            <div style="height:55px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(............................................)</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return S().printHtmlZone(docHtml, 'Bukti Setoran Konsinyasi - ' + (sr.no_settlement || 'STL'));
+  };
+
+  global.printKonsinyasiStokA4 = () => {
+    const st = S().AppState;
+    const allItems = ((st.konsinyasiSummary || {}).items || []).filter((it) => Number(it.qty_sisa || 0) > 0);
+    const prof = typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {};
+    const apotekName = prof.nama_usaha || 'APOTEK ONS FARMA';
+    const apotekAlamat = [prof.alamat_usaha, prof.kota].filter(Boolean).join(', ') || 'Jl. Perintis Kemerdekaan No. 10';
+    const dStamp = new Date().toISOString().slice(0, 10);
+
+    const totalQty = allItems.reduce((s, it) => s + Number(it.qty_sisa || 0), 0);
+    const totalVal = allItems.reduce((s, it) => s + (Number(it.qty_sisa || 0) * Number(it.hpp_beli || 0)), 0);
+
+    const rowsHtml = allItems.length ? allItems.map((it, idx) => {
+      const ed = String(it.tgl_kadaluarsa || '').slice(0, 10);
+      const days = S().daysUntil(ed);
+      const isExp = days <= 30;
+      const isWarn = days > 30 && days <= 90;
+      const edColor = isExp ? '#dc2626' : (isWarn ? '#d97706' : '#166534');
+
+      return `
+        <tr>
+          <td style="border:1px solid #334155;padding:5px;text-align:center;">${idx + 1}</td>
+          <td style="border:1px solid #334155;padding:5px;font-weight:bold;">${S().esc(it.nama_dagang)}</td>
+          <td style="border:1px solid #334155;padding:5px;">${S().esc(it.id_pbf)}</td>
+          <td style="border:1px solid #334155;padding:5px;text-align:center;font-family:monospace;">${S().esc(it.no_batch)}</td>
+          <td style="border:1px solid #334155;padding:5px;text-align:center;font-family:monospace;font-weight:bold;color:${edColor};">${S().esc(ed)}</td>
+          <td style="border:1px solid #334155;padding:5px;text-align:right;font-family:monospace;font-weight:bold;">${it.qty_sisa} ${S().esc(it.satuan_dasar || 'unit')}</td>
+          <td style="border:1px solid #334155;padding:5px;text-align:right;font-family:monospace;">${S().rp(it.hpp_beli)}</td>
+          <td style="border:1px solid #334155;padding:5px;text-align:right;font-family:monospace;font-weight:bold;">${S().rp(it.qty_sisa * it.hpp_beli)}</td>
+        </tr>
+      `;
+    }).join('') : `
+      <tr>
+        <td colspan="8" style="border:1px solid #334155;padding:12px;text-align:center;">Tidak ada stok fisik konsinyasi aktif.</td>
+      </tr>
+    `;
+
+    const docHtml = `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:850px;margin:0 auto;padding:24px;color:#0f172a;line-height:1.4;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #0f172a;padding-bottom:10px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:18px;font-weight:900;">${S().esc(apotekName.toUpperCase())}</div>
+            <div style="font-size:11px;color:#475569;">${S().esc(apotekAlamat)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:800;color:#0284c7;">AUDIT FISIK &amp; STOK KONSINYASI</div>
+            <div style="font-size:11px;color:#64748b;">Per Tanggal: ${S().esc(dStamp)}</div>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;font-size:10.5px;margin-bottom:14px;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="border:1px solid #334155;padding:5px;width:30px;text-align:center;">No</th>
+              <th style="border:1px solid #334155;padding:5px;text-align:left;">Nama Produk Konsinyasi</th>
+              <th style="border:1px solid #334155;padding:5px;text-align:left;">Penitip / Supplier</th>
+              <th style="border:1px solid #334155;padding:5px;text-align:center;width:80px;">Batch</th>
+              <th style="border:1px solid #334155;padding:5px;text-align:center;width:80px;">ED</th>
+              <th style="border:1px solid #334155;padding:5px;text-align:right;width:70px;">Sisa Fisik</th>
+              <th style="border:1px solid #334155;padding:5px;text-align:right;width:80px;">HPP Titipan</th>
+              <th style="border:1px solid #334155;padding:5px;text-align:right;width:95px;">Nilai Stok</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc;font-weight:bold;">
+              <td colspan="5" style="border:1px solid #334155;padding:6px;text-align:right;">Total Keseluruhan Sediaan Konsinyasi:</td>
+              <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;">${totalQty} Unit</td>
+              <td style="border:1px solid #334155;padding:6px;"></td>
+              <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;font-size:11.5px;color:#0284c7;">${S().rp(totalVal)}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:24px;">
+          <div style="color:#64748b;font-size:9.5px;max-width:400px;">
+            Dicetak otomatis dari Sistem ONS Farma Digital PWA untuk keperluan audit stok opname konsinyasi berkala.
+          </div>
+          <div style="text-align:center;width:200px;">
+            <div>Penanggung Jawab Gudang,</div>
+            <div style="height:50px;"></div>
+            <div style="font-weight:bold;border-top:1px dotted #64748b;padding-top:4px;">(${S().esc((st.user && st.user.nama) || 'Petugas Gudang')})</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return S().printHtmlZone(docHtml, 'Rekap Stok Konsinyasi - ' + dStamp);
+  };
+
+  global.ONSViewsInventoryProcurement = { renderMasterObatView, renderKontakView, renderGudangView, renderDefectaView, renderFakturView, renderKonsinyasiView };
 })(window);
 
   global.runUnitConvertCalc = () => {

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.17.0"/>
+  <meta name="application-version" content="v18.18.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.17.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.18.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.17.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.18.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.17.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.17.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.17.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.18.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.18.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.18.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.17.0"></script>
-  <script src="./js/struk-engine.js?v=18.17.0"></script>
-  <script src="./js/demo-engine.js?v=18.17.0"></script>
-  <script src="./js/api-turbo.js?v=18.17.0"></script>
-  <script src="./js/store.js?v=18.17.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.17.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.17.0"></script>
+  <script src="./js/config.js?v=18.18.0"></script>
+  <script src="./js/struk-engine.js?v=18.18.0"></script>
+  <script src="./js/demo-engine.js?v=18.18.0"></script>
+  <script src="./js/api-turbo.js?v=18.18.0"></script>
+  <script src="./js/store.js?v=18.18.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.18.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.18.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.17.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.17.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.17.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.17.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.17.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.17.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.18.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.18.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.18.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.18.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.18.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.18.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -80,6 +80,7 @@
         moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
         logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
         truck: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+        handshake: '<path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4l-2-2"/><path d="m18 10 1.3-1.3a1 1 0 0 0 0-1.4l-3.6-3.6a1 1 0 0 0-1.4 0L13 5"/><path d="M2 11h7l2 2-2 2H2"/><path d="m7 7 4 4"/>',
         pill: '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
         receipt: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/>',
         chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
@@ -180,14 +181,24 @@
             {
               viewId: 'faktur', label: 'Pembelian', icon: 'cart', badgeKey: 'lowStock', badgeTone: '',
               desc: 'Rencana pembelian, Surat Pesanan (SP) BPOM, faktur PBF, retur & pelunasan utang.',
-              kw: 'pembelian pengadaan faktur defecta rencana surat pesanan sp bpom terima grn scan analisa harga retur konsinyasi hutang utang',
+              kw: 'pembelian pengadaan faktur defecta rencana surat pesanan sp bpom terima grn scan analisa harga retur hutang utang',
               tabs: [
                 { subTab: 'rencana', label: 'Rencana Pembelian', kw: 'rencana pembelian defecta ambang rop buffer usulan order sp po penawaran sales', badge: 'DEFECTA' },
                 { subTab: 'sp', label: 'Pesanan Pembelian', kw: 'pesanan pembelian surat pesanan sp resmi bpom reguler prekursor psikotropika narkotika oot', badge: 'RESMI' },
                 { subTab: 'faktur', label: 'Faktur Pembelian', kw: 'faktur pembelian pbf grn penerimaan barang batch ed scan ocr fefo terima faktur' },
                 { subTab: 'retur', label: 'Retur Pembelian', kw: 'retur pembelian barang pbf near ed rusak recall surat bar' },
-                { subTab: 'hutang', label: 'Pembayaran Utang', kw: 'pembayaran utang buku hutang usaha pbf pelunasan cicilan tempo termin riwayat' },
-                { subTab: 'konsinyasi', label: 'Konsinyasi Masuk', kw: 'konsinyasi masuk titip jual distributor settlement laku bayar' }
+                { subTab: 'hutang', label: 'Pembayaran Utang', kw: 'pembayaran utang buku hutang usaha pbf pelunasan cicilan tempo termin riwayat' }
+              ]
+            },
+            {
+              viewId: 'konsinyasi', label: 'Konsinyasi', icon: 'handshake', badgeKey: 'konsinyasiUnsettled', badgeTone: 'bg-indigo-500/10 text-indigo-600',
+              desc: 'Penerimaan barang titip jual (konsinyasi masuk), rekonsiliasi setoran barang laku, retur & stok fisik penitip.',
+              kw: 'konsinyasi konsinyasi-masuk titip jual penitip distributor supplier bagi hasil laku bayar settlement retur konsinyasi stok konsinyasi',
+              tabs: [
+                { subTab: 'masuk', label: 'Konsinyasi Masuk', kw: 'konsinyasi masuk faktur titip nota penerimaan supplier barang titipan' },
+                { subTab: 'status', label: 'Status Konsinyasi', kw: 'status konsinyasi bagi hasil setoran belum disetor bayar lunas penitip rekonsiliasi', badge: 'SETORAN' },
+                { subTab: 'retur', label: 'Retur Konsinyasi', kw: 'retur konsinyasi tarik barang tak laku pengembalian berita acara' },
+                { subTab: 'stok', label: 'Stok Konsinyasi', kw: 'stok konsinyasi fisik batch ed kadaluarsa rak gudang penitip' }
               ]
             },
             {
@@ -856,6 +867,7 @@
       };
 
       window.navigateView = function (viewId, subTab) {
+        if (viewId === 'faktur' && subTab === 'konsinyasi') { viewId = 'konsinyasi'; subTab = 'masuk'; }
         if (viewId === 'omnichannel') { viewId = 'pos'; subTab = 'kasir'; }
         if (viewId === 'tutup-shift') { viewId = 'pos'; subTab = 'tutup-shift'; }
         if (viewId === 'pos' && subTab === 'online') subTab = 'kasir';
@@ -1128,6 +1140,7 @@
           case 'gudang': slot.innerHTML = v2.renderGudangView(); break;
           case 'defecta': slot.innerHTML = v2.renderFakturView(); break;
           case 'faktur': slot.innerHTML = v2.renderFakturView(); break;
+          case 'konsinyasi': slot.innerHTML = (v2.renderKonsinyasiView ? v2.renderKonsinyasiView(ONSStore.AppState.activeSubTab) : v2.renderFakturView()); break;
           case 'klinis': slot.innerHTML = v3.renderKlinisView(); break;
           case 'eresep-prb': slot.innerHTML = v3.renderKlinisView(); break;
           case 'pemeriksaan': slot.innerHTML = (window.ONSViewsPemeriksaan ? window.ONSViewsPemeriksaan.renderPemeriksaanView() : v3.renderKlinisView()); break;
