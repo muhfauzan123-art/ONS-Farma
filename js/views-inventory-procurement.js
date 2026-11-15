@@ -10505,6 +10505,7 @@
                     <td>
                       <div class="flex flex-wrap gap-1.5">
                         <button type="button" onclick="window.openFakturDetailModal('${S().esc(f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Detail</button>
+                        <button type="button" onclick="window.printFakturPembelianA4('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2" title="Cetak Bukti Penerimaan Barang Resmi (GRN A4)">Cetak GRN</button>
                         ${isKons ? `<button type="button" onclick="window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-primary text-xs py-1 px-2">Settle</button>` : (Number(f.sisa_hutang || 0) > 0 ? `<button type="button" onclick="window.openPayHutangModal('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}', '${S().esc(f.no_faktur_pbf)}', ${Number(f.sisa_hutang || 0)})" class="ons-btn ons-btn-emerald text-xs py-1 px-2.5 font-bold shadow-sm">Bayar Hutang</button>` : '')}
                       </div>
                     </td>
@@ -12224,6 +12225,7 @@
 
         <div class="flex flex-wrap justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
           ${linkedSp ? `<button type="button" onclick="window.ONSStore.closeModal();window.openSpA4PreviewModal('${S().esc(linkedSp.id_sp)}')" class="ons-btn ons-btn-ghost text-xs">Lihat SP A4</button>` : ''}
+          <button type="button" onclick="window.ONSStore.closeModal();window.printFakturPembelianA4('${S().esc(f.id_beli || f.id_faktur || f.no_faktur_pbf)}')" class="ons-btn ons-btn-ghost text-xs font-bold text-blue-600">🖨️ Cetak Bukti Terima (GRN A4)</button>
           ${isKons ? `<button type="button" onclick="window.ONSStore.closeModal();window.setFakturTab('konsinyasi')" class="ons-btn ons-btn-primary text-xs">Kelola Settlement Konsinyasi</button>` : (sisa > 0 ? `<button type="button" onclick="window.ONSStore.closeModal();window.navigateView('finance','hutang')" class="ons-btn ons-btn-emerald text-xs">Bayar / Cicil di Hutang PBF</button>` : '')}
           <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
         </div>

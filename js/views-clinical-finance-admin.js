@@ -3526,7 +3526,10 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               <input type="date" class="ons-input text-xs w-40" value="${S().esc(financeDateTo)}" onchange="window.setFinanceDateRange('${S().esc(financeDateFrom)}', this.value)"/>
               ${(financeDateFrom || financeDateTo) ? `<button onclick="window.setFinanceDateRange('','')" class="ons-btn ons-btn-ghost text-xs py-1">Reset</button>` : ''}
             </div>
-            <button onclick="window.exportFinancePnlExcel()" class="ons-btn ons-btn-emerald text-xs">Export Laporan P&amp;L (.xlsx)</button>
+            <div class="flex items-center gap-2">
+              <button onclick="window.navigateView('sipnap','keuangan')" class="ons-btn ons-btn-primary text-xs font-bold">📑 Laporan Lengkap (Laba-Rugi, Neraca &amp; Arus Kas) &rarr;</button>
+              <button onclick="window.exportFinancePnlExcel()" class="ons-btn ons-btn-emerald text-xs">Export P&amp;L (.xlsx)</button>
+            </div>
           </div>
 
           <div class="ons-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3">
