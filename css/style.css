@@ -1099,7 +1099,7 @@ html.dark .ons-cmdk-shell {
 
 /* === ONS FARMA v11.1 MODERN PHARMACY MENU, SUB-MENU, BREADCRUMB & DRAWER === */
 .ons-sidebar {
-  width: 248px;
+  width: 264px;
   transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.28) transparent;

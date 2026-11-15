@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.15.0"/>
+  <meta name="application-version" content="v18.15.1"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.15.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.15.1"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.15.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.15.1"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" style="display:none!important;" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.15.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.15.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.15.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.15.1"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.15.1"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.15.1"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.15.0"></script>
-  <script src="./js/struk-engine.js?v=18.15.0"></script>
-  <script src="./js/demo-engine.js?v=18.15.0"></script>
-  <script src="./js/api-turbo.js?v=18.15.0"></script>
-  <script src="./js/store.js?v=18.15.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.15.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.15.0"></script>
+  <script src="./js/config.js?v=18.15.1"></script>
+  <script src="./js/struk-engine.js?v=18.15.1"></script>
+  <script src="./js/demo-engine.js?v=18.15.1"></script>
+  <script src="./js/api-turbo.js?v=18.15.1"></script>
+  <script src="./js/store.js?v=18.15.1"></script>
+  <script src="./js/invoice-scanner.js?v=18.15.1"></script>
+  <script src="./js/barcode-scanner.js?v=18.15.1"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.15.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.15.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.15.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.15.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.15.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.15.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.15.1"></script>
+  <script src="./js/views-procurement-pro.js?v=18.15.1"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.15.1"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.15.1"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.15.1"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.15.1"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1636,8 +1636,7 @@
                       <img src="${ONSStore.esc(logoSrc)}" alt="Logo" class="w-7 h-7 rounded-full object-cover"/>
                     </div>
                     <div class="min-w-0 ons-hide-collapsed">
-                      <div class="font-extrabold text-[14px] text-white tracking-wide truncate">Apotek ONS Farma</div>
-                      <div class="text-[9.5px] text-emerald-300 font-semibold tracking-wider uppercase">HealthTech System</div>
+                      <div class="font-bold text-[15px] text-white tracking-normal leading-tight whitespace-nowrap">${ONSStore.esc(prof.nama_usaha || 'Apotek ONS Farma')}</div>
                     </div>
                   </div>
                   <button onclick="window.toggleSidebarCollapsed()" aria-label="Perkecil atau Perlebar Sidebar" title="Perkecil / Perlebar Menu" class="p-1 rounded-lg text-white/80 hover:bg-white/15 hover:text-white shrink-0">
