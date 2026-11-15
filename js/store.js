@@ -22,7 +22,8 @@
     { key: 'dashboard', label: 'Beranda & Audit BPOM', group: 'Operasional' },
     { key: 'pos', label: 'Kasir POS FEFO & Riwayat', group: 'Operasional' },
     { key: 'tutup-shift', label: 'Tutup Shift & Laci Kas', group: 'Operasional' },
-    { key: 'obat', label: 'Master Data (Obat, Supplier, Pelanggan, Dokter)', group: 'Produk & Gudang' },
+    { key: 'obat', label: 'Master Data (Produk, Kategori, Satuan, Rak, Gudang, Pajak)', group: 'Produk & Gudang' },
+    { key: 'kontak', label: 'Buku Kontak (Supplier, Pelanggan, Dokter, Sales)', group: 'Produk & Gudang' },
     { key: 'gudang', label: 'Persediaan & Stok (Kadaluarsa, Kartu Stok, Suhu)', group: 'Produk & Gudang' },
     { key: 'gudang:opname', label: 'Stok Opname', group: 'Produk & Gudang' },
     { key: 'gudang:penyesuaian', label: 'Penyesuaian Stok', group: 'Produk & Gudang' },
@@ -46,7 +47,7 @@
   const DEFAULT_ROLE_PERMS = {
     Pemilik: ALL_PERM_KEYS.slice(),
     APJ: ALL_PERM_KEYS.slice(),
-    Kasir: ['dashboard', 'pos', 'gudang', 'pemeriksaan', 'billing', 'tutup-shift', 'mobile-preview']
+    Kasir: ['dashboard', 'pos', 'gudang', 'pemeriksaan', 'billing', 'tutup-shift', 'mobile-preview', 'kontak']
   };
 
   function _safeB64(s) {
@@ -447,6 +448,7 @@
     if (viewId === 'faktur' && perms.includes('defecta')) return true;
     if (viewId === 'defecta' && perms.includes('faktur')) return true;
     if (viewId === 'eresep-prb') return perms.includes('klinis') || perms.includes('obat');
+    if (viewId === 'kontak') return perms.includes('kontak') || perms.includes('obat') || perms.includes('pos');
     return perms.includes(viewId);
   }
 
@@ -461,8 +463,8 @@
     if (compound === 'gudang:opname' || compound === 'gudang:penyesuaian' || compound === 'gudang:transfer' || compound === 'settings:audit') {
       return perms.includes(compound);
     }
-    if (compound === 'obat:supplier') {
-      return canSeeFinancialCost() && perms.includes('obat');
+    if (compound === 'kontak:supplier' || compound === 'obat:supplier') {
+      return canSeeFinancialCost() && (perms.includes('kontak') || perms.includes('obat'));
     }
     return perms.includes(viewId);
   }

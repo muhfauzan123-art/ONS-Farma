@@ -1735,18 +1735,20 @@
   function renderMasterObatView() {
     const st = S().AppState;
     const seeCost = S().canSeeFinancialCost();
-    const canSupplier = S().canAccessSubTab ? S().canAccessSubTab('obat', 'supplier') : seeCost;
-    const allowedTabs = ['obat', 'kategori', 'satuan', 'rak', 'gudang', 'kategori-pelanggan', 'pajak', 'supplier', 'pelanggan', 'dokter', 'sales'];
+    const allowedTabs = ['obat', 'kategori', 'satuan', 'rak', 'gudang', 'kategori-pelanggan', 'pajak'];
     masterTab = (st.subTabs && st.subTabs.obat) || masterTab || 'obat';
-    if (masterTab === 'supplier' && !canSupplier) masterTab = 'obat';
-    if (!allowedTabs.includes(masterTab)) masterTab = 'obat';
+    if (!allowedTabs.includes(masterTab)) {
+      if (['supplier', 'pelanggan', 'dokter', 'sales'].includes(masterTab)) {
+        if (typeof global.navigateView === 'function') {
+          global.navigateView('kontak', masterTab);
+          return renderKontakView();
+        }
+      }
+      masterTab = 'obat';
+    }
 
     const { allMeta, filtered } = _getFilteredMasterObatMeta();
     const obatCount = (st.masterObat || []).length;
-    const supCount = (st.supplierPbf || []).length;
-    const pelCount = (st.members || []).length;
-    const dokCount = (st.masterDokter || []).length;
-    const salesCount = _getSalesStaffList().length;
 
     const tabs = [
       { id: 'obat', label: 'Master Produk', count: obatCount },
@@ -1755,11 +1757,7 @@
       { id: 'rak', label: 'Master Rak', count: _getMasterRakList().length },
       { id: 'gudang', label: 'Master Gudang', count: _getMasterGudangList().length },
       { id: 'kategori-pelanggan', label: 'Master Kategori Pelanggan', count: _getMasterKatPelangganList().length },
-      { id: 'pajak', label: 'Master Pajak', count: _getMasterPajakList().length },
-      ...(canSupplier ? [{ id: 'supplier', label: 'Supplier', count: supCount }] : []),
-      { id: 'pelanggan', label: 'Pelanggan', count: pelCount },
-      { id: 'dokter', label: 'Dokter', count: dokCount },
-      { id: 'sales', label: 'Sales/Pelayan', count: salesCount }
+      { id: 'pajak', label: 'Master Pajak', count: _getMasterPajakList().length }
     ];
 
     const exportBtns = (fnName) => `
@@ -1769,7 +1767,7 @@
     `;
 
     let pageTitle = 'Master Data Apotek';
-    let pageDesc = 'Kelola terpusat katalog Obat KFA, Supplier PBF, Pelanggan Apotek, Dokter Mitra & Sales/Pelayan.';
+    let pageDesc = 'Kelola terpusat katalog Obat KFA, multi-satuan, referensi harga & rak gudang penyimpanan.';
     let headerActions = '';
 
     if (masterTab === 'obat') {
@@ -1778,7 +1776,7 @@
       headerActions = `
         <button type="button" onclick="window.openObatBatchEditModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-pencil mr-1"></i> Ubah Sekaligus</button>
         <button type="button" onclick="window.openImportObatModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> Tambah Sekaligus</button>
-        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488" title="+ Tambah Produk"><i class="fa fa-plus mr-1"></i> + Produk Baru <span class="sr-only">+ Tambah Produk</span></button>
+        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-3 text-white font-bold" style="background:#0D9488" title="+ Tambah Obat Baru"><i class="fa fa-plus mr-1"></i> + Tambah Obat</button>
         <button type="button" onclick="window.openBulkMarginWizard()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0F766E" title="Evaluasi &amp; Kalkulator Margin Massal"><i class="fa fa-calculator mr-1"></i> Evaluasi Margin</button>
         <button type="button" onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Cetak Barcode</button>
         ${exportBtns('exportMasterObat')}
@@ -1819,40 +1817,6 @@
       headerActions = `
         <button type="button" onclick="window.openAddPajakModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Pajak</button>
       `;
-    } else if (masterTab === 'supplier') {
-      pageTitle = 'Daftar Supplier PBF';
-      pageDesc = 'Direktori pedagang besar farmasi (PBF) resmi dengan izin CDOB & kontak WhatsApp.';
-      headerActions = `
-        <button onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Supplier</button>
-        <button onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.navigateView('defecta','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Buat SP</button>
-        ${exportBtns('exportMasterSupplier')}
-      `;
-    } else if (masterTab === 'pelanggan') {
-      pageTitle = 'Daftar Pelanggan';
-      pageDesc = 'Buku kontak pelanggan apotek, data rekam medis, status keanggotaan & pantauan terapi.';
-      headerActions = `
-        <button onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Pelanggan</button>
-        <button onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Pantau Terapi Rutin</button>
-        ${exportBtns('exportMasterPelanggan')}
-      `;
-    } else if (masterTab === 'dokter') {
-      pageTitle = 'Daftar Dokter Mitra';
-      pageDesc = 'Direktori dokter penulis resep, nomor SIP, klinik mitra & integrasi SatuSehat.';
-      headerActions = `
-        <button onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Dokter</button>
-        <button onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Antrean E-Resep</button>
-        ${exportBtns('exportMasterDokter')}
-      `;
-    } else {
-      pageTitle = 'Daftar Sales & Pelayan';
-      pageDesc = 'Daftar tenaga kasir & sales pelayan apotek untuk komisi dan pencatatan transaksi.';
-      headerActions = `
-        <button onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-2.5">+ Sales/Pelayan</button>
-        ${exportBtns('exportMasterSales')}
-      `;
     }
 
     const bodyHtml = masterTab === 'kategori'
@@ -1867,15 +1831,7 @@
               ? _renderMasterKategoriPelangganSubTab()
               : (masterTab === 'pajak'
                 ? _renderMasterPajakSubTab()
-                : (masterTab === 'supplier'
-                  ? _renderMasterSupplierSubTab()
-                  : (masterTab === 'pelanggan'
-                    ? _renderMasterPelangganSubTab()
-                    : (masterTab === 'dokter'
-                      ? _renderMasterDokterSubTab()
-                      : (masterTab === 'sales'
-                        ? _renderMasterSalesSubTab()
-                        : _renderMasterObatSubTab(seeCost, allMeta, filtered))))))))));
+                : _renderMasterObatSubTab(seeCost, allMeta, filtered))))));
 
     return `<div class="space-y-3 ons-view-enter">
       <div class="ons-md-shell space-y-2">
@@ -1899,11 +1855,124 @@
 
   global.setMasterTab = (t) => {
     const req = String(t || 'obat');
-    const canSupplier = S().canAccessSubTab ? S().canAccessSubTab('obat', 'supplier') : S().canSeeFinancialCost();
-    const allowed = ['obat', 'kategori', 'satuan', 'rak', 'gudang', 'kategori-pelanggan', 'pajak', 'supplier', 'pelanggan', 'dokter', 'sales'];
-    masterTab = (req === 'supplier' && !canSupplier) ? 'obat' : (allowed.includes(req) ? req : 'obat');
+    if (['supplier', 'pelanggan', 'dokter', 'sales'].includes(req)) {
+      if (typeof global.navigateView === 'function') return global.navigateView('kontak', req);
+      if (typeof global.setKontakTab === 'function') return global.setKontakTab(req);
+    }
+    const allowed = ['obat', 'kategori', 'satuan', 'rak', 'gudang', 'kategori-pelanggan', 'pajak'];
+    masterTab = allowed.includes(req) ? req : 'obat';
     if (S().AppState.subTabs) S().AppState.subTabs.obat = masterTab;
     S().AppState.activeSubTab = masterTab;
+    global.renderActiveView();
+    if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
+  };
+
+  /* ==========================================================================
+     BUKU KONTAK: SUPPLIER / PBF, PELANGGAN / PASIEN, DOKTER MITRA & SALES
+     ========================================================================== */
+  let kontakTab = 'supplier';
+  function renderKontakView() {
+    const st = S().AppState;
+    const seeCost = S().canSeeFinancialCost();
+    const canSupplier = S().canAccessSubTab ? S().canAccessSubTab('kontak', 'supplier') : seeCost;
+    const allowedTabs = ['supplier', 'pelanggan', 'dokter', 'sales'];
+    kontakTab = (st.subTabs && st.subTabs.kontak) || kontakTab || (canSupplier ? 'supplier' : 'pelanggan');
+    if (kontakTab === 'supplier' && !canSupplier) kontakTab = 'pelanggan';
+    if (!allowedTabs.includes(kontakTab)) kontakTab = canSupplier ? 'supplier' : 'pelanggan';
+
+    const supCount = (st.supplierPbf || []).length;
+    const pelCount = (st.members || []).length;
+    const dokCount = (st.masterDokter || []).length;
+    const salesCount = _getSalesStaffList().length;
+
+    const tabs = [
+      ...(canSupplier ? [{ id: 'supplier', label: 'Supplier / PBF', count: supCount }] : []),
+      { id: 'pelanggan', label: 'Pelanggan / Pasien', count: pelCount },
+      { id: 'dokter', label: 'Dokter Mitra', count: dokCount },
+      { id: 'sales', label: 'Sales / Pelayan', count: salesCount }
+    ];
+
+    const exportBtns = (fnName) => `
+      <button onclick="window.${fnName}('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
+      <button onclick="window.${fnName}('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
+      <button onclick="window.${fnName}('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+    `;
+
+    let pageTitle = 'Buku Kontak Apotek';
+    let pageDesc = 'Direktori terpadu Supplier PBF, Pelanggan Apotek, Dokter Mitra & Sales / Tenaga Pelayan.';
+    let headerActions = '';
+
+    if (kontakTab === 'supplier') {
+      pageTitle = 'Daftar Supplier PBF';
+      pageDesc = 'Direktori pedagang besar farmasi (PBF) resmi dengan izin CDOB & kontak WhatsApp.';
+      headerActions = `
+        <button onclick="window.openSupplierPbfModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Supplier Baru</button>
+        <button onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
+        <button onclick="window.navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Buat SP</button>
+        ${exportBtns('exportMasterSupplier')}
+      `;
+    } else if (kontakTab === 'pelanggan') {
+      pageTitle = 'Daftar Pelanggan';
+      pageDesc = 'Buku kontak pelanggan apotek, data rekam medis, status keanggotaan & pantauan terapi.';
+      headerActions = `
+        <button onclick="window.openMasterPelangganModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Pelanggan Baru</button>
+        <button onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
+        <button onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Pantau Terapi Rutin</button>
+        ${exportBtns('exportMasterPelanggan')}
+      `;
+    } else if (kontakTab === 'dokter') {
+      pageTitle = 'Daftar Dokter Mitra';
+      pageDesc = 'Direktori dokter penulis resep, nomor SIP, klinik mitra & integrasi SatuSehat.';
+      headerActions = `
+        <button onclick="window.openMasterDokterModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Dokter Baru</button>
+        <button onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
+        <button onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Antrean E-Resep</button>
+        ${exportBtns('exportMasterDokter')}
+      `;
+    } else {
+      pageTitle = 'Daftar Sales & Pelayan';
+      pageDesc = 'Daftar tenaga kasir & sales pelayan apotek untuk komisi dan pencatatan transaksi.';
+      headerActions = `
+        <button onclick="window.openMasterSalesModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Sales/Pelayan Baru</button>
+        ${exportBtns('exportMasterSales')}
+      `;
+    }
+
+    const bodyHtml = kontakTab === 'supplier'
+      ? _renderMasterSupplierSubTab()
+      : (kontakTab === 'pelanggan'
+        ? _renderMasterPelangganSubTab()
+        : (kontakTab === 'dokter'
+          ? _renderMasterDokterSubTab()
+          : _renderMasterSalesSubTab()));
+
+    return `<div class="space-y-3 ons-view-enter">
+      <div class="ons-md-shell space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="min-w-0">
+            <h1 class="text-base sm:text-lg font-extrabold tracking-tight">${S().esc(pageTitle)}</h1>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">${headerActions}</div>
+        </div>
+        <div class="ons-md-tabs" role="tablist" aria-label="Sub Menu Kontak">
+          ${tabs.map((tb) => `<button type="button" role="tab" aria-selected="${kontakTab === tb.id ? 'true' : 'false'}" onclick="window.setKontakTab('${tb.id}')" class="ons-md-tab ${kontakTab === tb.id ? 'active' : ''}">
+            <span>${S().esc(tb.label)}</span>
+            <span class="ons-md-tab-count">${tb.count}</span>
+          </button>`).join('')}
+        </div>
+      </div>
+      ${bodyHtml}
+    </div>`;
+  }
+
+  global.setKontakTab = (t) => {
+    const req = String(t || 'supplier');
+    const canSupplier = S().canAccessSubTab ? S().canAccessSubTab('kontak', 'supplier') : S().canSeeFinancialCost();
+    const allowed = ['supplier', 'pelanggan', 'dokter', 'sales'];
+    kontakTab = (req === 'supplier' && !canSupplier) ? 'pelanggan' : (allowed.includes(req) ? req : 'pelanggan');
+    if (S().AppState.subTabs) S().AppState.subTabs.kontak = kontakTab;
+    S().AppState.activeSubTab = kontakTab;
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
@@ -4515,9 +4584,10 @@
   };
 
   global.openObatWizardModal = (editId, stepOverride, draftObj) => {
+    const st = S().AppState;
     if (stepOverride) wizardStep = Math.max(1, Math.min(5, stepOverride));
     else wizardStep = 1;
-    const baseDefault = (S().AppState.masterObat || []).find((x) => x.id_obat === editId) || {
+    const baseDefault = (st.masterObat || []).find((x) => x.id_obat === editId) || {
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1', satuan_dasar: 'Tablet',
       satuan_sedang: 'Strip', rasio_sedang: 10, satuan_besar: 'Box', rasio_besar: 100, stok_min: 10, stok_max: 100,
@@ -5073,6 +5143,10 @@
     S().openModal(renderForm(), 'full');
     global.updateObatWizardPreview();
   };
+
+  global.openAddObatModal = global.openObatWizardModal;
+  global.tambahObat = global.openObatWizardModal;
+  global.openTambahObatModal = global.openObatWizardModal;
 
   global.updateObatWizardPreview = () => {
     const val = (id, fb = '') => {
@@ -13273,7 +13347,7 @@
     global.renderActiveView();
   };
 
-  global.ONSViewsInventoryProcurement = { renderMasterObatView, renderGudangView, renderDefectaView, renderFakturView };
+  global.ONSViewsInventoryProcurement = { renderMasterObatView, renderKontakView, renderGudangView, renderDefectaView, renderFakturView };
 })(window);
 
   global.runUnitConvertCalc = () => {
