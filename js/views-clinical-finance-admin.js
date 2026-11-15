@@ -5021,6 +5021,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     { val: 100, label: 'Rp 100', tone: 'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/30' }
   ];
   let shiftMetaCtx = { expectedBase: 0, sisTunai: 0, canReveal: false };
+  let shiftHistFilter = 'ALL';
 
   function _calcDenomSum() {
     return Object.keys(shiftDenomCounts).reduce((s, d) => s + (Number(d) * Number(shiftDenomCounts[d] || 0)), 0);
@@ -5136,6 +5137,26 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
 
     return `<div class="space-y-4 ons-view-enter">
       ${(opts && opts.subTabHeader) ? opts.subTabHeader : ''}
+
+      <!-- 3-Step Guided Workflow Banner (Standard Apotek Digital) -->
+      <div class="ons-card p-3 bg-gradient-to-r from-blue-500/10 via-emerald-500/10 to-transparent border-l-4 border-l-blue-600">
+        <div class="flex items-center justify-between text-xs font-semibold gap-2 overflow-x-auto pb-0.5">
+          <div class="flex items-center gap-2 shrink-0 text-blue-600 dark:text-blue-400">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[11px]">1</span>
+            <span>Hitung Fisik Laci (Kertas &amp; Koin)</span>
+          </div>
+          <span class="text-gray-300 dark:text-gray-600">&rarr;</span>
+          <div class="flex items-center gap-2 shrink-0 text-emerald-600 dark:text-emerald-400">
+            <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px]">2</span>
+            <span>Sisihkan Modal Shift Depan &amp; Setoran</span>
+          </div>
+          <span class="text-gray-300 dark:text-gray-600">&rarr;</span>
+          <div class="flex items-center gap-2 shrink-0 text-slate-700 dark:text-slate-300">
+            <span class="w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-[11px]">3</span>
+            <span>Otorisasi PIN &amp; Terbitkan Z-Report</span>
+          </div>
+        </div>
+      </div>
 
       <!-- Shift Status Workstation Header -->
       <div class="ons-pos-bar p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -5323,7 +5344,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             <div class="flex items-center justify-between gap-2">
               <span class="font-bold">Evaluasi Selisih Kas</span>
               ${(canReveal && shiftBlindRevealed)
-                ? `<span id="shLiveVariancePreview" class="font-mono-num font-extrabold text-sm ${liveDiff === 0 ? 'text-emerald-600' : (liveDiff > 0 ? 'text-blue-600' : 'text-red-600')}">${liveDiff === 0 ? 'Klop (Rp 0)' : (liveDiff > 0 ? ('Lebih +' + S().rp(liveDiff)) : ('Kurang -' + S().rp(Math.abs(liveDiff))))}</span>`
+                ? `<span id="shLiveVariancePreview" class="font-mono-num font-extrabold text-xs">${liveDiff === 0 ? '<span class="badge-bpom bpom-bebas font-bold">✓ KAS PAS (SELISIH RP 0)</span>' : (liveDiff > 0 ? `<span class="badge-bpom bpom-terbatas font-bold">▲ KAS LEBIH (+${S().rp(liveDiff)})</span>` : `<span class="badge-bpom bpom-keras font-bold">▼ KAS KURANG (-${S().rp(Math.abs(liveDiff))})</span>`)}</span>`
                 : `<span id="shLiveVariancePreview" class="badge-bpom bpom-terbatas">Dihitung Otomatis Saat Simpan</span>`}
             </div>
             <div>
@@ -5358,28 +5379,47 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 class="font-bold text-sm">Arsip Riwayat Tutup Shift &amp; Z-Report (${shiftHist.length})</h3>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Klik tombol <b>Z-Report</b> untuk melihat rincian tender, cetak struk 58/80mm, atau kirim laporan ke WhatsApp Pemilik.</p>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Klik tombol <b>Z-Report</b> untuk rincian tender, atau <b>🖨️ Cetak</b> untuk mencetak ulang struk rekap thermal 58/80mm.</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="window.setShiftHistFilter('ALL')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'ALL' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">Semua (${shiftHist.length})</button>
+            <button type="button" onclick="window.setShiftHistFilter('KLOP')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'KLOP' ? 'ons-btn-emerald font-bold shadow-sm' : 'ons-btn-ghost'}">✓ Klop Rp 0 (${shiftHist.filter((s) => Number(s.selisih_kas || 0) === 0).length})</button>
+            <button type="button" onclick="window.setShiftHistFilter('SELISIH')" class="ons-btn text-xs py-1 px-2.5 ${shiftHistFilter === 'SELISIH' ? 'ons-btn-amber font-bold shadow-sm' : 'ons-btn-ghost'}">⚠ Ada Selisih (${shiftHist.filter((s) => Number(s.selisih_kas || 0) !== 0).length})</button>
           </div>
         </div>
         <div class="ons-table-wrap">
           <table class="ons-table">
             <thead><tr><th>ID Shift &amp; Waktu Tutup</th><th>Kasir / Supervisor</th><th>Penjualan Sistem</th><th>Tunai Aktual</th><th>Selisih Kas</th><th>Catatan Handover</th><th class="text-right">Aksi</th></tr></thead>
             <tbody>
-              ${shiftHist.length ? shiftHist.slice(0, 20).map((sh, idx) => {
-                const diff = Number(sh.selisih_kas || 0);
-                const sysTot = Number(sh.sistem_tunai || 0) + Number(sh.sistem_qris || 0) + Number(sh.sistem_transfer || 0);
-                const diffBadgeCls = diff === 0 ? 'bpom-bebas' : (diff > 0 ? 'bpom-terbatas' : 'bpom-keras');
-                const diffTxt = diff === 0 ? 'Klop Rp 0' : ((diff > 0 ? '+' : '-') + S().rp(Math.abs(diff)));
-                return `<tr>
-                  <td class="font-mono-num text-xs"><b>${S().esc(sh.id_shift)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sh.tgl_tutup, true)}</span></td>
-                  <td class="text-xs"><b>${S().esc(sh.kasir_id || '-')}</b><br/><span style="color:var(--ons-text-soft)">SPV: ${S().esc(sh.supervisor_id || '-')}</span></td>
-                  <td class="font-mono-num text-xs"><b>${S().rp(sysTot)}</b><br/><span class="text-[10px]" style="color:var(--ons-text-soft)">T:${S().rp(sh.sistem_tunai || 0)} &bull; Q:${S().rp(sh.sistem_qris || 0)}</span></td>
-                  <td class="font-mono-num text-xs font-bold">${S().rp(sh.aktual_tunai || 0)}</td>
-                  <td><span class="badge-bpom ${diffBadgeCls} font-mono-num">${diffTxt}</span></td>
-                  <td class="text-xs max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(sh.catatan_handover || '-')}</td>
-                  <td class="text-right"><button type="button" onclick="window.openZReportModal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Z-Report</button></td>
-                </tr>`;
-              }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada arsip penutupan shift tersimpan.</td></tr>'}
+              ${(() => {
+                const filtered = shiftHist.filter((s) => {
+                  const d = Number(s.selisih_kas || 0);
+                  if (shiftHistFilter === 'KLOP') return d === 0;
+                  if (shiftHistFilter === 'SELISIH') return d !== 0;
+                  return true;
+                });
+                if (!filtered.length) return '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Tidak ada arsip shift yang sesuai filter.</td></tr>';
+                return filtered.slice(0, 30).map((sh, idx) => {
+                  const diff = Number(sh.selisih_kas || 0);
+                  const sysTot = Number(sh.sistem_tunai || 0) + Number(sh.sistem_qris || 0) + Number(sh.sistem_transfer || 0);
+                  const diffBadgeCls = diff === 0 ? 'bpom-bebas' : (diff > 0 ? 'bpom-terbatas' : 'bpom-keras');
+                  const diffTxt = diff === 0 ? '✓ Klop Rp 0' : ((diff > 0 ? '▲ +' : '▼ -') + S().rp(Math.abs(diff)));
+                  return `<tr>
+                    <td class="font-mono-num text-xs"><b>${S().esc(sh.id_shift)}</b><br/><span style="color:var(--ons-text-soft)">${S().formatTgl(sh.tgl_tutup, true)}</span></td>
+                    <td class="text-xs"><b>${S().esc(sh.kasir_id || '-')}</b><br/><span style="color:var(--ons-text-soft)">SPV: ${S().esc(sh.supervisor_id || '-')}</span></td>
+                    <td class="font-mono-num text-xs"><b>${S().rp(sysTot)}</b><br/><span class="text-[10px]" style="color:var(--ons-text-soft)">T:${S().rp(sh.sistem_tunai || 0)} &bull; Q:${S().rp(sh.sistem_qris || 0)}</span></td>
+                    <td class="font-mono-num text-xs font-bold">${S().rp(sh.aktual_tunai || 0)}</td>
+                    <td><span class="badge-bpom ${diffBadgeCls} font-mono-num font-bold">${diffTxt}</span></td>
+                    <td class="text-xs max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(sh.catatan_handover || '-')}</td>
+                    <td class="text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button type="button" onclick="window.openZReportModal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Z-Report</button>
+                        <button type="button" onclick="window.printShiftRowThermal(${idx})" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-bold text-blue-600" title="Cetak Ulang Struk Rekap Shift Thermal 58/80mm">🖨️ Cetak</button>
+                      </div>
+                    </td>
+                  </tr>`;
+                }).join('');
+              })()}
             </tbody>
           </table>
         </div>
@@ -14046,4 +14086,24 @@ S. prn 3 dd 1 tab</textarea>
         Jam Kerja Masuk: <b>${p.total_jam_kerja} Jam</b> (${p.upah_dasar_desc}) &bull; Hadir: <b>${p.hari_hadir} Hari</b> &bull; Lembur: <b>${p.total_jam_lembur} Jam</b> &bull; Terlambat: <b>${p.total_menit_terlambat} Mnt</b>
       </div>
     `;
+  };
+
+  global.setShiftHistFilter = (f) => {
+    shiftHistFilter = f || 'ALL';
+    global.renderActiveView();
+  };
+
+  global.printShiftRowThermal = (idx) => {
+    const st = S().AppState;
+    const hist = (st.shiftHistory || []).filter((sh) => String(sh.status_shift || '').toUpperCase() !== 'TERBUKA');
+    const filtered = hist.filter((s) => {
+      const d = Number(s.selisih_kas || 0);
+      if (shiftHistFilter === 'KLOP') return d === 0;
+      if (shiftHistFilter === 'SELISIH') return d !== 0;
+      return true;
+    });
+    const sh = filtered[idx] || hist[idx];
+    if (!sh) return;
+    lastClosedZReport = sh;
+    if (typeof global.printShiftZReport === 'function') global.printShiftZReport();
   };
