@@ -4770,13 +4770,13 @@
 
         <!-- CTA Utama: Bayar & Tunda -->
         <div class="grid grid-cols-2 gap-2 pt-1.5">
-          <button id="posBayarPrimaryBtn" type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-btn ons-btn-emerald py-2.5 text-xs font-extrabold shadow-sm justify-center">
+          <button id="posBayarPrimaryBtn" type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-btn ons-btn-primary py-2.5 text-xs font-extrabold shadow-sm justify-center">
             <span>Bayar</span>
             <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F2</span>
           </button>
-          <button id="posTundaPrimaryBtn" type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-primary py-2.5 text-xs font-extrabold shadow-sm justify-center">
+          <button id="posTundaPrimaryBtn" type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost py-2.5 text-xs font-bold border justify-center" style="border-color:var(--ons-border-strong)" title="Tahan transaksi sementara (F4)">
             <span>Tunda</span>
-            <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F4</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-200 dark:bg-slate-700 font-mono-num">F4</span>
           </button>
         </div>
 
@@ -4937,8 +4937,8 @@
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
-          <button type="button" onclick="window.openKasMasukModal()" class="ons-btn ons-btn-ghost text-emerald-600 dark:text-emerald-400 text-[11px] py-1 px-2 min-h-0 h-7 font-bold" title="Catat Kas Masuk Laci">+ Masuk</button>
-          <button type="button" onclick="window.openKasKeluarModal()" class="ons-btn ons-btn-ghost text-rose-600 dark:text-rose-400 text-[11px] py-1 px-2 min-h-0 h-7 font-bold" title="Catat Kas Keluar Laci">- Keluar</button>
+          <button type="button" onclick="window.openKasMasukModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Catat Kas Masuk Laci">+ Masuk</button>
+          <button type="button" onclick="window.openKasKeluarModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Catat Kas Keluar Laci">- Keluar</button>
           <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">Printer BT</button>
           ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold">Tutup Shift &rarr;</button>` : ''}
         </div>
@@ -4952,16 +4952,15 @@
             <input id="posSearchInput" placeholder="[F2] Tulis nama, kode, zat aktif, atau kategori produk..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
             <button id="posSearchClearBtn" type="button" onclick="window.clearPosSearchInput()" class="${String(st.posSearchQ || '').trim() ? '' : 'hidden'} px-2 py-0.5 rounded text-sm font-bold text-red-500 hover:bg-red-500/10" title="Bersihkan pencarian">&times;</button>
             <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 min-h-0 h-8 rounded-full" title="Scan Barcode Kamera">Scan</button>
-            
           </div>
           <div id="posSearchDropdown" class="ons-pos-search-menu ${String(st.posSearchQ || '').trim() ? '' : 'hidden'}">${String(st.posSearchQ || '').trim() ? renderPosSearchDropdownHtml(catalog) : ''}</div>
         </div>
-        <div class="flex items-center gap-3 ml-auto">
-          <button type="button" onclick="window.openRacikanModalFromPos && window.openRacikanModalFromPos()" class="ons-pos-bar-tool font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800" title="Resep Dokter &amp; Obat Racikan (Compound)">&#128138; + Racikan / Resep</button>
-          <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool" title="Kalkulator Dosis &amp; Aturan Pakai">&#129658; Hitung Dosis</button>
-          <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
-          <div class="text-right">
-            <div class="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Total Tagihan</div>
+        <div class="flex items-center gap-2 ml-auto">
+          <button type="button" onclick="window.openRacikanModalFromPos && window.openRacikanModalFromPos()" class="ons-pos-bar-tool font-semibold" title="Resep Dokter &amp; Obat Racikan (Compound)">&#128138; + Racikan / Resep</button>
+          <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool font-semibold" title="Kalkulator Dosis &amp; Aturan Pakai">&#129658; Hitung Dosis</button>
+          <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool font-semibold" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
+          <div class="text-right pl-2 border-l" style="border-color:var(--ons-border)">
+            <div class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--ons-text-soft)">Total Tagihan</div>
             <div id="posHeroTotalDisplay" class="ons-pos-total-hero">${S().rp(grandTotal)}</div>
           </div>
         </div>
@@ -5114,23 +5113,23 @@
         </div>
       </div>
 
-      <!-- Bottom Action & Status Strip (Apotek Digital Style) -->
+      <!-- Bottom Action & Status Strip -->
       <div class="ons-pos-bottom-bar">
         <div class="flex flex-wrap items-center gap-1.5">
-          <button type="button" onclick="window.openCartEtiketModal(0)" class="ons-pos-bar-tool font-bold" title="Cetak Etiket Obat Putih/Biru">&#127991; Cetak Etiket</button>
-          <button type="button" onclick="window.openCopyResepFromPosModal()" class="ons-pos-bar-tool font-bold" title="Salinan Resep p.c.c">&#128221; Copy Resep</button>
-          <button type="button" onclick="window.openKasMasukModal()" class="ons-pos-bar-tool font-extrabold text-emerald-300 hover:text-white" title="Catat Kas Masuk Laci (Modal Tambahan / Tukar Receh)">+ Kas Masuk</button>
-          <button type="button" onclick="window.openKasKeluarModal()" class="ons-pos-bar-tool font-extrabold text-rose-300 hover:text-white" title="Catat Kas Keluar Laci (Petty Cash Operasional / Beli Plastik)">- Kas Keluar</button>
-          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-pos-bar-tool" title="Daftar Penjualan &amp; Draft">&#128203; Riwayat Penjualan</button>
-          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-pos-bar-tool text-amber-300" title="Catat Penjualan Tertolak / Lost Sales">&#9888; Obat Kosong</button>
-          <span class="px-2.5 py-1 rounded-md font-extrabold text-[11px] bg-amber-400 text-slate-900">${S().esc(prof.status_pajak || 'Non-PKP')}</span>
+          <button type="button" onclick="window.openCartEtiketModal(0)" class="ons-pos-bar-tool font-semibold" title="Cetak Etiket Obat Putih/Biru">&#127991; Cetak Etiket</button>
+          <button type="button" onclick="window.openCopyResepFromPosModal()" class="ons-pos-bar-tool font-semibold" title="Salinan Resep p.c.c">&#128221; Copy Resep</button>
+          <button type="button" onclick="window.openKasMasukModal()" class="ons-pos-bar-tool font-semibold" title="Catat Kas Masuk Laci (Modal Tambahan / Tukar Receh)">+ Kas Masuk</button>
+          <button type="button" onclick="window.openKasKeluarModal()" class="ons-pos-bar-tool font-semibold" title="Catat Kas Keluar Laci (Petty Cash Operasional / Beli Plastik)">- Kas Keluar</button>
+          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-pos-bar-tool font-semibold" title="Daftar Penjualan &amp; Draft">&#128203; Riwayat Penjualan</button>
+          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-pos-bar-tool font-semibold" title="Catat Penjualan Tertolak / Lost Sales">&#9888; Obat Kosong</button>
+          <span class="px-2.5 py-1 rounded-md font-semibold text-[11px] border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(prof.status_pajak || 'Non-PKP')}</span>
         </div>
         <div class="flex flex-wrap items-center gap-2 ml-auto">
-          <label class="flex items-center gap-1.5 text-[11px] font-semibold">
+          <label class="flex items-center gap-1.5 text-[11px] font-semibold" style="color:var(--ons-text-soft)">
             <span>Tgl. Transaksi:</span>
-            <input type="date" value="${S().esc(cart.tgl_transaksi || todayYmd)}" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].tgl_transaksi=this.value" class="px-2 py-1 rounded text-xs font-mono-num bg-white text-slate-900 border-0"/>
+            <input type="date" value="${S().esc(cart.tgl_transaksi || todayYmd)}" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].tgl_transaksi=this.value" class="ons-input text-xs font-mono-num py-0.5 px-2 h-7 w-36"/>
           </label>
-          <span class="px-2.5 py-1 rounded bg-white/15 font-bold text-xs">${S().esc(branchLabel)}</span>
+          <span class="px-2.5 py-1 rounded font-bold text-xs border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">${S().esc(branchLabel)}</span>
         </div>
       </div>
     </div>`;

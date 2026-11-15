@@ -2175,16 +2175,14 @@ html.dark .ons-scan-zone {
 /* === v16.9 KASIR POS WORKSTATION PRO === */
 .ons-pos-bar {
   position: relative;
-  border-radius: 1.15rem;
+  border-radius: 1rem;
   border: 1px solid var(--ons-border);
-  border-top: 3px solid var(--ons-primary-bright);
-  background: radial-gradient(circle at 96% 20%, rgba(16, 185, 129, 0.12), transparent 40%),
-              linear-gradient(135deg, rgba(239, 246, 255, 0.7) 0%, var(--ons-bg-card) 58%);
-  box-shadow: 0 8px 24px -14px rgba(0, 80, 202, 0.18), var(--ons-shadow-card);
+  background: var(--ons-bg-card);
+  box-shadow: var(--ons-shadow-card);
 }
 html.dark .ons-pos-bar {
-  background: radial-gradient(circle at 96% 20%, rgba(16, 185, 129, 0.18), transparent 44%),
-              linear-gradient(135deg, rgba(30, 58, 138, 0.22) 0%, var(--ons-bg-card) 60%);
+  background: var(--ons-bg-card);
+  border-color: var(--ons-border);
 }
 .ons-pos-live-dot {
   width: 0.5rem;
@@ -2988,11 +2986,12 @@ html.dark .ons-dash-sec-title {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.72rem 1rem;
-  border-radius: 0.95rem;
-  background: linear-gradient(90deg, #0050CA 0%, #0066FE 100%);
-  color: #FFFFFF;
-  box-shadow: var(--ons-shadow-sm);
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  color: var(--ons-text-main);
+  box-shadow: var(--ons-shadow-card);
 }
 .ons-pos-search-pill {
   display: flex;
@@ -3001,10 +3000,10 @@ html.dark .ons-dash-sec-title {
   flex: 1;
   min-width: 240px;
   padding: 0.25rem 0.5rem 0.25rem 0.95rem;
-  border-radius: 999px;
-  background: #FFFFFF;
-  color: #0F172A;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+  border-radius: 0.75rem;
+  background: var(--ons-bg-subtle);
+  border: 1px solid var(--ons-border-strong);
+  color: var(--ons-text-main);
 }
 html.dark .ons-pos-search-pill {
   background: #0F172A;
@@ -3046,8 +3045,11 @@ html.dark .ons-pos-search-pill .ons-btn-ghost:hover {
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.05;
-  color: #FFFFFF;
+  color: var(--ons-primary);
   white-space: nowrap;
+}
+html.dark .ons-pos-total-hero {
+  color: #60A5FA;
 }
 .ons-pos-dropdown {
   position: relative;
@@ -3104,10 +3106,17 @@ html.dark .ons-pos-search-pill .ons-btn-ghost:hover {
   justify-content: space-between;
   gap: 0.55rem;
   padding: 0.55rem 0.9rem;
-  border-radius: 0.85rem;
-  background: linear-gradient(90deg, #0050CA 0%, #0066FE 100%);
-  color: #FFFFFF;
+  border-radius: 1rem;
+  background: var(--ons-bg-card);
+  border: 1px solid var(--ons-border);
+  color: var(--ons-text-main);
+  box-shadow: var(--ons-shadow-card);
   font-size: 0.74rem;
+}
+html.dark .ons-pos-bottom-bar {
+  background: var(--ons-bg-card);
+  border-color: var(--ons-border);
+  color: var(--ons-text-main);
 }
 .ons-pos-bar-tool {
   display: inline-flex;
@@ -3116,15 +3125,26 @@ html.dark .ons-pos-search-pill .ons-btn-ghost:hover {
   min-height: 34px;
   padding: 0.3rem 0.65rem;
   border-radius: 0.55rem;
-  background: rgba(255, 255, 255, 0.14);
-  color: #FFFFFF;
+  background: var(--ons-bg-subtle);
+  border: 1px solid var(--ons-border);
+  color: var(--ons-text-main);
   font-weight: 600;
   font-size: 0.72rem;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 .ons-pos-bar-tool:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: var(--ons-border);
+  color: var(--ons-primary);
+}
+html.dark .ons-pos-bar-tool {
+  background: #1E293B;
+  border-color: #334155;
+  color: #F8FAFC;
+}
+html.dark .ons-pos-bar-tool:hover {
+  background: #334155;
+  color: #60A5FA;
 }
 .ons-pos-rekap-foot {
   border-radius: 0.9rem;
