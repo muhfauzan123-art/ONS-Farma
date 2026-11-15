@@ -1875,26 +1875,32 @@
     if (action === 'obat.bulkImport') {
       const list = Array.isArray(d.items) ? d.items : [];
       const now = new Date().toISOString();
+      const createStok = Boolean(d.create_stok_awal !== false);
       let inserted = 0;
       let updated = 0;
-      list.slice(0, 500).forEach((raw, idx) => {
+      let stockBatchesCreated = 0;
+      list.slice(0, 1000).forEach((raw, idx) => {
         if (!raw || !raw.nama_dagang) return;
         const kfa = String(raw.kode_kfa || '').trim();
+        let targetId = raw.id_obat;
         const existing = db.master_obat.find((m) =>
           (raw.id_obat && String(m.id_obat) === String(raw.id_obat)) ||
-          (kfa && String(m.kode_kfa || '').trim() === kfa)
+          (kfa && String(m.kode_kfa || '').trim() === kfa) ||
+          (String(m.nama_dagang || '').trim().toLowerCase() === String(raw.nama_dagang).trim().toLowerCase())
         );
         if (existing) {
+          targetId = existing.id_obat;
           Object.keys(raw).forEach((k) => {
-            if (k === 'id_obat') return;
+            if (k === 'id_obat' || k === 'stok_awal' || k === 'no_batch' || k === 'tgl_kadaluarsa' || k === 'stok') return;
             const v = raw[k];
             if (v !== undefined && v !== null && v !== '') existing[k] = v;
           });
           existing.updated_at = now;
           updated++;
         } else {
+          targetId = raw.id_obat || ('OBT-IMP-' + Date.now().toString(36).toUpperCase() + idx);
           db.master_obat.push({
-            id_obat: raw.id_obat || ('OBT-IMP-' + Date.now() + idx),
+            id_obat: targetId,
             kode_kfa: kfa,
             nama_dagang: String(raw.nama_dagang).trim(),
             zat_aktif: raw.zat_aktif || '',
@@ -1902,6 +1908,7 @@
             golongan_bpom: raw.golongan_bpom || 'BEBAS',
             bentuk_sediaan: raw.bentuk_sediaan || raw.satuan_dasar || 'Tablet',
             nie_bpom: raw.nie_bpom || '',
+            pabrikan: raw.pabrikan || '',
             suhu_simpan: raw.suhu_simpan || 'Suhu Ruang (15-25 C)',
             rak_lokasi: raw.rak_lokasi || 'RAK-A1',
             satuan_dasar: raw.satuan_dasar || 'Tablet',
@@ -1925,10 +1932,50 @@
           });
           inserted++;
         }
+
+        // Jika ada stok_awal dan opsi aktif, otomatis buatkan stok_batch di gudang!
+        const stokAwal = Number(raw.stok_awal || raw.stok || 0);
+        if (createStok && stokAwal > 0) {
+          const defaultEd = new Date(Date.now() + 730 * 86400000).toISOString().slice(0, 10);
+          const expDate = String(raw.tgl_kadaluarsa || raw.kadaluarsa || defaultEd).slice(0, 10);
+          const batchNo = String(raw.no_batch || ('BATCH-' + now.slice(2, 10).replace(/-/g, ''))).trim();
+          db.stok_batch = db.stok_batch || [];
+          const existingBatch = db.stok_batch.find((b) => b.id_obat === targetId && b.no_batch === batchNo);
+          if (existingBatch) {
+            existingBatch.qty_sisa = Number(existingBatch.qty_sisa || 0) + stokAwal;
+            existingBatch.qty_masuk = Number(existingBatch.qty_masuk || 0) + stokAwal;
+          } else {
+            db.stok_batch.push({
+              id_batch: 'BTC-' + targetId + '-' + Date.now().toString(36).slice(-4).toUpperCase(),
+              cabang_id: cabang,
+              id_obat: targetId,
+              no_batch: batchNo,
+              tgl_kadaluarsa: expDate,
+              qty_masuk: stokAwal,
+              qty_sisa: stokAwal,
+              hpp_batch: Number(raw.hpp_avg || 0),
+              harga_jual_batch: Number(raw.harga_umum || 0),
+              status_batch: 'AKTIF'
+            });
+            stockBatchesCreated++;
+          }
+          db.kartu_stok = db.kartu_stok || [];
+          db.kartu_stok.push({
+            id_kartu: 'KS-IMP-' + Date.now() + idx,
+            id_obat: targetId,
+            cabang_id: cabang,
+            tanggal: now,
+            tipe_mutasi: 'SALDO_AWAL_IMPORT',
+            jumlah_masuk: stokAwal,
+            jumlah_keluar: 0,
+            sisa_stok: stokAwal,
+            keterangan: 'Import saldo awal file Excel/CSV (' + batchNo + ')'
+          });
+        }
       });
       db.epoch++;
       saveDb(db);
-      return { inserted, updated };
+      return { inserted, updated, stock_batches_created: stockBatchesCreated };
     }
     if (action === 'finance.payHutangPbf') {
       const f = db.faktur_pbf.find((x) => x.id_beli === d.id_beli || x.no_faktur_pbf === d.id_beli);

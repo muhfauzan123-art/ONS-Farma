@@ -5733,13 +5733,14 @@
 
 
   const MASTER_OBAT_IMPORT_COLUMNS = [
-    { key: 'kode_kfa', label: 'kode_kfa', ket: 'Kode KFA Kemenkes (opsional, disarankan diisi)' },
+    { key: 'kode_kfa', label: 'kode_kfa', ket: 'Kode KFA Kemenkes / Barcode produk (opsional, disarankan diisi)' },
     { key: 'nama_dagang', label: 'nama_dagang', ket: 'WAJIB diisi. Nama produk dagang di etalase & struk' },
     { key: 'zat_aktif', label: 'zat_aktif', ket: 'Nama zat aktif / kandungan generik' },
     { key: 'kekuatan', label: 'kekuatan', ket: 'Dosis / kekuatan sediaan (cth: 500 mg, 10 mg/5 mL)' },
     { key: 'golongan_bpom', label: 'golongan_bpom', ket: 'BEBAS | TERBATAS | KERAS | PREKURSOR | OOT | PSIKOTROPIKA | NARKOTIKA' },
     { key: 'bentuk_sediaan', label: 'bentuk_sediaan', ket: 'Tablet | Kaplet | Kapsul | Sirup | Salep | Tetes | Injeksi | Alkes' },
     { key: 'nie_bpom', label: 'nie_bpom', ket: 'Nomor Izin Edar BPOM (cth: DKL1405048817A1)' },
+    { key: 'pabrikan', label: 'pabrikan', ket: 'Nama produsen / pabrik farmasi (cth: Kimia Farma, Dexa Medica)' },
     { key: 'rak_lokasi', label: 'rak_lokasi', ket: 'Lokasi rak penyimpanan (cth: RAK-A1, LEMARI-KERAS)' },
     { key: 'suhu_simpan', label: 'suhu_simpan', ket: 'Suhu Ruang (15-25 C) | Kulkas (2-8 C) | Lemari Khusus' },
     { key: 'satuan_dasar', label: 'satuan_dasar', ket: 'Satuan jual terkecil (Tablet, Kapsul, Botol, Tube, Pcs)' },
@@ -5755,15 +5756,18 @@
     { key: 'harga_faskes', label: 'harga_faskes', ket: 'Harga jual khusus klinik / bidan / faskes mitra' },
     { key: 'stok_min', label: 'stok_min', ket: 'Batas peringatan stok menipis (angka, default 10)' },
     { key: 'stok_max', label: 'stok_max', ket: 'Kapasitas stok maksimal yang disarankan (angka, default 100)' },
-    { key: 'pbf_utama', label: 'pbf_utama', ket: 'Nama PBF / distributor pemasok utama' }
+    { key: 'pbf_utama', label: 'pbf_utama', ket: 'Nama PBF / distributor pemasok utama' },
+    { key: 'stok_awal', label: 'stok_awal', ket: 'Stok fisik awal masuk gudang (opsional, langsung bisa dijual di kasir)' },
+    { key: 'no_batch', label: 'no_batch', ket: 'Nomor batch / lot pabrik (opsional, cth: B260101)' },
+    { key: 'tgl_kadaluarsa', label: 'tgl_kadaluarsa', ket: 'Tanggal kadaluarsa (opsional, format: YYYY-MM-DD)' }
   ];
 
   const MASTER_OBAT_SAMPLE_ROWS = [
-    ['93001105', 'Paracetamol 500mg Kaplet KF', 'Paracetamol', '500 mg', 'BEBAS', 'Kaplet', 'GBL9812416804A1', 'RAK-A1', 'Suhu Ruang (15-25 C)', 'Kaplet', 'Strip', 10, 'Box', 100, 185, 350, 300, 260, 10, 250, 50, 500, 'PT Kimia Farma Trading'],
-    ['93002110', 'Cetirizine 10mg Dexa', 'Cetirizine HCl', '10 mg', 'TERBATAS', 'Tablet', 'GKL1405048817A1', 'RAK-A2', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 350, 700, 600, 520, 10, 500, 30, 300, 'PT Anugerah Argon Medica'],
-    ['93003340', 'Amoxsan 500mg Kapsul', 'Amoxicillin Trihydrate', '500 mg', 'KERAS', 'Kapsul', 'DKL8622205901A1', 'RAK-B1', 'Suhu Ruang (15-25 C)', 'Kapsul', 'Strip', 10, 'Box', 100, 3400, 4800, 4500, 4100, 10, 4000, 20, 200, 'PT Enseval Putera Megatrading'],
-    ['93004821', 'Rhinos SR Kapsul', 'Loratadine + Pseudoephedrine HCl', '5 mg + 120 mg', 'PREKURSOR', 'Kapsul SR', 'DKL9905029103A1', 'LEMARI-PREKURSOR', 'Suhu Ruang (15-25 C)', 'Kapsul', 'Strip', 10, 'Box', 50, 6800, 8900, 8400, 7800, 10, 7600, 15, 100, 'PT Anugerah Argon Medica'],
-    ['92004512', 'Neurobion Forte Tablet', 'Vitamin B1, B6, B12', '100/100/5000 mcg', 'BEBAS', 'Tablet Salut', 'DBL7215806416B1', 'RAK-C1', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 2800, 3900, 3600, 3300, 10, 3200, 20, 200, 'PT Parit Padang Global']
+    ['93001105', 'Paracetamol 500mg Kaplet KF', 'Paracetamol', '500 mg', 'BEBAS', 'Kaplet', 'GBL9812416804A1', 'Kimia Farma', 'RAK-A1', 'Suhu Ruang (15-25 C)', 'Kaplet', 'Strip', 10, 'Box', 100, 185, 350, 300, 260, 10, 250, 50, 500, 'PT Kimia Farma Trading', 100, 'BTC-PCT-2026', '2028-12-31'],
+    ['93002110', 'Cetirizine 10mg Dexa', 'Cetirizine HCl', '10 mg', 'TERBATAS', 'Tablet', 'GKL1405048817A1', 'Dexa Medica', 'RAK-A2', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 350, 700, 600, 520, 10, 500, 30, 300, 'PT Anugerah Argon Medica', 50, 'BTC-CTZ-2026', '2028-10-15'],
+    ['93003340', 'Amoxsan 500mg Kapsul', 'Amoxicillin Trihydrate', '500 mg', 'KERAS', 'Kapsul', 'DKL8622205901A1', 'Sanbe Farma', 'RAK-B1', 'Suhu Ruang (15-25 C)', 'Kapsul', 'Strip', 10, 'Box', 100, 3400, 4800, 4500, 4100, 10, 4000, 20, 200, 'PT Enseval Putera Megatrading', 40, 'BTC-AMX-2026', '2027-11-20'],
+    ['93004821', 'Rhinos SR Kapsul', 'Loratadine + Pseudoephedrine HCl', '5 mg + 120 mg', 'PREKURSOR', 'Kapsul SR', 'DKL9905029103A1', 'Dexa Medica', 'LEMARI-PREKURSOR', 'Suhu Ruang (15-25 C)', 'Kapsul', 'Strip', 10, 'Box', 50, 6800, 8900, 8400, 7800, 10, 7600, 15, 100, 'PT Anugerah Argon Medica', 30, 'BTC-RHN-2026', '2028-06-30'],
+    ['92004512', 'Neurobion Forte Tablet', 'Vitamin B1, B6, B12', '100/100/5000 mcg', 'BEBAS', 'Tablet Salut', 'DBL7215806416B1', 'Merck / P&G', 'RAK-C1', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 2800, 3900, 3600, 3300, 10, 3200, 20, 200, 'PT Parit Padang Global', 80, 'BTC-NRB-2026', '2028-09-01']
   ];
 
   function _csvSafeVal(val) {
@@ -5863,63 +5867,184 @@
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
     const aliases = {
-      kode_kfa: 'kode_kfa', kfa: 'kode_kfa', kode_obat: 'kode_kfa',
-      nama_dagang: 'nama_dagang', nama: 'nama_dagang', produk: 'nama_dagang', nama_obat: 'nama_dagang', nama_produk: 'nama_dagang',
-      zat_aktif: 'zat_aktif', kandungan: 'zat_aktif', generik: 'zat_aktif',
-      kekuatan: 'kekuatan', dosis: 'kekuatan',
-      golongan_bpom: 'golongan_bpom', golongan: 'golongan_bpom', gol: 'golongan_bpom',
-      bentuk_sediaan: 'bentuk_sediaan', sediaan: 'bentuk_sediaan',
-      nie_bpom: 'nie_bpom', nie: 'nie_bpom', no_nie: 'nie_bpom',
-      rak_lokasi: 'rak_lokasi', rak: 'rak_lokasi', lokasi_rak: 'rak_lokasi',
-      suhu_simpan: 'suhu_simpan', suhu: 'suhu_simpan',
-      satuan_dasar: 'satuan_dasar', satuan: 'satuan_dasar', unit: 'satuan_dasar',
-      satuan_sedang: 'satuan_sedang',
-      rasio_sedang: 'rasio_sedang',
-      satuan_besar: 'satuan_besar',
-      rasio_besar: 'rasio_besar',
-      hpp_avg: 'hpp_avg', hpp: 'hpp_avg', harga_beli: 'hpp_avg',
-      harga_umum: 'harga_umum', harga: 'harga_umum', harga_jual: 'harga_umum',
-      harga_member: 'harga_member', member: 'harga_member',
-      harga_grosir: 'harga_grosir', grosir: 'harga_grosir',
-      min_qty_grosir: 'min_qty_grosir', min_grosir: 'min_qty_grosir',
-      harga_faskes: 'harga_faskes', faskes: 'harga_faskes',
-      stok_min: 'stok_min', min_stok: 'stok_min',
-      stok_max: 'stok_max', max_stok: 'stok_max',
-      pbf_utama: 'pbf_utama', pbf: 'pbf_utama', distributor: 'pbf_utama'
+      kode_kfa: 'kode_kfa', kfa: 'kode_kfa', kode_obat: 'kode_kfa', kode_barang: 'kode_kfa', kode_item: 'kode_kfa', kode_produk: 'kode_kfa', kode: 'kode_kfa', barcode: 'kode_kfa', sku: 'kode_kfa', kode_sku: 'kode_kfa', id_obat: 'kode_kfa', plu: 'kode_kfa',
+      nama_dagang: 'nama_dagang', nama: 'nama_dagang', produk: 'nama_dagang', nama_obat: 'nama_dagang', nama_produk: 'nama_dagang', nama_barang: 'nama_dagang', nama_item: 'nama_dagang', item: 'nama_dagang', item_name: 'nama_dagang', product_name: 'nama_dagang', deskripsi: 'nama_dagang', deskripsi_produk: 'nama_dagang', description: 'nama_dagang', obat: 'nama_dagang',
+      zat_aktif: 'zat_aktif', kandungan: 'zat_aktif', generik: 'zat_aktif', komposisi: 'zat_aktif', active_ingredient: 'zat_aktif', nama_generik: 'zat_aktif',
+      kekuatan: 'kekuatan', dosis: 'kekuatan', potency: 'kekuatan', strength: 'kekuatan',
+      golongan_bpom: 'golongan_bpom', golongan: 'golongan_bpom', gol: 'golongan_bpom', kategori: 'golongan_bpom', klasifikasi: 'golongan_bpom', category: 'golongan_bpom',
+      bentuk_sediaan: 'bentuk_sediaan', sediaan: 'bentuk_sediaan', bentuk: 'bentuk_sediaan', form: 'bentuk_sediaan', dosage_form: 'bentuk_sediaan',
+      nie_bpom: 'nie_bpom', nie: 'nie_bpom', no_nie: 'nie_bpom', no_bpom: 'nie_bpom', nomor_izin_edar: 'nie_bpom', izin_edar: 'nie_bpom',
+      pabrikan: 'pabrikan', pabrik: 'pabrikan', produsen: 'pabrikan', prinsipal: 'pabrikan', principal: 'pabrikan', manufaktur: 'pabrikan', manufacturer: 'pabrikan',
+      rak_lokasi: 'rak_lokasi', rak: 'rak_lokasi', lokasi_rak: 'rak_lokasi', lokasi: 'rak_lokasi', posisi_rak: 'rak_lokasi', shelf: 'rak_lokasi',
+      suhu_simpan: 'suhu_simpan', suhu: 'suhu_simpan', storage_temp: 'suhu_simpan', kondisi_simpan: 'suhu_simpan',
+      satuan_dasar: 'satuan_dasar', satuan: 'satuan_dasar', unit: 'satuan_dasar', uom: 'satuan_dasar', satuan_terkecil: 'satuan_dasar',
+      satuan_sedang: 'satuan_sedang', satuan_tengah: 'satuan_sedang', pack: 'satuan_sedang', kemasan_sedang: 'satuan_sedang',
+      rasio_sedang: 'rasio_sedang', isi_sedang: 'rasio_sedang', isi_per_strip: 'rasio_sedang', qty_sedang: 'rasio_sedang',
+      satuan_besar: 'satuan_besar', kemasan_besar: 'satuan_besar', dus: 'satuan_besar', box: 'satuan_besar',
+      rasio_besar: 'rasio_besar', isi_besar: 'rasio_besar', isi_per_box: 'rasio_besar', qty_besar: 'rasio_besar',
+      hpp_avg: 'hpp_avg', hpp: 'hpp_avg', harga_beli: 'hpp_avg', hna: 'hpp_avg', modal: 'hpp_avg', beli: 'hpp_avg', harga_pokok: 'hpp_avg', harga_modal: 'hpp_avg', cost: 'hpp_avg', buy_price: 'hpp_avg', harga_netto: 'hpp_avg',
+      harga_umum: 'harga_umum', harga: 'harga_umum', harga_jual: 'harga_umum', hja: 'harga_umum', harga_eceran: 'harga_umum', eceran: 'harga_umum', retail_price: 'harga_umum', harga_konsumen: 'harga_umum', jual: 'harga_umum',
+      harga_member: 'harga_member', member: 'harga_member', harga_langganan: 'harga_member', member_price: 'harga_member',
+      harga_grosir: 'harga_grosir', grosir: 'harga_grosir', wholesale: 'harga_grosir', wholesale_price: 'harga_grosir',
+      min_qty_grosir: 'min_qty_grosir', min_grosir: 'min_qty_grosir', min_qty: 'min_qty_grosir', minimal_grosir: 'min_qty_grosir',
+      harga_faskes: 'harga_faskes', faskes: 'harga_faskes', harga_klinik: 'harga_faskes', harga_dokter: 'harga_faskes',
+      stok_min: 'stok_min', min_stok: 'stok_min', minimum_stok: 'stok_min', min_stock: 'stok_min', reorder_point: 'stok_min', rop: 'stok_min',
+      stok_max: 'stok_max', max_stok: 'stok_max', maksimum_stok: 'stok_max', max_stock: 'stok_max',
+      pbf_utama: 'pbf_utama', pbf: 'pbf_utama', distributor: 'pbf_utama', distributor_pbf: 'pbf_utama', nama_distributor: 'pbf_utama', supplier: 'pbf_utama', nama_supplier: 'pbf_utama', vendor: 'pbf_utama', pemasok: 'pbf_utama', nama_pbf: 'pbf_utama',
+      stok_awal: 'stok_awal', stok: 'stok_awal', stock: 'stok_awal', saldo_awal: 'stok_awal', qty: 'stok_awal', jumlah: 'stok_awal', kuantitas: 'stok_awal', current_stock: 'stok_awal', stok_gudang: 'stok_awal', qty_awal: 'stok_awal', stok_fisik: 'stok_awal', saldo: 'stok_awal',
+      no_batch: 'no_batch', batch: 'no_batch', nomor_batch: 'no_batch', kode_batch: 'no_batch', no_lot: 'no_batch', nomor_lot: 'no_batch', lot: 'no_batch', lot_no: 'no_batch', lot_number: 'no_batch', batch_no: 'no_batch', batch_number: 'no_batch',
+      tgl_kadaluarsa: 'tgl_kadaluarsa', kadaluarsa: 'tgl_kadaluarsa', tanggal_kadaluarsa: 'tgl_kadaluarsa', tgl_ed: 'tgl_kadaluarsa', ed: 'tgl_kadaluarsa', tanggal_ed: 'tgl_kadaluarsa', expired: 'tgl_kadaluarsa', expired_date: 'tgl_kadaluarsa', tanggal_expired: 'tgl_kadaluarsa', exp_date: 'tgl_kadaluarsa', expiry_date: 'tgl_kadaluarsa', tgl_expired: 'tgl_kadaluarsa', exp: 'tgl_kadaluarsa', tgl_exp: 'tgl_kadaluarsa', tgl_kadaluwarsa: 'tgl_kadaluarsa'
     };
     return aliases[clean] || clean;
   }
+  global._normalizeImportHeader = _normalizeImportHeader;
 
   global.openImportObatModal = () => {
     importObatBuffer = [];
     S().openModal(`<div class="p-6 space-y-4 text-xs">
       <div class="flex justify-between items-start gap-3">
         <div>
-          <h3 class="font-bold text-base">Import Massal Master Obat (.xlsx / .csv)</h3>
-          <p class="mt-0.5" style="color:var(--ons-text-soft)">Unggah file template resmi ONS Farma atau file hasil <b>Export Excel / CSV</b> yang sudah Anda lengkapi di Microsoft Excel.</p>
+          <h3 class="font-bold text-base flex items-center gap-2">
+            <span>&#128229; Import Massal Data Obat (.xlsx / .csv)</span>
+            <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800">Smart Auto-Mapping</span>
+          </h3>
+          <p class="mt-0.5" style="color:var(--ons-text-soft)">Unggah file template resmi ONS Farma atau file Excel/CSV dari apotek lain, PBF, atau catatan Anda. Sistem otomatis mengenali variasi nama kolom secara cerdas.</p>
         </div>
         <button onclick="ONSStore.closeModal()" class="text-xl leading-none">&times;</button>
       </div>
-      <div class="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+
+      <!-- Step 1: Download Template -->
+      <div class="p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
         <div class="space-y-0.5">
-          <div class="font-bold">1. Unduh Contoh File Import (23 Kolom Lengkap)</div>
-          <div style="color:var(--ons-text-soft)">Berisi 5 contoh obat standar Kemenkes/BPOM lengkap dengan satuan, margin tier &amp; panduan pengisian.</div>
+          <div class="font-bold flex items-center gap-1.5">
+            <span>1. Unduh Contoh File &amp; Template (27 Kolom Lengkap)</span>
+          </div>
+          <div style="color:var(--ons-text-soft)">Berisi 5 contoh obat standar BPOM lengkap dengan satuan berjenjang, harga, rak, dan stok awal.</div>
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" onclick="window.downloadTemplateImportObat()" class="ons-btn ons-btn-ghost">&#128196; Unduh Contoh CSV (.csv)</button>
           <button type="button" onclick="window.downloadTemplateImportObatXlsx()" class="ons-btn ons-btn-emerald">&#128202; Unduh Contoh Excel (.xlsx)</button>
         </div>
       </div>
-      <div class="space-y-1.5">
-        <label class="font-bold block">2. Pilih File (.xlsx atau .csv) untuk Dipindai</label>
-        <input id="impObatFile" type="file" accept=".xlsx,.csv" class="ons-input w-full" onchange="window.parseImportObatFile(this.files[0])"/>
+
+      <!-- Step 2: Interactive Sample Data Accordion -->
+      <details class="p-3 rounded-xl border group transition-all" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <summary class="font-bold cursor-pointer text-emerald-700 dark:text-emerald-400 flex items-center justify-between select-none">
+          <span class="flex items-center gap-1.5">
+            <span>&#128065; Lihat Contoh Data &amp; Format Kolom yang Diterima Sistem</span>
+          </span>
+          <span class="text-xs font-normal underline">Klik untuk Buka/Tutup</span>
+        </summary>
+        <div class="mt-3 pt-3 border-t space-y-2.5" style="border-color:var(--ons-border)">
+          <div class="p-2.5 rounded-lg border text-[11px] leading-relaxed bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
+            <b>&#10003; Cukup 1 Kolom Wajib:</b> <code>nama_dagang</code> (atau <i>Nama Obat / Nama Barang / Item</i>). Kolom lain opsional dan otomatis diberi nilai aman jika kosong.<br/>
+            <b>&#10003; Smart Auto-Mapping:</b> Jika kolom file Anda bernama <i>HNA / Modal / Beli</i>, otomatis jadi <b>HPP</b>. Jika bernama <i>Harga Jual / Eceran</i>, otomatis jadi <b>Harga Umum</b>. Jika ada <i>Qty / Stok / Saldo</i>, otomatis jadi <b>Stok Awal</b>.<br/>
+            <b>&#10003; Format Angka Fleksibel:</b> Boleh menggunakan format <code>15000</code> atau <code>Rp 15.000</code> (titik/koma/simbol Rp otomatis dibersihkan).
+          </div>
+          <div class="overflow-x-auto max-h-48 border rounded-lg" style="border-color:var(--ons-border)">
+            <table class="w-full text-[11px] border-collapse bg-white dark:bg-neutral-900">
+              <thead><tr class="border-b bg-neutral-50 dark:bg-neutral-800 text-left font-bold" style="border-color:var(--ons-border)">
+                <th class="p-1.5 whitespace-nowrap">#</th>
+                <th class="p-1.5 whitespace-nowrap text-emerald-700">Nama Dagang <span class="text-[9px] bg-red-100 text-red-700 px-1 py-0.2 rounded font-normal">WAJIB</span></th>
+                <th class="p-1.5 whitespace-nowrap">Golongan</th>
+                <th class="p-1.5 whitespace-nowrap">Pabrikan</th>
+                <th class="p-1.5 whitespace-nowrap">Satuan</th>
+                <th class="p-1.5 whitespace-nowrap text-right">HPP</th>
+                <th class="p-1.5 whitespace-nowrap text-right">Harga Jual</th>
+                <th class="p-1.5 whitespace-nowrap text-right text-emerald-700">Stok Awal</th>
+                <th class="p-1.5 whitespace-nowrap">No Batch &amp; ED</th>
+              </tr></thead>
+              <tbody>
+                <tr class="border-b" style="border-color:var(--ons-border)">
+                  <td class="p-1.5 font-mono-num">1</td>
+                  <td class="p-1.5 font-bold">Paracetamol 500mg Kaplet KF</td>
+                  <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800">BEBAS</span></td>
+                  <td class="p-1.5">Kimia Farma</td>
+                  <td class="p-1.5">Kaplet</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 185</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 350</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">100</td>
+                  <td class="p-1.5 font-mono-num text-[10px]">BTC-PCT-2026 (2028-12-31)</td>
+                </tr>
+                <tr class="border-b" style="border-color:var(--ons-border)">
+                  <td class="p-1.5 font-mono-num">2</td>
+                  <td class="p-1.5 font-bold">Cetirizine 10mg Dexa</td>
+                  <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800">TERBATAS</span></td>
+                  <td class="p-1.5">Dexa Medica</td>
+                  <td class="p-1.5">Tablet</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 350</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 700</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">50</td>
+                  <td class="p-1.5 font-mono-num text-[10px]">BTC-CTZ-2026 (2028-10-15)</td>
+                </tr>
+                <tr class="border-b" style="border-color:var(--ons-border)">
+                  <td class="p-1.5 font-mono-num">3</td>
+                  <td class="p-1.5 font-bold">Amoxsan 500mg Kapsul</td>
+                  <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800">KERAS</span></td>
+                  <td class="p-1.5">Sanbe Farma</td>
+                  <td class="p-1.5">Kapsul</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 3.400</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 4.800</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">40</td>
+                  <td class="p-1.5 font-mono-num text-[10px]">BTC-AMX-2026 (2027-11-20)</td>
+                </tr>
+                <tr class="border-b" style="border-color:var(--ons-border)">
+                  <td class="p-1.5 font-mono-num">4</td>
+                  <td class="p-1.5 font-bold">Rhinos SR Kapsul</td>
+                  <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800">PREKURSOR</span></td>
+                  <td class="p-1.5">Dexa Medica</td>
+                  <td class="p-1.5">Kapsul</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 6.800</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 8.900</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">30</td>
+                  <td class="p-1.5 font-mono-num text-[10px]">BTC-RHN-2026 (2028-06-30)</td>
+                </tr>
+                <tr>
+                  <td class="p-1.5 font-mono-num">5</td>
+                  <td class="p-1.5 font-bold">Neurobion Forte Tablet</td>
+                  <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800">BEBAS</span></td>
+                  <td class="p-1.5">Merck / P&G</td>
+                  <td class="p-1.5">Tablet</td>
+                  <td class="p-1.5 text-right font-mono-num">Rp 2.800</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold">Rp 3.900</td>
+                  <td class="p-1.5 text-right font-mono-num font-bold text-emerald-700">80</td>
+                  <td class="p-1.5 font-mono-num text-[10px]">BTC-NRB-2026 (2028-09-01)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <!-- Step 3: File Input & Opening Stock Option -->
+      <div class="space-y-2">
+        <label class="font-bold block">2. Pilih File Excel / CSV yang Ingin Diunggah</label>
+        <input id="impObatFile" type="file" accept=".xlsx,.csv" class="ons-input w-full cursor-pointer" onchange="window.parseImportObatFile(this.files[0])"/>
+        
+        <label class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer select-none" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <input type="checkbox" id="chkCreateStokAwal" checked class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"/>
+          <div class="space-y-0.5">
+            <div class="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              <span>&#128230; Otomatis Buat Stok Awal di Gudang (Batch &amp; Kartu Stok FEFO)</span>
+            </div>
+            <div class="text-[11px]" style="color:var(--ons-text-soft)">
+              Jika file Anda memiliki kolom stok/qty, sistem langsung memasukkan batch ke gudang sehingga produk <b>langsung siap dijual di Kasir POS</b> tanpa perlu penyesuaian manual.
+            </div>
+          </div>
+        </label>
       </div>
-      <div class="text-[11px] leading-relaxed px-3 py-2 rounded-lg border" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-        <b>Kolom wajib:</b> <code>nama_dagang</code>. <b>Kolom opsional lengkap:</b> <code>kode_kfa</code>, <code>zat_aktif</code>, <code>kekuatan</code>, <code>golongan_bpom</code>, <code>bentuk_sediaan</code>, <code>nie_bpom</code>, <code>rak_lokasi</code>, <code>suhu_simpan</code>, <code>satuan_dasar</code>, <code>satuan_sedang</code>, <code>rasio_sedang</code>, <code>satuan_besar</code>, <code>rasio_besar</code>, <code>hpp_avg</code>, <code>harga_umum</code>, <code>harga_member</code>, <code>harga_grosir</code>, <code>min_qty_grosir</code>, <code>harga_faskes</code>, <code>stok_min</code>, <code>stok_max</code>, <code>pbf_utama</code>.
+
+      <!-- Preview Box -->
+      <div id="impObatPreview" class="p-3.5 rounded-xl border max-h-60 overflow-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="text-center py-4" style="color:var(--ons-text-soft)">
+          Pilih file .xlsx atau .csv di atas untuk melihat pratinjau data dan validasi...
+        </div>
       </div>
-      <div id="impObatPreview" class="p-3 rounded-xl border max-h-56 overflow-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">Pilih file .xlsx atau .csv untuk pratinjau...</div>
-      <button onclick="window.submitImportObatBulk()" class="ons-btn ons-btn-emerald w-full min-h-[42px] font-bold">&#128229; Import ke Database Master Obat</button>
-    </div>`, '720px');
+
+      <button id="btnSubmitImportObat" onclick="window.submitImportObatBulk()" class="ons-btn ons-btn-emerald w-full min-h-[42px] font-bold text-sm shadow">
+        &#128229; Import ke Database Master Obat &amp; Gudang
+      </button>
+    </div>`, '760px');
   };
 
   global.downloadTemplateImportObat = () => {
@@ -5928,7 +6053,7 @@
     const csv = '\uFEFF' + [headerLine, ...bodyLines].join('\r\n') + '\r\n';
     S().downloadFile(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'Template_Import_Master_Obat_ONS.csv');
     if (typeof global.toast === 'function') {
-      global.toast('Contoh CSV Master Obat (UTF-8 Excel, 23 kolom & 5 contoh obat) berhasil diunduh.', 'ok');
+      global.toast('Contoh CSV Master Obat (UTF-8 Excel, 27 kolom & 5 contoh obat) berhasil diunduh.', 'ok');
     }
     return csv;
   };
@@ -5939,7 +6064,7 @@
     }
     const XS = global.ONSXlsxExport.STYLE;
     const c = global.ONSXlsxExport.cell;
-    const intCols = new Set(['rasio_sedang', 'rasio_besar', 'min_qty_grosir', 'stok_min', 'stok_max']);
+    const intCols = new Set(['rasio_sedang', 'rasio_besar', 'min_qty_grosir', 'stok_min', 'stok_max', 'stok_awal']);
     const curCols = new Set(['hpp_avg', 'harga_umum', 'harga_member', 'harga_grosir', 'harga_faskes']);
     const headerRow = MASTER_OBAT_IMPORT_COLUMNS.map((col) => c(col.label, XS.HEADER));
     const dataRows = MASTER_OBAT_SAMPLE_ROWS.map((r, ri) => {
@@ -5952,11 +6077,11 @@
         return c(val, alt ? XS.TEXT_ALT : XS.TEXT);
       });
     });
-    const widths = [14, 28, 26, 16, 16, 15, 19, 18, 22, 14, 14, 14, 13, 13, 14, 14, 14, 14, 15, 14, 11, 11, 28];
+    const widths = [14, 28, 26, 16, 16, 15, 19, 22, 18, 22, 14, 14, 14, 13, 13, 14, 14, 14, 14, 15, 14, 11, 11, 28, 12, 16, 14];
     const rowHeights = { 1: 24 };
     const colGuideRows = [
       [c('PANDUAN PENGISIAN TEMPLATE IMPORT MASTER OBAT ONS FARMA', XS.TITLE), '', ''],
-      [c('Silakan isi data produk pada tab Template_Master_Obat (baris 1 wajib tetap berupa nama kolom teknis)', XS.SUBTITLE), '', ''],
+      [c('Silakan isi data produk pada tab Template_Master_Obat (baris 1 wajib tetap berupa nama kolom teknis atau aliasnya)', XS.SUBTITLE), '', ''],
       [c('Nama Kolom', XS.HEADER), c('Status', XS.HEADER), c('Keterangan & Format Standar', XS.HEADER)],
       ...MASTER_OBAT_IMPORT_COLUMNS.map((col, idx) => {
         const alt = idx % 2 === 1;
@@ -5972,7 +6097,7 @@
       {
         name: 'Template_Master_Obat',
         freezeRows: 1,
-        autoFilter: 'A1:W' + (1 + dataRows.length),
+        autoFilter: 'A1:AA' + (1 + dataRows.length),
         widths,
         rowHeights,
         rows: [headerRow, ...dataRows]
@@ -5990,7 +6115,7 @@
       creator: 'Apotek ONS Farma'
     });
     if (typeof global.toast === 'function') {
-      global.toast('Contoh Excel (.xlsx) 2 sheet + panduan pengisian berhasil diunduh.', 'ok');
+      global.toast('Contoh Excel (.xlsx) 2 sheet (27 kolom + panduan) berhasil diunduh.', 'ok');
     }
     return true;
   };
@@ -6026,7 +6151,7 @@
       // Validasi Kolom Wajib (Audit #13): Beri peringatan jelas jika header nama_dagang tidak ditemukan
       if (headerIdx < 0) {
         const detectedCols = (rows[0] || []).map(_normalizeImportHeader).filter(Boolean).slice(0, 8).join(', ');
-        throw new Error('Kolom wajib "nama_dagang" (atau "Nama Obat") tidak ditemukan dalam file. Kolom yang terdeteksi: [' + detectedCols + ']. Pastikan menggunakan file template yang sesuai.');
+        throw new Error('Kolom wajib "nama_dagang" (atau "Nama Obat" / "Nama Barang") tidak ditemukan dalam file. Kolom yang terdeteksi: [' + detectedCols + ']. Pastikan file mencantumkan nama produk.');
       }
       const headers = rows[headerIdx].map(_normalizeImportHeader);
       const VALID_GOL = new Set(['BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA', 'HERBAL', 'ALKES']);
@@ -6047,6 +6172,7 @@
           const hMem = Math.max(0, _parseImportNum(obj.harga_member, hUmum));
           const hGrosir = Math.max(0, _parseImportNum(obj.harga_grosir, hMem || hUmum));
           const hFaskes = Math.max(0, _parseImportNum(obj.harga_faskes, hGrosir || hUmum));
+          const stokAwal = Math.max(0, _parseImportNum(obj.stok_awal, 0));
           return {
             nama_dagang: nama,
             zat_aktif: obj.zat_aktif === '-' ? '' : (obj.zat_aktif || ''),
@@ -6055,6 +6181,7 @@
             nie_bpom: (obj.nie_bpom === '-' ? '' : (obj.nie_bpom || '')),
             golongan_bpom: gol,
             bentuk_sediaan: obj.bentuk_sediaan || obj.satuan_dasar || 'Tablet',
+            pabrikan: obj.pabrikan === '-' ? '' : (obj.pabrikan || ''),
             rak_lokasi: obj.rak_lokasi || 'RAK-A1',
             suhu_simpan: obj.suhu_simpan || 'Suhu Ruang (15-25 C)',
             satuan_dasar: obj.satuan_dasar || 'Tablet',
@@ -6070,28 +6197,44 @@
             harga_faskes: hFaskes,
             stok_min: Math.max(0, _parseImportNum(obj.stok_min, 10)),
             stok_max: Math.max(1, _parseImportNum(obj.stok_max, 100)),
-            pbf_utama: obj.pbf_utama === '-' ? '' : (obj.pbf_utama || '')
+            pbf_utama: obj.pbf_utama === '-' ? '' : (obj.pbf_utama || ''),
+            stok_awal: stokAwal,
+            no_batch: obj.no_batch || '',
+            tgl_kadaluarsa: obj.tgl_kadaluarsa || ''
           };
         }).filter(Boolean);
       if (!importObatBuffer.length) {
         throw new Error('Tidak ada baris produk dengan kolom nama_dagang yang terisi.');
       }
       const warnMargin = importObatBuffer.filter((x) => x.hpp_avg > 0 && x.harga_umum > 0 && x.harga_umum < x.hpp_avg).length;
+      const withStock = importObatBuffer.filter((x) => x.stok_awal > 0).length;
       box.innerHTML = `<div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <span class="font-bold text-emerald-700">&#9989; Terdeteksi ${importObatBuffer.length} produk valid (header baris ${headerIdx + 1})</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-emerald-700 dark:text-emerald-400">&#9989; Terdeteksi ${importObatBuffer.length} produk valid</span>
+            ${withStock ? `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">&#128230; ${withStock} item berisi stok awal</span>` : ''}
+          </div>
           ${warnMargin ? `<span class="text-amber-700 font-semibold">&#9888; ${warnMargin} item Harga Umum &lt; HPP</span>` : ''}
         </div>
         <div class="overflow-x-auto"><table class="w-full text-[11px] border-collapse">
           <thead><tr class="border-b" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-            <th class="text-left py-1 pr-2">#</th><th class="text-left py-1 pr-2">Nama Dagang</th><th class="text-left py-1 pr-2">Golongan</th><th class="text-left py-1 pr-2">Satuan</th><th class="text-right py-1 pr-2">HPP</th><th class="text-right py-1">Harga Umum</th>
+            <th class="text-left py-1 pr-2">#</th>
+            <th class="text-left py-1 pr-2">Nama Dagang</th>
+            <th class="text-left py-1 pr-2">Pabrikan</th>
+            <th class="text-left py-1 pr-2">Satuan</th>
+            <th class="text-right py-1 pr-2">HPP</th>
+            <th class="text-right py-1 pr-2">Harga Umum</th>
+            <th class="text-right py-1 pr-2 text-emerald-700">Stok Awal</th>
+            <th class="text-left py-1">Batch / ED</th>
           </tr></thead>
           <tbody>${importObatBuffer.slice(0, 8).map((x, idx) => `<tr class="border-b" style="border-color:var(--ons-border)">
             <td class="py-1 pr-2 font-mono-num">${idx + 1}</td>
             <td class="py-1 pr-2 font-semibold">${S().esc(x.nama_dagang)}</td>
-            <td class="py-1 pr-2">${S().esc(x.golongan_bpom)}</td>
+            <td class="py-1 pr-2" style="color:var(--ons-text-soft)">${S().esc(x.pabrikan || '-')}</td>
             <td class="py-1 pr-2">${S().esc(x.satuan_dasar)}</td>
             <td class="py-1 pr-2 text-right font-mono-num">${S().rp(x.hpp_avg)}</td>
-            <td class="py-1 text-right font-mono-num font-bold">${S().rp(x.harga_umum)}</td>
+            <td class="py-1 pr-2 text-right font-mono-num font-bold">${S().rp(x.harga_umum)}</td>
+            <td class="py-1 pr-2 text-right font-mono-num font-bold text-emerald-700">${x.stok_awal ? x.stok_awal.toLocaleString('id-ID') : '-'}</td>
+            <td class="py-1 font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${x.no_batch ? S().esc(x.no_batch) : '-'}${x.tgl_kadaluarsa ? ' (' + S().esc(x.tgl_kadaluarsa) + ')' : ''}</td>
           </tr>`).join('')}</tbody>
         </table></div>` +
         (importObatBuffer.length > 8 ? `<div class="mt-2 italic" style="color:var(--ons-text-soft)">... dan ${importObatBuffer.length - 8} item lainnya siap diimport.</div>` : '');
@@ -6103,14 +6246,18 @@
 
   global.submitImportObatBulk = async () => {
     if (!importObatBuffer.length) return global.toast('Pilih file berisi data produk yang valid terlebih dahulu.', 'warn');
+    const chkStok = document.getElementById('chkCreateStokAwal');
+    const createStok = chkStok ? chkStok.checked : true;
     try {
-      const res = await API().callApi('obat.bulkImport', { items: importObatBuffer }, { isWrite: true });
+      const res = await API().callApi('obat.bulkImport', { items: importObatBuffer, create_stok_awal: createStok }, { isWrite: true });
       S().closeModal();
       const cnt = res.imported !== undefined ? res.imported : ((res.inserted || 0) + (res.updated || 0) || importObatBuffer.length);
-      global.toast('Import berhasil! ' + cnt + ' produk diperbarui ke Master Obat.', 'ok');
+      const stockMsg = res.stock_batches_created ? ` & ${res.stock_batches_created} batch stok awal masuk gudang` : '';
+      global.toast(`Import berhasil! ${cnt} produk diperbarui${stockMsg}.`, 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
+  global._getImportObatBuffer = () => importObatBuffer;
 
   /**
    * W-05: Gudang Batch FEFO (3 Sub-Menu: batch | kartu-stok | opname)
