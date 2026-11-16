@@ -4947,7 +4947,7 @@
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
           <button type="button" onclick="window.openKasMasukModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Catat Kas Masuk Laci">+ Masuk</button>
           <button type="button" onclick="window.openKasKeluarModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Catat Kas Keluar Laci">- Keluar</button>
-          <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7">Printer BT</button>
+          <button type="button" onclick="window.handlePosPrinterBtClick()" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7" title="Koneksi &amp; Uji Printer Thermal Bluetooth">${S().ThermalPrinter && S().ThermalPrinter.characteristic ? '🖨️ BT Terhubung' : '🖨️ Printer BT'}</button>
           ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold">Tutup Shift &rarr;</button>` : ''}
         </div>
       </div>
@@ -5267,6 +5267,25 @@
     } catch (e) {}
   }
   global._getCashDrawerTx = _getCashDrawerTx;
+
+  global.handlePosPrinterBtClick = async () => {
+    const tp = S().ThermalPrinter;
+    if (!tp) return;
+    if (tp.characteristic) {
+      const devName = tp.deviceName || 'Thermal Printer';
+      const ans = typeof global.confirm === 'function' ? global.confirm(`Printer Bluetooth (${devName}) sudah aktif & terhubung.\n\nKlik OK untuk cetak tes struk uji coba.\nKlik Batal jika ingin menghubungkan ulang perangkat lain.`) : false;
+      if (ans) {
+        const dummyTpl = `[C]<b>${(S().getStoreProfile && S().getStoreProfile().nama_usaha) || 'APOTEK ONS FARMA'}</b>\n[C]Tes Koneksi Bluetooth Printer OK!\n[C]Status: TERHUBUNG & SIAP POS\n[LR]Tanggal||${new Date().toLocaleDateString('id-ID')}\n[C]================================\n[C]Terima kasih\n[CUT]`;
+        const bytes = global.StrukEngine ? global.StrukEngine.buildEscPosBytes(dummyTpl, {}, 58) : new TextEncoder().encode('TEST BT PRINTER OK\n\n\n');
+        await tp.printRawBytes(bytes);
+      } else {
+        await tp.connect();
+      }
+    } else {
+      await tp.connect();
+    }
+    if (typeof global.renderActiveView === 'function') global.renderActiveView();
+  };
 
   global.openKasMasukModal = () => {
     S().openModal(`<div class="p-6 space-y-4 text-xs">

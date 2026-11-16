@@ -354,7 +354,7 @@
       ${seeCost ? `<button type="button" onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-amber-700 dark:text-amber-400 font-semibold" title="Edit Data &amp; Harga">✏️ Edit</button>` : ''}
       ${seeCost ? `<button type="button" onclick="window.confirmDeleteObat('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 font-semibold" title="Hapus dari Katalog">🗑️ Hapus</button>` : ''}
       <button type="button" onclick="window.openShelfLabelModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-teal-700 dark:text-teal-400 font-semibold" title="Cetak Label Harga Rak Apotek (Shelf Talker)">🏷️ Label Rak</button>
-      <button type="button" onclick="window.openObatRiwayatBeliModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-blue-700 dark:text-blue-400 font-semibold" title="Riwayat Beli dari PBF &amp; Keputusan Harga Jual">📈 Riwayat Beli</button>
+      ${seeCost ? `<button type="button" onclick="window.openObatRiwayatBeliModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-blue-700 dark:text-blue-400 font-semibold" title="Riwayat Beli dari PBF &amp; Keputusan Harga Jual">📈 Riwayat Beli</button>` : ''}
       <button type="button" onclick="window.openProductBarcodeModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs font-semibold" title="Cetak Barcode Label Stiker 58/80mm">🏷️ Barcode</button>
       <button type="button" onclick="window.openObatKartuStok('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-purple-700 dark:text-purple-400 font-semibold" title="Buka Kartu Stok &amp; Riwayat Mutasi">📊 Mutasi</button>
     </div>`;
@@ -4612,7 +4612,7 @@
           <button type="button" onclick="ONSStore.closeDrawer();window.openObatKartuStok('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Lihat Kartu Stok Lengkap">📊 Kartu Stok</button>
           <button type="button" onclick="window.openShelfLabelModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 text-teal-700 font-semibold" title="Cetak Label Harga Rak Apotek (Shelf Talker)">🏷️ Label Rak</button>
           <button type="button" onclick="window.openProductBarcodeModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5" title="Cetak Barcode Label Stiker 58/80mm">🏷️ Cetak Barcode</button>
-          <button type="button" onclick="window.setObatDetailTab('riwayat-beli')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 text-blue-700 font-semibold" title="Buka Riwayat Pembelian PBF &amp; Hitung Margin">📈 Riwayat Beli</button>
+          ${seeCost ? `<button type="button" onclick="window.setObatDetailTab('riwayat-beli')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 text-blue-700 font-semibold" title="Buka Riwayat Pembelian PBF &amp; Hitung Margin">📈 Riwayat Beli</button>` : ''}
         </div>
         <div class="flex gap-2">
           ${m.isCritical ? `<button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', undefined, 'Defecta dari Detail Master');" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5 font-bold flex items-center gap-1 shadow-xs" title="1-Klik Masukkan ke Defecta">⚡ + Defecta</button>` : ''}

@@ -11997,7 +11997,9 @@ S. prn 3 dd 1 tab</textarea>
                   <option value="58" ${widthNum !== 80 ? 'selected' : ''}>58 mm (32 Kolom)</option>
                   <option value="80" ${widthNum === 80 ? 'selected' : ''}>80 mm (46 Kolom)</option>
                 </select>
-                <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Cetak</button>
+                <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs" title="Hubungkan Printer Thermal Bluetooth">🖨️ Hubungkan BT</button>
+                <button type="button" onclick="window.testPrintBluetoothStruk()" class="ons-btn ons-btn-ghost text-xs text-blue-700 font-semibold" title="Kirim Uji Cetak ESC/POS Langsung ke Printer Bluetooth">⚡ Uji Cetak BT</button>
+                <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs" title="Uji Cetak via Dialog Browser / Print PDF">Uji Cetak (Browser)</button>
                 <button type="button" onclick="window.downloadEditedStrukPng()" class="ons-btn ons-btn-ghost text-xs">Unduh PNG</button>
                 <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template ke Sheets</button>
               </div>
@@ -13393,6 +13395,19 @@ S. prn 3 dd 1 tab</textarea>
       ta.setSelectionRange(pos, pos);
     }
     global.previewEditedStruk();
+  };
+
+  global.testPrintBluetoothStruk = async () => {
+    const txt = (document.getElementById('strukTplText') || {}).value || (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || '';
+    const w = Number((document.getElementById('strukTplWidth') || {}).value || 58) === 80 ? 80 : 58;
+    if (!global.StrukEngine || !S().ThermalPrinter) return;
+    try {
+      const bytes = global.StrukEngine.buildEscPosBytes(txt, buildStrukEditorSampleData(), w);
+      await S().ThermalPrinter.printRawBytes(bytes);
+      global.toast('Uji cetak berhasil dikirim ke printer thermal Bluetooth!', 'ok');
+    } catch (e) {
+      global.toast('Gagal mencetak ke Bluetooth: ' + e.message, 'err');
+    }
   };
 
   global.testPrintEditedStruk = () => {
