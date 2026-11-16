@@ -616,16 +616,16 @@
   function _renderMasterObatSubTab(seeCost, allMeta, filtered) {
     const totalCount = allMeta.length;
     const golDefList = [
-      { id: '', label: 'Semua', cls: '' },
-      { id: 'BEBAS', label: 'Bebas', cls: 'bpom-bebas' },
-      { id: 'TERBATAS', label: 'Bebas Terbatas', cls: 'bpom-terbatas' },
-      { id: 'KERAS', label: 'Keras (K)', cls: 'bpom-keras' },
-      { id: 'PREKURSOR', label: 'Prekursor', cls: 'bpom-prekursor' },
-      { id: 'OOT', label: 'OOT', cls: 'bpom-oot' },
-      { id: 'PSIKOTROPIKA', label: 'Psikotropika', cls: 'bpom-psikotropika' },
-      { id: 'NARKOTIKA', label: 'Narkotika', cls: 'bpom-narkotika' },
-      { id: 'HERBAL', label: 'Herbal/Suplemen', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700' },
-      { id: 'ALKES', label: 'Alkes/Medis', cls: 'bg-cyan-50 text-cyan-700 border border-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-700' }
+      { id: '', label: 'Semua Kategori & Golongan', icon: '📦', cls: '' },
+      { id: 'BEBAS', label: 'Obat Bebas', icon: '🟢', cls: 'bpom-bebas' },
+      { id: 'TERBATAS', label: 'Obat Bebas Terbatas', icon: '🔵', cls: 'bpom-terbatas' },
+      { id: 'KERAS', label: 'Obat Keras (K)', icon: '🔴', cls: 'bpom-keras' },
+      { id: 'PREKURSOR', label: 'Prekursor Farmasi', icon: '🟣', cls: 'bpom-prekursor' },
+      { id: 'OOT', label: 'OOT (Obat Tertentu)', icon: '🟠', cls: 'bpom-oot' },
+      { id: 'PSIKOTROPIKA', label: 'Psikotropika', icon: '🟡', cls: 'bpom-psikotropika' },
+      { id: 'NARKOTIKA', label: 'Narkotika', icon: '⚪', cls: 'bpom-narkotika' },
+      { id: 'HERBAL', label: 'Herbal / Jamu / Fitofarmaka', icon: '🌿', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700' },
+      { id: 'ALKES', label: 'Alat Kesehatan (Alkes)', icon: '🩺', cls: 'bg-cyan-50 text-cyan-700 border border-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-700' }
     ];
 
     const golCounts = {};
@@ -713,38 +713,57 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t" style="border-color:var(--ons-border)">
-          <div class="flex flex-wrap items-center gap-1.5">
-            <span class="text-[11px] font-bold text-slate-500 mr-1">Golongan BPOM:</span>
-            ${golDefList.map((g) => {
-              const cnt = g.id ? (golCounts[g.id] || 0) : totalCount;
-              const isAct = masterFilterGol === g.id;
-              return `<button type="button" onclick="window.setMasterGol('${g.id}')" class="ons-subnav-chip ${isAct ? 'active' : ''} flex items-center gap-1 text-xs" title="Filter ${g.label}">
-                ${g.cls ? `<span class="badge-bpom ${g.cls} text-[10px] py-0 px-1 leading-tight">${g.label}</span>` : `<span>${g.label}</span>`}
-                <b class="font-mono-num text-[11px]">(${cnt})</b>
-              </button>`;
-            }).join('')}
-          </div>
-          <div class="flex flex-wrap items-center gap-2 text-xs">
-            <select class="ons-select text-xs py-0.5 px-2 max-w-[150px]" onchange="window.setMasterKategori(this.value)" aria-label="Filter Kategori Produk">
-              <option value="SEMUA" ${masterFilterKategori === 'SEMUA' ? 'selected' : ''}>Semua Kategori</option>
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- 1 Kotak Dropdown Kategori / Golongan BPOM (Permintaan Pengguna) -->
+            <div class="flex items-center gap-1.5">
+              <label for="masterGolSelect" class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1 shrink-0">
+                <span>🏷️ Kategori / Golongan:</span>
+              </label>
+              <select id="masterGolSelect" class="ons-select text-xs font-semibold py-1 px-2.5 rounded-lg border shadow-xs min-w-[210px]" onchange="window.setMasterGol(this.value)" aria-label="Filter Kategori / Golongan BPOM">
+                <option value="" ${!masterFilterGol ? 'selected' : ''}>Semua Kategori &amp; Golongan (${totalCount})</option>
+                ${golDefList.filter((g) => g.id).map((g) => {
+                  const cnt = golCounts[g.id] || 0;
+                  return `<option value="${g.id}" ${masterFilterGol === g.id ? 'selected' : ''}>${g.icon} ${g.label} (${cnt})</option>`;
+                }).join('')}
+              </select>
+              ${masterFilterGol ? `
+                <span class="inline-flex items-center gap-1">
+                  ${S().bpomBadge(masterFilterGol)}
+                  <button type="button" onclick="window.setMasterGol('')" class="text-xs text-slate-400 hover:text-red-500 font-bold p-0.5" title="Hapus filter kategori">&times;</button>
+                </span>
+              ` : ''}
+            </div>
+
+            <!-- Dropdown Kategori Etalase Produk -->
+            <select class="ons-select text-xs py-1 px-2.5 max-w-[160px]" onchange="window.setMasterKategori(this.value)" aria-label="Filter Kategori Produk">
+              <option value="SEMUA" ${masterFilterKategori === 'SEMUA' ? 'selected' : ''}>Semua Kategori Etalase</option>
               ${kategoriList.map((k) => `<option value="${S().esc(k)}" ${masterFilterKategori === k ? 'selected' : ''}>${S().esc(k)}</option>`).join('')}
             </select>
-            <select class="ons-select text-xs py-0.5 px-2" onchange="window.setMasterPbf(this.value)" aria-label="Filter Distributor PBF">
+
+            <!-- Distributor PBF -->
+            <select class="ons-select text-xs py-1 px-2.5" onchange="window.setMasterPbf(this.value)" aria-label="Filter Distributor PBF">
               <option value="SEMUA" ${masterFilterPbf === 'SEMUA' ? 'selected' : ''}>Semua PBF</option>
               ${pbfList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPbf === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
             </select>
-            <select class="ons-select text-xs py-0.5 px-2" onchange="window.setMasterSuhu(this.value)" aria-label="Filter Suhu Simpan">
+
+            <!-- Suhu Simpan -->
+            <select class="ons-select text-xs py-1 px-2.5" onchange="window.setMasterSuhu(this.value)" aria-label="Filter Suhu Simpan">
               <option value="SEMUA" ${masterFilterSuhu === 'SEMUA' ? 'selected' : ''}>Semua Suhu</option>
               <option value="CHILLER" ${masterFilterSuhu === 'CHILLER' ? 'selected' : ''}>❄️ Chiller 2-8&deg;C</option>
               <option value="RUANG" ${masterFilterSuhu === 'RUANG' ? 'selected' : ''}>🌡️ Suhu Ruang</option>
             </select>
-            <select class="ons-select text-xs py-0.5 px-2" onchange="window.setMasterStatusJual(this.value)" aria-label="Status Jual">
+
+            <!-- Status Jual -->
+            <select class="ons-select text-xs py-1 px-2.5" onchange="window.setMasterStatusJual(this.value)" aria-label="Status Jual">
               <option value="SEMUA" ${masterFilterStatusJual === 'SEMUA' ? 'selected' : ''}>Semua Status Jual</option>
               <option value="DIJUAL" ${masterFilterStatusJual === 'DIJUAL' ? 'selected' : ''}>Hanya Dijual</option>
               <option value="TIDAK_DIJUAL" ${masterFilterStatusJual === 'TIDAK_DIJUAL' ? 'selected' : ''}>Tidak Dijual</option>
             </select>
-            ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs py-0.5 px-2 text-red-600 font-semibold">✕ Reset Filter</button>` : ''}
+          </div>
+
+          <div class="flex items-center gap-2">
+            ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 text-red-600 font-semibold shadow-xs">✕ Reset Filter</button>` : ''}
           </div>
         </div>
       </div>
