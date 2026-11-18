@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0050CA"/>
   <meta name="application-version" content="v18.19.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.20.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.21.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.20.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.21.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.20.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.20.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.20.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.21.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.21.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.21.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.20.0"></script>
-  <script src="./js/struk-engine.js?v=18.20.0"></script>
-  <script src="./js/demo-engine.js?v=18.20.0"></script>
-  <script src="./js/api-turbo.js?v=18.20.0"></script>
-  <script src="./js/store.js?v=18.20.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.20.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.20.0"></script>
+  <script src="./js/config.js?v=18.21.0"></script>
+  <script src="./js/struk-engine.js?v=18.21.0"></script>
+  <script src="./js/demo-engine.js?v=18.21.0"></script>
+  <script src="./js/api-turbo.js?v=18.21.0"></script>
+  <script src="./js/store.js?v=18.21.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.21.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.21.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.20.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.20.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.20.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.20.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.20.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.20.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.21.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.21.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.21.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.21.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.21.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.21.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -325,7 +325,7 @@
         const st = ONSStore.AppState;
         const nearEd = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && ONSStore.daysUntil(b.tgl_kadaluarsa) <= 90).length;
         const lowStock = ONSStore.canSeeFinancialCost()
-          ? (st.masterObat || []).filter((o) => ONSStore.getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length
+          ? (st.masterObat || []).filter((o) => ONSStore.isCriticalStock ? ONSStore.isCriticalStock(o, ONSStore.getTotalStok(o.id_obat)) : ONSStore.getTotalStok(o.id_obat) <= 0).length
           : 0;
         const erxPending = ONSStore.canSeeFinancialCost()
           ? (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length
@@ -1177,7 +1177,7 @@
         const alerts = [];
         const nearEdCount = (st.stokBatch || []).filter((b) => b.status_batch === 'AKTIF' && b.qty_sisa > 0 && ONSStore.daysUntil(b.tgl_kadaluarsa) <= 90).length;
         if (nearEdCount > 0) alerts.push({ view: 'gudang', sub: 'batch', tone: 'text-red-600', title: `${nearEdCount} Batch Kritis Near-ED (<=90 hari)`, desc: 'Prioritaskan FEFO atau Retur BAR-PBF.' });
-        const lowCount = (st.masterObat || []).filter((o) => ONSStore.getTotalStok(o.id_obat) <= Number(o.stok_min || 10)).length;
+        const lowCount = (st.masterObat || []).filter((o) => ONSStore.isCriticalStock ? ONSStore.isCriticalStock(o, ONSStore.getTotalStok(o.id_obat)) : ONSStore.getTotalStok(o.id_obat) <= 0).length;
         if (lowCount > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'faktur', sub: 'defecta', tone: 'text-amber-600', title: `${lowCount} Obat di Bawah Stok Minimum`, desc: 'Buat SP BPOM otomatis dari menu Defecta.' });
         const erxPend = (st.rekamKlinis || []).filter((r) => r.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
         if (erxPend > 0 && ONSStore.canSeeFinancialCost()) alerts.push({ view: 'klinis', sub: 'erx', tone: 'text-blue-600', title: `${erxPend} E-Resep Menunggu PIN APJ`, desc: 'Periksa interaksi obat & verifikasi SIPA.' });
@@ -1508,7 +1508,7 @@
                   ${ONSStore.bpomBadge(o.golongan_bpom)}
                   <div class="min-w-0">
                     <div class="font-bold text-xs sm:text-sm truncate">${ONSStore.esc(o.nama_dagang)}</div>
-                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(o.zat_aktif || '-')} &bull; Stok: <b class="${stok <= Number(o.stok_min || 10) ? 'text-amber-600' : 'text-emerald-600'}">${stok} ${ONSStore.esc(o.satuan_dasar)}</b> &bull; Rak ${ONSStore.esc(o.rak_lokasi || '-')}</div>
+                    <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${ONSStore.esc(o.zat_aktif || '-')} &bull; Stok: <b class="${(ONSStore.isCriticalStock ? ONSStore.isCriticalStock(o, stok) : stok <= 0) ? 'text-amber-600' : 'text-emerald-600'}">${stok} ${ONSStore.esc(o.satuan_dasar)}</b> &bull; Rak ${ONSStore.esc(o.rak_lokasi || '-')}</div>
                   </div>
                 </div>
                 <div class="text-right shrink-0">

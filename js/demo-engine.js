@@ -284,6 +284,7 @@
       });
     }
     if (Array.isArray(db.master_obat)) {
+      const doClearDefaultMinMax = !db._clearedDefaultMinMaxV1821;
       db.master_obat.forEach((o) => {
         if (o && o.tgl_kadaluarsa) {
           const norm = _normalizeDateIsoDemo(o.tgl_kadaluarsa);
@@ -292,7 +293,16 @@
             changed = true;
           }
         }
+        if (doClearDefaultMinMax && o && Number(o.stok_min) === 10 && Number(o.stok_max) === 100) {
+          o.stok_min = '';
+          o.stok_max = '';
+          changed = true;
+        }
       });
+      if (doClearDefaultMinMax) {
+        db._clearedDefaultMinMaxV1821 = true;
+        changed = true;
+      }
     }
     if (changed) saveDb(db);
     return db;
@@ -500,18 +510,20 @@
     (db.master_obat || []).forEach((o) => {
       if (String(o.status_aktif || 'AKTIF') !== 'AKTIF') return;
       const s = stokMap[o.id_obat] || 0;
-      const min = Number(o.stok_min || 10);
-      const max = Number(o.stok_max || 100);
+      const hasMin = o.stok_min !== undefined && o.stok_min !== null && o.stok_min !== '' && Number(o.stok_min) > 0;
+      const hasMax = o.stok_max !== undefined && o.stok_max !== null && o.stok_max !== '' && Number(o.stok_max) > 0;
+      const min = hasMin ? Number(o.stok_min) : 0;
+      const max = hasMax ? Number(o.stok_max) : 0;
       const qty30 = sold30[o.id_obat] || 0;
-      const avgHarian = Math.round((qty30 > 0 ? qty30 / 30 : Math.max(0.5, min / 14)) * 100) / 100;
+      const avgHarian = Math.round((qty30 > 0 ? qty30 / 30 : (hasMin ? Math.max(0.2, min / 14) : 0)) * 100) / 100;
       const leadTime = pbfLead[String(o.pbf_utama || '').toLowerCase()] || 2;
-      const rop = Math.ceil(avgHarian * (leadTime + 3));
+      const rop = avgHarian > 0 ? Math.ceil(avgHarian * (leadTime + 3)) : 0;
       const dos = avgHarian > 0 ? Math.round(s / avgHarian) : 999;
-      const smartQty = Math.max(1, Math.max(max, Math.ceil(avgHarian * (30 + leadTime))) - s);
-      if (s <= min || s <= rop) {
+      const smartQty = hasMax ? Math.max(1, max - s) : (hasMin ? Math.max(1, min - s) : Math.max(1, Math.ceil(avgHarian * (30 + leadTime)) - s));
+      if (s <= 0 || (hasMin && s <= min) || (rop > 0 && s <= rop)) {
         items.push({
           id_obat: o.id_obat, nama_dagang: o.nama_dagang, zat_aktif: o.zat_aktif, golongan_bpom: o.golongan_bpom || 'BEBAS',
-          stok_saat_ini: s, stok_min: min, reorder_point: rop, terjual_30_hari: qty30, avg_harian: avgHarian,
+          stok_saat_ini: s, stok_min: hasMin ? min : '', reorder_point: rop, terjual_30_hari: qty30, avg_harian: avgHarian,
           lead_time_hari: leadTime, days_of_stock: dos, rekomendasi_order: smartQty,
           satuan_dasar: o.satuan_dasar, hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0), pbf_utama: o.pbf_utama || 'PBF Reguler'
         });
@@ -882,8 +894,8 @@
       delete item.min_qty_grosir;
       delete item.harga_faskes;
 
-      item.stok_min = Math.max(0, sanitizeNum(item.stok_min, 10));
-      item.stok_max = Math.max(1, sanitizeNum(item.stok_max, 100));
+      item.stok_min = (item.stok_min !== undefined && item.stok_min !== null && item.stok_min !== '' && sanitizeNum(item.stok_min, 0) > 0) ? sanitizeNum(item.stok_min, 0) : '';
+      item.stok_max = (item.stok_max !== undefined && item.stok_max !== null && item.stok_max !== '' && sanitizeNum(item.stok_max, 0) > 0) ? sanitizeNum(item.stok_max, 0) : '';
       item.pabrikan = String(item.pabrikan || '').trim();
       item.pbf_utama = String(item.pbf_utama || '').trim();
 
@@ -1132,7 +1144,7 @@
         grand_total: grandTotal,
         total_hpp: totalHpp,
         estimasi_margin: grandTotal - totalHpp,
-        poin_didapat: Math.floor(grandTotal / 10000),
+        poin_didapat: 0,
         status_trx: isPiutang ? 'BELUM_LUNAS' : 'LUNAS'
       };
       db.penjualan.unshift(trx);
@@ -2144,8 +2156,8 @@
             rasio_sedang: ras2,
             satuan_besar: sat3,
             rasio_besar: ras3,
-            stok_min: Number(raw.stok_min !== undefined ? raw.stok_min : 10),
-            stok_max: Number(raw.stok_max || 100),
+            stok_min: (raw.stok_min !== undefined && raw.stok_min !== null && raw.stok_min !== '' && Number(raw.stok_min) > 0) ? Number(raw.stok_min) : '',
+            stok_max: (raw.stok_max !== undefined && raw.stok_max !== null && raw.stok_max !== '' && Number(raw.stok_max) > 0) ? Number(raw.stok_max) : '',
             hpp_avg: Number(raw.hpp_avg || 0),
             hpp_terakhir: Number(raw.hpp_terakhir || raw.hpp_avg || 0),
             harga_umum: hrg1,
@@ -2165,7 +2177,7 @@
         const stokAwal = Number(raw.stok_awal || raw.stok || 0);
         if (createStok && stokAwal > 0) {
           const defaultEd = new Date(Date.now() + 730 * 86400000).toISOString().slice(0, 10);
-          const expDate = String(raw.tgl_kadaluarsa || raw.kadaluarsa || defaultEd).slice(0, 10);
+          const expDate = _normalizeDateIsoDemo(raw.tgl_kadaluarsa || raw.kadaluarsa) || defaultEd;
           const batchNo = String(raw.no_batch || ('BATCH-' + now.slice(2, 10).replace(/-/g, ''))).trim();
           db.stok_batch = db.stok_batch || [];
           const existingBatch = db.stok_batch.find((b) => b.id_obat === targetId && b.no_batch === batchNo);

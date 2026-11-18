@@ -1236,7 +1236,7 @@
     const st = S().AppState;
     const pbf = (st.supplierPbf || []).find((p) => p.id_pbf === spDraftPbfId || p.nama_pbf === spDraftPbfId);
     const pbfName = pbf ? pbf.nama_pbf : '';
-    const lowAll = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
+    const lowAll = (st.masterObat || []).filter((o) => S().isCriticalStock ? S().isCriticalStock(o) : S().getSellableStok(o.id_obat) <= 0);
     const filtered = pbfName ? lowAll.filter((o) => o.pbf_utama === pbfName) : lowAll;
     const pool = filtered.length ? filtered : lowAll;
     // Strict BPOM compliance: Only include drugs matching current SP category (spDraftGol)
@@ -1257,7 +1257,7 @@
           zat_aktif: o.zat_aktif || '',
           golongan_bpom: spDraftGol,
           satuan_dasar: o.satuan_dasar || 'Unit',
-          qty: Math.max(10, Number(o.stok_max || 100) - s),
+          qty: S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1,
           hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0),
           keterangan: 'Defecta stok tipis'
         });
@@ -1432,7 +1432,7 @@
         zat_aktif: o.zat_aktif || '',
         golongan_bpom: itemGol,
         satuan_dasar: o.satuan_dasar || 'Unit',
-        qty: Math.max(10, Number(o.stok_min || 10)),
+        qty: (S().getStokMin && S().getStokMin(o)) ? S().getStokMin(o) : 1,
         hpp_terakhir: Number(o.hpp_terakhir || o.hpp_avg || 0),
         keterangan: ''
       });

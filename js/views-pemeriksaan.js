@@ -2001,7 +2001,7 @@
         penyakit_kronis: notes.join(', ') || '-',
         program_prb: notes.length ? 'MEMBER_RUTIN' : 'UMUM',
         tgl_reminder_berikut: rec.tgl_kontrol || '',
-        poin_loyalitas: 10
+        poin_loyalitas: 0
       }, { isWrite: true });
       const mbr = mRes && mRes.item;
       if (mbr && mbr.id_member) {

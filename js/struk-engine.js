@@ -36,8 +36,7 @@
 [LR]Dibayar||{{DIBAYAR|rp}}
 {{?KEMBALI}}[LR]Kembali||{{KEMBALI|rp}}
 {{/KEMBALI}}[=]
-{{?POIN}}[C]Poin Loyalitas: +{{POIN}} poin
-{{/POIN}}{{?CATATAN}}[C]{{CATATAN}}
+{{?CATATAN}}[C]{{CATATAN}}
 {{/CATATAN}}[QR]{{QR_URL}}
 [C]Terima kasih, semoga lekas sembuh!
 [C]Obat sesuai ketentuan BPOM & Farmasi
@@ -72,8 +71,7 @@
 {{?KEMBALI}}[LR]Kembalian||{{KEMBALI|rp}}
 {{/KEMBALI}}[=]
 [BOX]STATUS: {{STATUS}}
-{{?POIN}}[C]Poin Loyalitas Diperoleh: +{{POIN}} poin
-{{/POIN}}{{?CATATAN}}[C]Catatan: {{CATATAN}}
+{{?CATATAN}}[C]Catatan: {{CATATAN}}
 {{/CATATAN}}[QR]{{QR_URL}}
 [BAR]{{NOTA}}
 [C]Terima kasih telah mempercayakan kesehatan Anda

@@ -2258,8 +2258,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <div class="font-semibold mt-0.5">${S().esc(m.alergi_list || 'Tidak Ada')}</div>
         </div>
         <div class="p-3 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-          <div class="text-[11px]" style="color:var(--ons-text-soft)">Poin &amp; Jadwal Refill</div>
-          <div class="font-bold font-mono-num mt-0.5">${m.poin_loyalitas || 0} Poin &bull; ${S().esc(m.tgl_habis_obat || '-')}</div>
+          <div class="text-[11px]" style="color:var(--ons-text-soft)">Jadwal Refill Obat</div>
+          <div class="font-bold font-mono-num mt-0.5">${S().esc(m.tgl_habis_obat || '-')}</div>
         </div>
       </div>
       <div>
@@ -2494,7 +2494,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
-              <thead><tr><th>Pasien &amp; Alergi</th><th>Program &amp; Diagnosa</th><th>Tgl Habis Obat</th><th>Poin</th><th>Pemeriksaan Terakhir (POCT)</th><th>Aksi</th></tr></thead>
+              <thead><tr><th>Pasien &amp; Alergi</th><th>Program &amp; Diagnosa</th><th>Tgl Habis Obat</th><th>Pemeriksaan Terakhir (POCT)</th><th>Aksi</th></tr></thead>
               <tbody>
                 ${filteredMembers.length ? filteredMembers.map((m) => {
                   // SINKRONISASI DATA PEMERIKSAAN DENGAN st.pemeriksaanPasien
@@ -2531,7 +2531,6 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                     <td class="font-mono-num text-xs">
                       ${m.tgl_habis_obat ? `<span class="badge-bpom ${daysLeft <= 3 ? 'bpom-keras' : (daysLeft <= 7 ? 'bpom-prekursor' : 'bpom-bebas')}">${m.tgl_habis_obat} (${daysLeft}h)</span>` : '-'}
                     </td>
-                    <td class="font-mono-num font-bold text-blue-600">${m.poin_loyalitas || 0}</td>
                     <td class="text-xs font-mono-num">
                       <div class="font-semibold text-slate-800 dark:text-slate-200">${S().esc(pemSummary)}</div>
                       <div>${_renderSkriningSparkline(skrList)}</div>
@@ -3704,15 +3703,14 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         const pct = (r.val / totalVal) * 100;
         cum += pct;
         if (cum <= 70) {
-          const sMin = Number(r.o.stok_min !== undefined ? r.o.stok_min : 10);
-          if (r.qtyStok <= sMin) {
+          if (S().isCriticalStock ? S().isCriticalStock(r.o, r.qtyStok) : r.qtyStok <= 0) {
             criticalParetoA.push(r);
           }
         }
       });
 
       if (!criticalParetoA.length) {
-        return global.toast('Seluruh item Kelas A (Pareto Omzet 70%) memiliki stok fisik yang aman di atas batas minimum.', 'ok');
+        return global.toast('Seluruh item Kelas A (Pareto Omzet 70%) memiliki stok fisik yang aman.', 'ok');
       }
 
       // Add to Rencana Pembelian (Defecta)
@@ -3723,8 +3721,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       criticalParetoA.forEach((item) => {
         const o = item.o;
         if (!rList.some(r => r.id_obat === o.id_obat)) {
-          const sMax = Number(o.stok_max || 100);
-          const orderQty = Math.max(10, sMax - item.qtyStok);
+          const orderQty = S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, item.qtyStok) : 1;
           rList.push({
             id_rencana: 'REC-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random()*900+100),
             id_obat: o.id_obat,
@@ -3733,7 +3730,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             satuan_dasar: o.satuan_1 || o.satuan_dasar || 'Tablet',
             qty_usulan: orderQty,
             stok_saat_ini: item.qtyStok,
-            stok_min: o.stok_min || 10,
+            stok_min: (S().getStokMin && S().getStokMin(o)) || '',
             hpp_terakhir: o.hpp_avg || 0,
             subtotal_estimasi: orderQty * (o.hpp_avg || 0),
             supplier_nama: o.pbf_utama || 'PBF Rekanan',
@@ -7711,8 +7708,10 @@ S. prn 3 dd 1 tab</textarea>
       const terjual = Number(soldPeriodMap[o.id_obat] || 0);
       const lastSold = lastSoldMap[o.id_obat] ? _fmtDateId(lastSoldMap[o.id_obat]) : '-';
       const stokTerkini = S().getTotalStok(o.id_obat);
-      const stokMin = Number(o.stok_min || 10);
-      const stokMax = Number(o.stok_max || Math.max(stokMin * 4, 40));
+      const stokMinRaw = S().getStokMin ? S().getStokMin(o) : null;
+      const stokMaxRaw = S().getStokMax ? S().getStokMax(o) : null;
+      const stokMin = stokMinRaw !== null ? stokMinRaw : 0;
+      const stokMax = stokMaxRaw !== null ? stokMaxRaw : 0;
       const leadHari = Number(pbfLeadMap[String(o.pbf_utama || '').toUpperCase()] || anlPoLeadTime || 3);
       const avgHarian = terjual / days;
       const avgBln = Math.round((terjual / (days / 30)) * 10) / 10;
@@ -8135,8 +8134,7 @@ S. prn 3 dd 1 tab</textarea>
     const st = S().AppState;
     const underItems = (st.masterObat || []).filter((o) => {
       const stok = S().getTotalStok(o.id_obat);
-      const min = Number(o.stok_min || 10);
-      return stok <= min;
+      return S().isCriticalStock ? S().isCriticalStock(o, stok) : stok <= 0;
     });
     if (!underItems.length) {
       return global.toast('Seluruh stok apotek masih dalam kondisi aman. Belum memerlukan pesanan otomatis.', 'info');
@@ -8295,17 +8293,18 @@ S. prn 3 dd 1 tab</textarea>
     const dTag = new Date().toISOString().slice(0, 10);
     const rows = (st.masterObat || []).map((o, idx) => {
       const stok = S().getTotalStok(o.id_obat);
-      const min = Number(o.stok_min || 10);
-      const target = Math.max(min, min * 2);
+      const minVal = S().getStokMin ? S().getStokMin(o) : null;
+      const maxVal = S().getStokMax ? S().getStokMax(o) : null;
+      const target = maxVal !== null ? maxVal : (minVal !== null ? minVal * 2 : 0);
       return {
         no: idx + 1,
         nama: o.nama_dagang || o.id_obat,
         satuan: o.satuan_dasar || 'Unit',
-        stok_min: min,
-        target,
+        stok_min: minVal !== null ? minVal : '',
+        target: target || '',
         stok_kini: stok,
-        pemenuhan: Math.max(0, target - stok),
-        status: stok <= min ? 'UNDERSTOCK' : 'AMAN',
+        pemenuhan: target > 0 ? Math.max(0, target - stok) : 0,
+        status: (S().isCriticalStock ? S().isCriticalStock(o, stok) : stok <= 0) ? 'UNDERSTOCK' : 'AMAN',
         jenis_sp: o.golongan_bpom || 'REGULER'
       };
     });
@@ -13313,7 +13312,7 @@ S. prn 3 dd 1 tab</textarea>
       TOTAL: tot,
       DIBAYAR: paid,
       KEMBALI: Math.max(0, paid - tot),
-      POIN: Math.floor(tot / 10000),
+      POIN: 0,
       CATATAN: 'Konsultasi obat gratis bersama Apoteker.',
       QR_URL: 'https://onsfarma.id/v/PREVIEW'
     };

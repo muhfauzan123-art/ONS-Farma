@@ -822,6 +822,52 @@
   }
 
   /**
+   * Stok Minimal & Maksimal opsional:
+   * Hanya mengembalikan angka jika diisi oleh pengguna (> 0). Jika kosong, kembalikan null
+   * agar sistem tidak memaksa batas default 10 / 100.
+   */
+  function getStokMin(o) {
+    if (!o) return null;
+    const raw = (o.stok_min !== undefined && o.stok_min !== null && o.stok_min !== '')
+      ? o.stok_min
+      : ((o.stok_minimum !== undefined && o.stok_minimum !== null && o.stok_minimum !== '') ? o.stok_minimum : null);
+    if (raw === null) return null;
+    const n = Number(raw);
+    return (isFinite(n) && n > 0) ? n : null;
+  }
+
+  function getStokMax(o) {
+    if (!o) return null;
+    const raw = (o.stok_max !== undefined && o.stok_max !== null && o.stok_max !== '') ? o.stok_max : null;
+    if (raw === null) return null;
+    const n = Number(raw);
+    return (isFinite(n) && n > 0) ? n : null;
+  }
+
+  function isLowStock(o, stok) {
+    const min = getStokMin(o);
+    if (min === null) return false;
+    const s = Number(stok !== undefined ? stok : getSellableStok(o && o.id_obat));
+    return s > 0 && s <= min;
+  }
+
+  function isCriticalStock(o, stok) {
+    const s = Number(stok !== undefined ? stok : getSellableStok(o && o.id_obat));
+    if (s <= 0) return true;
+    const min = getStokMin(o);
+    return min !== null && s <= min;
+  }
+
+  function calcSuggestedOrderQty(o, stok) {
+    const s = Math.max(0, Number(stok !== undefined ? stok : getSellableStok(o && o.id_obat)));
+    const max = getStokMax(o);
+    if (max !== null && max > s) return Math.max(1, max - s);
+    const min = getStokMin(o);
+    if (min !== null && min > s) return Math.max(1, min - s);
+    return 1;
+  }
+
+  /**
    * Clinical Decision Support System (CDSS) Real-Time
    * Mengecek Alergi Pasien, DDI (Drug-Drug Interaction) & Golongan Keras/Prekursor/Narkotika
    */
@@ -1772,7 +1818,7 @@
     });
     const openPiutang = (AppState.piutangPelanggan || []).filter((pt) => String(pt.status_piutang || '').toUpperCase() !== 'LUNAS');
     const totalPiutangSisa = openPiutang.reduce((s, pt) => s + Number(pt.sisa_piutang || 0), 0);
-    const defectaCount = (AppState.masterObat || []).filter((o) => getSellableStok(o.id_obat) <= Number(o.stok_minimum || 0)).length;
+    const defectaCount = (AppState.masterObat || []).filter((o) => isCriticalStock(o)).length;
     const nearEdCount = (AppState.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && daysUntil(b.tgl_kadaluarsa) <= 90).length;
     const actShift = AppState.activeShift || (AppState.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
 
@@ -2049,6 +2095,11 @@
     getSellableStok,
     getNearestEdBatch,
     getNearestSellableBatch,
+    getStokMin,
+    getStokMax,
+    isLowStock,
+    isCriticalStock,
+    calcSuggestedOrderQty,
     checkCartCdss,
     getEffectiveObatPrice,
     getNearEdBatchInfo,

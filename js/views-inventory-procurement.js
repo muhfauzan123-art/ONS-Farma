@@ -227,11 +227,12 @@
   function buildObatMeta(o) {
     const stok = S().getSellableStok(o.id_obat);
     const totalFisik = S().getTotalStok(o.id_obat);
-    const min = Number(o.stok_min || 10);
-    const max = Math.max(Number(o.stok_max || 100), min * 2, stok, 1);
-    const pct = Math.min(100, Math.round((stok / max) * 100));
+    const min = S().getStokMin ? S().getStokMin(o) : null;
+    const max = S().getStokMax ? S().getStokMax(o) : null;
+    const barDenom = max !== null ? Math.max(max, stok, 1) : (min !== null ? Math.max(min * 2, stok, 1) : Math.max(stok, 1));
+    const pct = stok <= 0 ? 0 : Math.min(100, Math.round((stok / barDenom) * 100));
     const isZero = stok <= 0;
-    const isLow = stok > 0 && stok <= min;
+    const isLow = min !== null && stok > 0 && stok <= min;
     const isCritical = isZero || isLow;
     const nearBatch = S().getNearestSellableBatch(o.id_obat) || S().getNearestEdBatch(o.id_obat);
     const edDays = nearBatch && nearBatch.tgl_kadaluarsa ? S().daysUntil(nearBatch.tgl_kadaluarsa) : null;
@@ -430,7 +431,7 @@
               </div>
               <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
               <div class="flex items-center justify-between text-[10px] font-mono-num text-slate-400">
-                <span>Min: ${m.min} &bull; Max: ${m.max}</span>
+                <span>Min: ${m.min !== null ? m.min : '-'} &bull; Max: ${m.max !== null ? m.max : '-'}</span>
                 ${m.nearBatch ? `<span class="${m.isNearEd ? 'text-red-600 font-bold' : ''}">ED: ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</span>` : '<span>Belum ada batch</span>'}
               </div>
               ${m.isCritical ? `
@@ -461,7 +462,6 @@
           <div class="pt-2 border-t flex flex-wrap items-center justify-between gap-2" style="border-color:var(--ons-border)">
             <div>
               ${seeCost ? `<div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">HPP ${S().rp(o.hpp_avg || 0)}${m.marginPct !== null ? ` &bull; <b class="text-emerald-600">+${m.marginPct}%</b>` : ''}</div>` : ''}
-              <div class="text-[10px] text-slate-400 line-through">HET: ${S().rp(hetVal)}</div>
             </div>
             ${actionButtons(o)}
           </div>
@@ -485,7 +485,6 @@
               <th>Stok Buffer &amp; Kadaluarsa</th>
               <th>Multi-Kemasan</th>
               ${seeCost ? '<th title="Referensi Harga Beli / Harga Pokok (HPP)">HPP Modal</th>' : ''}
-              <th>HET Kemenkes</th>
               <th>Harga Jual Kemasan (Eceran / Sedang / Besar)</th>
               <th class="text-center">Status</th>
               <th class="text-right min-w-[260px]">Aksi</th>
@@ -552,8 +551,8 @@
                   ` : ''}
                   <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
                   <div class="flex items-center justify-between text-[10px] font-mono-num text-slate-400 mt-0.5">
-                    <span>Min: ${m.min}</span>
-                    <span>Max: ${m.max}</span>
+                    <span>Min: ${m.min !== null ? m.min : '-'}</span>
+                    <span>Max: ${m.max !== null ? m.max : '-'}</span>
                   </div>
                   ${m.nearBatch ? `<div class="text-[10px] font-mono-num mt-0.5 ${m.isNearEd ? 'text-red-600 font-bold' : 'text-slate-400'}">ED: ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</div>` : '<div class="text-[10px] text-slate-400 mt-0.5">Belum ada batch</div>'}
                   ${m.isCritical ? `
@@ -566,7 +565,6 @@
                   ${formatKonversiRasio(s1, s2, r2, s3, r3)}
                 </td>
                 ${seeCost ? `<td class="font-mono-num text-xs font-semibold">${S().rp(o.hpp_avg || o.hpp_terakhir || 0)}</td>` : ''}
-                <td class="font-mono-num text-xs text-slate-400 line-through">${S().rp(hetVal)}</td>
                 <td class="font-mono-num text-xs min-w-[170px]">
                   <div class="flex items-center justify-between gap-1">
                     <span class="text-[10px] uppercase font-bold text-slate-400">Harga 1 (${S().esc(s1)}):</span>
@@ -923,7 +921,6 @@
       ${_renderMasterKpiBtn("window.setMasterPelangganProg('SEMUA')", '', pelangganProgFilter === 'SEMUA', 'Total Pelanggan', allMbr.length, 'Member &amp; pasien terdaftar', '')}
       ${_renderMasterKpiBtn("window.setMasterPelangganProg('MEMBER_RUTIN')", 'is-emerald', pelangganProgFilter === 'MEMBER_RUTIN', 'Member Terapi Rutin', rutinCount, 'Pasien kontrol &amp; obat rutin', 'text-emerald-600')}
       ${_renderMasterKpiBtn("window.setMasterPelangganProg('ALERGI')", 'is-red', pelangganProgFilter === 'ALERGI', 'Catatan Alergi', alergiCount, 'Proteksi CDSS saat racik/POS', 'text-red-600')}
-      <div class="ons-md-kpi is-amber"><div class="text-[10.5px] font-semibold" style="color:var(--ons-text-soft)">Akumulasi Poin</div><div class="text-lg font-extrabold font-mono-num text-amber-600 leading-tight mt-0.5">${totalPoin.toLocaleString('id-ID')}</div><div class="text-[10.5px]" style="color:var(--ons-text-soft)">Loyalitas belanja apotek</div></div>
     </div>`;
 
     const actionHtml = (m) => `<div class="flex flex-wrap gap-1">
@@ -960,7 +957,7 @@
               return `<tr>
                 <td>
                   <div class="font-bold text-xs">${S().esc(m.nama_pasien)}</div>
-                  <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)} &bull; <b class="text-blue-600">${Number(m.poin_loyalitas || 0)} poin</b></div>
+                  <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)}</div>
                 </td>
                 <td class="font-mono-num text-xs">
                   <div>${S().esc(noRm)}</div>
@@ -999,7 +996,7 @@
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
                 <div class="font-bold truncate">${S().esc(m.nama_pasien)}</div>
-                <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)} &bull; <b class="text-blue-600">${Number(m.poin_loyalitas || 0)} poin</b></div>
+                <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(m.id_member)}</div>
               </div>
               <span class="badge-bpom shrink-0 ${prog === 'MEMBER_RUTIN' ? 'bpom-bebas' : (prog === 'MITRA_KLINIK' ? 'bpom-terbatas' : 'bpom-prekursor')}">${S().esc(prog)}</span>
             </div>
@@ -2774,7 +2771,6 @@
           </select>
         </div>
         <div><label class="font-semibold block mb-1">Batas Maksimal Total Piutang (Rp)</label><input id="mdPelMaxPiutang" type="number" min="0" class="ons-input font-mono-num" value="${Number(ex.max_piutang || 0)}"/></div>
-        <div><label class="font-semibold block mb-1">Poin Loyalitas</label><input id="mdPelPoin" type="number" min="0" class="ons-input font-mono-num" value="${existing ? Number(existing.poin_loyalitas || 0) : 0}"/></div>
         <div class="sm:col-span-2 flex items-center gap-2 pt-1">
           <input id="mdPelMitraChk" type="checkbox" ${ex.is_mitra ? 'checked' : ''} class="w-4 h-4"/>
           <label for="mdPelMitraChk" class="font-semibold cursor-pointer">Pelanggan ini adalah mitra apotek / institusi</label>
@@ -3005,8 +3001,7 @@
       { key: 'program_prb', label: 'Segmen', width: 15 },
       { key: 'tgl_lahir', label: 'Tanggal Lahir', type: 'date', width: 14 },
       { key: 'alergi_list', label: 'Riwayat Alergi', width: 22, wrap: true },
-      { key: 'penyakit_kronis', label: 'Riwayat Penyakit', width: 28, wrap: true },
-      { key: 'poin_loyalitas', label: 'Poin', type: 'int', sum: true, width: 10 }
+      { key: 'penyakit_kronis', label: 'Riwayat Penyakit', width: 28, wrap: true }
     ];
     const rows = list.map((m) => {
       const ex = _getExtraRecord(PELANGGAN_EXTRA_KEY, m.id_member, m.nama_pasien);
@@ -3021,8 +3016,7 @@
         program_prb: _normMemberProg(m),
         tgl_lahir: m.tgl_lahir ? String(m.tgl_lahir).slice(0, 10) : '-',
         alergi_list: m.alergi_list || 'Tidak Ada',
-        penyakit_kronis: m.penyakit_kronis || '-',
-        poin_loyalitas: Number(m.poin_loyalitas || 0)
+        penyakit_kronis: m.penyakit_kronis || '-'
       };
     });
     return S().exportDataset(
@@ -3031,7 +3025,7 @@
       'Master_Pelanggan_ONS_' + dateTag,
       headers,
       rows,
-      { sheetName: 'Master_Pelanggan', subtitle: 'Data member, riwayat alergi obat, segmen & poin (' + rows.length + ' pelanggan)' }
+      { sheetName: 'Master_Pelanggan', subtitle: 'Data member, riwayat alergi obat & segmen (' + rows.length + ' pelanggan)' }
     );
   };
 
@@ -3404,8 +3398,7 @@
           <div style="font-family:monospace;font-size:16pt;font-weight:bold;letter-spacing:2px;line-height:1;">||| |||| || ||||| |||</div>
           <div style="font-family:monospace;font-size:8pt;font-weight:bold;letter-spacing:1px;margin-top:1mm;">${S().esc(codeVal)}</div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ccc;padding-top:1.5mm;margin-top:1.5mm;font-size:8pt;">
-          <span style="font-size:6.5pt;color:#666;">HET: <strike>${S().rp(hetVal)}</strike></span>
+        <div style="display:flex;justify-content:center;align-items:center;border-top:1px solid #ccc;padding-top:1.5mm;margin-top:1.5mm;font-size:8pt;">
           <span style="font-size:10pt;font-weight:900;color:#0050CA;">${S().rp(o.harga_umum || 0)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:6pt;color:#777;margin-top:1mm;">
@@ -3449,8 +3442,7 @@
               <div class="font-mono text-xl font-bold tracking-widest px-3 py-1 bg-slate-50 border rounded text-slate-800">||| |||| || ||||| |||</div>
               <div class="font-mono text-[11px] font-bold mt-1 tracking-widest text-slate-700">${S().esc(codeVal)}</div>
             </div>
-            <div class="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px]">
-              <div>HET: <b class="line-through text-slate-400">${S().rp(hetVal)}</b></div>
+            <div class="flex items-center justify-center pt-1 border-t border-slate-200 text-[11px]">
               <div class="text-base font-extrabold text-blue-700">${S().rp(o.harga_umum || 0)}</div>
             </div>
             <div class="text-[9px] text-slate-400">Rak: ${S().esc(o.rak_lokasi || 'RAK-A1')} &bull; Satuan: ${S().esc(o.satuan_dasar || 'Unit')}</div>
@@ -3503,7 +3495,6 @@
           <div>
             <div class="text-[9.5px] font-bold text-slate-500 uppercase">Harga Jual 1 / ${S().esc(s1)}</div>
             <div class="text-base font-black text-blue-700 font-mono-num">${S().rp(h1)}</div>
-            <div class="text-[9px] text-slate-400 line-through">HET: ${S().rp(hetVal)}</div>
           </div>
           ${valid2 ? `
           <div>
@@ -4473,10 +4464,6 @@
               <span style="color:var(--ons-text-soft)">Distributor PBF Utama:</span>
               <span class="font-semibold text-blue-600">${S().esc(o.pbf_utama || 'PBF Resmi Apotek')}</span>
             </div>
-            <div class="flex justify-between items-center py-1 border-b border-slate-200 dark:border-slate-700">
-              <span style="color:var(--ons-text-soft)">HET Pemerintah:</span>
-              <span class="font-mono-num font-semibold text-slate-500">${S().rp(hetVal)}</span>
-            </div>
             <div class="sm:col-span-2 py-1 border-b border-slate-200 dark:border-slate-700">
               <span style="color:var(--ons-text-soft)">Konversi Multi-Satuan:</span>
               <span class="font-mono-num font-semibold ml-2">${formatKonversiRasio(s1, s2, r2, s3, r3)}</span>
@@ -4665,8 +4652,8 @@
         satuan_besar: sBesar,
         rasio_besar: rBesar,
         stok_jual: Number(m.stok || 0),
-        stok_min: Number(o.stok_min || 10),
-        stok_max: Number(o.stok_max || 100),
+        stok_min: m.min !== null ? m.min : '',
+        stok_max: m.max !== null ? m.max : '',
         status_stok: m.stokTone.label.toUpperCase(),
         ed_terdekat: edIso || '-',
         hpp_avg: seeCost ? Number(o.hpp_avg || 0) : 0,
@@ -4709,12 +4696,12 @@
       { key: 'suhu_simpan', label: 'Suhu Simpan', type: 'text', width: 22 },
       { key: 'satuan_dasar', label: 'Satuan Dasar', type: 'text', width: 14 },
       { key: 'satuan_sedang', label: 'Satuan Sedang', type: 'text', width: 14 },
-      { key: 'rasio_sedang', label: 'Rasio Sedang', type: 'int', width: 13 },
+      { key: 'rasio_sedang', label: 'Isi Konversi 2', type: 'int', width: 15 },
       { key: 'satuan_besar', label: 'Satuan Besar', type: 'text', width: 14 },
-      { key: 'rasio_besar', label: 'Rasio Besar', type: 'int', width: 13 },
-      { key: 'stok_jual', label: 'Stok Layak Jual', type: 'int', sum: true, width: 16 },
-      { key: 'stok_min', label: 'Stok Min', type: 'int', width: 11 },
-      { key: 'stok_max', label: 'Stok Max', type: 'int', width: 11 },
+      { key: 'rasio_besar', label: 'Konversi 3', type: 'int', width: 13 },
+      { key: 'stok_jual', label: 'Stok Nyata', type: 'int', sum: true, width: 14 },
+      { key: 'stok_min', label: 'Stok Min', type: 'text', width: 11 },
+      { key: 'stok_max', label: 'Stok Max', type: 'text', width: 11 },
       { key: 'status_stok', label: 'Status Stok', type: 'status', width: 14 },
       { key: 'ed_terdekat', label: 'ED Terdekat', type: 'date', width: 14 },
       ...(seeCost ? [
@@ -4833,8 +4820,8 @@
       harga_umum: num('wHrgUmum', baseObj.harga_umum),
       harga_sedang: num('wHrgSed', baseObj.harga_sedang),
       harga_besar: num('wHrgBes', baseObj.harga_besar),
-      stok_min: num('wStokMin', baseObj.stok_min),
-      stok_max: num('wStokMax', baseObj.stok_max),
+      stok_min: val('wStokMin', baseObj.stok_min !== undefined && baseObj.stok_min !== null && baseObj.stok_min !== '' && Number(baseObj.stok_min) > 0 ? String(baseObj.stok_min) : ''),
+      stok_max: val('wStokMax', baseObj.stok_max !== undefined && baseObj.stok_max !== null && baseObj.stok_max !== '' && Number(baseObj.stok_max) > 0 ? String(baseObj.stok_max) : ''),
       pabrikan: val('wPabrikan', baseObj.pabrikan),
       pbf_utama: val('wPbfUtama', baseObj.pbf_utama),
       substitusi_ids: val('wSubstitusi', baseObj.substitusi_ids)
@@ -4854,7 +4841,7 @@
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1',
       satuan_1: 'Tablet', satuan_2: '', rasio_2: 1, satuan_3: '', rasio_3: 1,
       satuan_dasar: 'Tablet', satuan_sedang: '', rasio_sedang: 1, satuan_besar: '', rasio_besar: 1,
-      stok_min: 10, stok_max: 100, pabrikan: '', pbf_utama: '',
+      stok_min: '', stok_max: '', pabrikan: '', pbf_utama: '',
       hpp_avg: 0, harga_jual_1: 0, harga_jual_2: 0, harga_jual_3: 0,
       harga_umum: 0, harga_sedang: 0, harga_besar: 0, substitusi_ids: ''
     };
@@ -5209,14 +5196,14 @@
                   <div id="wizStep4MarginHint" class="hidden p-3 rounded-xl border border-red-400 bg-red-500/10 text-red-600 font-semibold text-xs"></div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t" style="border-color:var(--ons-border)">
                     <div>
-                      <label class="font-bold block mb-1.5">Stok Minimum (Alert Defecta)</label>
-                      <input id="wStokMin" type="number" min="0" class="${inpCls} font-mono-num" value="${o.stok_min !== undefined ? o.stok_min : 10}"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Sistem memberi notifikasi pesan ulang jika total batch &le; angka ini.</div>
+                      <label class="font-bold block mb-1.5">Stok Minimum (Opsional — Alert Defecta)</label>
+                      <input id="wStokMin" type="number" min="0" class="${inpCls} font-mono-num" value="${(o.stok_min !== undefined && o.stok_min !== null && o.stok_min !== '' && Number(o.stok_min) > 0) ? o.stok_min : ''}" placeholder="Kosongkan jika tidak dipakai"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hanya aktif jika Anda mengisi angka ini. Kosongkan jika tidak ingin peringatan otomatis.</div>
                     </div>
                     <div>
-                      <label class="font-bold block mb-1.5">Stok Maksimum Gudang</label>
-                      <input id="wStokMax" type="number" min="1" class="${inpCls} font-mono-num" value="${o.stok_max || 100}"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Acuan kuantitas ideal saat membuat Surat Pesanan PBF.</div>
+                      <label class="font-bold block mb-1.5">Stok Maksimum Gudang (Opsional)</label>
+                      <input id="wStokMax" type="number" min="1" class="${inpCls} font-mono-num" value="${(o.stok_max !== undefined && o.stok_max !== null && o.stok_max !== '' && Number(o.stok_max) > 0) ? o.stok_max : ''}" placeholder="Kosongkan jika tidak dipakai"/>
+                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hanya digunakan sebagai acuan order jika Anda isi sendiri.</div>
                     </div>
                   </div>
                 </div>
@@ -5931,8 +5918,10 @@
         : ('Konfirmasi: Tambahkan produk baru "' + nama + '" ke Master Data Obat?');
       if (typeof global.confirm === 'function' && !global.confirm(confirmObatMsg)) return;
 
-      const stokMin = parseNum('wStokMin', 10);
-      const stokMax = Math.max(1, parseNum('wStokMax', 100));
+      const rawStokMin = val('wStokMin');
+      const rawStokMax = val('wStokMax');
+      const stokMin = (rawStokMin !== '' && Number(rawStokMin) > 0) ? Number(rawStokMin) : '';
+      const stokMax = (rawStokMax !== '' && Number(rawStokMax) > 0) ? Number(rawStokMax) : '';
 
       await API().callApi('obat.save', {
         id_obat: val('wObatId'),
@@ -5991,17 +5980,17 @@
     { key: 'suhu_simpan', label: 'suhu_simpan', ket: 'Suhu Ruang (15-25 C) | Kulkas (2-8 C) | Lemari Khusus' },
     { key: 'satuan_1', label: 'satuan_1', ket: 'Satuan 1 (terendah/terkecil dari yang dijual di apotek, cth: Tablet, Strip, Botol)' },
     { key: 'satuan_2', label: 'satuan_2', ket: 'Satuan 2 (opsional, kemasan tingkat 2, cth: Strip, Blister, Pack). Kosongkan jika tidak ada' },
-    { key: 'rasio_2', label: 'rasio_2', ket: 'Rasio Satuan 2 (jumlah Satuan 1 dalam 1 Satuan 2, default 1)' },
+    { key: 'rasio_2', label: 'Isi Konversi 2', ket: 'Jumlah Satuan 1 dalam 1 Satuan 2 (contoh: 10 tablet per strip, default 1)' },
     { key: 'satuan_3', label: 'satuan_3', ket: 'Satuan 3 (opsional, kemasan tingkat 3, cth: Box, Dus). Kosongkan jika tidak ada' },
-    { key: 'rasio_3', label: 'rasio_3', ket: 'Rasio Satuan 3 (jumlah Satuan 1 dalam 1 Satuan 3, default 1)' },
+    { key: 'rasio_3', label: 'Konversi 3', ket: 'Jumlah Satuan 1 dalam 1 Satuan 3 (contoh: 100 tablet per box, default 1)' },
     { key: 'hpp_avg', label: 'hpp_avg', ket: 'Harga pokok modal pembelian per Satuan 1 (angka tanpa titik/Rp)' },
     { key: 'harga_jual_1', label: 'harga_jual_1', ket: 'Harga Jual 1 (per Satuan 1 / terendah, >= HPP modal)' },
     { key: 'harga_jual_2', label: 'harga_jual_2', ket: 'Harga Jual 2 (per Satuan 2, opsional, jika kosong dihitung otomatis)' },
     { key: 'harga_jual_3', label: 'harga_jual_3', ket: 'Harga Jual 3 (per Satuan 3, opsional, jika kosong dihitung otomatis)' },
-    { key: 'stok_min', label: 'stok_min', ket: 'Batas peringatan stok menipis (angka, default 10)' },
-    { key: 'stok_max', label: 'stok_max', ket: 'Kapasitas stok maksimal yang disarankan (angka, default 100)' },
+    { key: 'stok_min', label: 'stok_min', ket: 'Batas peringatan stok menipis (opsional, kosongkan jika tidak ingin dipakai)' },
+    { key: 'stok_max', label: 'stok_max', ket: 'Kapasitas stok maksimal (opsional, kosongkan jika tidak ingin dipakai)' },
     { key: 'pbf_utama', label: 'pbf_utama', ket: 'Nama PBF / distributor pemasok utama' },
-    { key: 'stok_awal', label: 'stok_awal', ket: 'Stok fisik awal masuk gudang (opsional, langsung bisa dijual di kasir)' },
+    { key: 'stok_awal', label: 'Stok Nyata', ket: 'Stok fisik nyata yang tersedia di gudang (opsional, langsung bisa dijual di kasir)' },
     { key: 'no_batch', label: 'no_batch', ket: 'Nomor batch / lot pabrik (opsional, cth: B260101)' },
     { key: 'tgl_kadaluarsa', label: 'tgl_kadaluarsa', ket: 'Tanggal kadaluarsa (opsional, format: YYYY-MM-DD)' }
   ];
@@ -6123,9 +6112,9 @@
       suhu_simpan: 'suhu_simpan', suhu: 'suhu_simpan', storage_temp: 'suhu_simpan', kondisi_simpan: 'suhu_simpan',
       satuan_1: 'satuan_dasar', satuan1: 'satuan_dasar', satuan_terendah: 'satuan_dasar', satuan_dasar: 'satuan_dasar', satuan: 'satuan_dasar', unit: 'satuan_dasar', uom: 'satuan_dasar', satuan_terkecil: 'satuan_dasar',
       satuan_2: 'satuan_sedang', satuan2: 'satuan_sedang', kemasan_2: 'satuan_sedang', satuan_sedang: 'satuan_sedang', satuan_tengah: 'satuan_sedang', pack: 'satuan_sedang', kemasan_sedang: 'satuan_sedang',
-      rasio_2: 'rasio_sedang', rasio2: 'rasio_sedang', rasio_konversi_2: 'rasio_sedang', konversi_2: 'rasio_sedang', rasio_sedang: 'rasio_sedang', isi_sedang: 'rasio_sedang', isi_per_strip: 'rasio_sedang', qty_sedang: 'rasio_sedang',
+      rasio_2: 'rasio_sedang', rasio2: 'rasio_sedang', rasio_konversi_2: 'rasio_sedang', konversi_2: 'rasio_sedang', konversi2: 'rasio_sedang', isi_konversi_2: 'rasio_sedang', isi_konversi2: 'rasio_sedang', rasio_sedang: 'rasio_sedang', isi_sedang: 'rasio_sedang', isi_per_strip: 'rasio_sedang', qty_sedang: 'rasio_sedang',
       satuan_3: 'satuan_besar', satuan3: 'satuan_besar', kemasan_3: 'satuan_besar', satuan_besar: 'satuan_besar', kemasan_besar: 'satuan_besar', dus: 'satuan_besar', box: 'satuan_besar',
-      rasio_3: 'rasio_besar', rasio3: 'rasio_besar', rasio_konversi_3: 'rasio_besar', konversi_3: 'rasio_besar', rasio_besar: 'rasio_besar', isi_besar: 'rasio_besar', isi_per_box: 'rasio_besar', qty_besar: 'rasio_besar',
+      rasio_3: 'rasio_besar', rasio3: 'rasio_besar', rasio_konversi_3: 'rasio_besar', konversi_3: 'rasio_besar', konversi3: 'rasio_besar', isi_konversi_3: 'rasio_besar', isi_konversi3: 'rasio_besar', rasio_besar: 'rasio_besar', isi_besar: 'rasio_besar', isi_per_box: 'rasio_besar', qty_besar: 'rasio_besar',
       hpp_avg: 'hpp_avg', hpp: 'hpp_avg', harga_beli: 'hpp_avg', hna: 'hpp_avg', modal: 'hpp_avg', beli: 'hpp_avg', harga_pokok: 'hpp_avg', harga_modal: 'hpp_avg', cost: 'hpp_avg', buy_price: 'hpp_avg', harga_netto: 'hpp_avg',
       harga_jual_1: 'harga_umum', harga_jual1: 'harga_umum', harga_1: 'harga_umum', hrg_jual_1: 'harga_umum', hrg_1: 'harga_umum', harga_umum: 'harga_umum', harga: 'harga_umum', harga_jual: 'harga_umum', hja: 'harga_umum', harga_eceran: 'harga_umum', eceran: 'harga_umum', retail_price: 'harga_umum', harga_konsumen: 'harga_umum', jual: 'harga_umum',
       harga_jual_2: 'harga_sedang', harga_jual2: 'harga_sedang', harga_2: 'harga_sedang', hrg_jual_2: 'harga_sedang', hrg_2: 'harga_sedang', harga_sedang: 'harga_sedang', harga_strip: 'harga_sedang', strip: 'harga_sedang', per_strip: 'harga_sedang', pack_price: 'harga_sedang', harga_pack: 'harga_sedang',
@@ -6137,7 +6126,7 @@
       stok_min: 'stok_min', min_stok: 'stok_min', minimum_stok: 'stok_min', min_stock: 'stok_min', reorder_point: 'stok_min', rop: 'stok_min',
       stok_max: 'stok_max', max_stok: 'stok_max', maksimum_stok: 'stok_max', max_stock: 'stok_max',
       pbf_utama: 'pbf_utama', pbf: 'pbf_utama', distributor: 'pbf_utama', distributor_pbf: 'pbf_utama', nama_distributor: 'pbf_utama', supplier: 'pbf_utama', nama_supplier: 'pbf_utama', vendor: 'pbf_utama', pemasok: 'pbf_utama', nama_pbf: 'pbf_utama',
-      stok_awal: 'stok_awal', stok: 'stok_awal', stock: 'stok_awal', saldo_awal: 'stok_awal', qty: 'stok_awal', jumlah: 'stok_awal', kuantitas: 'stok_awal', current_stock: 'stok_awal', stok_gudang: 'stok_awal', qty_awal: 'stok_awal', stok_fisik: 'stok_awal', saldo: 'stok_awal',
+      stok_awal: 'stok_awal', stok_nyata: 'stok_awal', stoknyata: 'stok_awal', stok_layak_jual: 'stok_awal', stok: 'stok_awal', stock: 'stok_awal', saldo_awal: 'stok_awal', qty: 'stok_awal', jumlah: 'stok_awal', kuantitas: 'stok_awal', current_stock: 'stok_awal', stok_gudang: 'stok_awal', qty_awal: 'stok_awal', stok_fisik: 'stok_awal', saldo: 'stok_awal',
       no_batch: 'no_batch', batch: 'no_batch', nomor_batch: 'no_batch', kode_batch: 'no_batch', no_lot: 'no_batch', nomor_lot: 'no_batch', lot: 'no_batch', lot_no: 'no_batch', lot_number: 'no_batch', batch_no: 'no_batch', batch_number: 'no_batch',
       tgl_kadaluarsa: 'tgl_kadaluarsa', kadaluarsa: 'tgl_kadaluarsa', tanggal_kadaluarsa: 'tgl_kadaluarsa', tgl_ed: 'tgl_kadaluarsa', ed: 'tgl_kadaluarsa', tanggal_ed: 'tgl_kadaluarsa', expired: 'tgl_kadaluarsa', expired_date: 'tgl_kadaluarsa', tanggal_expired: 'tgl_kadaluarsa', exp_date: 'tgl_kadaluarsa', expiry_date: 'tgl_kadaluarsa', tgl_expired: 'tgl_kadaluarsa', exp: 'tgl_kadaluarsa', tgl_exp: 'tgl_kadaluarsa', tgl_kadaluwarsa: 'tgl_kadaluarsa'
     };
@@ -6461,12 +6450,12 @@
             harga_besar: hJual3,
             harga_strip: hJual2,
             harga_box: hJual3,
-            stok_min: Math.max(0, _parseImportNum(obj.stok_min, 10)),
-            stok_max: Math.max(1, _parseImportNum(obj.stok_max, 100)),
+            stok_min: (obj.stok_min !== undefined && String(obj.stok_min).trim() !== '' && _parseImportNum(obj.stok_min, 0) > 0) ? _parseImportNum(obj.stok_min, 0) : '',
+            stok_max: (obj.stok_max !== undefined && String(obj.stok_max).trim() !== '' && _parseImportNum(obj.stok_max, 0) > 0) ? _parseImportNum(obj.stok_max, 0) : '',
             pbf_utama: obj.pbf_utama === '-' ? '' : (obj.pbf_utama || ''),
             stok_awal: stokAwal,
             no_batch: obj.no_batch || '',
-            tgl_kadaluarsa: obj.tgl_kadaluarsa || ''
+            tgl_kadaluarsa: (obj.tgl_kadaluarsa && S().normalizeDateIso) ? (S().normalizeDateIso(obj.tgl_kadaluarsa) || obj.tgl_kadaluarsa) : (obj.tgl_kadaluarsa || '')
           };
         }).filter(Boolean);
       if (!importObatBuffer.length) {
@@ -9012,7 +9001,7 @@
         reorder_point: rop,
         rekomendasi_order: rekOrder,
         dos: dos,
-        perlu_order: s <= rop || s <= Number(o.stok_min || 10)
+        perlu_order: (rop > 0 && s <= rop) || (S().isCriticalStock ? S().isCriticalStock(o, s) : s <= 0)
       };
     });
     const pendingOrderMap = {};
@@ -9026,13 +9015,13 @@
     });
 
     const dq = defectaSearchQ.trim().toLowerCase();
-    const belowMinCount = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) > 0 && S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).length;
+    const belowMinCount = st.masterObat.filter((o) => S().isLowStock ? S().isLowStock(o) : false).length;
     const emptyCount = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= 0).length;
     const lowStock = st.masterObat.filter((o) => {
       if (!forecastMap[o.id_obat] || !forecastMap[o.id_obat].perlu_order) return false;
       const s = S().getSellableStok(o.id_obat);
       if (defectaStatusFilter === 'KOSONG' && s > 0) return false;
-      if (defectaStatusFilter === 'DIBAWAH_MIN' && !(s > 0 && s <= Number(o.stok_min || 10))) return false;
+      if (defectaStatusFilter === 'DIBAWAH_MIN' && !(S().isLowStock ? S().isLowStock(o, s) : false)) return false;
       if (dq && !`${o.nama_dagang} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase().includes(dq)) return false;
       return true;
     });
@@ -9048,7 +9037,7 @@
       const fc = forecastMap[o.id_obat];
       if (fc && fc.rekomendasi_order > 0) return fc.rekomendasi_order;
       const s = S().getSellableStok(o.id_obat);
-      return Math.max(10, Number(o.stok_max || 100) - s);
+      return S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1;
     };
 
     const resolveJenisSp = (gol) => {
@@ -9235,14 +9224,16 @@
                 const s = S().getSellableStok(o.id_obat);
                 const totFisik = S().getTotalStok(o.id_obat);
                 const edBlocked = Math.max(0, totFisik - s);
-                const fc = forecastMap[o.id_obat] || { avg_harian: 0.5, lead_time_hari: 3, reorder_point: Number(o.stok_min || 10), rekomendasi_order: 20, dos: 0 };
+                const sMinVal = S().getStokMin ? S().getStokMin(o) : null;
+                const sMaxVal = S().getStokMax ? S().getStokMax(o) : null;
+                const fc = forecastMap[o.id_obat] || { avg_harian: 0, lead_time_hari: 3, reorder_point: sMinVal || 0, rekomendasi_order: 1, dos: 0 };
                 const qtyOrder = getOrderQty(o);
                 const sedangDipesan = Number(pendingOrderMap[o.id_obat] || 0);
                 const inPlan = (_readLocalList(PLANS_KEY) || []).find((p) => p.id_obat === o.id_obat);
                 const jenisSp = resolveJenisSp(o.golongan_bpom);
-                const sMin = Number(o.stok_min || 10);
-                const sMax = Number(o.stok_max || 100);
-                const sPct = sMax > 0 ? Math.min(100, Math.round((s / sMax) * 100)) : 0;
+                const sMin = sMinVal !== null ? sMinVal : '-';
+                const sMax = sMaxVal !== null ? sMaxVal : '-';
+                const sPct = sMaxVal > 0 ? Math.min(100, Math.round((s / sMaxVal) * 100)) : (s > 0 ? 100 : 0);
                 const isKosong = s <= 0;
                 const isChecked = defectaSelectedIds.has(o.id_obat);
 
@@ -9384,15 +9375,20 @@
   global.setDefectaStatusFilter = (v) => { defectaStatusFilter = v || 'SEMUA'; global.renderActiveView(); };
   global.exportDefectaList = (fmt) => {
     const st = S().AppState;
-    const rows = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10)).map((o, i) => ({
-      no: i + 1,
-      nama: o.nama_dagang,
-      stok_min: Number(o.stok_min || 10),
-      stok_max: Number(o.stok_max || 100),
-      stok: S().getSellableStok(o.id_obat),
-      supplier: o.pbf_utama || '-',
-      qty_order: defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - S().getSellableStok(o.id_obat))
-    }));
+    const rows = (st.masterObat || []).filter((o) => S().isCriticalStock ? S().isCriticalStock(o) : S().getSellableStok(o.id_obat) <= 0).map((o, i) => {
+      const sMin = S().getStokMin ? S().getStokMin(o) : null;
+      const sMax = S().getStokMax ? S().getStokMax(o) : null;
+      const s = S().getSellableStok(o.id_obat);
+      return {
+        no: i + 1,
+        nama: o.nama_dagang,
+        stok_min: sMin !== null ? sMin : '',
+        stok_max: sMax !== null ? sMax : '',
+        stok: s,
+        supplier: o.pbf_utama || '-',
+        qty_order: defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : (S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1)
+      };
+    });
     S().exportDataset(fmt || 'xlsx', 'Daftar Defecta Stok Apotek', `defecta-${new Date().toISOString().slice(0, 10)}`, [
       { key: 'no', label: 'No', type: 'int', width: 6 },
       { key: 'nama', label: 'Nama Produk', type: 'wrap', width: 28 },
@@ -9470,7 +9466,7 @@
     const st = S().AppState;
     const lowAll = st.masterObat.filter((o) => {
       const s = S().getSellableStok(o.id_obat);
-      return s <= Number(o.stok_min || 10);
+      return S().isCriticalStock ? S().isCriticalStock(o, s) : s <= 0;
     });
 
     if (!lowAll.length) {
@@ -9494,7 +9490,7 @@
       const key = pbfName + '|||' + jenisSp;
       if (!groupKeyMap[key]) groupKeyMap[key] = { pbfName, jenisSp, items: [] };
       const s = S().getSellableStok(o.id_obat);
-      const q = defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : Math.max(10, Number(o.stok_max || 100) - s);
+      const q = defectaOrderQty[o.id_obat] !== undefined ? Number(defectaOrderQty[o.id_obat]) : (S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1);
       groupKeyMap[key].items.push({
         id_obat: o.id_obat,
         nama_dagang: o.nama_dagang,
@@ -9555,10 +9551,9 @@
     const dq = defectaSearchQ.trim().toLowerCase();
     const lowStock = st.masterObat.filter((o) => {
       const s = S().getSellableStok(o.id_obat);
-      const sMin = Number(o.stok_min || 10);
-      if (s > sMin) return false;
+      if (!(S().isCriticalStock ? S().isCriticalStock(o, s) : s <= 0)) return false;
       if (defectaStatusFilter === 'KOSONG' && s > 0) return false;
-      if (defectaStatusFilter === 'DIBAWAH_MIN' && !(s > 0 && s <= sMin)) return false;
+      if (defectaStatusFilter === 'DIBAWAH_MIN' && !(S().isLowStock ? S().isLowStock(o, s) : false)) return false;
       if (dq && !`${o.nama_dagang} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase().includes(dq)) return false;
       return true;
     });
@@ -9580,7 +9575,7 @@
     const o = st.masterObat.find((x) => x.id_obat === idObat);
     if (!o) return global.toast('Data obat tidak ditemukan.', 'warn');
     const s = S().getSellableStok(o.id_obat);
-    const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : Math.max(10, Number(o.stok_max || 100) - s);
+    const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : (S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1);
     const pbfName = o.pbf_utama || ((st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'Distributor Apotek');
     const g = String(o.golongan_bpom || '').toUpperCase();
     const golSp = ['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g) ? g : 'REGULER';
@@ -9615,7 +9610,7 @@
     if (!pickedObat.length) return;
     const items = pickedObat.map((o) => {
       const s = S().getSellableStok(o.id_obat);
-      const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : Math.max(10, Number(o.stok_max || 100) - s);
+      const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : (S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1);
       const g = String(o.golongan_bpom || '').toUpperCase();
       const golSp = ['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g) ? g : 'REGULER';
       return {
@@ -9654,7 +9649,7 @@
       const pbf = o.pbf_utama || 'Distributor Apotek';
       if (!grouped[pbf]) grouped[pbf] = [];
       const s = S().getSellableStok(o.id_obat);
-      const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : Math.max(10, Number(o.stok_max || 100) - s);
+      const q = defectaOrderQty[o.id_obat] !== undefined ? Math.max(1, Number(defectaOrderQty[o.id_obat])) : (S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1);
       const g = String(o.golongan_bpom || '').toUpperCase();
       const golSp = ['NARKOTIKA', 'PSIKOTROPIKA', 'PREKURSOR', 'OOT'].includes(g) ? g : 'REGULER';
       grouped[pbf].push({
@@ -10288,7 +10283,7 @@
 
     const lowStockDefecta = (st.masterObat || []).filter((o) => {
       const s = S().getSellableStok(o.id_obat);
-      return s <= Number(o.stok_min || 10);
+      return S().isCriticalStock ? S().isCriticalStock(o, s) : s <= 0;
     });
 
     return `<div class="space-y-5 ons-view-enter">
@@ -11270,7 +11265,7 @@
     if (!o) return global.toast('Produk tidak ditemukan di katalog.', 'warn');
     const plans = _readLocalList(PLANS_KEY);
     const s = S().getSellableStok(o.id_obat);
-    const defaultQty = qtyCustom !== undefined ? Math.max(1, Number(qtyCustom)) : Math.max(10, Number(o.stok_max || 100) - s);
+    const defaultQty = qtyCustom !== undefined ? Math.max(1, Number(qtyCustom)) : (S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1);
     const exist = plans.find((p) => p.id_obat === o.id_obat);
     if (exist) {
       exist.kuantitas = Number(exist.kuantitas || 0) + defaultQty;
@@ -11299,7 +11294,7 @@
   global.pullLowStockToPlans = () => {
     const st = S().AppState;
     const plans = _readLocalList(PLANS_KEY);
-    const lowAll = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
+    const lowAll = (st.masterObat || []).filter((o) => S().isCriticalStock ? S().isCriticalStock(o) : S().getSellableStok(o.id_obat) <= 0);
     const candidates = lowAll.length ? lowAll : (st.masterObat || []).slice(0, 3);
     let added = 0;
     candidates.forEach((o) => {
@@ -11311,7 +11306,7 @@
           nama_produk: o.nama_dagang,
           jenis_sp: _resolvePlanJenisSp(o.golongan_bpom),
           nama_supplier: o.pbf_utama || ((st.supplierPbf && st.supplierPbf[0] && st.supplierPbf[0].nama_pbf) || 'PBF Reguler'),
-          kuantitas: Math.max(10, Number(o.stok_max || 100) - s),
+          kuantitas: S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1,
           satuan: o.satuan_dasar || 'Unit',
           harga_beli: Number(o.hpp_terakhir || o.hpp_avg || 0),
           keterangan: 'Rekomendasi Defecta',
@@ -11576,15 +11571,16 @@
     const suggestions = [];
     (st.masterObat || []).forEach((o) => {
       const stok = S().getSellableStok(o.id_obat);
+      const sMin = S().getStokMin ? S().getStokMin(o) : null;
       const qty30 = Number(sold30Map[o.id_obat] || 0);
-      const avgHarian = Math.max(0.2, Math.round((qty30 > 0 ? qty30 / 30 : Number(o.stok_min || 10) / 14) * 10) / 10);
+      const avgHarian = qty30 > 0 ? Math.max(0.2, Math.round((qty30 / 30) * 10) / 10) : (sMin !== null ? Math.max(0.2, Math.round((sMin / 14) * 10) / 10) : 0);
       const leadTime = pbfLeadMap[String(o.pbf_utama || '').trim().toUpperCase()] || 3;
-      const safetyStock = Math.max(Number(o.stok_min || 10), Math.ceil(avgHarian * bufferDays));
-      const rop = Math.ceil(avgHarian * leadTime) + safetyStock;
-      const targetStock = Math.ceil(avgHarian * (targetDays + leadTime)) + safetyStock;
+      const safetyStock = Math.max(sMin || 0, Math.ceil(avgHarian * bufferDays));
+      const rop = avgHarian > 0 ? (Math.ceil(avgHarian * leadTime) + safetyStock) : (sMin || 0);
+      const targetStock = avgHarian > 0 ? (Math.ceil(avgHarian * (targetDays + leadTime)) + safetyStock) : (S().getStokMax && S().getStokMax(o) ? S().getStokMax(o) : (sMin || 0));
       const usulanQty = Math.max(0, targetStock - stok);
 
-      if (stok <= rop || stok <= Number(o.stok_min || 10)) {
+      if (stok <= 0 || (rop > 0 && stok <= rop) || (sMin !== null && stok <= sMin)) {
         const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
         const golSp = _resolvePlanJenisSp(o.golongan_bpom);
         suggestions.push({

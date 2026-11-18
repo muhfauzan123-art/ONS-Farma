@@ -89,7 +89,7 @@
             PEMBULATAN: found.pembulatan || 0,
             DIBAYAR: found.tunai_diterima || found.grand_total,
             KEMBALI: found.kembalian || 0,
-            POIN: found.poin_didapat || 0,
+            POIN: 0,
             ITEM: items.map((it) => ({
               NAMA: it.nama_dagang || it.id_obat,
               QTY: it.qty,
@@ -1544,7 +1544,7 @@
       return hpp > 0 && hj > 0 && hj <= hpp;
     });
     const zeroProducts = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= 0);
-    const defectaProducts = (st.masterObat || []).filter((o) => S().getSellableStok(o.id_obat) <= Number(o.stok_min || 10));
+    const defectaProducts = (st.masterObat || []).filter((o) => S().isCriticalStock ? S().isCriticalStock(o) : S().getSellableStok(o.id_obat) <= 0);
     const currentStockVal = activeBatches.reduce((sum, b) => {
       const ob = (st.masterObat || []).find((o) => o.id_obat === b.id_obat);
       const hpp = Number(b.hpp_beli || (ob && (ob.hpp_avg || ob.hpp_terakhir)) || 0);
@@ -1552,6 +1552,38 @@
     }, 0);
     const currentStockUnits = activeBatches.reduce((sum, b) => sum + Number(b.qty_sisa || 0), 0);
     return { activeBatches, expiredBatches, nearEdBatches, lossProducts, zeroProducts, defectaProducts, currentStockVal, currentStockUnits };
+  }
+
+  /**
+   * Hitung laba kotor per transaksi secara konsisten (menggunakan estimasi_margin, total_hpp,
+   * atau fallback dari detailPenjualan x hpp_unit/hpp_avg agar setiap transaksi selalu terhitung akurat).
+   */
+  function _calcPosTrxLaba(st, p) {
+    if (!p) return 0;
+    if (String(p.status_trx || '').toUpperCase() === 'RETUR') return 0;
+    const grand = Number(p.grand_total || 0);
+    if (p.estimasi_margin !== undefined && p.estimasi_margin !== null && p.estimasi_margin !== '') {
+      const em = Number(p.estimasi_margin);
+      if (em !== 0 || grand === 0 || Number(p.total_hpp || 0) > 0) return em;
+    }
+    const hppRow = Number(p.total_hpp || 0);
+    if (hppRow > 0) return grand - hppRow;
+    const dets = (st && st.detailPenjualan ? st.detailPenjualan : []).filter((d) =>
+      (p.id_transaksi && d.id_transaksi === p.id_transaksi) ||
+      (p.no_invoice && d.no_invoice === p.no_invoice)
+    );
+    if (dets.length) {
+      let estHpp = 0;
+      dets.forEach((d) => {
+        const netQty = Math.max(0, Number(d.qty || 0) - Number(d.qty_retur || 0));
+        if (netQty <= 0) return;
+        const ob = (st && st.masterObat ? st.masterObat : []).find((o) => o.id_obat === d.id_obat);
+        const uHpp = Number(d.hpp_unit || (ob && (ob.hpp_avg || ob.hpp_terakhir)) || 0);
+        estHpp += netQty * uHpp;
+      });
+      if (estHpp > 0) return grand - estHpp;
+    }
+    return 0;
   }
 
   function _compactNumLabel(v) {
@@ -1937,10 +1969,10 @@
     const todaySales = validSales.filter((p) => toLocalYmd_(p.tanggal) === todayIso);
     const omzetHariIni = todaySales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const omzetTotal = validSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
-    const marginHariIni = seeCost ? todaySales.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : null;
-    const marginTotal = seeCost ? validSales.reduce((s, p) => s + Number(p.estimasi_margin || 0), 0) : null;
-    const marginDenom = omzetHariIni > 0 ? omzetHariIni : omzetTotal;
-    const marginNum = omzetHariIni > 0 ? (marginHariIni || 0) : (marginTotal || 0);
+    const marginHariIni = seeCost ? todaySales.reduce((s, p) => s + _calcPosTrxLaba(st, p), 0) : null;
+    const marginTotal = seeCost ? validSales.reduce((s, p) => s + _calcPosTrxLaba(st, p), 0) : null;
+    const marginDenom = omzetTotal > 0 ? omzetTotal : omzetHariIni;
+    const marginNum = omzetTotal > 0 ? (marginTotal || 0) : (marginHariIni || 0);
     const marginPct = seeCost && marginDenom > 0 ? Math.round((marginNum / marginDenom) * 100) : 0;
 
     const expiredBatches = invStatus.expiredBatches;
@@ -1998,7 +2030,7 @@
       days.push(offset === 0 ? 'Hari Ini' : dayNames[dt.getDay()]);
       const daySales = validSales.filter((p) => toLocalYmd_(p.tanggal) === iso);
       omzSeries.push(daySales.reduce((acc, p) => acc + Number(p.grand_total || 0), 0));
-      labaSeries.push(seeCost ? daySales.reduce((acc, p) => acc + Number(p.estimasi_margin || 0), 0) : 0);
+      labaSeries.push(seeCost ? daySales.reduce((acc, p) => acc + _calcPosTrxLaba(st, p), 0) : 0);
     }
     const maxVal = Math.max(...omzSeries, 100000);
     const total7Hari = omzSeries.reduce((a, b) => a + b, 0);
@@ -2039,6 +2071,8 @@
     const rangeValidSales = validSales.filter((p) => _inDashRange(p.tanggal, range));
     const rangeReturSales = returSales.filter((p) => _inDashRange(p.tanggal, range));
     const rangeSalesSum = rangeValidSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const rangeProfitSum = seeCost ? rangeValidSales.reduce((s, p) => s + _calcPosTrxLaba(st, p), 0) : 0;
+    const rangeProfitPct = (seeCost && rangeSalesSum > 0) ? Math.round((rangeProfitSum / rangeSalesSum) * 1000) / 10 : 0;
     const rangeReturSum = rangeReturSales.reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const rangeLostSales = _getDashLostSales(range);
     const rangeLostQty = rangeLostSales.reduce((s, l) => s + Number(l.qty || 1), 0);
@@ -2267,7 +2301,7 @@
         <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-emerald-500 transition-colors" onclick="navigateView('obat','pelanggan')">
           <div class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Pelanggan / CRM</div>
           <div class="text-base sm:text-lg font-extrabold font-mono-num text-emerald-700 dark:text-emerald-300">${st.members.length} Member</div>
-          <div class="text-[10px] text-slate-500 truncate">${totalPoinMember} poin loyalitas aktif</div>
+          <div class="text-[10px] text-slate-500 truncate">Data pasien &amp; terapi rutin</div>
         </div>
         <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-purple-500 transition-colors" onclick="navigateView('faktur','pbf')">
           <div class="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Distributor &amp; Mitra</div>
@@ -2297,13 +2331,13 @@
         ${seeCost ? `<div class="ons-kpi-card is-emerald" ${canFin ? `onclick="navigateView('finance','pnl')"` : ''}>
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Estimasi Laba Kotor</div>
-              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight leading-tight break-words">${S().rp(omzetHariIni > 0 ? marginHariIni : marginTotal)}</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Laba Penjualan</div>
+              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 ${(marginTotal || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'} tracking-tight leading-tight break-words">${S().rp(marginTotal || 0)}</div>
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 font-extrabold text-[13px] tracking-tight" aria-hidden="true">${marginPct}%</span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
-            <span class="truncate" style="color:var(--ons-text-soft)">${omzetHariIni > 0 ? 'Hari ini &bull; Akumulasi ' + S().rp(marginTotal) : 'Akumulasi tercatat (' + validSales.length + ' nota)'}</span>
+            <span class="truncate" style="color:var(--ons-text-soft)">Hari ini: <b class="text-emerald-600 font-mono-num">${S().rp(marginHariIni || 0)}</b> &bull; Total ${validSales.length} nota</span>
             ${canFin ? `<span class="font-semibold text-emerald-600 shrink-0">Buka P&amp;L &rarr;</span>` : ''}
           </div>
         </div>` : `<div class="ons-kpi-card is-emerald" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
@@ -2315,7 +2349,7 @@
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
-            <span class="truncate" style="color:var(--ons-text-soft)">${branchPoct.length} riwayat &bull; ${totalPoinMember} poin member</span>
+            <span class="truncate" style="color:var(--ons-text-soft)">${branchPoct.length} riwayat pemeriksaan klinik</span>
             ${canPoct ? `<span class="font-semibold text-emerald-600 shrink-0">Periksa &rarr;</span>` : ''}
           </div>
         </div>`}
@@ -2370,7 +2404,7 @@
           </span>
           ${_renderDashFilterBar(range, `<button type="button" onclick="window.setDashboardTab('penjualan')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Detail Penjualan &rarr;</button>`)}
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 ${seeCost ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5">
           <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
             <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 font-extrabold text-sm">Rp</span>
             <div class="min-w-0">
@@ -2378,6 +2412,13 @@
               <div class="text-lg font-extrabold font-mono-num mt-0.5">${rangeValidSales.length} nota &bull; <span class="text-emerald-600">${S().rp(rangeSalesSum)}</span></div>
             </div>
           </div>
+          ${seeCost ? `<div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600 font-extrabold text-xs">${rangeProfitPct}%</span>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Laba (${S().esc(range.label)})</div>
+              <div class="text-lg font-extrabold font-mono-num mt-0.5 ${rangeProfitSum >= 0 ? 'text-blue-600' : 'text-red-600'}">${S().rp(rangeProfitSum)}</div>
+            </div>
+          </div>` : ''}
           <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
             <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
             <div class="min-w-0">
@@ -3242,10 +3283,8 @@
 
     const rencanaPembelianRp = (st.masterObat || []).reduce((sum, o) => {
       const stok = S().getSellableStok(o.id_obat);
-      const min = Number(o.stok_min || 10);
-      const max = Number(o.stok_max || min * 4);
-      if (stok > min) return sum;
-      const qtyOrder = Math.max(1, max - Math.max(0, stok));
+      if (!(S().isCriticalStock ? S().isCriticalStock(o, stok) : stok <= 0)) return sum;
+      const qtyOrder = S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, stok) : 1;
       return sum + qtyOrder * Number(o.hpp_terakhir || o.hpp_avg || 0);
     }, 0);
 
@@ -3517,8 +3556,7 @@
     // Prioritas Defecta Kritis
     const defectaList = (st.masterObat || []).filter((o) => {
       const stok = S().getSellableStok(o.id_obat);
-      const min = Number(o.stok_min || 10);
-      return stok <= min;
+      return S().isCriticalStock ? S().isCriticalStock(o, stok) : stok <= 0;
     }).slice(0, 5);
 
     return `<div class="space-y-5">
@@ -3666,14 +3704,14 @@
             <tbody>
               ${defectaList.map((o) => {
                 const stok = S().getSellableStok(o.id_obat);
-                const min = Number(o.stok_min || 10);
-                const max = Number(o.stok_max || min * 4);
-                const saran = Math.max(1, max - Math.max(0, stok));
+                const minVal = S().getStokMin ? S().getStokMin(o) : null;
+                const maxVal = S().getStokMax ? S().getStokMax(o) : null;
+                const saran = S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, stok) : 1;
                 return `<tr>
                   <td class="font-semibold">${S().esc(o.nama_dagang)}</td>
                   <td>${S().bpomBadge(o.golongan_bpom || 'BEBAS')}</td>
                   <td><span class="badge-bpom ${stok === 0 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num font-bold">${stok} ${S().esc(o.satuan_terkecil || 'pcs')}</span></td>
-                  <td class="font-mono-num">${min} &bull; ${max}</td>
+                  <td class="font-mono-num">${minVal !== null ? minVal : '-'} &bull; ${maxVal !== null ? maxVal : '-'}</td>
                   <td class="font-mono-num font-extrabold text-blue-600">${saran} ${S().esc(o.satuan_terkecil || 'pcs')}</td>
                   <td>${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5 font-bold">Pesan SP &rarr;</button>` : '-'}</td>
                 </tr>`;
@@ -3944,7 +3982,7 @@
       }
       const sellStok = S().getSellableStok(o.id_obat);
       if (posStockFilter === 'READY' && sellStok <= 0) return false;
-      if (posStockFilter === 'LOW' && (sellStok <= 0 || sellStok > Number(o.stok_min || 10))) return false;
+      if (posStockFilter === 'LOW' && !(S().isLowStock ? S().isLowStock(o, sellStok) : false)) return false;
       if (posStockFilter === 'NEAR_ED') {
         const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(o.id_obat, 90) : { hasNearEd: false };
         if (!nearEd.hasNearEd) return false;
@@ -3981,7 +4019,7 @@
       const edBadgeCls = edDays === null ? '' : (edDays <= 90 ? 'text-red-600 font-bold' : (edDays <= 180 ? 'text-amber-600 font-semibold' : 'text-emerald-600'));
       const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(o.id_obat, 90) : { hasNearEd: false };
       const qtyInCart = inCartMap[o.id_obat] || 0;
-      const isLow = sellStok > 0 && sellStok <= Number(o.stok_min || 10);
+      const isLow = S().isLowStock ? S().isLowStock(o, sellStok) : false;
       const isEmpty = sellStok <= 0;
 
       // Standarisasi Satuan 1, Satuan 2, Satuan 3 & Harga Jual 1, 2, 3 (Sinkron Kasir POS)
@@ -4120,8 +4158,8 @@
     const returNominalToday = todayReturRows.reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const tunaiToday = todayRows.filter((p) => String(p.metode_bayar || '').toUpperCase() === 'TUNAI').reduce((s, p) => s + Number(p.grand_total || 0), 0);
     const nonTunaiToday = Math.max(0, omzetToday - tunaiToday);
-    const labaToday = seeCost ? todayRows.reduce((s, p) => s + Number(p.estimasi_margin !== undefined ? p.estimasi_margin : (Number(p.grand_total || 0) - Number(p.total_hpp || 0))), 0) : 0;
-    const poinToday = todayRows.reduce((s, p) => s + Number(p.poin_didapat || 0), 0);
+    const labaToday = seeCost ? todayRows.reduce((s, p) => s + _calcPosTrxLaba(S().AppState, p), 0) : 0;
+    const poinToday = 0;
     return {
       countToday: todayRows.length,
       todayRetur: todayReturRows.length,
@@ -4227,16 +4265,19 @@
   }
 
   function _renderPosHistorySummaryAndRowsHtml(st, filteredSales) {
+    const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
     const activeSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() !== 'RETUR');
     const returSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR');
     const partialReturSubset = filteredSales.filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR_SEBAGIAN');
     const activeNominal = activeSubset.reduce((s, p) => s + Number(p.grand_total || 0), 0);
+    const activeLaba = seeCost ? activeSubset.reduce((s, p) => s + _calcPosTrxLaba(st, p), 0) : 0;
     const returNominal = returSubset.reduce((s, p) => s + Number(p.grand_total || 0), 0);
 
     const summaryHtml = `<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
       <div>Menampilkan <b class="font-mono-num">${filteredSales.length}</b> transaksi${filteredSales.length > 80 ? ' (80 terbaru)' : ''}</div>
       <div class="flex flex-wrap items-center gap-3 font-mono-num">
         <span>Netto Aktif: <b class="text-emerald-600">${S().rp(activeNominal)}</b> (${activeSubset.length} nota)</span>
+        ${seeCost ? `<span>Total Laba: <b class="${activeLaba >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600'}">${S().rp(activeLaba)}</b>${activeNominal > 0 ? ` (${Math.round((activeLaba / activeNominal) * 1000) / 10}%)` : ''}</span>` : ''}
         ${partialReturSubset.length ? `<span class="text-amber-600 dark:text-amber-400 font-bold">Retur Sebagian: ${partialReturSubset.length} nota</span>` : ''}
         ${returSubset.length ? `<span class="text-red-600 dark:text-red-400 font-bold">Penanda Void Penuh: ${returSubset.length} nota (-${S().rp(returNominal)})</span>` : ''}
       </div>
@@ -4246,6 +4287,9 @@
       const mem = (st.members || []).find((m) => m.id_member === p.id_member);
       const ret = _extractPosReturInfo(p, st.mutasiStok);
       const items = _getPosItemsForTrx(st, p);
+      const trxLaba = seeCost ? _calcPosTrxLaba(st, p) : 0;
+      const trxGrand = Number(p.grand_total || 0);
+      const trxMarginPct = (seeCost && !ret.isFullRetur && trxGrand > 0) ? Math.round((trxLaba / trxGrand) * 1000) / 10 : 0;
       const itemPreview = items.length
         ? items.slice(0, 2).map((it) => {
             const qtyRet = Number(it.qty_retur || 0);
@@ -4291,9 +4335,14 @@
             <span class="text-[11px] line-through opacity-65">${S().rp(p.grand_total)}</span>
             <div class="font-extrabold text-red-600 dark:text-red-400">-${S().rp(p.grand_total)} (Dibatalkan)</div>
           </div>` : `<div class="mt-1 font-mono-num font-extrabold text-sm">${S().rp(p.grand_total)}${ret.isPartialRetur ? ' <span class="text-[10px] font-normal text-amber-600">(Netto)</span>' : ''}</div>
-          ${Number(p.diskon_total || 0) > 0 ? `<div class="text-[10px] text-emerald-600 font-semibold">Disc -${S().rp(p.diskon_total)}</div>` : ''}
-          ${Number(p.poin_didapat || 0) > 0 ? `<div class="text-[10px] text-amber-600 font-semibold">+${Number(p.poin_didapat)} poin</div>` : ''}`}
+          ${Number(p.diskon_total || 0) > 0 ? `<div class="text-[10px] text-emerald-600 font-semibold">Disc -${S().rp(p.diskon_total)}</div>` : ''}`}
         </td>
+        ${seeCost ? `<td class="text-xs align-top font-mono-num whitespace-nowrap">
+          ${ret.isFullRetur
+            ? `<div class="text-[11px] text-slate-400 line-through">Rp 0</div><div class="text-[10px] text-red-500">Void</div>`
+            : `<div class="font-extrabold ${trxLaba >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600'}">${trxLaba >= 0 ? '+' : ''}${S().rp(trxLaba)}</div>
+               <div class="text-[10px]" style="color:var(--ons-text-soft)">Margin ${trxMarginPct}%</div>`}
+        </td>` : ''}
         <td class="align-top">
           <span class="badge-bpom ${statusCls}">${statusLabel}</span>
           ${ret.hasReturHistory && ret.tglRetur ? `<div class="text-[10px] font-mono-num mt-1 ${ret.isFullRetur ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'}">${S().formatTgl(ret.tglRetur, true)}</div>` : ''}
@@ -4307,12 +4356,12 @@
           </div>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="8" class="text-center py-8 text-xs">
+    }).join('') || `<tr><td colspan="${seeCost ? 9 : 8}" class="text-center py-8 text-xs">
       <div class="font-semibold mb-1">Data tidak ditemukan pada filter saat ini.</div>
       <button type="button" onclick="window.resetPosHistFilters()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-3 mt-1">Reset Filter Pencarian</button>
     </td></tr>`;
 
-    return { summaryHtml, rowsHtml, activeNominal, activeCount: activeSubset.length };
+    return { summaryHtml, rowsHtml, activeNominal, activeLaba, activeCount: activeSubset.length };
   }
 
   function _syncPosHistoryDomOnly() {
@@ -4323,14 +4372,16 @@
     }
     const st = S().AppState;
     const { filtered } = _getFilteredPosHistoryRows(st);
-    const { summaryHtml, rowsHtml, activeNominal, activeCount } = _renderPosHistorySummaryAndRowsHtml(st, filtered);
+    const { summaryHtml, rowsHtml, activeNominal, activeLaba, activeCount } = _renderPosHistorySummaryAndRowsHtml(st, filtered);
     tbody.innerHTML = rowsHtml;
     const sumEl = document.getElementById('posHistorySummaryLine');
     if (sumEl) sumEl.innerHTML = summaryHtml;
     const totEl = document.getElementById('posRekapTotalSales');
-    if (totEl) totEl.textContent = S().rp(activeNominal);
+    if (totEl) totEl.textContent = ': ' + S().rp(activeNominal);
+    const labaEl = document.getElementById('posRekapTotalLaba');
+    if (labaEl) labaEl.textContent = ': ' + S().rp(activeLaba);
     const cntEl = document.getElementById('posRekapCountSales');
-    if (cntEl) cntEl.textContent = `${activeCount} transaksi`;
+    if (cntEl) cntEl.textContent = `: ${activeCount} transaksi`;
     const clrBtn = document.getElementById('posHistClearBtn');
     if (clrBtn) clrBtn.classList.toggle('hidden', !posHistQ.trim());
   }
@@ -4338,9 +4389,10 @@
   function renderPosHistoryView(st, subTabHeader) {
     const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
     const { periodRows, filtered: filteredSales } = _getFilteredPosHistoryRows(st);
-    const { summaryHtml, rowsHtml, activeNominal, activeCount } = _renderPosHistorySummaryAndRowsHtml(st, filteredSales);
+    const { summaryHtml, rowsHtml, activeNominal, activeLaba, activeCount } = _renderPosHistorySummaryAndRowsHtml(st, filteredSales);
     const ds = buildPosDailySummaryStats(st.penjualan, seeCost);
-    const marginPct = ds.omzetToday > 0 ? Math.round((ds.labaToday / ds.omzetToday) * 1000) / 10 : 0;
+    const filteredMarginPct = activeNominal > 0 ? Math.round((activeLaba / activeNominal) * 1000) / 10 : 0;
+    const avgBasketToday = ds.countToday > 0 ? Math.round(ds.omzetToday / ds.countToday) : 0;
 
     const allReturRows = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase() === 'RETUR');
     const allReturNominal = allReturRows.reduce((s, p) => s + Number(p.grand_total || 0), 0);
@@ -4377,13 +4429,13 @@
           <div class="text-[11px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">Non-Tunai/Tempo: <b>${S().rp(ds.nonTunaiToday)}</b></div>
         </div>
         ${seeCost ? `<div class="ons-card p-3.5" style="border-top:3px solid #D97706">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Est. Laba Kotor Hari Ini</div>
-          <div class="text-xl font-extrabold font-mono-num ${ds.labaToday >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-1">${S().rp(ds.labaToday)}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Margin kotor rata-rata: <b class="font-mono-num">${marginPct}%</b></div>
+          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Total Laba (Filter Aktif)</div>
+          <div class="text-xl font-extrabold font-mono-num ${activeLaba >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-1">${S().rp(activeLaba)}</div>
+          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hari ini: <b class="font-mono-num">${S().rp(ds.labaToday)}</b> &bull; Margin <b class="font-mono-num">${filteredMarginPct}%</b></div>
         </div>` : `<div class="ons-card p-3.5" style="border-top:3px solid #D97706">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Poin Loyalitas Terbit</div>
-          <div class="text-xl font-extrabold font-mono-num text-amber-600 mt-1">+${ds.poinToday} Poin</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Otomatis dikreditkan ke Member Apotek</div>
+          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Rata-Rata Nilai Nota</div>
+          <div class="text-xl font-extrabold font-mono-num text-amber-600 mt-1">${S().rp(avgBasketToday)}</div>
+          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Rata-rata belanja per transaksi hari ini</div>
         </div>`}
       </div>
 
@@ -4468,7 +4520,7 @@
 
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Struk</th><th>Pelanggan</th><th>Produk</th><th>Total Penjualan</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Struk</th><th>Pelanggan</th><th>Produk</th><th>Total Penjualan</th>${seeCost ? '<th>Laba</th>' : ''}<th>Status</th><th>Actions</th></tr></thead>
             <tbody id="posHistoryTableBody">${rowsHtml}</tbody>
           </table>
         </div>
@@ -4479,11 +4531,15 @@
           <span>Rekap dari ${S().esc(rekapRangeTxt)}</span>
           <span aria-hidden="true">${posRekapExpanded ? '&#9650;' : '&#9660;'}</span>
         </button>
-        ${posRekapExpanded ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 mt-2 border-t" style="border-color:var(--ons-border)">
+        ${posRekapExpanded ? `<div class="grid grid-cols-1 ${seeCost ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4 pt-3 mt-2 border-t" style="border-color:var(--ons-border)">
           <div class="flex items-center justify-between gap-2">
             <span style="color:var(--ons-text-soft)">Total Penjualan</span>
             <span id="posRekapTotalSales" class="font-mono-num font-extrabold text-sm text-emerald-600">: ${S().rp(activeNominal)}</span>
           </div>
+          ${seeCost ? `<div class="flex items-center justify-between gap-2">
+            <span style="color:var(--ons-text-soft)">Total Laba</span>
+            <span id="posRekapTotalLaba" class="font-mono-num font-extrabold text-sm ${activeLaba >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600'}">: ${S().rp(activeLaba)}</span>
+          </div>` : ''}
           <div class="flex items-center justify-between gap-2">
             <div>
               <div style="color:var(--ons-text-soft)">Jumlah Transaksi Penjualan</div>
@@ -4981,7 +5037,6 @@
           ${member ? `<div class="p-2.5 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-primary-tint);border-color:var(--ons-primary);">
             <div class="min-w-0 flex-1"><b>Pasien:</b> ${S().esc(member.nama_pasien)} &bull; <b>Alergi:</b> <span class="text-red-600 font-bold">${S().esc(member.alergi_list || 'Tidak Ada')}</span> &bull; <b>Kondisi:</b> ${S().esc(member.penyakit_kronis || '-')}</div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <span class="font-mono-num font-bold text-blue-700">${member.poin_loyalitas} Poin</span>
               ${typeof global.openMemberProfileDrawer === 'function' ? `<button type="button" onclick="window.openMemberProfileDrawer('${S().esc(member.id_member)}')" class="ons-btn ons-btn-ghost text-[10px] py-0.5 px-2 min-h-0 h-6">Profil</button>` : ''}
             </div>
           </div>` : ''}
@@ -5549,6 +5604,7 @@
 
   global.exportPosHistoryExcel = (fmt) => {
     const st = S().AppState;
+    const seeCost = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
     const rawList = (typeof _getFilteredPosHistoryRows === 'function' ? _getFilteredPosHistoryRows(st).filtered : (st.penjualan || [])).slice();
     const rows = rawList.map((p, idx) => {
       const mem = (st.members || []).find((m) => m.id_member === p.id_member);
@@ -5567,6 +5623,7 @@
         subtotal: Number(p.subtotal || 0),
         diskon_total: Number(p.diskon_total || 0),
         grand_total: Number(p.grand_total || 0),
+        laba_trx: seeCost ? _calcPosTrxLaba(st, p) : 0,
         status_trx: ret.isRetur ? 'RETUR / VOID' : (p.status_trx || 'LUNAS'),
         retur_ket: returKet
       };
@@ -5588,6 +5645,7 @@
         { key: 'subtotal', label: 'Subtotal (Rp)', type: 'currency', sum: true, width: 16 },
         { key: 'diskon_total', label: 'Diskon (Rp)', type: 'currency', sum: true, width: 15 },
         { key: 'grand_total', label: 'Grand Total (Rp)', type: 'currency', sum: true, width: 17 },
+        ...(seeCost ? [{ key: 'laba_trx', label: 'Laba (Rp)', type: 'currency', sum: true, width: 16 }] : []),
         { key: 'status_trx', label: 'Status', type: 'status', width: 14 },
         { key: 'retur_ket', label: 'Keterangan Retur / Void', type: 'wrap', width: 32 }
       ], rows, {
@@ -6946,7 +7004,7 @@
         TOTAL: trx.grand_total,
         DIBAYAR: trx.grand_total,
         KEMBALI: 0,
-        POIN: trx.poin_didapat || 0,
+        POIN: 0,
         CATATAN: trx.status_trx === 'RETUR' ? 'STATUS: TRANSAKSI DIRETUR' : 'Terima kasih!',
         QR_URL: global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(trx.no_invoice) + '&tot=' + encodeURIComponent(String(trx.grand_total || 0))
       };
@@ -7150,18 +7208,6 @@
       ${isBelowHpp ? `<div class="p-3 rounded-xl border border-red-500 bg-red-500/15 text-xs space-y-1 text-red-700 dark:text-red-300">
         <div class="font-extrabold">&#9888;&#65039; GUARD ANTI-RUGI: HARGA JUAL DI BAWAH HPP MODAL!</div>
         <div>Total Jual: <b class="font-mono-num">${S().rp(total)}</b>${seeCost ? ` &bull; Modal HPP: <b class="font-mono-num">${S().rp(estHppCart)}</b> (Selisih Rugi: <b class="font-mono-num">${S().rp(estHppCart - total)}</b>)` : ' &bull; Di bawah batas minimum modal'}. Wajib otorisasi PIN APJ/Pemilik.</div>
-      </div>` : ''}
-
-      ${maxRedeemPoin > 0 ? `<div class="p-3 rounded-xl border text-xs space-y-1.5" style="border-color:var(--ons-border)">
-        <div class="flex justify-between items-center font-bold">
-          <span>Tukar Poin Member (${S().esc(member.nama_pasien)})</span>
-          <span class="text-emerald-600">Saldo: ${member.poin_loyalitas} poin</span>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <input id="posRedeemPoinInp" type="number" min="0" max="${maxRedeemPoin}" value="0" oninput="window.recalcPosModalNetTotal(${total}, '${S().esc(invPreview)}')" class="ons-input font-mono-num w-28 py-1 text-xs"/>
-          <span class="flex-1" style="color:var(--ons-text-soft)">poin (1 poin = Rp 100, maks ${maxRedeemPoin})</span>
-          <button type="button" onclick="document.getElementById('posRedeemPoinInp').value=${maxRedeemPoin};window.recalcPosModalNetTotal(${total}, '${S().esc(invPreview)}');" class="ons-quick-denom text-[11px]">Pakai Maks (${maxRedeemPoin})</button>
-        </div>
       </div>` : ''}
 
       ${metode === 'QRIS' ? `<div class="text-center space-y-2 p-3 rounded-xl border" style="border-color:var(--ons-border)">
@@ -7497,7 +7543,7 @@
         TOTAL: grandTotal,
         DIBAYAR: metode === 'PIUTANG' ? piutangDp : tunaiBayar,
         KEMBALI: kembaliRp,
-        POIN: Math.floor(grandTotal / 10000),
+        POIN: 0,
         CATATAN: [apjOverride ? ('Diverifikasi APJ: ' + apjOverride) : '', catatanGabung || 'Konsultasi obat GRATIS bersama Apoteker kami.'].filter(Boolean).join(' • '),
         QR_URL: global.location.origin + global.location.pathname + '?nota=' + encodeURIComponent(notaNo) + '&tot=' + encodeURIComponent(String(grandTotal || 0))
       }, 58, waTarget, itemsCopy);
