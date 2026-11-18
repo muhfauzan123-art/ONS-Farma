@@ -1002,10 +1002,15 @@
                     const stokSys = it.id_obat && !String(it.id_obat).startsWith('CUSTOM-') ? S().getSellableStok(it.id_obat) : '-';
                     const sedangSys = it.id_obat ? Number(pendingMap[it.id_obat] || 0) : 0;
                     const hppVal = Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit || 0));
+                    const bench = (it.id_obat && S().getObatPurchaseBenchmark) ? S().getObatPurchaseBenchmark(it.id_obat) : null;
+                    const cheap = bench && bench.cheapestBuy && bench.cheapestBuy.hpp > 0 ? bench.cheapestBuy : null;
+                    const isOverCheap = cheap && hppVal > cheap.hpp;
+                    const overPct = isOverCheap ? Math.round(((hppVal - cheap.hpp) / cheap.hpp) * 100) : 0;
                     return `<tr>
                       <td class="font-mono-num text-xs">${idx + 1}.</td>
                       <td>
                         <input class="ons-input text-xs font-bold py-1 min-h-0 min-w-[150px]" value="${S().esc(it.nama_dagang)}" onchange="window.updateSpDraftField(${idx}, 'nama_dagang', this.value)"/>
+                        ${cheap ? `<div class="text-[10px] font-mono-num mt-0.5 ${isOverCheap ? 'text-amber-600 font-bold' : ''}" style="${isOverCheap ? '' : 'color:var(--ons-text-soft)'}">💡 PBF Termurah: <b>${S().esc(cheap.pbf)}</b> @ ${S().rp(cheap.hpp)}${isOverCheap ? ` (+${overPct}% lebih mahal)` : ''}</div>` : ''}
                       </td>
                       <td class="text-right font-mono-num text-xs font-semibold">${stokSys}</td>
                       <td class="text-right font-mono-num text-xs">${sedangSys > 0 ? `<span class="badge-bpom bpom-terbatas">${sedangSys}</span>` : '0'}</td>

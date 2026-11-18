@@ -1897,6 +1897,10 @@
             <button type="button" onclick="window.openObatBatchEditModal()" class="ons-float-item"><span>✏️</span><span>Ubah Sekaligus</span></button>
             <button type="button" onclick="window.openBulkMarginWizard()" class="ons-float-item"><span>📊</span><span>Evaluasi Margin Massal</span></button>
             <button type="button" onclick="window.openPrintMasterLabelsModal()" class="ons-float-item"><span>🔖</span><span>Cetak Barcode Massal</span></button>
+            ${(() => {
+              const chgCount = S().getTodayChangedPriceObatIds ? S().getTodayChangedPriceObatIds().length : 0;
+              return `<button type="button" onclick="window.openChangedPriceLabelsModal()" class="ons-float-item"><span>🏷️</span><span>Label Harga Berubah Hari Ini${chgCount > 0 ? ` <b class="text-emerald-600">(${chgCount})</b>` : ''}</span></button>`;
+            })()}
             <div class="ons-float-sep"></div>
             <button type="button" onclick="window.syncAutoDetectGolonganBpom()" class="ons-float-item"><span>⚡</span><span>Deteksi Golongan BPOM Otomatis</span></button>
           </div>
@@ -3675,10 +3679,14 @@
     all.forEach((o) => {
       const hpp = Number(o.hpp_avg || o.hpp_terakhir || 0);
       if (hpp > 0) {
+        const oldH1 = Number(o.harga_umum || o.harga_jual_1 || 0);
         let calc = hpp * (1 + pct / 100);
         calc = Math.round(calc / rnd) * rnd;
         o.harga_jual_1 = calc;
         o.harga_umum = calc;
+        if (calc !== oldH1 && S().markObatPriceChanged) {
+          S().markObatPriceChanged(o.id_obat, oldH1, calc);
+        }
         const r2 = Number(o.rasio_2 || o.rasio_sedang || 1);
         const r3 = Number(o.rasio_3 || o.rasio_besar || 1);
         if (o.satuan_2 && r2 > 1) {
@@ -3695,8 +3703,131 @@
       }
     });
     S().closeModal();
-    if (global.toast) global.toast(`Berhasil menyesuaikan margin ${pct}% untuk ${count} produk obat.`, 'ok');
+    if (global.toast) global.toast(`Berhasil menyesuaikan margin ${pct}% untuk ${count} produk obat. Label harga siap dicetak!`, 'ok');
     if (global.renderActiveView) global.renderActiveView();
+  };
+
+  /**
+   * #6 Cetak Label Harga Rak (Shelf Talker) Khusus Obat yang Harganya Berubah Hari Ini
+   */
+  global.openChangedPriceLabelsModal = (showAll = false) => {
+    const st = S().AppState;
+    const allObat = st.masterObat || [];
+    const log = S().getPriceChangedLog ? S().getPriceChangedLog() : {};
+    const changedIds = S().getTodayChangedPriceObatIds ? S().getTodayChangedPriceObatIds() : [];
+    const todayStr = S().formatEd ? S().formatEd(new Date().toISOString().slice(0, 10)) : new Date().toISOString().slice(0, 10);
+    const list = showAll
+      ? allObat
+      : allObat.filter((o) => changedIds.includes(o.id_obat));
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex items-start justify-between gap-2 pb-2 border-b" style="border-color:var(--ons-border)">
+        <div>
+          <span class="badge-bpom bpom-bebas">SHELF TALKER MASSAL (70 &times; 45 mm)</span>
+          <h3 class="font-extrabold text-base mt-1">🏷️ Cetak Label Harga Rak — Perubahan Hari Ini (${todayStr})</h3>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis mendeteksi produk yang harga jualnya baru diperbarui hari ini (via Edit Obat, Evaluasi Margin, atau Penyesuaian Harga dari Faktur PBF).</p>
+        </div>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="inline-flex rounded-lg border p-0.5 text-[11px]" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+          <button type="button" onclick="window.openChangedPriceLabelsModal(false)" class="px-2.5 py-1 rounded-md font-semibold ${!showAll ? 'bg-blue-600 text-white' : ''}">Berubah Hari Ini (${changedIds.length})</button>
+          <button type="button" onclick="window.openChangedPriceLabelsModal(true)" class="px-2.5 py-1 rounded-md font-semibold ${showAll ? 'bg-blue-600 text-white' : ''}">Semua Master Obat (${allObat.length})</button>
+        </div>
+        ${list.length ? `<div class="flex gap-1.5">
+          <button type="button" onclick="document.querySelectorAll('.ons-chg-lbl-chk').forEach(c=>c.checked=true)" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Pilih Semua</button>
+          <button type="button" onclick="document.querySelectorAll('.ons-chg-lbl-chk').forEach(c=>c.checked=false)" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Kosongkan</button>
+        </div>` : ''}
+      </div>
+
+      ${list.length ? `<div class="max-h-72 overflow-y-auto border rounded-xl divide-y" style="border-color:var(--ons-border)">
+        ${list.map((o) => {
+          const rec = log[o.id_obat];
+          const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+          const oldP = rec ? Number(rec.old_price || 0) : 0;
+          const isChg = changedIds.includes(o.id_obat);
+          return `<label class="flex items-center justify-between gap-3 p-2.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <input type="checkbox" class="ons-chg-lbl-chk rounded" value="${S().esc(o.id_obat)}" ${isChg || !showAll ? 'checked' : ''}/>
+              <div class="min-w-0">
+                <div class="font-bold truncate">${S().esc(o.nama_dagang)}</div>
+                <div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Rak: <b>${S().esc(o.rak_lokasi || 'RAK-UTAMA')}</b> &bull; Satuan: ${S().esc(o.satuan_dasar || 'Unit')}</div>
+              </div>
+            </div>
+            <div class="text-right font-mono-num shrink-0">
+              <div class="font-extrabold text-blue-600">${S().rp(h1)}</div>
+              ${isChg && oldP > 0 && oldP !== h1 ? `<div class="text-[10px] text-emerald-600">Lama: <span class="line-through text-slate-400">${S().rp(oldP)}</span></div>` : ''}
+            </div>
+          </label>`;
+        }).join('')}
+      </div>` : `<div class="p-6 rounded-xl border text-center space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="text-2xl">🏷️</div>
+        <div class="font-bold">Belum ada obat yang harga jualnya diubah hari ini (${todayStr}).</div>
+        <p class="text-[11px]" style="color:var(--ons-text-soft)">Begitu Anda mengubah harga obat di Master Obat atau menyesuaikan harga saat input Faktur PBF, produk otomatis muncul di sini siap cetak.</p>
+        <button type="button" onclick="window.openChangedPriceLabelsModal(true)" class="ons-btn ons-btn-ghost text-xs mt-1">Lihat Semua Master Obat</button>
+      </div>`}
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <span class="text-[11px]" style="color:var(--ons-text-soft)">Format cetak A4 siap gunting (3 kolom &times; 70&times;45 mm)</span>
+        <div class="flex gap-2">
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+          ${list.length ? `<button type="button" onclick="window.printBatchShelfTalkers()" class="ons-btn ons-btn-primary text-xs font-bold px-4">🖨️ Cetak Label Rak Terpilih</button>` : ''}
+        </div>
+      </div>
+    </div>`, '620px');
+  };
+
+  global.printBatchShelfTalkers = () => {
+    const chks = Array.from(document.querySelectorAll('.ons-chg-lbl-chk:checked'));
+    if (!chks.length) return global.toast('Pilih minimal 1 produk untuk dicetak label raknya.', 'warn');
+    const ids = chks.map((c) => c.value);
+    const st = S().AppState;
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const usahaNama = prof.nama_usaha || 'APOTEK ONS FARMA';
+    const todayDisp = S().formatEd ? S().formatEd(new Date().toISOString().slice(0, 10)) : new Date().toISOString().slice(0, 10);
+
+    const cards = ids.map((id) => {
+      const o = (st.masterObat || []).find((x) => x.id_obat === id);
+      if (!o) return '';
+      const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+      const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
+      const r2 = s2 ? Math.max(1, Number(o.rasio_2 || o.rasio_sedang || 1)) : 1;
+      const valid2 = Boolean(s2 && s2.toLowerCase() !== s1.toLowerCase() && r2 > 1);
+      const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+      const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
+      const codeVal = o.kode_kfa || o.id_obat || '-';
+      return `<div style="border:1.8px solid #0d9488;border-radius:6px;padding:7px 9px;background:#fff;color:#0f172a;page-break-inside:avoid;display:flex;flex-direction:column;justify-content:space-between;min-height:122px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #99f6e4;padding-bottom:3px;margin-bottom:4px;">
+          <span style="font-size:8.5px;font-weight:800;color:#115e59;letter-spacing:0.3px;">${S().esc(usahaNama.toUpperCase())}</span>
+          <span style="font-size:8px;font-family:monospace;font-weight:700;padding:1px 4px;border-radius:3px;background:#f0fdfa;border:1px solid #5eead4;color:#115e59;">${S().esc(o.rak_lokasi || 'RAK')}</span>
+        </div>
+        <div style="margin-bottom:4px;">
+          <div style="font-size:11px;font-weight:900;line-height:1.2;text-transform:uppercase;">${S().esc(o.nama_dagang)}</div>
+          <div style="font-size:8.5px;color:#475569;margin-top:1px;">${S().esc(o.zat_aktif || '-')}</div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:4px 6px;display:flex;justify-content:space-between;align-items:flex-end;gap:6px;">
+          <div>
+            <div style="font-size:7.5px;font-weight:700;color:#64748b;text-transform:uppercase;">Harga / ${S().esc(s1)}</div>
+            <div style="font-size:14px;font-weight:900;color:#1d4ed8;font-family:monospace;line-height:1.1;">${S().rp(h1)}</div>
+          </div>
+          ${valid2 ? `<div style="text-align:right;">
+            <div style="font-size:7.5px;font-weight:700;color:#047857;text-transform:uppercase;">${S().esc(s2)} (Isi ${r2})</div>
+            <div style="font-size:11px;font-weight:800;color:#059669;font-family:monospace;">${S().rp(h2)}</div>
+          </div>` : ''}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:7.5px;color:#64748b;font-family:monospace;margin-top:4px;padding-top:2px;border-top:1px dashed #cbd5e1;">
+          <span>|||| ${S().esc(codeVal)}</span>
+          <span>Upd: ${S().esc(todayDisp)}</span>
+        </div>
+      </div>`;
+    }).filter(Boolean).join('');
+
+    const html = `<style>@page{size:A4 portrait;margin:8mm;}</style>
+      <div style="font-family:Arial,sans-serif;">
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;">${cards}</div>
+      </div>`;
+    S().printHtmlZone(html, `Label-Harga-Rak-${todayDisp}`);
   };
 
   const _getObatPurchaseHistory = (idObat) => {
@@ -5923,7 +6054,12 @@
       const stokMin = (rawStokMin !== '' && Number(rawStokMin) > 0) ? Number(rawStokMin) : '';
       const stokMax = (rawStokMax !== '' && Number(rawStokMax) > 0) ? Number(rawStokMax) : '';
 
-      await API().callApi('obat.save', {
+      const existingObatForLog = isEditObat ? (S().AppState.masterObat || []).find((x) => x.id_obat === val('wObatId')) : null;
+      const oldH1ForLog = existingObatForLog ? Number(existingObatForLog.harga_umum || existingObatForLog.harga_jual_1 || 0) : 0;
+      const oldH2ForLog = existingObatForLog ? Number(existingObatForLog.harga_sedang || existingObatForLog.harga_jual_2 || 0) : 0;
+      const oldH3ForLog = existingObatForLog ? Number(existingObatForLog.harga_besar || existingObatForLog.harga_jual_3 || 0) : 0;
+
+      const saveRes = await API().callApi('obat.save', {
         id_obat: val('wObatId'),
         nama_dagang: nama,
         zat_aktif: val('wZatAktif'),
@@ -5957,6 +6093,11 @@
         pbf_utama: val('wPbfUtama'),
         substitusi_ids: val('wSubstitusi')
       }, { isWrite: true });
+
+      const savedId = (saveRes && (saveRes.id_obat || (saveRes.obat && saveRes.obat.id_obat))) || val('wObatId');
+      if (savedId && S().markObatPriceChanged && (!isEditObat || oldH1ForLog !== hUmum || oldH2ForLog !== hSed || oldH3ForLog !== hBes)) {
+        S().markObatPriceChanged(savedId, oldH1ForLog, hUmum);
+      }
 
       S().closeModal();
       global.toast('✓ Produk ' + nama + ' (Harga ' + S().rp(hUmum) + ') berhasil disimpan ke Master Obat!', 'ok');
@@ -10711,7 +10852,10 @@
                 <tbody>
                   ${grnItems.map((it, idx) => {
                     const obRef = st.masterObat.find((m) => m.id_obat === it.id_obat);
-                    const oldHpp = obRef ? Number(obRef.hpp_terakhir || obRef.hpp_avg || 0) : 0;
+                    const bench = S().getObatPurchaseBenchmark ? S().getObatPurchaseBenchmark(it.id_obat) : null;
+                    const lastBuy = bench && bench.lastBuy ? bench.lastBuy : null;
+                    const cheapBuy = bench && bench.cheapestBuy ? bench.cheapestBuy : null;
+                    const oldHpp = lastBuy ? Number(lastBuy.hpp || 0) : (obRef ? Number(obRef.hpp_terakhir || obRef.hpp_avg || 0) : 0);
                     const newHpp = Number(it.hpp_unit || 0);
                     const qtyD = Math.max(1, Number(it.qty_dasar || 1));
                     const dItem = Math.max(0, Number(it.diskon_item || 0));
@@ -10721,7 +10865,11 @@
                       : 1;
                     const hargaPokokPreview = Math.round((rowNet / qtyD) * taxFactor);
                     const hppDiffPct = (oldHpp > 0 && hargaPokokPreview > oldHpp) ? Math.round(((hargaPokokPreview - oldHpp) / oldHpp) * 100) : 0;
-                    const hppBelowJual = obRef && hargaPokokPreview > 0 && Number(obRef.harga_umum || 0) > 0 && hargaPokokPreview >= Number(obRef.harga_umum || 0);
+                    const curSell = obRef ? Number(obRef.harga_umum || obRef.harga_jual_1 || 0) : 0;
+                    const hppBelowJual = obRef && hargaPokokPreview > 0 && curSell > 0 && hargaPokokPreview >= curSell;
+                    const newMarginPct = (curSell > 0 && hargaPokokPreview > 0) ? Math.round(((curSell - hargaPokokPreview) / curSell) * 100) : null;
+                    const isThinMargin = !it.is_bonus && obRef && hargaPokokPreview > 0 && curSell > 0 && (hppBelowJual || newMarginPct < 15);
+                    const showCheaperPbf = !it.is_bonus && cheapBuy && cheapBuy.hpp > 0 && hargaPokokPreview > cheapBuy.hpp;
                     return `<tr>
                     <td>
                       <div class="flex items-center gap-1.5 flex-wrap mb-1">
@@ -10730,7 +10878,15 @@
                       </select>
                         <button type="button" onclick="window.toggleGrnItemBonus(${idx})" class="ons-btn text-[10px] py-0.5 px-2 rounded-lg border min-h-0 h-6 font-bold ${it.is_bonus ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 border-slate-300'}" title="Tandai barang bonus / promo ekstra cuma-cuma">${it.is_bonus ? '&#127873; BONUS (Rp 0)' : '+ Bonus'}</button>
                       </div>
-                      ${it.is_bonus ? '<span class="badge-bpom bpom-bebas text-[9px] font-bold">BARANG BONUS PBF &bull; HPP Rp 0</span>' : (oldHpp > 0 ? `<div class="text-[10px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">HPP Lama: ${S().rp(oldHpp)}${hppDiffPct > 0 ? ` &bull; <span class="text-red-600 font-bold">Naik +${hppDiffPct}%</span>` : ''}${hppBelowJual ? ` &bull; <span class="text-red-600 font-bold">RUGI (&ge; Harga Umum!)</span>` : ''}</div>` : '')}
+                      ${it.is_bonus ? '<span class="badge-bpom bpom-bebas text-[9px] font-bold">BARANG BONUS PBF &bull; HPP Rp 0</span>' : `
+                      <div class="space-y-0.5 mt-0.5 text-[10px] font-mono-num">
+                        ${oldHpp > 0 ? `<div style="color:var(--ons-text-soft)">Beli Terakhir: <b>${S().rp(oldHpp)}</b>${lastBuy && lastBuy.pbf ? ` (${S().esc(lastBuy.pbf)})` : ''}${hppDiffPct > 0 ? ` &bull; <span class="text-red-600 font-bold">&#9888;&#65039; Naik +${hppDiffPct}%</span>` : ''}</div>` : ''}
+                        ${showCheaperPbf ? `<div class="text-amber-700 dark:text-amber-300 font-semibold">💡 PBF Termurah: <b>${S().esc(cheapBuy.pbf)}</b> @ ${S().rp(cheapBuy.hpp)}</div>` : ''}
+                        ${isThinMargin ? `<div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span class="text-red-600 font-bold">${hppBelowJual ? '&#9888;&#65039; RUGI (Modal >= Harga Jual ' + S().rp(curSell) + ')' : '&#9888;&#65039; Margin tipis ' + newMarginPct + '% (Jual ' + S().rp(curSell) + ')'}</span>
+                          <button type="button" onclick="window.quickAdjustHargaFromGrn('${S().esc(it.id_obat)}', ${hargaPokokPreview}, 25)" class="px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-[9.5px] hover:bg-emerald-700">⚡ Naikkan Jual (+25%)</button>
+                        </div>` : ''}
+                      </div>`}
                     </td>
                     <td><input class="ons-input font-mono-num text-xs w-28" value="${S().esc(it.no_batch)}" onchange="window.updateGrnItem(${idx}, 'no_batch', this.value)"/></td>
                     <td><input type="date" class="ons-input text-xs w-32" value="${S().esc(S().normalizeDateIso ? S().normalizeDateIso(it.tgl_kadaluarsa) : (it.tgl_kadaluarsa || ''))}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
@@ -14270,6 +14426,54 @@
       grnItems[idx].hpp_unit = grnItems[idx].prev_hpp || 5000;
     }
     global.renderActiveView();
+  };
+
+  /**
+   * #4 Penyesuaian 1-Klik Harga Jual langsung dari baris Faktur PBF (GRN)
+   * Otomatis menyimpan ke Master Obat & menandai produk untuk Cetak Label Harga Berubah Hari Ini
+   */
+  global.quickAdjustHargaFromGrn = async (idObat, newHpp, markupPct = 25) => {
+    try {
+      const st = S().AppState;
+      const o = (st.masterObat || []).find((m) => m.id_obat === idObat);
+      if (!o) return global.toast('Produk tidak ditemukan di Master Obat.', 'warn');
+      const hpp = Number(newHpp || 0);
+      if (hpp <= 0) return global.toast('Harga beli baru harus lebih dari Rp 0.', 'warn');
+      const oldH1 = Number(o.harga_umum || o.harga_jual_1 || 0);
+      const step = hpp >= 10000 ? 500 : 100;
+      const newH1 = Math.ceil((hpp * (1 + Number(markupPct || 25) / 100)) / step) * step;
+      const r2 = Number(o.rasio_2 || o.rasio_sedang || 1);
+      const r3 = Number(o.rasio_3 || o.rasio_besar || 1);
+      const newH2 = (o.satuan_2 || o.satuan_sedang) && r2 > 1 ? newH1 * r2 : Number(o.harga_sedang || 0);
+      const newH3 = (o.satuan_3 || o.satuan_besar) && r3 > 1 ? newH1 * r3 : Number(o.harga_besar || 0);
+
+      const ok = typeof global.confirm === 'function'
+        ? global.confirm(`Sesuaikan harga jual "${o.nama_dagang}"?\n\n• Harga Beli Baru: ${S().rp(hpp)}\n• Harga Jual Lama: ${S().rp(oldH1)}\n• Harga Jual Baru (+${markupPct}%): ${S().rp(newH1)}`)
+        : true;
+      if (!ok) return;
+
+      const updated = Object.assign({}, o, {
+        hpp_avg: hpp,
+        hpp_terakhir: hpp,
+        harga_umum: newH1,
+        harga_jual_1: newH1,
+        harga_sedang: newH2,
+        harga_jual_2: newH2,
+        harga_strip: newH2,
+        harga_besar: newH3,
+        harga_jual_3: newH3,
+        harga_box: newH3
+      });
+      await API().callApi('obat.save', updated, { isWrite: true });
+      Object.assign(o, updated);
+      if (S().markObatPriceChanged) {
+        S().markObatPriceChanged(o.id_obat, oldH1, newH1);
+      }
+      global.toast(`Harga jual ${o.nama_dagang} diperbarui: ${S().rp(oldH1)} → ${S().rp(newH1)} (masuk daftar Label Harga Berubah Hari Ini).`, 'ok');
+      global.renderActiveView();
+    } catch (e) {
+      global.toast('Gagal menyesuaikan harga jual: ' + e.message, 'err');
+    }
   };
 
   

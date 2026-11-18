@@ -5299,6 +5299,11 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             ${canReveal
               ? `<button type="button" onclick="window.toggleShiftBlindView()" class="ons-btn ${shiftBlindRevealed ? 'ons-btn-amber font-bold' : 'ons-btn-ghost'} text-xs" title="Pemilik/APJ dapat melihat target kas sistem untuk pencocokan">${shiftBlindRevealed ? '👁️ Sembunyikan Target' : '👁️ Intip Target (APJ/Owner)'}</button>`
               : `<span class="badge-bpom bpom-terbatas font-semibold" title="Kasir menghitung fisik uang secara mandiri tanpa melihat saldo buku">🔒 Blind Count Aktif</span>`}
+            <button type="button" onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs font-semibold" title="Kirim Ringkasan Omzet, Laba, Stok &amp; Jatuh Tempo PBF ke WA Pemilik">📲 Rekap WA Pemilik</button>
+            ${(() => {
+              const bk = S().getLastBackupInfo ? S().getLastBackupInfo() : { isOverdue: false, label: '-' };
+              return `<button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ${bk.isOverdue ? 'ons-btn-amber font-bold' : 'ons-btn-ghost'} text-xs" title="Backup Data Akhir Shift (Terakhir: ${S().esc(bk.label)})">💾 Backup Data${bk.isOverdue ? '!' : ''}</button>`;
+            })()}
             ${latestClosed
               ? `<button type="button" onclick="window.openZReportModal(0)" class="ons-btn ons-btn-ghost text-xs font-semibold">📄 Z-Report Terakhir</button>`
               : ''}
@@ -5766,9 +5771,14 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         </div>
       </div>
 
+      <div class="p-3 rounded-xl border border-amber-500/35 bg-amber-500/8 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+        <span>💾 <b>Pengingat Akhir Shift:</b> Unduh cadangan data harian agar Master Obat, Stok &amp; Transaksi tetap aman.</span>
+        <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2.5 font-bold shrink-0">Backup Data (.JSON)</button>
+      </div>
+
       <div class="flex flex-wrap gap-2">
         <button type="button" onclick="window.printShiftZReport()" class="ons-btn ons-btn-primary flex-1 text-xs">Cetak Z-Report (Thermal / PDF)</button>
-        <button type="button" onclick="window.sendZReportWaOwner()" class="ons-btn ons-btn-emerald flex-1 text-xs">Kirim ke WA Pemilik</button>
+        <button type="button" onclick="window.sendZReportWaOwner()" class="ons-btn ons-btn-emerald flex-1 text-xs font-bold">📲 Kirim Rekap &amp; Z-Report ke WA Pemilik</button>
       </div>
     </div>`, '520px');
   };
@@ -5821,25 +5831,18 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   global.sendZReportWaOwner = () => {
     const sh = lastClosedZReport;
     if (!sh) return;
+    if (typeof global.openOwnerDailyDigestModal === 'function') {
+      global.openOwnerDailyDigestModal(sh);
+      return;
+    }
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const targetWa = prof.wa_pemilik || prof.wa_usaha || '';
-    const msg = [
-      '*Z-REPORT TUTUP SHIFT - ' + String(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase() + '*',
-      'ID Shift   : ' + sh.id_shift,
-      'Kasir      : ' + (sh.kasir_id || '-') + ' (SPV: ' + (sh.supervisor_id || '-') + ')',
-      'Tunai Sis  : ' + S().rp(sh.sistem_tunai || 0),
-      'QRIS       : ' + S().rp(sh.sistem_qris || 0),
-      'Trf/EDC    : ' + S().rp(sh.sistem_transfer || 0),
-      'Modal Awal : ' + S().rp(sh.modal_awal || 0),
-      'Fisik Laci : ' + S().rp(sh.aktual_tunai || 0),
-      'Selisih    : ' + S().rp(sh.selisih_kas || 0),
-      'Catatan    : ' + (sh.catatan_handover || '-')
-    ].join('\n');
+    const msg = S().buildOwnerDailyDigestText ? S().buildOwnerDailyDigestText(undefined, sh) : '';
     if (S().buildWaUrl && targetWa) {
       const url = S().buildWaUrl(targetWa, msg);
       if (url && global.open) global.open(url, '_blank');
     } else {
-      global.toast('Nomor WA Pemilik belum diisi di Profil Usaha. Gunakan tombol Cetak Z-Report.', 'info');
+      global.toast('Nomor WA Pemilik belum diisi di Profil Usaha.', 'info');
     }
   };
 
@@ -11912,6 +11915,30 @@ S. prn 3 dd 1 tab</textarea>
       </div>`) : ''}
 
       ${settingsTab === 'vault' ? `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-2 border-blue-400/70" style="background:linear-gradient(135deg,rgba(0,102,254,0.06),transparent)">
+          ${(() => {
+            const bk = S().getLastBackupInfo ? S().getLastBackupInfo() : { label: 'Belum pernah dibackup', isOverdue: true };
+            const isDemo = API().isDemoMode();
+            return `<div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="max-w-3xl space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="font-extrabold text-sm">💾 Pengamanan Data: Backup &amp; Restore Penuh 1-Klik (.JSON)</h3>
+                  <span class="badge-bpom ${bk.isOverdue ? 'bpom-prekursor' : 'bpom-bebas'} text-[10px]">Backup Terakhir: ${S().esc(bk.label)}</span>
+                  <span class="badge-bpom ${isDemo ? 'bpom-terbatas' : 'bpom-bebas'} text-[10px]">${isDemo ? 'Mode Penyimpanan Lokal Browser' : 'Tersambung Cloud Database'}</span>
+                </div>
+                <p style="color:var(--ons-text-soft)">Unduh 1 file cadangan lengkap berisi seluruh <b>Master Obat, Stok Batch/ED, Riwayat Penjualan, Faktur PBF, Supplier, Member, &amp; Pengaturan Toko</b>. Jika pindah perangkat atau browser dibersihkan, tinggal klik <b>Pulihkan dari File Backup</b>.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup Penuh (.JSON)</button>
+                <label class="ons-btn ons-btn-ghost text-xs font-semibold cursor-pointer">
+                  📂 Pulihkan dari File Backup
+                  <input type="file" accept=".json,application/json" class="hidden" onchange="window.handleRestoreFullBackupFile(this)"/>
+                </label>
+              </div>
+            </div>`;
+          })()}
+        </div>
+
         <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-2 border-emerald-400/80" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),transparent)">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="max-w-3xl">
@@ -12935,6 +12962,48 @@ S. prn 3 dd 1 tab</textarea>
       const res = await API().callApi('backup.driveSnapshot', {}, { isWrite: true });
       global.toast('Snapshot JSON Drive berhasil dibuat: ' + res.file_name, 'ok');
     } catch (e) { global.toast(e.message, 'err'); }
+  };
+
+  global.handleRestoreFullBackupFile = (inputEl) => {
+    const file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const rawText = String((ev && ev.target && ev.target.result) || '');
+        const preview = JSON.parse(rawText);
+        if (!preview || preview.app !== 'ONS_FARMA_DIGITAL') {
+          throw new Error('File ini bukan file backup resmi ONS Farma Digital.');
+        }
+        const cnt = preview.counts || {};
+        const expTgl = preview.exported_at ? S().formatTgl(preview.exported_at, true) : '-';
+        const ok = typeof global.confirm === 'function'
+          ? global.confirm(
+              `Pulihkan data dari file backup "${file.name}"?\n\n` +
+              `• Apotek: ${preview.apotek || 'Apotek ONS Farma'}\n` +
+              `• Tanggal Backup: ${expTgl}\n` +
+              `• Isi: ${cnt.masterObat || 0} obat, ${cnt.stokBatch || 0} batch, ${cnt.penjualan || 0} transaksi\n\n` +
+              `Data lokal perangkat saat ini akan diganti dengan isi file backup ini.`
+            )
+          : true;
+        if (!ok) {
+          if (inputEl) inputEl.value = '';
+          return;
+        }
+        const res = S().restoreFullBackupJson(rawText);
+        if (inputEl) inputEl.value = '';
+        global.toast(`Data berhasil dipulihkan (${res.keysRestored} bagian data)! Memuat ulang sistem...`, 'ok');
+        if (typeof global.bootLoadState === 'function') {
+          await global.bootLoadState(true);
+        } else {
+          global.renderActiveView();
+        }
+      } catch (e) {
+        if (inputEl) inputEl.value = '';
+        global.toast('Gagal memulihkan backup: ' + e.message, 'err');
+      }
+    };
+    reader.readAsText(file);
   };
 
   function extractSpreadsheetId_(raw) {

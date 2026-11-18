@@ -1819,52 +1819,97 @@
   }
 
   /**
-   * Generator Teks Rekap Malam Harian Pemilik Apotek (100% Gratis via wa.me)
+   * Generator Teks Rekap Harian Pemilik Apotek (100% Gratis via wa.me)
+   * Mencakup: Omzet, Total Laba, Rincian Metode Bayar, Selisih Laci Shift, Obat Habis/Menipis, & Jatuh Tempo PBF
    */
-  function buildOwnerDailyDigestText(dateIso) {
+  function buildOwnerDailyDigestText(dateIso, shiftObj) {
     const prof = getStoreProfile();
     const todayIso = dateIso || new Date().toISOString().slice(0, 10);
+    const tglDisp = formatEd(todayIso);
     const salesToday = (AppState.penjualan || []).filter((p) => {
       const tgl = String(p.tanggal || '').slice(0, 10);
-      return (!tgl || tgl === todayIso) && String(p.status_trx || '') !== 'RETUR';
+      return (!tgl || tgl === todayIso) && String(p.status_trx || '').toUpperCase() !== 'RETUR' && String(p.status_trx || '').toUpperCase() !== 'VOID';
     });
     let omzet = 0;
-    let margin = 0;
+    let totalLaba = 0;
     let tunai = 0;
-    let nonTunai = 0;
+    let qris = 0;
+    let transfer = 0;
     let piutangHariIni = 0;
     salesToday.forEach((p) => {
       const gt = Number(p.grand_total || 0);
+      const hpp = Number(p.total_hpp || 0);
+      const laba = (p.estimasi_margin !== undefined && p.estimasi_margin !== null && p.estimasi_margin !== '')
+        ? Number(p.estimasi_margin)
+        : (gt - hpp);
       omzet += gt;
-      margin += Number(p.estimasi_margin || 0);
+      totalLaba += laba;
       const met = String(p.metode_bayar || 'TUNAI').toUpperCase();
       if (met === 'TUNAI') tunai += gt;
-      else if (met === 'PIUTANG') piutangHariIni += gt;
-      else nonTunai += gt;
+      else if (met === 'QRIS') qris += gt;
+      else if (met === 'PIUTANG' || met === 'TEMPO') piutangHariIni += gt;
+      else transfer += gt;
     });
-    const openPiutang = (AppState.piutangPelanggan || []).filter((pt) => String(pt.status_piutang || '').toUpperCase() !== 'LUNAS');
-    const totalPiutangSisa = openPiutang.reduce((s, pt) => s + Number(pt.sisa_piutang || 0), 0);
-    const defectaCount = (AppState.masterObat || []).filter((o) => isCriticalStock(o)).length;
-    const nearEdCount = (AppState.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && daysUntil(b.tgl_kadaluarsa) <= 90).length;
+    const marginPct = omzet > 0 ? Math.round((totalLaba / omzet) * 1000) / 10 : 0;
+
+    // Obat stok habis / menipis
+    const lowList = (AppState.masterObat || [])
+      .map((o) => ({ o, stok: getSellableStok(o.id_obat), crit: isCriticalStock(o) }))
+      .filter((x) => x.stok <= 0 || x.crit)
+      .sort((a, b) => a.stok - b.stok);
+    const lowTop = lowList.slice(0, 5).map((x) => `  • ${x.o.nama_dagang} (Sisa ${x.stok} ${x.o.satuan_dasar || 'unit'})`);
+
+    // Faktur PBF jatuh tempo <= 7 hari atau lewat tempo
+    const duePbf = (AppState.fakturPbf || []).filter((f) => {
+      const sisa = Number(f.sisa_hutang || 0);
+      const stBayar = String(f.status_bayar || '').toUpperCase();
+      if (sisa <= 0 || stBayar === 'LUNAS' || stBayar === 'KONSINYASI' || stBayar === 'DIBATALKAN') return false;
+      const dLeft = daysUntil(f.tgl_jatuh_tempo);
+      return Number.isFinite(dLeft) && dLeft <= 7;
+    }).sort((a, b) => daysUntil(a.tgl_jatuh_tempo) - daysUntil(b.tgl_jatuh_tempo));
+    const duePbfTotal = duePbf.reduce((s, f) => s + Number(f.sisa_hutang || 0), 0);
+    const duePbfTop = duePbf.slice(0, 4).map((f) => {
+      const dL = daysUntil(f.tgl_jatuh_tempo);
+      const tag = dL < 0 ? `TERLAMBAT ${Math.abs(dL)}h` : (dL === 0 ? 'HARI INI' : `H-${dL}`);
+      return `  • ${f.id_pbf || 'PBF'} (${f.no_faktur_pbf || '-'}) ${rp(f.sisa_hutang)} [${tag}, JT ${formatEd(f.tgl_jatuh_tempo)}]`;
+    });
+
+    // Status shift & selisih kas laci
+    const closedToday = (AppState.shiftHistory || []).filter((s) => String(s.status_shift || '').toUpperCase() !== 'TERBUKA' && String(s.tgl_tutup || '').slice(0, 10) === todayIso);
+    const refShift = shiftObj || closedToday[0] || null;
     const actShift = AppState.activeShift || (AppState.shiftHistory || []).find((s) => String(s.status_shift || '').toUpperCase() === 'TERBUKA');
+    let shiftLine = actShift ? ('TERBUKA (' + actShift.id_shift + ')') : 'Semua shift tertutup';
+    let selisihLine = '';
+    if (refShift) {
+      const sel = Number(refShift.selisih_kas || 0);
+      shiftLine = `Ditutup (${refShift.id_shift || '-'} • Kasir: ${refShift.kasir_id || '-'})`;
+      selisihLine = 'Selisih Laci   : ' + (sel === 0 ? 'PAS / KLOP (Rp 0)' : ((sel > 0 ? 'LEBIH +' : 'KURANG -') + rp(Math.abs(sel))));
+    }
+
+    const nearEdCount = (AppState.stokBatch || []).filter((b) => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && daysUntil(b.tgl_kadaluarsa) <= 90).length;
 
     const lines = [
       '*REKAP HARIAN ' + String(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase() + '*',
-      'Tanggal : ' + todayIso + ' (' + salesToday.length + ' nota)',
+      'Tanggal : ' + tglDisp + ' (' + salesToday.length + ' transaksi)',
       'Pemilik/APJ : ' + (prof.nama_pemilik || 'Apoteker Penanggung Jawab'),
       '--------------------------------',
-      'Omzet Hari Ini : ' + rp(omzet),
-      'Est. Laba Kotor: ' + rp(margin),
+      'Omzet Hari Ini : *' + rp(omzet) + '*',
+      'Total Laba     : *' + rp(totalLaba) + '* (' + marginPct + '%)',
       '- Tunai        : ' + rp(tunai),
-      '- QRIS/EDC/Trf : ' + rp(nonTunai),
-      '- Piutang Baru : ' + rp(piutangHariIni),
+      '- QRIS         : ' + rp(qris),
+      '- Transfer/EDC : ' + rp(transfer),
+      ...(piutangHariIni > 0 ? ['- Piutang Baru : ' + rp(piutangHariIni)] : []),
       '--------------------------------',
-      'Piutang Aktif  : ' + openPiutang.length + ' nota (' + rp(totalPiutangSisa) + ')',
-      'Alert Defecta  : ' + defectaCount + ' produk perlu restok',
+      'Status Shift   : ' + shiftLine,
+      ...(selisihLine ? [selisihLine] : []),
+      'Stok Habis/Tipis: ' + lowList.length + ' produk',
+      ...lowTop,
+      ...(lowList.length > 5 ? ['  ... dan ' + (lowList.length - 5) + ' produk lainnya'] : []),
+      'Faktur PBF <=7h: ' + duePbf.length + ' faktur (' + rp(duePbfTotal) + ')',
+      ...duePbfTop,
       'Alert Near ED  : ' + nearEdCount + ' batch (<=90 hari / ED)',
-      'Status Shift   : ' + (actShift ? ('TERBUKA (' + actShift.id_shift + ')') : 'Semua shift tertutup'),
       '--------------------------------',
-      '_Dikirim 1-klik dari ONS Farma Digital v15.0 (Gratis Tanpa Gateway)_'
+      '_Dikirim 1-klik dari ONS Farma Digital_'
     ];
     return lines.join('\n');
   }
@@ -2067,7 +2112,297 @@
   }
   global.resolveObatJenisSp = resolveObatJenisSp;
 
+  // ============================================================================
+  // #2 PENGAMANAN DATA: BACKUP & RESTORE FULL 1-KLIK (.JSON)
+  // ============================================================================
+  const LAST_BACKUP_KEY = 'ons_farma_last_backup_v1';
+
+  function getLastBackupInfo() {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(LAST_BACKUP_KEY) : null;
+      if (!raw) return { timestamp: '', isoDate: '', label: 'Belum pernah dibackup', hoursAgo: Infinity, isOverdue: true };
+      const obj = JSON.parse(raw);
+      const ts = obj && obj.timestamp ? String(obj.timestamp) : '';
+      const ms = ts ? new Date(ts).getTime() : NaN;
+      if (isNaN(ms)) return { timestamp: '', isoDate: '', label: 'Belum pernah dibackup', hoursAgo: Infinity, isOverdue: true };
+      const hoursAgo = Math.max(0, Math.round(((Date.now() - ms) / 3600000) * 10) / 10);
+      return {
+        timestamp: ts,
+        isoDate: ts.slice(0, 10),
+        filename: obj.filename || '',
+        label: formatTgl(ts, true),
+        hoursAgo,
+        isOverdue: hoursAgo >= 24
+      };
+    } catch (e) {
+      return { timestamp: '', isoDate: '', label: 'Belum pernah dibackup', hoursAgo: Infinity, isOverdue: true };
+    }
+  }
+
+  function buildFullBackupPayload() {
+    const storageDump = {};
+    try {
+      if (typeof localStorage !== 'undefined') {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && /^(ons_|ONS_)/.test(k)) {
+            storageDump[k] = localStorage.getItem(k);
+          }
+        }
+      }
+    } catch (e) {}
+    const prof = getStoreProfile();
+    return {
+      app: 'ONS_FARMA_DIGITAL',
+      schema_version: '18.25.0',
+      exported_at: new Date().toISOString(),
+      apotek: prof.nama_usaha || 'Apotek ONS Farma',
+      counts: {
+        masterObat: (AppState.masterObat || []).length,
+        stokBatch: (AppState.stokBatch || []).length,
+        penjualan: (AppState.penjualan || []).length,
+        fakturPbf: (AppState.fakturPbf || []).length,
+        supplierPbf: (AppState.supplierPbf || []).length,
+        members: (AppState.members || []).length
+      },
+      storage: storageDump,
+      snapshot: {
+        masterObat: AppState.masterObat || [],
+        stokBatch: AppState.stokBatch || [],
+        penjualan: AppState.penjualan || [],
+        fakturPbf: AppState.fakturPbf || [],
+        supplierPbf: AppState.supplierPbf || [],
+        members: AppState.members || [],
+        shiftHistory: AppState.shiftHistory || [],
+        mutasiStok: AppState.mutasiStok || []
+      }
+    };
+  }
+
+  function downloadFullBackupJson() {
+    const payload = buildFullBackupPayload();
+    const now = new Date();
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const stamp = `${pad2(now.getDate())}-${pad2(now.getMonth() + 1)}-${now.getFullYear()}_${pad2(now.getHours())}${pad2(now.getMinutes())}`;
+    const filename = `ONS_Farma_Backup_${stamp}.json`;
+    _triggerDownload(filename, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8;');
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(LAST_BACKUP_KEY, JSON.stringify({ timestamp: payload.exported_at, filename }));
+      }
+    } catch (e) {}
+    return { filename, counts: payload.counts, exported_at: payload.exported_at };
+  }
+
+  function restoreFullBackupJson(rawText) {
+    let parsed;
+    try {
+      parsed = JSON.parse(String(rawText || ''));
+    } catch (e) {
+      throw new Error('File backup tidak valid (bukan format JSON yang benar).');
+    }
+    if (!parsed || parsed.app !== 'ONS_FARMA_DIGITAL' || !parsed.storage || typeof parsed.storage !== 'object') {
+      throw new Error('File ini bukan file Backup resmi ONS Farma Digital.');
+    }
+    let keysRestored = 0;
+    if (typeof localStorage !== 'undefined') {
+      Object.keys(parsed.storage).forEach((k) => {
+        if (/^(ons_|ONS_)/.test(k) && parsed.storage[k] !== null && parsed.storage[k] !== undefined) {
+          localStorage.setItem(k, String(parsed.storage[k]));
+          keysRestored++;
+        }
+      });
+    }
+    if (parsed.snapshot && typeof parsed.snapshot === 'object') {
+      ['masterObat', 'stokBatch', 'penjualan', 'fakturPbf', 'supplierPbf', 'members', 'shiftHistory', 'mutasiStok'].forEach((k) => {
+        if (Array.isArray(parsed.snapshot[k])) AppState[k] = parsed.snapshot[k];
+      });
+      invalidateStockIndex();
+    }
+    return {
+      keysRestored,
+      exportedAt: parsed.exported_at || '',
+      apotek: parsed.apotek || 'Apotek ONS Farma',
+      counts: parsed.counts || {}
+    };
+  }
+
+  // ============================================================================
+  // #4 RADAR ANTI-SALAH BELI & PERBANDINGAN HARGA PBF OTOMATIS
+  // ============================================================================
+  function getObatPurchaseBenchmark(idObat) {
+    if (!idObat) return { lastBuy: null, cheapestBuy: null, highestBuy: null, pbfCount: 0, historyCount: 0 };
+    const batches = (AppState.stokBatch || []).filter((b) => b && b.id_obat === idObat && Number(b.hpp_beli || b.hpp_batch || 0) > 0);
+    const fakMap = new Map();
+    (AppState.fakturPbf || []).forEach((f) => {
+      if (f && f.no_faktur_pbf) fakMap.set(f.no_faktur_pbf, f);
+    });
+    const rows = batches.map((b) => {
+      const f = b.no_faktur_pbf ? fakMap.get(b.no_faktur_pbf) : null;
+      const hpp = Number(b.hpp_beli || b.hpp_batch || 0);
+      const pbf = String(b.id_pbf || (f && (f.id_pbf || f.nama_pbf)) || '').trim() || 'PBF Umum';
+      const tgl = normalizeDateIso((f && (f.tgl_terima || f.tgl_faktur)) || b.created_at || b.tgl_masuk || '') || String(b.created_at || '').slice(0, 10) || '';
+      return { hpp, pbf, tgl, no_faktur: b.no_faktur_pbf || '-' };
+    });
+
+    if (!rows.length) {
+      const ob = (AppState.masterObat || []).find((m) => m.id_obat === idObat);
+      const refHpp = ob ? Number(ob.hpp_terakhir || ob.hpp_avg || 0) : 0;
+      if (refHpp > 0) {
+        const defEntry = { hpp: refHpp, pbf: (ob && ob.pbf_utama) || 'Master Obat', tgl: '', no_faktur: '-' };
+        return { lastBuy: defEntry, cheapestBuy: defEntry, highestBuy: defEntry, pbfCount: 1, historyCount: 1 };
+      }
+      return { lastBuy: null, cheapestBuy: null, highestBuy: null, pbfCount: 0, historyCount: 0 };
+    }
+
+    const byDate = rows.slice().sort((a, b) => String(b.tgl || '').localeCompare(String(a.tgl || '')));
+    const byPrice = rows.slice().sort((a, b) => a.hpp - b.hpp);
+    const pbfSet = new Set(rows.map((r) => r.pbf).filter(Boolean));
+    return {
+      lastBuy: byDate[0],
+      cheapestBuy: byPrice[0],
+      highestBuy: byPrice[byPrice.length - 1],
+      pbfCount: pbfSet.size,
+      historyCount: rows.length
+    };
+  }
+
+  // ============================================================================
+  // #5 RADAR ANTI-KEBOCORAN (PENGAWASAN KHUSUS PEMILIK / APJ)
+  // ============================================================================
+  function getOwnerLeakageRadar(daysWindow = 1) {
+    const winDays = Math.max(1, Number(daysWindow || 1));
+    const cutoffIso = new Date(Date.now() - (winDays - 1) * 86400000).toISOString().slice(0, 10);
+    const inWindow = (rawDate) => {
+      const iso = normalizeDateIso(rawDate) || String(rawDate || '').slice(0, 10);
+      if (!iso) return true;
+      return iso >= cutoffIso;
+    };
+
+    const diskonRugi = [];
+    const returVoid = [];
+    (AppState.penjualan || []).forEach((p) => {
+      if (!p || !inWindow(p.tanggal)) return;
+      const status = String(p.status_trx || 'LUNAS').toUpperCase();
+      const gt = Number(p.grand_total || 0);
+      const disc = Number(p.diskon_total || p.diskon_rp || 0);
+      const bruto = gt + disc;
+      const discPct = bruto > 0 ? Math.round((disc / bruto) * 1000) / 10 : 0;
+      const hpp = Number(p.total_hpp || 0);
+      const laba = (p.estimasi_margin !== undefined && p.estimasi_margin !== null && p.estimasi_margin !== '')
+        ? Number(p.estimasi_margin)
+        : (gt - hpp);
+
+      if (status === 'RETUR' || status === 'VOID' || status === 'RETUR_SEBAGIAN' || Number(p.qty_retur || 0) > 0) {
+        returVoid.push({
+          no_invoice: p.no_invoice || '-',
+          tanggal: p.tanggal || '',
+          kasir: p.kasir_id || '-',
+          nominal: gt,
+          alasan: p.retur_alasan || status
+        });
+      } else if (laba < 0 || discPct >= 15) {
+        diskonRugi.push({
+          no_invoice: p.no_invoice || '-',
+          tanggal: p.tanggal || '',
+          kasir: p.kasir_id || '-',
+          nominal: gt,
+          diskon: disc,
+          discPct,
+          laba,
+          reason: laba < 0 ? 'Jual Rugi (< HPP)' : `Diskon Besar (${discPct}%)`
+        });
+      }
+    });
+
+    const stokKurangManual = [];
+    (AppState.mutasiStok || []).forEach((m) => {
+      if (!m || !inWindow(m.timestamp)) return;
+      const qty = Number(m.qty_ubah || 0);
+      const jenis = String(m.jenis_mutasi || '').toUpperCase();
+      if (qty < 0 && /(OPNAME|PENYESUAIAN|ADJUST|RUSAK|HILANG|KOREKSI|MUSNAH|SELISIH)/.test(jenis)) {
+        const ob = (AppState.masterObat || []).find((o) => o.id_obat === m.id_obat);
+        const hpp = Number(m.hpp_beli || (ob && ob.hpp_avg) || 0);
+        stokKurangManual.push({
+          id_obat: m.id_obat,
+          nama_dagang: m.nama_dagang || (ob && ob.nama_dagang) || m.id_obat,
+          no_batch: m.no_batch || '-',
+          qty_kurang: Math.abs(qty),
+          nilai_hpp: Math.abs(qty) * hpp,
+          jenis,
+          user: m.user_id || '-',
+          catatan: m.catatan || '-',
+          timestamp: m.timestamp || ''
+        });
+      }
+    });
+
+    const selisihShift = [];
+    (AppState.shiftHistory || []).forEach((sh) => {
+      if (!sh || String(sh.status_shift || '').toUpperCase() === 'TERBUKA') return;
+      if (!inWindow(sh.tgl_tutup || sh.tgl_buka)) return;
+      const sel = Number(sh.selisih_kas || 0);
+      if (Math.abs(sel) > 0) {
+        selisihShift.push({
+          id_shift: sh.id_shift || '-',
+          kasir: sh.kasir_id || '-',
+          tgl_tutup: sh.tgl_tutup || '',
+          selisih: sel,
+          catatan: sh.catatan_handover || '-'
+        });
+      }
+    });
+
+    const totalAlerts = diskonRugi.length + returVoid.length + stokKurangManual.length + selisihShift.length;
+    return { totalAlerts, diskonRugi, returVoid, stokKurangManual, selisihShift, daysWindow: winDays };
+  }
+
+  // ============================================================================
+  // #6 PELACAK OBAT YANG HARGANYA BERUBAH HARI INI (UNTUK LABEL RAK / SHELF TALKER)
+  // ============================================================================
+  const PRICE_CHANGED_LOG_KEY = 'ons_price_changed_log_v1';
+
+  function getPriceChangedLog() {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PRICE_CHANGED_LOG_KEY) : null;
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function markObatPriceChanged(idObat, oldPrice, newPrice) {
+    if (!idObat) return;
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const log = getPriceChangedLog();
+    log[idObat] = {
+      id_obat: idObat,
+      date: todayIso,
+      old_price: Number(oldPrice || 0),
+      new_price: Number(newPrice || 0),
+      at: new Date().toISOString()
+    };
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(PRICE_CHANGED_LOG_KEY, JSON.stringify(log));
+      }
+    } catch (e) {}
+  }
+
+  function getTodayChangedPriceObatIds(dateIso) {
+    const targetIso = dateIso || new Date().toISOString().slice(0, 10);
+    const log = getPriceChangedLog();
+    return Object.keys(log).filter((id) => log[id] && log[id].date === targetIso);
+  }
+
   global.ONSStore = {
+    getLastBackupInfo,
+    buildFullBackupPayload,
+    downloadFullBackupJson,
+    restoreFullBackupJson,
+    getObatPurchaseBenchmark,
+    getOwnerLeakageRadar,
+    getPriceChangedLog,
+    markObatPriceChanged,
+    getTodayChangedPriceObatIds,
     autoDetectGolonganBpom,
     resolveObatJenisSp,
     AppState,

@@ -2279,7 +2279,11 @@
             <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs" title="Pusat Pencarian &amp; Navigasi Cepat">Cari Cepat <span class="ons-shortcut-kbd ml-1">Ctrl+K</span></button>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs font-semibold" title="Kirim Ringkasan Harian ke WA Pemilik">Rekap WA Pemilik</button>` : ''}
+            ${seeCost ? (() => {
+              const bk = S().getLastBackupInfo ? S().getLastBackupInfo() : { isOverdue: false, label: '-' };
+              return `<button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ${bk.isOverdue ? 'ons-btn-amber' : 'ons-btn-ghost'} text-xs font-semibold relative" title="Backup 1-Klik Seluruh Data ke File JSON (Terakhir: ${S().esc(bk.label)})">💾 Backup Data${bk.isOverdue ? ' <span class="inline-block w-2 h-2 rounded-full bg-red-500 ml-0.5"></span>' : ''}</button>`;
+            })() : ''}
+            ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs font-semibold" title="Kirim Ringkasan Harian ke WA Pemilik">📲 Rekap WA Pemilik</button>` : ''}
             <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
           </div>
         </div>
@@ -2405,6 +2409,56 @@
           </div>
         </div>`}
       </div>
+
+      ${seeCost && S().getOwnerLeakageRadar ? (() => {
+        const winDays = Number(global._onsLeakageDays || 1);
+        const rad = S().getOwnerLeakageRadar(winDays);
+        const periodLbl = winDays === 1 ? 'Hari Ini' : `${winDays} Hari Terakhir`;
+        const c1 = rad.diskonRugi.length;
+        const c2 = rad.returVoid.length;
+        const c3 = rad.stokKurangManual.length;
+        const c4 = rad.selisihShift.length;
+        return `<div class="ons-card p-3.5 space-y-2.5 border-l-4 ${rad.totalAlerts > 0 ? 'border-l-amber-500' : 'border-l-emerald-500'}">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-sm">${rad.totalAlerts > 0 ? '🛡️' : '✅'}</span>
+              <div>
+                <div class="font-extrabold text-xs flex items-center gap-2">
+                  <span>Radar Anti-Kebocoran (Pengawasan Pemilik)</span>
+                  <span class="badge-bpom ${rad.totalAlerts > 0 ? 'bpom-prekursor' : 'bpom-bebas'} text-[10px]">${rad.totalAlerts > 0 ? `${rad.totalAlerts} Temuan (${periodLbl})` : `Aman (${periodLbl})`}</span>
+                </div>
+                <div class="text-[11px]" style="color:var(--ons-text-soft)">${rad.totalAlerts > 0 ? 'Klik kartu di bawah untuk melihat detail transaksi sensitif, retur, pengurangan stok manual, atau selisih laci kasir.' : 'Tidak ada diskon tidak wajar/rugi, retur kasir, pengurangan stok manual, maupun selisih laci kasir pada periode ini.'}</div>
+              </div>
+            </div>
+            <div class="inline-flex rounded-lg border p-0.5 text-[11px]" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+              <button type="button" onclick="window.setLeakageRadarDays(1)" class="px-2.5 py-1 rounded-md font-semibold ${winDays === 1 ? 'bg-blue-600 text-white' : ''}">Hari Ini</button>
+              <button type="button" onclick="window.setLeakageRadarDays(7)" class="px-2.5 py-1 rounded-md font-semibold ${winDays === 7 ? 'bg-blue-600 text-white' : ''}">7 Hari</button>
+            </div>
+          </div>
+          ${rad.totalAlerts > 0 ? `<div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+            <button type="button" onclick="window.openAntiKebocoranDetailModal('diskonRugi')" class="text-left p-2.5 rounded-xl border transition hover:border-red-400 ${c1 > 0 ? 'bg-red-500/8 border-red-500/30' : ''}" style="${c1 > 0 ? '' : 'background:var(--ons-bg-subtle);border-color:var(--ons-border)'}">
+              <div class="text-[10.5px] font-bold uppercase ${c1 > 0 ? 'text-red-600' : ''}" style="${c1 > 0 ? '' : 'color:var(--ons-text-soft)'}">Diskon Besar / Rugi</div>
+              <div class="text-base font-extrabold font-mono-num mt-0.5 ${c1 > 0 ? 'text-red-600' : 'text-emerald-600'}">${c1} Transaksi</div>
+              <div class="text-[10px] truncate" style="color:var(--ons-text-soft)">Diskon &ge;15% atau Laba &lt; Rp 0</div>
+            </button>
+            <button type="button" onclick="window.openAntiKebocoranDetailModal('returVoid')" class="text-left p-2.5 rounded-xl border transition hover:border-amber-400 ${c2 > 0 ? 'bg-amber-500/8 border-amber-500/30' : ''}" style="${c2 > 0 ? '' : 'background:var(--ons-bg-subtle);border-color:var(--ons-border)'}">
+              <div class="text-[10.5px] font-bold uppercase ${c2 > 0 ? 'text-amber-600' : ''}" style="${c2 > 0 ? '' : 'color:var(--ons-text-soft)'}">Retur / Batal Kasir</div>
+              <div class="text-base font-extrabold font-mono-num mt-0.5 ${c2 > 0 ? 'text-amber-600' : 'text-emerald-600'}">${c2} Nota</div>
+              <div class="text-[10px] truncate" style="color:var(--ons-text-soft)">Total ${S().rp(rad.returVoid.reduce((s, x) => s + Number(x.nominal || 0), 0))}</div>
+            </button>
+            <button type="button" onclick="window.openAntiKebocoranDetailModal('stokKurangManual')" class="text-left p-2.5 rounded-xl border transition hover:border-purple-400 ${c3 > 0 ? 'bg-purple-500/8 border-purple-500/30' : ''}" style="${c3 > 0 ? '' : 'background:var(--ons-bg-subtle);border-color:var(--ons-border)'}">
+              <div class="text-[10.5px] font-bold uppercase ${c3 > 0 ? 'text-purple-600' : ''}" style="${c3 > 0 ? '' : 'color:var(--ons-text-soft)'}">Stok Kurang Manual</div>
+              <div class="text-base font-extrabold font-mono-num mt-0.5 ${c3 > 0 ? 'text-purple-600' : 'text-emerald-600'}">${c3} Catatan</div>
+              <div class="text-[10px] truncate" style="color:var(--ons-text-soft)">Penyesuaian / selisih opname (-)</div>
+            </button>
+            <button type="button" onclick="window.openAntiKebocoranDetailModal('selisihShift')" class="text-left p-2.5 rounded-xl border transition hover:border-rose-400 ${c4 > 0 ? 'bg-rose-500/8 border-rose-500/30' : ''}" style="${c4 > 0 ? '' : 'background:var(--ons-bg-subtle);border-color:var(--ons-border)'}">
+              <div class="text-[10.5px] font-bold uppercase ${c4 > 0 ? 'text-rose-600' : ''}" style="${c4 > 0 ? '' : 'color:var(--ons-text-soft)'}">Selisih Laci Shift</div>
+              <div class="text-base font-extrabold font-mono-num mt-0.5 ${c4 > 0 ? 'text-rose-600' : 'text-emerald-600'}">${c4} Shift</div>
+              <div class="text-[10px] truncate" style="color:var(--ons-text-soft)">Kas fisik &ne; sistem saat tutup shift</div>
+            </button>
+          </div>` : ''}
+        </div>`;
+      })() : ''}
 
       <!-- SEKSI APOTEK DIGITAL 1: - Ringkasan Penjualan -->
       <div class="space-y-3">
@@ -5810,6 +5864,13 @@
           <span>Total Nota (${S().esc(trx.status_trx || 'LUNAS')})</span>
           <span class="text-base font-mono-num ${ret.isFullRetur ? 'line-through text-red-600' : 'text-blue-600'}">${S().rp(trx.grand_total || 0)}</span>
         </div>
+        <div class="p-3 rounded-xl border border-emerald-500/35 bg-emerald-500/5 space-y-2">
+          <div class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">📲 Kirim Struk ke WhatsApp Pembeli (Tanpa Simpan Kontak)</div>
+          <div class="flex flex-wrap gap-2">
+            <input id="riwayatWaPhoneInp" type="tel" class="ons-input font-mono-num text-xs flex-1 min-w-[170px]" value="${S().esc(trx.no_wa || (mem && mem.no_hp) || '')}" placeholder="Ketik No. WA Pembeli (cth: 081234567890)"/>
+            <button type="button" onclick="window.sendRiwayatStrukWa('${S().esc(noInvoice)}')" class="ons-btn ons-btn-emerald text-xs font-bold shrink-0">Kirim Struk WA &rarr;</button>
+          </div>
+        </div>
         <div class="flex flex-wrap gap-2 pt-1">
           <button type="button" onclick="window.openPosReprintModal('${S().esc(noInvoice)}')" class="ons-btn ons-btn-primary flex-1 text-xs">${ret.isFullRetur ? 'Cetak Nota Void' : 'Struk Thermal'}</button>
           <button type="button" onclick="window.printFakturPenjualanA4('${S().esc(noInvoice)}')" class="ons-btn ons-btn-ghost flex-1 text-xs">🖨️ Cetak Faktur A4</button>
@@ -7212,11 +7273,11 @@
     const qrisStr = S().buildQrisEmvcoPayload(total, invPreview);
     const totalQty = cart.items.reduce((s, it) => s + Number(it.qty || 0), 0);
     const roundUp = (step, v) => Math.ceil(Math.max(1, v) / step) * step;
-    const smartDenoms = Array.from(new Set([
-      roundUp(10000, total),
-      roundUp(50000, total),
-      20000, 50000, 100000, 150000, 200000
-    ])).filter((v) => v >= total || v >= 50000).sort((a, b) => a - b).slice(0, 5);
+    const baseBanknotes = [20000, 50000, 100000, 200000];
+    const extraAbove = total > 200000 ? [roundUp(50000, total), roundUp(100000, total)] : [roundUp(10000, total)];
+    const smartDenoms = Array.from(new Set(
+      baseBanknotes.concat(extraAbove)
+    )).filter((v) => v >= total || baseBanknotes.includes(v)).sort((a, b) => a - b).slice(0, 6);
 
     S().openModal(`<div class="p-6 space-y-4">
       <div class="flex justify-between items-start gap-2">
@@ -7794,25 +7855,25 @@
   };
 
   /**
-   * Modal Kirim Rekap Malam Pemilik ke WhatsApp (100% Gratis via wa.me)
+   * Modal Kirim Rekap Harian Pemilik ke WhatsApp (100% Gratis via wa.me)
    */
-  global.openOwnerDailyDigestModal = () => {
+  global.openOwnerDailyDigestModal = (shiftObj) => {
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const defaultWa = prof.wa_pemilik || prof.wa_usaha || '';
-    const msg = S().buildOwnerDailyDigestText ? S().buildOwnerDailyDigestText() : '';
+    const msg = S().buildOwnerDailyDigestText ? S().buildOwnerDailyDigestText(undefined, shiftObj || null) : '';
     const waHref = S().buildWaUrl ? S().buildWaUrl(defaultWa, msg) : ('https://wa.me/?text=' + encodeURIComponent(msg));
     global._lastOwnerDigestMsg = msg;
     S().openModal(`<div class="p-6 space-y-3 text-xs">
       <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base">Rekap Malam Harian ke WhatsApp Pemilik (100% Gratis)</h3>
+        <h3 class="font-bold text-base">📲 Rekap Harian ke WhatsApp Pemilik (1-Klik)</h3>
         <button onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
       </div>
-      <p style="color:var(--ons-text-soft)">Kirim ringkasan omzet, estimasi laba kotor, breakdown metode bayar, piutang terbuka, defecta, &amp; Near-ED langsung lewat WhatsApp tanpa biaya gateway bulanan.</p>
+      <p style="color:var(--ons-text-soft)">Berisi ringkasan <b>Omzet &amp; Total Laba</b>, rincian metode bayar, <b>Selisih Kas Laci Shift</b>, daftar obat habis/menipis, serta faktur PBF jatuh tempo minggu ini.</p>
       <div>
         <label class="font-semibold block mb-1">Nomor WA Pemilik Tujuan</label>
         <input id="ownerDigestWaInp" type="tel" class="ons-input font-mono-num" value="${S().esc(defaultWa)}" oninput="window.syncOwnerDigestHref(this.value)" placeholder="0811xxxx / 62811xxxx"/>
       </div>
-      <pre class="p-3 rounded-xl border font-mono-num whitespace-pre-wrap text-[11px] max-h-60 overflow-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(msg)}</pre>
+      <pre class="p-3 rounded-xl border font-mono-num whitespace-pre-wrap text-[11px] max-h-64 overflow-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(msg)}</pre>
       <div class="flex flex-wrap gap-2">
         <button type="button" onclick="window.copyOwnerDigestNow()" class="ons-btn ons-btn-ghost flex-1 text-xs">Salin Teks Laporan</button>
         <a id="ownerDigestWaBtn" target="_blank" rel="noopener" href="${S().esc(waHref)}" class="ons-btn ons-btn-emerald flex-1 text-xs font-bold">Kirim Sekarang via WhatsApp &rarr;</a>
@@ -7831,7 +7892,145 @@
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).catch(() => {});
     }
-    global.toast('Teks Rekap Malam Harian berhasil disalin ke clipboard!', 'ok');
+    global.toast('Teks Rekap Harian Pemilik berhasil disalin ke clipboard!', 'ok');
+  };
+
+  /**
+   * #2 Backup Data 1-Klik ke File JSON (dapat di-restore di Pengaturan -> Brankas)
+   */
+  global.runQuickBackupNow = () => {
+    try {
+      if (!S().downloadFullBackupJson) return global.toast('Modul backup belum tersedia.', 'warn');
+      const res = S().downloadFullBackupJson();
+      global.toast(`Backup sukses diunduh: ${res.filename} (${res.counts.masterObat || 0} obat, ${res.counts.penjualan || 0} transaksi)`, 'ok');
+      global.renderActiveView();
+    } catch (e) {
+      global.toast('Gagal membuat backup: ' + e.message, 'err');
+    }
+  };
+
+  /**
+   * #5 Radar Anti-Kebocoran Pemilik (Filter Periode & Modal Drill-Down)
+   */
+  global.setLeakageRadarDays = (days) => {
+    global._onsLeakageDays = Number(days) === 7 ? 7 : 1;
+    global.renderActiveView();
+  };
+
+  global.openAntiKebocoranDetailModal = (type) => {
+    if (!S().canSeeFinancialCost()) return;
+    const winDays = Number(global._onsLeakageDays || 1);
+    const rad = S().getOwnerLeakageRadar ? S().getOwnerLeakageRadar(winDays) : null;
+    if (!rad) return;
+    const periodLbl = winDays === 1 ? 'Hari Ini' : `${winDays} Hari Terakhir`;
+    let title = 'Detail Radar Anti-Kebocoran';
+    let bodyHtml = '';
+
+    if (type === 'diskonRugi') {
+      title = `Diskon Besar (>=15%) / Jual Rugi (${periodLbl})`;
+      bodyHtml = rad.diskonRugi.length ? `<div class="ons-table-wrap"><table class="ons-table">
+        <thead><tr><th>No. Struk</th><th>Tanggal</th><th>Kasir</th><th class="text-right">Total</th><th class="text-right">Laba</th><th>Peringatan</th></tr></thead>
+        <tbody>${rad.diskonRugi.map((x) => `<tr>
+          <td class="font-mono-num font-bold text-xs"><button type="button" onclick="ONSStore.closeModal();window.openPosInvoiceDetail('${S().esc(x.no_invoice)}')" class="text-blue-600 underline">${S().esc(x.no_invoice)}</button></td>
+          <td class="font-mono-num text-xs">${S().formatTgl(x.tanggal, true)}</td>
+          <td class="text-xs">${S().esc(x.kasir)}</td>
+          <td class="text-right font-mono-num text-xs">${S().rp(x.nominal)}</td>
+          <td class="text-right font-mono-num text-xs font-bold ${x.laba < 0 ? 'text-red-600' : 'text-amber-600'}">${S().rp(x.laba)}</td>
+          <td><span class="badge-bpom bpom-keras text-[10px]">${S().esc(x.reason)}</span></td>
+        </tr>`).join('')}</tbody></table></div>` : '<p class="text-center py-6 text-emerald-600 font-bold">✅ Tidak ada transaksi diskon besar atau jual rugi.</p>';
+    } else if (type === 'returVoid') {
+      title = `Retur & Pembatalan Kasir (${periodLbl})`;
+      bodyHtml = rad.returVoid.length ? `<div class="ons-table-wrap"><table class="ons-table">
+        <thead><tr><th>No. Struk</th><th>Tanggal</th><th>Kasir</th><th class="text-right">Nominal</th><th>Alasan</th></tr></thead>
+        <tbody>${rad.returVoid.map((x) => `<tr>
+          <td class="font-mono-num font-bold text-xs"><button type="button" onclick="ONSStore.closeModal();window.openPosInvoiceDetail('${S().esc(x.no_invoice)}')" class="text-blue-600 underline">${S().esc(x.no_invoice)}</button></td>
+          <td class="font-mono-num text-xs">${S().formatTgl(x.tanggal, true)}</td>
+          <td class="text-xs">${S().esc(x.kasir)}</td>
+          <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(x.nominal)}</td>
+          <td class="text-xs">${S().esc(x.alasan)}</td>
+        </tr>`).join('')}</tbody></table></div>` : '<p class="text-center py-6 text-emerald-600 font-bold">✅ Tidak ada retur atau pembatalan kasir.</p>';
+    } else if (type === 'stokKurangManual') {
+      title = `Pengurangan Stok Manual / Selisih Opname (-) (${periodLbl})`;
+      bodyHtml = rad.stokKurangManual.length ? `<div class="ons-table-wrap"><table class="ons-table">
+        <thead><tr><th>Waktu</th><th>Produk &amp; Batch</th><th>Jenis</th><th class="text-right">Qty (-)</th><th class="text-right">Nilai HPP</th><th>Petugas &amp; Catatan</th></tr></thead>
+        <tbody>${rad.stokKurangManual.map((x) => `<tr>
+          <td class="font-mono-num text-xs whitespace-nowrap">${S().formatTgl(x.timestamp, true)}</td>
+          <td class="text-xs"><b>${S().esc(x.nama_dagang)}</b><div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Batch: ${S().esc(x.no_batch)}</div></td>
+          <td><span class="badge-bpom bpom-prekursor text-[10px]">${S().esc(x.jenis)}</span></td>
+          <td class="text-right font-mono-num font-bold text-red-600">-${x.qty_kurang}</td>
+          <td class="text-right font-mono-num text-xs">${S().rp(x.nilai_hpp)}</td>
+          <td class="text-xs"><b>${S().esc(x.user)}</b><div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(x.catatan)}</div></td>
+        </tr>`).join('')}</tbody></table></div>` : '<p class="text-center py-6 text-emerald-600 font-bold">✅ Tidak ada pengurangan stok manual / selisih opname negatif.</p>';
+    } else {
+      title = `Selisih Uang Laci Tutup Shift (${periodLbl})`;
+      bodyHtml = rad.selisihShift.length ? `<div class="ons-table-wrap"><table class="ons-table">
+        <thead><tr><th>ID Shift</th><th>Waktu Tutup</th><th>Kasir</th><th class="text-right">Selisih Laci</th><th>Catatan</th></tr></thead>
+        <tbody>${rad.selisihShift.map((x) => `<tr>
+          <td class="font-mono-num font-bold text-xs">${S().esc(x.id_shift)}</td>
+          <td class="font-mono-num text-xs">${S().formatTgl(x.tgl_tutup, true)}</td>
+          <td class="text-xs">${S().esc(x.kasir)}</td>
+          <td class="text-right font-mono-num font-bold text-xs ${x.selisih < 0 ? 'text-red-600' : 'text-amber-600'}">${x.selisih > 0 ? '+' : ''}${S().rp(x.selisih)}</td>
+          <td class="text-xs">${S().esc(x.catatan)}</td>
+        </tr>`).join('')}</tbody></table></div>` : '<p class="text-center py-6 text-emerald-600 font-bold">✅ Semua shift tutup dengan kas laci PAS (Rp 0).</p>';
+    }
+
+    S().openModal(`<div class="p-6 space-y-4 text-xs">
+      <div class="flex items-center justify-between pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-extrabold text-base">🛡️ ${S().esc(title)}</h3>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      ${bodyHtml}
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+      </div>
+    </div>`, '720px');
+  };
+
+  /**
+   * #6 Kirim Struk ke WhatsApp Pembeli langsung dari Riwayat Kasir (Tanpa Simpan Kontak)
+   */
+  global.sendRiwayatStrukWa = async (noInvoice) => {
+    try {
+      const inp = document.getElementById('riwayatWaPhoneInp');
+      const rawPhone = inp ? inp.value.trim() : '';
+      let digits = rawPhone.replace(/[^0-9]/g, '');
+      if (!digits || digits.length < 7) {
+        global.toast('Masukkan nomor WhatsApp pembeli yang valid (cth: 081234567890).', 'warn');
+        if (inp) inp.focus();
+        return;
+      }
+      if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+      else if (digits.startsWith('8')) digits = '62' + digits;
+
+      const st = S().AppState;
+      const trx = (st.penjualan || []).find((p) => p.no_invoice === noInvoice) || {};
+      let items = [];
+      try {
+        const res = await API().callApi('pos.detail', { no_invoice: noInvoice });
+        if (res && Array.isArray(res.items)) items = res.items;
+      } catch (_) {}
+      const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+      const lines = [
+        '*STRUK DIGITAL - ' + String(prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase() + '*',
+        'No. Nota : ' + (noInvoice || '-'),
+        'Tanggal  : ' + S().formatTgl(trx.tanggal || new Date().toISOString(), true),
+        'Metode   : ' + (trx.metode_bayar || 'TUNAI'),
+        '--------------------------------',
+        ...(items.length
+          ? items.map((it) => `• ${it.nama_dagang || it.id_obat} (${it.qty} ${it.satuan || 'unit'}) = ${S().rp(it.subtotal_item || (Number(it.qty || 1) * Number(it.harga_jual || 0)))}`)
+          : ['• Rincian item tercatat pada nota resmi apotek']),
+        '--------------------------------',
+        'TOTAL BAYAR : *' + S().rp(trx.grand_total || 0) + '*',
+        'Status      : ' + (trx.status_trx || 'LUNAS'),
+        '--------------------------------',
+        '_Terima kasih telah berbelanja di ' + (prof.nama_usaha || 'Apotek ONS Farma') + '. Semoga lekas sembuh._'
+      ];
+      const waUrl = 'https://wa.me/' + digits + '?text=' + encodeURIComponent(lines.join('\n'));
+      if (typeof global.open === 'function') global.open(waUrl, '_blank');
+      global.toast('Struk digital dibuka di WhatsApp (+' + digits + ')!', 'ok');
+    } catch (e) {
+      global.toast(e.message, 'err');
+    }
   };
 
   
