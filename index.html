@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0050CA"/>
   <meta name="application-version" content="v18.19.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.28.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.29.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.28.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.29.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.28.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.28.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.28.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.29.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.29.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.29.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.28.0"></script>
-  <script src="./js/struk-engine.js?v=18.28.0"></script>
-  <script src="./js/demo-engine.js?v=18.28.0"></script>
-  <script src="./js/api-turbo.js?v=18.28.0"></script>
-  <script src="./js/store.js?v=18.28.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.28.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.28.0"></script>
+  <script src="./js/config.js?v=18.29.0"></script>
+  <script src="./js/struk-engine.js?v=18.29.0"></script>
+  <script src="./js/demo-engine.js?v=18.29.0"></script>
+  <script src="./js/api-turbo.js?v=18.29.0"></script>
+  <script src="./js/store.js?v=18.29.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.29.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.29.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.28.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.28.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.28.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.28.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.28.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.28.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.29.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.29.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.29.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.29.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.29.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.29.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -861,6 +861,10 @@
           <div id="drawerMenuMount" class="flex-1 space-y-1 overflow-y-auto">${renderMenuTreeHtml()}</div>
           <div class="pt-3 mt-3 border-t ons-nav-divider space-y-2 text-xs">
             <div class="px-2 ons-nav-profile-name font-medium truncate"><b>${ONSStore.esc((st.user && st.user.nama_lengkap) || '')}</b></div>
+            <div class="grid grid-cols-2 gap-2 px-1">
+              <button type="button" onclick="ONSStore.toggleDarkMode();window.closeMobileDrawer();renderApp();" class="ons-btn ons-btn-ghost text-xs py-2 justify-center">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}<span>${st.darkMode ? 'Mode Terang' : 'Mode Malam'}</span></button>
+              <button type="button" onclick="window.closeMobileDrawer();bootLoadState(true);window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-btn ons-btn-ghost text-xs py-2 justify-center"><span>↻ Segarkan</span></button>
+            </div>
             <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn ons-nav-logout-btn">${svgIcon('logout')}<span>Keluar Sesi</span></button>
           </div>
         </div>`;
@@ -1246,7 +1250,7 @@
         const m = window.getConnStatusMeta();
         pill.className = 'ons-conn-pill ' + m.cls;
         pill.title = m.desc;
-        pill.innerHTML = `<span>${m.dot}</span><span>${m.label}</span>`;
+        pill.innerHTML = `<span>${m.dot}</span><span class="hidden sm:inline">${m.label}</span>`;
       };
 
       window.showConnStatusToast = function () {
@@ -1939,37 +1943,37 @@
 
             <!-- Konten Utama -->
             <div class="flex-1 flex flex-col min-w-0">
-              <header class="ons-topbar h-14 border-b px-3 sm:px-4 flex items-center justify-between gap-2 sticky top-0 z-30 shadow-sm" style="background:linear-gradient(135deg, #0A1E3F 0%, #0F2E5E 50%, #11427D 100%);color:#FFFFFF;border-color:rgba(255,255,255,0.16)">
-                <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 text-white">
-                  <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-btn ons-btn-ghost p-1.5 w-9 h-9 rounded-lg text-white hover:bg-white/20 border-0 md:hidden flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.15);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
-                  <div class="ons-topbar-crest">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="font-extrabold tracking-wide text-xs truncate max-w-[130px] sm:max-w-none">${ONSStore.esc((ONSStore.getStoreProfile && ONSStore.getStoreProfile().nama_usaha) || 'Apotek ONS Farma')}</span>
+              <header class="ons-topbar h-14 border-b px-2.5 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-2 sticky top-0 z-30 shadow-sm" style="background:linear-gradient(135deg, #0A1E3F 0%, #0F2E5E 50%, #11427D 100%);color:#FFFFFF;border-color:rgba(255,255,255,0.16)">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 text-white">
+                  <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-topbar-icon-btn w-9 h-9 rounded-lg text-white hover:bg-white/20 border-0 md:hidden flex items-center justify-center shrink-0" style="background:rgba(255,255,255,0.15);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
+                  <div class="ons-topbar-crest min-w-0">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0 hidden sm:inline-block"></span>
+                    <span class="font-extrabold tracking-wide text-xs sm:text-[13px] truncate">${ONSStore.esc((ONSStore.getStoreProfile && ONSStore.getStoreProfile().nama_usaha) || 'Apotek ONS Farma')}</span>
                   </div>
                   ${(() => {
                     const cm = window.getConnStatusMeta ? window.getConnStatusMeta() : { cls: 'is-cloud', dot: '🟢', label: 'Cloud Sheets', desc: '' };
-                    return `<button id="topbarConnPill" type="button" onclick="window.showConnStatusToast()" class="ons-conn-pill ${cm.cls}" title="${ONSStore.esc(cm.desc)}"><span>${cm.dot}</span><span>${cm.label}</span></button>`;
+                    return `<button id="topbarConnPill" type="button" onclick="window.showConnStatusToast()" class="ons-conn-pill ${cm.cls} shrink-0" title="${ONSStore.esc(cm.desc)}"><span>${cm.dot}</span><span class="hidden sm:inline">${cm.label}</span></button>`;
                   })()}
                 </div>
-                <div class="flex items-center gap-1.5 sm:gap-2 text-white">
-                  <button onclick="window.openCommandPalette()" aria-label="Pencarian Cepat dan Pintasan Navigasi" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1.5 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Pencarian Cepat &amp; Pintasan Fitur (Ctrl+K)">
-                    ${svgIcon('search', 'w-3.5 h-3.5 text-white')}
-                    <span class="font-semibold text-white">Cari Cepat</span>
+                <div class="flex items-center gap-1 sm:gap-2 text-white shrink-0">
+                  <button onclick="window.openCommandPalette()" aria-label="Pencarian Cepat dan Pintasan Navigasi" class="ons-topbar-icon-btn text-xs px-2 sm:px-2.5 h-9 rounded-lg text-white hover:bg-white/25 flex items-center gap-1.5 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Pencarian Cepat &amp; Pintasan Fitur (Ctrl+K)">
+                    ${svgIcon('search', 'w-4 h-4 sm:w-3.5 sm:h-3.5 text-white')}
+                    <span class="hidden sm:inline font-semibold text-white">Cari Cepat</span>
                     <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">Ctrl+K</kbd>
                   </button>
                   <div id="headerAlertHost" class="relative">
-                    <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-btn ons-btn-ghost text-xs p-2 rounded-lg text-white hover:bg-white/25 flex items-center justify-center relative shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Radar Notifikasi Apotek">
+                    <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-topbar-icon-btn w-9 h-9 rounded-lg text-white hover:bg-white/25 flex items-center justify-center relative shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Radar Notifikasi Apotek">
                       ${svgIcon('bell', 'w-4 h-4')}
                       ${alertsCount ? `<span class="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[10px] font-bold absolute -top-1 -right-1 shadow-sm">${alertsCount}</span>` : ''}
                     </button>
                   </div>
-                  <button type="button" onclick="window.renderApp();window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-btn ons-btn-ghost text-xs p-2 rounded-lg text-white hover:bg-white/25 flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Segarkan Data">
+                  <button type="button" onclick="window.renderApp();window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-topbar-icon-btn hidden sm:flex w-9 h-9 rounded-lg text-white hover:bg-white/25 items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Segarkan Data">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   </button>
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden font-bold">Install</button>
-                  <button onclick="window.lockScreenNow()" aria-label="Kunci Layar dan Hapus Cache Sesi" title="Kunci Layar Segera" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline text-white font-medium">Kunci</span></button>
-                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs p-2 rounded-lg text-white hover:bg-white/25 flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
-                  <button type="button" onclick="navigateView('settings','profil')" class="w-7 h-7 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 ml-1 shadow-sm" title="Profil Pengguna">
+                  <button onclick="window.lockScreenNow()" aria-label="Kunci Layar Segera" title="Kunci Layar Segera" class="ons-topbar-icon-btn h-9 px-2 sm:px-2.5 rounded-lg text-white hover:bg-white/25 flex items-center justify-center gap-1 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline text-white font-medium">Kunci</span></button>
+                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-topbar-icon-btn hidden sm:flex w-9 h-9 rounded-lg text-white hover:bg-white/25 items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
+                  <button type="button" onclick="navigateView('settings','profil')" class="w-8 h-8 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 shadow-sm" title="Profil Pengguna">
                     ${(fotoPem && ONSStore.getRole() === 'Pemilik')
                       ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-full h-full rounded-full object-cover"/>`
                       : 'AP'}
