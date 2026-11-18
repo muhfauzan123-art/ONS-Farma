@@ -403,8 +403,7 @@
         const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
         const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
         const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
-        const hetVal = Math.round(h1 * 1.15);
-        const sBreakdown = _formatStockMultiSatuan(m.stok, o);
+            const sBreakdown = _formatStockMultiSatuan(m.stok, o);
         return `<div class="ons-product-card flex flex-col justify-between gap-2.5 ${!isAktifJual ? 'opacity-75' : ''}">
           <div class="space-y-1.5">
             <div class="flex items-start justify-between gap-2">
@@ -512,8 +511,7 @@
               const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
               const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
               const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
-              const hetVal = Math.round(h1 * 1.15);
-              const sBreakdown = _formatStockMultiSatuan(m.stok, o);
+                        const sBreakdown = _formatStockMultiSatuan(m.stok, o);
               return `<tr class="${!isAktifJual ? 'opacity-70 bg-slate-500/5' : ''}">
                 <td class="font-mono-num text-xs text-center">${idx + 1}.</td>
                 <td>
@@ -900,7 +898,6 @@
       const a = String(m.alergi_list || '').trim();
       return a && !/^(tidak ada|-)$/i.test(a);
     }).length;
-    const totalPoin = allMbr.reduce((s, m) => s + Number(m.poin_loyalitas || 0), 0);
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
 
     const kpiHtml = `<div class="ons-md-kpi-strip">
@@ -3474,7 +3471,6 @@
     const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
     const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
     const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
-    const hetVal = Math.round(h1 * 1.15);
     const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
@@ -3565,7 +3561,6 @@
     const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
     const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
     const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
-    const hetVal = Math.round(h1 * 1.15);
     const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
     const prof = S().getStoreProfile ? S().getStoreProfile() : {};
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
@@ -4478,7 +4473,6 @@
     const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
     const h2 = valid2 ? Number(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || (h1 * r2))) : 0;
     const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
-    const hetVal = Math.round(h1 * 1.15);
     const isRiw = initialTab === 'riwayat-beli';
     const isBatch = initialTab === 'batch';
     const isHarga = initialTab === 'multi-satuan';
@@ -11198,7 +11192,7 @@
                     <td class="font-mono-num text-xs"><b>${S().esc(f.no_faktur_pbf)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(f.no_sp || 'Tanpa SP')}</span></td>
                     <td class="font-semibold text-xs">${S().esc(f.id_pbf)}</td>
                     <td class="text-xs">${linkedBatches.length ? `<b>${linkedBatches.length} batch</b><div class="text-[10px] truncate max-w-[160px]" style="color:var(--ons-text-soft)">${S().esc(prodNames)}</div>` : '<span style="color:var(--ons-text-soft)">-</span>'}</td>
-                    <td class="font-mono-num text-xs whitespace-nowrap">${S().esc(f.tgl_jatuh_tempo || '-')}${tempoBadge}</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap">${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}${tempoBadge}</td>
                     <td class="text-right font-mono-num text-xs">
                       <div class="font-bold">${isKons ? 'Titip Jual' : S().rp(f.netto_hutang)}</div>
                       <div class="text-[11px] font-bold ${isKons ? 'text-blue-600' : (Number(f.sisa_hutang || 0) > 0 ? 'text-red-600' : 'text-emerald-600')}">Sisa: ${S().rp(f.sisa_hutang)}</div>
@@ -11273,7 +11267,7 @@
             <div style="color:#64748b;font-size:10px;text-transform:uppercase;font-weight:bold;margin-bottom:2px;">Parameter Tagihan</div>
             <div>No. SP Asal: <b>${S().esc(f.no_sp || '-')}</b></div>
             <div>Sistem Bayar: <b>${S().esc(f.metode_bayar || (f.sisa_hutang > 0 ? 'TEMPO' : 'TUNAI'))}</b></div>
-            <div>Jatuh Tempo: <b style="color:${f.sisa_hutang > 0 ? '#dc2626' : '#166534'};">${S().esc(f.tgl_jatuh_tempo || '-')}</b></div>
+            <div>Jatuh Tempo: <b style="color:${f.sisa_hutang > 0 ? '#dc2626' : '#166534'};">${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}</b></div>
             <div style="margin-top:3px;"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-weight:bold;font-size:10px;${f.status_bayar === 'LUNAS' ? 'background:#dcfce7;color:#166534;' : 'background:#fee2e2;color:#991b1b;'}">${S().esc(f.status_bayar || 'BELUM_LUNAS')}</span></div>
           </div>
         </div>
@@ -12552,7 +12546,7 @@
             <tbody>
               ${masukProdRows.length ? masukProdRows.map((it, idx) => `<tr>
                 <td class="font-mono-num text-xs">${idx + 1}</td>
-                <td class="font-mono-num text-xs">${S().esc(String(it.tgl_terima || new Date().toISOString().slice(0, 10)).slice(0, 10))}</td>
+                <td class="font-mono-num text-xs">${S().esc(S().formatEd(it.tgl_terima || new Date().toISOString().slice(0, 10)))}</td>
                 <td class="font-mono-num text-xs font-bold">${S().esc(it.no_faktur_pbf || '-')}</td>
                 <td class="text-xs font-semibold">${S().esc(it.id_pbf)}</td>
                 <td class="text-xs"><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)} &bull; ED ${S().esc(S().formatEd(it.tgl_kadaluarsa))}</div></td>
@@ -12960,8 +12954,8 @@
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
           <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Jenis &amp; Status</div><div class="font-bold mt-0.5">${isKons ? 'KONSINYASI' : S().esc(f.status_bayar || 'BELUM_LUNAS')}</div></div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Tanggal Faktur</div><div class="font-bold font-mono-num mt-0.5">${S().esc(String(f.tgl_faktur || f.created_at || '-').slice(0, 10))}</div></div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Jatuh Tempo</div><div class="font-bold font-mono-num mt-0.5 ${!isKons && sisa > 0 && dTempo <= 7 ? 'text-amber-600' : ''}">${S().esc(f.tgl_jatuh_tempo || '-')}${!isKons && sisa > 0 && dTempo <= 7 ? (dTempo < 0 ? ` (Lewat ${Math.abs(dTempo)}h)` : ` (H-${dTempo})`) : ''}</div></div>
+          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Tanggal Faktur</div><div class="font-bold font-mono-num mt-0.5">${S().esc(S().formatEd(f.tgl_faktur || f.created_at || ''))}</div></div>
+          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"><div class="text-[10px]" style="color:var(--ons-text-soft)">Jatuh Tempo</div><div class="font-bold font-mono-num mt-0.5 ${!isKons && sisa > 0 && dTempo <= 7 ? 'text-amber-600' : ''}">${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}${!isKons && sisa > 0 && dTempo <= 7 ? (dTempo < 0 ? ` (Lewat ${Math.abs(dTempo)}h)` : ` (H-${dTempo})`) : ''}</div></div>
         </div>
 
         <div class="p-3.5 rounded-xl border space-y-1.5 text-xs" style="border-color:var(--ons-border)">

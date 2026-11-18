@@ -3471,7 +3471,7 @@
                   return `<tr class="cursor-pointer hover:bg-blue-500/5 transition" onclick="if(window.openFakturDetailModal)window.openFakturDetailModal('${S().esc(f.id_faktur || f.no_faktur_pbf)}')">
                     <td class="font-mono-num">${i + 1}</td>
                     <td class="font-semibold">${S().esc(f.id_pbf || f.nama_pbf || '-')}</td>
-                    <td class="font-mono-num">${S().esc(f.tgl_jatuh_tempo || '-')}</td>
+                    <td class="font-mono-num">${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}</td>
                     <td><span class="badge-bpom ${badgeCls} font-mono-num font-bold">${badgeTxt}</span></td>
                     <td class="text-right font-mono-num font-bold text-amber-600">${S().rp(f.sisa_hutang)}</td>
                   </tr>`;

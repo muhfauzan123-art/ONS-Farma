@@ -4408,7 +4408,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <b class="text-xl font-extrabold font-mono-num text-red-600">${S().rp(sisa)}</b>
         </div>
         <div class="text-right text-[11px] text-slate-500">
-          <div>Jatuh Tempo: <b>${S().esc(f.tgl_jatuh_tempo || '-')}</b></div>
+          <div>Jatuh Tempo: <b>${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}</b></div>
           <div>Status: <span class="badge-bpom bpom-prekursor">${S().esc(f.status_bayar || 'BELUM_LUNAS')}</span></div>
         </div>
       </div>
@@ -6550,9 +6550,9 @@ S. prn 3 dd 1 tab</textarea>
                 return `<tr>
                   <td class="font-mono-num text-xs">${idx + 1}</td>
                   <td class="font-mono-num text-xs font-bold">${S().esc(f.no_faktur_pbf || f.id_beli || '-')}</td>
-                  <td class="font-mono-num text-xs">${S().esc(String(f.tgl_terima || f.tgl_faktur || '').slice(0, 10))}</td>
+                  <td class="font-mono-num text-xs">${S().esc(S().formatEd(f.tgl_terima || f.tgl_faktur || ''))}</td>
                   <td class="text-xs font-semibold">${S().esc(f.id_pbf || '-')}</td>
-                  <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo || '-')}</td>
+                  <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}</td>
                   <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
                   <td><span class="badge-bpom ${status === 'LUNAS' ? 'bpom-bebas' : 'bpom-keras'}">${status}</span></td>
                 </tr>`;
