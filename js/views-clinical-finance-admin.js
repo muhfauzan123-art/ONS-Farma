@@ -14535,6 +14535,34 @@ S. prn 3 dd 1 tab</textarea>
               <label class="font-semibold block mb-1">Maksimal Jumlah Shift Kasir yang Buka Bersamaan</label>
               <input type="number" id="cfg_max_active_shifts" min="1" max="5" class="ons-input font-mono-num text-xs w-28" value="${cfg.max_active_shifts || 2}" />
             </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
+              <div>
+                <label class="font-semibold block mb-1">Auto-Lock Layar Otomatis (Idle)</label>
+                <select id="cfg_idle_lock_minutes" class="ons-select text-xs">
+                  ${[
+                    { v: 0, l: 'Nonaktif (Kunci Manual)' },
+                    { v: 5, l: '5 Menit Tidak Aktif' },
+                    { v: 10, l: '10 Menit Tidak Aktif' },
+                    { v: 15, l: '15 Menit (Disarankan)' },
+                    { v: 30, l: '30 Menit Tidak Aktif' }
+                  ].map((o) => `<option value="${o.v}" ${Number(cfg.idle_lock_minutes !== undefined ? cfg.idle_lock_minutes : 15) === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="font-semibold block mb-1">Batas Maks. Diskon Kasir Tanpa PIN (%)</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="cfg_max_kasir_discount_pct" min="0" max="100" class="ons-input font-mono-num text-xs w-24" value="${cfg.max_kasir_discount_pct !== undefined ? cfg.max_kasir_discount_pct : 10}" />
+                  <span style="color:var(--ons-text-soft)">% (di atasnya wajib PIN)</span>
+                </div>
+              </div>
+            </div>
+            <label class="flex items-start gap-2.5 cursor-pointer pt-1">
+              <input type="checkbox" id="cfg_lock_kasir_export" class="mt-0.5 rounded" ${cfg.lock_kasir_export !== false ? 'checked' : ''} />
+              <div>
+                <span class="font-bold block text-red-700 dark:text-red-300">Kunci Export Database (Excel/CSV/PDF) dari Peran Kasir</span>
+                <span class="text-[11px]" style="color:var(--ons-text-soft)">Hanya Pemilik &amp; APJ yang boleh mengunduh data Master Obat, Pelanggan, PBF, dan Riwayat Penjualan.</span>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -14652,6 +14680,9 @@ S. prn 3 dd 1 tab</textarea>
 
         blind_cash_count: getVal('cfg_blind_cash_count', false, true),
         max_active_shifts: getVal('cfg_max_active_shifts', true, false),
+        idle_lock_minutes: getVal('cfg_idle_lock_minutes', true, false),
+        max_kasir_discount_pct: getVal('cfg_max_kasir_discount_pct', true, false),
+        lock_kasir_export: getVal('cfg_lock_kasir_export', false, true),
 
         min_ed_terima_bulan: getVal('cfg_min_ed_terima_bulan', true, false),
         min_ed_jual_bulan: getVal('cfg_min_ed_jual_bulan', true, false),

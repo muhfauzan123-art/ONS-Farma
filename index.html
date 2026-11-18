@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0050CA"/>
   <meta name="application-version" content="v18.19.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.26.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.27.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.26.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.27.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.26.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.26.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.26.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.27.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.27.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.27.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.26.0"></script>
-  <script src="./js/struk-engine.js?v=18.26.0"></script>
-  <script src="./js/demo-engine.js?v=18.26.0"></script>
-  <script src="./js/api-turbo.js?v=18.26.0"></script>
-  <script src="./js/store.js?v=18.26.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.26.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.26.0"></script>
+  <script src="./js/config.js?v=18.27.0"></script>
+  <script src="./js/struk-engine.js?v=18.27.0"></script>
+  <script src="./js/demo-engine.js?v=18.27.0"></script>
+  <script src="./js/api-turbo.js?v=18.27.0"></script>
+  <script src="./js/store.js?v=18.27.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.27.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.27.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.26.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.26.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.26.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.26.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.26.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.26.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.27.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.27.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.27.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.27.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.27.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.27.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -535,8 +535,12 @@
           if (drawerMount) drawerMount.innerHTML = menuHtml;
           if (subBar) subBar.innerHTML = renderSubnavBarHtml();
         }
+        if (curView !== 'pos' && document.body && document.body.classList && document.body.classList.contains('ons-pos-focus-mode')) {
+          document.body.classList.remove('ons-pos-focus-mode');
+        }
         document.querySelectorAll('[data-mobile-nav]').forEach((el) => {
-          const isMatch = el.getAttribute('data-mobile-nav') === curView;
+          const targetId = el.getAttribute('data-mobile-nav');
+          const isMatch = targetId === curView || (targetId === 'obat' && curView === 'gudang');
           el.classList.toggle('is-active', isMatch);
         });
       };
@@ -1132,9 +1136,127 @@
         if (reasonMsg && typeof toast === 'function') toast(reasonMsg, 'info');
       };
 
-      window.lockScreenNow = function () {
-        window.logoutUser('Layar dikunci & cache sesi dibersihkan. Silakan login kembali.');
+      /**
+       * #6 Mode Fokus Kasir POS (Sembunyikan Sidebar Sementara untuk Layar Penuh)
+       */
+      window.togglePosFocusMode = function (forceVal) {
+        if (!document.body || !document.body.classList) return false;
+        const next = forceVal !== undefined ? Boolean(forceVal) : !document.body.classList.contains('ons-pos-focus-mode');
+        document.body.classList.toggle('ons-pos-focus-mode', next);
+        if (typeof window.renderActiveView === 'function') window.renderActiveView();
+        return next;
       };
+
+      /**
+       * #1 Layar Kunci Otomatis & Kunci Cepat Ber-PIN (Tidak Menghapus Keranjang Kasir)
+       */
+      window._isScreenLocked = false;
+      window.lockScreenNow = function (reasonMsg) {
+        if (!ONSApi.getSession() || !ONSStore.AppState.user) return;
+        if (document.getElementById('onsPinLockOverlay')) return;
+        window._isScreenLocked = true;
+        const st = ONSStore.AppState;
+        const prof = ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : {};
+        const logoUrl = prof.logo_usaha_url || './icons/ons-farma-app-icon.png';
+        const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
+        const uName = (st.user && (st.user.nama_lengkap || st.user.username)) || 'Staf Apotek';
+        const uRole = (st.user && st.user.role) || 'Kasir';
+        const isDemo = ONSApi.isDemoMode();
+
+        const ov = document.createElement('div');
+        ov.id = 'onsPinLockOverlay';
+        ov.className = 'ons-pinlock-overlay';
+        ov.innerHTML = `<div class="ons-pinlock-card space-y-4 text-center">
+          <div class="flex flex-col items-center gap-2">
+            <img src="${ONSStore.esc(logoUrl)}" alt="Logo" class="w-14 h-14 rounded-2xl object-cover border-2 border-blue-500/30 shadow-md bg-white"/>
+            <div>
+              <span class="badge-bpom bpom-terbatas text-[10px]">🔒 LAYAR TERKUNCI</span>
+              <h2 class="text-base font-extrabold mt-1">${ONSStore.esc(usahaNama)}</h2>
+              <p class="text-xs mt-0.5" style="color:var(--ons-text-soft)">Sesi aktif: <b>${ONSStore.esc(uName)}</b> (${ONSStore.esc(uRole)})</p>
+            </div>
+          </div>
+          ${reasonMsg ? `<div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-700 dark:text-amber-300">${ONSStore.esc(reasonMsg)}</div>` : ''}
+          <form onsubmit="event.preventDefault();window.unlockOnsPinScreen();" class="space-y-3 text-left">
+            <div>
+              <label class="text-xs font-bold block mb-1">Masukkan 6 Digit PIN untuk Membuka Kembali</label>
+              <input id="onsPinUnlockInp" type="password" inputmode="numeric" maxlength="6" autocomplete="off" class="ons-input font-mono-num text-center text-lg tracking-[0.35em] font-extrabold" placeholder="••••••" autofocus required/>
+              <div class="text-[10.5px] mt-1 text-center" style="color:var(--ons-text-soft)">Keranjang kasir &amp; pekerjaan Anda tetap aman tersimpan.${isDemo ? ' (PIN Demo: 123456)' : ''}</div>
+            </div>
+            <div id="onsPinUnlockErr" class="hidden text-[11px] font-bold text-red-600 text-center"></div>
+            <button id="onsPinUnlockBtn" type="submit" class="ons-btn ons-btn-primary w-full py-2.5 text-xs font-bold">🔓 Buka Layar Kembali</button>
+          </form>
+          <div class="pt-2 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
+            <span style="color:var(--ons-text-soft)">Bukan Anda?</span>
+            <button type="button" onclick="window.removePinLockOverlay();window.logoutUser('Keluar sesi dari layar kunci.');" class="text-red-600 font-bold hover:underline">Ganti Akun / Logout &rarr;</button>
+          </div>
+        </div>`;
+        document.body.appendChild(ov);
+        setTimeout(() => { const inp = document.getElementById('onsPinUnlockInp'); if (inp) inp.focus(); }, 60);
+      };
+
+      window.removePinLockOverlay = function () {
+        window._isScreenLocked = false;
+        const ov = document.getElementById('onsPinLockOverlay');
+        if (ov) ov.remove();
+      };
+
+      window.unlockOnsPinScreen = async function () {
+        const inp = document.getElementById('onsPinUnlockInp');
+        const errEl = document.getElementById('onsPinUnlockErr');
+        const btn = document.getElementById('onsPinUnlockBtn');
+        const pinVal = String((inp && inp.value) || '').trim();
+        if (pinVal.length < 4) {
+          if (errEl) { errEl.textContent = 'Masukkan 6 digit PIN yang valid.'; errEl.classList.remove('hidden'); }
+          return;
+        }
+        if (btn) btn.disabled = true;
+        try {
+          await ONSApi.callApi('auth.verifyPin', { pin: pinVal }, { isWrite: true });
+          window.removePinLockOverlay();
+          if (typeof toast === 'function') toast('Layar berhasil dibuka kembali.', 'ok');
+        } catch (e) {
+          if (errEl) {
+            errEl.textContent = (e && e.message) || 'PIN tidak cocok. Coba lagi.';
+            errEl.classList.remove('hidden');
+          }
+          if (inp) { inp.value = ''; inp.focus(); }
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      };
+
+      /**
+       * #4 Indikator Status Koneksi Live (Cloud Sheets vs Mode Lokal vs Offline)
+       */
+      window.getConnStatusMeta = function () {
+        const isDemo = ONSApi.isDemoMode();
+        const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine !== false;
+        if (isDemo) {
+          return { cls: 'is-local', dot: '🟠', label: 'Mode Lokal', desc: 'Data tersimpan di perangkat ini (Mode Lokal/Demo). Gunakan Backup JSON rutin atau beralih ke Mode Live GAS.' };
+        }
+        if (!isOnline) {
+          return { cls: 'is-offline', dot: '🔴', label: 'Offline (Antre)', desc: 'Koneksi internet terputus. Transaksi disimpan ke antrean offline dan otomatis disinkron saat online.' };
+        }
+        return { cls: 'is-cloud', dot: '🟢', label: 'Cloud Sheets', desc: 'Tersambung langsung ke Google Sheets Cloud Apotek ONS Farma secara real-time.' };
+      };
+
+      window.syncConnStatusPill = function () {
+        const pill = document.getElementById('topbarConnPill');
+        if (!pill) return;
+        const m = window.getConnStatusMeta();
+        pill.className = 'ons-conn-pill ' + m.cls;
+        pill.title = m.desc;
+        pill.innerHTML = `<span>${m.dot}</span><span>${m.label}</span>`;
+      };
+
+      window.showConnStatusToast = function () {
+        const m = window.getConnStatusMeta();
+        const bk = ONSStore.getLastBackupInfo ? ONSStore.getLastBackupInfo() : null;
+        const extra = bk ? (' | Backup terakhir: ' + bk.label) : '';
+        if (typeof toast === 'function') toast(m.dot + ' ' + m.label + ' — ' + m.desc + extra, m.cls === 'is-cloud' ? 'ok' : 'warn');
+      };
+      window.addEventListener('online', window.syncConnStatusPill);
+      window.addEventListener('offline', window.syncConnStatusPill);
 
       let _activeFloatTrigger = null;
       window.closeOnsFloatMenu = function () {
@@ -1822,10 +1944,12 @@
                   <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-btn ons-btn-ghost p-1.5 w-9 h-9 rounded-lg text-white hover:bg-white/20 border-0 md:hidden flex items-center justify-center shadow-sm" style="background:rgba(255,255,255,0.15);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
                   <div class="ons-topbar-crest">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="font-extrabold tracking-wide text-xs">Apotek ONS Farma</span>
-                    <span class="text-[10px] text-emerald-200 font-medium hidden sm:inline">&bull; Shift 1 Aktif</span>
+                    <span class="font-extrabold tracking-wide text-xs truncate max-w-[130px] sm:max-w-none">${ONSStore.esc((ONSStore.getStoreProfile && ONSStore.getStoreProfile().nama_usaha) || 'Apotek ONS Farma')}</span>
                   </div>
-                  <span class="badge-bpom ${ONSApi.isDemoMode() ? 'bpom-terbatas' : 'bpom-bebas'} hidden lg:inline-block">${ONSApi.isDemoMode() ? 'DEMO SANDBOX' : 'LIVE'}</span>
+                  ${(() => {
+                    const cm = window.getConnStatusMeta ? window.getConnStatusMeta() : { cls: 'is-cloud', dot: '🟢', label: 'Cloud Sheets', desc: '' };
+                    return `<button id="topbarConnPill" type="button" onclick="window.showConnStatusToast()" class="ons-conn-pill ${cm.cls}" title="${ONSStore.esc(cm.desc)}"><span>${cm.dot}</span><span>${cm.label}</span></button>`;
+                  })()}
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2 text-white">
                   <button onclick="window.openCommandPalette()" aria-label="Pencarian Cepat dan Pintasan Navigasi" class="ons-btn ons-btn-ghost text-xs px-2.5 py-1.5 rounded-lg text-white hover:bg-white/25 flex items-center gap-1.5 shadow-sm" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF" title="Pencarian Cepat &amp; Pintasan Fitur (Ctrl+K)">
@@ -1859,18 +1983,16 @@
               <main id="mainViewSlot" class="flex-1 p-3 sm:p-4 md:p-6 ons-main-scroll"></main>
             </div>
 
-            <!-- Mobile Bottom Nav (<768px) dengan Touch Target >=44px & Drawer Menu -->
-            <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-5 ons-mobile-bottom">
+            <!-- #7 Mobile Bottom Nav (<768px) 4-Ikon Cepat seperti Aplikasi Asli -->
+            <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-4 ons-mobile-bottom">
               ${[
-                { id: 'dashboard', l: 'Beranda', i: 'home' },
+                { id: 'dashboard', l: 'Dashboard', i: 'home' },
                 { id: 'pos', l: 'Kasir', i: 'pos' },
-                { id: 'gudang', l: 'Stok', i: 'inventory' },
-                { id: 'klinis', l: 'Klinis', i: 'clinical' },
-                { id: 'keuangan', l: 'Keuangan', i: 'finance' }
-              ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold ${st.activeView === b.id ? 'is-active' : ''}">
+                { id: 'obat', l: 'Produk/Stok', i: 'inventory' }
+              ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[48px] text-[11px] font-semibold ${(st.activeView === b.id || (b.id === 'obat' && st.activeView === 'gudang')) ? 'is-active' : ''}">
                 ${svgIcon(b.i, 'w-5 h-5')}<span class="mt-0.5">${b.l}</span>
               </button>`).join('')}
-              <button onclick="window.openMobileDrawer()" aria-label="Buka Semua Menu" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[44px] text-[11px] font-semibold">
+              <button onclick="window.openMobileDrawer()" aria-label="Buka Semua Menu" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[48px] text-[11px] font-semibold">
                 ${svgIcon('menu', 'w-5 h-5')}<span class="mt-0.5">Menu</span>
               </button>
             </nav>
@@ -1948,7 +2070,7 @@
         }).catch(() => {});
       }
 
-      // Kunci Sesi Otomatis saat idle >= 25 menit pada Mode Live GAS (cegah penyalahgunaan PC bersama)
+      // #1 Auto-Lock Layar Otomatis Ber-PIN saat Idle (bisa diatur di Pengaturan -> Konfigurasi, default 15 menit)
       let lastUserActivityMs = Date.now();
       const bumpActivity = () => { lastUserActivityMs = Date.now(); };
       ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach((ev) => {
@@ -1956,11 +2078,13 @@
       });
       if (typeof setInterval === 'function') {
         setInterval(() => {
-          if (!ONSApi.isDemoMode() && ONSApi.getSession() && (Date.now() - lastUserActivityMs > 25 * 60 * 1000)) {
+          const cfg = ONSStore.getStoreSettings ? ONSStore.getStoreSettings() : {};
+          const limitMin = Number(cfg.idle_lock_minutes !== undefined ? cfg.idle_lock_minutes : 15);
+          if (limitMin > 0 && !window._isScreenLocked && ONSApi.getSession() && ONSStore.AppState.user && (Date.now() - lastUserActivityMs > limitMin * 60 * 1000)) {
             lastUserActivityMs = Date.now();
-            window.logoutUser('Sesi dikunci otomatis karena tidak ada aktivitas selama 25 menit.');
+            window.lockScreenNow(`Layar dikunci otomatis karena tidak ada aktivitas selama ${limitMin} menit.`);
           }
-        }, 60 * 1000);
+        }, 30 * 1000);
       }
 
       // Reset Data Pabrik Otomatis untuk Fresh Start Bersih (Transaksional 100% Kosong, Akun, Struk & Log Terjaga)

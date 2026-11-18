@@ -1061,10 +1061,14 @@
     const nowDt = new Date();
     const hr = nowDt.getHours();
     const autoShift = (hr >= 15 && hr < 22) ? 'SORE' : 'PAGI';
+    const greetWord = hr < 11 ? 'Selamat Pagi' : (hr < 15 ? 'Selamat Siang' : (hr < 19 ? 'Selamat Sore' : 'Selamat Malam'));
     const timeStr = nowDt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     const dateStr = nowDt.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     const isDark = !!(S().AppState && S().AppState.darkMode);
     const gasConfigured = !!(global.ONS_CONFIG && global.ONS_CONFIG.GAS_URL && global.ONS_CONFIG.GAS_URL.indexOf('GANTI_DENGAN_ID') === -1);
+    const cfgLogin = S().getStoreSettings ? S().getStoreSettings() : {};
+    const lockMinLogin = Number(cfgLogin.idle_lock_minutes !== undefined ? cfgLogin.idle_lock_minutes : 15);
+    const jamOps = prof.jam_operasional || 'Buka Setiap Hari • 08:00 - 22:00';
 
     root.innerHTML = `<div class="ons-login-stage">
       <div class="ons-login-shell grid grid-cols-1 lg:grid-cols-12">
@@ -1105,8 +1109,12 @@
                 </div>
                 <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10">
                   <span class="text-emerald-400 shrink-0">${_loginIco('clock', 'w-3.5 h-3.5')}</span>
-                  <span class="font-medium truncate">Auto-Lock 25 Menit</span>
+                  <span class="font-medium truncate">${lockMinLogin > 0 ? `Auto-Lock ${lockMinLogin} Menit` : 'Kunci Layar Manual'}</span>
                 </div>
+              </div>
+              <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-[11px] text-sky-200">
+                <span class="shrink-0">🕒</span>
+                <span class="truncate">${S().esc(jamOps)}</span>
               </div>
             </div>
           </div>
@@ -1117,27 +1125,30 @@
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">
                   <span class="w-2.5 h-2.5 rounded-full shrink-0 ${demoMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
-                  <span class="text-xs font-bold uppercase tracking-wider ${demoMode ? 'text-amber-300' : 'text-emerald-300'}">${demoMode ? 'Mode Sandbox Demo' : 'Live Google Apps Script'}</span>
+                  <span class="text-xs font-bold uppercase tracking-wider ${demoMode ? 'text-amber-300' : 'text-emerald-300'}">${demoMode ? 'Mode Lokal / Uji Coba' : 'Cloud Google Sheets Aktif'}</span>
                 </div>
                 <button type="button" onclick="window.pingBackendHealth()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white transition-colors shrink-0">Cek Koneksi</button>
               </div>
               <div class="text-xs text-slate-200 leading-snug flex items-center gap-2">
                 <span class="${demoMode ? 'text-amber-300' : 'text-emerald-300'} shrink-0">${_loginIco(demoMode ? 'bolt' : 'cloud', 'w-4 h-4')}</span>
-                <span id="loginConnDesc">${demoMode ? 'Penyimpanan lokal browser (aman untuk uji coba &amp; simulasi peran).' : (gasConfigured ? 'Terhubung langsung ke Google Sheets &amp; Drive Apotek (/exec).' : 'URL Google Apps Script belum terpasang di config.js.')}</span>
+                <span id="loginConnDesc">${demoMode ? 'Penyimpanan lokal perangkat (aman untuk uji coba &amp; simulasi).' : (gasConfigured ? 'Terhubung real-time ke database Cloud Google Sheets Apotek.' : 'URL Google Apps Script belum terpasang di config.js.')}</span>
               </div>
               <div id="loginPingResult" class="text-[11px] font-mono-num text-slate-300 hidden"></div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2" role="group" aria-label="Pilih Mode Backend">
-              <button type="button" onclick="window.switchBackendMode('DEMO')" class="ons-login-mode-btn ${demoMode ? 'is-active-demo' : ''}">
-                ${demoMode ? _loginIco('check', 'w-3.5 h-3.5') : _loginIco('bolt', 'w-3.5 h-3.5')}
-                <span>Mode Demo</span>
+            ${demoMode ? `<div class="grid grid-cols-2 gap-2" role="group" aria-label="Pilih Mode Backend">
+              <button type="button" onclick="window.switchBackendMode('DEMO')" class="ons-login-mode-btn is-active-demo">
+                ${_loginIco('check', 'w-3.5 h-3.5')}
+                <span>Mode Lokal</span>
               </button>
-              <button type="button" onclick="window.switchBackendMode('LIVE')" class="ons-login-mode-btn ${!demoMode ? 'is-active-live' : ''}">
-                ${!demoMode ? _loginIco('check', 'w-3.5 h-3.5') : _loginIco('cloud', 'w-3.5 h-3.5')}
-                <span>Mode Live GAS</span>
+              <button type="button" onclick="window.switchBackendMode('LIVE')" class="ons-login-mode-btn">
+                ${_loginIco('cloud', 'w-3.5 h-3.5')}
+                <span>Buka Cloud Live</span>
               </button>
-            </div>
+            </div>` : `<div class="flex items-center justify-between text-[11px] text-slate-300 px-1">
+              <span>🟢 Siap Operasional Produksi</span>
+              <button type="button" onclick="window.switchBackendMode('DEMO')" class="text-sky-300 hover:underline font-medium">Mode Uji Coba Lokal &rarr;</button>
+            </div>`}
           </div>
         </div>
 
@@ -1147,9 +1158,9 @@
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div class="flex items-center gap-2 text-[11px] font-semibold mb-1" style="color:var(--ons-text-soft)">
-                  <span class="inline-flex items-center gap-1">${_loginIco('clock', 'w-3.5 h-3.5 text-blue-600')} ${S().esc(dateStr)} &bull; <span class="font-mono-num font-bold">${S().esc(timeStr)}</span></span>
+                  <span class="inline-flex items-center gap-1">${_loginIco('clock', 'w-3.5 h-3.5 text-blue-600')} ${S().esc(greetWord)} &bull; ${S().esc(dateStr)} &bull; <span class="font-mono-num font-bold">${S().esc(timeStr)}</span></span>
                 </div>
-                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Masuk ke Ruang Kerja Apotek</h1>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Masuk ke ${S().esc(usahaNama)}</h1>
                 <p class="text-xs mt-0.5" style="color:var(--ons-text-soft)">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Pilih cabang apotek, shift aktif, lalu verifikasi akun Anda.' : 'Pilih shift operasional aktif, lalu verifikasi akun apotek Anda.'}</p>
               </div>
               <button type="button" onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-3 min-h-[40px]">
@@ -4563,7 +4574,7 @@
                 <input id="posHistDateEnd" type="date" value="${S().esc(posHistEnd)}" onchange="window.setPosHistDateRange(document.getElementById('posHistDateStart')?.value, this.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num"/>
               </div>
             </div>
-            <div class="ons-dd-wrap inline-block">
+            ${seeCost ? `<div class="ons-dd-wrap inline-block">
               <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-emerald text-xs h-9 font-semibold">📤 Ekspor &#9662;</button>
               <div class="ons-dd-items hidden">
                 <div class="ons-float-hdr">Unduh Riwayat Penjualan</div>
@@ -4571,7 +4582,7 @@
                 <button type="button" onclick="window.exportPosHistoryExcel('csv')" class="ons-float-item"><span>📄</span><span>Export CSV</span></button>
                 <button type="button" onclick="window.exportPosHistoryExcel('pdf')" class="ons-float-item"><span>📕</span><span>Export PDF</span></button>
               </div>
-            </div>
+            </div>` : ''}
             <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs h-9">Segarkan</button>
           </div>
         </div>
@@ -5073,6 +5084,10 @@
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
+          ${(() => {
+            const isFocus = typeof document !== 'undefined' && document.body && document.body.classList && document.body.classList.contains('ons-pos-focus-mode');
+            return `<button type="button" onclick="window.togglePosFocusMode()" class="ons-btn ${isFocus ? 'ons-btn-primary font-bold' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold hidden md:inline-flex" title="Sembunyikan sidebar sementara agar layar kasir lebih lega">${isFocus ? '✕ Keluar Fokus' : '⛶ Mode Fokus'}</button>`;
+          })()}
           <div class="ons-dd-wrap inline-block">
             <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Laci Kas, Printer Bluetooth &amp; Shift">
               ⚙️ Kas &amp; Printer${S().ThermalPrinter && S().ThermalPrinter.characteristic ? ' (BT Aktif)' : ''} &#9662;
@@ -7266,7 +7281,13 @@
       return s + (hppBase * Number(it.qty || 1) * Math.max(1, Number(it.faktor_konversi || 1)));
     }, 0);
     const isBelowHpp = estHppCart > 0 && total < estHppCart;
-    const requiresApjAuth = Boolean(cdss.needsApjPin || isBelowHpp);
+    const cfgPos = S().getStoreSettings ? S().getStoreSettings() : {};
+    const maxKasirDiscPct = Number(cfgPos.max_kasir_discount_pct !== undefined ? cfgPos.max_kasir_discount_pct : 10);
+    const brutoCart = cart.items.reduce((s, it) => s + (Number(it.harga_jual || 0) * Number(it.qty || 0)), 0);
+    const totalDiscCart = Number(cart.diskon_global || 0) + cart.items.reduce((s, it) => s + Number(it.diskon_item || 0), 0);
+    const discPctCart = brutoCart > 0 ? Math.round((totalDiscCart / brutoCart) * 1000) / 10 : 0;
+    const isOverKasirDisc = !seeCost && maxKasirDiscPct >= 0 && discPctCart > maxKasirDiscPct;
+    const requiresApjAuth = Boolean(cdss.needsApjPin || isBelowHpp || isOverKasirDisc);
     const member = S().AppState.members.find((m) => m.id_member === cart.id_member);
     const maxRedeemPoin = member ? Math.min(Number(member.poin_loyalitas || 0), Math.floor(total / 100)) : 0;
     const invPreview = 'INV-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-POS';
@@ -7305,6 +7326,11 @@
       ${isBelowHpp ? `<div class="p-3 rounded-xl border border-red-500 bg-red-500/15 text-xs space-y-1 text-red-700 dark:text-red-300">
         <div class="font-extrabold">&#9888;&#65039; GUARD ANTI-RUGI: HARGA JUAL DI BAWAH HPP MODAL!</div>
         <div>Total Jual: <b class="font-mono-num">${S().rp(total)}</b>${seeCost ? ` &bull; Modal HPP: <b class="font-mono-num">${S().rp(estHppCart)}</b> (Selisih Rugi: <b class="font-mono-num">${S().rp(estHppCart - total)}</b>)` : ' &bull; Di bawah batas minimum modal'}. Wajib otorisasi PIN APJ/Pemilik.</div>
+      </div>` : ''}
+
+      ${isOverKasirDisc ? `<div class="p-3 rounded-xl border border-amber-500 bg-amber-500/15 text-xs space-y-1 text-amber-800 dark:text-amber-200">
+        <div class="font-extrabold">🔒 GUARD BATAS DISKON KASIR (${discPctCart}% &gt; Maks ${maxKasirDiscPct}%)</div>
+        <div>Total diskon <b class="font-mono-num">${S().rp(totalDiscCart)}</b> (${discPctCart}%) melebihi batas maksimal diskon kasir (${maxKasirDiscPct}%). Wajib otorisasi PIN Pemilik/APJ.</div>
       </div>` : ''}
 
       ${metode === 'QRIS' ? `<div class="text-center space-y-2 p-3 rounded-xl border" style="border-color:var(--ons-border)">
@@ -7375,8 +7401,8 @@
       </div>` : ''}
 
       ${requiresApjAuth ? `<div class="p-3 rounded-xl border border-red-500/40 bg-red-500/10 space-y-2">
-        <div class="text-xs font-bold text-red-600">&#128274; OTORISASI PIN APJ DIPERLUKAN (${isBelowHpp ? 'Guard Anti-Rugi Jual < HPP' : 'Obat Keras / Narkotika / Peringatan CDSS'})</div>
-        <input id="posApjPinInput" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN APJ${API().isDemoMode() ? ' (Demo: 123456)' : ''}" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
+        <div class="text-xs font-bold text-red-600">&#128274; OTORISASI PIN PEMILIK / APJ DIPERLUKAN (${isBelowHpp ? 'Guard Anti-Rugi Jual < HPP' : (isOverKasirDisc ? `Diskon ${discPctCart}% > Batas Kasir ${maxKasirDiscPct}%` : 'Obat Keras / Narkotika / Peringatan CDSS')})</div>
+        <input id="posApjPinInput" type="password" maxlength="6" autocomplete="off" class="ons-input font-mono-num" placeholder="Masukkan 6 Digit PIN Pemilik / APJ${API().isDemoMode() ? ' (Demo: 123456)' : ''}" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
       </div>` : ''}
 
       <div>
@@ -7487,7 +7513,15 @@
     const member = st.members.find((m) => m.id_member === cart.id_member);
     let apjOverride = '';
 
-    if (needsPin) {
+    const seeCostChk = S().canSeeFinancialCost ? S().canSeeFinancialCost() : false;
+    const cfgChk = S().getStoreSettings ? S().getStoreSettings() : {};
+    const maxDiscChk = Number(cfgChk.max_kasir_discount_pct !== undefined ? cfgChk.max_kasir_discount_pct : 10);
+    const brutoChk = (cart.items || []).reduce((s, it) => s + (Number(it.harga_jual || 0) * Number(it.qty || 0)), 0);
+    const totDiscChk = Number(cart.diskon_global || 0) + (cart.items || []).reduce((s, it) => s + Number(it.diskon_item || 0), 0);
+    const discPctChk = brutoChk > 0 ? Math.round((totDiscChk / brutoChk) * 1000) / 10 : 0;
+    const mustVerifyPin = Boolean(needsPin || (!seeCostChk && maxDiscChk >= 0 && discPctChk > maxDiscChk));
+
+    if (mustVerifyPin) {
       const pinVal = (document.getElementById('posApjPinInput') || {}).value || '';
       try {
         const ver = await API().callApi('auth.verifyPin', { pin: pinVal }, { isWrite: true });

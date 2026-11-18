@@ -1266,6 +1266,11 @@
 
   function exportDataset(format, title, filenameBase, headers, rows, options) {
     const opts = options || {};
+    const cfgExp = getStoreSettings ? getStoreSettings() : {};
+    if (!canSeeFinancialCost() && cfgExp.lock_kasir_export !== false && !opts.allowKasirExport) {
+      showToast('🔒 Akses Export Database dibatasi khusus Pemilik / APJ.', 'warn');
+      return false;
+    }
     const fmt = String(format || 'xlsx').toLowerCase() === 'excel' ? 'xlsx' : String(format || 'xlsx').toLowerCase();
     const normHeaders = (Array.isArray(headers) ? headers : []).map((h, i) => {
       if (typeof h === 'string') return { key: '__col_' + i, label: h, _rawIdx: i };
@@ -1633,6 +1638,9 @@
       arah_pembulatan: 'TERDEKAT',
       blind_cash_count: true,
       max_active_shifts: 2,
+      idle_lock_minutes: 15,
+      max_kasir_discount_pct: 10,
+      lock_kasir_export: true,
 
       pos_show_embalase: true,
       pos_show_tuslah: true,

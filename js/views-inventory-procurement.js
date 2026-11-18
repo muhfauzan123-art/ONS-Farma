@@ -1865,7 +1865,7 @@
       { id: 'pajak', label: 'Master Pajak', count: _getMasterPajakList().length }
     ];
 
-    const exportBtns = (fnName) => `
+    const exportBtns = (fnName) => S().canSeeFinancialCost() ? `
       <div class="ons-dd-wrap inline-block">
         <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📤 Ekspor &#9662;</button>
         <div class="ons-dd-items hidden">
@@ -1875,7 +1875,7 @@
           <button type="button" onclick="window.${fnName}('pdf')" class="ons-float-item"><span>📕</span><span>Export PDF</span></button>
         </div>
       </div>
-    `;
+    ` : '';
 
     let pageTitle = 'Master Data Apotek';
     let pageDesc = 'Kelola terpusat katalog Obat KFA, multi-satuan, referensi harga & rak gudang penyimpanan.';
