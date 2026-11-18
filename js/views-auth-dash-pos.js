@@ -4509,9 +4509,15 @@
                 <input id="posHistDateEnd" type="date" value="${S().esc(posHistEnd)}" onchange="window.setPosHistDateRange(document.getElementById('posHistDateStart')?.value, this.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num"/>
               </div>
             </div>
-            <button type="button" onclick="window.exportPosHistoryExcel('xlsx')" class="ons-btn ons-btn-emerald text-xs h-9">Export Excel</button>
-            <button type="button" onclick="window.exportPosHistoryExcel('csv')" class="ons-btn ons-btn-ghost text-xs h-9">CSV</button>
-            <button type="button" onclick="window.exportPosHistoryExcel('pdf')" class="ons-btn ons-btn-ghost text-xs h-9">PDF</button>
+            <div class="ons-dd-wrap inline-block">
+              <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-emerald text-xs h-9 font-semibold">📤 Ekspor &#9662;</button>
+              <div class="ons-dd-items hidden">
+                <div class="ons-float-hdr">Unduh Riwayat Penjualan</div>
+                <button type="button" onclick="window.exportPosHistoryExcel('xlsx')" class="ons-float-item"><span>📗</span><span>Export Excel (.xlsx)</span></button>
+                <button type="button" onclick="window.exportPosHistoryExcel('csv')" class="ons-float-item"><span>📄</span><span>Export CSV</span></button>
+                <button type="button" onclick="window.exportPosHistoryExcel('pdf')" class="ons-float-item"><span>📕</span><span>Export PDF</span></button>
+              </div>
+            </div>
             <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs h-9">Segarkan</button>
           </div>
         </div>
@@ -5013,10 +5019,18 @@
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
-          <button type="button" onclick="window.openKasMasukModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Catat Kas Masuk Laci">+ Masuk</button>
-          <button type="button" onclick="window.openKasKeluarModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Catat Kas Keluar Laci">- Keluar</button>
-          <button type="button" onclick="window.handlePosPrinterBtClick()" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7" title="Koneksi &amp; Uji Printer Thermal Bluetooth">${S().ThermalPrinter && S().ThermalPrinter.characteristic ? '🖨️ BT Terhubung' : '🖨️ Printer BT'}</button>
-          ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold">Tutup Shift &rarr;</button>` : ''}
+          <div class="ons-dd-wrap inline-block">
+            <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Laci Kas, Printer Bluetooth &amp; Shift">
+              ⚙️ Kas &amp; Printer${S().ThermalPrinter && S().ThermalPrinter.characteristic ? ' (BT Aktif)' : ''} &#9662;
+            </button>
+            <div class="ons-dd-items hidden">
+              <div class="ons-float-hdr">Operasional Laci &amp; Perangkat</div>
+              <button type="button" onclick="window.openKasMasukModal()" class="ons-float-item"><span>➕</span><span>Kas Masuk Laci</span></button>
+              <button type="button" onclick="window.openKasKeluarModal()" class="ons-float-item"><span>➖</span><span>Kas Keluar Laci</span></button>
+              <button type="button" onclick="window.handlePosPrinterBtClick()" class="ons-float-item"><span>🖨️</span><span>${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'Printer BT Terhubung (Uji/Ganti)' : 'Hubungkan Printer Thermal BT'}</span></button>
+              ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<div class="ons-float-sep"></div><button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-float-item"><span>🔒</span><span>Tutup Shift &amp; Rekap Kas</span></button>` : ''}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -5161,18 +5175,28 @@
             </div>
             ${posCatalogExpanded ? `
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="flex gap-1.5 flex-wrap items-center">
-                  ${['', 'BEBAS', 'TERBATAS', 'KERAS', 'PREKURSOR', 'OOT', 'PSIKOTROPIKA', 'NARKOTIKA'].map((g) => `
-                    <button type="button" onclick="ONSStore.AppState.posFilterGol='${g}';window.refreshPosCatalogView();" class="ons-pos-chip ${fGol === g ? 'is-active' : ''}">${g || 'Semua BPOM'}</button>
-                  `).join('')}
-                </div>
-                <div class="flex gap-1.5 flex-wrap items-center">
-                  ${[
-                    { id: 'ALL', lbl: 'Semua Stok' },
-                    { id: 'READY', lbl: 'Siap Jual' },
-                    { id: 'LOW', lbl: 'Menipis' },
-                    { id: 'NEAR_ED', lbl: 'Hampir ED' }
-                  ].map((sf) => `<button type="button" onclick="window.setPosStockFilter('${sf.id}')" class="ons-pos-chip ${posStockFilter === sf.id ? 'is-active' : ''}">${sf.lbl}</button>`).join('')}
+                <div class="flex flex-wrap items-center gap-2">
+                  <select class="ons-select text-xs font-semibold py-1 px-2.5 min-w-[160px]" onchange="ONSStore.AppState.posFilterGol=this.value;window.refreshPosCatalogView();" aria-label="Filter Golongan BPOM">
+                    ${[
+                      { id: '', lbl: '🏷️ Semua Golongan BPOM' },
+                      { id: 'BEBAS', lbl: '🟢 Obat Bebas' },
+                      { id: 'TERBATAS', lbl: '🔵 Bebas Terbatas' },
+                      { id: 'KERAS', lbl: '🔴 Obat Keras (K)' },
+                      { id: 'PREKURSOR', lbl: '🟣 Prekursor' },
+                      { id: 'OOT', lbl: '🟠 OOT' },
+                      { id: 'PSIKOTROPIKA', lbl: '🟡 Psikotropika' },
+                      { id: 'NARKOTIKA', lbl: '⚪ Narkotika' }
+                    ].map((g) => `<option value="${g.id}" ${fGol === g.id ? 'selected' : ''}>${g.lbl}</option>`).join('')}
+                  </select>
+                  <select class="ons-select text-xs font-semibold py-1 px-2.5 min-w-[135px]" onchange="window.setPosStockFilter(this.value)" aria-label="Filter Status Stok">
+                    ${[
+                      { id: 'ALL', lbl: '📦 Semua Stok' },
+                      { id: 'READY', lbl: '✅ Siap Jual' },
+                      { id: 'LOW', lbl: '⚠️ Menipis' },
+                      { id: 'NEAR_ED', lbl: '⏳ Hampir ED' }
+                    ].map((sf) => `<option value="${sf.id}" ${posStockFilter === sf.id ? 'selected' : ''}>${sf.lbl}</option>`).join('')}
+                  </select>
+                  ${(fGol || posStockFilter !== 'ALL') ? `<button type="button" onclick="window.resetPosCatalogFilters()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-red-600 font-semibold">✕ Reset</button>` : ''}
                 </div>
               </div>
               <div id="posCatalogGrid" class="${posCatalogView === 'LIST' ? 'space-y-2' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5'} max-h-[42vh] overflow-y-auto pr-1">

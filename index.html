@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0050CA"/>
   <meta name="application-version" content="v18.19.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.22.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.23.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <link rel="preconnect" href="https://script.google.com"/>
@@ -24,33 +24,33 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.22.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.23.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.22.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.22.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.22.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.23.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.23.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.23.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.22.0"></script>
-  <script src="./js/struk-engine.js?v=18.22.0"></script>
-  <script src="./js/demo-engine.js?v=18.22.0"></script>
-  <script src="./js/api-turbo.js?v=18.22.0"></script>
-  <script src="./js/store.js?v=18.22.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.22.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.22.0"></script>
+  <script src="./js/config.js?v=18.23.0"></script>
+  <script src="./js/struk-engine.js?v=18.23.0"></script>
+  <script src="./js/demo-engine.js?v=18.23.0"></script>
+  <script src="./js/api-turbo.js?v=18.23.0"></script>
+  <script src="./js/store.js?v=18.23.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.23.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.23.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.22.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.22.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.22.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.22.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.22.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.22.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.23.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.23.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.23.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.23.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.23.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.23.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1136,7 +1136,119 @@
         window.logoutUser('Layar dikunci & cache sesi dibersihkan. Silakan login kembali.');
       };
 
+      let _activeFloatTrigger = null;
+      window.closeOnsFloatMenu = function () {
+        const old = document.getElementById('onsFloatingMenuPortal');
+        if (old) old.remove();
+        _activeFloatTrigger = null;
+      };
+
+      window.toggleOnsDropdown = function (btnEl, ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (!btnEl) return;
+        const wasSame = _activeFloatTrigger === btnEl && document.getElementById('onsFloatingMenuPortal');
+        window.closeOnsFloatMenu();
+        if (wasSame) return;
+
+        const wrap = btnEl.closest('.ons-dd-wrap');
+        const src = wrap ? wrap.querySelector('.ons-dd-items') : null;
+        if (!src) return;
+
+        const portal = document.createElement('div');
+        portal.id = 'onsFloatingMenuPortal';
+        portal.className = 'ons-float-menu';
+        portal.innerHTML = src.innerHTML;
+        portal.addEventListener('click', (e) => {
+          const clickedBtn = e.target && e.target.closest('button, a');
+          if (clickedBtn) {
+            setTimeout(() => window.closeOnsFloatMenu(), 0);
+          }
+        });
+        document.body.appendChild(portal);
+        _activeFloatTrigger = btnEl;
+
+        const r = btnEl.getBoundingClientRect();
+        const mw = portal.offsetWidth || 215;
+        const mh = portal.offsetHeight || 200;
+        let left = r.right - mw;
+        if (left < 10) left = Math.max(10, r.left);
+        if (left + mw > window.innerWidth - 10) left = Math.max(10, window.innerWidth - mw - 10);
+        let top = r.bottom + 6;
+        if (top + mh > window.innerHeight - 12 && r.top - mh - 6 > 10) {
+          top = r.top - mh - 6;
+        }
+        portal.style.left = Math.round(left) + 'px';
+        portal.style.top = Math.round(top) + 'px';
+      };
+
+      document.addEventListener('click', (e) => {
+        const p = document.getElementById('onsFloatingMenuPortal');
+        if (!p) return;
+        if (p.contains(e.target) || (_activeFloatTrigger && _activeFloatTrigger.contains(e.target))) return;
+        window.closeOnsFloatMenu();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') window.closeOnsFloatMenu();
+      });
+      window.addEventListener('resize', () => window.closeOnsFloatMenu());
+
+      function _enhanceSubTabBarsToDropdowns(slot) {
+        if (!slot || typeof document === 'undefined') return;
+        const bars = slot.querySelectorAll('.ons-tab-bar, .ons-md-tabs');
+        bars.forEach((bar) => {
+          if (bar.dataset.onsDdEnhanced === '1' || bar.dataset.keepTabs === '1') return;
+          const btns = Array.from(bar.querySelectorAll(':scope > button'));
+          if (btns.length < 3) return;
+          let activeIdx = btns.findIndex((b) =>
+            b.classList.contains('active') ||
+            b.classList.contains('is-active') ||
+            b.getAttribute('aria-selected') === 'true'
+          );
+          if (activeIdx < 0) activeIdx = 0;
+
+          const ddBar = document.createElement('div');
+          ddBar.className = 'ons-subtab-dd-bar';
+          const left = document.createElement('div');
+          left.className = 'ons-subtab-dd-left';
+
+          const lbl = document.createElement('span');
+          lbl.className = 'ons-subtab-dd-lbl';
+          lbl.textContent = 'Tampilan:';
+
+          const sel = document.createElement('select');
+          sel.className = 'ons-subtab-dd-select';
+          sel.setAttribute('aria-label', 'Pilih Tampilan Sub-Menu');
+          btns.forEach((b, idx) => {
+            const opt = document.createElement('option');
+            opt.value = String(idx);
+            const cleanText = String(b.textContent || '').replace(/\s+/g, ' ').trim();
+            opt.textContent = cleanText || ('Tab ' + (idx + 1));
+            if (idx === activeIdx) opt.selected = true;
+            sel.appendChild(opt);
+          });
+          sel.addEventListener('change', () => {
+            const chosen = btns[Number(sel.value)];
+            if (chosen) chosen.click();
+          });
+
+          left.appendChild(lbl);
+          left.appendChild(sel);
+
+          const meta = document.createElement('span');
+          meta.className = 'ons-subtab-dd-meta';
+          meta.textContent = `${activeIdx + 1} / ${btns.length} sub-menu`;
+
+          ddBar.appendChild(left);
+          ddBar.appendChild(meta);
+
+          bar.dataset.onsDdEnhanced = '1';
+          bar.style.display = 'none';
+          bar.parentNode.insertBefore(ddBar, bar);
+        });
+      }
+
       window.renderActiveView = function () {
+        window.closeOnsFloatMenu();
         const slot = document.getElementById('mainViewSlot');
         if (!slot) return;
         if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
@@ -1170,6 +1282,7 @@
           case 'mobile-preview': slot.innerHTML = v3.renderMobilePreviewView(); break;
           default: slot.innerHTML = v1.renderDashboardView();
         }
+        _enhanceSubTabBarsToDropdowns(slot);
       };
 
       function buildOperationalAlerts() {

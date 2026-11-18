@@ -18,6 +18,7 @@
   let masterFilterSuhu = 'SEMUA'; // SEMUA | CHILLER | RUANG
   let masterSortBy = 'NAMA'; // NAMA | NAMA_DESC | STOK_ASC | STOK_DESC | ED_ASC | HARGA_DESC | HARGA_ASC | MARGIN_DESC | VALUASI_DESC
   let masterViewMode = 'TABLE'; // TABLE | CARD
+  let masterShowAdvFilters = false;
   let masterSearchQ = '';
   let supplierSearchQ = '';
   let supplierStatusFilter = 'SEMUA'; // SEMUA | AKTIF | NONAKTIF
@@ -350,14 +351,20 @@
     const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (Math.max(0, m.stok) * m.hpp), 0) : 0;
     const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA' || masterFilterPabrikan !== 'SEMUA' || masterFilterPbf !== 'SEMUA' || masterFilterSuhu !== 'SEMUA');
 
-    const actionButtons = (o) => `<div class="flex flex-wrap items-center gap-1 justify-end max-w-[280px] ml-auto">
+    const actionButtons = (o) => `<div class="flex items-center gap-1 justify-end">
       <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary ons-btn-xs" title="Detail Monograf Klinis &amp; Batch FEFO">👁️ Detail</button>
-      ${seeCost ? `<button type="button" onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-amber-700 dark:text-amber-400 font-semibold" title="Edit Data &amp; Harga">✏️ Edit</button>` : ''}
-      ${seeCost ? `<button type="button" onclick="window.confirmDeleteObat('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 font-semibold" title="Hapus dari Katalog">🗑️ Hapus</button>` : ''}
-      <button type="button" onclick="window.openShelfLabelModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-teal-700 dark:text-teal-400 font-semibold" title="Cetak Label Harga Rak Apotek (Shelf Talker)">🏷️ Label Rak</button>
-      ${seeCost ? `<button type="button" onclick="window.openObatRiwayatBeliModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-blue-700 dark:text-blue-400 font-semibold" title="Riwayat Beli dari PBF &amp; Keputusan Harga Jual">📈 Riwayat Beli</button>` : ''}
-      <button type="button" onclick="window.openProductBarcodeModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs font-semibold" title="Cetak Barcode Label Stiker 58/80mm">🏷️ Barcode</button>
-      <button type="button" onclick="window.openObatKartuStok('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost ons-btn-xs text-purple-700 dark:text-purple-400 font-semibold" title="Buka Kartu Stok &amp; Riwayat Mutasi">📊 Mutasi</button>
+      <div class="ons-dd-wrap inline-block">
+        <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost ons-btn-xs font-semibold" title="Pilihan Aksi Produk">&#8942; Aksi &#9662;</button>
+        <div class="ons-dd-items hidden">
+          <div class="ons-float-hdr">${S().esc(String(o.nama_dagang || 'Produk').slice(0, 26))}</div>
+          ${seeCost ? `<button type="button" onclick="window.openObatWizardModal('${S().esc(o.id_obat)}')" class="ons-float-item"><span>✏️</span><span>Edit Data &amp; Harga</span></button>` : ''}
+          ${seeCost ? `<button type="button" onclick="window.openObatRiwayatBeliModal('${S().esc(o.id_obat)}')" class="ons-float-item"><span>📈</span><span>Riwayat Beli &amp; PBF</span></button>` : ''}
+          <button type="button" onclick="window.openObatKartuStok('${S().esc(o.id_obat)}')" class="ons-float-item"><span>📊</span><span>Kartu Stok &amp; Mutasi</span></button>
+          <button type="button" onclick="window.openShelfLabelModal('${S().esc(o.id_obat)}')" class="ons-float-item"><span>🏷️</span><span>Cetak Label Rak</span></button>
+          <button type="button" onclick="window.openProductBarcodeModal('${S().esc(o.id_obat)}')" class="ons-float-item"><span>🔖</span><span>Cetak Barcode</span></button>
+          ${seeCost ? `<div class="ons-float-sep"></div><button type="button" onclick="window.confirmDeleteObat('${S().esc(o.id_obat)}')" class="ons-float-item is-danger"><span>🗑️</span><span>Hapus dari Katalog</span></button>` : ''}
+        </div>
+      </div>
     </div>`;
 
     const kpiHtml = `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -487,7 +494,7 @@
               ${seeCost ? '<th title="Referensi Harga Beli / Harga Pokok (HPP)">HPP Modal</th>' : ''}
               <th>Harga Jual Kemasan (Eceran / Sedang / Besar)</th>
               <th class="text-center">Status</th>
-              <th class="text-right min-w-[260px]">Aksi</th>
+              <th class="text-right min-w-[135px]">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -592,7 +599,7 @@
                     ${isAktifJual ? '✓ Dijual' : '✕ Nonaktif'}
                   </button>
                 </td>
-                <td class="text-right min-w-[260px]">${actionButtons(o)}</td>
+                <td class="text-right min-w-[135px]">${actionButtons(o)}</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -658,113 +665,92 @@
         </div>
       ` : ''}
 
-      <div class="ons-card p-3 space-y-2.5">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-2 items-center">
-          <div class="lg:col-span-3">
-            ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, Golongan (OOT, Keras...), KFA, NIE, Rak, Pabrik, PBF...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
+      ${(() => {
+        const advActiveCount = [
+          masterFilterSediaan !== 'SEMUA',
+          masterFilterKategori !== 'SEMUA',
+          masterFilterPabrikan !== 'SEMUA',
+          masterFilterPbf !== 'SEMUA',
+          masterFilterSuhu !== 'SEMUA',
+          masterFilterStatusJual !== 'SEMUA',
+          masterSortBy !== 'NAMA'
+        ].filter(Boolean).length;
+        return `<div class="ons-card p-3 space-y-2.5">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex-1 min-w-[210px]">
+            ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, Golongan, KFA, NIE, Rak, PBF...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
           </div>
-          <div class="lg:col-span-2">
-            <select class="ons-select w-full text-xs" onchange="window.setMasterSediaan(this.value)" aria-label="Filter Bentuk Sediaan">
-              <option value="SEMUA" ${masterFilterSediaan === 'SEMUA' ? 'selected' : ''}>Semua Sediaan</option>
-              <option value="TABLET" ${masterFilterSediaan === 'TABLET' ? 'selected' : ''}>Tablet / Kaplet</option>
-              <option value="KAPSUL" ${masterFilterSediaan === 'KAPSUL' ? 'selected' : ''}>Kapsul</option>
-              <option value="SIRUP" ${masterFilterSediaan === 'SIRUP' ? 'selected' : ''}>Sirup / Suspensi / Drop</option>
-              <option value="SALEP" ${masterFilterSediaan === 'SALEP' ? 'selected' : ''}>Salep / Krim / Gel</option>
-              <option value="INJEKSI" ${masterFilterSediaan === 'INJEKSI' ? 'selected' : ''}>Injeksi / Infus / Pen</option>
-              <option value="LAINNYA" ${masterFilterSediaan === 'LAINNYA' ? 'selected' : ''}>Sediaan Lainnya</option>
-            </select>
-          </div>
-          <div class="lg:col-span-2">
-            <select class="ons-select w-full text-xs" onchange="window.setMasterStokFilter(this.value)" aria-label="Filter Status Stok">
-              <option value="SEMUA" ${masterFilterStok === 'SEMUA' ? 'selected' : ''}>Semua Stok</option>
-              <option value="AMAN" ${masterFilterStok === 'AMAN' ? 'selected' : ''}>Stok Aman</option>
-              <option value="KRITIS" ${masterFilterStok === 'KRITIS' ? 'selected' : ''}>Menipis (&le; Min)</option>
-              <option value="HABIS" ${masterFilterStok === 'HABIS' ? 'selected' : ''}>Stok Habis / 0</option>
-              <option value="NEAR_ED" ${masterFilterStok === 'NEAR_ED' ? 'selected' : ''}>Near ED (&le; 90h)</option>
-            </select>
-          </div>
-          <div class="lg:col-span-2">
-            <select class="ons-select w-full text-xs" onchange="window.setMasterPabrikan(this.value)" aria-label="Filter Pabrik Industri Farmasi">
-              <option value="SEMUA" ${masterFilterPabrikan === 'SEMUA' ? 'selected' : ''}>Semua Pabrikan</option>
-              ${pabrikList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPabrikan === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="lg:col-span-2">
-            <select class="ons-select w-full text-xs" onchange="window.setMasterSort(this.value)" aria-label="Urutkan Produk">
-              <option value="NAMA" ${masterSortBy === 'NAMA' ? 'selected' : ''}>Nama A-Z</option>
-              <option value="NAMA_DESC" ${masterSortBy === 'NAMA_DESC' ? 'selected' : ''}>Nama Z-A</option>
-              <option value="STOK_ASC" ${masterSortBy === 'STOK_ASC' ? 'selected' : ''}>Stok Terendah</option>
-              <option value="STOK_DESC" ${masterSortBy === 'STOK_DESC' ? 'selected' : ''}>Stok Tertinggi</option>
-              <option value="ED_ASC" ${masterSortBy === 'ED_ASC' ? 'selected' : ''}>ED Terdekat (FEFO)</option>
-              <option value="HARGA_DESC" ${masterSortBy === 'HARGA_DESC' ? 'selected' : ''}>Harga Tertinggi</option>
-              <option value="HARGA_ASC" ${masterSortBy === 'HARGA_ASC' ? 'selected' : ''}>Harga Terendah</option>
-              ${seeCost ? '<option value="MARGIN_DESC" ' + (masterSortBy === 'MARGIN_DESC' ? 'selected' : '') + '>Margin Tertinggi</option>' : ''}
-              ${seeCost ? '<option value="VALUASI_DESC" ' + (masterSortBy === 'VALUASI_DESC' ? 'selected' : '') + '>Valuasi Terbesar</option>' : ''}
-            </select>
-          </div>
-          <div class="lg:col-span-1 flex items-center gap-1.5 justify-end">
-            <button type="button" onclick="window.scanMasterObatBarcode()" class="ons-btn ons-btn-primary text-xs py-1.5 px-2 shrink-0" title="Cari Obat Lewat Kamera Barcode">📷</button>
-            <div class="inline-flex rounded-lg border p-0.5 shrink-0" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-              <button type="button" onclick="window.setMasterViewMode('TABLE')" class="ons-btn text-[11px] py-1 px-1.5 ${masterViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}" title="Mode Tabel">&#9776;</button>
-              <button type="button" onclick="window.setMasterViewMode('CARD')" class="ons-btn text-[11px] py-1 px-1.5 ${masterViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}" title="Mode Kartu">&#9638;</button>
-            </div>
+          <select id="masterGolSelect" class="ons-select text-xs font-semibold py-1.5 px-2.5 min-w-[190px] max-w-[240px]" onchange="window.setMasterGol(this.value)" aria-label="Filter Kategori / Golongan BPOM">
+            <option value="" ${!masterFilterGol ? 'selected' : ''}>🏷️ Semua Kategori (${totalCount})</option>
+            ${golDefList.filter((g) => g.id).map((g) => {
+              const cnt = golCounts[g.id] || 0;
+              return `<option value="${g.id}" ${masterFilterGol === g.id ? 'selected' : ''}>${g.icon} ${g.label} (${cnt})</option>`;
+            }).join('')}
+          </select>
+          <select class="ons-select text-xs py-1.5 px-2.5 min-w-[130px] max-w-[165px]" onchange="window.setMasterStokFilter(this.value)" aria-label="Filter Status Stok">
+            <option value="SEMUA" ${masterFilterStok === 'SEMUA' ? 'selected' : ''}>Semua Stok</option>
+            <option value="AMAN" ${masterFilterStok === 'AMAN' ? 'selected' : ''}>Stok Aman</option>
+            <option value="KRITIS" ${masterFilterStok === 'KRITIS' ? 'selected' : ''}>Menipis (&le; Min)</option>
+            <option value="HABIS" ${masterFilterStok === 'HABIS' ? 'selected' : ''}>Stok Habis / 0</option>
+            <option value="NEAR_ED" ${masterFilterStok === 'NEAR_ED' ? 'selected' : ''}>Near ED (&le; 90h)</option>
+          </select>
+          <button type="button" onclick="window.toggleMasterAdvFilters()" class="ons-btn ${masterShowAdvFilters || advActiveCount ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-2.5 font-semibold shrink-0" title="Tampilkan atau sembunyikan filter tambahan">
+            🎛️ Filter${advActiveCount ? ` (${advActiveCount})` : ''} ${masterShowAdvFilters ? '&#9652;' : '&#9662;'}
+          </button>
+          ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2 text-red-600 font-semibold shrink-0" title="Reset semua filter">✕ Reset</button>` : ''}
+          <button type="button" onclick="window.scanMasterObatBarcode()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2 shrink-0" title="Cari Obat Lewat Kamera Barcode">📷</button>
+          <div class="inline-flex rounded-lg border p-0.5 shrink-0" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <button type="button" onclick="window.setMasterViewMode('TABLE')" class="ons-btn text-[11px] py-1 px-1.5 ${masterViewMode === 'TABLE' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}" title="Mode Tabel">&#9776;</button>
+            <button type="button" onclick="window.setMasterViewMode('CARD')" class="ons-btn text-[11px] py-1 px-1.5 ${masterViewMode === 'CARD' ? 'ons-btn-primary' : 'ons-btn-ghost border-0'}" title="Mode Kartu">&#9638;</button>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t" style="border-color:var(--ons-border)">
-          <div class="flex flex-wrap items-center gap-2">
-            <!-- 1 Kotak Dropdown Kategori / Golongan BPOM (Permintaan Pengguna) -->
-            <div class="flex items-center gap-1.5">
-              <label for="masterGolSelect" class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1 shrink-0">
-                <span>🏷️ Kategori / Golongan:</span>
-              </label>
-              <select id="masterGolSelect" class="ons-select text-xs font-semibold py-1 px-2.5 rounded-lg border shadow-xs min-w-[210px]" onchange="window.setMasterGol(this.value)" aria-label="Filter Kategori / Golongan BPOM">
-                <option value="" ${!masterFilterGol ? 'selected' : ''}>Semua Kategori &amp; Golongan (${totalCount})</option>
-                ${golDefList.filter((g) => g.id).map((g) => {
-                  const cnt = golCounts[g.id] || 0;
-                  return `<option value="${g.id}" ${masterFilterGol === g.id ? 'selected' : ''}>${g.icon} ${g.label} (${cnt})</option>`;
-                }).join('')}
-              </select>
-              ${masterFilterGol ? `
-                <span class="inline-flex items-center gap-1">
-                  ${S().bpomBadge(masterFilterGol)}
-                  <button type="button" onclick="window.setMasterGol('')" class="text-xs text-slate-400 hover:text-red-500 font-bold p-0.5" title="Hapus filter kategori">&times;</button>
-                </span>
-              ` : ''}
-            </div>
-
-            <!-- Dropdown Kategori Etalase Produk -->
-            <select class="ons-select text-xs py-1 px-2.5 max-w-[160px]" onchange="window.setMasterKategori(this.value)" aria-label="Filter Kategori Produk">
-              <option value="SEMUA" ${masterFilterKategori === 'SEMUA' ? 'selected' : ''}>Semua Kategori Etalase</option>
-              ${kategoriList.map((k) => `<option value="${S().esc(k)}" ${masterFilterKategori === k ? 'selected' : ''}>${S().esc(k)}</option>`).join('')}
-            </select>
-
-            <!-- Distributor PBF -->
-            <select class="ons-select text-xs py-1 px-2.5" onchange="window.setMasterPbf(this.value)" aria-label="Filter Distributor PBF">
-              <option value="SEMUA" ${masterFilterPbf === 'SEMUA' ? 'selected' : ''}>Semua PBF</option>
-              ${pbfList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPbf === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
-            </select>
-
-            <!-- Suhu Simpan -->
-            <select class="ons-select text-xs py-1 px-2.5" onchange="window.setMasterSuhu(this.value)" aria-label="Filter Suhu Simpan">
-              <option value="SEMUA" ${masterFilterSuhu === 'SEMUA' ? 'selected' : ''}>Semua Suhu</option>
-              <option value="CHILLER" ${masterFilterSuhu === 'CHILLER' ? 'selected' : ''}>❄️ Chiller 2-8&deg;C</option>
-              <option value="RUANG" ${masterFilterSuhu === 'RUANG' ? 'selected' : ''}>🌡️ Suhu Ruang</option>
-            </select>
-
-            <!-- Status Jual -->
-            <select class="ons-select text-xs py-1 px-2.5" onchange="window.setMasterStatusJual(this.value)" aria-label="Status Jual">
-              <option value="SEMUA" ${masterFilterStatusJual === 'SEMUA' ? 'selected' : ''}>Semua Status Jual</option>
-              <option value="DIJUAL" ${masterFilterStatusJual === 'DIJUAL' ? 'selected' : ''}>Hanya Dijual</option>
-              <option value="TIDAK_DIJUAL" ${masterFilterStatusJual === 'TIDAK_DIJUAL' ? 'selected' : ''}>Tidak Dijual</option>
-            </select>
-          </div>
-
-          <div class="flex items-center gap-2">
-            ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 text-red-600 font-semibold shadow-xs">✕ Reset Filter</button>` : ''}
-          </div>
-        </div>
-      </div>
+        ${masterShowAdvFilters ? `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 pt-2.5 border-t" style="border-color:var(--ons-border)">
+          <select class="ons-select w-full text-xs" onchange="window.setMasterSediaan(this.value)" aria-label="Filter Bentuk Sediaan">
+            <option value="SEMUA" ${masterFilterSediaan === 'SEMUA' ? 'selected' : ''}>Semua Sediaan</option>
+            <option value="TABLET" ${masterFilterSediaan === 'TABLET' ? 'selected' : ''}>Tablet / Kaplet</option>
+            <option value="KAPSUL" ${masterFilterSediaan === 'KAPSUL' ? 'selected' : ''}>Kapsul</option>
+            <option value="SIRUP" ${masterFilterSediaan === 'SIRUP' ? 'selected' : ''}>Sirup / Suspensi</option>
+            <option value="SALEP" ${masterFilterSediaan === 'SALEP' ? 'selected' : ''}>Salep / Krim / Gel</option>
+            <option value="INJEKSI" ${masterFilterSediaan === 'INJEKSI' ? 'selected' : ''}>Injeksi / Infus</option>
+            <option value="LAINNYA" ${masterFilterSediaan === 'LAINNYA' ? 'selected' : ''}>Sediaan Lainnya</option>
+          </select>
+          <select class="ons-select w-full text-xs" onchange="window.setMasterKategori(this.value)" aria-label="Filter Kategori Etalase">
+            <option value="SEMUA" ${masterFilterKategori === 'SEMUA' ? 'selected' : ''}>Semua Etalase</option>
+            ${kategoriList.map((k) => `<option value="${S().esc(k)}" ${masterFilterKategori === k ? 'selected' : ''}>${S().esc(k)}</option>`).join('')}
+          </select>
+          <select class="ons-select w-full text-xs" onchange="window.setMasterPabrikan(this.value)" aria-label="Filter Pabrikan">
+            <option value="SEMUA" ${masterFilterPabrikan === 'SEMUA' ? 'selected' : ''}>Semua Pabrikan</option>
+            ${pabrikList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPabrikan === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
+          </select>
+          <select class="ons-select w-full text-xs" onchange="window.setMasterPbf(this.value)" aria-label="Filter Distributor PBF">
+            <option value="SEMUA" ${masterFilterPbf === 'SEMUA' ? 'selected' : ''}>Semua PBF</option>
+            ${pbfList.map((p) => `<option value="${S().esc(p)}" ${masterFilterPbf === p ? 'selected' : ''}>${S().esc(p)}</option>`).join('')}
+          </select>
+          <select class="ons-select w-full text-xs" onchange="window.setMasterSuhu(this.value)" aria-label="Filter Suhu Simpan">
+            <option value="SEMUA" ${masterFilterSuhu === 'SEMUA' ? 'selected' : ''}>Semua Suhu</option>
+            <option value="CHILLER" ${masterFilterSuhu === 'CHILLER' ? 'selected' : ''}>❄️ Chiller 2-8&deg;C</option>
+            <option value="RUANG" ${masterFilterSuhu === 'RUANG' ? 'selected' : ''}>🌡️ Suhu Ruang</option>
+          </select>
+          <select class="ons-select w-full text-xs" onchange="window.setMasterStatusJual(this.value)" aria-label="Status Jual">
+            <option value="SEMUA" ${masterFilterStatusJual === 'SEMUA' ? 'selected' : ''}>Semua Status Jual</option>
+            <option value="DIJUAL" ${masterFilterStatusJual === 'DIJUAL' ? 'selected' : ''}>Hanya Dijual</option>
+            <option value="TIDAK_DIJUAL" ${masterFilterStatusJual === 'TIDAK_DIJUAL' ? 'selected' : ''}>Tidak Dijual</option>
+          </select>
+          <select class="ons-select w-full text-xs" onchange="window.setMasterSort(this.value)" aria-label="Urutkan Produk">
+            <option value="NAMA" ${masterSortBy === 'NAMA' ? 'selected' : ''}>Urut: Nama A-Z</option>
+            <option value="NAMA_DESC" ${masterSortBy === 'NAMA_DESC' ? 'selected' : ''}>Urut: Nama Z-A</option>
+            <option value="STOK_ASC" ${masterSortBy === 'STOK_ASC' ? 'selected' : ''}>Stok Terendah</option>
+            <option value="STOK_DESC" ${masterSortBy === 'STOK_DESC' ? 'selected' : ''}>Stok Tertinggi</option>
+            <option value="ED_ASC" ${masterSortBy === 'ED_ASC' ? 'selected' : ''}>ED Terdekat (FEFO)</option>
+            <option value="HARGA_DESC" ${masterSortBy === 'HARGA_DESC' ? 'selected' : ''}>Harga Tertinggi</option>
+            <option value="HARGA_ASC" ${masterSortBy === 'HARGA_ASC' ? 'selected' : ''}>Harga Terendah</option>
+            ${seeCost ? '<option value="MARGIN_DESC" ' + (masterSortBy === 'MARGIN_DESC' ? 'selected' : '') + '>Margin Tertinggi</option>' : ''}
+            ${seeCost ? '<option value="VALUASI_DESC" ' + (masterSortBy === 'VALUASI_DESC' ? 'selected' : '') + '>Valuasi Terbesar</option>' : ''}
+          </select>
+        </div>` : ''}
+      </div>`;
+      })()}
 
       <div id="mdResultsSlot">${_renderMasterObatResultsHtml(seeCost, allMeta, filtered)}</div>
     </div>`;
@@ -1883,9 +1869,15 @@
     ];
 
     const exportBtns = (fnName) => `
-      <button onclick="window.${fnName}('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-      <button onclick="window.${fnName}('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
-      <button onclick="window.${fnName}('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+      <div class="ons-dd-wrap inline-block">
+        <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📤 Ekspor &#9662;</button>
+        <div class="ons-dd-items hidden">
+          <div class="ons-float-hdr">Format Unduhan</div>
+          <button type="button" onclick="window.${fnName}('xlsx')" class="ons-float-item"><span>📗</span><span>Export Excel (.xlsx)</span></button>
+          <button type="button" onclick="window.${fnName}('csv')" class="ons-float-item"><span>📄</span><span>Export CSV</span></button>
+          <button type="button" onclick="window.${fnName}('pdf')" class="ons-float-item"><span>📕</span><span>Export PDF</span></button>
+        </div>
+      </div>
     `;
 
     let pageTitle = 'Master Data Apotek';
@@ -1896,12 +1888,19 @@
       pageTitle = 'Master Produk';
       pageDesc = 'Kelola terpusat katalog Obat KFA, satuan multi-kemasan, referensi harga & rak penyimpanan.';
       headerActions = `
-        <button type="button" onclick="window.syncAutoDetectGolonganBpom()" class="ons-btn text-xs py-1.5 px-3 text-white font-bold" style="background:#4F46E5" title="Deteksi dan sinkronkan golongan BPOM (Keras, OOT, Prekursor, dll.) otomatis">⚡ Deteksi Golongan BPOM</button>
-        <button type="button" onclick="window.openObatBatchEditModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-pencil mr-1"></i> Ubah Sekaligus</button>
-        <button type="button" onclick="window.openImportObatModal()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> Tambah Sekaligus</button>
-        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-3 text-white font-bold" style="background:#0D9488" title="+ Tambah Obat Baru"><i class="fa fa-plus mr-1"></i> + Tambah Obat</button>
-        <button type="button" onclick="window.openBulkMarginWizard()" class="ons-btn text-xs py-1.5 px-2.5 text-white" style="background:#0F766E" title="Evaluasi &amp; Kalkulator Margin Massal"><i class="fa fa-calculator mr-1"></i> Evaluasi Margin</button>
-        <button type="button" onclick="window.openPrintMasterLabelsModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5" title="Cetak Stiker Barcode">Cetak Barcode</button>
+        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-3 text-white font-bold" style="background:#0D9488" title="+ Tambah Obat Baru">+ Tambah Obat</button>
+        <div class="ons-dd-wrap inline-block">
+          <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">⚙️ Alat &amp; Massal &#9662;</button>
+          <div class="ons-dd-items hidden">
+            <div class="ons-float-hdr">Operasi Massal &amp; Alat</div>
+            <button type="button" onclick="window.openImportObatModal()" class="ons-float-item"><span>📥</span><span>Tambah Sekaligus (Import Excel/CSV)</span></button>
+            <button type="button" onclick="window.openObatBatchEditModal()" class="ons-float-item"><span>✏️</span><span>Ubah Sekaligus</span></button>
+            <button type="button" onclick="window.openBulkMarginWizard()" class="ons-float-item"><span>📊</span><span>Evaluasi Margin Massal</span></button>
+            <button type="button" onclick="window.openPrintMasterLabelsModal()" class="ons-float-item"><span>🔖</span><span>Cetak Barcode Massal</span></button>
+            <div class="ons-float-sep"></div>
+            <button type="button" onclick="window.syncAutoDetectGolonganBpom()" class="ons-float-item"><span>⚡</span><span>Deteksi Golongan BPOM Otomatis</span></button>
+          </div>
+        </div>
         ${exportBtns('exportMasterObat')}
       `;
     } else if (masterTab === 'kategori') {
@@ -3180,6 +3179,7 @@
   global.setMasterStatusJual = (st) => { masterFilterStatusJual = st || 'SEMUA'; global.renderActiveView(); };
   global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; global.renderActiveView(); };
   global.setMasterViewMode = (m) => { masterViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
+  global.toggleMasterAdvFilters = () => { masterShowAdvFilters = !masterShowAdvFilters; global.renderActiveView(); };
   global.resetMasterFilter = () => {
     masterFilterGol = '';
     masterFilterKategori = 'SEMUA';
