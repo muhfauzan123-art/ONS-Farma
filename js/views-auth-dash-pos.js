@@ -2763,7 +2763,7 @@
                 return `<tr>
                   <td class="font-semibold">${S().esc(ob ? ob.nama_dagang : b.id_obat)}</td>
                   <td class="font-mono-num">${S().esc(b.no_batch)}</td>
-                  <td class="font-mono-num">${S().esc(b.tgl_kadaluarsa)}</td>
+                  <td class="font-mono-num">${S().esc(S().formatEd(b.tgl_kadaluarsa))}</td>
                   <td><span class="badge-bpom ${badgeCls} font-mono-num font-bold">${dayTxt}</span></td>
                   <td class="font-mono-num font-bold">${b.qty_sisa}</td>
                   <td>${d < 0 ? (canGudang ? `<button onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-danger text-xs py-1 px-2.5">Cek Recall</button>` : '-') : (canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Prioritaskan Jual</button>` : '-')}</td>
@@ -3920,7 +3920,7 @@
       return `<button type="button" onclick="window.posAddToCart('${S().esc(o.id_obat)}');ONSStore.AppState.posSearchQ='';renderActiveView();" class="w-full text-left px-3 py-2 flex items-center justify-between gap-2 border-b last:border-b-0 hover:bg-blue-500/10 transition" style="border-color:var(--ons-border)">
         <div class="min-w-0 flex-1">
           <div class="font-bold text-xs truncate">${S().esc(o.nama_dagang)} ${S().bpomBadge(o.golongan_bpom)}</div>
-          <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif || '-')} &bull; Rak ${S().esc(o.rak_lokasi || '-')} ${nearest ? `&bull; Batch ${S().esc(nearest.no_batch)} (ED ${nearest.tgl_kadaluarsa})` : ''}</div>
+          <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif || '-')} &bull; Rak ${S().esc(o.rak_lokasi || '-')} ${nearest ? `&bull; Batch ${S().esc(nearest.no_batch)} (ED ${S().formatEd(nearest.tgl_kadaluarsa)})` : ''}</div>
         </div>
         <div class="text-right shrink-0">
           <div class="font-mono-num font-extrabold text-xs text-blue-600">${S().rp(o.harga_umum)}/${S().esc(o.satuan_dasar)}</div>
@@ -4059,7 +4059,7 @@
               ${valid2 ? `<span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300">Sat 2 (${S().esc(sat2)}): ${S().rp(h2)}</span>` : ''}
               ${valid3 ? `<span class="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">Sat 3 (${S().esc(sat3)}): ${S().rp(h3)}</span>` : ''}
             </div>
-            <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; Rak ${S().esc(o.rak_lokasi || '-')} &bull; ${nearest ? `Batch ${S().esc(nearest.no_batch)} (<span class="${edBadgeCls}">ED ${nearest.tgl_kadaluarsa}</span>)` : (expiredQty > 0 ? '<span class="text-red-600 font-bold">Batch ED Terblokir</span>' : '<span class="text-red-600 font-bold">Kosong</span>')}</div>
+            <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; Rak ${S().esc(o.rak_lokasi || '-')} &bull; ${nearest ? `Batch ${S().esc(nearest.no_batch)} (<span class="${edBadgeCls}">ED ${S().formatEd(nearest.tgl_kadaluarsa)}</span>)` : (expiredQty > 0 ? '<span class="text-red-600 font-bold">Batch ED Terblokir</span>' : '<span class="text-red-600 font-bold">Kosong</span>')}</div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <div class="text-right">
@@ -4089,7 +4089,7 @@
           </div>
           <div class="text-[11px] mt-1 truncate" style="color:var(--ons-text-soft)">${S().esc(o.zat_aktif)} &bull; Rak <b>${S().esc(o.rak_lokasi || '-')}</b></div>
           <div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">
-            FEFO: ${nearest ? `${S().esc(nearest.no_batch)} &bull; <span class="${edBadgeCls}">ED ${nearest.tgl_kadaluarsa} (${edDays}h)</span>` : (expiredQty > 0 ? `<span class="text-red-500 font-bold">Batch ED (${expiredQty} Terblokir)</span>` : '<span class="text-red-500 font-bold">Stok Kosong</span>')}
+            FEFO: ${nearest ? `${S().esc(nearest.no_batch)} &bull; <span class="${edBadgeCls}">ED ${S().formatEd(nearest.tgl_kadaluarsa)} (${edDays}h)</span>` : (expiredQty > 0 ? `<span class="text-red-500 font-bold">Batch ED (${expiredQty} Terblokir)</span>` : '<span class="text-red-500 font-bold">Stok Kosong</span>')}
           </div>
           <div class="flex flex-wrap gap-1 mt-1.5">
             ${nearEd.hasNearEd ? `<span class="badge-bpom bpom-prekursor text-[10px]">Promo Near-ED &le;${nearEd.minDays}h: -${nearEd.suggestedDiscPct}%</span>` : ''}
@@ -5797,7 +5797,7 @@
                 const subAktif = qtyOrig > 0 ? Math.round((qtySisa / qtyOrig) * Number(it.subtotal_item || (qtyOrig * Number(it.harga_jual || 0)))) : 0;
                 return `<tr>
                   <td><div class="font-semibold">${S().esc(it.nama_dagang || it.id_obat)}</div>${it.aturan_pakai ? `<div class="text-[10px] text-emerald-600">${S().esc(it.aturan_pakai)}</div>` : ''}</td>
-                  <td class="font-mono-num"><b>${S().esc(it.no_batch || it.id_batch || '-')}</b>${it.tgl_kadaluarsa ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(String(it.tgl_kadaluarsa).slice(0, 10))}</div>` : ''}</td>
+                  <td class="font-mono-num"><b>${S().esc(it.no_batch || it.id_batch || '-')}</b>${it.tgl_kadaluarsa ? `<div class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(S().formatEd(it.tgl_kadaluarsa))}</div>` : ''}</td>
                   <td class="font-mono-num">${qtyRet > 0 ? `<b>${qtySisa}</b> <span class="text-[10px] text-amber-600">(Awal ${qtyOrig}, Retur ${qtyRet})</span>` : `${qtyOrig}`} ${S().esc(it.satuan || '')}</td>
                   <td class="font-mono-num">${S().rp(it.harga_jual)}</td>
                   <td class="font-mono-num font-bold">${S().rp(subAktif)}</td>
@@ -6945,7 +6945,7 @@
                     </td>
                     <td style="padding:8px 6px;text-align:center;font-family:monospace;font-size:10px;">
                       <div>${S().esc(it.no_batch || it.id_batch || '-')}</div>
-                      ${it.tgl_kadaluarsa ? `<div style="color:#64748b;">ED: ${S().esc(String(it.tgl_kadaluarsa).slice(0, 10))}</div>` : ''}
+                      ${it.tgl_kadaluarsa ? `<div style="color:#64748b;">ED: ${S().esc(S().formatEd(it.tgl_kadaluarsa))}</div>` : ''}
                     </td>
                     <td style="padding:8px 6px;text-align:center;font-weight:bold;">${qtyOrig} ${S().esc(it.satuan || '')}</td>
                     <td style="padding:8px 6px;text-align:right;font-family:monospace;">${S().rp(harga)}</td>

@@ -7120,7 +7120,7 @@ S. prn 3 dd 1 tab</textarea>
                           <div class="text-[10px] text-slate-400">${S().esc(ob ? (ob.satuan_dasar || 'Unit') : 'Unit')}</div>
                         </td>
                         <td class="font-mono-num text-xs">${S().esc(b.no_batch)}</td>
-                        <td class="font-mono-num text-xs">${S().esc(b.tgl_kadaluarsa)}</td>
+                        <td class="font-mono-num text-xs">${S().esc(S().formatEd(b.tgl_kadaluarsa))}</td>
                         <td class="font-mono-num font-bold text-xs text-red-600">${b.qty_sisa}</td>
                         <td class="font-mono-num text-xs font-bold text-amber-600">${S().rp(valBatch)}</td>
                         <td>

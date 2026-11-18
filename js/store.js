@@ -391,11 +391,36 @@
       .replace(/`/g, '&#96;');
   }
 
-  function formatTgl(iso) {
+  function formatTgl(iso, withTime) {
     if (!iso) return '-';
     try {
-      return new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+      const raw = String(iso).trim();
+      const dt = (raw.includes('T') || /\d{2}:\d{2}/.test(raw))
+        ? new Date(raw)
+        : (() => {
+            const norm = normalizeDateIso(raw);
+            return norm ? new Date(norm + 'T00:00:00') : new Date(raw);
+          })();
+      if (isNaN(dt.getTime())) return raw.slice(0, 10);
+      if (withTime) {
+        return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+          dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      }
+      return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch (e) { return String(iso).slice(0, 10); }
+  }
+
+  /**
+   * Format tampilan tanggal kadaluarsa (ED) standar Indonesia: DD-MM-YYYY (Hari-Bulan-Tahun).
+   * Contoh: '2029-07-30' -> '30-07-2029'.
+   */
+  function formatEd(val) {
+    if (!val) return '-';
+    const iso = normalizeDateIso(val);
+    if (!iso) return String(val).trim() || '-';
+    const parts = iso.split('-');
+    if (parts.length !== 3) return iso;
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
   }
 
   let _nowCache = { ts: 0, iso: '' };
@@ -1323,8 +1348,9 @@
             const sem = _resolveSemanticStyle(S, val);
             if (sem !== null) return global.ONSXlsxExport.cell(val, sem);
           }
-          if (h._type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(String(val || ''))) {
-            return global.ONSXlsxExport.cell(val, alt ? S.DATE_ALT : S.DATE);
+          if (h._type === 'date' && (/^\d{4}-\d{2}-\d{2}$/.test(String(val || '')) || /^\d{2}-\d{2}-\d{4}$/.test(String(val || '')))) {
+            const dispDate = /^\d{4}-\d{2}-\d{2}$/.test(String(val || '')) ? formatEd(val) : String(val);
+            return global.ONSXlsxExport.cell(dispDate, alt ? S.DATE_ALT : S.DATE);
           }
           const txt = String(val === null || val === undefined ? '' : val);
           if (h._type === 'wrap' || h.wrap || txt.length > w - 2) {
@@ -2090,6 +2116,7 @@
     setMultiBranchMode,
     isBatchExpired,
     normalizeDateIso,
+    formatEd,
     invalidateStockIndex,
     getTotalStok,
     getSellableStok,

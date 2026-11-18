@@ -314,7 +314,7 @@
   function renderObatStockBarHtml(m) {
     const edHtml = m.nearBatch
       ? `<div class="text-[11px] font-mono-num mt-1" style="color:${m.isNearEd ? '#DC2626' : 'var(--ons-text-soft)'}">
-          ED ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'KADALUARSA' : m.edDays + 'h lagi'})
+          ED ${S().esc(S().formatEd(m.nearBatch.tgl_kadaluarsa))} (${m.edDays <= 0 ? 'KADALUARSA' : m.edDays + 'h lagi'})
         </div>`
       : `<div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Belum ada batch aktif</div>`;
     return `<div class="min-w-[130px]">
@@ -439,7 +439,7 @@
               <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
               <div class="flex items-center justify-between text-[10px] font-mono-num text-slate-400">
                 <span>Min: ${m.min !== null ? m.min : '-'} &bull; Max: ${m.max !== null ? m.max : '-'}</span>
-                ${m.nearBatch ? `<span class="${m.isNearEd ? 'text-red-600 font-bold' : ''}">ED: ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</span>` : '<span>Belum ada batch</span>'}
+                ${m.nearBatch ? `<span class="${m.isNearEd ? 'text-red-600 font-bold' : ''}">ED: ${S().esc(S().formatEd(m.nearBatch.tgl_kadaluarsa))} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</span>` : '<span>Belum ada batch</span>'}
               </div>
               ${m.isCritical ? `
               <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', undefined, 'Defecta dari Master Obat')" class="ons-btn ons-btn-emerald ons-btn-xs w-full font-bold flex items-center justify-center gap-1 shadow-xs" title="Masukkan kekurangan stok ke Rencana Pemesanan SP">
@@ -561,7 +561,7 @@
                     <span>Min: ${m.min !== null ? m.min : '-'}</span>
                     <span>Max: ${m.max !== null ? m.max : '-'}</span>
                   </div>
-                  ${m.nearBatch ? `<div class="text-[10px] font-mono-num mt-0.5 ${m.isNearEd ? 'text-red-600 font-bold' : 'text-slate-400'}">ED: ${S().esc(m.nearBatch.tgl_kadaluarsa)} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</div>` : '<div class="text-[10px] text-slate-400 mt-0.5">Belum ada batch</div>'}
+                  ${m.nearBatch ? `<div class="text-[10px] font-mono-num mt-0.5 ${m.isNearEd ? 'text-red-600 font-bold' : 'text-slate-400'}">ED: ${S().esc(S().formatEd(m.nearBatch.tgl_kadaluarsa))} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</div>` : '<div class="text-[10px] text-slate-400 mt-0.5">Belum ada batch</div>'}
                   ${m.isCritical ? `
                   <button type="button" onclick="window.addObatToPurchasePlan('${S().esc(o.id_obat)}', undefined, 'Defecta dari Master Obat')" class="mt-1.5 w-full ons-btn ons-btn-emerald ons-btn-xs font-bold flex items-center justify-center gap-1 shadow-xs" title="1-Klik Masukkan ke Keranjang Defecta / SP">
                     ⚡ + Defecta
@@ -4565,7 +4565,7 @@
                   return `<tr>
                     <td class="font-mono-num font-bold text-xs">${S().esc(b.no_batch)}</td>
                     <td class="font-mono-num text-xs ${isExp ? 'text-red-700 font-extrabold' : (isNear ? 'text-red-600 font-bold' : '')}">
-                      ${S().esc(b.tgl_kadaluarsa)}
+                      ${S().esc(S().formatEd(b.tgl_kadaluarsa))}
                       <span class="text-[10px] block ${isExp ? 'text-red-700' : (isNear ? 'text-red-600' : 'text-slate-400')}">
                         ${isExp ? 'EXPIRED' : (days + 'h lagi')}
                       </span>
@@ -4621,7 +4621,7 @@
 
     const rows = list.map((m, i) => {
       const o = m.o;
-      const edIso = (m.nearBatch && m.nearBatch.tgl_kadaluarsa) ? String(m.nearBatch.tgl_kadaluarsa).slice(0, 10) : '';
+      const edIso = (m.nearBatch && m.nearBatch.tgl_kadaluarsa) ? S().formatEd(m.nearBatch.tgl_kadaluarsa) : '';
       const valModal = seeCost ? (Number(m.stok || 0) * Number(o.hpp_avg || 0)) : 0;
       const marginDecimal = (seeCost && Number(o.hpp_avg || 0) > 0 && Number(o.harga_umum || 0) > 0)
         ? Number((((Number(o.harga_umum || 0) - Number(o.hpp_avg || 0)) / Number(o.hpp_avg || 0)) * 100).toFixed(1))
@@ -5992,15 +5992,15 @@
     { key: 'pbf_utama', label: 'pbf_utama', ket: 'Nama PBF / distributor pemasok utama' },
     { key: 'stok_awal', label: 'Stok Nyata', ket: 'Stok fisik nyata yang tersedia di gudang (opsional, langsung bisa dijual di kasir)' },
     { key: 'no_batch', label: 'no_batch', ket: 'Nomor batch / lot pabrik (opsional, cth: B260101)' },
-    { key: 'tgl_kadaluarsa', label: 'tgl_kadaluarsa', ket: 'Tanggal kadaluarsa (opsional, format: YYYY-MM-DD)' }
+    { key: 'tgl_kadaluarsa', label: 'tgl_kadaluarsa', ket: 'Tanggal kadaluarsa (opsional, format: DD-MM-YYYY, cth: 31-12-2028)' }
   ];
 
   const MASTER_OBAT_SAMPLE_ROWS = [
-    ['93001105', 'Paracetamol 500mg Kaplet KF', 'Paracetamol', '500 mg', 'BEBAS', 'Kaplet', 'GBL9812416804A1', 'Kimia Farma', 'RAK-A1', 'Suhu Ruang (15-25 C)', 'Kaplet', 'Strip', 10, 'Box', 100, 185, 350, 3200, 30000, 50, 500, 'PT Kimia Farma Trading', 100, 'BTC-PCT-2026', '2028-12-31'],
-    ['93002110', 'Cetirizine 10mg Dexa', 'Cetirizine HCl', '10 mg', 'TERBATAS', 'Tablet', 'GKL1405048817A1', 'Dexa Medica', 'RAK-A2', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 350, 700, 6500, 30000, 30, 300, 'PT Anugerah Argon Medica', 50, 'BTC-CTZ-2026', '2028-10-15'],
-    ['93003340', 'Emturnas 500mg Strip', 'Paracetamol', '500 mg', 'BEBAS', 'Strip', 'DBL8622205901A1', 'Kalbe Farma', 'RAK-B1', 'Suhu Ruang (15-25 C)', 'Strip', '', 1, '', 1, 2150, 4000, 0, 0, 20, 200, 'PT Enseval Putera Megatrading', 40, 'BTC-EMT-2026', '2027-11-20'],
-    ['93004821', 'Rhinos SR Kapsul', 'Loratadine + Pseudoephedrine HCl', '5 mg + 120 mg', 'PREKURSOR', 'Kapsul SR', 'DKL9905029103A1', 'Dexa Medica', 'LEMARI-PREKURSOR', 'Suhu Ruang (15-25 C)', 'Strip', '', 1, 'Box', 10, 68000, 89000, 0, 850000, 15, 100, 'PT Anugerah Argon Medica', 30, 'BTC-RHN-2026', '2028-06-30'],
-    ['92004512', 'Sanmol Sirup 120mg/5ml 60ml', 'Paracetamol', '120 mg/5 mL', 'BEBAS', 'Botol', 'DBL7215806416B1', 'Sanbe Farma', 'RAK-SIRUP', 'Suhu Ruang (15-25 C)', 'Botol', '', 1, '', 1, 16500, 22000, 0, 0, 10, 50, 'PT Parit Padang Global', 25, 'BTC-SNM-2026', '2028-09-01']
+    ['93001105', 'Paracetamol 500mg Kaplet KF', 'Paracetamol', '500 mg', 'BEBAS', 'Kaplet', 'GBL9812416804A1', 'Kimia Farma', 'RAK-A1', 'Suhu Ruang (15-25 C)', 'Kaplet', 'Strip', 10, 'Box', 100, 185, 350, 3200, 30000, 50, 500, 'PT Kimia Farma Trading', 100, 'BTC-PCT-2026', '31-12-2028'],
+    ['93002110', 'Cetirizine 10mg Dexa', 'Cetirizine HCl', '10 mg', 'TERBATAS', 'Tablet', 'GKL1405048817A1', 'Dexa Medica', 'RAK-A2', 'Suhu Ruang (15-25 C)', 'Tablet', 'Strip', 10, 'Box', 50, 350, 700, 6500, 30000, 30, 300, 'PT Anugerah Argon Medica', 50, 'BTC-CTZ-2026', '15-10-2028'],
+    ['93003340', 'Emturnas 500mg Strip', 'Paracetamol', '500 mg', 'BEBAS', 'Strip', 'DBL8622205901A1', 'Kalbe Farma', 'RAK-B1', 'Suhu Ruang (15-25 C)', 'Strip', '', 1, '', 1, 2150, 4000, 0, 0, 20, 200, 'PT Enseval Putera Megatrading', 40, 'BTC-EMT-2026', '20-11-2027'],
+    ['93004821', 'Rhinos SR Kapsul', 'Loratadine + Pseudoephedrine HCl', '5 mg + 120 mg', 'PREKURSOR', 'Kapsul SR', 'DKL9905029103A1', 'Dexa Medica', 'LEMARI-PREKURSOR', 'Suhu Ruang (15-25 C)', 'Strip', '', 1, 'Box', 10, 68000, 89000, 0, 850000, 15, 100, 'PT Anugerah Argon Medica', 30, 'BTC-RHN-2026', '30-06-2028'],
+    ['92004512', 'Sanmol Sirup 120mg/5ml 60ml', 'Paracetamol', '120 mg/5 mL', 'BEBAS', 'Botol', 'DBL7215806416B1', 'Sanbe Farma', 'RAK-SIRUP', 'Suhu Ruang (15-25 C)', 'Botol', '', 1, '', 1, 16500, 22000, 0, 0, 10, 50, 'PT Parit Padang Global', 25, 'BTC-SNM-2026', '01-09-2028']
   ];
 
   function _csvSafeVal(val) {
@@ -6489,7 +6489,7 @@
             <td class="py-1 pr-2 text-right font-mono-num">${S().rp(x.hpp_avg)}</td>
             <td class="py-1 pr-2 text-right font-mono-num font-bold text-blue-600">${S().rp(x.harga_jual_1)} / ${S().esc(x.satuan_1)}</td>
             <td class="py-1 pr-2 text-right font-mono-num font-bold text-emerald-700">${x.stok_awal ? x.stok_awal.toLocaleString('id-ID') + ' ' + S().esc(x.satuan_1) : '-'}</td>
-            <td class="py-1 font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${x.no_batch ? S().esc(x.no_batch) : '-'}${x.tgl_kadaluarsa ? ' (' + S().esc(x.tgl_kadaluarsa) + ')' : ''}</td>
+            <td class="py-1 font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${x.no_batch ? S().esc(x.no_batch) : '-'}${x.tgl_kadaluarsa ? ' (' + S().esc(S().formatEd(x.tgl_kadaluarsa)) + ')' : ''}</td>
           </tr>`).join('')}</tbody>
         </table></div>` +
         (importObatBuffer.length > 8 ? `<div class="mt-2 italic" style="color:var(--ons-text-soft)">... dan ${importObatBuffer.length - 8} item lainnya siap diimport.</div>` : '');
@@ -6734,8 +6734,8 @@
                   <td class="text-xs">${S().esc(pemilikLabel)}</td>
                   <td class="font-mono-num text-xs">${tglMasuk !== '-' ? S().formatTgl(tglMasuk) : '-'}</td>
                   <td class="text-xs">${S().esc(gudangName)}</td>
-                  <td><span class="badge-bpom ${edBadge} font-mono-num">${isEd ? 'ED / BLOKIR POS ' : ''}${S().esc(b.tgl_kadaluarsa)} (${d}h)</span></td>
-                  <td class="font-mono-num text-xs ${returLewat ? 'text-red-600 font-bold' : ''}">${S().esc(batasRetur)}</td>
+                  <td><span class="badge-bpom ${edBadge} font-mono-num">${isEd ? 'ED / BLOKIR POS ' : ''}${S().esc(S().formatEd(b.tgl_kadaluarsa))} (${d}h)</span></td>
+                  <td class="font-mono-num text-xs ${returLewat ? 'text-red-600 font-bold' : ''}">${S().esc(batasRetur !== '-' ? S().formatEd(batasRetur) : '-')}</td>
                   ${seeCost ? `<td class="font-mono-num text-xs">${S().rp(b.hpp_beli || (o && o.hpp_avg) || 0)}</td>` : ''}
                   <td class="font-mono-num text-xs">
                     <span class="font-bold">${b.qty_sisa}</span>
@@ -6829,7 +6829,7 @@
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="font-bold text-sm">${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
-                    <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Rak: <b>${S().esc((o && o.rak_lokasi) || '-')}</b> &bull; Batch <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)}</div>
+                    <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Rak: <b>${S().esc((o && o.rak_lokasi) || '-')}</b> &bull; Batch <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(S().formatEd(b.tgl_kadaluarsa))}</div>
                   </div>
                   <div class="text-right">
                     <span class="badge-bpom bpom-terbatas font-mono-num font-bold">Sistem: ${sysQty} ${S().esc(sat1)}</span>
@@ -6891,7 +6891,7 @@
                     <div>${S().esc(o ? o.nama_dagang : b.id_obat)}</div>
                     <span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">Rak: ${S().esc((o && o.rak_lokasi) || '-')}</span>
                   </td>
-                  <td class="font-mono-num text-xs whitespace-nowrap"><b>${S().esc(b.no_batch)}</b><br/><span class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(b.tgl_kadaluarsa)}</span></td>
+                  <td class="font-mono-num text-xs whitespace-nowrap"><b>${S().esc(b.no_batch)}</b><br/><span class="text-[10px]" style="color:var(--ons-text-soft)">ED ${S().esc(S().formatEd(b.tgl_kadaluarsa))}</span></td>
                   <td class="text-xs">
                     ${valid2 || valid3 ? `
                       <span class="badge-bpom bpom-terbatas text-[9.5px] font-bold">Satuan 1: ${S().esc(sat1)}</span>
@@ -7261,7 +7261,7 @@
                     </td>
                     <td class="text-xs text-slate-600 dark:text-slate-300">${S().esc(m.gudang || m.cabang_id || 'Gudang Utama')}</td>
                     <td class="font-mono-num text-xs font-semibold">${S().esc(m.no_batch || m.id_batch || '-')}</td>
-                    <td class="font-mono-num text-xs whitespace-nowrap ${m.tgl_kadaluarsa && m.tgl_kadaluarsa < new Date().toISOString().slice(0, 10) ? 'text-red-600 font-bold' : 'text-slate-500'}">${m.tgl_kadaluarsa ? S().formatTgl(m.tgl_kadaluarsa) : '-'}</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap ${m.tgl_kadaluarsa && (S().normalizeDateIso ? S().normalizeDateIso(m.tgl_kadaluarsa) : m.tgl_kadaluarsa) < new Date().toISOString().slice(0, 10) ? 'text-red-600 font-bold' : 'text-slate-500'}">${m.tgl_kadaluarsa ? S().formatEd(m.tgl_kadaluarsa) : '-'}</td>
                     <td class="font-mono-num text-xs text-right">${hppVal > 0 ? S().rp(hppVal) : '-'}</td>
                     <td class="font-mono-num font-extrabold text-xs text-right text-emerald-600">${q > 0 ? ('+' + q) : '-'}</td>
                     <td class="font-mono-num font-extrabold text-xs text-right text-red-600">${q < 0 ? Math.abs(q) : '-'}</td>
@@ -8196,7 +8196,7 @@
         <tbody>
           ${trLines.map((ln) => `<tr>
             <td style="border:1px solid #cbd5e1;padding:6px;font-weight:bold;">${S().esc(ln.nama_dagang || '-')}</td>
-            <td style="border:1px solid #cbd5e1;padding:6px;font-family:monospace;">${S().esc(ln.no_batch || '-')} &bull; ED ${S().esc(ln.tgl_kadaluarsa || '-')}</td>
+            <td style="border:1px solid #cbd5e1;padding:6px;font-family:monospace;">${S().esc(ln.no_batch || '-')} &bull; ED ${S().esc(S().formatEd(ln.tgl_kadaluarsa))}</td>
             <td style="border:1px solid #cbd5e1;padding:6px;text-align:right;font-weight:bold;">${ln.qty || 0} Unit</td>
           </tr>`).join('')}
         </tbody>
@@ -8247,8 +8247,8 @@
         rak: b.rak_penyimpanan || o.rak_lokasi || '-',
         supplier: _resolveBatchSupplier(st, b, o),
         gudang: b.gudang || (b.cabang_id && b.cabang_id !== 'ONS-01' ? b.cabang_id : 'Gudang Utama'),
-        tgl_kadaluarsa: b.tgl_kadaluarsa || '-',
-        batas_retur: _calcBatasReturIso(b.tgl_kadaluarsa),
+        tgl_kadaluarsa: S().formatEd(b.tgl_kadaluarsa),
+        batas_retur: S().formatEd(_calcBatasReturIso(b.tgl_kadaluarsa)),
         ...(seeCost ? { hpp: Number(b.hpp_beli || o.hpp_avg || 0) } : {}),
         kuantitas: Number(b.qty_sisa || 0),
         status: b.status_batch || 'AKTIF'
@@ -8934,7 +8934,7 @@
           return `<div class="flex items-center justify-between gap-2 p-2 rounded-lg border">
             <div>
               <b>${S().esc(o ? o.nama_dagang : b.id_obat)}</b>
-              <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Batch: ${S().esc(b.no_batch)} | ED: ${S().esc(b.tgl_kadaluarsa)} | Satuan 1: <b>${S().esc(sat1)}</b></div>
+              <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">Batch: ${S().esc(b.no_batch)} | ED: ${S().esc(S().formatEd(b.tgl_kadaluarsa))} | Satuan 1: <b>${S().esc(sat1)}</b></div>
             </div>
             <div class="flex items-center gap-1.5">
               <input type="number" min="0" data-opname-batch="${b.id_batch}" class="ons-input font-mono-num w-24 text-right font-bold" placeholder="Qty Fisik"/>
@@ -10733,7 +10733,7 @@
                       ${it.is_bonus ? '<span class="badge-bpom bpom-bebas text-[9px] font-bold">BARANG BONUS PBF &bull; HPP Rp 0</span>' : (oldHpp > 0 ? `<div class="text-[10px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">HPP Lama: ${S().rp(oldHpp)}${hppDiffPct > 0 ? ` &bull; <span class="text-red-600 font-bold">Naik +${hppDiffPct}%</span>` : ''}${hppBelowJual ? ` &bull; <span class="text-red-600 font-bold">RUGI (&ge; Harga Umum!)</span>` : ''}</div>` : '')}
                     </td>
                     <td><input class="ons-input font-mono-num text-xs w-28" value="${S().esc(it.no_batch)}" onchange="window.updateGrnItem(${idx}, 'no_batch', this.value)"/></td>
-                    <td><input type="date" class="ons-input text-xs w-32" value="${S().esc(it.tgl_kadaluarsa)}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
+                    <td><input type="date" class="ons-input text-xs w-32" value="${S().esc(S().normalizeDateIso ? S().normalizeDateIso(it.tgl_kadaluarsa) : (it.tgl_kadaluarsa || ''))}" onchange="window.updateGrnItem(${idx}, 'tgl_kadaluarsa', this.value)"/></td>
                     <td>
                       <input type="number" min="1" class="ons-input font-mono-num text-xs w-18 text-right" value="${it.qty_dasar}" onchange="window.updateGrnItem(${idx}, 'qty_dasar', Number(this.value||1))"/>
                       ${Number(it.qty_sp || 0) > 0 ? `<div class="text-[10px] font-mono-num mt-0.5 ${Number(it.qty_dasar) === Number(it.qty_sp) ? 'text-emerald-600' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'text-amber-600 font-bold' : 'text-blue-600 font-bold')}">SP: ${it.qty_sp} (${Number(it.qty_dasar) === Number(it.qty_sp) ? 'Cocok' : (Number(it.qty_dasar) < Number(it.qty_sp) ? 'Kurang' : '+' + (Number(it.qty_dasar) - Number(it.qty_sp)))})</div>` : ''}
@@ -10808,7 +10808,7 @@
                     return `<tr>
                       <td class="font-semibold text-xs">${S().esc(o ? o.nama_dagang : b.id_obat)}</td>
                       <td class="text-xs">${S().esc(b.id_pbf || '-')}</td>
-                      <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="${dLeft <= 90 ? 'text-red-600 font-bold' : (dLeft <= 180 ? 'text-amber-600 font-bold' : '')}">${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))} (${dLeft}h)</div></td>
+                      <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="${dLeft <= 90 ? 'text-red-600 font-bold' : (dLeft <= 180 ? 'text-amber-600 font-bold' : '')}">${S().esc(S().formatEd(b.tgl_kadaluarsa))} (${dLeft}h)</div></td>
                       <td class="text-right font-mono-num text-xs font-bold">${b.qty_sisa}</td>
                       <td class="text-right font-mono-num text-xs"><div>${S().rp(hpp)}/unit</div><div style="color:var(--ons-text-soft)">Max ${S().rp(estCut)}</div></td>
                       <td><button type="button" onclick="window.openReturBarModal('${S().esc(b.id_batch)}')" class="ons-btn ons-btn-amber text-xs py-1 px-2.5">Proses Retur BAR-PBF</button></td>
@@ -10942,7 +10942,7 @@
                         const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat) || {};
                         const hpp = Number(b.hpp_beli || ob.hpp_terakhir || ob.hpp_avg || 0);
                         const qty = Number(b.qty_masuk_awal || b.qty_sisa || 0);
-                        return `<tr>\n                          <td class="font-mono-num text-xs">${idx + 1}.</td>\n                          <td class="text-xs font-semibold">${S().esc(ob.nama_dagang || b.id_obat)}</td>\n                          <td class="text-xs">${S().esc(b.id_pbf || '-')}</td>\n                          <td class="font-mono-num text-xs"><b>${S().esc(b.no_faktur_pbf)}</b></td>\n                          <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">ED: ${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))}</div></td>\n                          <td class="text-right font-mono-num text-xs font-bold">${qty}</td>\n                          <td class="text-right font-mono-num text-xs">${S().rp(hpp)}</td>\n                          <td class="text-right font-mono-num text-xs font-bold text-blue-600">${S().rp(qty * hpp)}</td>\n                        </tr>`;
+                        return `<tr>\n                          <td class="font-mono-num text-xs">${idx + 1}.</td>\n                          <td class="text-xs font-semibold">${S().esc(ob.nama_dagang || b.id_obat)}</td>\n                          <td class="text-xs">${S().esc(b.id_pbf || '-')}</td>\n                          <td class="font-mono-num text-xs"><b>${S().esc(b.no_faktur_pbf)}</b></td>\n                          <td class="font-mono-num text-xs"><div>${S().esc(b.no_batch)}</div><div class="text-[10px]" style="color:var(--ons-text-soft)">ED: ${S().esc(S().formatEd(b.tgl_kadaluarsa))}</div></td>\n                          <td class="text-right font-mono-num text-xs font-bold">${qty}</td>\n                          <td class="text-right font-mono-num text-xs">${S().rp(hpp)}</td>\n                          <td class="text-right font-mono-num text-xs font-bold text-blue-600">${S().rp(qty * hpp)}</td>\n                        </tr>`;
                       }).join('');
                     })()}
                   </tbody>
@@ -11144,7 +11144,7 @@
                   <td style="padding:8px 6px;color:#64748b;">${idx + 1}</td>
                   <td style="padding:8px 6px;font-weight:bold;">${S().esc(obat.nama_dagang || b.id_obat)}</td>
                   <td style="padding:8px 6px;text-align:center;font-family:monospace;font-weight:bold;">${S().esc(b.no_batch)}</td>
-                  <td style="padding:8px 6px;text-align:center;font-family:monospace;">${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))}</td>
+                  <td style="padding:8px 6px;text-align:center;font-family:monospace;">${S().esc(S().formatEd(b.tgl_kadaluarsa))}</td>
                   <td style="padding:8px 6px;text-align:center;font-weight:bold;">${q}</td>
                   <td style="padding:8px 6px;text-align:right;font-family:monospace;">${S().rp(hpp)}</td>
                   <td style="padding:8px 6px;text-align:right;font-family:monospace;font-weight:bold;">${S().rp(q * hpp)}</td>
@@ -12399,7 +12399,7 @@
                 <td class="font-mono-num text-xs">${S().esc(String(it.tgl_terima || new Date().toISOString().slice(0, 10)).slice(0, 10))}</td>
                 <td class="font-mono-num text-xs font-bold">${S().esc(it.no_faktur_pbf || '-')}</td>
                 <td class="text-xs font-semibold">${S().esc(it.id_pbf)}</td>
-                <td class="text-xs"><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)} &bull; ED ${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</div></td>
+                <td class="text-xs"><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)} &bull; ED ${S().esc(S().formatEd(it.tgl_kadaluarsa))}</div></td>
                 <td class="text-right font-mono-num text-xs">${Number(it.qty_awal || 0)} ${S().esc(it.satuan_dasar || 'unit')}</td>
                 <td class="text-right font-mono-num text-xs font-bold">${S().rp(Number(it.qty_awal || 0) * Number(it.hpp_beli || 0))}</td>
               </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Data tidak ditemukan.</td></tr>'}
@@ -12517,7 +12517,7 @@
               ${stokRows.length ? stokRows.map((it, idx) => `<tr>
                 <td class="font-mono-num text-xs">${idx + 1}</td>
                 <td class="text-xs font-bold">${S().esc(it.nama_dagang)}</td>
-                <td class="font-mono-num text-xs">${S().esc(it.no_batch)} &bull; ED ${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</td>
+                <td class="font-mono-num text-xs">${S().esc(it.no_batch)} &bull; ED ${S().esc(S().formatEd(it.tgl_kadaluarsa))}</td>
                 <td class="font-mono-num text-xs">${S().esc(it.no_faktur_pbf || '-')}</td>
                 <td class="text-xs font-semibold">${S().esc(it.id_pbf)}</td>
                 <td class="text-right font-mono-num text-xs font-bold">${Number(it.qty_sisa || 0)} ${S().esc(it.satuan_dasar || 'unit')}</td>
@@ -12597,7 +12597,7 @@
             <thead><tr><th>Obat &amp; Batch / ED</th><th>Supplier PBF &amp; Faktur</th><th class="text-right">Masuk / Laku / Retur / Sisa</th><th class="text-right">HPP &amp; Belum Settle</th><th>Aksi</th></tr></thead>
             <tbody>
               ${filteredItems.length ? filteredItems.map((it) => `<tr>
-                <td class="text-xs"><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)} &bull; ED ${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</div></td>
+                <td class="text-xs"><div class="font-bold">${S().esc(it.nama_dagang)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_batch)} &bull; ED ${S().esc(S().formatEd(it.tgl_kadaluarsa))}</div></td>
                 <td class="text-xs"><div class="font-semibold">${S().esc(it.id_pbf)}</div><div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(it.no_faktur_pbf || '-')}</div></td>
                 <td class="text-right font-mono-num text-xs">Awal <b>${it.qty_awal}</b> &bull; Laku <b class="text-blue-600">${it.qty_terjual}</b> &bull; Retur <b class="text-amber-600">${it.qty_retur_supplier}</b><br/>Sisa Titipan: <b>${it.qty_sisa} ${S().esc(it.satuan_dasar)}</b></td>
                 <td class="text-right font-mono-num text-xs"><div>HPP: ${S().rp(it.hpp_beli)}</div><div class="font-bold ${it.qty_belum_bayar > 0 ? 'text-red-600' : 'text-emerald-600'}">${it.qty_belum_bayar} unit (${S().rp(it.tagihan_belum_bayar)})</div></td>
@@ -12825,7 +12825,7 @@
             <div class="max-h-40 overflow-y-auto border rounded-xl divide-y text-xs" style="border-color:var(--ons-border)">
               ${linkedBatches.map((b) => {
                 const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat);
-                return `<div class="p-2 flex items-center justify-between gap-2"><div><b>${S().esc(ob ? ob.nama_dagang : b.id_obat)}</b> <span class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(b.no_batch)} &bull; ED ${S().esc(b.tgl_kadaluarsa)}</span></div><span class="font-mono-num font-bold">Sisa ${b.qty_sisa}/${b.qty_awal}</span></div>`;
+                return `<div class="p-2 flex items-center justify-between gap-2"><div><b>${S().esc(ob ? ob.nama_dagang : b.id_obat)}</b> <span class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(b.no_batch)} &bull; ED ${S().esc(S().formatEd(b.tgl_kadaluarsa))}</span></div><span class="font-mono-num font-bold">Sisa ${b.qty_sisa}/${b.qty_awal}</span></div>`;
               }).join('')}
             </div>
           </div>
@@ -12856,7 +12856,7 @@
           <div>
             <div class="text-[11px] font-bold uppercase tracking-wider text-amber-600">Konfirmasi Retur Distributor (BAR-PBF)</div>
             <h3 class="text-base font-extrabold mt-0.5">${S().esc(ob ? ob.nama_dagang : b.id_obat)}</h3>
-            <div class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Batch ${S().esc(b.no_batch)} &bull; ED ${S().esc(b.tgl_kadaluarsa)} (${dLeft}h) &bull; ${S().esc(b.id_pbf || '-')}</div>
+            <div class="text-xs font-mono-num" style="color:var(--ons-text-soft)">Batch ${S().esc(b.no_batch)} &bull; ED ${S().esc(S().formatEd(b.tgl_kadaluarsa))} (${dLeft}h) &bull; ${S().esc(b.id_pbf || '-')}</div>
           </div>
           <button type="button" onclick="window.ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-sm px-2.5 py-1">&times;</button>
         </div>
@@ -12995,7 +12995,7 @@
               <select id="returAddBatchSel" class="ons-select text-xs w-72">
                 ${poolBatches.map((b) => {
                   const ob = (st.masterObat || []).find((m) => m.id_obat === b.id_obat) || {};
-                  return `<option value="${S().esc(b.id_batch)}">${S().esc(ob.nama_dagang || b.id_obat)} | ${S().esc(b.no_batch)} | ED ${S().esc(String(b.tgl_kadaluarsa || '').slice(0, 10))} (Sisa ${b.qty_sisa})</option>`;
+                  return `<option value="${S().esc(b.id_batch)}">${S().esc(ob.nama_dagang || b.id_obat)} | ${S().esc(b.no_batch)} | ED ${S().esc(S().formatEd(b.tgl_kadaluarsa))} (Sisa ${b.qty_sisa})</option>`;
                 }).join('')}
               </select>
               <button type="button" onclick="window.addBatchToReturForm()" class="ons-btn ons-btn-primary text-xs">+ Tambah Produk</button>
@@ -13009,7 +13009,7 @@
                 ${returFormState.items.length ? returFormState.items.map((it, idx) => `<tr>
                   <td class="font-mono-num text-xs">${idx + 1}.</td>
                   <td class="text-xs font-bold">${S().esc(it.nama_dagang)}<div class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">Faktur Asal: ${S().esc(it.no_faktur_pbf || '-')}</div></td>
-                  <td class="font-mono-num text-xs">${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</td>
+                  <td class="font-mono-num text-xs">${S().esc(S().formatEd(it.tgl_kadaluarsa))}</td>
                   <td class="font-mono-num text-xs">${S().esc(it.no_batch)}</td>
                   <td><input type="number" min="1" max="${it.stok_gudang}" class="ons-input text-xs font-mono-num text-right w-20 py-1 min-h-0" value="${it.qty_retur}" onchange="window.updateReturFormItem(${idx}, 'qty_retur', Number(this.value||1))"/></td>
                   <td class="text-xs">${S().esc(it.satuan || 'Unit')}</td>
@@ -13224,7 +13224,7 @@
       const qty = Math.abs(Number(m.qty_ubah || 0));
       const hpp = Number(b.hpp_beli || 0);
       totalVal += qty * hpp;
-      return `<tr><td style="border:1px solid #94a3b8;padding:5px">${idx + 1}</td><td style="border:1px solid #94a3b8;padding:5px"><b>${S().esc(m.nama_dagang || m.id_obat)}</b></td><td style="border:1px solid #94a3b8;padding:5px">${S().esc(m.no_batch || b.no_batch || '-')}</td><td style="border:1px solid #94a3b8;padding:5px">${S().esc(String(m.tgl_kadaluarsa || b.tgl_kadaluarsa || '-').slice(0, 10))}</td><td style="border:1px solid #94a3b8;padding:5px;text-align:right">${qty}</td><td style="border:1px solid #94a3b8;padding:5px;text-align:right">${S().rp(qty * hpp)}</td></tr>`;
+      return `<tr><td style="border:1px solid #94a3b8;padding:5px">${idx + 1}</td><td style="border:1px solid #94a3b8;padding:5px"><b>${S().esc(m.nama_dagang || m.id_obat)}</b></td><td style="border:1px solid #94a3b8;padding:5px">${S().esc(m.no_batch || b.no_batch || '-')}</td><td style="border:1px solid #94a3b8;padding:5px">${S().esc(S().formatEd(m.tgl_kadaluarsa || b.tgl_kadaluarsa))}</td><td style="border:1px solid #94a3b8;padding:5px;text-align:right">${qty}</td><td style="border:1px solid #94a3b8;padding:5px;text-align:right">${S().rp(qty * hpp)}</td></tr>`;
     }).join('');
     const html = `<style>@page{size:A4 portrait;margin:12mm;}</style>
       <div style="font-family:Arial,sans-serif;color:#0f172a;font-size:12px">
@@ -13600,7 +13600,7 @@
       ], rows, { sheetName: 'ReturKonsinyasi' });
     }
     if (mode === 'stok') {
-      const rows = allItems.filter((it) => Number(it.qty_sisa || 0) > 0).map((it, i) => ({ no: i + 1, produk: it.nama_dagang, batch: it.no_batch, ed: String(it.tgl_kadaluarsa || '').slice(0, 10), faktur: it.no_faktur_pbf || '-', supplier: it.id_pbf, kuantitas: Number(it.qty_sisa || 0), satuan: it.satuan_dasar || 'unit' }));
+      const rows = allItems.filter((it) => Number(it.qty_sisa || 0) > 0).map((it, i) => ({ no: i + 1, produk: it.nama_dagang, batch: it.no_batch, ed: S().formatEd(it.tgl_kadaluarsa), faktur: it.no_faktur_pbf || '-', supplier: it.id_pbf, kuantitas: Number(it.qty_sisa || 0), satuan: it.satuan_dasar || 'unit' }));
       if (!rows.length) return global.toast('Belum ada stok konsinyasi aktif.', 'warn');
       return S().exportDataset('xlsx', 'Stok Konsinyasi', `stok-konsinyasi-${dt}`, [
         { key: 'no', label: 'No', type: 'int', width: 6 },
@@ -13802,7 +13802,7 @@
                     </td>
                     <td class="text-xs text-slate-600 dark:text-slate-300">${S().esc(m.gudang || m.cabang_id || 'Gudang Utama')}</td>
                     <td class="font-mono text-xs font-semibold">${S().esc(m.no_batch || m.id_batch || '-')}</td>
-                    <td class="font-mono text-xs whitespace-nowrap ${m.tgl_kadaluarsa && m.tgl_kadaluarsa < new Date().toISOString().slice(0, 10) ? 'text-red-600 font-bold' : 'text-slate-500'}">${m.tgl_kadaluarsa ? S().formatTgl(m.tgl_kadaluarsa) : '-'}</td>
+                    <td class="font-mono text-xs whitespace-nowrap ${m.tgl_kadaluarsa && (S().normalizeDateIso ? S().normalizeDateIso(m.tgl_kadaluarsa) : m.tgl_kadaluarsa) < new Date().toISOString().slice(0, 10) ? 'text-red-600 font-bold' : 'text-slate-500'}">${m.tgl_kadaluarsa ? S().formatEd(m.tgl_kadaluarsa) : '-'}</td>
                     <td class="font-mono text-xs text-right">${hppLine > 0 ? S().rp(hppLine) : '-'}</td>
                     <td class="text-xs text-slate-600 dark:text-slate-300">${S().esc(m.user_id || 'Apoteker')}</td>
                     <td class="font-mono font-bold text-xs text-right text-emerald-600">${q > 0 ? ('+' + q) : '-'}</td>
@@ -13847,7 +13847,7 @@
         <td style="border:1px solid #333;padding:4px;white-space:nowrap;">${S().formatTgl(m.timestamp, true)}</td>
         <td style="border:1px solid #333;padding:4px;">${S().esc(m.referensi_id || '-')} (${S().esc(m.jenis_mutasi)})</td>
         <td style="border:1px solid #333;padding:4px;text-align:center;">${S().esc(m.no_batch || '-')}</td>
-        <td style="border:1px solid #333;padding:4px;text-align:center;">${m.tgl_kadaluarsa ? S().formatTgl(m.tgl_kadaluarsa) : '-'}</td>
+        <td style="border:1px solid #333;padding:4px;text-align:center;">${m.tgl_kadaluarsa ? S().formatEd(m.tgl_kadaluarsa) : '-'}</td>
         <td style="border:1px solid #333;padding:4px;text-align:right;">${q > 0 ? ('+' + q) : '-'}</td>
         <td style="border:1px solid #333;padding:4px;text-align:right;">${q < 0 ? Math.abs(q) : '-'}</td>
         <td style="border:1px solid #333;padding:4px;text-align:right;font-weight:bold;">${m.stok_akhir}</td>
@@ -14043,7 +14043,7 @@
       return {
         nama: o ? o.nama_dagang : idBatch,
         batch: b ? b.no_batch : '-',
-        ed: b ? b.tgl_kadaluarsa : '-',
+        ed: b ? S().formatEd(b.tgl_kadaluarsa) : '-',
         satuan: sat1,
         sistem,
         fisik,
@@ -14174,7 +14174,7 @@
         <div>
           <span class="badge-bpom bpom-bebas">KALKULATOR HITUNG FISIK OPNAME</span>
           <h3 class="text-base font-extrabold mt-1 text-slate-800 dark:text-slate-100">${S().esc(o.nama_dagang)}</h3>
-          <p class="text-[11px]" style="color:var(--ons-text-soft)">Batch: <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(b.tgl_kadaluarsa)} &bull; Stok Sistem: <b>${b.qty_sisa} ${S().esc(sat1)}</b></p>
+          <p class="text-[11px]" style="color:var(--ons-text-soft)">Batch: <b>${S().esc(b.no_batch)}</b> &bull; ED ${S().esc(S().formatEd(b.tgl_kadaluarsa))} &bull; Stok Sistem: <b>${b.qty_sisa} ${S().esc(sat1)}</b></p>
         </div>
         <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 text-slate-400 hover:text-slate-700">&times;</button>
       </div>
@@ -14480,7 +14480,7 @@
                         <input type="text" oninput="window.updateGrnItemField(${idx}, 'no_batch', this.value)" value="${S().esc(it.no_batch || '')}" placeholder="BATCH..." class="ons-input text-xs font-mono-num"/>
                       </td>
                       <td>
-                        <input type="date" onchange="window.updateGrnItemField(${idx}, 'tgl_kadaluarsa', this.value)" value="${S().esc(it.tgl_kadaluarsa || '')}" class="ons-input text-xs"/>
+                        <input type="date" onchange="window.updateGrnItemField(${idx}, 'tgl_kadaluarsa', this.value)" value="${S().esc(S().normalizeDateIso ? S().normalizeDateIso(it.tgl_kadaluarsa) : (it.tgl_kadaluarsa || ''))}" class="ons-input text-xs"/>
                       </td>
                       <td>
                         <input type="number" min="1" oninput="window.updateGrnItemField(${idx}, 'qty_dasar', this.value)" value="${Number(it.qty_dasar || 1)}" class="ons-input text-xs font-mono-num text-right"/>
@@ -14652,7 +14652,7 @@
         <td style="border:1px solid #334155;padding:6px;text-align:center;">${idx + 1}</td>
         <td style="border:1px solid #334155;padding:6px;font-weight:bold;">${S().esc(it.nama_dagang)}</td>
         <td style="border:1px solid #334155;padding:6px;text-align:center;font-family:monospace;">${S().esc(it.no_batch)}</td>
-        <td style="border:1px solid #334155;padding:6px;text-align:center;font-family:monospace;">${S().esc(String(it.tgl_kadaluarsa || '').slice(0, 10))}</td>
+        <td style="border:1px solid #334155;padding:6px;text-align:center;font-family:monospace;">${S().esc(S().formatEd(it.tgl_kadaluarsa))}</td>
         <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;font-weight:bold;">${it.qty_awal || it.qty_sisa} ${S().esc(it.satuan_dasar || 'unit')}</td>
         <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;">${S().rp(it.hpp_beli)}</td>
         <td style="border:1px solid #334155;padding:6px;text-align:right;font-family:monospace;font-weight:bold;">${S().rp((it.qty_awal || it.qty_sisa) * it.hpp_beli)}</td>
@@ -14815,6 +14815,7 @@
 
     const rowsHtml = allItems.length ? allItems.map((it, idx) => {
       const ed = String(it.tgl_kadaluarsa || '').slice(0, 10);
+      const edDisp = S().formatEd(it.tgl_kadaluarsa);
       const days = S().daysUntil(ed);
       const isExp = days <= 30;
       const isWarn = days > 30 && days <= 90;
@@ -14826,7 +14827,7 @@
           <td style="border:1px solid #334155;padding:5px;font-weight:bold;">${S().esc(it.nama_dagang)}</td>
           <td style="border:1px solid #334155;padding:5px;">${S().esc(it.id_pbf)}</td>
           <td style="border:1px solid #334155;padding:5px;text-align:center;font-family:monospace;">${S().esc(it.no_batch)}</td>
-          <td style="border:1px solid #334155;padding:5px;text-align:center;font-family:monospace;font-weight:bold;color:${edColor};">${S().esc(ed)}</td>
+          <td style="border:1px solid #334155;padding:5px;text-align:center;font-family:monospace;font-weight:bold;color:${edColor};">${S().esc(edDisp)}</td>
           <td style="border:1px solid #334155;padding:5px;text-align:right;font-family:monospace;font-weight:bold;">${it.qty_sisa} ${S().esc(it.satuan_dasar || 'unit')}</td>
           <td style="border:1px solid #334155;padding:5px;text-align:right;font-family:monospace;">${S().rp(it.hpp_beli)}</td>
           <td style="border:1px solid #334155;padding:5px;text-align:right;font-family:monospace;font-weight:bold;">${S().rp(it.qty_sisa * it.hpp_beli)}</td>
