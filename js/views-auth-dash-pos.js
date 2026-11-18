@@ -1555,19 +1555,13 @@
   }
 
   /**
-   * Hitung laba kotor per transaksi secara konsisten (menggunakan estimasi_margin, total_hpp,
-   * atau fallback dari detailPenjualan x hpp_unit/hpp_avg agar setiap transaksi selalu terhitung akurat).
+   * Hitung HPP modal per transaksi secara akurat (fallback ke detailPenjualan -> stokBatch -> masterObat.hpp_avg
+   * bila total_hpp transaksi sempat tercatat 0 akibat perbedaan key hpp_batch vs hpp_beli).
    */
-  function _calcPosTrxLaba(st, p) {
-    if (!p) return 0;
-    if (String(p.status_trx || '').toUpperCase() === 'RETUR') return 0;
-    const grand = Number(p.grand_total || 0);
-    if (p.estimasi_margin !== undefined && p.estimasi_margin !== null && p.estimasi_margin !== '') {
-      const em = Number(p.estimasi_margin);
-      if (em !== 0 || grand === 0 || Number(p.total_hpp || 0) > 0) return em;
-    }
+  function _calcPosTrxHpp(st, p) {
+    if (!p || String(p.status_trx || '').toUpperCase() === 'RETUR') return 0;
     const hppRow = Number(p.total_hpp || 0);
-    if (hppRow > 0) return grand - hppRow;
+    if (hppRow > 0) return hppRow;
     const dets = (st && st.detailPenjualan ? st.detailPenjualan : []).filter((d) =>
       (p.id_transaksi && d.id_transaksi === p.id_transaksi) ||
       (p.no_invoice && d.no_invoice === p.no_invoice)
@@ -1577,13 +1571,30 @@
       dets.forEach((d) => {
         const netQty = Math.max(0, Number(d.qty || 0) - Number(d.qty_retur || 0));
         if (netQty <= 0) return;
+        const bt = (st && st.stokBatch ? st.stokBatch : []).find((b) => b.id_batch && b.id_batch === d.id_batch);
         const ob = (st && st.masterObat ? st.masterObat : []).find((o) => o.id_obat === d.id_obat);
-        const uHpp = Number(d.hpp_unit || (ob && (ob.hpp_avg || ob.hpp_terakhir)) || 0);
+        const uHpp = Number(d.hpp_unit || (bt && (bt.hpp_beli || bt.hpp_batch)) || (ob && (ob.hpp_avg || ob.hpp_terakhir)) || 0);
         estHpp += netQty * uHpp;
       });
-      if (estHpp > 0) return grand - estHpp;
+      if (estHpp > 0) return estHpp;
     }
     return 0;
+  }
+
+  /**
+   * Hitung laba kotor per transaksi secara konsisten (Grand Total dikurangi Modal HPP aktual).
+   */
+  function _calcPosTrxLaba(st, p) {
+    if (!p) return 0;
+    if (String(p.status_trx || '').toUpperCase() === 'RETUR') return 0;
+    const grand = Number(p.grand_total || 0);
+    const hpp = _calcPosTrxHpp(st, p);
+    if (hpp > 0) return grand - hpp;
+    if (p.estimasi_margin !== undefined && p.estimasi_margin !== null && p.estimasi_margin !== '') {
+      const em = Number(p.estimasi_margin);
+      if (em !== grand) return em;
+    }
+    return grand - hpp;
   }
 
   function _compactNumLabel(v) {
@@ -4287,6 +4298,7 @@
       const mem = (st.members || []).find((m) => m.id_member === p.id_member);
       const ret = _extractPosReturInfo(p, st.mutasiStok);
       const items = _getPosItemsForTrx(st, p);
+      const trxHpp = seeCost ? _calcPosTrxHpp(st, p) : 0;
       const trxLaba = seeCost ? _calcPosTrxLaba(st, p) : 0;
       const trxGrand = Number(p.grand_total || 0);
       const trxMarginPct = (seeCost && !ret.isFullRetur && trxGrand > 0) ? Math.round((trxLaba / trxGrand) * 1000) / 10 : 0;
@@ -4341,7 +4353,7 @@
           ${ret.isFullRetur
             ? `<div class="text-[11px] text-slate-400 line-through">Rp 0</div><div class="text-[10px] text-red-500">Void</div>`
             : `<div class="font-extrabold ${trxLaba >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600'}">${trxLaba >= 0 ? '+' : ''}${S().rp(trxLaba)}</div>
-               <div class="text-[10px]" style="color:var(--ons-text-soft)">Margin ${trxMarginPct}%</div>`}
+               <div class="text-[10px]" style="color:var(--ons-text-soft)">${trxHpp > 0 ? `Modal ${S().rp(trxHpp)} &bull; ${trxMarginPct}%` : '<span class="text-amber-600">HPP modal Rp 0</span>'}</div>`}
         </td>` : ''}
         <td class="align-top">
           <span class="badge-bpom ${statusCls}">${statusLabel}</span>

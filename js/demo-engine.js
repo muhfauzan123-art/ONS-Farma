@@ -304,6 +304,62 @@
         changed = true;
       }
     }
+    // Auto-heal HPP batch & riwayat transaksi lama yang sempat tercatat total_hpp=0 karena key hpp_batch vs hpp_beli
+    if (Array.isArray(db.master_obat)) {
+      const obById = {};
+      db.master_obat.forEach((o) => { if (o && o.id_obat) obById[o.id_obat] = o; });
+      if (Array.isArray(db.stok_batch)) {
+        db.stok_batch.forEach((b) => {
+          if (!b) return;
+          const ob = obById[b.id_obat] || {};
+          if (!Number(b.hpp_beli || 0)) {
+            const fixedHpp = Number(b.hpp_batch || ob.hpp_avg || ob.hpp_terakhir || 0);
+            if (fixedHpp > 0) {
+              b.hpp_beli = fixedHpp;
+              changed = true;
+            }
+          }
+        });
+      }
+      if (Array.isArray(db.detail_penjualan) && Array.isArray(db.penjualan)) {
+        const bById = {};
+        (db.stok_batch || []).forEach((b) => { if (b && b.id_batch) bById[b.id_batch] = b; });
+        db.detail_penjualan.forEach((dt) => {
+          if (!dt) return;
+          if (!Number(dt.hpp_unit || 0)) {
+            const bt = bById[dt.id_batch] || {};
+            const ob = obById[dt.id_obat] || {};
+            const fixedU = Number(bt.hpp_beli || bt.hpp_batch || ob.hpp_avg || ob.hpp_terakhir || 0);
+            if (fixedU > 0) {
+              dt.hpp_unit = fixedU;
+              changed = true;
+            }
+          }
+        });
+        db.penjualan.forEach((p) => {
+          if (!p || String(p.status_trx || '').toUpperCase() === 'RETUR') return;
+          if (Number(p.total_hpp || 0) <= 0 && Number(p.grand_total || 0) > 0) {
+            const dets = db.detail_penjualan.filter((dt) =>
+              (p.id_transaksi && dt.id_transaksi === p.id_transaksi) ||
+              (p.no_invoice && dt.no_invoice === p.no_invoice)
+            );
+            let calcHpp = 0;
+            dets.forEach((dt) => {
+              const netQ = Math.max(0, Number(dt.qty || 0) - Number(dt.qty_retur || 0));
+              if (netQ <= 0) return;
+              const ob = obById[dt.id_obat] || {};
+              const uHpp = Number(dt.hpp_unit || ob.hpp_avg || ob.hpp_terakhir || 0);
+              calcHpp += netQ * uHpp;
+            });
+            if (calcHpp > 0) {
+              p.total_hpp = calcHpp;
+              p.estimasi_margin = Number(p.grand_total || 0) - calcHpp;
+              changed = true;
+            }
+          }
+        });
+      }
+    }
     if (changed) saveDb(db);
     return db;
   }
@@ -467,8 +523,8 @@
       const faktor = Math.max(1, Number(it.faktor_konversi || 1));
       let rem = Number(it.qty || 1) * faktor;
       const avail = (db.stok_batch || [])
-        .filter((b) => (!b.cabang_id || b.cabang_id === branchId) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) >= isoToday)
-        .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
+        .filter((b) => (!b.cabang_id || b.cabang_id === branchId) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && (_normalizeDateIsoDemo(b.tgl_kadaluarsa) || '9999-12-31') >= isoToday)
+        .sort((a, b) => (_normalizeDateIsoDemo(a.tgl_kadaluarsa) || '9999-12-31').localeCompare(_normalizeDateIsoDemo(b.tgl_kadaluarsa) || '9999-12-31'));
       const unitSell = Number(it.harga_jual || 0) / faktor;
       const obat = (db.master_obat || []).find((o) => o.id_obat === it.id_obat) || {};
       avail.forEach((b) => {
@@ -478,7 +534,7 @@
         const cut = Math.min(rem, free);
         cutTmp[b.id_batch] = Number(cutTmp[b.id_batch] || 0) + cut;
         rem -= cut;
-        estHpp += cut * Number(b.hpp_beli || obat.hpp_avg || 0);
+        estHpp += cut * Number(b.hpp_beli || b.hpp_batch || obat.hpp_avg || obat.hpp_terakhir || 0);
         estBruto += Math.round(cut * unitSell);
       });
     });
@@ -1085,7 +1141,8 @@
             if (obat.stok_total !== undefined) obat.stok_total = Math.max(0, Number(obat.stok_total || 0) - cut);
           }
           rem -= cut;
-          totalHpp += cut * Number(b.hpp_beli || 0);
+          const unitHpp = Number(b.hpp_beli || b.hpp_batch || obat.hpp_avg || obat.hpp_terakhir || 0);
+          totalHpp += cut * unitHpp;
           const propDisc = Math.round(itemDiscTotal * (cut / qtyNeededBase));
           const brutoCut = Math.round(cut * unitSell);
           const netSub = Math.max(0, brutoCut - propDisc);
@@ -1102,7 +1159,7 @@
             qty: cut,
             satuan: obat.satuan_dasar || it.satuan,
             harga_jual: Math.round(unitSell),
-            hpp_unit: Number(b.hpp_beli || 0),
+            hpp_unit: unitHpp,
             diskon_item: propDisc,
             subtotal_item: netSub,
             aturan_pakai: it.aturan_pakai || ''
@@ -2193,6 +2250,7 @@
               tgl_kadaluarsa: expDate,
               qty_masuk: stokAwal,
               qty_sisa: stokAwal,
+              hpp_beli: Number(raw.hpp_avg || 0),
               hpp_batch: Number(raw.hpp_avg || 0),
               harga_jual_batch: Number(raw.harga_umum || 0),
               status_batch: 'AKTIF'
