@@ -407,10 +407,116 @@
     return _nowCache;
   }
 
+  /**
+   * Normalisasi berbagai format tanggal ED/transaksi (DD-MM-YYYY, DD/MM/YYYY, MM/YYYY,
+   * Excel serial date, nama bulan ID/EN, atau ISO) menjadi format ISO standar YYYY-MM-DD.
+   */
+  const _MONTH_NAME_MAP = {
+    jan: 1, januari: 1, january: 1,
+    feb: 2, februari: 2, february: 2,
+    mar: 3, maret: 3, march: 3,
+    apr: 4, april: 4,
+    mei: 5, may: 5,
+    jun: 6, juni: 6, june: 6,
+    jul: 7, juli: 7, july: 7,
+    agu: 8, agt: 8, agustus: 8, aug: 8, august: 8,
+    sep: 9, sept: 9, september: 9,
+    okt: 10, oktober: 10, oct: 10, october: 10,
+    nov: 11, november: 11,
+    des: 12, desember: 12, dec: 12, december: 12
+  };
+
+  function _pad2Date(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function normalizeDateIso(val) {
+    if (val === null || val === undefined) return '';
+    if (val instanceof Date) {
+      return isNaN(val.getTime()) ? '' : val.toISOString().slice(0, 10);
+    }
+    if (typeof val === 'number' && isFinite(val) && val > 20000 && val < 90000) {
+      const dt = new Date(Math.round((val - 25569) * 86400000));
+      return isNaN(dt.getTime()) ? '' : dt.toISOString().slice(0, 10);
+    }
+    const raw = String(val).trim();
+    if (!raw || raw === '-' || raw.toLowerCase() === 'n/a' || raw.toLowerCase() === 'null') return '';
+    // Excel serial numeric string
+    if (/^\d{5}(\.\d+)?$/.test(raw)) {
+      const num = Number(raw);
+      if (num > 20000 && num < 90000) {
+        const dt = new Date(Math.round((num - 25569) * 86400000));
+        if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+      }
+    }
+    // Already YYYY-MM-DD (with optional time)
+    let m = raw.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (m) {
+      const yr = Number(m[1]), mo = Number(m[2]), dy = Number(m[3]);
+      if (yr >= 1900 && mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31) {
+        return `${yr}-${_pad2Date(mo)}-${_pad2Date(dy)}`;
+      }
+    }
+    // DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY (format Indonesia standar & impor Excel)
+    m = raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})(?:\s.*)?$/);
+    if (m) {
+      let dy = Number(m[1]), mo = Number(m[2]), yr = Number(m[3]);
+      if (mo > 12 && dy <= 12) { const tmp = dy; dy = mo; mo = tmp; }
+      if (yr >= 1900 && mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31) {
+        return `${yr}-${_pad2Date(mo)}-${_pad2Date(dy)}`;
+      }
+    }
+    // DD-MM-YY or DD/MM/YY
+    m = raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2})$/);
+    if (m) {
+      let dy = Number(m[1]), mo = Number(m[2]), yr = 2000 + Number(m[3]);
+      if (mo > 12 && dy <= 12) { const tmp = dy; dy = mo; mo = tmp; }
+      if (mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31) {
+        return `${yr}-${_pad2Date(mo)}-${_pad2Date(dy)}`;
+      }
+    }
+    // MM/YYYY or MM-YYYY (ED bulan/tahun -> hari terakhir bulan tsb)
+    m = raw.match(/^(\d{1,2})[-/.](\d{4})$/);
+    if (m) {
+      const mo = Number(m[1]), yr = Number(m[2]);
+      if (yr >= 1900 && mo >= 1 && mo <= 12) {
+        const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
+        return `${yr}-${_pad2Date(mo)}-${_pad2Date(lastDay)}`;
+      }
+    }
+    // YYYY-MM (ED tahun-bulan -> hari terakhir bulan tsb)
+    m = raw.match(/^(\d{4})[-/.](\d{1,2})$/);
+    if (m) {
+      const yr = Number(m[1]), mo = Number(m[2]);
+      if (yr >= 1900 && mo >= 1 && mo <= 12) {
+        const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
+        return `${yr}-${_pad2Date(mo)}-${_pad2Date(lastDay)}`;
+      }
+    }
+    // DD Mon YYYY / DD-Mon-YYYY / Mon YYYY (ID or EN)
+    m = raw.toLowerCase().match(/^(?:(\d{1,2})[\s\-/.]+)?([a-z]{3,9})[\s\-/.]+(\d{2,4})$/);
+    if (m && _MONTH_NAME_MAP[m[2]]) {
+      const mo = _MONTH_NAME_MAP[m[2]];
+      const yr = m[3].length === 2 ? (2000 + Number(m[3])) : Number(m[3]);
+      const dy = m[1] ? Number(m[1]) : new Date(Date.UTC(yr, mo, 0)).getUTCDate();
+      if (yr >= 1900 && dy >= 1 && dy <= 31) {
+        return `${yr}-${_pad2Date(mo)}-${_pad2Date(dy)}`;
+      }
+    }
+    // Native fallback
+    const parsed = new Date(raw);
+    if (!isNaN(parsed.getTime()) && parsed.getFullYear() >= 1970) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return '';
+  }
+
   function daysUntil(dateStr) {
     if (!dateStr) return 9999;
-    const ms = new Date(dateStr).getTime() - _getNowCache().ts;
-    return Math.ceil(ms / 86400000);
+    const iso = normalizeDateIso(dateStr);
+    if (!iso) return 9999;
+    const ms = new Date(iso + 'T00:00:00').getTime() - _getNowCache().ts;
+    return isNaN(ms) ? 9999 : Math.ceil(ms / 86400000);
   }
 
   function bpomBadge(gol) {
@@ -578,7 +684,7 @@
    * Kalkulator Stok FEFO Total & Layak Jual (Belum Kadaluarsa) per ID Obat
    * O(1) Lookup Indexer (disegarkan otomatis per frame / mutasi data)
    */
-  let _batchIdx = { arr: null, len: -1, br: '', day: '', dirty: true, ts: 0, byId: new Map() };
+  let _batchIdx = { arr: null, len: -1, mLen: -1, br: '', day: '', dirty: true, ts: 0, byId: new Map() };
 
   function invalidateStockIndex() {
     _batchIdx.dirty = true;
@@ -588,11 +694,13 @@
   function _getBatchIndex() {
     const nc = _getNowCache();
     const arr = AppState.stokBatch || [];
+    const mList = AppState.masterObat || [];
     const br = AppState.cabangId || 'ONS-01';
     if (
       !_batchIdx.dirty &&
       _batchIdx.arr === arr &&
       _batchIdx.len === arr.length &&
+      _batchIdx.mLen === mList.length &&
       _batchIdx.br === br &&
       _batchIdx.day === nc.iso &&
       (Date.now() - _batchIdx.ts) <= 60
@@ -612,26 +720,78 @@
       const qty = Number(b.qty_sisa || 0);
       ent.totalStok += qty;
       if (qty > 0) {
-        const bEd = String(b.tgl_kadaluarsa || '');
-        if (!ent.nearestEd || bEd.localeCompare(String(ent.nearestEd.tgl_kadaluarsa || '')) < 0) {
+        const iso = normalizeDateIso(b.tgl_kadaluarsa);
+        const cmpEd = iso || '9999-12-31';
+        const curNearEd = ent.nearestEd ? (normalizeDateIso(ent.nearestEd.tgl_kadaluarsa) || '9999-12-31') : '';
+        if (!ent.nearestEd || cmpEd.localeCompare(curNearEd) < 0) {
           ent.nearestEd = b;
         }
-        const iso = bEd.slice(0, 10);
         if (!iso || iso >= nc.iso) {
           ent.sellableStok += qty;
           ent.sellableBatches.push(b);
-          if (!ent.nearestSellable || bEd.localeCompare(String(ent.nearestSellable.tgl_kadaluarsa || '')) < 0) {
+          const curNearSell = ent.nearestSellable ? (normalizeDateIso(ent.nearestSellable.tgl_kadaluarsa) || '9999-12-31') : '';
+          if (!ent.nearestSellable || cmpEd.localeCompare(curNearSell) < 0) {
             ent.nearestSellable = b;
           }
         }
       }
     }
-    _batchIdx = { arr, len: arr.length, br, day: nc.iso, dirty: false, ts: Date.now(), byId: map };
+
+    // Fallback: Sinkronisasi produk katalog master obat yang belum memiliki record batch terpisah (contoh impor dari Excel)
+    const defaultFutureEd = new Date(Date.now() + 730 * 86400000).toISOString().slice(0, 10);
+    for (let i = 0; i < mList.length; i++) {
+      const o = mList[i];
+      if (!o || !o.id_obat) continue;
+      const mStok = Number(o.stok !== undefined ? o.stok : (o.stok_akhir !== undefined ? o.stok_akhir : (o.stok_total || 0)));
+      if (mStok <= 0) continue;
+      let ent = map.get(o.id_obat);
+      const oEdIso = normalizeDateIso(o.tgl_kadaluarsa);
+      const safeEd = (oEdIso && oEdIso >= nc.iso) ? oEdIso : defaultFutureEd;
+      if (!ent) {
+        const synthBatch = {
+          id_batch: 'BT-INIT-' + o.id_obat,
+          id_obat: o.id_obat,
+          cabang_id: br,
+          no_batch: o.no_batch || 'BATCH-AWAL',
+          tgl_kadaluarsa: safeEd,
+          qty_sisa: mStok,
+          status_batch: 'AKTIF',
+          hpp_beli: Number(o.hpp_avg || o.hpp_terakhir || 0)
+        };
+        map.set(o.id_obat, {
+          totalStok: mStok,
+          sellableStok: mStok,
+          nearestEd: synthBatch,
+          nearestSellable: synthBatch,
+          sellableBatches: [synthBatch],
+          isSynthetic: true
+        });
+      } else if (ent.totalStok <= 0) {
+        const synthBatch = {
+          id_batch: 'BT-INIT-' + o.id_obat,
+          id_obat: o.id_obat,
+          cabang_id: br,
+          no_batch: o.no_batch || 'BATCH-AWAL',
+          tgl_kadaluarsa: safeEd,
+          qty_sisa: mStok,
+          status_batch: 'AKTIF',
+          hpp_beli: Number(o.hpp_avg || o.hpp_terakhir || 0)
+        };
+        ent.totalStok = mStok;
+        ent.sellableStok = mStok;
+        ent.nearestEd = synthBatch;
+        ent.nearestSellable = synthBatch;
+        ent.sellableBatches = [synthBatch];
+        ent.isSynthetic = true;
+      }
+    }
+
+    _batchIdx = { arr, len: arr.length, mLen: mList.length, br, day: nc.iso, dirty: false, ts: Date.now(), byId: map };
     return map;
   }
 
   function isBatchExpired(tglEd) {
-    const iso = String(tglEd || '').slice(0, 10);
+    const iso = normalizeDateIso(tglEd);
     if (!iso) return false;
     return iso < _getNowCache().iso;
   }
@@ -1883,6 +2043,7 @@
     getBranchLabel,
     setMultiBranchMode,
     isBatchExpired,
+    normalizeDateIso,
     invalidateStockIndex,
     getTotalStok,
     getSellableStok,

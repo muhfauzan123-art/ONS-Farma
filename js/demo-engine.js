@@ -271,8 +271,55 @@
       db.master_dokter = [];
       changed = true;
     }
+    // Auto-heal format tanggal kadaluarsa (DD-MM-YYYY / DD/MM/YYYY / MM/YYYY -> YYYY-MM-DD) agar FEFO akurat
+    if (Array.isArray(db.stok_batch)) {
+      db.stok_batch.forEach((b) => {
+        if (b && b.tgl_kadaluarsa) {
+          const norm = _normalizeDateIsoDemo(b.tgl_kadaluarsa);
+          if (norm && norm !== b.tgl_kadaluarsa) {
+            b.tgl_kadaluarsa = norm;
+            changed = true;
+          }
+        }
+      });
+    }
+    if (Array.isArray(db.master_obat)) {
+      db.master_obat.forEach((o) => {
+        if (o && o.tgl_kadaluarsa) {
+          const norm = _normalizeDateIsoDemo(o.tgl_kadaluarsa);
+          if (norm && norm !== o.tgl_kadaluarsa) {
+            o.tgl_kadaluarsa = norm;
+            changed = true;
+          }
+        }
+      });
+    }
     if (changed) saveDb(db);
     return db;
+  }
+
+  function _normalizeDateIsoDemo(val) {
+    if (global.ONSStore && typeof global.ONSStore.normalizeDateIso === 'function') {
+      return global.ONSStore.normalizeDateIso(val);
+    }
+    if (val === null || val === undefined) return '';
+    const raw = String(val).trim();
+    if (!raw || raw === '-') return '';
+    let m = raw.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+    m = raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})(?:\s.*)?$/);
+    if (m) {
+      let dy = Number(m[1]), mo = Number(m[2]), yr = Number(m[3]);
+      if (mo > 12 && dy <= 12) { const tmp = dy; dy = mo; mo = tmp; }
+      return `${yr}-${String(mo).padStart(2, '0')}-${String(dy).padStart(2, '0')}`;
+    }
+    m = raw.match(/^(\d{1,2})[-/.](\d{4})$/);
+    if (m) {
+      const mo = Number(m[1]), yr = Number(m[2]);
+      const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
+      return `${yr}-${String(mo).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    }
+    return raw.slice(0, 10);
   }
 
   function loadDb() {
@@ -972,11 +1019,28 @@
         let expiredQty = 0;
         db.stok_batch.forEach((b) => {
           if ((!b.cabang_id || b.cabang_id === cabang) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0) {
-            const ed = String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10);
+            const ed = _normalizeDateIsoDemo(b.tgl_kadaluarsa) || '9999-12-31';
             if (ed < isoToday) expiredQty += Number(b.qty_sisa || 0);
             else availSellable += Number(b.qty_sisa || 0);
           }
         });
+        const mStok = Number(obat.stok !== undefined ? obat.stok : (obat.stok_akhir !== undefined ? obat.stok_akhir : (obat.stok_total || 0)));
+        if (availSellable === 0 && expiredQty === 0 && mStok > 0) {
+          // Auto-seed initial batch in demo DB dari master stok
+          const normOEd = _normalizeDateIsoDemo(obat.tgl_kadaluarsa);
+          const initBatch = {
+            id_batch: 'BT-INIT-' + (obat.id_obat || it.id_obat),
+            id_obat: obat.id_obat || it.id_obat,
+            cabang_id: cabang,
+            no_batch: obat.no_batch || 'BATCH-AWAL',
+            tgl_kadaluarsa: (normOEd && normOEd >= isoToday) ? normOEd : new Date(Date.now() + 730 * 86400000).toISOString().slice(0, 10),
+            qty_sisa: mStok,
+            status_batch: 'AKTIF',
+            hpp_beli: Number(obat.hpp_avg || obat.hpp_terakhir || 0)
+          };
+          db.stok_batch.push(initBatch);
+          availSellable = mStok;
+        }
         if (availSellable < qtyNeeded) {
           throw new Error('Stok layak jual ' + (obat.nama_dagang || it.id_obat) + ' tidak mencukupi (tersedia ' + availSellable + ', butuh ' + qtyNeeded + (expiredQty > 0 ? '; ada ' + expiredQty + ' stok KADALUARSA terblokir' : '') + ').');
         }
@@ -992,8 +1056,8 @@
         const qtyNeededBase = Number(it.qty || 1) * faktor;
         let rem = qtyNeededBase;
         const batches = db.stok_batch
-          .filter((b) => (!b.cabang_id || b.cabang_id === cabang) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && String(b.tgl_kadaluarsa || '9999-12-31').slice(0, 10) >= isoToday)
-          .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
+          .filter((b) => (!b.cabang_id || b.cabang_id === cabang) && b.id_obat === it.id_obat && String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && (_normalizeDateIsoDemo(b.tgl_kadaluarsa) || '9999-12-31') >= isoToday)
+          .sort((a, b) => (_normalizeDateIsoDemo(a.tgl_kadaluarsa) || '9999-12-31').localeCompare(_normalizeDateIsoDemo(b.tgl_kadaluarsa) || '9999-12-31'));
         const obat = db.master_obat.find((o) => o.id_obat === it.id_obat) || {};
         const unitSell = Number(it.harga_jual || obat.harga_umum || 0) / faktor;
         const itemDiscTotal = Number(it.diskon_item || 0);
@@ -1003,6 +1067,11 @@
           b.qty_sisa = Number(b.qty_sisa || 0) - cut;
           if (b.qty_sisa <= 0) { b.qty_sisa = 0; b.status_batch = 'HABIS'; }
           b.updated_at = nowIso;
+          if (obat) {
+            if (obat.stok !== undefined) obat.stok = Math.max(0, Number(obat.stok || 0) - cut);
+            if (obat.stok_akhir !== undefined) obat.stok_akhir = Math.max(0, Number(obat.stok_akhir || 0) - cut);
+            if (obat.stok_total !== undefined) obat.stok_total = Math.max(0, Number(obat.stok_total || 0) - cut);
+          }
           rem -= cut;
           totalHpp += cut * Number(b.hpp_beli || 0);
           const propDisc = Math.round(itemDiscTotal * (cut / qtyNeededBase));
