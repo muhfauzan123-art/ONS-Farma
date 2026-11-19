@@ -5,85 +5,87 @@
 
 :root {
   color-scheme: light;
-  --ons-bg-canvas: #F8FAFC;
+  --ons-bg-canvas: #F4F6F9;
   --ons-bg-card: #FFFFFF;
-  --ons-bg-subtle: #F1F5F9;
-  --ons-topbar-bg: linear-gradient(135deg, #0A192F 0%, #1E3A8A 32%, #1D4ED8 72%, #2563EB 100%);
+  --ons-bg-subtle: #EDF2F7;
+  --ons-topbar-bg: linear-gradient(135deg, #0A1528 0%, #0F203C 50%, #132D56 100%);
   --ons-topbar-text: #FFFFFF;
   --ons-border: #E2E8F0;
   --ons-border-strong: #CBD5E1;
-  --ons-text-main: #0B1C30;
-  --ons-text-muted: #424655;
+  --ons-border-soft: rgba(226, 232, 240, 0.7);
+  --ons-text-main: #0F172A;
+  --ons-text-muted: #334155;
   --ons-text-soft: #64748B;
 
-  --ons-primary: #0050CA;
-  --ons-primary-bright: #0066FE;
-  --ons-primary-hover: #004BBD;
+  --ons-primary: #1D4ED8;
+  --ons-primary-bright: #2563EB;
+  --ons-primary-hover: #1E40AF;
   --ons-primary-tint: #EFF6FF;
 
-  --ons-secondary: #006C4A;
+  --ons-secondary: #059669;
   --ons-emerald: #10B981;
   --ons-emerald-tint: #ECFDF5;
-  --ons-tertiary: #00655C;
+  --ons-tertiary: #0D9488;
   --ons-cyan: #0284C7;
-  --ons-amber: #F59E0B;
+  --ons-amber: #D97706;
   --ons-amber-tint: #FFFBEB;
   --ons-red: #DC2626;
   --ons-red-tint: #FEF2F2;
   --ons-purple: #7C3AED;
   --ons-purple-tint: #F5F3FF;
 
-  --ons-nav-start: #FFFFFF;
-  --ons-nav-end: #F8FAFC;
-  --ons-nav-border: #E2E8F0;
-  --ons-nav-divider: #E2E8F0;
-  --ons-nav-text: #334155;
-  --ons-nav-text-strong: #0F172A;
-  --ons-nav-muted: #64748B;
-  --ons-nav-hover-bg: #F1F5F9;
-  --ons-nav-hover-text: #0F172A;
-  --ons-nav-active-bg: #EFF6FF;
-  --ons-nav-active-border: #BFDBFE;
-  --ons-nav-active-text: #0050CA;
-  --ons-nav-accent: #0066FE;
-  --ons-nav-brand-sub: #0050CA;
-  --ons-nav-subline: #CBD5E1;
-  --ons-nav-danger: #DC2626;
-  --ons-nav-danger-bg: #FEF2F2;
-  --ons-nav-status-ok: #047857;
-  --ons-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --ons-shadow-card-hover: 0 10px 26px -10px rgba(0, 80, 202, 0.14), 0 2px 6px rgba(15, 23, 42, 0.04);
-  --ons-shadow-elev: 0 14px 36px rgba(11, 28, 48, 0.14);
+  --ons-nav-start: #0A1528;
+  --ons-nav-end: #10223D;
+  --ons-nav-border: rgba(255, 255, 255, 0.08);
+  --ons-nav-divider: rgba(255, 255, 255, 0.12);
+  --ons-nav-text: rgba(255, 255, 255, 0.85);
+  --ons-nav-text-strong: #FFFFFF;
+  --ons-nav-muted: rgba(255, 255, 255, 0.65);
+  --ons-nav-hover-bg: rgba(255, 255, 255, 0.08);
+  --ons-nav-hover-text: #FFFFFF;
+  --ons-nav-active-bg: rgba(255, 255, 255, 0.12);
+  --ons-nav-active-border: rgba(56, 189, 248, 0.4);
+  --ons-nav-active-text: #FFFFFF;
+  --ons-nav-accent: #38BDF8;
+  --ons-nav-brand-sub: #BAE6FD;
+  --ons-nav-subline: rgba(255, 255, 255, 0.18);
+  --ons-nav-danger: #F87171;
+  --ons-nav-danger-bg: rgba(239, 68, 68, 0.15);
+  --ons-nav-status-ok: #34D399;
+
+  --ons-shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+  --ons-shadow-card-hover: 0 8px 24px -4px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  --ons-shadow-elev: 0 20px 40px -8px rgba(15, 23, 42, 0.12);
 }
 
 html.dark {
   color-scheme: dark;
-  --ons-bg-canvas: #0F172A;
-  --ons-bg-card: #1E293B;
-  --ons-topbar-bg: linear-gradient(135deg, #020617 0%, #0F172A 32%, #1E3A8A 72%, #1E40AF 100%);
+  --ons-bg-canvas: #0B1120;
+  --ons-bg-card: #151F32;
+  --ons-bg-subtle: #1E293B;
+  --ons-topbar-bg: linear-gradient(135deg, #030712 0%, #0B1120 40%, #111E36 100%);
   --ons-topbar-text: #FFFFFF;
-  --ons-nav-start: #0F172A;
-  --ons-nav-end: #111827;
+  --ons-nav-start: #080D1A;
+  --ons-nav-end: #0B1325;
   --ons-nav-border: #1E293B;
-  --ons-nav-divider: rgba(148, 163, 184, 0.18);
+  --ons-nav-divider: rgba(148, 163, 184, 0.14);
   --ons-nav-text: #CBD5E1;
   --ons-nav-text-strong: #F8FAFC;
   --ons-nav-muted: #94A3B8;
-  --ons-nav-hover-bg: rgba(255, 255, 255, 0.07);
+  --ons-nav-hover-bg: rgba(255, 255, 255, 0.06);
   --ons-nav-hover-text: #FFFFFF;
   --ons-nav-active-bg: rgba(59, 130, 246, 0.16);
-  --ons-nav-active-border: rgba(96, 165, 250, 0.34);
+  --ons-nav-active-border: rgba(96, 165, 250, 0.35);
   --ons-nav-active-text: #93C5FD;
   --ons-nav-accent: #38BDF8;
   --ons-nav-brand-sub: #7DD3FC;
-  --ons-nav-subline: rgba(148, 163, 184, 0.25);
+  --ons-nav-subline: rgba(148, 163, 184, 0.22);
   --ons-nav-danger: #FCA5A5;
   --ons-nav-danger-bg: rgba(239, 68, 68, 0.18);
   --ons-nav-status-ok: #6EE7B7;
-  --ons-bg-subtle: #0F172A;
-  --ons-border: #334155;
-  --ons-border-strong: #475569;
-  --ons-text-main: #F1F5F9;
+  --ons-border: #1E293B;
+  --ons-border-strong: #334155;
+  --ons-text-main: #F8FAFC;
   --ons-text-muted: #CBD5E1;
   --ons-text-soft: #94A3B8;
 
@@ -96,8 +98,8 @@ html.dark {
   --ons-amber-tint: rgba(245, 158, 11, 0.14);
   --ons-red-tint: rgba(220, 38, 38, 0.15);
   --ons-purple-tint: rgba(124, 58, 237, 0.16);
-  --ons-shadow-card: 0 4px 12px rgba(2, 6, 23, 0.42);
-  --ons-shadow-card-hover: 0 14px 30px -10px rgba(2, 6, 23, 0.72), 0 0 0 1px rgba(96, 165, 250, 0.24);
+  --ons-shadow-card: 0 4px 14px rgba(0, 0, 0, 0.36);
+  --ons-shadow-card-hover: 0 12px 28px -6px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(96, 165, 250, 0.25);
   --ons-shadow-elev: 0 18px 44px rgba(2, 6, 23, 0.74);
 }
 
@@ -109,16 +111,41 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--ons-bg-canvas);
+  background-image: radial-gradient(at 10% 0%, rgba(37, 99, 235, 0.025) 0px, transparent 45%),
+                    radial-gradient(at 90% 10%, rgba(16, 185, 129, 0.02) 0px, transparent 45%);
+  background-attachment: fixed;
   color: var(--ons-text-main);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .font-mono-num {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
+}
+
+/* Universal Eye-Comfort Sleek Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.32);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
 }
 
 /* Sidebar Putih Bersih & Biru Klinik (adaptif Shift Malam) */
@@ -162,9 +189,15 @@ html, body {
 .ons-card {
   background-color: var(--ons-bg-card);
   border: 1px solid var(--ons-border);
-  border-radius: 1rem;
+  border-radius: 1.15rem;
   box-shadow: var(--ons-shadow-card);
-  transition: border-color 0.16s ease, box-shadow 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, transform 0.16s ease;
+}
+.ons-card:hover {
+  border-color: rgba(203, 213, 225, 0.85);
+}
+html.dark .ons-card:hover {
+  border-color: rgba(71, 85, 105, 0.75);
 }
 
 .ons-input, .ons-select, .ons-textarea {
@@ -172,17 +205,17 @@ html, body {
   background-color: var(--ons-bg-card);
   color: var(--ons-text-main);
   border: 1px solid var(--ons-border-strong);
-  border-radius: 0.65rem;
-  padding: 0.54rem 0.82rem;
+  border-radius: 0.75rem;
+  padding: 0.58rem 0.88rem;
   font-size: 0.875rem;
-  min-height: 40px;
+  min-height: 42px;
   outline: none;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
 }
 
 .ons-input:focus, .ons-select:focus, .ons-textarea:focus {
-  border-color: var(--ons-primary-bright);
-  box-shadow: 0 0 0 3px rgba(0, 102, 254, 0.18);
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3.5px rgba(59, 130, 246, 0.14), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 }
 .ons-input:disabled, .ons-select:disabled, .ons-textarea:disabled {
   opacity: 0.65;
@@ -195,17 +228,22 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  padding: 0.52rem 0.95rem;
+  padding: 0.54rem 1rem;
   min-height: 40px;
-  border-radius: 0.65rem;
+  border-radius: 0.75rem;
   font-size: 0.84rem;
   font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.08s ease, background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
 }
-.ons-btn:active:not(:disabled) { transform: scale(0.98); }
+.ons-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.ons-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
 .ons-btn:disabled {
   opacity: 0.56;
   cursor: not-allowed;
@@ -229,22 +267,52 @@ html, body {
   outline-offset: 2px;
 }
 
-.ons-btn-primary { background: linear-gradient(135deg, #0050CA 0%, #0066FE 100%); color: #FFFFFF; box-shadow: 0 2px 6px rgba(0, 80, 202, 0.22); }
-.ons-btn-primary:hover { background: linear-gradient(135deg, #0044AD 0%, #0055D6 100%); box-shadow: 0 4px 12px rgba(0, 80, 202, 0.28); }
-.ons-btn-emerald { background: linear-gradient(135deg, #006C4A 0%, #059669 100%); color: #FFFFFF; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.22); }
-.ons-btn-emerald:hover { background: linear-gradient(135deg, #00593D 0%, #047857 100%); box-shadow: 0 4px 12px rgba(5, 150, 105, 0.28); }
-.ons-btn-danger { background: #DC2626; color: #FFFFFF; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.18); }
-.ons-btn-danger:hover { background: #B91C1C; }
-.ons-btn-amber { background: #D97706; color: #FFFFFF; box-shadow: 0 2px 6px rgba(217, 119, 6, 0.18); }
-.ons-btn-amber:hover { background: #B45309; }
+.ons-btn-primary {
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px -1px rgba(37, 99, 235, 0.28);
+}
+.ons-btn-primary:hover {
+  background: linear-gradient(135deg, #1E40AF 0%, #1D4ED8 100%);
+  box-shadow: 0 4px 14px -2px rgba(37, 99, 235, 0.38);
+}
+.ons-btn-emerald {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px -1px rgba(16, 185, 129, 0.28);
+}
+.ons-btn-emerald:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.38);
+}
+.ons-btn-danger {
+  background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px -1px rgba(220, 38, 38, 0.25);
+}
+.ons-btn-danger:hover {
+  background: #B91C1C;
+  box-shadow: 0 4px 12px -2px rgba(220, 38, 38, 0.35);
+}
+.ons-btn-amber {
+  background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px -1px rgba(217, 119, 6, 0.25);
+}
+.ons-btn-amber:hover {
+  background: #B45309;
+  box-shadow: 0 4px 12px -2px rgba(217, 119, 6, 0.35);
+}
 .ons-btn-ghost {
   background: var(--ons-bg-card);
   color: var(--ons-text-main);
   border-color: var(--ons-border-strong);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 .ons-btn-ghost:hover {
-  background: var(--ons-primary-tint);
-  border-color: var(--ons-primary-bright);
+  background: var(--ons-bg-subtle);
+  border-color: #94A3B8;
+  color: var(--ons-primary);
 }
 html.dark .ons-btn-ghost:hover {
   background: rgba(59, 130, 246, 0.14);
@@ -1685,9 +1753,15 @@ html.dark .ons-nav-badge.info {
   background: linear-gradient(90deg, #0D9488, #2563EB);
 }
 .ons-subnav-bar {
-  background: var(--ons-bg-card);
-  border-bottom: 1px solid var(--ons-border);
-  padding: 0.4rem 1.05rem;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  padding: 0.45rem 1.15rem;
+}
+html.dark .ons-subnav-bar {
+  background: rgba(21, 31, 50, 0.88);
+  border-bottom-color: rgba(30, 41, 59, 0.9);
 }
 .ons-main-scroll {
   scrollbar-width: thin;
@@ -3480,48 +3554,33 @@ html.dark .ons-pos-bar-tool:hover {
 }
 
 /* =========================================================
-   APOTEK DIGITAL SIGNATURE ROYAL BLUE SIDEBAR & WHITE ISLAND CARDS
+   APOTEK DIGITAL SIGNATURE EXECUTIVE FROSTED SAPPHIRE SIDEBAR
    ========================================================= */
-:root {
-  --ons-nav-start: #0066D6;
-  --ons-nav-end: #0050CA;
-  --ons-nav-border: #004BA3;
-  --ons-nav-divider: rgba(255, 255, 255, 0.18);
-  --ons-nav-text: #FFFFFF;
-  --ons-nav-text-strong: #FFFFFF;
-  --ons-nav-muted: rgba(255, 255, 255, 0.82);
-  --ons-nav-hover-bg: rgba(255, 255, 255, 0.14);
-  --ons-nav-hover-text: #FFFFFF;
-  --ons-nav-active-bg: #FFFFFF;
-  --ons-nav-active-border: #FFFFFF;
-  --ons-nav-active-text: #0284C7;
-  --ons-nav-accent: #10B981;
-  --ons-nav-brand-sub: #E0F2FE;
-  --ons-nav-subline: rgba(255, 255, 255, 0.25);
-  --ons-topbar-bg: linear-gradient(135deg, #0A1E3F 0%, #0F2E5E 50%, #11427D 100%);
-}
-
 .ons-sidebar {
-  background: linear-gradient(180deg, #0A192F 0%, #0F274E 45%, #16366E 100%) !important;
+  background: linear-gradient(180deg, #0A1528 0%, #0F203C 45%, #132746 100%) !important;
   color: #FFFFFF !important;
-  border-right: 1px solid rgba(15, 23, 42, 0.15) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 2px 0 16px rgba(10, 21, 40, 0.12);
 }
 
 /* Distinctive HealthTech Modern Search Pill */
 .ons-sb-search-pill {
-  border: 1.5px solid rgba(226, 232, 240, 0.75) !important;
-  background: #FFFFFF !important;
-  color: #0F172A !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: #FFFFFF !important;
   border-radius: 9999px !important;
-  box-shadow: 0 2px 10px rgba(10, 25, 47, 0.12) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important;
   transition: all 0.2s ease;
 }
 .ons-sb-search-pill:focus {
-  border-color: #10B981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22) !important;
+  border-color: #38BDF8 !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.24) !important;
 }
 .ons-sb-search-pill::placeholder {
-  color: #64748B !important;
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 /* Normal Inactive Menu Row on Midnight Sapphire Sidebar */
@@ -3546,7 +3605,7 @@ html.dark .ons-pos-bar-tool:hover {
   transition: all 0.15s ease;
 }
 .ons-nav-row:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
   color: #FFFFFF !important;
 }
 .ons-nav-row-btn {
@@ -3558,31 +3617,33 @@ html.dark .ons-pos-bar-tool:hover {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* THE SIGNATURE ONS FARMA WHITE-ISLAND CARD (With Bio-Emerald Edge Accent) */
+/* THE SIGNATURE ONS FARMA FROSTED OCEAN GLASS (Eye-Comfort Calm Contrast) */
 .ons-nav-group.is-open,
 .ons-nav-group.has-active {
-  background: #FFFFFF !important;
-  color: #0F172A !important;
-  border-radius: 0.85rem !important;
-  box-shadow: 0 4px 20px rgba(10, 25, 47, 0.16) !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  color: #FFFFFF !important;
+  border-radius: 0.9rem !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22) !important;
   margin: 0.35rem 0.15rem !important;
-  padding: 0.25rem 0.35rem 0.45rem 0.35rem !important;
-  border: 1px solid rgba(226, 232, 240, 0.95) !important;
-  border-left: 3.5px solid #10B981 !important;
+  padding: 0.3rem 0.4rem 0.5rem 0.4rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-left: 3.5px solid #38BDF8 !important;
 }
 
 html.dark .ons-nav-group.is-open,
 html.dark .ons-nav-group.has-active {
-  background: #1E293B !important;
+  background: rgba(15, 23, 42, 0.68) !important;
   color: #F8FAFC !important;
-  border-color: rgba(51, 65, 85, 0.9) !important;
-  border-left: 3.5px solid #10B981 !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+  border-left: 3.5px solid #38BDF8 !important;
   box-shadow: 0 4px 22px rgba(0, 0, 0, 0.45) !important;
 }
 
 .ons-nav-group.is-open .ons-nav-row,
 .ons-nav-group.has-active .ons-nav-row {
-  color: #0F172A !important;
+  color: #FFFFFF !important;
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
@@ -3595,7 +3656,7 @@ html.dark .ons-nav-group.has-active .ons-nav-row {
 
 .ons-nav-group.is-open .ons-nav-row-btn,
 .ons-nav-group.has-active .ons-nav-row-btn {
-  color: #0F172A !important;
+  color: #FFFFFF !important;
   font-weight: 750 !important;
 }
 
@@ -3606,7 +3667,7 @@ html.dark .ons-nav-group.has-active .ons-nav-row-btn {
 
 .ons-nav-group.is-open .ons-nav-row-btn .ons-nav-svg,
 .ons-nav-group.has-active .ons-nav-row-btn .ons-nav-svg {
-  color: #0284C7 !important;
+  color: #38BDF8 !important;
 }
 
 html.dark .ons-nav-group.is-open .ons-nav-row-btn .ons-nav-svg,
@@ -3616,18 +3677,18 @@ html.dark .ons-nav-group.has-active .ons-nav-row-btn .ons-nav-svg {
 
 .ons-nav-group.is-open .ons-nav-caret,
 .ons-nav-group.has-active .ons-nav-caret {
-  color: #64748B !important;
+  color: rgba(255, 255, 255, 0.75) !important;
 }
 .ons-nav-group.is-open .ons-nav-caret[aria-expanded="true"],
 .ons-nav-group.has-active .ons-nav-caret[aria-expanded="true"] {
-  color: #0284C7 !important;
+  color: #38BDF8 !important;
 }
 html.dark .ons-nav-group.is-open .ons-nav-caret[aria-expanded="true"],
 html.dark .ons-nav-group.has-active .ons-nav-caret[aria-expanded="true"] {
   color: #38BDF8 !important;
 }
 
-/* Submenu List inside White Island Card */
+/* Submenu List inside Frosted Island Card */
 .ons-nav-group.is-open .ons-nav-subinner {
   padding-left: 0.15rem;
 }
@@ -3639,13 +3700,13 @@ html.dark .ons-nav-group.has-active .ons-nav-caret[aria-expanded="true"] {
 }
 
 .ons-nav-group.is-open .ons-submenu-btn {
-  color: #334155 !important;
-  font-size: 0.74rem !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 0.76rem !important;
   font-weight: 500 !important;
-  padding: 0.34rem 0.65rem !important;
-  border-radius: 0.5rem !important;
-  margin: 1px 0 !important;
-  transition: all 0.12s ease;
+  padding: 0.36rem 0.68rem !important;
+  border-radius: 0.55rem !important;
+  margin: 1.5px 0 !important;
+  transition: all 0.15s ease;
 }
 
 html.dark .ons-nav-group.is-open .ons-submenu-btn {
@@ -3653,24 +3714,26 @@ html.dark .ons-nav-group.is-open .ons-submenu-btn {
 }
 
 .ons-nav-group.is-open .ons-submenu-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0284C7 !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #FFFFFF !important;
 }
 
 html.dark .ons-nav-group.is-open .ons-submenu-btn:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
   color: #38BDF8 !important;
 }
 
-.ons-nav-group.is-open .ons-submenu-btn.active {
-  background: rgba(2, 132, 199, 0.09) !important;
-  color: #0369A1 !important;
+.ons-nav-group.is-open .ons-submenu-btn.active,
+.ons-nav-group.is-open .ons-submenu-btn[data-active="true"] {
+  background: rgba(56, 189, 248, 0.24) !important;
+  color: #FFFFFF !important;
   font-weight: 750 !important;
-  box-shadow: none !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.22) !important;
 }
 
 html.dark .ons-nav-group.is-open .ons-submenu-btn.active {
-  background: rgba(56, 189, 248, 0.18) !important;
+  background: rgba(56, 189, 248, 0.24) !important;
   color: #38BDF8 !important;
 }
 
@@ -3715,11 +3778,11 @@ html.dark .ons-nav-group.is-open .ons-submenu-btn.active {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.42rem 0.65rem;
+  padding: 0.48rem 0.85rem;
   background: var(--ons-bg-card);
   border: 1px solid var(--ons-border);
-  border-radius: 0.78rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  border-radius: 0.95rem;
+  box-shadow: var(--ons-shadow-card);
 }
 .ons-subtab-dd-left {
   display: inline-flex;
