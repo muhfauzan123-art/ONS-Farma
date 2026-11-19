@@ -11037,38 +11037,38 @@ S. prn 3 dd 1 tab</textarea>
       <!-- ========================================================
            1. EXECUTIVE HERO BRANDING & IDENTITY BANNER
            ======================================================== -->
-      <div id="profHeroBanner" class="relative overflow-hidden rounded-3xl shadow-2xl border text-white transition-all duration-300" style="background:linear-gradient(135deg, #0A192F 0%, #1E3A8A 50%, #0284C7 100%);border-color:rgba(56, 189, 248, 0.3)">
-        <!-- Ambient Decorative Glow -->
-        <div class="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-sky-400/20 blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-16 -left-16 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none"></div>
+      <div id="profHeroBanner" class="relative overflow-hidden rounded-3xl shadow-2xl border text-white transition-all duration-300" style="background:linear-gradient(135deg, #091E3A 0%, #103766 38%, #1D4ED8 72%, #0284C7 100%);border-color:rgba(56, 189, 248, 0.35)">
+        <!-- Ambient Decorative Luminous Glow -->
+        <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-sky-400/25 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-600/30 blur-3xl pointer-events-none"></div>
 
         <div class="relative p-5 sm:p-7 space-y-5">
           <!-- Top Tagline & Primary Action Buttons -->
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/15 pb-4">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-500/20 text-sky-200 border border-sky-400/30 shadow-sm backdrop-blur-md">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-500/25 text-sky-100 border border-sky-300/40 shadow-sm backdrop-blur-md">
                 <span>🛡️</span> Fasilitas Pelayanan Kefarmasian Resmi Kemenkes RI
               </span>
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SIA &amp; SIPA Terverifikasi
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/25 text-emerald-200 border border-emerald-400/40">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SIA &amp; SIPA Terverifikasi DPMPTSP
               </span>
             </div>
 
             <!-- Theme Switcher Pills & Top Actions -->
             <div class="flex flex-wrap items-center gap-2">
               <!-- Live Color Palette Switcher -->
-              <div class="flex items-center gap-1 bg-black/30 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/15">
-                <span class="text-[10px] font-bold text-sky-200 mr-1">🎨 Tema:</span>
-                <button type="button" onclick="window.setProfileTheme('royal-blue')" data-theme="royal-blue" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'royal-blue' ? 'bg-blue-600 text-white shadow ring-2 ring-sky-300' : 'text-white/70 hover:text-white'}" title="Tema Medical Royal Blue & Cyan">🔵 Biru</button>
-                <button type="button" onclick="window.setProfileTheme('clean-light')" data-theme="clean-light" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'clean-light' ? 'bg-white text-slate-900 shadow ring-2 ring-white' : 'text-white/70 hover:text-white'}" title="Tema Clean Light White">⚪ Terang</button>
-                <button type="button" onclick="window.setProfileTheme('fresh-emerald')" data-theme="fresh-emerald" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'fresh-emerald' ? 'bg-emerald-600 text-white shadow ring-2 ring-emerald-300' : 'text-white/70 hover:text-white'}" title="Tema Fresh Emerald Farmasi">🟢 Hijau</button>
-                <button type="button" onclick="window.setProfileTheme('midnight-navy')" data-theme="midnight-navy" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'midnight-navy' ? 'bg-slate-800 text-white shadow ring-2 ring-slate-400' : 'text-white/70 hover:text-white'}" title="Tema Deep Midnight Navy">⚫ Gelap</button>
+              <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 shadow-inner">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-sky-200 mr-1">🎨 Tema:</span>
+                <button type="button" onclick="window.setProfileTheme('royal-blue')" data-theme="royal-blue" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'royal-blue' ? 'bg-blue-600 text-white shadow ring-2 ring-sky-300' : 'text-white/75 hover:text-white'}" title="Medical Royal Blue & Cyan">🔵 Biru</button>
+                <button type="button" onclick="window.setProfileTheme('clean-light')" data-theme="clean-light" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'clean-light' ? 'bg-white text-slate-900 shadow ring-2 ring-white' : 'text-white/75 hover:text-white'}" title="Clean Light White">⚪ Terang</button>
+                <button type="button" onclick="window.setProfileTheme('fresh-emerald')" data-theme="fresh-emerald" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'fresh-emerald' ? 'bg-emerald-600 text-white shadow ring-2 ring-emerald-300' : 'text-white/75 hover:text-white'}" title="Fresh Emerald Farmasi">🟢 Hijau</button>
+                <button type="button" onclick="window.setProfileTheme('midnight-navy')" data-theme="midnight-navy" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'midnight-navy' ? 'bg-slate-800 text-white shadow ring-2 ring-slate-400' : 'text-white/75 hover:text-white'}" title="Deep Midnight Navy">⚫ Gelap</button>
               </div>
 
-              <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn text-white text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 transition-all shadow-sm" title="Buka Titik Koordinat GPS di Google Maps">
+              <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn text-white text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 backdrop-blur-md bg-white/15 hover:bg-white/25 border border-white/25 transition-all shadow-sm" title="Buka Titik Koordinat GPS di Google Maps">
                 <span>🗺️ Google Maps</span>
               </a>
-              <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-bold px-4 py-1.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/30 transition-all hover:scale-105 active:scale-95" style="background:linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)">
+              <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-bold px-4 py-1.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/40 transition-all hover:scale-105 active:scale-95" style="background:linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                 <span>Simpan Profil</span>
               </button>
@@ -11117,14 +11117,14 @@ S. prn 3 dd 1 tab</textarea>
                 <p id="profHeroSlogan" class="text-xs sm:text-sm text-sky-100 font-medium italic">
                   ${merged.slogan ? `"${S().esc(merged.slogan)}"` : 'Sahabat Kesehatan & Pelayanan Farmasi Keluarga'}
                 </p>
-                <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-200">
-                  <span id="profHeroSiaPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/15 font-mono-num">
+                <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-100">
+                  <span id="profHeroSiaPill" class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-mono-num font-semibold">
                     📜 SIA: ${S().esc(merged.no_sia || '-')}
                   </span>
-                  <span class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/15">
+                  <span class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-medium">
                     👨‍⚕️ APJ: <b>${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</b>
                   </span>
-                  <span id="profHeroJamPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/15">
+                  <span id="profHeroJamPill" class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-medium">
                     🕒 ${S().esc(merged.jam_operasional || '07:30 - 22:00 WITA')}
                   </span>
                 </div>
@@ -11150,10 +11150,10 @@ S. prn 3 dd 1 tab</textarea>
           </div>
 
           <!-- Indikator Kelengkapan Profil Usaha -->
-          <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+          <div class="pt-3 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 flex-1 min-w-[220px]">
-              <span class="text-[11px] font-semibold text-sky-100">Status Kelengkapan Profil Apotek:</span>
-              <div class="flex-1 max-w-xs h-2.5 rounded-full bg-white/20 overflow-hidden">
+              <span class="text-[11px] font-semibold text-sky-100">Status Kelengkapan Dokumen &amp; Legalitas:</span>
+              <div class="flex-1 max-w-xs h-2.5 rounded-full bg-white/20 overflow-hidden shadow-inner">
                 <div class="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-emerald-400" style="width:${Math.max(20, comp.pct || 95)}%"></div>
               </div>
               <span class="text-[11px] font-bold text-sky-300 font-mono-num">${comp.pct || 95}% Lengkap</span>
@@ -11169,12 +11169,12 @@ S. prn 3 dd 1 tab</textarea>
            2. NAVIGASI CEPAT KATEGORI PROFIL (QUICK JUMP PILLS)
            ======================================================== -->
       <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
-        <a href="#secIdentitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">🏢 Identitas &amp; Lokasi</a>
-        <a href="#secLegalitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">⚖️ Legalitas &amp; SIA</a>
-        <a href="#secApj" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">👨‍⚕️ APJ &amp; Tenaga Farmasi</a>
-        <a href="#secBank" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">💳 Rekening Bank</a>
-        <a href="#secOutlet" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">🏪 Skala Cabang</a>
-        <a href="#profKopPreviewBox" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-sky-300 font-bold shrink-0 border border-blue-200 dark:border-blue-800">📄 Pratinjau Kop Surat</a>
+        <a href="#secIdentitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">🏢 1. Identitas &amp; Lokasi</a>
+        <a href="#secLegalitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">⚖️ 2. Perizinan &amp; Pajak</a>
+        <a href="#secApj" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">👨‍⚕️ 3. APJ &amp; Tenaga Farmasi</a>
+        <a href="#secBank" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">💳 4. Rekening Bank Usaha</a>
+        <a href="#secOutlet" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">🏪 5. Jaringan Cabang</a>
+        <a href="#profKopPreviewBox" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-sky-300 font-bold shrink-0 border border-blue-200 dark:border-blue-800">📄 6. Pratinjau Kop Surat</a>
       </div>
 
       <!-- ========================================================
@@ -11191,8 +11191,9 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">🏢</span>
                 <div>
-                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Identitas Usaha &amp; Lokasi Fisik Apotek</h3>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Informasi gerai apotek resmi, alamat domisili, dan titik koordinat GPS.</p>
+                  <div class="ons-form-eyebrow text-blue-600 dark:text-sky-400">SEKSI 01 • PROFIL FASILITAS</div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Identitas Sarana &amp; Lokasi Fisik Apotek</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Informasi gerai apotek resmi, domisili wilayah administratif, dan titik koordinat GPS.</p>
                 </div>
               </div>
               <span class="badge-bpom bpom-bebas">Aktif</span>
@@ -11201,68 +11202,71 @@ S. prn 3 dd 1 tab</textarea>
             <div class="space-y-3.5">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nama Perusahaan / Bisnis</label>
-                  <input id="profNamaUsaha" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}" placeholder="Nama Perusahaan/Bisnis" oninput="window.refreshProfileKopPreview()"/>
+                  <label class="ons-form-label">Nama Resmi Perusahaan / Apotek <span class="text-rose-500">*</span></label>
+                  <input id="profNamaUsaha" ${ro} class="ons-input text-xs w-full font-bold text-slate-900 dark:text-white" value="${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}" placeholder="Nama Perusahaan/Bisnis" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Slogan Apotek</label>
-                  <input id="profSlogan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.slogan || '')}" placeholder="Contoh: Sahabat Kesehatan Keluarga" oninput="window.refreshProfileKopPreview()"/>
+                  <label class="ons-form-label">Slogan / Motto Pelayanan Kefarmasian</label>
+                  <input id="profSlogan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.slogan || '')}" placeholder="Contoh: Sahabat Kesehatan & Pelayanan Keluarga" oninput="window.refreshProfileKopPreview()"/>
                 </div>
               </div>
 
               <div>
-                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Alamat Lengkap Usaha</label>
+                <label class="ons-form-label">Alamat Lengkap Gerai (Jalan, No, RT/RW) <span class="text-rose-500">*</span></label>
                 <input id="profAlamatUsaha" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.alamat_usaha || 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang')}" placeholder="Alamat lengkap apotek" oninput="window.refreshProfileKopPreview()"/>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Provinsi</label>
-                  <input id="profProvinsi" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.provinsi || 'Sulawesi Selatan')}" placeholder="Provinsi" oninput="window.refreshProfileKopPreview()"/>
+                  <label class="ons-form-label">Provinsi <span class="text-rose-500">*</span></label>
+                  <input id="profProvinsi" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.provinsi || 'Sulawesi Selatan')}" placeholder="Provinsi" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kabupaten / Kota</label>
-                  <input id="profKota" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kota || 'Makassar')}" placeholder="Kabupaten / Kota" oninput="window.refreshProfileKopPreview()"/>
+                  <label class="ons-form-label">Kabupaten / Kota <span class="text-rose-500">*</span></label>
+                  <input id="profKota" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.kota || 'Makassar')}" placeholder="Kabupaten / Kota" oninput="window.refreshProfileKopPreview()"/>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kecamatan</label>
+                  <label class="ons-form-label">Kecamatan <span class="text-rose-500">*</span></label>
                   <input id="profKecamatan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kecamatan || 'Panakkukang')}" placeholder="Kecamatan" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kelurahan</label>
+                  <label class="ons-form-label">Kelurahan <span class="text-rose-500">*</span></label>
                   <input id="profKelurahan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kelurahan || 'Masale')}" placeholder="Kelurahan" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kode Pos</label>
-                  <input id="profKodePos" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.kode_pos || '90231')}" placeholder="Kode Pos" oninput="window.refreshProfileKopPreview()"/>
+                  <label class="ons-form-label">Kode Pos <span class="text-rose-500">*</span></label>
+                  <input id="profKodePos" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.kode_pos || '90231')}" placeholder="90231" oninput="window.refreshProfileKopPreview()"/>
                 </div>
               </div>
 
               <!-- Titik Koordinat GPS & Lokasi Geospasial -->
-              <div class="p-4 rounded-2xl border space-y-3 bg-slate-50/70 dark:bg-slate-900/50" style="border-color:var(--ons-border)">
+              <div class="p-4 rounded-2xl border space-y-3 bg-slate-50/80 dark:bg-slate-900/60" style="border-color:var(--ons-border)">
                 <div class="flex items-center justify-between">
-                  <div class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <span>📍</span> Koordinat Geografis Outlet (GPS)
+                  <div>
+                    <div class="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <span>📍</span> Koordinat Geografis Outlet (GPS)
+                    </div>
+                    <p class="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">Digunakan untuk presensi pegawai berbasis radius, integrasi peta antar-outlet, dan verifikasi faktur.</p>
                   </div>
-                  <span class="text-[10.5px] text-blue-600 dark:text-sky-400 font-semibold">Akurasi Presisi</span>
+                  <span class="text-[10.5px] text-blue-600 dark:text-sky-400 font-bold bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">Akurasi Presisi</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Latitude</label>
-                    <input id="profLat" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.latitude || '-5.147665')}" placeholder="-5.147665" oninput="window.updateGmapsLinkFromInputs()"/>
+                    <label class="ons-form-label text-[11px]">Latitude (Garis Lintang)</label>
+                    <input id="profLat" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.latitude || '-5.147665')}" placeholder="-5.147665" oninput="window.updateGmapsLinkFromInputs()"/>
                   </div>
                   <div>
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Longitude</label>
-                    <input id="profLng" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.longitude || '119.432732')}" placeholder="119.432732" oninput="window.updateGmapsLinkFromInputs()"/>
+                    <label class="ons-form-label text-[11px]">Longitude (Garis Bujur)</label>
+                    <input id="profLng" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.longitude || '119.432732')}" placeholder="119.432732" oninput="window.updateGmapsLinkFromInputs()"/>
                   </div>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 pt-1">
-                  <button type="button" onclick="window.openKoordinatModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm flex-1" style="background:#2563EB">
+                  <button type="button" onclick="window.openKoordinatModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm flex-1 hover:brightness-110 active:scale-95 transition-all" style="background:#2563EB">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-                    <span>Atur Titik Koordinat &amp; Lokasi Outlet</span>
+                    <span>Atur Titik Koordinat &amp; Lokasi Outlet di Peta</span>
                   </button>
                 </div>
               </div>
@@ -11273,15 +11277,15 @@ S. prn 3 dd 1 tab</textarea>
               <!-- Jam Operasional & Preset Cepat -->
               <div class="pt-2 border-t space-y-2" style="border-color:var(--ons-border)">
                 <div class="flex items-center justify-between">
-                  <label class="font-semibold text-[11px] text-slate-700 dark:text-slate-300">Jam Operasional Pelayanan</label>
-                  <span class="text-[10px] text-slate-400">Klik preset di bawah untuk isi cepat</span>
+                  <label class="ons-form-label mb-0">Jadwal &amp; Jam Operasional Pelayanan Kasir</label>
+                  <span class="text-[10px] text-blue-600 dark:text-sky-400 font-medium">⚡ Klik preset di bawah untuk isi cepat</span>
                 </div>
-                <input id="profJamOps" ${ro} class="ons-input text-xs w-full font-semibold" value="${S().esc(merged.jam_operasional || 'Setiap Hari 07:30 - 22:00 WITA')}" placeholder="Contoh: Setiap Hari 07:30 - 22:00 WITA"/>
+                <input id="profJamOps" ${ro} class="ons-input text-xs w-full font-semibold text-slate-900 dark:text-white" value="${S().esc(merged.jam_operasional || 'Setiap Hari 07:30 - 22:00 WITA')}" placeholder="Contoh: Setiap Hari 07:30 - 22:00 WITA"/>
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                  <button type="button" onclick="window.setProfileJamOpsPreset('Setiap Hari 07:30 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">Setiap Hari 07:30 - 22:00</button>
-                  <button type="button" onclick="window.setProfileJamOpsPreset('24 Jam Non-Stop (Pelayanan Siaga)')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">24 Jam Non-Stop</button>
-                  <button type="button" onclick="window.setProfileJamOpsPreset('Senin - Sabtu 08:00 - 21:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">Senin - Sabtu 08:00 - 21:00</button>
-                  <button type="button" onclick="window.setProfileJamOpsPreset('08:00 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">08:00 - 22:00 WITA</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('Setiap Hari 07:30 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700 transition-all">🕒 Setiap Hari 07:30 - 22:00</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('24 Jam Non-Stop (Pelayanan Siaga)')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700 transition-all">🕒 24 Jam Non-Stop</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('Senin - Sabtu 08:00 - 21:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700 transition-all">🕒 Senin - Sabtu 08:00 - 21:00</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('08:00 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700 transition-all">🕒 08:00 - 22:00 WITA</button>
                 </div>
               </div>
             </div>
@@ -11293,8 +11297,9 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm font-bold">⚖️</span>
                 <div>
-                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Legalitas &amp; Perizinan Apotek Resmi</h3>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Kepatuhan legalitas operasional farmasi (SIA, NIB, NITKU &amp; NPWP Badan).</p>
+                  <div class="ons-form-eyebrow text-amber-600 dark:text-amber-400">SEKSI 02 • PERIZINAN &amp; PERPAJAKAN</div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Perizinan DPMPTSP, NIB OSS &amp; Perpajakan</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Kepatuhan izin edar farmasi, nomor induk berusaha OSS, dan integrasi nomor faktur pajak Ditjen Pajak.</p>
                 </div>
               </div>
               <span class="badge-bpom bpom-keras">Legalitas DPMPTSP</span>
@@ -11304,39 +11309,41 @@ S. prn 3 dd 1 tab</textarea>
               <!-- SIA DPMPTSP -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">No. Surat Izin Apotek (SIA)</label>
-                  <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.no_sia || '503/001/SIA/DPMPTSP/2021')}" placeholder="Contoh: 503/001/SIA/DPMPTSP/2021" oninput="window.refreshProfileKopPreview()"/>
+                  <label class="ons-form-label">No. Surat Izin Apotek (SIA) <span class="text-rose-500">*</span></label>
+                  <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full font-bold text-slate-900 dark:text-white" value="${S().esc(merged.no_sia || '503/001/SIA/DPMPTSP/2021')}" placeholder="Contoh: 503/001/SIA/DPMPTSP/2021" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Tgl. Akhir Masa Berlaku SIA</label>
-                  <input id="profTglSia" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sia || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
+                  <label class="ons-form-label">Tgl. Akhir Masa Berlaku SIA <span class="text-rose-500">*</span></label>
+                  <input id="profTglSia" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.tgl_berlaku_sia || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
                 </div>
               </div>
               ${renderDocUploadRow('sia', 'Berkas Surat Izin Apotek (SIA PDF) :', '.pdf,image/*', merged.file_sia_url || '', merged.file_sia_name || (merged.no_sia ? 'SIA_DPMPTSP.pdf' : ''))}
 
               <!-- NIB OSS -->
               <div>
-                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nomor Induk Berusaha (NIB OSS)</label>
-                <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nib_oss || '1234567890123')}" placeholder="13 Digit Nomor Induk Berusaha (NIB)"/>
+                <label class="ons-form-label">Nomor Induk Berusaha (NIB OSS 13 Digit) <span class="text-rose-500">*</span></label>
+                <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.nib_oss || '1234567890123')}" placeholder="13 Digit Nomor Induk Berusaha (NIB)"/>
               </div>
               ${renderDocUploadRow('nib', 'Berkas NIB OSS (PDF) :', '.pdf,image/*', merged.file_nib_url || '', merged.file_nib_name || (merged.nib_oss ? 'NIB_OSS_Apotek.pdf' : ''))}
 
               <!-- NITKU & NPWP Perusahaan -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">NITKU Usaha (16 Digit)</label>
-                  <input id="profNitku" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nitku || '8511240918050000')}" placeholder="Nomor Identitas Tempat Kegiatan Usaha"/>
+                  <label class="ons-form-label">NITKU Usaha (16 Digit)</label>
+                  <input id="profNitku" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.nitku || '8511240918050000')}" placeholder="Nomor Identitas Tempat Kegiatan Usaha"/>
+                  <span class="ons-form-sublabel block">Standar integrasi NPWP/NIK 16 digit Ditjen Pajak RI terbaru.</span>
                 </div>
                 <div>
-                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">No. NPWP Perusahaan</label>
-                  <input id="profNpwpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_usaha || '85.112.409.1-805.000')}" placeholder="85.112.409.1-805.000"/>
+                  <label class="ons-form-label">No. NPWP Badan / Perusahaan</label>
+                  <input id="profNpwpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.npwp_usaha || '85.112.409.1-805.000')}" placeholder="85.112.409.1-805.000"/>
+                  <span class="ons-form-sublabel block">NPWP resmi untuk penerbitan faktur pajak elektronik.</span>
                 </div>
               </div>
               ${renderDocUploadRow('npwp_usaha', 'Berkas NPWP Perusahaan (PDF) :', '.pdf,image/*', merged.file_npwp_usaha_url || '', merged.file_npwp_usaha_name || (merged.npwp_usaha ? 'NPWP_Perusahaan.pdf' : ''))}
 
               <!-- Jenis Badan Usaha -->
               <div>
-                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Bentuk / Jenis Badan Usaha</label>
+                <label class="ons-form-label">Bentuk / Jenis Badan Usaha</label>
                 <select id="profJenisBadanUsaha" ${canEdit ? '' : 'disabled'} class="ons-select text-xs w-full font-semibold">
                   <option value="Perorangan" ${String(merged.jenis_badan_usaha || 'Perorangan') === 'Perorangan' ? 'selected' : ''}>Perorangan (Apotek Swasta)</option>
                   <option value="Perseroan Terbatas (PT)" ${String(merged.jenis_badan_usaha || '') === 'Perseroan Terbatas (PT)' ? 'selected' : ''}>Perseroan Terbatas (PT)</option>
@@ -11354,8 +11361,9 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">👨‍⚕️</span>
                 <div>
-                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Tenaga Kefarmasian &amp; Penanggung Jawab</h3>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Data Pemilik Sarana Apotek (PSA), Apoteker Penanggung Jawab (APJ), &amp; Apoteker Pendamping.</p>
+                  <div class="ons-form-eyebrow text-blue-600 dark:text-sky-400">SEKSI 03 • SUMBER DAYA FARMASI</div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Apoteker Penanggung Jawab &amp; Tenaga Teknis Farmasi</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Legalitas tenaga kefarmasian berizin resmi IAI &amp; Dinas Kesehatan untuk penerbitan SP dan penyerahan resep dokter.</p>
                 </div>
               </div>
               <span class="badge-bpom bpom-terbatas">IAI &amp; Kemenkes</span>
@@ -11363,32 +11371,32 @@ S. prn 3 dd 1 tab</textarea>
 
             <div class="space-y-4">
               <!-- Sub 1: Data Pemilik / PIC -->
-              <div class="p-4 rounded-2xl border space-y-3 bg-slate-50/60 dark:bg-slate-900/40" style="border-color:var(--ons-border)">
+              <div class="p-4 rounded-2xl border space-y-3 bg-slate-50/70 dark:bg-slate-900/50" style="border-color:var(--ons-border)">
                 <div class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <span>👤</span> Data Pemilik Sarana Apotek (PSA) / Penanggung Jawab
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Nama Lengkap Pemilik</label>
+                    <label class="ons-form-label text-[11px]">Nama Lengkap Pemilik / Direktur</label>
                     <input id="profNamaPemilik" ${ro} class="ons-input text-xs w-full font-semibold" value="${S().esc(merged.nama_pemilik || '')}" placeholder="Nama Pemilik" oninput="window.refreshProfileKopPreview()"/>
                   </div>
                   <div>
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. WhatsApp / HP</label>
+                    <label class="ons-form-label text-[11px]">No. WhatsApp / HP</label>
                     <input id="profWaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.wa_pemilik || '')}" placeholder="08xxxxxxxxxx" oninput="window.refreshProfileKopPreview()"/>
                   </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div class="sm:col-span-1">
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Email Pemilik</label>
+                    <label class="ons-form-label text-[11px]">Email Pemilik</label>
                     <input id="profEmailPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.email_pemilik || '')}" placeholder="email@..."/>
                   </div>
                   <div class="sm:col-span-1">
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. KTP Pemilik</label>
-                    <input id="profKtpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.ktp_pemilik || '7371105408920001')}" placeholder="NIK KTP"/>
+                    <label class="ons-form-label text-[11px]">No. KTP Pemilik (NIK)</label>
+                    <input id="profKtpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.ktp_pemilik || '7371105408920001')}" placeholder="NIK KTP"/>
                   </div>
                   <div class="sm:col-span-1">
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. NPWP Pemilik</label>
-                    <input id="profNpwpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_pemilik || '')}" placeholder="NPWP Pribadi"/>
+                    <label class="ons-form-label text-[11px]">No. NPWP Pemilik</label>
+                    <input id="profNpwpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.npwp_pemilik || '')}" placeholder="NPWP Pribadi"/>
                   </div>
                 </div>
                 ${renderDocUploadRow('ktp_pemilik', 'Berkas KTP Pemilik (PDF/Foto) :', '.pdf,image/*', merged.file_ktp_url || '', merged.file_ktp_name || (merged.ktp_pemilik ? 'KTP_Pemilik.pdf' : ''))}
@@ -11396,26 +11404,29 @@ S. prn 3 dd 1 tab</textarea>
               </div>
 
               <!-- Sub 2: APJ (Apoteker Penanggung Jawab) -->
-              <div class="p-4 rounded-2xl border-2 space-y-3 bg-blue-50/50 dark:bg-blue-950/25" style="border-color:rgba(59, 130, 246, 0.4)">
+              <div class="p-4 rounded-2xl border-2 space-y-3 bg-blue-50/60 dark:bg-blue-950/30" style="border-color:rgba(59, 130, 246, 0.45)">
                 <div class="flex items-center justify-between">
-                  <div class="font-bold text-xs text-blue-900 dark:text-sky-300 flex items-center gap-1.5">
-                    <span>🛡️</span> Apoteker Penanggung Jawab (APJ Utama)
+                  <div>
+                    <div class="font-bold text-xs text-blue-900 dark:text-sky-300 flex items-center gap-1.5">
+                      <span>🛡️</span> Apoteker Penanggung Jawab (APJ Utama)
+                    </div>
+                    <p class="text-[10.5px] text-blue-700/80 dark:text-sky-400 mt-0.5">Penanggung jawab utama atas legalitas Surat Pesanan (SP) obat dan penyerahan etiket resep dokter.</p>
                   </div>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white shadow-sm">Penanda Tangan SP &amp; Resep</span>
+                  <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white shadow-sm">Penanda Tangan SP</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. STRA APJ</label>
-                    <input id="profStraPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.stra_pemilik || '')}" placeholder="Nomor Surat Tanda Registrasi Apoteker"/>
+                    <label class="ons-form-label text-[11px]">No. STRA APJ (Surat Tanda Registrasi Apoteker) <span class="text-rose-500">*</span></label>
+                    <input id="profStraPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.stra_pemilik || '')}" placeholder="Nomor STRA resmi KFN/IAI"/>
                   </div>
                   <div>
-                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. SIPA APJ</label>
-                    <input id="profSipaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.sipa_pemilik || '')}" placeholder="Nomor Surat Izin Praktik Apoteker" oninput="window.refreshProfileKopPreview()"/>
+                    <label class="ons-form-label text-[11px]">No. SIPA APJ (Surat Izin Praktik Apoteker) <span class="text-rose-500">*</span></label>
+                    <input id="profSipaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.sipa_pemilik || '')}" placeholder="Nomor SIPA resmi DPMPTSP" oninput="window.refreshProfileKopPreview()"/>
                   </div>
                 </div>
                 <div>
-                  <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Masa Berlaku SIPA APJ</label>
-                  <input id="profMasaSipa" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sipa || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
+                  <label class="ons-form-label text-[11px]">Masa Berlaku SIPA APJ <span class="text-rose-500">*</span></label>
+                  <input id="profMasaSipa" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.tgl_berlaku_sipa || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
                 </div>
                 ${renderDocUploadRow('sipa_pemilik', 'Berkas SIPA APJ (PDF/Foto) :', '.pdf,image/*', merged.file_sipa_url || '', merged.file_sipa_name || (merged.sipa_pemilik ? 'SIPA_APJ.pdf' : ''))}
               </div>
@@ -11424,17 +11435,17 @@ S. prn 3 dd 1 tab</textarea>
               <div class="space-y-3 pt-1">
                 <div class="flex items-center justify-between">
                   <div class="font-bold text-xs text-slate-800 dark:text-slate-200">Apoteker Pendamping (Aping)</div>
-                  <span class="text-[10.5px] text-slate-400">Pelayanan Shift Siang / Malam</span>
+                  <span class="text-[10.5px] text-slate-500 dark:text-slate-400">Pelayanan Shift Siang / Malam</span>
                 </div>
 
                 <!-- Pendamping #1 -->
-                <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
+                <div class="p-3.5 rounded-xl border bg-slate-50/70 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
                   <div class="font-bold text-xs text-blue-700 dark:text-sky-300 flex items-center justify-between">
                     <span>Apoteker Pendamping #1</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-sky-300">Shift Pagi</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-sky-300 font-semibold">Shift Pagi</span>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <input ${ro} class="ons-input text-xs w-full" value="Apoteker Penanggung Jawab" placeholder="Nama Apoteker Pendamping"/>
+                    <input ${ro} class="ons-input text-xs w-full font-semibold" value="Apoteker Penanggung Jawab" placeholder="Nama Apoteker Pendamping"/>
                     <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0812-3456-7890" placeholder="08xxxxxxxxxx"/>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -11446,13 +11457,13 @@ S. prn 3 dd 1 tab</textarea>
                 </div>
 
                 <!-- Pendamping #2 -->
-                <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
+                <div class="p-3.5 rounded-xl border bg-slate-50/70 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
                   <div class="font-bold text-xs text-blue-700 dark:text-sky-300 flex items-center justify-between">
                     <span>Apoteker Pendamping #2</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-sky-300">Shift Malam</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-sky-300 font-semibold">Shift Malam</span>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <input ${ro} class="ons-input text-xs w-full" value="apt. Dewi Kartika, S.Farm" placeholder="Nama Apoteker Pendamping"/>
+                    <input ${ro} class="ons-input text-xs w-full font-semibold" value="apt. Dewi Kartika, S.Farm" placeholder="Nama Apoteker Pendamping"/>
                     <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0813-9876-5432" placeholder="08xxxxxxxxxx"/>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -11472,7 +11483,8 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">💳</span>
                 <div>
-                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Rekening Bank Perusahaan &amp; Pembayaran</h3>
+                  <div class="ons-form-eyebrow text-blue-600 dark:text-sky-400">SEKSI 04 • KEUANGAN &amp; PEMBAYARAN</div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Rekening Bank Resmi Operasional Apotek</h3>
                   <p class="text-[11px]" style="color:var(--ons-text-soft)">Rekening resmi apotek untuk pelunasan faktur PBF, QRIS, &amp; transfer pelanggan.</p>
                 </div>
               </div>
@@ -11482,30 +11494,33 @@ S. prn 3 dd 1 tab</textarea>
             <!-- Virtual Bank Card Mockup -->
             <div class="ons-bank-card-mockup space-y-3.5 my-2">
               <div class="flex items-center justify-between">
-                <div class="ons-bank-chip"></div>
+                <div class="flex items-center gap-3">
+                  <div class="ons-bank-chip"></div>
+                  <span class="text-white/60 text-xs font-mono">)))</span>
+                </div>
                 <div class="text-right">
                   <div id="profBankCardDispName" class="font-black text-sm uppercase tracking-wider text-sky-200">${S().esc(merged.bank_nama || 'Bank Mandiri')}</div>
-                  <div id="profBankCardDispCabang" class="text-[10px] text-sky-100/80">${S().esc(merged.bank_cabang || 'KCP Panakkukang')}</div>
+                  <div id="profBankCardDispCabang" class="text-[10px] text-sky-100/90 font-medium">${S().esc(merged.bank_cabang || 'KCP Panakkukang')}</div>
                 </div>
               </div>
               <div class="pt-2">
-                <div class="text-[9px] uppercase tracking-widest text-sky-200/80 font-semibold">Nomor Rekening Usaha</div>
+                <div class="text-[9px] uppercase tracking-widest text-sky-200/80 font-bold">Nomor Rekening Operasional</div>
                 <div class="flex items-center justify-between gap-2">
-                  <div id="profBankCardDispNo" class="font-mono-num text-base sm:text-lg font-black tracking-widest text-white drop-shadow">
+                  <div id="profBankCardDispNo" class="ons-card-embossed text-base sm:text-lg text-white">
                     ${S().esc(merged.bank_nomor_rekening || '152001928374')}
                   </div>
-                  <button type="button" onclick="window.copyProfileText(document.getElementById('profBankNo')?.value, 'Nomor Rekening')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-all flex items-center gap-1 shadow-sm">
-                    <span>📋 Salin</span>
+                  <button type="button" onclick="window.copyProfileText(document.getElementById('profBankNo')?.value, 'Nomor Rekening')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-all flex items-center gap-1 shadow-sm active:scale-95">
+                    <span>📋 Salin No Rekening</span>
                   </button>
                 </div>
               </div>
-              <div class="flex items-center justify-between pt-1 border-t border-white/15 text-[11px]">
+              <div class="flex items-center justify-between pt-1 border-t border-white/20 text-[11px]">
                 <div>
-                  <div class="text-[9px] uppercase tracking-wider text-sky-200/80">Atas Nama Rekening</div>
-                  <div id="profBankCardDispAkun" class="font-bold text-white uppercase">${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}</div>
+                  <div class="text-[9px] uppercase tracking-wider text-sky-200/80 font-medium">Atas Nama Rekening</div>
+                  <div id="profBankCardDispAkun" class="font-bold text-white uppercase tracking-wide">${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}</div>
                 </div>
                 <div class="text-right">
-                  <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-400/25 text-sky-200 border border-sky-400/35">REKENING RESMI</span>
+                  <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-400/25 text-sky-100 border border-sky-400/35">REKENING RESMI VERIFIED</span>
                 </div>
               </div>
             </div>
@@ -11513,22 +11528,22 @@ S. prn 3 dd 1 tab</textarea>
             <!-- Input Fields Rekening -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
               <div>
-                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nama Bank</label>
+                <label class="ons-form-label">Nama Bank Rekening <span class="text-rose-500">*</span></label>
                 <input id="profBankNama" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_nama || 'Bank Mandiri')}" placeholder="Nama Bank" oninput="window.refreshBankCardMockup()"/>
               </div>
               <div>
-                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kantor Cabang</label>
-                <input id="profBankCabang" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.bank_cabang || 'KCP Panakkukang')}" placeholder="Kantor Cabang" oninput="window.refreshBankCardMockup()"/>
+                <label class="ons-form-label">Kantor Cabang Bank</label>
+                <input id="profBankCabang" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.bank_cabang || 'KCP Panakkukang')}" placeholder="Kantor Cabang" oninput="window.refreshBankCardMockup()"/>
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nama Pemilik Akun Rekening</label>
+                <label class="ons-form-label">Nama Pemilik Akun Rekening <span class="text-rose-500">*</span></label>
                 <input id="profBankAkun" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}" placeholder="Nama Akun" oninput="window.refreshBankCardMockup()"/>
               </div>
               <div>
-                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nomor Rekening</label>
+                <label class="ons-form-label">Nomor Rekening Bank <span class="text-rose-500">*</span></label>
                 <input id="profBankNo" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.bank_nomor_rekening || '152001928374')}" placeholder="Nomor Rekening" oninput="window.refreshBankCardMockup()"/>
               </div>
             </div>
@@ -11545,14 +11560,15 @@ S. prn 3 dd 1 tab</textarea>
                 <div class="flex items-center gap-2.5">
                   <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">🏪</span>
                   <div>
+                    <div class="ons-form-eyebrow text-blue-600 dark:text-sky-400">SEKSI 05 • SKALABILITAS OUTLET</div>
                     <div class="flex items-center gap-2">
-                      <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Skala Outlet Apotek</h3>
+                      <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Skala Operasional Gerai Apotek</h3>
                       <span class="badge-bpom ${multiOn ? 'bpom-terbatas' : 'bpom-bebas'}">${multiOn ? 'Multi-Cabang Aktif (' + activeBranches.length + ' Outlet)' : 'Mode 1 Apotek Tunggal (ONS-01)'}</span>
                     </div>
                     <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">
                       ${multiOn
                         ? 'Mutasi Antar-Cabang, pemilihan cabang saat login kasir, &amp; radar stok antar-outlet aktif.'
-                        : 'Apotek berjalan dalam mode 1 outlet utama tanpa cabang tambahan (antarmuka lebih simpel dan cepat).'}
+                        : 'Apotek berjalan dalam mode 1 outlet utama tanpa cabang tambahan (antarmuka lebih simpel, fokus, dan cepat).'}
                     </p>
                   </div>
                 </div>
@@ -11564,8 +11580,8 @@ S. prn 3 dd 1 tab</textarea>
               </div>
               ${multiOn ? `<div class="p-3.5 rounded-2xl border flex flex-wrap items-end gap-2 bg-slate-50 dark:bg-slate-900/50" style="border-color:var(--ons-border)">
                 <div class="flex-1 min-w-[220px]">
-                  <label class="font-semibold block mb-1">Daftar Kode Outlet Aktif (pisahkan dengan koma)</label>
-                  <input id="profMultiBranchCodes" class="ons-input font-mono-num text-xs w-full" value="${S().esc(activeBranches.join(', '))}" placeholder="ONS-01, ONS-02"/>
+                  <label class="ons-form-label">Daftar Kode Outlet Aktif (pisahkan dengan koma)</label>
+                  <input id="profMultiBranchCodes" class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(activeBranches.join(', '))}" placeholder="ONS-01, ONS-02"/>
                 </div>
                 ${S().getRole() === 'Pemilik' ? `<button type="button" onclick="window.saveMultiBranchCodes()" class="ons-btn ons-btn-emerald text-xs">Simpan Daftar Cabang</button>` : ''}
               </div>` : ''}`;
@@ -11573,15 +11589,15 @@ S. prn 3 dd 1 tab</textarea>
           </div>
 
           <!-- CARD F: PERNYATAAN KEABSAHAN & SIMPAN DATA RESMI -->
-          <div class="ons-card p-5 space-y-3.5 border-2 border-blue-500/30">
+          <div class="ons-card p-5 space-y-3.5 border-2 border-blue-500/35 bg-gradient-to-br from-blue-50/20 via-transparent to-transparent dark:from-blue-950/20">
             ${canEdit ? `<div class="space-y-3">
-              <label class="flex items-start gap-2.5 cursor-pointer font-semibold select-none text-slate-800 dark:text-slate-200">
+              <label class="flex items-start gap-2.5 cursor-pointer font-semibold select-none text-slate-900 dark:text-slate-100">
                 <input id="profConfirmChk" type="checkbox" checked class="w-4 h-4 mt-0.5 accent-blue-600 rounded"/>
-                <span>Saya menyatakan seluruh data pemilik, foto/logo, izin SIA/SIPA, alamat domisili, dan berkas legalitas di atas adalah benar, sah, dan dapat dipertanggungjawabkan secara hukum.</span>
+                <span class="text-xs leading-relaxed">Saya menyatakan seluruh data pemilik sarana, foto gerai, logo resmi, izin operasional SIA &amp; SIPA, alamat domisili, dan berkas legalitas di atas adalah benar, sah, dan dapat dipertanggungjawabkan secara hukum.</span>
               </label>
               <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
-                <span class="text-[11px] text-slate-500">Tersimpan otomatis ke Google Cloud Sheets &amp; Brankas Digital Apotek.</span>
-                <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/30 hover:scale-105 active:scale-95 transition-all" style="background:linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)">
+                <span class="text-[11px] text-slate-500 dark:text-slate-400">🔒 Tersimpan aman &amp; tersinkronisasi otomatis ke Database Apotek.</span>
+                <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/40 hover:scale-105 active:scale-95 transition-all" style="background:linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                   <span>Konfirmasi &amp; Simpan Profil Resmi</span>
                 </button>
@@ -11599,17 +11615,17 @@ S. prn 3 dd 1 tab</textarea>
           <!-- PRATINJAU KOP RESMI REAL-TIME -->
           <div class="ons-card p-4 space-y-3">
             <div class="flex items-center justify-between">
-              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                 <span>📄</span> Pratinjau Kop Surat Resmi
               </h3>
-              <span class="text-[10px] text-blue-600 dark:text-sky-400 font-bold">Live Reactive</span>
+              <span class="text-[10px] text-blue-600 dark:text-sky-400 font-bold bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">Live Reactive</span>
             </div>
             <p class="text-[10.5px]" style="color:var(--ons-text-soft)">
               Pratinjau otomatis yang akan dicetak pada Surat Pesanan (SP), Kwitansi Pasien, &amp; Etiket Obat.
             </p>
             <div id="profKopPreviewBox" class="ons-kop-paper">
-              <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
-                <div class="flex items-center gap-3.5 pb-3 border-b-2 border-slate-800 dark:border-slate-300">
+              <div class="p-4 bg-white dark:bg-slate-900 rounded-xl space-y-3">
+                <div class="flex items-center gap-3.5 pb-3 ons-kop-rule">
                   <div class="w-14 h-14 rounded-xl border border-slate-200 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 bg-slate-50 dark:bg-slate-800 overflow-hidden">
                     ${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}
                   </div>
@@ -11622,11 +11638,11 @@ S. prn 3 dd 1 tab</textarea>
                 </div>
                 <div class="flex items-center justify-between text-[10.5px] pt-1">
                   <div>
-                    <span class="text-slate-400 block text-[9.5px] font-bold uppercase">Apoteker Penanggung Jawab (APJ)</span>
-                    <span class="font-bold text-slate-800 dark:text-slate-100">${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</span>
+                    <span class="text-slate-400 block text-[9.5px] font-bold uppercase tracking-wider">Apoteker Penanggung Jawab (APJ)</span>
+                    <span class="font-bold text-slate-900 dark:text-slate-100">${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</span>
                   </div>
                   <div class="text-right">
-                    <span class="text-slate-400 block text-[9.5px] font-bold uppercase">Nomor SIPA</span>
+                    <span class="text-slate-400 block text-[9.5px] font-bold uppercase tracking-wider">Nomor SIPA</span>
                     <span class="font-mono-num font-bold text-blue-700 dark:text-sky-400">${S().esc(merged.sipa_pemilik || '-')}</span>
                   </div>
                 </div>
@@ -11637,58 +11653,62 @@ S. prn 3 dd 1 tab</textarea>
           <!-- PRATINJAU STRUK KASIR DIGITAL -->
           <div class="ons-card p-4 space-y-3">
             <div class="flex items-center justify-between">
-              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                 <span>🖨️</span> Simulasi Struk Thermal (58/80mm)
               </h3>
-              <span class="text-[10px] text-slate-400 font-mono">Kasir POS</span>
+              <span class="text-[10px] text-slate-500 font-mono font-semibold">Kasir POS</span>
             </div>
-            <div class="p-3.5 bg-slate-100 dark:bg-slate-900 rounded-xl border font-mono text-[11px] space-y-1.5 text-slate-700 dark:text-slate-300 shadow-inner" style="border-color:var(--ons-border)">
-              <div class="text-center font-bold text-xs uppercase">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</div>
+            <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border font-mono text-[11px] space-y-1.5 text-slate-700 dark:text-slate-300 shadow-inner" style="border-color:var(--ons-border)">
+              <div class="text-center font-bold text-xs uppercase text-slate-900 dark:text-white">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</div>
               <div class="text-center text-[10px] text-slate-500 dark:text-slate-400">${S().esc(merged.alamat_usaha || 'Makassar')}</div>
               <div class="text-center text-[10px] text-slate-500 dark:text-slate-400">Telp: ${S().esc(merged.wa_usaha || merged.telepon_usaha || '0411-458-990')}</div>
               <div class="border-b border-dashed border-slate-300 dark:border-slate-700 my-1"></div>
               <div class="flex justify-between"><span>No. Nota:</span><span>POS-20261119-001</span></div>
               <div class="flex justify-between"><span>Kasir:</span><span>Budi Santoso</span></div>
               <div class="border-b border-dashed border-slate-300 dark:border-slate-700 my-1"></div>
-              <div class="text-center text-[10px] text-slate-400 pt-1">*** TERIMA KASIH ATAS KUNJUNGAN ANDA ***</div>
+              <div class="text-center text-[10px] text-slate-500 dark:text-slate-400 pt-1">*** TERIMA KASIH ATAS KUNJUNGAN ANDA ***</div>
               <div class="text-center text-[9px] text-blue-600 dark:text-sky-400 font-semibold">Semoga Lekas Sembuh &bull; Apotek ONS Farma</div>
             </div>
           </div>
 
           <!-- KEPATUHAN STANDAR FARMASI & PERIZINAN -->
           <div class="ons-card p-4 space-y-2.5">
-            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <span>🛡️</span> Kepatuhan Standar Farmasi
+            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <span>🛡️</span> Kepatuhan Standar Farmasi &amp; Legalitas
             </h3>
-            <div class="space-y-1.5 text-[11px]">
+            <div class="space-y-2 text-[11px]">
               <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <span>✅</span> <span>Permenkes RI No. 73/2016 (Standar Farmasi)</span>
+                <span class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-xs shrink-0">✅</span>
+                <span>Permenkes RI No. 73/2016 (Standar Farmasi)</span>
               </div>
               <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <span>✅</span> <span>BPOM Pelaporan SIPNAP &amp; e-Report Farmasi</span>
+                <span class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-xs shrink-0">✅</span>
+                <span>BPOM Pelaporan SIPNAP &amp; e-Report Farmasi</span>
               </div>
               <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <span>✅</span> <span>Perpajakan NITKU 16 Digit &amp; Faktur Pajak</span>
+                <span class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-xs shrink-0">✅</span>
+                <span>Perpajakan NITKU 16 Digit &amp; Faktur Pajak</span>
               </div>
               <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <span>✅</span> <span>Autentikasi Presisi Titik Koordinat GPS</span>
+                <span class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-xs shrink-0">✅</span>
+                <span>Autentikasi Presisi Titik Koordinat GPS Outlet</span>
               </div>
             </div>
           </div>
 
           <!-- PINTASAN PENGATURAN TERKAIT -->
           <div class="ons-card p-4 space-y-2">
-            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100">
-              ⚡ Pintasan Pengaturan Terkait
+            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <span>⚡</span> Pintasan Pengaturan Terkait
             </h3>
             <div class="grid grid-cols-1 gap-1.5">
-              <button type="button" onclick="window.setSettingsTab('struk')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left">
+              <button type="button" onclick="window.setSettingsTab('struk')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all">
                 <span>🖨️ Kustomisasi Header &amp; Footer Struk</span>
               </button>
-              <button type="button" onclick="window.setSettingsTab('metode-bayar')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left">
+              <button type="button" onclick="window.setSettingsTab('metode-bayar')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all">
                 <span>💳 Kelola Saluran &amp; QRIS Kasir</span>
               </button>
-              <button type="button" onclick="window.setSettingsTab('akun')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left">
+              <button type="button" onclick="window.setSettingsTab('akun')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all">
                 <span>👥 Manajemen Hak Akses Staf Apotek</span>
               </button>
             </div>
