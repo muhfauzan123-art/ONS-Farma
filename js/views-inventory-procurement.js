@@ -613,7 +613,33 @@
       { label: 'Total Unit Fisik', valHtml: `${totalItemFisik} unit` }
     ]);
 
-    return `<div class="space-y-3">${kpiHtml}${listHtml}${kondisiFooter}</div>`;
+    // ===== BANNER STOK MENIPIS (Item #2) =====
+    const lowItems = allMeta.filter((m) => m.isCritical);
+    const lowStockBanner = (lowItems.length > 0 && masterFilterStok === 'SEMUA') ? (() => {
+      const habisItems = lowItems.filter((m) => m.isZero);
+      const meніpisItems = lowItems.filter((m) => m.isLow && !m.isZero);
+      const totalAlert = habisItems.length + meніpisItems.length;
+      const names = lowItems.slice(0, 3).map((m) => `<strong>${S().esc(m.o.nama_dagang || 'Obat')}</strong>`).join(', ');
+      const more = totalAlert > 3 ? ` +${totalAlert - 3} lainnya` : '';
+      const bgColor = habisItems.length > 0 ? 'linear-gradient(135deg,#fee2e2,#fecaca)' : 'linear-gradient(135deg,#fef3c7,#fde68a)';
+      const borderColor = habisItems.length > 0 ? '#fca5a5' : '#f59e0b';
+      const textColor = habisItems.length > 0 ? '#991b1b' : '#92400e';
+      const icon = habisItems.length > 0 ? '🚨' : '⚠️';
+      const title = habisItems.length > 0 ? `${habisItems.length} Obat HABIS + ${meніpisItems.length} Menipis` : `${meніpisItems.length} Obat Stok Menipis`;
+      return `<div class="ons-low-stock-banner" style="background:${bgColor};border-color:${borderColor}">
+        <span style="font-size:1.6rem;flex-shrink:0">${icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;color:${textColor};font-size:0.95rem">${title}!</div>
+          <div style="font-size:0.82rem;color:${textColor};opacity:0.85;margin-top:0.15rem">Perlu segera dipesan: ${names}${more}</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;align-items:center">
+          <button onclick="window.setMasterStokFilter('KRITIS');window.renderActiveView()" style="background:${textColor};color:#fff;border:none;padding:0.4rem 0.8rem;border-radius:0.5rem;cursor:pointer;font-size:0.8rem;font-weight:700">Lihat Semua</button>
+          <button onclick="this.closest('.ons-low-stock-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:${textColor};font-size:1.3rem;line-height:1;padding:0 0.2rem;opacity:0.7">×</button>
+        </div>
+      </div>`;
+    })() : '';
+
+    return `<div class="space-y-3">${kpiHtml}${lowStockBanner}${listHtml}${kondisiFooter}</div>`;
   }
 
   function _renderMasterObatSubTab(seeCost, allMeta, filtered) {
@@ -15193,3 +15219,146 @@
       global.toast(e.message || 'Gagal membatalkan faktur.', 'err');
     }
   };
+
+  // ===== ITEM #3: EXPORT PDF & CSV GLOBAL =====
+
+  /**
+   * onsPrintTable - Cetak tabel sebagai PDF lewat print dialog browser
+   * @param {string|HTMLElement} tableIdOrEl - ID tabel atau elemen tabel
+   * @param {string} title - Judul laporan
+   * @param {string} subtitle - Subjudul / keterangan laporan
+   */
+  global.onsPrintTable = function(tableIdOrEl, title, subtitle) {
+    var el = typeof tableIdOrEl === 'string'
+      ? (document.getElementById(tableIdOrEl) || document.querySelector(tableIdOrEl))
+      : tableIdOrEl;
+    if (!el) {
+      el = document.querySelector('#mainViewSlot table, #ons-main-content table');
+    }
+    if (!el) {
+      if (window.onsShowWarning) window.onsShowWarning('Tidak ada tabel data untuk dicetak.');
+      else alert('Tidak ada tabel data untuk dicetak.');
+      return;
+    }
+    var printTitle = title || 'Laporan ONS Farma';
+    var now = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+    var w = window.open('', '_blank', 'width=1000,height=750');
+    if (!w) { if (window.onsShowWarning) window.onsShowWarning('Popup diblokir browser. Izinkan popup untuk mencetak.'); return; }
+    w.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>${printTitle}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif; padding: 24px; color: #1e293b; font-size: 13px; }
+  .print-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #1D4ED8; padding-bottom: 14px; }
+  .print-header h1 { font-size: 1.3rem; font-weight: 800; color: #1D4ED8; }
+  .print-header .meta { font-size: 11px; color: #64748b; margin-top: 4px; }
+  .print-logo { font-size: 1.5rem; font-weight: 900; color: #0A1528; letter-spacing: -0.5px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th { background: #1D4ED8; color: #fff; padding: 8px 10px; text-align: left; font-weight: 700; }
+  tbody td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  tbody tr:nth-child(even) td { background: #f8fafc; }
+  tfoot td { padding: 8px 10px; font-weight: 700; border-top: 2px solid #1D4ED8; background: #eff6ff; }
+  .print-footer { margin-top: 20px; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+  .no-print { margin-top: 16px; display: flex; gap: 10px; }
+  .no-print button { padding: 8px 20px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .btn-print { background: #1D4ED8; color: #fff; }
+  .btn-close { background: #e2e8f0; color: #1e293b; }
+  @media print { .no-print { display: none !important; } body { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="print-header">
+  <div>
+    <div class="print-logo">🏥 ONS Farma</div>
+    <h1>${printTitle}</h1>
+    ${subtitle ? `<div class="meta">${subtitle}</div>` : ''}
+    <div class="meta">Dicetak: ${now}</div>
+  </div>
+</div>
+${el.outerHTML}
+<div class="print-footer">Dokumen ini digenerate oleh Sistem Apotek ONS Farma Digital v18.31.0 — Rahasia & Terbatas</div>
+<div class="no-print">
+  <button class="btn-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Tutup</button>
+</div>
+</body>
+</html>`);
+    w.document.close();
+    setTimeout(function() { try { w.focus(); } catch(e){} }, 300);
+  };
+
+  /**
+   * onsExportCSV - Export data array ke file CSV
+   * @param {Array} data - Array of objects
+   * @param {string} filename - Nama file (tanpa .csv)
+   * @param {Object} headerMap - {fieldKey: 'Label Kolom'} opsional
+   */
+  global.onsExportCSV = function(data, filename, headerMap) {
+    if (!data || !data.length) {
+      if (window.onsShowWarning) window.onsShowWarning('Tidak ada data untuk diekspor.');
+      else alert('Tidak ada data untuk diekspor.');
+      return;
+    }
+    var keys = headerMap ? Object.keys(headerMap) : Object.keys(data[0]);
+    var labels = headerMap ? keys.map(function(k){ return headerMap[k]; }) : keys;
+    var csvRows = [labels.join(',')];
+    data.forEach(function(row) {
+      csvRows.push(keys.map(function(k) {
+        var v = row[k] !== undefined && row[k] !== null ? String(row[k]) : '';
+        // Quote jika mengandung koma, newline, atau tanda kutip
+        if (v.indexOf(',') > -1 || v.indexOf('\n') > -1 || v.indexOf('"') > -1) {
+          v = '"' + v.replace(/"/g, '""') + '"';
+        }
+        return v;
+      }).join(','));
+    });
+    var csv = '\uFEFF' + csvRows.join('\r\n'); // BOM untuk Excel UTF-8
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (filename || 'laporan-ons-farma') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    if (window.onsShowSuccess) window.onsShowSuccess('✅ File CSV berhasil diunduh: ' + a.download);
+  };
+
+  /**
+   * onsExportMasterObatCSV - Shortcut export master obat ke CSV
+   */
+  global.onsExportMasterObatCSV = function() {
+    var st = S().AppState;
+    if (!st || !st.masterObat || !st.masterObat.length) {
+      if (window.onsShowWarning) window.onsShowWarning('Data master obat belum dimuat.');
+      return;
+    }
+    var data = st.masterObat.map(function(o) {
+      return {
+        id_obat: o.id_obat || '',
+        nama_dagang: o.nama_dagang || '',
+        zat_aktif: o.zat_aktif || '',
+        kekuatan: o.kekuatan || '',
+        bentuk_sediaan: o.bentuk_sediaan || '',
+        golongan_bpom: o.golongan_bpom || '',
+        satuan_dasar: o.satuan_dasar || o.satuan_1 || '',
+        stok: S().getSellableStok(o.id_obat) || 0,
+        stok_min: o.stok_min !== undefined ? o.stok_min : '',
+        harga_jual: o.harga_umum || o.harga_jual_1 || 0,
+        status: o.status_aktif || 'AKTIF'
+      };
+    });
+    var headers = {
+      id_obat: 'ID Obat', nama_dagang: 'Nama Dagang', zat_aktif: 'Zat Aktif',
+      kekuatan: 'Kekuatan', bentuk_sediaan: 'Bentuk Sediaan', golongan_bpom: 'Golongan BPOM',
+      satuan_dasar: 'Satuan', stok: 'Stok Saat Ini', stok_min: 'Stok Min',
+      harga_jual: 'Harga Jual', status: 'Status'
+    };
+    var tanggal = new Date().toISOString().slice(0, 10);
+    global.onsExportCSV(data, 'master-obat-ons-farma-' + tanggal, headers);
+  };
+

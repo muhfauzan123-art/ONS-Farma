@@ -3981,3 +3981,295 @@ body.ons-pos-focus-mode #mainViewSlot {
     padding-bottom: 5.25rem !important;
   }
 }
+
+
+/* ============================================================
+   ONS FARMA v18.31.0 — UPGRADE PACK
+   1. Skeleton Loading
+   2. Dark Mode Fixes
+   3. Page Transition Animations
+   4. Mobile Responsive Fixes
+   5. Toast & Utility
+   ============================================================ */
+
+/* ---- 1. SKELETON LOADING ---- */
+.ons-skeleton {
+  background: linear-gradient(90deg, #e8edf2 25%, #f4f6f9 50%, #e8edf2 75%);
+  background-size: 200% 100%;
+  animation: ons-skeleton-shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+  display: block;
+}
+@keyframes ons-skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.ons-skeleton-text   { height: 1em;    margin-bottom: 0.5rem; }
+.ons-skeleton-title  { height: 1.5em;  margin-bottom: 0.75rem; width: 60%; }
+.ons-skeleton-card   { height: 110px;  border-radius: 1rem; }
+.ons-skeleton-row    { height: 44px;   margin-bottom: 0.5rem; border-radius: 0.4rem; }
+.ons-skeleton-circle { border-radius: 50% !important; width: 48px; height: 48px; }
+.ons-skeleton-btn    { height: 38px; width: 120px; border-radius: 0.6rem; }
+
+html.dark .ons-skeleton {
+  background: linear-gradient(90deg, #1a2744 25%, #243044 50%, #1a2744 75%);
+  background-size: 200% 100%;
+}
+
+/* Skeleton KPI Grid */
+.ons-skeleton-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.ons-skeleton-kpi-grid .ons-skeleton-card {
+  height: 90px;
+  border-radius: 1rem;
+}
+
+/* ---- 2. DARK MODE FIXES ---- */
+html.dark .ons-table th {
+  background: #1a2744;
+  color: #94a3b8;
+  border-color: #1e2a3a;
+}
+html.dark .ons-table td {
+  border-color: #1e2a3a;
+  color: #cbd5e1;
+}
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background: #0f1e35 !important;
+  color: #e2e8f0 !important;
+  border-color: #2d4a6e !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+html.dark .ons-badge {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+html.dark .ons-modal-content,
+html.dark [class*="modal-content"],
+html.dark [class*="ons-modal"] > div {
+  background: #0d1829 !important;
+  color: #e2e8f0;
+  border: 1px solid #1e3a5f;
+}
+html.dark label {
+  color: #94a3b8;
+}
+html.dark .ons-form-label {
+  color: #94a3b8;
+}
+html.dark .ons-divider {
+  border-color: #1e2a3a;
+}
+html.dark .ons-alert-info {
+  background: rgba(30,58,138,0.25);
+  border-color: #1e3a5f;
+  color: #93c5fd;
+}
+html.dark .ons-alert-warning {
+  background: rgba(120,53,15,0.25);
+  border-color: #92400e;
+  color: #fcd34d;
+}
+
+/* ---- 3. PAGE TRANSITION ANIMATIONS ---- */
+.ons-view-enter {
+  animation: ons-fade-slide-in 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.ons-view-leave {
+  animation: ons-fade-slide-out 0.15s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes ons-fade-slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ons-fade-slide-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Sub-tab content transition */
+.ons-tab-content-enter {
+  animation: ons-tab-in 0.18s ease both;
+}
+@keyframes ons-tab-in {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ---- 4. MOBILE RESPONSIVE FIXES (768px) ---- */
+@media (max-width: 768px) {
+  /* Tabel bisa scroll horizontal */
+  .ons-table-wrap,
+  .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ons-table {
+    min-width: 560px;
+  }
+
+  /* KPI grid 2 kolom di tablet */
+  .ons-kpi-grid,
+  [class*="kpi-grid"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem;
+  }
+
+  /* Modal full-width di mobile */
+  .ons-modal-content,
+  [class*="modal-content"] {
+    width: 95vw !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: auto;
+  }
+
+  /* Sidebar z-index aman */
+  .ons-sidebar,
+  #ons-sidebar {
+    z-index: 200;
+  }
+
+  /* Konten utama padding lebih kecil */
+  #ons-main-content,
+  #mainViewSlot {
+    padding: 0.75rem !important;
+  }
+
+  /* Topbar padding mobile */
+  .ons-topbar,
+  #ons-topbar {
+    padding: 0 0.65rem !important;
+  }
+
+  /* Subnav wrap & lebih kecil */
+  .ons-subnav,
+  [class*="subnav"] {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding: 0.4rem 0.5rem;
+  }
+  .ons-tab-btn,
+  [class*="tab-btn"] {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+
+  /* Heading lebih kecil */
+  h1, .text-2xl { font-size: 1.25rem !important; }
+  h2, .text-xl  { font-size: 1.1rem  !important; }
+  h3, .text-lg  { font-size: 1rem    !important; }
+
+  /* Tombol di row form jadi column */
+  .ons-form-actions,
+  .ons-btn-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .ons-form-actions button,
+  .ons-btn-row button {
+    width: 100%;
+  }
+}
+
+/* Mobile kecil (480px) */
+@media (max-width: 480px) {
+  .ons-kpi-grid,
+  [class*="kpi-grid"] {
+    grid-template-columns: 1fr !important;
+  }
+  .ons-btn-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .ons-btn-group button,
+  .ons-btn-group a {
+    width: 100%;
+    text-align: center;
+  }
+  /* Sembunyikan kolom tidak penting di tabel kecil */
+  .ons-col-hide-xs {
+    display: none !important;
+  }
+  .ons-topbar .ons-search-wrap {
+    display: none;
+  }
+}
+
+/* ---- 5. TOAST NOTIFICATION ---- */
+#ons-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 340px;
+  pointer-events: none;
+}
+#ons-toast-container > * {
+  pointer-events: all;
+}
+@keyframes ons-toast-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes ons-toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(110%); }
+}
+
+/* ---- 6. LOW STOCK BANNER ---- */
+.ons-low-stock-banner {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: ons-fade-slide-in 0.3s ease both;
+}
+html.dark .ons-low-stock-banner {
+  background: rgba(120,53,15,0.3);
+  border-color: #92400e;
+  color: #fde68a;
+}
+
+/* ---- CONFIRM DIALOG ---- */
+.ons-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: ons-fade-slide-in 0.18s ease both;
+}
+.ons-confirm-box {
+  background: var(--ons-card-bg, #fff);
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border: 1px solid rgba(239,68,68,0.3);
+}
+html.dark .ons-confirm-box {
+  background: #0d1829;
+  border-color: rgba(239,68,68,0.4);
+  color: #e2e8f0;
+}

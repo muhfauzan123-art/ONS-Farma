@@ -2496,3 +2496,202 @@
     sanitizeLegacyOwnerName
   };
 })(window);
+
+
+/* ============================================================
+   ONS FARMA v18.31.0 — GLOBAL UX UTILITIES
+   - Item #4: Konfirmasi Hapus Global
+   - Item #5: Toast/Error Notification System
+   - Item #7: Page Transition Helper
+   - Item #8: Keyboard Shortcuts
+   ============================================================ */
+
+// ===== ITEM #4: KONFIRMASI HAPUS GLOBAL =====
+window.onsConfirmDelete = function(itemName, onConfirm, onCancel) {
+  const overlay = document.createElement('div');
+  overlay.className = 'ons-confirm-overlay';
+  overlay.innerHTML = `
+    <div class="ons-confirm-box">
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <div style="width:60px;height:60px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;flex-shrink:0">
+          <svg width="30" height="30" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>
+        </div>
+        <h3 style="font-size:1.1rem;font-weight:700;margin:0 0 0.5rem;color:var(--ons-text,#1e293b)">Konfirmasi Hapus</h3>
+        <p style="color:var(--ons-text-muted,#64748b);font-size:0.875rem;margin:0;line-height:1.6">
+          Apakah Anda yakin ingin menghapus<br>
+          <strong style="color:#ef4444">${itemName || 'data ini'}</strong>?<br>
+          <span style="font-size:0.8rem;opacity:0.8">Data yang dihapus tidak dapat dikembalikan.</span>
+        </p>
+      </div>
+      <div style="display:flex;gap:0.75rem">
+        <button id="ons-confirm-cancel" style="flex:1;padding:0.65rem;border-radius:0.65rem;border:1px solid var(--ons-border,#e2e8f0);background:transparent;cursor:pointer;font-weight:600;font-size:0.875rem;color:var(--ons-text-muted,#64748b);transition:all 0.15s">Batal</button>
+        <button id="ons-confirm-ok" style="flex:1;padding:0.65rem;border-radius:0.65rem;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;cursor:pointer;font-weight:700;font-size:0.875rem;transition:all 0.15s;box-shadow:0 4px 12px rgba(239,68,68,0.35)">🗑️ Hapus</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const cancel = () => { overlay.remove(); onCancel && onCancel(); };
+  const confirm = () => { overlay.remove(); onConfirm && onConfirm(); };
+  overlay.querySelector('#ons-confirm-cancel').onclick = cancel;
+  overlay.querySelector('#ons-confirm-ok').onclick = confirm;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cancel(); });
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') { cancel(); document.removeEventListener('keydown', escHandler); }
+  });
+};
+
+// Shortcut: ganti semua confirm('Hapus?') yang masih ada dengan onsConfirmDelete
+window.onsConfirm = window.onsConfirmDelete; // alias
+
+// ===== ITEM #5: TOAST NOTIFICATION SYSTEM =====
+window.onsShowToast = function(msg, type, duration) {
+  type = type || 'info';
+  duration = duration || 3500;
+  var colors = {
+    success: { bg: '#dcfce7', border: '#86efac', text: '#166534', icon: '✅' },
+    error:   { bg: '#fee2e2', border: '#fca5a5', text: '#991b1b', icon: '❌' },
+    warning: { bg: '#fef3c7', border: '#fcd34d', text: '#92400e', icon: '⚠️' },
+    info:    { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af', icon: 'ℹ️' }
+  };
+  var c = colors[type] || colors.info;
+
+  // Dark mode override
+  var isDark = document.documentElement.classList.contains('dark');
+  if (isDark) {
+    var darkColors = {
+      success: { bg: 'rgba(22,101,52,0.9)', border: '#16a34a', text: '#86efac', icon: '✅' },
+      error:   { bg: 'rgba(153,27,27,0.9)', border: '#dc2626', text: '#fca5a5', icon: '❌' },
+      warning: { bg: 'rgba(120,53,15,0.9)', border: '#d97706', text: '#fde68a', icon: '⚠️' },
+      info:    { bg: 'rgba(30,64,175,0.9)', border: '#3b82f6', text: '#93c5fd', icon: 'ℹ️' }
+    };
+    c = darkColors[type] || darkColors.info;
+  }
+
+  var container = document.getElementById('ons-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'ons-toast-container';
+    document.body.appendChild(container);
+  }
+  var toast = document.createElement('div');
+  toast.style.cssText = 'background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.text + ';padding:0.85rem 1.1rem;border-radius:0.75rem;box-shadow:0 8px 24px rgba(0,0,0,0.18);display:flex;align-items:flex-start;gap:0.6rem;font-size:0.875rem;font-weight:500;animation:ons-toast-in 0.3s ease both;max-width:340px;word-break:break-word;backdrop-filter:blur(8px)';
+  toast.innerHTML = '<span style="font-size:1.15rem;line-height:1.3;flex-shrink:0">' + c.icon + '</span><span style="flex:1;line-height:1.5">' + msg + '</span><button onclick="this.closest(\'div\').style.animation=\'ons-toast-out 0.25s ease forwards\';setTimeout(()=>this.closest(\'div\').remove(),250)" style="background:none;border:none;cursor:pointer;color:inherit;opacity:0.6;font-size:1.2rem;line-height:1;padding:0 0 0 0.3rem;flex-shrink:0">×</button>';
+  container.appendChild(toast);
+  setTimeout(function() {
+    if (toast.parentNode) {
+      toast.style.animation = 'ons-toast-out 0.3s ease forwards';
+      setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
+    }
+  }, duration);
+  return toast;
+};
+
+window.onsShowSuccess = function(msg, dur) { return window.onsShowToast(msg, 'success', dur); };
+window.onsShowError   = function(msg, dur) { return window.onsShowToast(msg, 'error', dur); };
+window.onsShowWarning = function(msg, dur) { return window.onsShowToast(msg, 'warning', dur); };
+window.onsShowInfo    = function(msg, dur) { return window.onsShowToast(msg, 'info', dur); };
+
+// ===== ITEM #7: PAGE TRANSITION HELPER =====
+window.onsAnimateView = function(containerEl) {
+  if (!containerEl) return;
+  containerEl.classList.remove('ons-view-enter');
+  void containerEl.offsetWidth; // force reflow
+  containerEl.classList.add('ons-view-enter');
+};
+
+window.onsAnimateTab = function(containerEl) {
+  if (!containerEl) return;
+  containerEl.classList.remove('ons-tab-content-enter');
+  void containerEl.offsetWidth;
+  containerEl.classList.add('ons-tab-content-enter');
+};
+
+// Auto-inject animasi ke mainViewSlot saat navigasi (patch ke renderView jika ada)
+(function patchViewTransition() {
+  var mainSlot = document.getElementById('mainViewSlot') || document.getElementById('ons-main-content');
+  if (!mainSlot) {
+    // Coba lagi setelah DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      var slot = document.getElementById('mainViewSlot') || document.getElementById('ons-main-content');
+      if (slot) {
+        var origInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+        // Soft patch: observer saja
+        var obs = new MutationObserver(function() {
+          slot.classList.remove('ons-view-enter');
+          void slot.offsetWidth;
+          slot.classList.add('ons-view-enter');
+        });
+        obs.observe(slot, { childList: true });
+      }
+    });
+    return;
+  }
+  var obs = new MutationObserver(function() {
+    mainSlot.classList.remove('ons-view-enter');
+    void mainSlot.offsetWidth;
+    mainSlot.classList.add('ons-view-enter');
+  });
+  obs.observe(mainSlot, { childList: true });
+})();
+
+// ===== ITEM #8: KEYBOARD SHORTCUTS =====
+(function initOnsKeyboardShortcuts() {
+  document.addEventListener('keydown', function(e) {
+    // Jangan aktif saat mengetik di form
+    var tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.target && e.target.isContentEditable) return;
+
+    var key = e.key;
+
+    // F2 — Fokus ke search bar
+    if (key === 'F2') {
+      e.preventDefault();
+      var el = document.getElementById('ons-global-search')
+            || document.querySelector('.ons-search-input')
+            || document.querySelector('[placeholder*="Cari"]')
+            || document.querySelector('[placeholder*="cari"]')
+            || document.querySelector('[placeholder*="Search"]');
+      if (el) { el.focus(); el.select(); window.onsShowInfo && window.onsShowInfo('🔍 Mode pencarian aktif (Esc untuk keluar)', 1500); }
+    }
+
+    // Escape — Tutup modal/dialog
+    if (key === 'Escape') {
+      var modal = document.querySelector('.ons-confirm-overlay');
+      if (modal) { modal.remove(); return; }
+      var openModal = document.querySelector('.ons-modal[style*="flex"]')
+                   || document.querySelector('[id*="modal"][style*="flex"]')
+                   || document.querySelector('[id*="Modal"][style*="flex"]');
+      if (openModal) {
+        var closeBtn = openModal.querySelector('[onclick*="close"], [onclick*="Close"], [onclick*="tutup"], .ons-modal-close, [data-dismiss]');
+        if (closeBtn) closeBtn.click();
+      }
+    }
+
+    // ? — Tampilkan bantuan shortcut
+    if (key === '?' && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      window.onsShowInfo && window.onsShowInfo(
+        '<strong>⌨️ Shortcut Keyboard:</strong><br>• <kbd style="background:#334155;color:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:0.8em">F2</kbd> Fokus pencarian<br>• <kbd style="background:#334155;color:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:0.8em">Esc</kbd> Tutup dialog',
+        'info', 5000
+      );
+    }
+  });
+
+  // Tampilkan hint shortcut saat pertama buka (sekali saja)
+  document.addEventListener('DOMContentLoaded', function() {
+    var shown = sessionStorage.getItem('ons-shortcut-hint');
+    if (!shown) {
+      setTimeout(function() {
+        window.onsShowInfo && window.onsShowInfo('💡 Tips: Tekan <strong>F2</strong> untuk pencarian cepat, <strong>?</strong> untuk bantuan shortcut', 'info', 5000);
+        sessionStorage.setItem('ons-shortcut-hint', '1');
+      }, 2500);
+    }
+  });
+})();
+
+// Ekspor shortcuts list (untuk referensi)
+window.onsShortcuts = {
+  'F2':  'Fokus pencarian cepat',
+  'Esc': 'Tutup dialog / modal',
+  '?':   'Tampilkan daftar shortcut'
+};
