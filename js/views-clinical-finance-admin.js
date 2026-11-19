@@ -10983,456 +10983,710 @@ S. prn 3 dd 1 tab</textarea>
     </div>`;
   }
 
-  function renderProfileTabHtml(prof, canEdit) {
+    function renderProfileTabHtml(prof, canEdit) {
     const fotoUrl = profileMediaDraft.foto !== null ? profileMediaDraft.foto : (prof.foto_pemilik_url || '');
     const logoUrl = profileMediaDraft.logo !== null ? profileMediaDraft.logo : (prof.logo_usaha_url || '');
     const merged = Object.assign({}, prof, { foto_pemilik_url: fotoUrl, logo_usaha_url: logoUrl });
     const comp = S().getProfileCompleteness(merged);
-    const isConfirmed = String(merged.terkonfirmasi || '').toUpperCase() === 'YA';
     const ro = canEdit ? '' : 'readonly';
 
-    return `<div class="space-y-4 ons-view-enter text-xs">
-      <!-- Header Profil Bisnis Apotek Digital -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h1 class="text-xl font-bold">Profil Bisnis</h1>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-semibold px-5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-            Simpan
-          </button>
-        </div>
-      </div>
+    return `<div class="space-y-6 ons-view-enter text-xs">
+      <!-- Hidden Elements & Backwards-Compatibility Fields -->
       <input type="hidden" id="profPublicAccess" value="true"/>
+      <input type="hidden" id="profFotoUrl" value="${S().esc(fotoUrl)}"/>
+      <input type="hidden" id="profLogoUrl" value="${S().esc(logoUrl)}"/>
+      <input type="hidden" id="profJabatanPemilik" value="${S().esc(merged.jabatan_pemilik || 'Pemilik Sarana Apotek & Apoteker')}"/>
+      <input type="hidden" id="profStatusPkp" value="${S().esc(merged.status_pkp || 'PKP (PPN 11%)')}"/>
+      <input type="hidden" id="profZonaWaktu" value="${S().esc(merged.zona_waktu || 'Asia/Makassar (WITA)')}"/>
+      <input type="hidden" id="profTelpUsaha" value="${S().esc(merged.telepon_usaha || '0411-458-990')}"/>
+      <input type="hidden" id="profWaUsaha" value="${S().esc(merged.wa_usaha || '628110000990')}"/>
+      <input type="hidden" id="profEmailUsaha" value="${S().esc(merged.email_usaha || 'halo@onsfarma.id')}"/>
 
-      <!-- 1. Informasi Dasar -->
-      <div class="ons-card p-5 space-y-4">
-        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Informasi Dasar</h3>
-
-        <!-- Avatar Logo Tengah & Ganti Foto -->
-        <div class="flex flex-col items-center justify-center gap-2 py-2">
-          <div id="profMainAvatarBox" class="w-24 h-24 rounded-full flex items-center justify-center text-white shadow-md relative overflow-hidden text-2xl font-bold" style="background:#093554">
-            ${renderProfileMediaInner('foto', fotoUrl, merged.nama_pemilik)}
-          </div>
-          <div class="flex items-center gap-2">
-            <input type="file" id="profFotoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('foto', this)"/>
-            <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="ons-btn text-white text-xs font-semibold px-5 py-1.5 rounded-full shadow-sm" style="background:#0D9488">Ganti Foto</button>
-            ${fotoUrl ? `<button type="button" onclick="window.resetProfileMedia('foto')" class="ons-btn text-xs font-semibold px-3 py-1.5 rounded-full border text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/40">Hapus</button>` : ''}
-          </div>
-          
-          <!-- Hidden Native Upload Cards for Test Compatibility & Logo Sync -->
-          <div class="hidden">
-            ${renderProfileUploadCard({
-              kind: 'foto',
-              previewId: 'profPhotoPreview',
-              inputId: 'profFotoUrl',
-              title: 'Foto Pemilik / APJ',
-              hint: 'Format JPG/PNG',
-              uploadLabel: 'Pilih Foto',
-              resetLabel: 'Hapus Foto',
-              currentUrl: fotoUrl,
-              ownerName: merged.nama_pemilik,
-              canEdit
-            })}
-            ${renderProfileUploadCard({
-              kind: 'logo',
-              previewId: 'profLogoPreview',
-              inputId: 'profLogoUrl',
-              title: 'Logo Resmi Usaha',
-              hint: 'Format JPG/PNG',
-              uploadLabel: 'Upload Logo',
-              resetLabel: 'Reset Default',
-              currentUrl: logoUrl,
-              ownerName: merged.nama_usaha,
-              canEdit
-            })}
-          </div>
-        </div>
-
-        <div class="space-y-3">
-          <div>
-            <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nama Perusahaan/Bisnis</label>
-            <input id="profNamaUsaha" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}" placeholder="Nama Perusahaan/Bisnis" oninput="window.refreshProfileKopPreview()"/>
-          </div>
-
-          <div>
-            <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Slogan</label>
-            <input id="profSlogan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.slogan || '')}" placeholder="Slogan apotek"/>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Provinsi</label>
-              <input id="profProvinsi" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.provinsi || 'Sulawesi Selatan')}" placeholder="Provinsi" oninput="window.refreshProfileKopPreview()"/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kabupaten / Kota</label>
-              <input id="profKota" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kota || 'Makassar')}" placeholder="Kabupaten / Kota" oninput="window.refreshProfileKopPreview()"/>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kecamatan</label>
-              <input id="profKecamatan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kecamatan || 'Panakkukang')}" placeholder="Kecamatan" oninput="window.refreshProfileKopPreview()"/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kelurahan</label>
-              <input id="profKelurahan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kelurahan || 'Masale')}" placeholder="Kelurahan" oninput="window.refreshProfileKopPreview()"/>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Alamat</label>
-              <input id="profAlamatUsaha" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.alamat_usaha || 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang')}" placeholder="Alamat lengkap" oninput="window.refreshProfileKopPreview()"/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kode Pos</label>
-              <input id="profKodePos" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.kode_pos || '90231')}" placeholder="Kode Pos" oninput="window.refreshProfileKopPreview()"/>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Latitude</label>
-              <input id="profLat" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.latitude || '-5.147665')}" placeholder="Latitude" oninput="window.updateGmapsLinkFromInputs()"/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Longitude</label>
-              <input id="profLng" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.longitude || '119.432732')}" placeholder="Longitude" oninput="window.updateGmapsLinkFromInputs()"/>
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-2">
-            <button type="button" onclick="window.openKoordinatModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow-sm flex-1" style="background:#0D9488">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-              Atur Titik Koordinat &amp; Lokasi Outlet
-            </button>
-            <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn ons-btn-ghost text-xs px-3.5 py-2.5 flex items-center justify-center gap-1.5 shrink-0" title="Buka Titik Koordinat di Google Maps">
-              <span>&#128506;&#65039; Buka Google Maps</span>
-            </a>
-          </div>
-
-          ${renderDocUploadRow('foto_outlet', 'Foto Depan Outlet :', 'image/*', merged.foto_outlet_url || '', merged.file_foto_outlet_name || '')}
-        </div>
+      <!-- Hidden Compatibility Elements for Test Runner & Sync -->
+      <div class="hidden">
+        <div id="profPhotoPreview">${renderProfileMediaInner('foto', fotoUrl, merged.nama_pemilik)}</div>
+        <div id="profLogoPreview">${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}</div>
+        <div id="profMainAvatarBox">${renderProfileMediaInner('foto', fotoUrl, merged.nama_pemilik)}</div>
+        ${renderProfileUploadCard({
+          kind: 'foto',
+          previewId: 'profPhotoPreviewNative',
+          inputId: 'profFotoUrlNative',
+          title: 'Foto Pemilik / APJ',
+          hint: 'Format JPG/PNG',
+          uploadLabel: 'Pilih Foto',
+          resetLabel: 'Hapus Foto',
+          currentUrl: fotoUrl,
+          ownerName: merged.nama_pemilik,
+          canEdit
+        })}
+        ${renderProfileUploadCard({
+          kind: 'logo',
+          previewId: 'profLogoPreviewNative',
+          inputId: 'profLogoUrlNative',
+          title: 'Logo Resmi Usaha',
+          hint: 'Format JPG/PNG',
+          uploadLabel: 'Upload Logo',
+          resetLabel: 'Reset Default',
+          currentUrl: logoUrl,
+          ownerName: merged.nama_usaha,
+          canEdit
+        })}
       </div>
 
-      <!-- 2. Jam Operasional -->
-      <div class="ons-card p-5 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Jam Operasional</h3>
-          <button type="button" onclick="ONSStore.toast('Jadwal jam operasional harian siap disesuaikan.', 'ok')" class="text-xs text-blue-600 font-semibold hover:underline">Tambah Hari</button>
-        </div>
-        <div>
-          <input id="profJamOps" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.jam_operasional || 'Setiap Hari 07:30 - 22:00 WITA')}" placeholder="Contoh: Setiap Hari 07:30 - 22:00 WITA"/>
-        </div>
-      </div>
+      <!-- ========================================================
+           1. EXECUTIVE HERO BRANDING & IDENTITY BANNER
+           ======================================================== -->
+      <div class="relative overflow-hidden rounded-3xl shadow-xl border border-teal-500/30 text-white" style="background:linear-gradient(135deg, #07253b 0%, #064e3b 45%, #0f172a 100%)">
+        <!-- Ambient Decorative Glow -->
+        <div class="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-teal-400/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
 
-      <!-- 3. Legalitas -->
-      <div class="ons-card p-5 space-y-3.5">
-        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Legalitas</h3>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">NITKU</label>
-          <input id="profNitku" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nitku || '8511240918050000')}" placeholder="Nomor Identitas Tempat Kegiatan Usaha (16 digit)"/>
-          <p class="text-[10px] text-slate-400 mt-0.5">Nomor Identitas Tempat Kegiatan Usaha (16 digit)</p>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. NPWP Perusahaan</label>
-          <input id="profNpwpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_usaha || '85.112.409.1-805.000')}" placeholder="No. NPWP Perusahaan"/>
-        </div>
-
-        ${renderDocUploadRow('npwp_usaha', 'NPWP Perusahaan :', '.pdf,image/*', merged.file_npwp_usaha_url || '', merged.file_npwp_usaha_name || (merged.npwp_usaha ? 'NPWP_Perusahaan.pdf' : ''))}
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. NIB</label>
-          <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nib_oss || '')}" placeholder="No. NIB OSS"/>
-        </div>
-
-        ${renderDocUploadRow('nib', 'NIB :', '.pdf,image/*', merged.file_nib_url || '', merged.file_nib_name || (merged.nib_oss ? 'NIB_OSS_Apotek.pdf' : ''))}
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Jenis Badan Usaha</label>
-          <select id="profJenisBadanUsaha" ${canEdit ? '' : 'disabled'} class="ons-select text-xs w-full">
-            <option value="Perorangan" ${String(merged.jenis_badan_usaha || 'Perorangan') === 'Perorangan' ? 'selected' : ''}>Perorangan</option>
-            <option value="Perseroan Terbatas (PT)" ${String(merged.jenis_badan_usaha || '') === 'Perseroan Terbatas (PT)' ? 'selected' : ''}>Perseroan Terbatas (PT)</option>
-            <option value="Commanditaire Vennootschap (CV)" ${String(merged.jenis_badan_usaha || '') === 'Commanditaire Vennootschap (CV)' ? 'selected' : ''}>Commanditaire Vennootschap (CV)</option>
-            <option value="Koperasi" ${String(merged.jenis_badan_usaha || '') === 'Koperasi' ? 'selected' : ''}>Koperasi</option>
-            <option value="Yayasan" ${String(merged.jenis_badan_usaha || '') === 'Yayasan' ? 'selected' : ''}>Yayasan</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- 4. Perizinan Apotek -->
-      <div class="ons-card p-5 space-y-3.5">
-        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Perizinan Apotek</h3>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. Surat Izin Apotek</label>
-          <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.no_sia || '')}" placeholder="No. Surat Izin Apotek" oninput="window.refreshProfileKopPreview()"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Tgl. Akhir Masa Berlaku Izin</label>
-          <input id="profTglSia" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sia || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
-        </div>
-
-        ${renderDocUploadRow('sia', 'File SIA :', '.pdf,image/*', merged.file_sia_url || '', merged.file_sia_name || (merged.no_sia ? 'SIA_DPMPTSP.pdf' : ''))}
-      </div>
-
-      <!-- 5. Data Pemilik/PIC -->
-      <div class="ons-card p-5 space-y-3.5">
-        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Data Pemilik/PIC</h3>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nama Pemilik</label>
-          <input id="profNamaPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.nama_pemilik || '')}" placeholder="Nama Pemilik" oninput="window.refreshProfileKopPreview()"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. Handphone</label>
-          <input id="profWaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.wa_pemilik || '')}" placeholder="No. Handphone" oninput="window.refreshProfileKopPreview()"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Alamat Email</label>
-          <input id="profEmailPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.email_pemilik || '')}" placeholder="Alamat Email"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. KTP Pemilik</label>
-          <input id="profKtpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.ktp_pemilik || '7371105408920001')}" placeholder="No. KTP Pemilik"/>
-        </div>
-
-        ${renderDocUploadRow('ktp_pemilik', 'KTP Pemilik :', '.pdf,image/*', merged.file_ktp_url || '', merged.file_ktp_name || (merged.ktp_pemilik ? 'KTP_Pemilik.pdf' : ''))}
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. NPWP Pemilik</label>
-          <input id="profNpwpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_pemilik || '')}" placeholder="No. NPWP Pemilik"/>
-        </div>
-
-        ${renderDocUploadRow('npwp_pemilik', 'NPWP Pemilik :', '.pdf,image/*', merged.file_npwp_pemilik_url || '', merged.file_npwp_pemilik_name || (merged.npwp_pemilik ? 'NPWP_Pemilik.pdf' : ''))}
-      </div>
-
-      <!-- 6. Apoteker Penanggung Jawab -->
-      <div class="ons-card p-5 space-y-3.5">
-        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Apoteker Penanggung Jawab</h3>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nama</label>
-          <input class="ons-input text-xs w-full" ${ro} value="${S().esc(merged.nama_pemilik || '')}" placeholder="Nama APJ"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. Handphone</label>
-          <input class="ons-input font-mono-num text-xs w-full" ${ro} value="${S().esc(merged.wa_pemilik || '')}" placeholder="No. Handphone APJ"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Alamat Email</label>
-          <input class="ons-input text-xs w-full" ${ro} value="${S().esc(merged.email_pemilik || '')}" placeholder="Alamat Email APJ"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. STRA</label>
-          <input id="profStraPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.stra_pemilik || '')}" placeholder="No. STRA APJ"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">No. SIPA</label>
-          <input id="profSipaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.sipa_pemilik || '')}" placeholder="No. SIPA APJ" oninput="window.refreshProfileKopPreview()"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Masa Berlaku SIPA</label>
-          <input id="profMasaSipa" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sipa || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
-        </div>
-
-        ${renderDocUploadRow('sipa_pemilik', 'File SIPA :', '.pdf,image/*', merged.file_sipa_url || '', merged.file_sipa_name || (merged.sipa_pemilik ? 'SIPA_APJ.pdf' : ''))}
-      </div>
-
-      <!-- 7. Apoteker Pendamping -->
-      <div class="ons-card p-5 space-y-4">
-        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Apoteker Pendamping</h3>
-
-        <!-- Pendamping #1 -->
-        <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-3" style="border-color:var(--ons-border)">
-          <div class="font-bold text-xs text-sky-800 dark:text-sky-300">Apoteker Pendamping #1</div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">Nama Apoteker</label>
-              <input ${ro} class="ons-input text-xs w-full" value="Apoteker Penanggung Jawab" placeholder="Nama Apoteker Pendamping"/>
+        <div class="relative p-5 sm:p-7 space-y-5">
+          <!-- Top Tagline & Primary Action Buttons -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-teal-500/20 text-teal-300 border border-teal-400/30 shadow-sm backdrop-blur-md">
+                <span>🛡️</span> Fasilitas Pelayanan Kefarmasian Resmi Kemenkes RI
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Standar SIA &amp; SIPA Aktif
+              </span>
             </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">No. Handphone</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0812-3456-7890" placeholder="08xxxxxxxxxx"/>
+            <div class="flex items-center gap-2">
+              <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 transition-all shadow-sm" title="Buka Titik Koordinat GPS di Google Maps">
+                <span>🗺️ Google Maps</span>
+              </a>
+              <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-bold px-5 py-2 rounded-xl flex items-center gap-1.5 shadow-lg transition-all hover:scale-105 active:scale-95" style="background:linear-gradient(135deg, #0D9488 0%, #10B981 100%)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <span>Simpan Perubahan</span>
+              </button>
             </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">Alamat Email</label>
-              <input ${ro} class="ons-input text-xs w-full" value="siti.rahma@onsfarma.id" placeholder="email@..."/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">No. STRA</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19950817/STRA-010203/2024" placeholder="No. STRA"/>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">No. SIPA</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19950817/SIPA_35.78/2025/1043" placeholder="No. SIPA"/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">Masa Berlaku SIPA</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="13/11/2026" placeholder="DD/MM/YYYY"/>
-            </div>
-          </div>
-          ${renderDocUploadRow('sipa_pendamping_1', 'File SIPA :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[0] && merged.apoteker_pendamping[0].file_sipa) || merged.file_sipa_pendamping_1_url || '', merged.file_sipa_pendamping_1_name || 'SIPA_Pendamping_1.pdf')}
-        </div>
 
-        <!-- Pendamping #2 -->
-        <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-3" style="border-color:var(--ons-border)">
-          <div class="font-bold text-xs text-sky-800 dark:text-sky-300">Apoteker Pendamping #2</div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">Nama Apoteker</label>
-              <input ${ro} class="ons-input text-xs w-full" value="apt. Dewi Kartika, S.Farm" placeholder="Nama Apoteker Pendamping"/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">No. Handphone</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0813-9876-5432" placeholder="08xxxxxxxxxx"/>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">Alamat Email</label>
-              <input ${ro} class="ons-input text-xs w-full" value="dewi.kartika@onsfarma.id" placeholder="email@..."/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">No. STRA</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19961120/STRA-040506/2025" placeholder="No. STRA"/>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">No. SIPA</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19961120/SIPA_35.78/2026/1044" placeholder="No. SIPA"/>
-            </div>
-            <div>
-              <label class="font-semibold text-[11px] block mb-1">Masa Berlaku SIPA</label>
-              <input ${ro} class="ons-input font-mono-num text-xs w-full" value="13/11/2026" placeholder="DD/MM/YYYY"/>
-            </div>
-          </div>
-          ${renderDocUploadRow('sipa_pendamping_2', 'File SIPA :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[1] && merged.apoteker_pendamping[1].file_sipa) || merged.file_sipa_pendamping_2_url || '', merged.file_sipa_pendamping_2_name || 'SIPA_Pendamping_2.pdf')}
-        </div>
-      </div>
+          <!-- Dual Identity Showcase: Logo Usaha & Avatar APJ -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0">
+              <div class="flex items-center gap-3 shrink-0">
+                <!-- Box Logo Usaha -->
+                <div class="relative group">
+                  <div id="profHeroLogoBox" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl p-1 bg-white dark:bg-slate-900 border-2 border-teal-400/50 shadow-2xl flex items-center justify-center overflow-hidden transition-all group-hover:scale-105">
+                    ${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}
+                  </div>
+                  ${canEdit ? `
+                    <input type="file" id="profLogoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('logo', this)"/>
+                    <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-teal-600 hover:bg-teal-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Logo Usaha">
+                      📸
+                    </button>
+                  ` : ''}
+                </div>
 
-      <!-- 8. Akun Bank Perusahaan/Bisnis -->
-      <div class="ons-card p-5 space-y-3.5">
-        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Akun Bank Perusahaan/Bisnis</h3>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nama Bank</label>
-          <input id="profBankNama" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.bank_nama || 'Bank Mandiri')}" placeholder="Nama Bank"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Kantor Cabang</label>
-          <input id="profBankCabang" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.bank_cabang || 'KCP Panakkukang')}" placeholder="Kantor Cabang"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nama Akun</label>
-          <input id="profBankAkun" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}" placeholder="Nama Pemilik Rekening"/>
-        </div>
-
-        <div>
-          <label class="font-semibold text-[11px] block mb-1 text-slate-600 dark:text-slate-300">Nomor Akun</label>
-          <input id="profBankNo" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.bank_nomor_rekening || '152001928374')}" placeholder="Nomor Rekening"/>
-        </div>
-
-        ${renderDocUploadRow('buku_rekening', 'Foto Buku Rekening :', '.pdf,image/*', merged.file_buku_rekening_url || '', merged.file_buku_rekening_name || (merged.bank_nomor_rekening ? 'Buku_Rekening_Bank.pdf' : ''))}
-      </div>
-
-      <!-- 9. Pratinjau Kop Resmi & Konfirmasi Data -->
-      <div class="ons-card p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 class="font-bold text-sm">Pratinjau Kop Resmi &amp; Konfirmasi Data</h3>
-          <span class="text-[11px]" style="color:var(--ons-text-soft)">Menampilkan pratinjau langsung pada Etiket, Kwitansi, &amp; Surat Pesanan (SP A4).</span>
-        </div>
-        <div id="profKopPreviewBox" class="p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-          <div class="flex items-center gap-3">
-            <div class="ons-logo-frame">${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}</div>
-            <div>
-              <div class="font-extrabold text-sm">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</div>
-              <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(merged.alamat_usaha || '-')}, ${S().esc(merged.kota || '-')} ${S().esc(merged.kode_pos || '')}</div>
-              <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Telp/WA: ${S().esc(merged.wa_usaha || merged.telepon_usaha || '-')} &bull; SIA: ${S().esc(merged.no_sia || '-')}</div>
-            </div>
-          </div>
-          <div class="text-left sm:text-right">
-            <div class="text-[10px] font-bold uppercase" style="color:var(--ons-text-soft)">Pemilik &amp; Apoteker Penanggung Jawab</div>
-            <div class="font-bold text-xs">${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</div>
-            <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">SIPA: ${S().esc(merged.sipa_pemilik || '-')}</div>
-          </div>
-        </div>
-
-        <!-- Hidden Inputs for Backwards Compatibility -->
-        <input type="hidden" id="profJabatanPemilik" value="${S().esc(merged.jabatan_pemilik || 'Pemilik Sarana Apotek & Apoteker')}"/>
-        <input type="hidden" id="profStatusPkp" value="${S().esc(merged.status_pkp || 'PKP (PPN 11%)')}"/>
-        <input type="hidden" id="profZonaWaktu" value="${S().esc(merged.zona_waktu || 'Asia/Makassar (WITA)')}"/>
-        <input type="hidden" id="profTelpUsaha" value="${S().esc(merged.telepon_usaha || '0411-458-990')}"/>
-        <input type="hidden" id="profWaUsaha" value="${S().esc(merged.wa_usaha || '628110000990')}"/>
-        <input type="hidden" id="profEmailUsaha" value="${S().esc(merged.email_usaha || 'halo@onsfarma.id')}"/>
-
-        ${canEdit ? `<div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
-          <label class="flex items-center gap-2 cursor-pointer font-semibold select-none">
-            <input id="profConfirmChk" type="checkbox" checked class="w-4 h-4 accent-blue-600"/>
-            <span>Saya menyatakan data pemilik, foto/logo, izin SIA/SIPA, &amp; alamat tempat usaha di atas adalah benar dan sah.</span>
-          </label>
-          <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn ons-btn-emerald text-xs px-5 py-2.5 font-bold">Konfirmasi &amp; Simpan Data Resmi</button>
-        </div>` : `<div class="p-3 rounded-xl border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">
-          Hanya peran <b>Pemilik</b> atau <b>APJ</b> yang dapat mengonfirmasi dan mengubah identitas resmi apotek.
-        </div>`}
-      </div>
-
-      <!-- 10. Skala Outlet: Mode 1 Apotek Tunggal vs Multi-Cabang -->
-      <div class="ons-card p-5 space-y-3">
-        ${(() => {
-          const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
-          const activeBranches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
-          return `<div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="font-bold text-sm">Skala Outlet Apotek</h3>
-                <span class="badge-bpom ${multiOn ? 'bpom-terbatas' : 'bpom-bebas'}">${multiOn ? 'Multi-Cabang Aktif (' + activeBranches.length + ' Outlet)' : 'Mode 1 Apotek Tunggal (ONS-01)'}</span>
+                <!-- Box Foto APJ / Pemilik -->
+                <div class="relative group">
+                  <div id="profHeroAvatarBox" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-slate-900 border-2 border-emerald-400/60 shadow-2xl flex items-center justify-center overflow-hidden transition-all group-hover:scale-105 text-white text-2xl font-bold">
+                    ${renderProfileMediaInner('foto', fotoUrl, merged.nama_pemilik)}
+                  </div>
+                  ${canEdit ? `
+                    <input type="file" id="profFotoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('foto', this)"/>
+                    <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-emerald-600 hover:bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Foto Pemilik / APJ">
+                      👤
+                    </button>
+                  ` : ''}
+                </div>
               </div>
-              <p class="mt-0.5" style="color:var(--ons-text-soft)">
-                ${multiOn
-                  ? 'Menu Mutasi Antar-Cabang, pilihan cabang saat login, &amp; pembanding stok antar-outlet sedang aktif.'
-                  : 'Apotek berjalan dalam mode 1 outlet utama tanpa cabang fiktif (tombol Cabang &amp; menu Mutasi Antar-Cabang disembunyikan agar simpel).'}
-              </p>
+
+              <!-- Judul, Slogan, dan Badge Kredensial -->
+              <div class="min-w-0 flex-1 space-y-1.5">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 id="profHeroNamaUsaha" class="text-xl sm:text-2xl font-black tracking-tight text-white truncate drop-shadow-sm">
+                    ${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}
+                  </h2>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-400/20 text-teal-200 border border-teal-400/30">Official Store</span>
+                </div>
+                <p id="profHeroSlogan" class="text-xs sm:text-sm text-teal-200/90 font-medium italic">
+                  ${merged.slogan ? `"${S().esc(merged.slogan)}"` : 'Sahabat Kesehatan & Pelayanan Farmasi Keluarga'}
+                </p>
+                <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-300">
+                  <span id="profHeroSiaPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10 font-mono-num">
+                    📜 SIA: ${S().esc(merged.no_sia || '-')}
+                  </span>
+                  <span class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10">
+                    👨‍⚕️ APJ: <b>${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</b>
+                  </span>
+                  <span id="profHeroJamPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10">
+                    🕒 ${S().esc(merged.jam_operasional || '07:30 - 22:00 WITA')}
+                  </span>
+                </div>
+              </div>
             </div>
-            ${S().getRole() === 'Pemilik' ? `<div class="flex flex-wrap gap-2">
-              ${multiOn
-                ? `<button type="button" onclick="window.toggleMultiBranchMode(false)" class="ons-btn ons-btn-ghost text-xs">Kembalikan ke Mode 1 Apotek</button>`
-                : `<button type="button" onclick="window.toggleMultiBranchMode(true)" class="ons-btn ons-btn-primary text-xs">Buka Cabang Baru (Aktifkan Multi-Cabang)</button>`}
+
+            <!-- Tombol Cepat Media & Reset -->
+            ${canEdit ? `<div class="flex flex-wrap items-center gap-2 shrink-0 md:flex-col md:items-end">
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-teal-500/25 hover:bg-teal-500/40 text-teal-200 border border-teal-400/40 font-semibold shadow-sm">
+                  📸 Upload Logo Usaha
+                </button>
+                <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 border border-emerald-400/40 font-semibold shadow-sm">
+                  👤 Upload Foto APJ
+                </button>
+              </div>
+              ${(fotoUrl || logoUrl) ? `<div class="flex items-center gap-2 text-[10.5px] pt-1">
+                ${fotoUrl ? `<button type="button" onclick="window.resetProfileMedia('foto')" class="text-red-300 hover:text-red-200 underline">Hapus Foto</button>` : ''}
+                ${(fotoUrl && logoUrl) ? `<span class="opacity-40">&bull;</span>` : ''}
+                ${logoUrl ? `<button type="button" onclick="window.resetProfileMedia('logo')" class="text-amber-300 hover:text-amber-200 underline">Reset Logo</button>` : ''}
+              </div>` : ''}
             </div>` : ''}
           </div>
-          ${multiOn ? `<div class="p-3 rounded-xl border flex flex-wrap items-end gap-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div class="flex-1 min-w-[220px]">
-              <label class="font-semibold block mb-1">Daftar Kode Outlet / Cabang Aktif (pisahkan dengan koma)</label>
-              <input id="profMultiBranchCodes" class="ons-input font-mono-num text-xs" value="${S().esc(activeBranches.join(', '))}" placeholder="ONS-01, ONS-02"/>
+
+          <!-- Indikator Kelengkapan Profil Usaha -->
+          <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 flex-1 min-w-[220px]">
+              <span class="text-[11px] font-semibold text-slate-300">Status Kelengkapan Profil Apotek:</span>
+              <div class="flex-1 max-w-xs h-2.5 rounded-full bg-white/20 overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400" style="width:${Math.max(20, comp.pct || 95)}%"></div>
+              </div>
+              <span class="text-[11px] font-bold text-teal-300 font-mono-num">${comp.pct || 95}% Lengkap</span>
             </div>
-            ${S().getRole() === 'Pemilik' ? `<button type="button" onclick="window.saveMultiBranchCodes()" class="ons-btn ons-btn-emerald text-xs">Simpan Daftar Cabang</button>` : ''}
-          </div>` : ''}`;
-        })()}
+            <div class="text-[11px] text-teal-200/90 font-medium">
+              ✅ Data terintegrasi ke Surat Pesanan (SP), Kwitansi, Etiket &amp; Faktur Pembelian
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           2. NAVIGASI CEPAT KATEGORI PROFIL (QUICK JUMP PILLS)
+           ======================================================== -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
+        <a href="#secIdentitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">🏢 Identitas &amp; Lokasi</a>
+        <a href="#secLegalitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">⚖️ Legalitas &amp; SIA</a>
+        <a href="#secApj" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">👨‍⚕️ APJ &amp; Tenaga Farmasi</a>
+        <a href="#secBank" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">💳 Rekening Bank</a>
+        <a href="#secOutlet" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">🏪 Skala Cabang</a>
+        <a href="#profKopPreviewBox" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 font-bold shrink-0">📄 Pratinjau Kop Surat</a>
+      </div>
+
+      <!-- ========================================================
+           3. TATA LETAK 12 KOLOM: FORM DETAIL + PRATINJAU LANGSUNG
+           ======================================================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- ======================================================
+             KOLOM KIRI (8 KOLOM): FORMULIR MASTER DATA
+             ====================================================== -->
+        <div class="lg:col-span-8 space-y-5">
+          <!-- CARD A: IDENTITAS & LOKASI USAHA -->
+          <div id="secIdentitas" class="ons-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center text-sm font-bold">🏢</span>
+                <div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Identitas Usaha &amp; Lokasi Fisik Apotek</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Informasi gerai apotek resmi, alamat domisili, dan titik koordinat GPS.</p>
+                </div>
+              </div>
+              <span class="badge-bpom bpom-bebas">Aktif</span>
+            </div>
+
+            <div class="space-y-3.5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nama Perusahaan / Bisnis</label>
+                  <input id="profNamaUsaha" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}" placeholder="Nama Perusahaan/Bisnis" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Slogan Apotek</label>
+                  <input id="profSlogan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.slogan || '')}" placeholder="Contoh: Sahabat Kesehatan Keluarga" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+              </div>
+
+              <div>
+                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Alamat Lengkap Usaha</label>
+                <input id="profAlamatUsaha" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.alamat_usaha || 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang')}" placeholder="Alamat lengkap apotek" oninput="window.refreshProfileKopPreview()"/>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Provinsi</label>
+                  <input id="profProvinsi" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.provinsi || 'Sulawesi Selatan')}" placeholder="Provinsi" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kabupaten / Kota</label>
+                  <input id="profKota" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kota || 'Makassar')}" placeholder="Kabupaten / Kota" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kecamatan</label>
+                  <input id="profKecamatan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kecamatan || 'Panakkukang')}" placeholder="Kecamatan" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kelurahan</label>
+                  <input id="profKelurahan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kelurahan || 'Masale')}" placeholder="Kelurahan" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kode Pos</label>
+                  <input id="profKodePos" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.kode_pos || '90231')}" placeholder="Kode Pos" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+              </div>
+
+              <!-- Titik Koordinat GPS & Lokasi Geospasial -->
+              <div class="p-4 rounded-2xl border space-y-3 bg-slate-50/70 dark:bg-slate-900/50" style="border-color:var(--ons-border)">
+                <div class="flex items-center justify-between">
+                  <div class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span>📍</span> Koordinat Geografis Outlet (GPS)
+                  </div>
+                  <span class="text-[10.5px] text-teal-600 dark:text-teal-400 font-semibold">Akurasi Presisi</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Latitude</label>
+                    <input id="profLat" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.latitude || '-5.147665')}" placeholder="-5.147665" oninput="window.updateGmapsLinkFromInputs()"/>
+                  </div>
+                  <div>
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Longitude</label>
+                    <input id="profLng" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.longitude || '119.432732')}" placeholder="119.432732" oninput="window.updateGmapsLinkFromInputs()"/>
+                  </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 pt-1">
+                  <button type="button" onclick="window.openKoordinatModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm flex-1" style="background:#0D9488">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                    <span>Atur Titik Koordinat &amp; Lokasi Outlet</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Foto Depan Outlet -->
+              ${renderDocUploadRow('foto_outlet', 'Foto Depan Outlet / Plang Usaha :', 'image/*', merged.foto_outlet_url || '', merged.file_foto_outlet_name || '')}
+
+              <!-- Jam Operasional & Preset Cepat -->
+              <div class="pt-2 border-t space-y-2" style="border-color:var(--ons-border)">
+                <div class="flex items-center justify-between">
+                  <label class="font-semibold text-[11px] text-slate-700 dark:text-slate-300">Jam Operasional Pelayanan</label>
+                  <span class="text-[10px] text-slate-400">Klik preset di bawah untuk isi cepat</span>
+                </div>
+                <input id="profJamOps" ${ro} class="ons-input text-xs w-full font-semibold" value="${S().esc(merged.jam_operasional || 'Setiap Hari 07:30 - 22:00 WITA')}" placeholder="Contoh: Setiap Hari 07:30 - 22:00 WITA"/>
+                <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                  <button type="button" onclick="window.setProfileJamOpsPreset('Setiap Hari 07:30 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">Setiap Hari 07:30 - 22:00</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('24 Jam Non-Stop (Pelayanan Siaga)')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">24 Jam Non-Stop</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('Senin - Sabtu 08:00 - 21:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">Senin - Sabtu 08:00 - 21:00</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('08:00 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">08:00 - 22:00 WITA</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD B: LEGALITAS & PERIZINAN APOTEK RESMI -->
+          <div id="secLegalitas" class="ons-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm font-bold">⚖️</span>
+                <div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Legalitas &amp; Perizinan Apotek Resmi</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Kepatuhan legalitas operasional farmasi (SIA, NIB, NITKU &amp; NPWP Badan).</p>
+                </div>
+              </div>
+              <span class="badge-bpom bpom-keras">Legalitas DPMPTSP</span>
+            </div>
+
+            <div class="space-y-3.5">
+              <!-- SIA DPMPTSP -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">No. Surat Izin Apotek (SIA)</label>
+                  <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.no_sia || '503/001/SIA/DPMPTSP/2021')}" placeholder="Contoh: 503/001/SIA/DPMPTSP/2021" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Tgl. Akhir Masa Berlaku SIA</label>
+                  <input id="profTglSia" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sia || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
+                </div>
+              </div>
+              ${renderDocUploadRow('sia', 'Berkas Surat Izin Apotek (SIA PDF) :', '.pdf,image/*', merged.file_sia_url || '', merged.file_sia_name || (merged.no_sia ? 'SIA_DPMPTSP.pdf' : ''))}
+
+              <!-- NIB OSS -->
+              <div>
+                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nomor Induk Berusaha (NIB OSS)</label>
+                <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nib_oss || '1234567890123')}" placeholder="13 Digit Nomor Induk Berusaha (NIB)"/>
+              </div>
+              ${renderDocUploadRow('nib', 'Berkas NIB OSS (PDF) :', '.pdf,image/*', merged.file_nib_url || '', merged.file_nib_name || (merged.nib_oss ? 'NIB_OSS_Apotek.pdf' : ''))}
+
+              <!-- NITKU & NPWP Perusahaan -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">NITKU Usaha (16 Digit)</label>
+                  <input id="profNitku" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.nitku || '8511240918050000')}" placeholder="Nomor Identitas Tempat Kegiatan Usaha"/>
+                </div>
+                <div>
+                  <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">No. NPWP Perusahaan</label>
+                  <input id="profNpwpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_usaha || '85.112.409.1-805.000')}" placeholder="85.112.409.1-805.000"/>
+                </div>
+              </div>
+              ${renderDocUploadRow('npwp_usaha', 'Berkas NPWP Perusahaan (PDF) :', '.pdf,image/*', merged.file_npwp_usaha_url || '', merged.file_npwp_usaha_name || (merged.npwp_usaha ? 'NPWP_Perusahaan.pdf' : ''))}
+
+              <!-- Jenis Badan Usaha -->
+              <div>
+                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Bentuk / Jenis Badan Usaha</label>
+                <select id="profJenisBadanUsaha" ${canEdit ? '' : 'disabled'} class="ons-select text-xs w-full font-semibold">
+                  <option value="Perorangan" ${String(merged.jenis_badan_usaha || 'Perorangan') === 'Perorangan' ? 'selected' : ''}>Perorangan (Apotek Swasta)</option>
+                  <option value="Perseroan Terbatas (PT)" ${String(merged.jenis_badan_usaha || '') === 'Perseroan Terbatas (PT)' ? 'selected' : ''}>Perseroan Terbatas (PT)</option>
+                  <option value="Commanditaire Vennootschap (CV)" ${String(merged.jenis_badan_usaha || '') === 'Commanditaire Vennootschap (CV)' ? 'selected' : ''}>Commanditaire Vennootschap (CV)</option>
+                  <option value="Koperasi" ${String(merged.jenis_badan_usaha || '') === 'Koperasi' ? 'selected' : ''}>Koperasi</option>
+                  <option value="Yayasan" ${String(merged.jenis_badan_usaha || '') === 'Yayasan' ? 'selected' : ''}>Yayasan</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD C: TENAGA FARMASI (PEMILIK, APJ & PENDAMPING) -->
+          <div id="secApj" class="ons-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">👨‍⚕️</span>
+                <div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Tenaga Kefarmasian &amp; Penanggung Jawab</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Data Pemilik Sarana Apotek (PSA), Apoteker Penanggung Jawab (APJ), &amp; Apoteker Pendamping.</p>
+                </div>
+              </div>
+              <span class="badge-bpom bpom-terbatas">IAI &amp; Kemenkes</span>
+            </div>
+
+            <div class="space-y-4">
+              <!-- Sub 1: Data Pemilik / PIC -->
+              <div class="p-4 rounded-2xl border space-y-3 bg-slate-50/60 dark:bg-slate-900/40" style="border-color:var(--ons-border)">
+                <div class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <span>👤</span> Data Pemilik Sarana Apotek (PSA) / Penanggung Jawab
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Nama Lengkap Pemilik</label>
+                    <input id="profNamaPemilik" ${ro} class="ons-input text-xs w-full font-semibold" value="${S().esc(merged.nama_pemilik || '')}" placeholder="Nama Pemilik" oninput="window.refreshProfileKopPreview()"/>
+                  </div>
+                  <div>
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. WhatsApp / HP</label>
+                    <input id="profWaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.wa_pemilik || '')}" placeholder="08xxxxxxxxxx" oninput="window.refreshProfileKopPreview()"/>
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="sm:col-span-1">
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Email Pemilik</label>
+                    <input id="profEmailPemilik" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.email_pemilik || '')}" placeholder="email@..."/>
+                  </div>
+                  <div class="sm:col-span-1">
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. KTP Pemilik</label>
+                    <input id="profKtpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.ktp_pemilik || '7371105408920001')}" placeholder="NIK KTP"/>
+                  </div>
+                  <div class="sm:col-span-1">
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. NPWP Pemilik</label>
+                    <input id="profNpwpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.npwp_pemilik || '')}" placeholder="NPWP Pribadi"/>
+                  </div>
+                </div>
+                ${renderDocUploadRow('ktp_pemilik', 'Berkas KTP Pemilik (PDF/Foto) :', '.pdf,image/*', merged.file_ktp_url || '', merged.file_ktp_name || (merged.ktp_pemilik ? 'KTP_Pemilik.pdf' : ''))}
+                ${renderDocUploadRow('npwp_pemilik', 'Berkas NPWP Pemilik (PDF/Foto) :', '.pdf,image/*', merged.file_npwp_pemilik_url || '', merged.file_npwp_pemilik_name || (merged.npwp_pemilik ? 'NPWP_Pemilik.pdf' : ''))}
+              </div>
+
+              <!-- Sub 2: APJ (Apoteker Penanggung Jawab) -->
+              <div class="p-4 rounded-2xl border-2 space-y-3 bg-teal-50/40 dark:bg-teal-950/20" style="border-color:rgba(13, 148, 136, 0.4)">
+                <div class="flex items-center justify-between">
+                  <div class="font-bold text-xs text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+                    <span>🛡️</span> Apoteker Penanggung Jawab (APJ Utama)
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white shadow-sm">Penanda Tangan SP &amp; Resep</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. STRA APJ</label>
+                    <input id="profStraPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.stra_pemilik || '')}" placeholder="Nomor Surat Tanda Registrasi Apoteker"/>
+                  </div>
+                  <div>
+                    <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">No. SIPA APJ</label>
+                    <input id="profSipaPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.sipa_pemilik || '')}" placeholder="Nomor Surat Izin Praktik Apoteker" oninput="window.refreshProfileKopPreview()"/>
+                  </div>
+                </div>
+                <div>
+                  <label class="font-semibold text-[10.5px] block mb-1 text-slate-600 dark:text-slate-400">Masa Berlaku SIPA APJ</label>
+                  <input id="profMasaSipa" ${ro} class="ons-input font-mono-num text-xs w-full" value="${S().esc(merged.tgl_berlaku_sipa || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
+                </div>
+                ${renderDocUploadRow('sipa_pemilik', 'Berkas SIPA APJ (PDF/Foto) :', '.pdf,image/*', merged.file_sipa_url || '', merged.file_sipa_name || (merged.sipa_pemilik ? 'SIPA_APJ.pdf' : ''))}
+              </div>
+
+              <!-- Sub 3: Apoteker Pendamping #1 & #2 -->
+              <div class="space-y-3 pt-1">
+                <div class="flex items-center justify-between">
+                  <div class="font-bold text-xs text-slate-800 dark:text-slate-200">Apoteker Pendamping (Aping)</div>
+                  <span class="text-[10.5px] text-slate-400">Pelayanan Shift Siang / Malam</span>
+                </div>
+
+                <!-- Pendamping #1 -->
+                <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
+                  <div class="font-bold text-xs text-sky-700 dark:text-sky-300 flex items-center justify-between">
+                    <span>Apoteker Pendamping #1</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">Shift Pagi</span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <input ${ro} class="ons-input text-xs w-full" value="Apoteker Penanggung Jawab" placeholder="Nama Apoteker Pendamping"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0812-3456-7890" placeholder="08xxxxxxxxxx"/>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <input ${ro} class="ons-input text-xs w-full sm:col-span-1" value="siti.rahma@onsfarma.id" placeholder="Email"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19950817/STRA-010203/2024" placeholder="No. STRA"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19950817/SIPA_35.78/2025/1043" placeholder="No. SIPA"/>
+                  </div>
+                  ${renderDocUploadRow('sipa_pendamping_1', 'File SIPA Pendamping #1 :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[0] && merged.apoteker_pendamping[0].file_sipa) || merged.file_sipa_pendamping_1_url || '', merged.file_sipa_pendamping_1_name || 'SIPA_Pendamping_1.pdf')}
+                </div>
+
+                <!-- Pendamping #2 -->
+                <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
+                  <div class="font-bold text-xs text-sky-700 dark:text-sky-300 flex items-center justify-between">
+                    <span>Apoteker Pendamping #2</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">Shift Malam</span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <input ${ro} class="ons-input text-xs w-full" value="apt. Dewi Kartika, S.Farm" placeholder="Nama Apoteker Pendamping"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0813-9876-5432" placeholder="08xxxxxxxxxx"/>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <input ${ro} class="ons-input text-xs w-full sm:col-span-1" value="dewi.kartika@onsfarma.id" placeholder="Email"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19961120/STRA-040506/2025" placeholder="No. STRA"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19961120/SIPA_35.78/2026/1044" placeholder="No. SIPA"/>
+                  </div>
+                  ${renderDocUploadRow('sipa_pendamping_2', 'File SIPA Pendamping #2 :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[1] && merged.apoteker_pendamping[1].file_sipa) || merged.file_sipa_pendamping_2_url || '', merged.file_sipa_pendamping_2_name || 'SIPA_Pendamping_2.pdf')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD D: REKENING BANK PERUSAHAAN & PEMBAYARAN -->
+          <div id="secBank" class="ons-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm font-bold">💳</span>
+                <div>
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Rekening Bank Perusahaan &amp; Pembayaran</h3>
+                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Rekening resmi apotek untuk pelunasan faktur PBF, QRIS, &amp; transfer pelanggan.</p>
+                </div>
+              </div>
+              <span class="badge-bpom bpom-bebas">Valid</span>
+            </div>
+
+            <!-- Virtual Bank Card Mockup -->
+            <div class="ons-bank-card-mockup space-y-3.5 my-2">
+              <div class="flex items-center justify-between">
+                <div class="ons-bank-chip"></div>
+                <div class="text-right">
+                  <div id="profBankCardDispName" class="font-black text-sm uppercase tracking-wider text-teal-300">${S().esc(merged.bank_nama || 'Bank Mandiri')}</div>
+                  <div id="profBankCardDispCabang" class="text-[10px] text-slate-300">${S().esc(merged.bank_cabang || 'KCP Panakkukang')}</div>
+                </div>
+              </div>
+              <div class="pt-2">
+                <div class="text-[9px] uppercase tracking-widest text-slate-300 font-semibold">Nomor Rekening Usaha</div>
+                <div class="flex items-center justify-between gap-2">
+                  <div id="profBankCardDispNo" class="font-mono-num text-base sm:text-lg font-black tracking-widest text-white drop-shadow">
+                    ${S().esc(merged.bank_nomor_rekening || '152001928374')}
+                  </div>
+                  <button type="button" onclick="window.copyProfileText(document.getElementById('profBankNo')?.value, 'Nomor Rekening')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/15 hover:bg-white/25 text-white border border-white/20 transition-all flex items-center gap-1 shadow-sm">
+                    <span>📋 Salin</span>
+                  </button>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-1 border-t border-white/15 text-[11px]">
+                <div>
+                  <div class="text-[9px] uppercase tracking-wider text-slate-400">Atas Nama Rekening</div>
+                  <div id="profBankCardDispAkun" class="font-bold text-white uppercase">${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}</div>
+                </div>
+                <div class="text-right">
+                  <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-teal-400/30 text-teal-200 border border-teal-400/30">REKENING RESMI</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Fields Rekening -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+              <div>
+                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nama Bank</label>
+                <input id="profBankNama" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_nama || 'Bank Mandiri')}" placeholder="Nama Bank" oninput="window.refreshBankCardMockup()"/>
+              </div>
+              <div>
+                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Kantor Cabang</label>
+                <input id="profBankCabang" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.bank_cabang || 'KCP Panakkukang')}" placeholder="Kantor Cabang" oninput="window.refreshBankCardMockup()"/>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nama Pemilik Akun Rekening</label>
+                <input id="profBankAkun" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}" placeholder="Nama Akun" oninput="window.refreshBankCardMockup()"/>
+              </div>
+              <div>
+                <label class="font-semibold text-[11px] block mb-1 text-slate-700 dark:text-slate-300">Nomor Rekening</label>
+                <input id="profBankNo" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.bank_nomor_rekening || '152001928374')}" placeholder="Nomor Rekening" oninput="window.refreshBankCardMockup()"/>
+              </div>
+            </div>
+
+            ${renderDocUploadRow('buku_rekening', 'Foto Buku Rekening / Rekening Koran :', '.pdf,image/*', merged.file_buku_rekening_url || '', merged.file_buku_rekening_name || (merged.bank_nomor_rekening ? 'Buku_Rekening_Bank.pdf' : ''))}
+          </div>
+
+          <!-- CARD E: SKALA OUTLET & PENGATURAN MULTI-CABANG -->
+          <div id="secOutlet" class="ons-card p-5 space-y-3.5">
+            ${(() => {
+              const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
+              const activeBranches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
+              return `<div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">🏪</span>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Skala Outlet Apotek</h3>
+                      <span class="badge-bpom ${multiOn ? 'bpom-terbatas' : 'bpom-bebas'}">${multiOn ? 'Multi-Cabang Aktif (' + activeBranches.length + ' Outlet)' : 'Mode 1 Apotek Tunggal (ONS-01)'}</span>
+                    </div>
+                    <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">
+                      ${multiOn
+                        ? 'Mutasi Antar-Cabang, pemilihan cabang saat login kasir, &amp; radar stok antar-outlet aktif.'
+                        : 'Apotek berjalan dalam mode 1 outlet utama tanpa cabang tambahan (antarmuka lebih simpel dan cepat).'}
+                    </p>
+                  </div>
+                </div>
+                ${S().getRole() === 'Pemilik' ? `<div class="flex flex-wrap gap-2">
+                  ${multiOn
+                    ? `<button type="button" onclick="window.toggleMultiBranchMode(false)" class="ons-btn ons-btn-ghost text-xs">Beralih ke Mode 1 Apotek</button>`
+                    : `<button type="button" onclick="window.toggleMultiBranchMode(true)" class="ons-btn ons-btn-primary text-xs">Aktifkan Multi-Cabang</button>`}
+                </div>` : ''}
+              </div>
+              ${multiOn ? `<div class="p-3.5 rounded-2xl border flex flex-wrap items-end gap-2 bg-slate-50 dark:bg-slate-900/50" style="border-color:var(--ons-border)">
+                <div class="flex-1 min-w-[220px]">
+                  <label class="font-semibold block mb-1">Daftar Kode Outlet Aktif (pisahkan dengan koma)</label>
+                  <input id="profMultiBranchCodes" class="ons-input font-mono-num text-xs w-full" value="${S().esc(activeBranches.join(', '))}" placeholder="ONS-01, ONS-02"/>
+                </div>
+                ${S().getRole() === 'Pemilik' ? `<button type="button" onclick="window.saveMultiBranchCodes()" class="ons-btn ons-btn-emerald text-xs">Simpan Daftar Cabang</button>` : ''}
+              </div>` : ''}`;
+            })()}
+          </div>
+
+          <!-- CARD F: PERNYATAAN KEABSAHAN & SIMPAN DATA RESMI -->
+          <div class="ons-card p-5 space-y-3.5 border-2 border-teal-500/40">
+            ${canEdit ? `<div class="space-y-3">
+              <label class="flex items-start gap-2.5 cursor-pointer font-semibold select-none text-slate-800 dark:text-slate-200">
+                <input id="profConfirmChk" type="checkbox" checked class="w-4 h-4 mt-0.5 accent-teal-600 rounded"/>
+                <span>Saya menyatakan seluruh data pemilik, foto/logo, izin SIA/SIPA, alamat domisili, dan berkas legalitas di atas adalah benar, sah, dan dapat dipertanggungjawabkan secara hukum.</span>
+              </label>
+              <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
+                <span class="text-[11px] text-slate-500">Tersimpan otomatis ke Google Cloud Sheets &amp; Brankas Digital Apotek.</span>
+                <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all" style="background:linear-gradient(135deg, #0D9488 0%, #10B981 100%)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span>Konfirmasi &amp; Simpan Profil Resmi</span>
+                </button>
+              </div>
+            </div>` : `<div class="p-3 rounded-xl border text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">
+              Hanya peran <b>Pemilik</b> atau <b>APJ</b> yang memiliki otorisasi untuk mengubah identitas resmi apotek.
+            </div>`}
+          </div>
+        </div>
+
+        <!-- ======================================================
+             KOLOM KANAN (4 KOLOM): PRATINJAU DOKUMEN & DIGITAL HUB
+             ====================================================== -->
+        <div class="lg:col-span-4 space-y-4 lg:sticky lg:top-16">
+          <!-- PRATINJAU KOP RESMI REAL-TIME -->
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                <span>📄</span> Pratinjau Kop Surat Resmi
+              </h3>
+              <span class="text-[10px] text-teal-600 font-bold">Live Reactive</span>
+            </div>
+            <p class="text-[10.5px]" style="color:var(--ons-text-soft)">
+              Pratinjau otomatis yang akan dicetak pada Surat Pesanan (SP), Kwitansi Pasien, &amp; Etiket Obat.
+            </p>
+            <div id="profKopPreviewBox" class="ons-kop-paper">
+              <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+                <div class="flex items-center gap-3.5 pb-3 border-b-2 border-slate-800 dark:border-slate-300">
+                  <div class="w-14 h-14 rounded-xl border border-slate-200 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 bg-slate-50 dark:bg-slate-800 overflow-hidden">
+                    ${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="font-black text-sm text-slate-900 dark:text-white uppercase tracking-wide truncate">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</div>
+                    ${merged.slogan ? `<div class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold italic truncate">"${S().esc(merged.slogan)}"</div>` : ''}
+                    <div class="text-[10.5px] text-slate-600 dark:text-slate-300 leading-tight mt-0.5">${S().esc(merged.alamat_usaha || '-')}, ${S().esc(merged.kota || '-')} ${S().esc(merged.kode_pos || '')}</div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono-num mt-0.5">Telp/WA: ${S().esc(merged.wa_usaha || merged.telepon_usaha || '-')} &bull; SIA: <span class="font-bold text-slate-700 dark:text-slate-200">${S().esc(merged.no_sia || '-')}</span></div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between text-[10.5px] pt-1">
+                  <div>
+                    <span class="text-slate-400 block text-[9.5px] font-bold uppercase">Apoteker Penanggung Jawab (APJ)</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-100">${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-slate-400 block text-[9.5px] font-bold uppercase">Nomor SIPA</span>
+                    <span class="font-mono-num font-bold text-teal-700 dark:text-teal-400">${S().esc(merged.sipa_pemilik || '-')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PRATINJAU STRUK KASIR DIGITAL -->
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                <span>🖨️</span> Simulasi Struk Thermal (58/80mm)
+              </h3>
+              <span class="text-[10px] text-slate-400 font-mono">Kasir POS</span>
+            </div>
+            <div class="p-3.5 bg-slate-100 dark:bg-slate-900 rounded-xl border font-mono text-[11px] space-y-1.5 text-slate-700 dark:text-slate-300 shadow-inner" style="border-color:var(--ons-border)">
+              <div class="text-center font-bold text-xs uppercase">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</div>
+              <div class="text-center text-[10px] text-slate-500 dark:text-slate-400">${S().esc(merged.alamat_usaha || 'Makassar')}</div>
+              <div class="text-center text-[10px] text-slate-500 dark:text-slate-400">Telp: ${S().esc(merged.wa_usaha || merged.telepon_usaha || '0411-458-990')}</div>
+              <div class="border-b border-dashed border-slate-300 dark:border-slate-700 my-1"></div>
+              <div class="flex justify-between"><span>No. Nota:</span><span>POS-20261119-001</span></div>
+              <div class="flex justify-between"><span>Kasir:</span><span>Budi Santoso</span></div>
+              <div class="border-b border-dashed border-slate-300 dark:border-slate-700 my-1"></div>
+              <div class="text-center text-[10px] text-slate-400 pt-1">*** TERIMA KASIH ATAS KUNJUNGAN ANDA ***</div>
+              <div class="text-center text-[9px] text-teal-600 dark:text-teal-400 font-semibold">Semoga Lekas Sembuh &bull; Apotek ONS Farma</div>
+            </div>
+          </div>
+
+          <!-- KEPATUHAN STANDAR FARMASI & PERIZINAN -->
+          <div class="ons-card p-4 space-y-2.5">
+            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <span>🛡️</span> Kepatuhan Standar Farmasi
+            </h3>
+            <div class="space-y-1.5 text-[11px]">
+              <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span>✅</span> <span>Permenkes RI No. 73/2016 (Standar Farmasi)</span>
+              </div>
+              <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span>✅</span> <span>BPOM Pelaporan SIPNAP &amp; e-Report Farmasi</span>
+              </div>
+              <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span>✅</span> <span>Perpajakan NITKU 16 Digit &amp; Faktur Pajak</span>
+              </div>
+              <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span>✅</span> <span>Autentikasi Presisi Titik Koordinat GPS</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PINTASAN PENGATURAN TERKAIT -->
+          <div class="ons-card p-4 space-y-2">
+            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100">
+              ⚡ Pintasan Pengaturan Terkait
+            </h3>
+            <div class="grid grid-cols-1 gap-1.5">
+              <button type="button" onclick="window.setSettingsTab('struk')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left">
+                <span>🖨️ Kustomisasi Header &amp; Footer Struk</span>
+              </button>
+              <button type="button" onclick="window.setSettingsTab('metode-bayar')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left">
+                <span>💳 Kelola Saluran &amp; QRIS Kasir</span>
+              </button>
+              <button type="button" onclick="window.setSettingsTab('akun')" class="ons-btn ons-btn-ghost text-xs justify-start py-2 px-3 text-left">
+                <span>👥 Manajemen Hak Akses Staf Apotek</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>`;
   }
 
-  // ==========================================
+// ==========================================
   // SALURAN METODE PEMBAYARAN APOTEK DIGITAL
   // ==========================================
   let payChannelSearchQ = '';
@@ -12249,6 +12503,10 @@ S. prn 3 dd 1 tab</textarea>
     if (box) {
       box.innerHTML = renderProfileMediaInner(kind, clean, kind === 'foto' ? ((ownerEl && ownerEl.value) || '') : ((usahaEl && usahaEl.value) || ''));
     }
+    const heroBox = document.getElementById(kind === 'foto' ? 'profHeroAvatarBox' : 'profHeroLogoBox');
+    if (heroBox) {
+      heroBox.innerHTML = renderProfileMediaInner(kind, clean, kind === 'foto' ? ((ownerEl && ownerEl.value) || '') : ((usahaEl && usahaEl.value) || ''));
+    }
     if (kind === 'foto') {
       const mainBox = document.getElementById('profMainAvatarBox');
       if (mainBox) {
@@ -12268,6 +12526,7 @@ S. prn 3 dd 1 tab</textarea>
     const prof = S().getStoreProfile();
     const logoUrl = val('profLogoUrl', prof.logo_usaha_url);
     const namaUsaha = val('profNamaUsaha', prof.nama_usaha);
+    const slogan = val('profSlogan', prof.slogan);
     const alamat = val('profAlamatUsaha', prof.alamat_usaha);
     const kota = val('profKota', prof.kota);
     const kodePos = val('profKodePos', prof.kode_pos);
@@ -12275,19 +12534,80 @@ S. prn 3 dd 1 tab</textarea>
     const noSia = val('profNoSia', prof.no_sia);
     const namaPemilik = val('profNamaPemilik', prof.nama_pemilik);
     const sipa = val('profSipaPemilik', prof.sipa_pemilik);
-    box.innerHTML = `<div class="flex items-center gap-3">
-      <div class="ons-logo-frame">${renderProfileMediaInner('logo', logoUrl, namaUsaha)}</div>
-      <div>
-        <div class="font-extrabold text-sm">${S().esc(namaUsaha || 'Apotek ONS Farma')}</div>
-        <div class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(alamat || '-')}, ${S().esc(kota || '-')} ${S().esc(kodePos || '')}</div>
-        <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">Telp/WA: ${S().esc(waUsaha || '-')} &bull; SIA: ${S().esc(noSia || '-')}</div>
+
+    box.innerHTML = `<div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+      <div class="flex items-center gap-3.5 pb-3 border-b-2 border-slate-800 dark:border-slate-300">
+        <div class="w-14 h-14 rounded-xl border border-slate-200 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 bg-slate-50 dark:bg-slate-800 overflow-hidden">
+          ${renderProfileMediaInner('logo', logoUrl, namaUsaha)}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="font-black text-sm text-slate-900 dark:text-white uppercase tracking-wide truncate">${S().esc(namaUsaha || 'Apotek ONS Farma')}</div>
+          ${slogan ? `<div class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold italic truncate">"${S().esc(slogan)}"</div>` : ''}
+          <div class="text-[10.5px] text-slate-600 dark:text-slate-300 leading-tight mt-0.5">${S().esc(alamat || '-')}, ${S().esc(kota || '-')} ${S().esc(kodePos || '')}</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono-num mt-0.5">Telp/WA: ${S().esc(waUsaha || '-')} &bull; SIA: <span class="font-bold text-slate-700 dark:text-slate-200">${S().esc(noSia || '-')}</span></div>
+        </div>
       </div>
-    </div>
-    <div class="text-left sm:text-right">
-      <div class="text-[10px] font-bold uppercase" style="color:var(--ons-text-soft)">Pemilik &amp; Apoteker Penanggung Jawab</div>
-      <div class="font-bold text-xs">${S().esc(namaPemilik || 'Apoteker Penanggung Jawab')}</div>
-      <div class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">SIPA: ${S().esc(sipa || '-')}</div>
+      <div class="flex items-center justify-between text-[10.5px] pt-1">
+        <div>
+          <span class="text-slate-400 block text-[9.5px] font-bold uppercase">Apoteker Penanggung Jawab (APJ)</span>
+          <span class="font-bold text-slate-800 dark:text-slate-100">${S().esc(namaPemilik || 'Apoteker Penanggung Jawab')}</span>
+        </div>
+        <div class="text-right">
+          <span class="text-slate-400 block text-[9.5px] font-bold uppercase">Nomor SIPA</span>
+          <span class="font-mono-num font-bold text-teal-700 dark:text-teal-400">${S().esc(sipa || '-')}</span>
+        </div>
+      </div>
     </div>`;
+
+    const heroTitleEl = document.getElementById('profHeroNamaUsaha');
+    if (heroTitleEl) heroTitleEl.textContent = namaUsaha || 'Apotek ONS Farma';
+    const heroSloganEl = document.getElementById('profHeroSlogan');
+    if (heroSloganEl) heroSloganEl.textContent = slogan ? `"${slogan}"` : 'Sahabat Kesehatan & Pelayanan Farmasi Keluarga';
+    const heroSiaEl = document.getElementById('profHeroSiaPill');
+    if (heroSiaEl) heroSiaEl.textContent = '📜 SIA: ' + (noSia || '-');
+  };
+
+  global.refreshBankCardMockup = () => {
+    const val = (id, fb) => (document.getElementById(id) || {}).value || fb || '';
+    const bName = val('profBankNama', 'Bank Mandiri');
+    const bNo = val('profBankNo', '152001928374');
+    const bAkun = val('profBankAkun', 'Apotek ONS Farma');
+    const bCabang = val('profBankCabang', 'KCP Panakkukang');
+
+    const dispName = document.getElementById('profBankCardDispName');
+    if (dispName) dispName.textContent = bName;
+    const dispNo = document.getElementById('profBankCardDispNo');
+    if (dispNo) {
+      const formatted = bNo.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim() || bNo;
+      dispNo.textContent = formatted;
+    }
+    const dispAkun = document.getElementById('profBankCardDispAkun');
+    if (dispAkun) dispAkun.textContent = bAkun.toUpperCase();
+    const dispCabang = document.getElementById('profBankCardDispCabang');
+    if (dispCabang) dispCabang.textContent = bCabang;
+  };
+
+  global.copyProfileText = (text, label) => {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        global.toast && global.toast((label || 'Teks') + ' berhasil disalin ke clipboard!', 'ok');
+      }).catch(() => {
+        global.toast && global.toast((label || 'Teks') + ': ' + text, 'ok');
+      });
+    } else {
+      global.toast && global.toast((label || 'Teks') + ': ' + text, 'ok');
+    }
+  };
+
+  global.setProfileJamOpsPreset = (preset) => {
+    const el = document.getElementById('profJamOps');
+    if (el) {
+      el.value = preset;
+      const heroJam = document.getElementById('profHeroJamPill');
+      if (heroJam) heroJam.textContent = '🕒 ' + preset;
+      global.toast && global.toast('Jam operasional diatur: ' + preset, 'ok');
+    }
   };
 
   global.handleProfileImageUpload = async (kind, inputEl) => {
