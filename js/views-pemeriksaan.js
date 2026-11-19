@@ -467,6 +467,7 @@
     lines.push('--------------------------------');
     lines.push('Petugas   : ' + (rec.petugas || 'Apoteker / Tim Farmasi'));
     lines.push('_Simpan pesan ini sebagai arsip riwayat kesehatan Anda. Konsultasi obat GRATIS bersama Apoteker kami._');
+    lines.push('_*Catatan Resmi (Permenkes No. 73/2016):* Skrining kesehatan POCT & pemantauan kepatuhan terapi obat di apotek, bukan diagnosa medis mutlak pengganti dokter._');
     return lines.join('\n');
   }
 
@@ -874,9 +875,10 @@
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <h2 class="text-lg font-extrabold tracking-tight">Pemeriksaan Kesehatan Pasien (POCT)</h2>
-            <span class="badge-bpom bpom-bebas">Tren Riwayat &bull; Triage Risiko &bull; Kirim WA</span>
+            <span class="badge-bpom bpom-bebas">Permenkes RI No. 73/2016</span>
+            <span class="badge-bpom bpom-terbatas">Standar Pelayanan Farmasi Klinik</span>
           </div>
-          <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Catat cek Tensi (plus MAP), Gula Darah, Kolesterol Total &amp; Asam Urat, pantau perbandingan kunjungan sebelumnya, cetak kartu/rekap A4, &amp; kirim langsung ke WhatsApp pasien.</p>
+          <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Standar Skrining &amp; Edukasi Kefarmasian: Tensi &amp; MAP, Gula Darah, Kolesterol, Asam Urat, Antropometri IMT, Triage Red-Flag Rujukan Dokter, Catatan SOAP, &amp; KIE WhatsApp.</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="window.openPemeriksaanModal('','${S().esc(subTab)}')" class="ons-btn ons-btn-primary text-xs min-h-[42px]">+ Catat ${S().esc(focusLabels[subTab] || 'Pemeriksaan Baru')}</button>
@@ -986,7 +988,8 @@
                       <button onclick="window.openPatientTrendDrawer('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Grafik Tren & Riwayat Pasien">Tren</button>
                       <button onclick="window.kirimWaLangsungPemeriksaan('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2" ${!hasWa ? 'title="Lengkapi No. WA di Pratinjau"' : 'title="Kirim laporan langsung ke WhatsApp pasien"'}>Kirim WA</button>
                       <button onclick="window.openWaPemeriksaanModal('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Pratinjau</button>
-                      <button onclick="window.printPemeriksaanCard('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Cetak</button>
+                      <button onclick="window.printPemeriksaanCard('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Kartu Hasil Pasien">Cetak</button>
+                      ${(stEv.tingkat_risiko === 'KRISIS_RUJUK' || stEv.tingkat_risiko === 'TINGGI_KONTROL' || stEv.status_tensi === 'KRISIS_HIPERTENSI' || stEv.status_gula === 'HIPOGLIKEMIA') ? `<button onclick="window.printSuratRujukanDokter('${S().esc(r.id_periksa)}')" class="ons-btn text-[11px] py-1 px-2 font-bold text-white bg-red-600 hover:bg-red-700" title="Cetak Surat Pengantar Rujukan Dokter / IGD">🚨 Rujukan</button>` : `<button onclick="window.printSuratRujukanDokter('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Cetak Surat Pengantar Rujukan Dokter">Rujukan</button>`}
                       <button onclick="window.catatSoapDariPemeriksaan('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Simpan ke Catatan SOAP Konseling Apoteker">SOAP</button>
                       <button onclick="window.openPemeriksaanModal('${S().esc(r.id_periksa)}','${S().esc(subTab)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Ubah</button>
                       ${isSupv ? `<button onclick="window.deletePemeriksaanRecord('${S().esc(r.id_periksa)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>` : ''}
@@ -1219,7 +1222,8 @@
       saran_apoteker: val('chkSaran'),
       tgl_kontrol: val('chkTglKontrol'),
       biaya_cek: Number(val('chkBiaya') || 0),
-      petugas: (S().AppState.user && S().AppState.user.nama_lengkap) || 'Apoteker / Tim Farmasi',
+      petugas: val('chkPetugas') || (S().AppState.user && S().AppState.user.nama_lengkap) || 'Apoteker Penanggung Jawab',
+      informed_consent: document.getElementById('chkInformedConsent') ? document.getElementById('chkInformedConsent').checked : true,
       tanggal: new Date().toISOString()
     };
     const ev = evalPemeriksaanStatus(draft);
@@ -1606,6 +1610,7 @@
         </div>
         <div id="chkGaugeTensi"></div>
         <div id="chkTensiCalcInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Normal L &amp; P sama: &lt;120/80 mmHg &bull; Nadi: 60–100 bpm.</div>
+        <div class="text-[10.5px] p-1.5 rounded bg-blue-500/10 text-blue-800 dark:text-blue-300 border border-blue-500/20">📋 <b>SOP Tensi (Permenkes):</b> Pasien istirahat duduk rileks min. 5 menit, manset sejajar jantung, tanpa bicara/gerak.</div>
       </div>`;
     }
     if (key === 'gula') {
@@ -1630,6 +1635,7 @@
         </div>
         <div id="chkGaugeGula"></div>
         <div id="chkGulaRefInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Normal L/P: GDS &amp; 2JPP &lt;140 &bull; GDP Puasa 70–99 &bull; Hipo &lt;70 mg/dL.</div>
+        <div class="text-[10.5px] p-1.5 rounded bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">📋 <b>SOP POCT Gula:</b> Alkohol swab 70% kering, lancet steril 1x pakai, seka tetes darah ke-1, gunakan tetes ke-2.</div>
       </div>`;
     }
     if (key === 'kolesterol') {
@@ -1644,6 +1650,7 @@
         </div>
         <div id="chkGaugeKol"></div>
         <div id="chkKolRefInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Dewasa L/P: Optimal &lt;200 &bull; Waspada 200–239 &bull; Tinggi ≥240 mg/dL.</div>
+        <div class="text-[10.5px] p-1.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">📋 <b>SOP Kolesterol:</b> Disarankan puasa 9–12 jam (hanya air putih). Pastikan volume tetes darah memenuhi strip POCT.</div>
       </div>`;
     }
     return `<div id="chkCard_asam_urat" class="ons-card p-3.5 space-y-2 ${ringCls('asam_urat')}">
@@ -1657,6 +1664,7 @@
       </div>
       <div id="chkGaugeAu"></div>
       <div id="chkAuRefInfo" class="text-[11px]" style="color:var(--ons-text-soft)">Normal menyesuaikan gender: L 3.4–7.0 &bull; P 2.4–6.0 mg/dL.</div>
+      <div class="text-[10.5px] p-1.5 rounded bg-purple-500/10 text-purple-800 dark:text-purple-300 border border-purple-500/20">📋 <b>SOP Asam Urat:</b> Cocokkan chip kode kalibrasi POCT. Hindari asupan tinggi purin mendadak sebelum pemeriksaan.</div>
     </div>`;
   }
 
@@ -1772,6 +1780,13 @@
                 <input id="chkTerapi" oninput="window.updatePemeriksaanPreview()" class="ons-input" value="${S().esc((seedIdentity && seedIdentity.riwayat_terapi) || '')}" placeholder="cth. Amlodipine 10mg, Metformin 500mg"/>
               </div>
             </div>
+            <!-- Informed Consent Standar Permenkes RI No. 73/2016 -->
+            <div class="p-2.5 rounded-lg border text-[11px] flex items-start gap-2 bg-emerald-500/10 border-emerald-500/25 text-emerald-900 dark:text-emerald-200">
+              <input id="chkInformedConsent" type="checkbox" checked class="accent-emerald-600 mt-0.5"/>
+              <label for="chkInformedConsent" class="cursor-pointer leading-relaxed">
+                <b>Informed Consent (Permenkes 73/2016):</b> Pasien / keluarga telah diberi penjelasan tentang tujuan &amp; prosedur skrining POCT mandiri serta menyetujui tindakan dan edukasi kefarmasian.
+              </label>
+            </div>
             <div id="chkBaselineLiveSlot"></div>
           </div>
 
@@ -1829,6 +1844,10 @@
                     ${quickTarifList.map((amt) => `<button type="button" data-tarif-amt="${amt}" onclick="window.setTarifQuickPemeriksaan(${amt})" class="px-2.5 py-1 rounded-lg border text-[11px] font-mono-num font-semibold hover:bg-blue-500/10" style="border-color:var(--ons-border)">${amt === 0 ? 'Gratis' : ('Rp ' + (amt / 1000) + 'rb')}</button>`).join('')}
                   </div>
                   <div class="text-[10px] mt-1" style="color:var(--ons-text-soft)">Jika &gt; Rp 0 pada cek baru, masuk otomatis ke Jurnal Kas Layanan Klinis.</div>
+                </div>
+                <div>
+                  <label class="font-semibold block mb-1">Apoteker / Petugas Pemeriksa (Sesuai SIPA)</label>
+                  <input id="chkPetugas" oninput="window.updatePemeriksaanPreview()" class="ons-input" value="${S().esc((rec && rec.petugas) || (S().AppState.user && S().AppState.user.nama_lengkap) || 'Apoteker Penanggung Jawab')}" placeholder="Nama Apoteker / SIPA"/>
                 </div>
               </div>
             </div>
@@ -2262,8 +2281,154 @@
       ${rec.saran_apoteker ? `<div style="font-size:12px;background:#ECFDF5;border:1px solid #A7F3D0;padding:10px;border-radius:8px;margin-bottom:10px;"><b>Saran &amp; Edukasi Apoteker:</b><br/>${S().esc(rec.saran_apoteker)}</div>` : ''}
       ${rec.tgl_kontrol ? `<div style="font-size:12px;background:#EFF6FF;border:1px solid #BFDBFE;padding:8px 10px;border-radius:8px;margin-bottom:12px;"><b>Jadwal Kontrol Berikutnya:</b> ${S().esc(rec.tgl_kontrol)}</div>` : ''}
 
-      <div style="font-size:10px;color:#64748B;text-align:center;border-top:1px dashed #CBD5E1;padding-top:8px;">
-        Hasil pemeriksaan cepat (POCT) apotek sebagai skrining kesehatan awal. Konsultasikan ke dokter apabila keluhan berlanjut.
+      <!-- Pengesahan Klinis Permenkes RI No. 73/2016 -->
+      <div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:10px;font-size:11px;">
+        <div style="text-align:center;width:200px;">
+          <div>Pasien / Yang Mewakili,</div>
+          <div style="height:45px;"></div>
+          <div style="border-top:1px solid #94A3B8;padding-top:3px;font-weight:700;">${S().esc(rec.nama_pasien)}</div>
+          <div style="color:#64748B;font-size:9.5px;">Penerima KIE / Informed Consent</div>
+        </div>
+        <div style="text-align:center;width:230px;">
+          <div>${S().esc(prof.kota || 'Makassar')}, ${S().formatTgl(rec.tanggal || new Date().toISOString())}</div>
+          <div style="font-weight:600;">Apoteker Pemeriksa / APJ,</div>
+          <div style="height:45px;"></div>
+          <div style="border-top:1px solid #94A3B8;padding-top:3px;font-weight:700;">${S().esc(rec.petugas || prof.nama_apoteker || 'Apoteker Penanggung Jawab')}</div>
+          <div style="color:#64748B;font-size:9.5px;">SIPA / SIPTTK: ${S().esc(prof.sipa_apoteker || prof.no_sipa || '-')}</div>
+        </div>
+      </div>
+
+      <div style="font-size:9.5px;color:#64748B;text-align:center;border-top:1px dashed #CBD5E1;padding-top:8px;margin-top:12px;line-height:1.5;">
+        <b>KETENTUAN MEDIS &amp; HUKUM (PERMENKES RI NO. 73 TAHUN 2016):</b><br/>
+        Pemeriksaan Point of Care Testing (POCT) di apotek diselenggarakan sebagai skrining awal risiko kesehatan &amp; pemantauan terapi mandiri (Pelayanan Farmasi Klinik). Hasil pemeriksaan ini <u>bukan diagnosa medis definitif</u> pengganti dokter. Apabila terdapat keluhan fisik berlanjut atau hasil di luar rentang normal, silakan berkonsultasi lebih lanjut dengan Dokter.
+      </div>
+    </div>`;
+
+    S().printHtmlZone(html, true);
+  };
+
+  /**
+   * SURAT PENGANTAR RUJUKAN PEMERIKSAAN KESEHATAN APOTEK
+   * Standar Pelayanan Farmasi Klinik (Permenkes RI No. 73 Tahun 2016)
+   */
+  global.printSuratRujukanDokter = (idPeriksa) => {
+    const rec = (S().AppState.pemeriksaanPasien || []).find((x) => x.id_periksa === idPeriksa);
+    if (!rec) {
+      if (window.onsShowWarning) window.onsShowWarning('Data pemeriksaan tidak ditemukan.');
+      return;
+    }
+    const prof = (S().getStoreProfile && S().getStoreProfile()) || {};
+    const stEv = evalPemeriksaanStatus(rec);
+
+    const redReasons = (stEv.red_flag_reasons && stEv.red_flag_reasons.length)
+      ? stEv.red_flag_reasons
+      : ['Hasil pemeriksaan POCT berada di luar rentang aman dan memerlukan pemeriksaan diagnostik / penanganan dokter segera.'];
+
+    const noSurat = 'RUJUK/' + (rec.id_periksa || '000') + '/' + new Date().getFullYear();
+    const tglSurat = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const html = `<div style="max-width:760px;margin:0 auto;font-family:'Times New Roman',Times,serif;color:#0F172A;padding:24px 30px;background:#FFFFFF;line-height:1.6;">
+      <!-- KOP RESMI APOTEK -->
+      <div style="text-align:center;border-bottom:3px double #0F172A;padding-bottom:10px;margin-bottom:14px;">
+        <div style="font-size:18px;font-weight:900;letter-spacing:1px;color:#1E3A8A;">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+        <div style="font-size:11.5px;color:#334155;">${S().esc([prof.alamat_usaha, prof.kota].filter(Boolean).join(', '))} &bull; Telp/WA: ${S().esc(prof.wa_usaha || '-')}</div>
+        <div style="font-size:11px;color:#475569;">No. SIA: ${S().esc(prof.no_sia || '-')} &bull; SIPA APJ: ${S().esc(prof.sipa_apoteker || prof.no_sipa || '-')}</div>
+      </div>
+
+      <!-- JUDUL SURAT -->
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:14.5px;font-weight:800;text-decoration:underline;letter-spacing:0.5px;">SURAT PENGANTAR RUJUKAN PEMERIKSAAN KESEHATAN</div>
+        <div style="font-size:11.5px;color:#475569;">Nomor: ${noSurat}</div>
+      </div>
+
+      <!-- KEPADA -->
+      <div style="margin-bottom:12px;font-size:12.5px;">
+        <div>Kepada Yth.</div>
+        <div style="font-weight:700;">Teman Sejawat Dokter / Dokter Spesialis / Dokter Faskes Terdekat</div>
+        <div>Di Tempat</div>
+      </div>
+
+      <div style="font-size:12.5px;margin-bottom:10px;text-align:justify;">
+        Dengan hormat,<br/>
+        Bersama ini kami menghadapkan pasien dari fasilitas pelayanan kefarmasian kami (Apotek ONS Farma) untuk mendapatkan evaluasi klinis dan penatalaksanaan medis lebih lanjut:
+      </div>
+
+      <!-- DATA PASIEN -->
+      <table style="width:100%;font-size:12px;margin-bottom:12px;border-collapse:collapse;">
+        <tr><td style="width:150px;padding:2px 0;vertical-align:top;"><b>Nama Pasien</b></td><td style="width:10px;">:</td><td><b>${S().esc(rec.nama_pasien)}</b></td></tr>
+        <tr><td style="padding:2px 0;vertical-align:top;">Jenis Kelamin / Usia</td><td>:</td><td>${rec.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki'} / ${rec.usia_tahun ? (rec.usia_tahun + ' Tahun') : '-'}</td></tr>
+        <tr><td style="padding:2px 0;vertical-align:top;">Antropometri</td><td>:</td><td>${rec.berat_badan ? ('BB ' + rec.berat_badan + ' kg') : '-'}, ${rec.tinggi_badan ? ('TB ' + rec.tinggi_badan + ' cm') : '-'} ${stEv.imt_bmi ? ('(IMT ' + stEv.imt_bmi + ' kg/m² - ' + (stEv.status_bmi || 'Normal') + ')') : ''}</td></tr>
+        <tr><td style="padding:2px 0;vertical-align:top;">No. Kontak / WA</td><td>:</td><td>${S().esc(rec.no_wa || '-')}</td></tr>
+        <tr><td style="padding:2px 0;vertical-align:top;">Keluhan Utama</td><td>:</td><td>${S().esc(rec.keluhan_catatan || 'Pemeriksaan / Skrining Kesehatan Mandiri')}</td></tr>
+        <tr><td style="padding:2px 0;vertical-align:top;">Riwayat Terapi Obat</td><td>:</td><td>${S().esc(rec.riwayat_terapi || 'Tidak ada riwayat obat yang dilaporkan')}</td></tr>
+      </table>
+
+      <!-- HASIL SKRINING POCT -->
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:5px;">Hasil Skrining Point of Care Testing (POCT) Apotek:</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:12px;">
+        <thead>
+          <tr style="background:#F1F5F9;text-align:left;">
+            <th style="padding:5px 8px;border:1px solid #94A3B8;">Pemeriksaan</th>
+            <th style="padding:5px 8px;border:1px solid #94A3B8;">Hasil</th>
+            <th style="padding:5px 8px;border:1px solid #94A3B8;">Rujukan Normal</th>
+            <th style="padding:5px 8px;border:1px solid #94A3B8;">Status / Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Number(rec.tensi_sistol || 0) > 0 ? `<tr>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">Tekanan Darah (Tensi)</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;">${rec.tensi_sistol}/${rec.tensi_diastol} mmHg ${rec.nadi_bpm ? ('(Nadi: ' + rec.nadi_bpm + ' bpm)') : ''}</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">&lt; 120/80 mmHg</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;color:${stEv.status_tensi === 'KRISIS_HIPERTENSI' ? '#DC2626' : '#0F172A'};">${metaStatusBadge(rec.status_tensi || stEv.status_tensi).label}</td>
+          </tr>` : ''}
+          ${Number(rec.gula_darah || 0) > 0 ? `<tr>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">Gula Darah (${stEv.gula_jenis || 'GDS'})</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;">${rec.gula_darah} mg/dL</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">${getGulaRefLabel(stEv.gula_jenis)}</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;color:${rec.gula_darah >= 300 || rec.gula_darah < 70 ? '#DC2626' : '#0F172A'};">${metaStatusBadge(rec.status_gula || stEv.status_gula).label}</td>
+          </tr>` : ''}
+          ${Number(rec.kolesterol_total || 0) > 0 ? `<tr>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">Kolesterol Total</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;">${rec.kolesterol_total} mg/dL</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">&lt; 200 mg/dL</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;">${metaStatusBadge(rec.status_kolesterol || stEv.status_kolesterol).label}</td>
+          </tr>` : ''}
+          ${Number(rec.asam_urat || 0) > 0 ? `<tr>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">Asam Urat</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;">${rec.asam_urat} mg/dL</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;">${stEv.jenis_kelamin === 'P' ? '2.4 – 6.0 mg/dL' : '3.4 – 7.0 mg/dL'}</td>
+            <td style="padding:5px 8px;border:1px solid #94A3B8;font-weight:700;">${metaStatusBadge(rec.status_asam_urat || stEv.status_asam_urat).label}</td>
+          </tr>` : ''}
+        </tbody>
+      </table>
+
+      <!-- INDIKASI RUJUKAN -->
+      <div style="background:#FEF2F2;border:1px solid #F87171;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11.5px;">
+        <div style="font-weight:700;color:#991B1B;margin-bottom:2px;">🚨 Temuan Klinis Kritis / Indikasi Rujukan:</div>
+        <ul style="margin:0;padding-left:18px;color:#7F1D1D;">
+          ${redReasons.map((r) => `<li>${S().esc(r)}</li>`).join('')}
+        </ul>
+      </div>
+
+      <!-- TINDAKAN / KIE AWAL -->
+      <div style="font-size:12px;margin-bottom:12px;">
+        <b>Tindakan Awal &amp; KIE di Apotek:</b><br/>
+        ${S().esc(rec.saran_apoteker || 'Pasien telah diistirahatkan, diberikan edukasi gaya hidup & disarankan segera memeriksakan diri ke dokter.')}
+      </div>
+
+      <div style="font-size:12px;margin-bottom:16px;text-align:justify;">
+        Demikian surat pengantar rujukan ini kami sampaikan sesuai Standar Pelayanan Farmasi Klinik (Permenkes RI No. 73 Tahun 2016). Mohon tatalaksana dan penanganan medis lebih lanjut. Atas perhatian dan kerjasama Teman Sejawat Dokter, kami ucapkan terima kasih.
+      </div>
+
+      <!-- TANDA TANGAN -->
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <div style="text-align:center;width:240px;font-size:12px;">
+          <div>${S().esc(prof.kota || 'Makassar')}, ${tglSurat}</div>
+          <div style="font-weight:700;margin-top:2px;">Apoteker Penanggung Jawab (APJ),</div>
+          <div style="height:55px;"></div>
+          <div style="border-top:1px solid #0F172A;padding-top:3px;font-weight:700;">( ${S().esc(rec.petugas || prof.nama_apoteker || 'apt. Apoteker Penanggung Jawab')} )</div>
+          <div style="font-size:11px;color:#475569;">SIPA: ${S().esc(prof.sipa_apoteker || prof.no_sipa || '-')}</div>
+        </div>
       </div>
     </div>`;
 
@@ -2398,6 +2563,7 @@
     buildAutoAdvice,
     getPatientHistory,
     getPreviousCheckup,
-    computeAllDeltas
+    computeAllDeltas,
+    printSuratRujukanDokter
   };
 })(window);

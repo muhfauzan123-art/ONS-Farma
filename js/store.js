@@ -2607,22 +2607,22 @@ window.onsAnimateTab = function(containerEl) {
 
 // Auto-inject animasi ke mainViewSlot saat navigasi (patch ke renderView jika ada)
 (function patchViewTransition() {
+  if (typeof window === 'undefined' || typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
   var mainSlot = document.getElementById('mainViewSlot') || document.getElementById('ons-main-content');
   if (!mainSlot) {
-    // Coba lagi setelah DOM ready
-    document.addEventListener('DOMContentLoaded', function() {
-      var slot = document.getElementById('mainViewSlot') || document.getElementById('ons-main-content');
-      if (slot) {
-        var origInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-        // Soft patch: observer saja
-        var obs = new MutationObserver(function() {
-          slot.classList.remove('ons-view-enter');
-          void slot.offsetWidth;
-          slot.classList.add('ons-view-enter');
-        });
-        obs.observe(slot, { childList: true });
-      }
-    });
+    if (document.addEventListener) {
+      document.addEventListener('DOMContentLoaded', function() {
+        var slot = document.getElementById('mainViewSlot') || document.getElementById('ons-main-content');
+        if (slot && typeof MutationObserver !== 'undefined') {
+          var obs = new MutationObserver(function() {
+            slot.classList.remove('ons-view-enter');
+            void slot.offsetWidth;
+            slot.classList.add('ons-view-enter');
+          });
+          obs.observe(slot, { childList: true });
+        }
+      });
+    }
     return;
   }
   var obs = new MutationObserver(function() {
@@ -2635,6 +2635,7 @@ window.onsAnimateTab = function(containerEl) {
 
 // ===== ITEM #8: KEYBOARD SHORTCUTS =====
 (function initOnsKeyboardShortcuts() {
+  if (typeof window === 'undefined' || typeof document === 'undefined' || !document.addEventListener) return;
   document.addEventListener('keydown', function(e) {
     // Jangan aktif saat mengetik di form
     var tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
