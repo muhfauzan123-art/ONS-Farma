@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.32.0"/>
+  <meta name="application-version" content="v18.33.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.32.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.33.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -1272,6 +1272,10 @@
       window.closeOnsFloatMenu = function () {
         const old = document.getElementById('onsFloatingMenuPortal');
         if (old) old.remove();
+        if (_activeFloatTrigger) {
+          _activeFloatTrigger.classList.remove('is-open', 'ons-dd-active');
+          _activeFloatTrigger.removeAttribute('data-dropdown-open');
+        }
         _activeFloatTrigger = null;
       };
 
@@ -1286,6 +1290,10 @@
         const src = wrap ? wrap.querySelector('.ons-dd-items') : null;
         if (!src) return;
 
+        btnEl.classList.add('is-open', 'ons-dd-active');
+        btnEl.setAttribute('data-dropdown-open', 'true');
+        _activeFloatTrigger = btnEl;
+
         const portal = document.createElement('div');
         portal.id = 'onsFloatingMenuPortal';
         portal.className = 'ons-float-menu';
@@ -1297,7 +1305,6 @@
           }
         });
         document.body.appendChild(portal);
-        _activeFloatTrigger = btnEl;
 
         const r = btnEl.getBoundingClientRect();
         const mw = portal.offsetWidth || 215;
@@ -1345,7 +1352,7 @@
 
           const lbl = document.createElement('span');
           lbl.className = 'ons-subtab-dd-lbl';
-          lbl.textContent = 'Tampilan:';
+          lbl.innerHTML = '📑 <span>TAMPILAN:</span>';
 
           const sel = document.createElement('select');
           sel.className = 'ons-subtab-dd-select';
@@ -1368,7 +1375,7 @@
 
           const meta = document.createElement('span');
           meta.className = 'ons-subtab-dd-meta';
-          meta.textContent = `${activeIdx + 1} / ${btns.length} sub-menu`;
+          meta.textContent = `${activeIdx + 1}/${btns.length} Sub-Menu`;
 
           ddBar.appendChild(left);
           ddBar.appendChild(meta);
