@@ -5341,10 +5341,10 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         <div class="ons-kpi-card is-blue">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Penjualan Tunai (${todayIso})</div>
+              <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Penjualan Tunai (${S().formatEd ? S().formatEd(todayIso) : todayIso})</div>
               <div class="text-xl font-extrabold font-mono-num mt-1 text-blue-600 truncate">${S().rp(sisTunai)}</div>
             </div>
-            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 font-extrabold text-[15px] tracking-tight" aria-hidden="true">Rp</span>
           </div>
           <div class="mt-2.5 pt-2 border-t text-[11px] flex justify-between" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
             <span class="font-semibold">${validToday.length} nota tunai</span>
@@ -5375,7 +5375,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 <div class="text-rose-600 font-bold">&minus; Keluar: ${S().rp(totalKasKeluar)}</div>
               </div>
             </div>
-            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600 font-extrabold text-[15px] tracking-tight" aria-hidden="true">Rp</span>
           </div>
           <div class="mt-2.5 pt-2 border-t text-[11px] flex justify-between items-center" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
             <span>${todayDrawerTx.length} mutasi shift</span>
