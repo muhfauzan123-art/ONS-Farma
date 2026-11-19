@@ -2352,7 +2352,7 @@
         </div>
         <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-purple-500 transition-colors" onclick="navigateView('faktur','pbf')">
           <div class="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Distributor &amp; Mitra</div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-purple-700 dark:text-purple-300">${st.supplierPbf.length} PBF &bull; ${(st.dokterPerujuk || st.masterDokter || []).length || 5} Dokter</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-purple-700 dark:text-purple-300">${st.supplierPbf.length} PBF &bull; ${(st.masterDokter || st.dokterPerujuk || []).length} Dokter</div>
           <div class="text-[10px] text-slate-500 truncate">Jaringan pengadaan apotek</div>
         </div>
       </div>
