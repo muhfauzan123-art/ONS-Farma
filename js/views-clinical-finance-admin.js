@@ -10989,6 +10989,7 @@ S. prn 3 dd 1 tab</textarea>
     const merged = Object.assign({}, prof, { foto_pemilik_url: fotoUrl, logo_usaha_url: logoUrl });
     const comp = S().getProfileCompleteness(merged);
     const ro = canEdit ? '' : 'readonly';
+    const curTheme = (typeof localStorage !== 'undefined' && localStorage.getItem('ons_prof_theme')) || 'royal-blue';
 
     return `<div class="space-y-6 ons-view-enter text-xs">
       <!-- Hidden Elements & Backwards-Compatibility Fields -->
@@ -11036,29 +11037,40 @@ S. prn 3 dd 1 tab</textarea>
       <!-- ========================================================
            1. EXECUTIVE HERO BRANDING & IDENTITY BANNER
            ======================================================== -->
-      <div class="relative overflow-hidden rounded-3xl shadow-xl border border-teal-500/30 text-white" style="background:linear-gradient(135deg, #07253b 0%, #064e3b 45%, #0f172a 100%)">
+      <div id="profHeroBanner" class="relative overflow-hidden rounded-3xl shadow-2xl border text-white transition-all duration-300" style="background:linear-gradient(135deg, #0A192F 0%, #1E3A8A 50%, #0284C7 100%);border-color:rgba(56, 189, 248, 0.3)">
         <!-- Ambient Decorative Glow -->
-        <div class="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-teal-400/10 blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-sky-400/20 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-16 -left-16 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none"></div>
 
         <div class="relative p-5 sm:p-7 space-y-5">
           <!-- Top Tagline & Primary Action Buttons -->
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-teal-500/20 text-teal-300 border border-teal-400/30 shadow-sm backdrop-blur-md">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-500/20 text-sky-200 border border-sky-400/30 shadow-sm backdrop-blur-md">
                 <span>🛡️</span> Fasilitas Pelayanan Kefarmasian Resmi Kemenkes RI
               </span>
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Standar SIA &amp; SIPA Aktif
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SIA &amp; SIPA Terverifikasi
               </span>
             </div>
-            <div class="flex items-center gap-2">
-              <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 transition-all shadow-sm" title="Buka Titik Koordinat GPS di Google Maps">
+
+            <!-- Theme Switcher Pills & Top Actions -->
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- Live Color Palette Switcher -->
+              <div class="flex items-center gap-1 bg-black/30 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/15">
+                <span class="text-[10px] font-bold text-sky-200 mr-1">🎨 Tema:</span>
+                <button type="button" onclick="window.setProfileTheme('royal-blue')" data-theme="royal-blue" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'royal-blue' ? 'bg-blue-600 text-white shadow ring-2 ring-sky-300' : 'text-white/70 hover:text-white'}" title="Tema Medical Royal Blue & Cyan">🔵 Biru</button>
+                <button type="button" onclick="window.setProfileTheme('clean-light')" data-theme="clean-light" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'clean-light' ? 'bg-white text-slate-900 shadow ring-2 ring-white' : 'text-white/70 hover:text-white'}" title="Tema Clean Light White">⚪ Terang</button>
+                <button type="button" onclick="window.setProfileTheme('fresh-emerald')" data-theme="fresh-emerald" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'fresh-emerald' ? 'bg-emerald-600 text-white shadow ring-2 ring-emerald-300' : 'text-white/70 hover:text-white'}" title="Tema Fresh Emerald Farmasi">🟢 Hijau</button>
+                <button type="button" onclick="window.setProfileTheme('midnight-navy')" data-theme="midnight-navy" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'midnight-navy' ? 'bg-slate-800 text-white shadow ring-2 ring-slate-400' : 'text-white/70 hover:text-white'}" title="Tema Deep Midnight Navy">⚫ Gelap</button>
+              </div>
+
+              <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn text-white text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 transition-all shadow-sm" title="Buka Titik Koordinat GPS di Google Maps">
                 <span>🗺️ Google Maps</span>
               </a>
-              <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-bold px-5 py-2 rounded-xl flex items-center gap-1.5 shadow-lg transition-all hover:scale-105 active:scale-95" style="background:linear-gradient(135deg, #0D9488 0%, #10B981 100%)">
+              <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-bold px-4 py-1.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/30 transition-all hover:scale-105 active:scale-95" style="background:linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                <span>Simpan Perubahan</span>
+                <span>Simpan Profil</span>
               </button>
             </div>
           </div>
@@ -11069,12 +11081,12 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex items-center gap-3 shrink-0">
                 <!-- Box Logo Usaha -->
                 <div class="relative group">
-                  <div id="profHeroLogoBox" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl p-1 bg-white dark:bg-slate-900 border-2 border-teal-400/50 shadow-2xl flex items-center justify-center overflow-hidden transition-all group-hover:scale-105">
+                  <div id="profHeroLogoBox" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl p-1 bg-white dark:bg-slate-900 border-2 border-sky-400/50 shadow-2xl flex items-center justify-center overflow-hidden transition-all group-hover:scale-105">
                     ${renderProfileMediaInner('logo', logoUrl, merged.nama_usaha)}
                   </div>
                   ${canEdit ? `
                     <input type="file" id="profLogoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('logo', this)"/>
-                    <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-teal-600 hover:bg-teal-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Logo Usaha">
+                    <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Logo Usaha">
                       📸
                     </button>
                   ` : ''}
@@ -11082,12 +11094,12 @@ S. prn 3 dd 1 tab</textarea>
 
                 <!-- Box Foto APJ / Pemilik -->
                 <div class="relative group">
-                  <div id="profHeroAvatarBox" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-slate-900 border-2 border-emerald-400/60 shadow-2xl flex items-center justify-center overflow-hidden transition-all group-hover:scale-105 text-white text-2xl font-bold">
+                  <div id="profHeroAvatarBox" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-slate-900 border-2 border-sky-400/60 shadow-2xl flex items-center justify-center overflow-hidden transition-all group-hover:scale-105 text-white text-2xl font-bold">
                     ${renderProfileMediaInner('foto', fotoUrl, merged.nama_pemilik)}
                   </div>
                   ${canEdit ? `
                     <input type="file" id="profFotoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('foto', this)"/>
-                    <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-emerald-600 hover:bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Foto Pemilik / APJ">
+                    <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Foto Pemilik / APJ">
                       👤
                     </button>
                   ` : ''}
@@ -11100,19 +11112,19 @@ S. prn 3 dd 1 tab</textarea>
                   <h2 id="profHeroNamaUsaha" class="text-xl sm:text-2xl font-black tracking-tight text-white truncate drop-shadow-sm">
                     ${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}
                   </h2>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-400/20 text-teal-200 border border-teal-400/30">Official Store</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-400/25 text-sky-200 border border-sky-400/40">Official Store</span>
                 </div>
-                <p id="profHeroSlogan" class="text-xs sm:text-sm text-teal-200/90 font-medium italic">
+                <p id="profHeroSlogan" class="text-xs sm:text-sm text-sky-100 font-medium italic">
                   ${merged.slogan ? `"${S().esc(merged.slogan)}"` : 'Sahabat Kesehatan & Pelayanan Farmasi Keluarga'}
                 </p>
-                <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-300">
-                  <span id="profHeroSiaPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10 font-mono-num">
+                <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-200">
+                  <span id="profHeroSiaPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/15 font-mono-num">
                     📜 SIA: ${S().esc(merged.no_sia || '-')}
                   </span>
-                  <span class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10">
+                  <span class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/15">
                     👨‍⚕️ APJ: <b>${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</b>
                   </span>
-                  <span id="profHeroJamPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10">
+                  <span id="profHeroJamPill" class="inline-flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/15">
                     🕒 ${S().esc(merged.jam_operasional || '07:30 - 22:00 WITA')}
                   </span>
                 </div>
@@ -11122,10 +11134,10 @@ S. prn 3 dd 1 tab</textarea>
             <!-- Tombol Cepat Media & Reset -->
             ${canEdit ? `<div class="flex flex-wrap items-center gap-2 shrink-0 md:flex-col md:items-end">
               <div class="flex items-center gap-1.5">
-                <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-teal-500/25 hover:bg-teal-500/40 text-teal-200 border border-teal-400/40 font-semibold shadow-sm">
+                <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 font-semibold shadow-sm">
                   📸 Upload Logo Usaha
                 </button>
-                <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 border border-emerald-400/40 font-semibold shadow-sm">
+                <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-blue-500/25 hover:bg-blue-500/40 text-blue-200 border border-blue-400/40 font-semibold shadow-sm">
                   👤 Upload Foto APJ
                 </button>
               </div>
@@ -11140,13 +11152,13 @@ S. prn 3 dd 1 tab</textarea>
           <!-- Indikator Kelengkapan Profil Usaha -->
           <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 flex-1 min-w-[220px]">
-              <span class="text-[11px] font-semibold text-slate-300">Status Kelengkapan Profil Apotek:</span>
+              <span class="text-[11px] font-semibold text-sky-100">Status Kelengkapan Profil Apotek:</span>
               <div class="flex-1 max-w-xs h-2.5 rounded-full bg-white/20 overflow-hidden">
-                <div class="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400" style="width:${Math.max(20, comp.pct || 95)}%"></div>
+                <div class="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-emerald-400" style="width:${Math.max(20, comp.pct || 95)}%"></div>
               </div>
-              <span class="text-[11px] font-bold text-teal-300 font-mono-num">${comp.pct || 95}% Lengkap</span>
+              <span class="text-[11px] font-bold text-sky-300 font-mono-num">${comp.pct || 95}% Lengkap</span>
             </div>
-            <div class="text-[11px] text-teal-200/90 font-medium">
+            <div class="text-[11px] text-sky-100 font-medium">
               ✅ Data terintegrasi ke Surat Pesanan (SP), Kwitansi, Etiket &amp; Faktur Pembelian
             </div>
           </div>
@@ -11157,12 +11169,12 @@ S. prn 3 dd 1 tab</textarea>
            2. NAVIGASI CEPAT KATEGORI PROFIL (QUICK JUMP PILLS)
            ======================================================== -->
       <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
-        <a href="#secIdentitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">🏢 Identitas &amp; Lokasi</a>
-        <a href="#secLegalitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">⚖️ Legalitas &amp; SIA</a>
-        <a href="#secApj" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">👨‍⚕️ APJ &amp; Tenaga Farmasi</a>
-        <a href="#secBank" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">💳 Rekening Bank</a>
-        <a href="#secOutlet" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold shrink-0">🏪 Skala Cabang</a>
-        <a href="#profKopPreviewBox" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 font-bold shrink-0">📄 Pratinjau Kop Surat</a>
+        <a href="#secIdentitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">🏢 Identitas &amp; Lokasi</a>
+        <a href="#secLegalitas" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">⚖️ Legalitas &amp; SIA</a>
+        <a href="#secApj" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">👨‍⚕️ APJ &amp; Tenaga Farmasi</a>
+        <a href="#secBank" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">💳 Rekening Bank</a>
+        <a href="#secOutlet" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 font-semibold shrink-0">🏪 Skala Cabang</a>
+        <a href="#profKopPreviewBox" class="ons-btn ons-btn-ghost text-xs px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-sky-300 font-bold shrink-0 border border-blue-200 dark:border-blue-800">📄 Pratinjau Kop Surat</a>
       </div>
 
       <!-- ========================================================
@@ -11177,7 +11189,7 @@ S. prn 3 dd 1 tab</textarea>
           <div id="secIdentitas" class="ons-card p-5 space-y-4">
             <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
               <div class="flex items-center gap-2.5">
-                <span class="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center text-sm font-bold">🏢</span>
+                <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">🏢</span>
                 <div>
                   <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Identitas Usaha &amp; Lokasi Fisik Apotek</h3>
                   <p class="text-[11px]" style="color:var(--ons-text-soft)">Informasi gerai apotek resmi, alamat domisili, dan titik koordinat GPS.</p>
@@ -11235,7 +11247,7 @@ S. prn 3 dd 1 tab</textarea>
                   <div class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <span>📍</span> Koordinat Geografis Outlet (GPS)
                   </div>
-                  <span class="text-[10.5px] text-teal-600 dark:text-teal-400 font-semibold">Akurasi Presisi</span>
+                  <span class="text-[10.5px] text-blue-600 dark:text-sky-400 font-semibold">Akurasi Presisi</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -11248,7 +11260,7 @@ S. prn 3 dd 1 tab</textarea>
                   </div>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 pt-1">
-                  <button type="button" onclick="window.openKoordinatModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm flex-1" style="background:#0D9488">
+                  <button type="button" onclick="window.openKoordinatModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm flex-1" style="background:#2563EB">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
                     <span>Atur Titik Koordinat &amp; Lokasi Outlet</span>
                   </button>
@@ -11266,10 +11278,10 @@ S. prn 3 dd 1 tab</textarea>
                 </div>
                 <input id="profJamOps" ${ro} class="ons-input text-xs w-full font-semibold" value="${S().esc(merged.jam_operasional || 'Setiap Hari 07:30 - 22:00 WITA')}" placeholder="Contoh: Setiap Hari 07:30 - 22:00 WITA"/>
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                  <button type="button" onclick="window.setProfileJamOpsPreset('Setiap Hari 07:30 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">Setiap Hari 07:30 - 22:00</button>
-                  <button type="button" onclick="window.setProfileJamOpsPreset('24 Jam Non-Stop (Pelayanan Siaga)')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">24 Jam Non-Stop</button>
-                  <button type="button" onclick="window.setProfileJamOpsPreset('Senin - Sabtu 08:00 - 21:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">Senin - Sabtu 08:00 - 21:00</button>
-                  <button type="button" onclick="window.setProfileJamOpsPreset('08:00 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700">08:00 - 22:00 WITA</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('Setiap Hari 07:30 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">Setiap Hari 07:30 - 22:00</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('24 Jam Non-Stop (Pelayanan Siaga)')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">24 Jam Non-Stop</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('Senin - Sabtu 08:00 - 21:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">Senin - Sabtu 08:00 - 21:00</button>
+                  <button type="button" onclick="window.setProfileJamOpsPreset('08:00 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700">08:00 - 22:00 WITA</button>
                 </div>
               </div>
             </div>
@@ -11384,12 +11396,12 @@ S. prn 3 dd 1 tab</textarea>
               </div>
 
               <!-- Sub 2: APJ (Apoteker Penanggung Jawab) -->
-              <div class="p-4 rounded-2xl border-2 space-y-3 bg-teal-50/40 dark:bg-teal-950/20" style="border-color:rgba(13, 148, 136, 0.4)">
+              <div class="p-4 rounded-2xl border-2 space-y-3 bg-blue-50/50 dark:bg-blue-950/25" style="border-color:rgba(59, 130, 246, 0.4)">
                 <div class="flex items-center justify-between">
-                  <div class="font-bold text-xs text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+                  <div class="font-bold text-xs text-blue-900 dark:text-sky-300 flex items-center gap-1.5">
                     <span>🛡️</span> Apoteker Penanggung Jawab (APJ Utama)
                   </div>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white shadow-sm">Penanda Tangan SP &amp; Resep</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white shadow-sm">Penanda Tangan SP &amp; Resep</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -11417,9 +11429,9 @@ S. prn 3 dd 1 tab</textarea>
 
                 <!-- Pendamping #1 -->
                 <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
-                  <div class="font-bold text-xs text-sky-700 dark:text-sky-300 flex items-center justify-between">
+                  <div class="font-bold text-xs text-blue-700 dark:text-sky-300 flex items-center justify-between">
                     <span>Apoteker Pendamping #1</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">Shift Pagi</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-sky-300">Shift Pagi</span>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <input ${ro} class="ons-input text-xs w-full" value="Apoteker Penanggung Jawab" placeholder="Nama Apoteker Pendamping"/>
@@ -11435,9 +11447,9 @@ S. prn 3 dd 1 tab</textarea>
 
                 <!-- Pendamping #2 -->
                 <div class="p-3.5 rounded-xl border bg-slate-50 dark:bg-slate-900/40 space-y-2.5" style="border-color:var(--ons-border)">
-                  <div class="font-bold text-xs text-sky-700 dark:text-sky-300 flex items-center justify-between">
+                  <div class="font-bold text-xs text-blue-700 dark:text-sky-300 flex items-center justify-between">
                     <span>Apoteker Pendamping #2</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">Shift Malam</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-sky-300">Shift Malam</span>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <input ${ro} class="ons-input text-xs w-full" value="apt. Dewi Kartika, S.Farm" placeholder="Nama Apoteker Pendamping"/>
@@ -11458,7 +11470,7 @@ S. prn 3 dd 1 tab</textarea>
           <div id="secBank" class="ons-card p-5 space-y-4">
             <div class="flex items-center justify-between border-b pb-3" style="border-color:var(--ons-border)">
               <div class="flex items-center gap-2.5">
-                <span class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm font-bold">💳</span>
+                <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">💳</span>
                 <div>
                   <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Rekening Bank Perusahaan &amp; Pembayaran</h3>
                   <p class="text-[11px]" style="color:var(--ons-text-soft)">Rekening resmi apotek untuk pelunasan faktur PBF, QRIS, &amp; transfer pelanggan.</p>
@@ -11472,28 +11484,28 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex items-center justify-between">
                 <div class="ons-bank-chip"></div>
                 <div class="text-right">
-                  <div id="profBankCardDispName" class="font-black text-sm uppercase tracking-wider text-teal-300">${S().esc(merged.bank_nama || 'Bank Mandiri')}</div>
-                  <div id="profBankCardDispCabang" class="text-[10px] text-slate-300">${S().esc(merged.bank_cabang || 'KCP Panakkukang')}</div>
+                  <div id="profBankCardDispName" class="font-black text-sm uppercase tracking-wider text-sky-200">${S().esc(merged.bank_nama || 'Bank Mandiri')}</div>
+                  <div id="profBankCardDispCabang" class="text-[10px] text-sky-100/80">${S().esc(merged.bank_cabang || 'KCP Panakkukang')}</div>
                 </div>
               </div>
               <div class="pt-2">
-                <div class="text-[9px] uppercase tracking-widest text-slate-300 font-semibold">Nomor Rekening Usaha</div>
+                <div class="text-[9px] uppercase tracking-widest text-sky-200/80 font-semibold">Nomor Rekening Usaha</div>
                 <div class="flex items-center justify-between gap-2">
                   <div id="profBankCardDispNo" class="font-mono-num text-base sm:text-lg font-black tracking-widest text-white drop-shadow">
                     ${S().esc(merged.bank_nomor_rekening || '152001928374')}
                   </div>
-                  <button type="button" onclick="window.copyProfileText(document.getElementById('profBankNo')?.value, 'Nomor Rekening')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/15 hover:bg-white/25 text-white border border-white/20 transition-all flex items-center gap-1 shadow-sm">
+                  <button type="button" onclick="window.copyProfileText(document.getElementById('profBankNo')?.value, 'Nomor Rekening')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-all flex items-center gap-1 shadow-sm">
                     <span>📋 Salin</span>
                   </button>
                 </div>
               </div>
               <div class="flex items-center justify-between pt-1 border-t border-white/15 text-[11px]">
                 <div>
-                  <div class="text-[9px] uppercase tracking-wider text-slate-400">Atas Nama Rekening</div>
+                  <div class="text-[9px] uppercase tracking-wider text-sky-200/80">Atas Nama Rekening</div>
                   <div id="profBankCardDispAkun" class="font-bold text-white uppercase">${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}</div>
                 </div>
                 <div class="text-right">
-                  <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-teal-400/30 text-teal-200 border border-teal-400/30">REKENING RESMI</span>
+                  <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-400/25 text-sky-200 border border-sky-400/35">REKENING RESMI</span>
                 </div>
               </div>
             </div>
@@ -11531,7 +11543,7 @@ S. prn 3 dd 1 tab</textarea>
               const activeBranches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
               return `<div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-2.5">
-                  <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">🏪</span>
+                  <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">🏪</span>
                   <div>
                     <div class="flex items-center gap-2">
                       <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Skala Outlet Apotek</h3>
@@ -11561,15 +11573,15 @@ S. prn 3 dd 1 tab</textarea>
           </div>
 
           <!-- CARD F: PERNYATAAN KEABSAHAN & SIMPAN DATA RESMI -->
-          <div class="ons-card p-5 space-y-3.5 border-2 border-teal-500/40">
+          <div class="ons-card p-5 space-y-3.5 border-2 border-blue-500/30">
             ${canEdit ? `<div class="space-y-3">
               <label class="flex items-start gap-2.5 cursor-pointer font-semibold select-none text-slate-800 dark:text-slate-200">
-                <input id="profConfirmChk" type="checkbox" checked class="w-4 h-4 mt-0.5 accent-teal-600 rounded"/>
+                <input id="profConfirmChk" type="checkbox" checked class="w-4 h-4 mt-0.5 accent-blue-600 rounded"/>
                 <span>Saya menyatakan seluruh data pemilik, foto/logo, izin SIA/SIPA, alamat domisili, dan berkas legalitas di atas adalah benar, sah, dan dapat dipertanggungjawabkan secara hukum.</span>
               </label>
               <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
                 <span class="text-[11px] text-slate-500">Tersimpan otomatis ke Google Cloud Sheets &amp; Brankas Digital Apotek.</span>
-                <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all" style="background:linear-gradient(135deg, #0D9488 0%, #10B981 100%)">
+                <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/30 hover:scale-105 active:scale-95 transition-all" style="background:linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                   <span>Konfirmasi &amp; Simpan Profil Resmi</span>
                 </button>
@@ -11590,7 +11602,7 @@ S. prn 3 dd 1 tab</textarea>
               <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                 <span>📄</span> Pratinjau Kop Surat Resmi
               </h3>
-              <span class="text-[10px] text-teal-600 font-bold">Live Reactive</span>
+              <span class="text-[10px] text-blue-600 dark:text-sky-400 font-bold">Live Reactive</span>
             </div>
             <p class="text-[10.5px]" style="color:var(--ons-text-soft)">
               Pratinjau otomatis yang akan dicetak pada Surat Pesanan (SP), Kwitansi Pasien, &amp; Etiket Obat.
@@ -11603,7 +11615,7 @@ S. prn 3 dd 1 tab</textarea>
                   </div>
                   <div class="min-w-0 flex-1">
                     <div class="font-black text-sm text-slate-900 dark:text-white uppercase tracking-wide truncate">${S().esc(merged.nama_usaha || 'Apotek ONS Farma')}</div>
-                    ${merged.slogan ? `<div class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold italic truncate">"${S().esc(merged.slogan)}"</div>` : ''}
+                    ${merged.slogan ? `<div class="text-[10px] text-blue-600 dark:text-sky-400 font-semibold italic truncate">"${S().esc(merged.slogan)}"</div>` : ''}
                     <div class="text-[10.5px] text-slate-600 dark:text-slate-300 leading-tight mt-0.5">${S().esc(merged.alamat_usaha || '-')}, ${S().esc(merged.kota || '-')} ${S().esc(merged.kode_pos || '')}</div>
                     <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono-num mt-0.5">Telp/WA: ${S().esc(merged.wa_usaha || merged.telepon_usaha || '-')} &bull; SIA: <span class="font-bold text-slate-700 dark:text-slate-200">${S().esc(merged.no_sia || '-')}</span></div>
                   </div>
@@ -11615,7 +11627,7 @@ S. prn 3 dd 1 tab</textarea>
                   </div>
                   <div class="text-right">
                     <span class="text-slate-400 block text-[9.5px] font-bold uppercase">Nomor SIPA</span>
-                    <span class="font-mono-num font-bold text-teal-700 dark:text-teal-400">${S().esc(merged.sipa_pemilik || '-')}</span>
+                    <span class="font-mono-num font-bold text-blue-700 dark:text-sky-400">${S().esc(merged.sipa_pemilik || '-')}</span>
                   </div>
                 </div>
               </div>
@@ -11639,7 +11651,7 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex justify-between"><span>Kasir:</span><span>Budi Santoso</span></div>
               <div class="border-b border-dashed border-slate-300 dark:border-slate-700 my-1"></div>
               <div class="text-center text-[10px] text-slate-400 pt-1">*** TERIMA KASIH ATAS KUNJUNGAN ANDA ***</div>
-              <div class="text-center text-[9px] text-teal-600 dark:text-teal-400 font-semibold">Semoga Lekas Sembuh &bull; Apotek ONS Farma</div>
+              <div class="text-center text-[9px] text-blue-600 dark:text-sky-400 font-semibold">Semoga Lekas Sembuh &bull; Apotek ONS Farma</div>
             </div>
           </div>
 
@@ -11687,8 +11699,6 @@ S. prn 3 dd 1 tab</textarea>
   }
 
 // ==========================================
-  // SALURAN METODE PEMBAYARAN APOTEK DIGITAL
-  // ==========================================
   let payChannelSearchQ = '';
   let activePayTypeIsAsuransi = false;
   let activePayMdrType = '%';
@@ -12598,6 +12608,56 @@ S. prn 3 dd 1 tab</textarea>
     } else {
       global.toast && global.toast((label || 'Teks') + ': ' + text, 'ok');
     }
+  };
+
+  
+  global.setProfileTheme = function(themeKey) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('ons_prof_theme', themeKey);
+    }
+    const banner = document.getElementById('profHeroBanner');
+    const bankCard = document.querySelector('.ons-bank-card-mockup');
+    const themes = {
+      'royal-blue': {
+        bg: 'linear-gradient(135deg, #0A192F 0%, #1E3A8A 50%, #0284C7 100%)',
+        border: 'rgba(56, 189, 248, 0.3)',
+        cardClass: ''
+      },
+      'clean-light': {
+        bg: 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 50%, #CBD5E1 100%)',
+        border: 'rgba(148, 163, 184, 0.4)',
+        cardClass: 'theme-clean-light'
+      },
+      'fresh-emerald': {
+        bg: 'linear-gradient(135deg, #064E3B 0%, #047857 50%, #10B981 100%)',
+        border: 'rgba(52, 211, 153, 0.3)',
+        cardClass: 'theme-fresh-emerald'
+      },
+      'midnight-navy': {
+        bg: 'linear-gradient(135deg, #050B14 0%, #0F172A 50%, #1E293B 100%)',
+        border: 'rgba(100, 116, 139, 0.3)',
+        cardClass: 'theme-midnight-navy'
+      }
+    };
+    const t = themes[themeKey] || themes['royal-blue'];
+    if (banner) {
+      banner.style.background = t.bg;
+      banner.style.borderColor = t.border;
+    }
+    if (bankCard) {
+      bankCard.classList.remove('theme-clean-light', 'theme-fresh-emerald', 'theme-midnight-navy');
+      if (t.cardClass) bankCard.classList.add(t.cardClass);
+    }
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.prof-theme-btn').forEach(btn => {
+        const isCurrent = btn.getAttribute('data-theme') === themeKey;
+        btn.classList.toggle('ring-2', isCurrent);
+        btn.classList.toggle('ring-sky-300', isCurrent && themeKey === 'royal-blue');
+        btn.classList.toggle('ring-white', isCurrent && themeKey !== 'royal-blue');
+        btn.classList.toggle('scale-105', isCurrent);
+      });
+    }
+    global.toast && global.toast('Tema visual apotek diubah: ' + themeKey, 'ok');
   };
 
   global.setProfileJamOpsPreset = (preset) => {
