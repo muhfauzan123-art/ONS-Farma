@@ -5000,11 +5000,11 @@
     wizardDraftSnapshot = o;
 
     const steps = [
-      { n: 1, label: 'Identitas Produk', sub: 'Nama & Zat Aktif', req: 'Wajib: Nama' },
-      { n: 2, label: 'Golongan & Rak', sub: 'BPOM & Rak Gudang', req: 'Wajib: Gol & Rak' },
-      { n: 3, label: 'Satuan 1, 2, 3', sub: 'Konversi Kemasan', req: 'Wajib: Satuan 1' },
-      { n: 4, label: 'Harga Jual 1, 2, 3', sub: 'HPP & Harga Satuan', req: 'Wajib: HPP & Harga 1' },
-      { n: 5, label: 'Tinjauan & Simpan', sub: 'Rangkuman & Terbitkan', req: 'Konfirmasi Terbit' }
+      { n: 1, label: 'Identitas Produk' },
+      { n: 2, label: 'Golongan & Rak' },
+      { n: 3, label: 'Satuan Kemasan' },
+      { n: 4, label: 'Harga & HPP' },
+      { n: 5, label: 'Konfirmasi' }
     ];
     const golList = [
       { v: 'BEBAS', label: 'Obat Bebas', dot: 'bg-emerald-500' },
@@ -5014,66 +5014,65 @@
       { v: 'OOT', label: 'OOT', dot: 'bg-amber-600' },
       { v: 'PSIKOTROPIKA', label: 'Psikotropika', dot: 'bg-rose-600' },
       { v: 'NARKOTIKA', label: 'Narkotika', dot: 'bg-rose-700' },
-      { v: 'HERBAL', label: 'Herbal / Jamu / Suplemen', dot: 'bg-emerald-600' },
-      { v: 'ALKES', label: 'Alkes / Medis', dot: 'bg-cyan-600' }
+      { v: 'HERBAL', label: 'Herbal / Alami', dot: 'bg-emerald-600' },
+      { v: 'ALKES', label: 'Alkes & Medis', dot: 'bg-cyan-600' }
     ];
-    const suhuPresets = ['Suhu Ruang (15-25°C)', 'Sejuk (8-15°C)', 'Cold Chain / Chiller (2-8°C)'];
+    const suhuPresets = ['Suhu Ruang (15-25°C)', 'Sejuk (8-15°C)', 'Cold Chain (2-8°C)'];
     const rakPresets = ['RAK-A1', 'RAK-B2', 'RAK-OTC', 'LEMARI-OKT', 'CHILLER-01'];
     const unitPresets = [
-      { label: 'Satuan 1: Tablet | Satuan 2: Strip (10) | Satuan 3: Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
-      { label: 'Satuan 1 Tunggal: Strip (Hanya Jual Strip)', d: 'Strip', s: '', rs: 1, b: '', rb: 1 },
-      { label: 'Satuan 1: Strip | Satuan 2: Box (10)', d: 'Strip', s: 'Box', rs: 10, b: '', rb: 1 },
-      { label: 'Satuan 1 Tunggal: Botol (Sirup)', d: 'Botol', s: '', rs: 1, b: '', rb: 1 },
-      { label: 'Satuan 1: Kapsul | Satuan 2: Blister (10) | Satuan 3: Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
-      { label: 'Satuan 1 Tunggal: Tube (Salep)', d: 'Tube', s: '', rs: 1, b: '', rb: 1 }
+      { label: 'Tablet ➔ Strip (10) ➔ Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
+      { label: 'Hanya Jual Strip (Tunggal)', d: 'Strip', s: '', rs: 1, b: '', rb: 1 },
+      { label: 'Strip ➔ Box (10)', d: 'Strip', s: 'Box', rs: 10, b: '', rb: 1 },
+      { label: 'Sirup Botol', d: 'Botol', s: '', rs: 1, b: '', rb: 1 },
+      { label: 'Kapsul ➔ Blister (10) ➔ Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
+      { label: 'Salep / Gel (Tube)', d: 'Tube', s: '', rs: 1, b: '', rb: 1 }
     ];
     const otherMeds = (S().AppState.masterObat || []).filter((m) => m.id_obat !== o.id_obat).slice(0, 10);
     const curSubs = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
 
     const secCls = (n) => (!wizardFullScrollMode && wizardStep !== n) ? 'hidden' : 'ons-wiz-card';
-    const inpCls = 'ons-input min-h-[44px] text-sm';
+    const inpCls = 'ons-input min-h-[42px] text-sm';
 
     const renderForm = () => `
       <div data-ws-custom="1" class="ons-wiz-shell">
+        <!-- Header Modal Bersih & Fokus -->
         <header class="ons-wiz-header">
           <div class="flex items-center gap-3 min-w-0">
-            <button type="button" onclick="ONSStore.closeModal()" class="ons-ws-back-btn">
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-ws-back-btn" title="Kembali">
               <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-              <span>Kembali</span>
+              <span class="text-xs font-semibold">Kembali</span>
             </button>
-            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
               <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
             </div>
             <div class="min-w-0">
               <h2 class="font-extrabold text-base md:text-lg tracking-tight truncate">${o.id_obat ? 'Edit Produk Obat: ' + S().esc(o.nama_dagang) : 'Tambah Produk Obat Baru'}</h2>
-              <div class="text-xs truncate" style="color:var(--ons-text-soft)">Katalog KFA SATUSEHAT &bull; Regulasi CDOB BPOM &bull; Multi-Satuan &amp; Valuasi Bertingkat</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 truncate">Formulir entri katalog obat, standar BPOM, multi-satuan, dan penetapan harga.</div>
             </div>
           </div>
-          <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <span id="wizCompBadge" class="ons-ws-pill font-mono-num font-bold">Kolom Wajib: 0/5</span>
-            <button type="button" onclick="window.toggleObatWizardMode('${S().esc(editId || '')}')" class="ons-btn ons-btn-ghost text-xs min-h-[40px]">
-              ${wizardFullScrollMode ? 'Ganti ke Stepper 5 Tahap' : 'Tampilkan Semua Sekaligus'}
+          <div class="flex items-center gap-2 shrink-0">
+            <span id="wizCompBadge" class="ons-ws-pill font-mono-num font-bold text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">Kolom Wajib: 0/5</span>
+            <button type="button" onclick="window.toggleObatWizardMode('${S().esc(editId || '')}')" class="ons-btn ons-btn-ghost text-xs min-h-[36px] px-3">
+              ${wizardFullScrollMode ? 'Mode Stepper 5 Tahap' : 'Tampilkan Semua'}
             </button>
             <button type="button" onclick="ONSStore.closeModal()" aria-label="Tutup" class="ons-ws-close-btn" title="Tutup (Esc)">&times;</button>
           </div>
         </header>
 
-        ${!wizardFullScrollMode ? `<div class="ons-wiz-stepper-wrap">
+        <!-- Stepper Ringkas & Linear (Tinggi ~42px, Rapi Tanpa Deskripsi Bertingkat) -->
+        ${!wizardFullScrollMode ? `<div class="ons-wiz-stepper-wrap py-2.5 px-4 md:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
           <div class="max-w-[1440px] mx-auto">
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2" id="wizStepNav">
               ${steps.map((stItem) => {
                 const stCls = stItem.n === wizardStep ? 'is-active' : (stItem.n < wizardStep ? 'is-done' : '');
-                return `<button type="button" onclick="window.setObatWizardStep(${stItem.n})" class="ons-wiz-step-btn ${stCls}">
-                  <span id="wizStepBadge${stItem.n}" class="ons-wiz-step-num">${stItem.n < wizardStep ? '&#10003;' : stItem.n}</span>
-                  <div class="min-w-0">
-                    <div class="font-bold text-xs truncate">${stItem.label}</div>
-                    <div class="text-[11px] opacity-80 truncate hidden sm:block">${stItem.sub}</div>
-                  </div>
+                return `<button type="button" onclick="window.setObatWizardStep(${stItem.n})" class="ons-wiz-step-btn ${stCls} py-1.5 px-3 min-h-[38px] rounded-lg flex items-center gap-2">
+                  <span id="wizStepBadge${stItem.n}" class="ons-wiz-step-num w-5 h-5 text-[11px] font-bold rounded-full flex items-center justify-center">${stItem.n < wizardStep ? '&#10003;' : stItem.n}</span>
+                  <span class="font-bold text-xs truncate">${stItem.n}. ${stItem.label}</span>
                 </button>`;
               }).join('')}
             </div>
-            <div class="ons-wiz-progress-track">
-              <div id="wizProgFill" class="ons-wiz-progress-fill" style="width:${(wizardStep / 5) * 100}%"></div>
+            <div class="ons-wiz-progress-track mt-2 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div id="wizProgFill" class="ons-wiz-progress-fill h-full bg-blue-600 rounded-full transition-all duration-300" style="width:${(wizardStep / 5) * 100}%"></div>
             </div>
           </div>
         </div>` : ''}
@@ -5082,63 +5081,57 @@
           <form id="obatWizardForm" novalidate onsubmit="event.preventDefault();window.saveObatFromWizard();" oninput="window.updateObatWizardPreview()" onchange="window.updateObatWizardPreview()" class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <input type="hidden" id="wObatId" value="${S().esc(o.id_obat)}"/>
 
-            <!-- Panel Kiri: Form Pengisian Terstruktur -->
+            <!-- Panel Kiri: Form Pengisian Rapi & Bersih -->
             <div class="lg:col-span-8 space-y-5">
 
-              <!-- TAHAP 1 -->
+              <!-- TAHAP 1: IDENTITAS PRODUK -->
               <section id="wizSec1" class="${secCls(1)}">
                 <div class="ons-wiz-card-head">
                   <div class="flex items-center gap-2.5">
-                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">1</span>
+                    <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">1</span>
                     <div>
                       <h3 class="font-extrabold text-sm md:text-base">Identitas &amp; Regulasi KFA / NIE BPOM</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Isi nama dagang resmi, kandungan zat aktif, serta kode standar Kemenkes &amp; BPOM.</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">Nama dagang resmi, kandungan zat aktif, serta kode referensi Kemenkes/BPOM.</p>
                     </div>
                   </div>
                   ${!o.id_obat ? `<div class="flex flex-wrap gap-1.5 items-center">
-                    <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Templat Cepat:</span>
-                    <button type="button" onclick="window.applyObatProductTemplate('tablet')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">Tablet Generik</button>
-                    <button type="button" onclick="window.applyObatProductTemplate('sirup')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">Sirup Botol</button>
-                    <button type="button" onclick="window.applyObatProductTemplate('chiller')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">Insulin Chiller</button>
+                    <span class="text-[11px] font-semibold text-slate-400">Templat Cepat:</span>
+                    <button type="button" onclick="window.applyObatProductTemplate('tablet')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">Tablet Generik</button>
+                    <button type="button" onclick="window.applyObatProductTemplate('sirup')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">Sirup Botol</button>
+                    <button type="button" onclick="window.applyObatProductTemplate('chiller')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">Insulin Chiller</button>
                   </div>` : ''}
                 </div>
                 <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div class="md:col-span-2">
-                    <label class="font-bold text-sm flex items-center gap-2 mb-1.5">
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
                       <span>Nama Dagang Produk</span>
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600">Wajib *</span>
+                      <span class="text-red-500 font-bold">*</span>
                     </label>
                     <input id="wNamaDagang" class="${inpCls} font-semibold" value="${S().esc(o.nama_dagang)}" placeholder="Cth: Paracetamol 500mg Kaplet / Emturnas 500mg" required/>
-                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Gunakan nama merek + kekuatan sediaan agar mudah dicari saat transaksi Kasir POS.</div>
                   </div>
                   <div class="md:col-span-2">
-                    <label class="font-bold block mb-1.5 flex items-center justify-between">
-                      <span>Zat Aktif &amp; Kekuatan</span>
-                      <span class="text-[10px] font-semibold text-slate-500">(Disarankan untuk Interaksi Obat)</span>
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">
+                      Zat Aktif &amp; Kekuatan
                     </label>
-                    <input id="wZatAktif" class="${inpCls}" value="${S().esc(o.zat_aktif)}" placeholder="Cth: Paracetamol 500 mg"/>
-                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Dipakai untuk deteksi interaksi obat CDSS &amp; pencocokan substitusi generik.</div>
+                    <input id="wZatAktif" class="${inpCls}" value="${S().esc(o.zat_aktif)}" placeholder="Cth: Paracetamol 500 mg (Dipakai deteksi interaksi obat)"/>
                   </div>
                   <div>
-                    <label class="font-bold block mb-1.5 flex items-center justify-between">
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1.5">
                       <span>Kode KFA SATUSEHAT</span>
-                      <span class="text-[10px] text-slate-500">(Opsional)</span>
+                      <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
                     </label>
                     <input id="wKfa" class="${inpCls} font-mono-num" value="${S().esc(o.kode_kfa)}" placeholder="Cth: 93001024"/>
-                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kode Kamus Farmasi &amp; Alkes Kemenkes (opsional untuk OTC).</div>
                   </div>
                   <div>
-                    <label class="font-bold block mb-1.5 flex items-center justify-between">
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1.5">
                       <span>Nomor Izin Edar (NIE BPOM)</span>
-                      <span class="text-[10px] text-slate-500">(Disarankan)</span>
+                      <span class="text-[10px] text-slate-400 font-normal">Disarankan</span>
                     </label>
                     <input id="wNie" class="${inpCls} font-mono-num" value="${S().esc(o.nie_bpom)}" placeholder="Cth: DBL8512304504A1"/>
-                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Tertera pada boks/blister kemasan pabrik.</div>
                   </div>
                   <div>
-                    <label class="font-bold block mb-1.5 flex items-center justify-between">
-                      <span>Pabrikan (Industri Farmasi / Produsen)</span>
-                      <span class="text-[10px] text-slate-500 font-semibold">(Produsen Obat)</span>
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">
+                      Pabrikan / Industri Farmasi
                     </label>
                     <input id="wPabrikan" list="pabrikanListDatalist" class="${inpCls}" value="${S().esc(o.pabrikan || '')}" placeholder="Cth: Kalbe Farma / Sanbe / Kimia Farma"/>
                     <datalist id="pabrikanListDatalist">
@@ -5160,17 +5153,10 @@
                       <option value="Caprifarmindo"></option>
                       <option value="Taisho Pharmaceutical"></option>
                     </datalist>
-                    <div class="flex flex-wrap gap-1 mt-1.5">
-                      <button type="button" onclick="document.getElementById('wPabrikan').value='Kalbe Farma';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Kalbe</button>
-                      <button type="button" onclick="document.getElementById('wPabrikan').value='Sanbe Farma';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Sanbe</button>
-                      <button type="button" onclick="document.getElementById('wPabrikan').value='Dexa Medica';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Dexa</button>
-                      <button type="button" onclick="document.getElementById('wPabrikan').value='Kimia Farma';window.updateObatWizardPreview();" class="ons-wiz-chip text-[10px] py-0.5 px-2">Kimia Farma</button>
-                    </div>
                   </div>
                   <div>
-                    <label class="font-bold block mb-1.5 flex items-center justify-between">
-                      <span>Supplier / PBF Distributor Utama</span>
-                      <span class="text-[10px] text-slate-500 font-semibold">(Pemasok Faktur)</span>
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">
+                      Supplier / PBF Distributor Utama
                     </label>
                     <input id="wPbfUtama" list="supplierListDatalist" class="${inpCls}" value="${S().esc(o.pbf_utama || o.supplier_utama || '')}" placeholder="Cth: PT Enseval Putera Megatrading / AAM"/>
                     <datalist id="supplierListDatalist">
@@ -5181,193 +5167,188 @@
                       <option value="PT Mensa Binasukses (MBS)"></option>
                       <option value="PT Parit Padang Global (PPG)"></option>
                     </datalist>
-                    <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">PBF tempat apotek memesan obat ini saat defecta.</div>
                   </div>
                 </div>
               </section>
 
-              <!-- TAHAP 2 -->
+              <!-- TAHAP 2: GOLONGAN BPOM & RAK -->
               <section id="wizSec2" class="${secCls(2)}">
                 <div class="ons-wiz-card-head">
                   <div class="flex items-center gap-2.5">
-                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">2</span>
+                    <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">2</span>
                     <div>
                       <h3 class="font-extrabold text-sm md:text-base">Golongan BPOM &amp; Penyimpanan CDOB</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Menentukan aturan otorisasi PIN APJ di Kasir, pelaporan SIPNAP, suhu, serta rak gudang.</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">Aturan regulasi obat, verifikasi resep APJ, serta zonasi rak apotek.</p>
                     </div>
                   </div>
                 </div>
-                <div class="p-5 md:p-6 space-y-5 text-xs">
+                <div class="p-5 md:p-6 space-y-4 text-xs">
                   <div>
-                    <label class="font-bold block mb-2 flex items-center gap-2">
-                      <span>Pilih Golongan Regulasi BPOM</span>
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600">Wajib *</span>
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-2">
+                      <span>Golongan Regulasi Obat (BPOM)</span>
+                      <span class="text-red-500 font-bold">*</span>
                     </label>
-                    <div id="wizGolPicker" class="flex flex-wrap gap-2 mb-3">
-                      ${golList.map((g) => `<button type="button" data-gol-val="${g.v}" onclick="window.pickObatGolChip('${g.v}')" class="ons-wiz-chip ${o.golongan_bpom === g.v ? 'is-selected' : ''}">
+                    <div id="wizGolPicker" class="flex flex-wrap gap-1.5 mb-2">
+                      ${golList.map((g) => `<button type="button" data-gol-val="${g.v}" onclick="window.pickObatGolChip('${g.v}')" class="ons-wiz-chip ${o.golongan_bpom === g.v ? 'is-selected' : ''} text-xs py-1 px-2.5">
                         <span class="w-2.5 h-2.5 rounded-full ${g.dot}"></span>
                         <span>${g.label}</span>
                       </button>`).join('')}
                     </div>
-                    <select id="wGol" class="${inpCls}" onchange="window.updateObatWizardPreview()">${golList.map((g) => `<option value="${g.v}" ${o.golongan_bpom === g.v ? 'selected' : ''}>${g.v} — ${g.label}</option>`).join('')}</select>
+                    <select id="wGol" class="${inpCls} hidden" onchange="window.updateObatWizardPreview()">${golList.map((g) => `<option value="${g.v}" ${o.golongan_bpom === g.v ? 'selected' : ''}>${g.v} — ${g.label}</option>`).join('')}</select>
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="font-bold block mb-1.5">Suhu Penyimpanan CDOB</label>
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">Suhu Penyimpanan CDOB</label>
                       <input id="wSuhu" class="${inpCls}" value="${S().esc(o.suhu_simpan || 'Suhu Ruang (15-25°C)')}" placeholder="Suhu Ruang (15-25°C)"/>
                       <div class="flex flex-wrap gap-1.5 mt-2">
-                        ${suhuPresets.map((sp) => `<button type="button" onclick="window.pickObatFieldChip('wSuhu','${S().esc(sp)}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">${S().esc(sp)}</button>`).join('')}
+                        ${suhuPresets.map((sp) => `<button type="button" onclick="window.pickObatFieldChip('wSuhu','${S().esc(sp)}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[28px]">${S().esc(sp)}</button>`).join('')}
                       </div>
                     </div>
                     <div>
-                      <label class="font-bold block mb-1.5 flex items-center gap-2">
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
                         <span>Lokasi Rak / Lemari</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600">Wajib *</span>
+                        <span class="text-red-500 font-bold">*</span>
                       </label>
-                      <input id="wRak" class="${inpCls} font-mono-num" value="${S().esc(o.rak_lokasi || 'RAK-A1')}" placeholder="RAK-A1"/>
+                      <input id="wRak" class="${inpCls} font-mono-num font-semibold" value="${S().esc(o.rak_lokasi || 'RAK-A1')}" placeholder="RAK-A1"/>
                       <div class="flex flex-wrap gap-1.5 mt-2">
-                        ${rakPresets.map((rpVal) => `<button type="button" onclick="window.pickObatFieldChip('wRak','${rpVal}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px] font-mono-num">${rpVal}</button>`).join('')}
+                        ${rakPresets.map((rpVal) => `<button type="button" onclick="window.pickObatFieldChip('wRak','${rpVal}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[28px] font-mono-num">${rpVal}</button>`).join('')}
                       </div>
                     </div>
                   </div>
                 </div>
               </section>
 
-              <!-- TAHAP 3 -->
+              <!-- TAHAP 3: KONVERSI SATUAN -->
               <section id="wizSec3" class="${secCls(3)}">
                 <div class="ons-wiz-card-head">
                   <div class="flex items-center gap-2.5">
-                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">3</span>
+                    <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">3</span>
                     <div>
                       <h3 class="font-extrabold text-sm md:text-base">Konversi Satuan (Satuan 1, Satuan 2, Satuan 3)</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Satuan 1 adalah satuan terendah/terkecil dari yang dijual. Satuan 2 dan 3 adalah kemasan bertingkat konversi.</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">Satuan 1 adalah unit eceran terendah. Satuan 2 &amp; 3 adalah kemasan bertingkat.</p>
                     </div>
                   </div>
                 </div>
                 <div class="p-5 md:p-6 space-y-4 text-xs">
-                  <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 text-xs flex items-center gap-2">
-                    <span class="text-base shrink-0">💡</span>
-                    <div><b>Fleksibel Satuan:</b> Jika obat hanya dijual per Strip (cth: Emturnas) atau botol sirup tanpa boks, cukup isi <b>Satuan 1</b> dan kosongkan Satuan 2 &amp; 3. Sistem tidak akan memaksakan kemasan Box.</div>
-                  </div>
                   <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Preset Cepat Satuan:</span>
-                    ${unitPresets.map((up) => `<button type="button" onclick="window.applyObatUnitPreset('${up.d}','${up.s}',${up.rs},'${up.b}',${up.rb})" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">${up.label}</button>`).join('')}
+                    <span class="text-[11px] font-bold text-slate-400">Preset Cepat:</span>
+                    ${unitPresets.map((up) => `<button type="button" onclick="window.applyObatUnitPreset('${up.d}','${up.s}',${up.rs},'${up.b}',${up.rb})" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">${up.label}</button>`).join('')}
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <!-- Satuan 1 -->
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
                       <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 flex items-center justify-between">
-                        <span>Satuan 1 (Terendah)</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
+                        <span>Satuan 1 (Eceran)</span>
+                        <span class="text-red-500 font-bold">* Wajib</span>
                       </div>
-                      <label class="font-semibold block">Nama Satuan Terkecil</label>
-                      <input id="wSatDasar" class="${inpCls}" value="${S().esc(o.satuan_1 || o.satuan_dasar || 'Tablet')}" placeholder="Tablet / Strip / Botol / Tube" oninput="window.updateObatWizardPreview();"/>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Satuan terendah yang dijual. HPP &amp; stok batch dihitung per Satuan 1.</div>
+                      <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama Satuan Terkecil</label>
+                      <input id="wSatDasar" class="${inpCls} font-semibold" value="${S().esc(o.satuan_1 || o.satuan_dasar || 'Tablet')}" placeholder="Tablet / Botol / Tube" oninput="window.updateObatWizardPreview();"/>
+                      <div class="text-[11px] text-slate-400">Satuan dasar kasir &amp; acuan hitung HPP.</div>
                     </div>
-                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">Satuan 2 (Kemasan 2)</div>
-                      <label class="font-semibold block">Nama &amp; Rasio Isi Satuan 1</label>
+                    <!-- Satuan 2 -->
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">Satuan 2 (Kemasan Sedang)</div>
+                      <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama &amp; Rasio Isi Satuan 1</label>
                       <div class="grid grid-cols-2 gap-2">
                         <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_2 || o.satuan_sedang || '')}" placeholder="Strip (opsional)" oninput="window.updateObatWizardPreview();"/>
                         <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_2 || o.rasio_sedang || 1}" placeholder="10" oninput="window.updateObatWizardPreview();"/>
                       </div>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk hanya dijual dalam 1 satuan (cth: Strip Emturnas).</div>
+                      <div class="text-[11px] text-slate-400">Isi berapa Satuan 1 (kosongkan jika tunggal).</div>
                     </div>
-                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-purple-600">Satuan 3 (Kemasan 3)</div>
-                      <label class="font-semibold block">Nama &amp; Rasio Isi Satuan 1</label>
+                    <!-- Satuan 3 -->
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-purple-600">Satuan 3 (Kemasan Besar)</div>
+                      <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama &amp; Rasio Isi Satuan 1</label>
                       <div class="grid grid-cols-2 gap-2">
                         <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_3 || o.satuan_besar || '')}" placeholder="Box (opsional)" oninput="window.updateObatWizardPreview();"/>
                         <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_3 || o.rasio_besar || 1}" placeholder="100" oninput="window.updateObatWizardPreview();"/>
                       </div>
-                      <div class="text-[11px]" style="color:var(--ons-text-soft)">Kosongkan jika produk ini tidak dijual / dikemas boks besar.</div>
+                      <div class="text-[11px] text-slate-400">Isi berapa Satuan 1 (cth: 1 Box = 100 Tablet).</div>
                     </div>
                   </div>
                 </div>
               </section>
 
-              <!-- TAHAP 4 -->
+              <!-- TAHAP 4: HARGA JUAL & HPP -->
               <section id="wizSec4" class="${secCls(4)}">
                 <div class="ons-wiz-card-head">
                   <div class="flex items-center gap-2.5">
-                    <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">4</span>
+                    <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">4</span>
                     <div>
-                      <h3 class="font-extrabold text-sm md:text-base">Harga Jual per Satuan (Harga Jual 1, 2, 3) &amp; Batas Stok</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Atur HPP modal beli per Satuan 1, Harga Jual 1 (terendah), serta Harga Jual 2 &amp; 3 jika bertingkat.</p>
+                      <h3 class="font-extrabold text-sm md:text-base">Harga Jual per Satuan &amp; HPP Modal Beli</h3>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">Atur modal beli per Satuan 1 dan tarif eceran/bertingkat.</p>
                     </div>
                   </div>
                   <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">Hitung Markup Otomatis:</span>
-                    <button type="button" onclick="window.applyObatMarkupHelper(20)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+20% Margin</button>
-                    <button type="button" onclick="window.applyObatMarkupHelper(25)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+25% Margin</button>
-                    <button type="button" onclick="window.applyObatMarkupHelper(35)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[32px]">+35% Margin</button>
+                    <span class="text-[11px] font-bold text-slate-400">Markup Cepat:</span>
+                    <button type="button" onclick="window.applyObatMarkupHelper(20)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">+20%</button>
+                    <button type="button" onclick="window.applyObatMarkupHelper(25)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">+25%</button>
+                    <button type="button" onclick="window.applyObatMarkupHelper(35)" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">+35%</button>
                   </div>
                 </div>
                 <div class="p-5 md:p-6 space-y-4 text-xs">
                   ${_renderWizPurchaseHistoryBanner(o.id_obat)}
-                  
-                  <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200 text-xs flex items-center gap-2">
-                    <span class="text-base shrink-0">💡</span>
-                    <div><b>Penetapan Harga Jual:</b> Harga Jual 1 adalah harga jual per Satuan 1 (terendah). Jika Harga Jual 2 atau 3 dikosongkan, sistem otomatis mengalikan Harga Jual 1 &times; Rasio Konversi.</div>
-                  </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <label class="font-bold block mb-1 flex items-center justify-between">
+                    <!-- HPP Modal -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
                         <span>HPP Modal Beli (per Satuan 1)</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
+                        <span class="text-red-500 font-bold">*</span>
                       </label>
-                      <input id="wHpp" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold" value="${S().formatDots(o.hpp_avg)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Harga modal pembelian per Satuan 1 (terendah).</div>
+                      <input id="wHpp" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-slate-800 dark:text-slate-100" value="${S().formatDots(o.hpp_avg)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="0"/>
+                      <div class="text-[11px] text-slate-400 mt-1">Harga modal pembelian per Satuan 1.</div>
                     </div>
-                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <label class="font-bold block mb-1 flex items-center justify-between">
+                    <!-- Harga Jual 1 -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
                         <span>Harga Jual 1 (Satuan 1 - Terendah)</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-600 font-bold">Wajib *</span>
+                        <span class="text-red-500 font-bold">*</span>
                       </label>
-                      <input id="wHrgUmum" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-blue-600" value="${S().formatDots(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();"/>
+                      <input id="wHrgUmum" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-blue-600 dark:text-blue-400" value="${S().formatDots(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="0"/>
                       <div id="wizMarginUmumTxt" class="text-[11px] mt-1 font-semibold text-emerald-600">Margin: -</div>
                     </div>
-                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <label class="font-bold block mb-1 flex items-center justify-between">
+                    <!-- Harga Jual 2 -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
                         <span>Harga Jual 2 (Satuan 2)</span>
-                        <span class="text-[10px] text-slate-500">(Opsional)</span>
+                        <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
                       </label>
-                      <input id="wHrgSed" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-emerald-600" value="${S().formatDots(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Jual 1 x Rasio 2)"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis = Harga Jual 1 &times; Rasio 2.</div>
+                      <input id="wHrgSed" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-emerald-600 dark:text-emerald-400" value="${S().formatDots(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga 1 × Rasio 2)"/>
+                      <div class="text-[11px] text-slate-400 mt-1">Kosongkan jika otomatis = Harga 1 &times; Rasio 2.</div>
                     </div>
-                    <div class="p-3.5 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                      <label class="font-bold block mb-1 flex items-center justify-between">
+                    <!-- Harga Jual 3 -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
                         <span>Harga Jual 3 (Satuan 3)</span>
-                        <span class="text-[10px] text-slate-500">(Opsional)</span>
+                        <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
                       </label>
-                      <input id="wHrgBes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-purple-600" value="${S().formatDots(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga Jual 1 x Rasio 3)"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Kosongkan jika ingin otomatis = Harga Jual 1 &times; Rasio 3.</div>
+                      <input id="wHrgBes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-purple-600 dark:text-purple-400" value="${S().formatDots(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga 1 × Rasio 3)"/>
+                      <div class="text-[11px] text-slate-400 mt-1">Kosongkan jika otomatis = Harga 1 &times; Rasio 3.</div>
                     </div>
                   </div>
                   <div id="wizStep4MarginHint" class="hidden p-3 rounded-xl border border-red-400 bg-red-500/10 text-red-600 font-semibold text-xs"></div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t" style="border-color:var(--ons-border)">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
                     <div>
-                      <label class="font-bold block mb-1.5">Stok Minimum (Opsional — Alert Defecta)</label>
-                      <input id="wStokMin" type="number" min="0" class="${inpCls} font-mono-num" value="${(o.stok_min !== undefined && o.stok_min !== null && o.stok_min !== '' && Number(o.stok_min) > 0) ? o.stok_min : ''}" placeholder="Kosongkan jika tidak dipakai"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hanya aktif jika Anda mengisi angka ini. Kosongkan jika tidak ingin peringatan otomatis.</div>
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">Stok Minimum (Alert Defecta)</label>
+                      <input id="wStokMin" type="number" min="0" class="${inpCls} font-mono-num" value="${(o.stok_min !== undefined && o.stok_min !== null && o.stok_min !== '' && Number(o.stok_min) > 0) ? o.stok_min : ''}" placeholder="Kosongkan jika tanpa alert"/>
                     </div>
                     <div>
-                      <label class="font-bold block mb-1.5">Stok Maksimum Gudang (Opsional)</label>
-                      <input id="wStokMax" type="number" min="1" class="${inpCls} font-mono-num" value="${(o.stok_max !== undefined && o.stok_max !== null && o.stok_max !== '' && Number(o.stok_max) > 0) ? o.stok_max : ''}" placeholder="Kosongkan jika tidak dipakai"/>
-                      <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hanya digunakan sebagai acuan order jika Anda isi sendiri.</div>
+                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">Stok Maksimum Gudang</label>
+                      <input id="wStokMax" type="number" min="1" class="${inpCls} font-mono-num" value="${(o.stok_max !== undefined && o.stok_max !== null && o.stok_max !== '' && Number(o.stok_max) > 0) ? o.stok_max : ''}" placeholder="Kosongkan jika tanpa batas"/>
                     </div>
                   </div>
                 </div>
               </section>
 
-              <!-- TAHAP 5 -->
+              <!-- TAHAP 5: TINJAUAN & SIMPAN -->
               <section id="wizSec5" class="${secCls(5)}">
                 <div class="ons-wiz-card-head">
                   <div class="flex items-center gap-2.5">
-                    <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center">5</span>
+                    <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center">5</span>
                     <div>
-                      <h3 class="font-extrabold text-sm md:text-base">Tinjauan Lengkap &amp; Konfirmasi Simpan</h3>
-                      <p class="text-xs" style="color:var(--ons-text-soft)">Periksa seluruh data produk sebelum disimpan ke database Master Katalog Apotek.</p>
+                      <h3 class="font-extrabold text-sm md:text-base">Tinjauan &amp; Konfirmasi Simpan</h3>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">Periksa seluruh data produk sebelum diterbitkan ke Master Katalog Apotek.</p>
                     </div>
                   </div>
                 </div>
@@ -5378,51 +5359,51 @@
                   <!-- Ringkasan Produk Terstruktur -->
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Box 1: Identitas & Regulasi -->
-                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
                       <div class="font-extrabold text-xs uppercase tracking-wide text-blue-600 flex items-center gap-1.5">
                         <span>💊</span><span>Identitas &amp; Regulasi</span>
                       </div>
                       <div class="space-y-1.5">
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Nama Dagang:</span><b id="wSumNama" class="truncate max-w-[180px] text-right">-</b></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Zat Aktif:</span><span id="wSumZat" class="truncate max-w-[180px] text-right">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Golongan BPOM:</span><b id="wSumGol">-</b></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">NIE BPOM:</span><span id="wSumNie" class="font-mono-num">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Kode KFA:</span><span id="wSumKfa" class="font-mono-num">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Lokasi Rak:</span><b id="wSumRak" class="font-mono-num">-</b></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Suhu Simpan:</span><span id="wSumSuhu">-</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Nama Dagang:</span><b id="wSumNama" class="truncate max-w-[180px] text-right">-</b></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Zat Aktif:</span><span id="wSumZat" class="truncate max-w-[180px] text-right">-</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Golongan BPOM:</span><b id="wSumGol">-</b></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">NIE BPOM:</span><span id="wSumNie" class="font-mono-num">-</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Kode KFA:</span><span id="wSumKfa" class="font-mono-num">-</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Lokasi Rak:</span><b id="wSumRak" class="font-mono-num">-</b></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Suhu Simpan:</span><span id="wSumSuhu">-</span></div>
                       </div>
                     </div>
 
-                    <!-- Box 2: Satuan 1, 2, 3 & Harga Jual 1, 2, 3 -->
-                    <div class="p-4 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <!-- Box 2: Satuan 1, 2, 3 & Harga -->
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
                       <div class="font-extrabold text-xs uppercase tracking-wide text-emerald-600 flex items-center gap-1.5">
-                        <span>💰</span><span>Satuan 1, 2, 3 &amp; Harga Jual 1, 2, 3</span>
+                        <span>💰</span><span>Satuan &amp; Harga Jual</span>
                       </div>
                       <div class="space-y-1.5">
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Satuan 1 (Terendah):</span><b id="wSumSatD">-</b></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Konversi Kemasan:</span><span id="wSumRasio" class="font-mono-num font-bold text-blue-600">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">HPP Modal Beli (Satuan 1):</span><b id="wSumHpp" class="font-mono-num">Rp 0</b></div>
-                        <div class="flex justify-between items-center pt-1 border-t" style="border-color:var(--ons-border)">
-                          <span class="font-bold text-blue-600">Harga Jual 1 (Satuan 1):</span>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Satuan 1 (Eceran):</span><b id="wSumSatD">-</b></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Konversi Kemasan:</span><span id="wSumRasio" class="font-mono-num font-bold text-blue-600">-</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">HPP Modal:</span><b id="wSumHpp" class="font-mono-num">Rp 0</b></div>
+                        <div class="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-800">
+                          <span class="font-bold text-blue-600">Harga Jual 1:</span>
                           <b id="wSumHrgUmum" class="font-mono-num text-blue-600 text-sm">Rp 0</b>
                         </div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Jual 2 (Satuan 2):</span><span id="wSumHrgSed" class="font-mono-num font-bold text-emerald-600">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Harga Jual 3 (Satuan 3):</span><span id="wSumHrgBes" class="font-mono-num font-bold text-purple-600">-</span></div>
-                        <div class="flex justify-between items-center"><span style="color:var(--ons-text-soft)">Alert Defecta:</span><span id="wSumDefecta" class="font-mono-num">Min: 10, Max: 100</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Harga Jual 2:</span><span id="wSumHrgSed" class="font-mono-num font-bold text-emerald-600">-</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Harga Jual 3:</span><span id="wSumHrgBes" class="font-mono-num font-bold text-purple-600">-</span></div>
+                        <div class="flex justify-between items-center"><span class="text-slate-500">Alert Defecta:</span><span id="wSumDefecta" class="font-mono-num">Min: -, Max: -</span></div>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label class="font-bold block mb-1.5">ID Obat Substitusi Terapeutik (pisahkan koma)</label>
+                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">ID Obat Substitusi Terapeutik (pisahkan koma)</label>
                     <input id="wSubstitusi" class="${inpCls} font-mono-num" value="${S().esc(o.substitusi_ids || '')}" placeholder="Cth: OBT-002, OBT-005"/>
                   </div>
                   ${otherMeds.length ? `<div>
-                    <div class="font-bold mb-2" style="color:var(--ons-text-soft)">Klik Cepat Produk Apotek untuk Tambah/Hapus Substitusi:</div>
+                    <div class="font-semibold text-xs mb-1.5 text-slate-500">Klik Cepat Produk Apotek untuk Tambah/Hapus Substitusi:</div>
                     <div id="wizSubPicker" class="flex flex-wrap gap-1.5">
                       ${otherMeds.map((m) => {
                         const sel = curSubs.includes(m.id_obat);
-                        return `<button type="button" data-sub-id="${S().esc(m.id_obat)}" onclick="window.toggleObatSubstitusiTag('${S().esc(m.id_obat)}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[34px] ${sel ? 'is-selected' : ''}">
+                        return `<button type="button" data-sub-id="${S().esc(m.id_obat)}" onclick="window.toggleObatSubstitusiTag('${S().esc(m.id_obat)}')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px] ${sel ? 'is-selected' : ''}">
                           <span class="font-mono-num font-bold">${S().esc(m.id_obat)}</span>
                           <span>${S().esc(m.nama_dagang)}</span>
                         </button>`;
@@ -5430,8 +5411,8 @@
                     </div>
                   </div>` : ''}
                   <div class="pt-2">
-                    <button type="submit" form="obatWizardForm" id="wSimpanBtnBig" class="ons-btn ons-btn-emerald w-full min-h-[46px] text-sm font-extrabold shadow-md flex items-center justify-center gap-2">
-                      <span class="text-base">&#9989;</span>
+                    <button type="submit" form="obatWizardForm" id="wSimpanBtnBig" class="ons-btn ons-btn-emerald w-full min-h-[44px] text-sm font-extrabold shadow-sm flex items-center justify-center gap-2">
+                      <span>&#9989;</span>
                       <span>Simpan &amp; Terbitkan Produk ke Master Obat</span>
                     </button>
                   </div>
@@ -5440,110 +5421,97 @@
 
             </div>
 
-            <!-- Panel Kanan: Monitor Kelengkapan & Pratinjau POS Real-Time -->
-            <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-0">
-
-              <!-- KARTU MONITOR KELENGKAPAN & PERINGATAN VALIDASI -->
-              <div class="ons-wiz-card border-2" id="wizMonitorBox" style="border-color:#0066FE">
+            <!-- Panel Kanan: KARTU TUNGGAL BERSIH & PROFESIONAL (Live POS & Monitor Ringkas) -->
+            <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-4" id="wizMonitorBox">
+              <div class="ons-wiz-card border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <!-- Header Pratinjau -->
                 <div class="px-4 py-3 border-b flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                   <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-                    <span class="font-extrabold text-xs uppercase tracking-wider text-blue-600">Monitor Kelengkapan Data</span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                    <span class="font-extrabold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200">Pratinjau Produk (Live POS)</span>
                   </div>
-                  <span id="wizMonitorBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600">0/5 Wajib</span>
+                  <span id="wizMonitorBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600">0/5 Terisi</span>
                 </div>
+                <!-- Sleek Linear Progress Line -->
+                <div class="w-full h-1 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <div id="wizCompBar" class="h-full bg-blue-600 transition-all duration-300" style="width:0%"></div>
+                </div>
+                <span id="wizCompPctSide" class="hidden">0%</span>
+
                 <div class="p-4 space-y-3.5 text-xs">
-                  <div>
-                    <div class="flex justify-between items-center text-xs font-bold mb-1.5">
-                      <span>Status Kelengkapan Wajib</span>
-                      <span id="wizCompPctSide" class="font-mono-num font-extrabold text-blue-600">0%</span>
-                    </div>
-                    <div class="w-full h-2.5 rounded-full overflow-hidden" style="background:var(--ons-bg-subtle)">
-                      <div id="wizCompBar" class="h-full rounded-full transition-all duration-300 bg-blue-600" style="width:0%"></div>
-                    </div>
-                  </div>
-
-                  <!-- Live Alert / Peringatan Kosong -->
-                  <div id="wizMonitorAlertBox" class="p-2.5 rounded-xl border text-xs font-semibold leading-relaxed"></div>
-
-                  <!-- Checklist Kolom Wajib -->
-                  <div class="space-y-1.5">
-                    <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Kolom Wajib (Harus Diisi):
-                    </div>
-                    <div id="wizWajibChecklist" class="space-y-1.5"></div>
-                  </div>
-
-                  <!-- Checklist Standar BPOM / Opsional -->
-                  <div class="pt-2 border-t space-y-1.5" style="border-color:var(--ons-border)">
-                    <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      Standar Regulasi (Disarankan):
-                    </div>
-                    <div id="wizOpsionalChecklist" class="space-y-1 text-[11px]"></div>
-                  </div>
-
-                  <!-- Tombol Aksi Cepat -->
-                  <div class="pt-2 border-t" style="border-color:var(--ons-border)">
-                    <button type="button" onclick="window.jumpToFirstIncompleteWizardField()" class="ons-btn ons-btn-ghost w-full text-xs min-h-[36px] flex items-center justify-center gap-1.5 font-semibold">
-                      <span>Lengkapi Kolom yang Kosong</span>
-                      <span aria-hidden="true">&rarr;</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- PRATINJAU KARTU POS REAL-TIME -->
-              <div class="ons-wiz-preview">
-                <div class="px-4 py-3 border-b flex items-center justify-between gap-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                  <span class="font-extrabold text-xs uppercase tracking-wider text-blue-600">Pratinjau Kartu Produk (Live)</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-600">Preview POS</span>
-                </div>
-                <div class="p-4 space-y-3.5 text-xs">
-                  <div class="p-3.5 rounded-xl border space-y-2" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                  <!-- Medicine Card Mockup -->
+                  <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-2">
                     <div class="flex items-start justify-between gap-2">
                       <div class="min-w-0">
-                        <div id="wizPrevNama" class="font-extrabold text-sm leading-snug break-words">-</div>
-                        <div id="wizPrevZat" class="text-[11px] mt-0.5 truncate" style="color:var(--ons-text-soft)">-</div>
+                        <div id="wizPrevNama" class="font-extrabold text-sm leading-snug break-words text-slate-900 dark:text-white">-</div>
+                        <div id="wizPrevZat" class="text-[11px] mt-0.5 truncate text-slate-500 dark:text-slate-400">-</div>
                       </div>
                       <span id="wizPrevBpom" class="badge-bpom bpom-bebas shrink-0">BEBAS</span>
                     </div>
-                    <div id="wizPrevKode" class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">KFA: - &bull; NIE: -</div>
-                    <div id="wizPrevLokasi" class="text-[11px]" style="color:var(--ons-text-soft)">Rak: - &bull; Suhu: -</div>
+                    <div id="wizPrevKode" class="text-[11px] font-mono-num text-slate-500 dark:text-slate-400">KFA: - &bull; NIE: -</div>
+                    <div id="wizPrevLokasi" class="text-[11px] text-slate-500 dark:text-slate-400">Rak: - &bull; Suhu: -</div>
                   </div>
 
-                  <div class="p-3 rounded-xl border space-y-1.5" style="border-color:var(--ons-border)">
-                    <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Konversi Satuan</div>
-                    <div id="wizPrevRasio" class="font-mono-num font-bold text-xs text-blue-600">-</div>
+                  <!-- Satuan & Rasio -->
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-1">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Konversi Kemasan</div>
+                    <div id="wizPrevRasio" class="font-mono-num font-bold text-xs text-blue-600 dark:text-blue-400">-</div>
                   </div>
 
-                  <div class="p-3 rounded-xl border space-y-2" style="border-color:var(--ons-border)">
+                  <!-- Harga & Estimasi Profit -->
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
                     <div class="flex items-center justify-between">
-                      <span class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Estimasi Harga &amp; Profit</span>
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Harga Jual &amp; Margin</span>
                       <span id="wizPrevMargin" class="font-mono-num text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600">Margin 0%</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                      <span id="wizPrevUmum" class="font-mono-num font-extrabold text-lg text-blue-600">Rp 0</span>
-                      <span id="wizPrevHpp" class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">HPP: Rp 0</span>
+                      <span id="wizPrevUmum" class="font-mono-num text-base font-extrabold text-blue-600 dark:text-blue-400">Rp 0 / Unit</span>
+                      <span id="wizPrevHpp" class="font-mono-num text-[11px] text-slate-500">HPP: Rp 0</span>
                     </div>
-                    <div id="wizPrevTierGrid" class="grid grid-cols-3 gap-1.5 pt-2 border-t text-[11px] font-mono-num" style="border-color:var(--ons-border)"></div>
+                    <div id="wizPrevTierGrid" class="pt-2 border-t border-slate-200 dark:border-slate-700 grid grid-cols-3 gap-1.5 text-[11px] text-center font-mono-num">
+                    </div>
                   </div>
+
+                  <!-- Status Kelengkapan & Checklist Lembut (Tenang & Tidak Mengganggu) -->
+                  <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                    <div id="wizMonitorAlertBox" class="p-2.5 rounded-lg border text-xs font-medium leading-relaxed"></div>
+
+                    <div class="space-y-1">
+                      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Checklist Kelengkapan:</div>
+                      <div id="wizWajibChecklist" class="space-y-1"></div>
+                    </div>
+
+                    <div class="pt-1">
+                      <div class="text-[10px] font-medium text-slate-400 mb-1">Standar Regulasi:</div>
+                      <div id="wizOpsionalChecklist" class="space-y-0.5 text-[11px]"></div>
+                    </div>
+
+                    <div class="pt-1">
+                      <button type="button" onclick="window.jumpToFirstIncompleteWizardField()" class="ons-btn ons-btn-ghost w-full text-xs min-h-[34px] flex items-center justify-center gap-1.5 font-medium">
+                        <span>Lengkapi Kolom Kosong</span>
+                        <span aria-hidden="true">&rarr;</span>
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </aside>
           </form>
         </div>
 
+        <!-- Footer Bersih & Ergonomis -->
         <footer class="ons-wiz-footer" id="wizFooterBar">
           <div class="flex gap-2">
-            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost min-h-[42px]">Batal</button>
-            ${!wizardFullScrollMode && wizardStep > 1 ? `<button type="button" id="wizPrevBtn" onclick="window.setObatWizardStep(window._wizCurStep - 1, true)" class="ons-btn ons-btn-ghost min-h-[42px]">&larr; Sebelumnya</button>` : ''}
+            <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost min-h-[40px] text-xs">Batal</button>
+            ${!wizardFullScrollMode && wizardStep > 1 ? `<button type="button" id="wizPrevBtn" onclick="window.setObatWizardStep(window._wizCurStep - 1, true)" class="ons-btn ons-btn-ghost min-h-[40px] text-xs">&larr; Sebelumnya</button>` : ''}
           </div>
-          <div id="wizFooterStepLabel" class="hidden sm:block text-xs font-bold font-mono-num" style="color:var(--ons-text-soft)">
-            ${wizardFullScrollMode ? 'Mode Scroll Penuh • Semua 5 Tahap' : 'Langkah ' + wizardStep + ' dari 5'}
+          <div id="wizFooterStepLabel" class="hidden sm:block text-xs font-bold font-mono-num text-slate-500">
+            ${wizardFullScrollMode ? 'Semua 5 Tahap Sekaligus' : 'Tahap ' + wizardStep + ' dari 5'}
           </div>
           <div class="flex gap-2" id="wizFooterRight">
-            ${!wizardFullScrollMode && wizardStep < 5 ? `<button type="button" id="wizNextBtn" onclick="window.setObatWizardStep(window._wizCurStep + 1)" class="ons-btn ons-btn-primary min-h-[42px]">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
-            ${(wizardFullScrollMode || wizardStep === 5) ? `<button type="submit" form="obatWizardForm" class="ons-btn ons-btn-emerald min-h-[42px] px-5">&#9989; Simpan Produk ke Master Obat</button>` : ''}
+            ${!wizardFullScrollMode && wizardStep < 5 ? `<button type="button" id="wizNextBtn" onclick="window.setObatWizardStep(window._wizCurStep + 1)" class="ons-btn ons-btn-primary min-h-[40px] text-xs font-bold px-4">Lanjut Langkah Berikutnya &rarr;</button>` : ''}
+            ${(wizardFullScrollMode || wizardStep === 5) ? `<button type="submit" form="obatWizardForm" class="ons-btn ons-btn-emerald min-h-[40px] text-xs font-bold px-4">&#9989; Simpan &amp; Terbitkan</button>` : ''}
           </div>
         </footer>
       </div>`;
@@ -5594,7 +5562,7 @@
 
     const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
     setTxt('wizPrevNama', nama || 'Nama Obat Belum Diisi');
-    setTxt('wizPrevZat', zat || 'Zat aktif & kekuatan belum diisi');
+    setTxt('wizPrevZat', zat || 'Zat aktif & kekuatan');
     setTxt('wizPrevKode', `KFA: ${kfa || '-'} • NIE: ${nie || '-'}`);
     setTxt('wizPrevLokasi', `Rak: ${rak || '-'} • ${suhu}`);
 
@@ -5617,7 +5585,7 @@
     setTxt('wSumHrgUmum', `${S().rp(umum)} / ${satD || 'Unit'}`);
     setTxt('wSumHrgSed', valid2 ? `${S().rp(hSed)} / ${satS} (${rasS} ${satD || 'Unit'})` : '- (Tidak diisi)');
     setTxt('wSumHrgBes', valid3 ? `${S().rp(hBes)} / ${satB} (${rasB} ${satD || 'Unit'})` : '- (Tidak diisi)');
-    setTxt('wSumDefecta', `Min: ${stokMin}, Max: ${stokMax}`);
+    setTxt('wSumDefecta', stokMin > 0 ? `Min: ${stokMin}, Max: ${stokMax}` : '- (Tidak diisi)');
 
     const badge = document.getElementById('wizPrevBpom');
     if (badge) {
@@ -5646,8 +5614,8 @@
         mHint.textContent = umum < hpp ? `Rugi ${S().rp(hpp - umum)} (${marginPct}%) di bawah HPP!` : `Margin: +${marginPct}% (Laba ${S().rp(laba)}/${satD || 'Unit'})`;
         mHint.className = 'text-[11px] mt-1 font-semibold ' + (umum < hpp ? 'text-red-600' : 'text-emerald-600');
       } else {
-        mHint.textContent = 'Isi HPP & Harga Jual 1 untuk melihat laba/margin.';
-        mHint.className = 'text-[11px] mt-1';
+        mHint.textContent = 'Isi HPP & Harga Jual 1 untuk estimasi profit.';
+        mHint.className = 'text-[11px] mt-1 text-slate-400';
       }
     }
     const antiRugiEl = document.getElementById('wizStep4MarginHint');
@@ -5663,10 +5631,10 @@
     const tierGrid = document.getElementById('wizPrevTierGrid');
     if (tierGrid) {
       tierGrid.innerHTML = `
-        <div><div style="color:var(--ons-text-soft)">Harga Jual 1</div><div class="font-bold text-blue-600">${S().rp(umum)}</div><div class="text-[9.5px] text-slate-400">/${satD || 'Unit'}</div></div>
-        ${valid2 ? `<div><div style="color:var(--ons-text-soft)">Harga Jual 2</div><div class="font-bold text-emerald-600">${S().rp(hSed)}</div><div class="text-[9.5px] text-slate-400">/${satS}</div></div>` : ''}
-        ${valid3 ? `<div><div style="color:var(--ons-text-soft)">Harga Jual 3</div><div class="font-bold text-purple-600">${S().rp(hBes)}</div><div class="text-[9.5px] text-slate-400">/${satB}</div></div>` : ''}
-        ${!valid2 && !valid3 ? `<div><div style="color:var(--ons-text-soft)">Kemasan</div><div class="font-semibold text-slate-500">Satuan 1 Tunggal</div></div>` : ''}`;
+        <div><div class="text-[10px] text-slate-400">Harga 1</div><div class="font-bold text-blue-600">${S().rp(umum)}</div><div class="text-[9px] text-slate-400">/${satD || 'Unit'}</div></div>
+        ${valid2 ? `<div><div class="text-[10px] text-slate-400">Harga 2</div><div class="font-bold text-emerald-600">${S().rp(hSed)}</div><div class="text-[9px] text-slate-400">/${satS}</div></div>` : ''}
+        ${valid3 ? `<div><div class="text-[10px] text-slate-400">Harga 3</div><div class="font-bold text-purple-600">${S().rp(hBes)}</div><div class="text-[9px] text-slate-400">/${satB}</div></div>` : ''}
+        ${!valid2 && !valid3 ? `<div><div class="text-[10px] text-slate-400">Kemasan</div><div class="font-semibold text-slate-400 text-[10px]">Tunggal</div></div>` : ''}`;
     }
 
     // 5 VALIDASI KOLOM WAJIB
@@ -5680,8 +5648,8 @@
       { key: 'nama', label: 'Nama Dagang Produk', step: 1, fieldId: 'wNamaDagang', ok: checkNama, detail: nama ? nama : 'Wajib diisi' },
       { key: 'rak', label: 'Lokasi Rak Gudang', step: 2, fieldId: 'wRak', ok: checkRak, detail: rak ? `${gol} • ${rak}` : 'Wajib diisi' },
       { key: 'satuan', label: 'Satuan Dasar Eceran', step: 3, fieldId: 'wSatDasar', ok: checkSatD, detail: satD ? satD : 'Wajib diisi' },
-      { key: 'hpp', label: 'HPP Modal Beli', step: 4, fieldId: 'wHpp', ok: checkHpp, detail: checkHpp ? S().rp(hpp) : 'Wajib > Rp 0' },
-      { key: 'umum', label: 'Harga Jual Umum', step: 4, fieldId: 'wHrgUmum', ok: checkUmum, detail: checkUmum ? (isUnderHpp ? S().rp(umum) + ' (Di Bawah HPP)' : S().rp(umum)) : 'Wajib > Rp 0' }
+      { key: 'hpp', label: 'HPP Modal Beli', step: 4, fieldId: 'wHpp', ok: checkHpp, detail: checkHpp ? S().rp(hpp) : 'Wajib > 0' },
+      { key: 'umum', label: 'Harga Jual 1', step: 4, fieldId: 'wHrgUmum', ok: checkUmum, detail: checkUmum ? (isUnderHpp ? S().rp(umum) + ' (Rugi)' : S().rp(umum)) : 'Wajib > 0' }
     ];
 
     const filledWajibCount = wajibList.filter((x) => x.ok).length;
@@ -5692,51 +5660,51 @@
     const bar = document.getElementById('wizCompBar');
     if (bar) {
       bar.style.width = wajibPct + '%';
-      bar.className = 'h-full rounded-full transition-all duration-300 ' + (wajibPct === 100 ? 'bg-emerald-600' : (wajibPct >= 60 ? 'bg-blue-600' : 'bg-amber-500'));
+      bar.className = 'h-full transition-all duration-300 ' + (wajibPct === 100 ? 'bg-emerald-500' : (wajibPct >= 60 ? 'bg-blue-600' : 'bg-slate-400'));
     }
 
     const monBadge = document.getElementById('wizMonitorBadge');
     if (monBadge) {
-      monBadge.textContent = filledWajibCount === 5 ? 'Lengkap 5/5' : `${filledWajibCount}/5 Terisi`;
-      monBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full ' + (filledWajibCount === 5 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300');
+      monBadge.textContent = filledWajibCount === 5 ? '✓ Lengkap 5/5' : `${filledWajibCount}/5 Terisi`;
+      monBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full ' + (filledWajibCount === 5 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-blue-500/10 text-blue-600');
     }
 
-    // Monitor Alert Box
+    // Monitor Alert Box (Tenang, Elegan, Informatif Tanpa Shouting Kuning Menyala)
     const alertBox = document.getElementById('wizMonitorAlertBox');
     if (alertBox) {
       if (isUnderHpp) {
-        alertBox.className = 'p-2.5 rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-xs font-semibold';
-        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-bold"><span class="text-base">&#9888;&#65039;</span><span>Peringatan Jual Rugi!</span></div><div>Harga Jual (${S().rp(umum)}) lebih kecil dari HPP modal (${S().rp(hpp)}). Disarankan naikkan harga jual.</div>`;
+        alertBox.className = 'p-2.5 rounded-lg border border-red-200 bg-red-50/70 dark:bg-red-950/20 text-red-700 dark:text-red-300 text-xs';
+        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-bold"><span>⚠️</span><span>Peringatan Harga Jual Rugi</span></div><div class="text-[11px] mt-0.5">Harga Jual (${S().rp(umum)}) di bawah HPP modal (${S().rp(hpp)}).</div>`;
       } else if (filledWajibCount === 5) {
-        alertBox.className = 'p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold';
-        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-bold"><span class="text-base">&#10003;</span><span>Seluruh Kolom Wajib Lengkap!</span></div><div>Produk telah siap disimpan &amp; diterbitkan ke Master Katalog Apotek.</div>`;
+        alertBox.className = 'p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200 text-xs';
+        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-bold"><span>✓</span><span>Data Wajib Lengkap</span></div><div class="text-[11px] mt-0.5">Produk siap disimpan &amp; diterbitkan ke katalog.</div>`;
       } else {
         const missingItem = wajibList.find((x) => !x.ok);
-        alertBox.className = 'p-2.5 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-xs font-semibold';
-        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-bold"><span class="text-base">&#9888;&#65039;</span><span>Belum Lengkap (${5 - filledWajibCount} Kolom Kosong)</span></div><div>Selanjutnya: Mohon lengkapi <b>${missingItem ? missingItem.label : 'kolom wajib'}</b> di Tahap ${missingItem ? missingItem.step : 1}.</div>`;
+        alertBox.className = 'p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 text-xs';
+        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200"><span>ℹ️</span><span>Lengkapi Data Wajib</span></div><div class="text-[11px] mt-0.5 text-slate-500 dark:text-slate-400">Tersisa <b>${5 - filledWajibCount} kolom</b> (berikutnya: ${missingItem ? missingItem.label : 'kolom wajib'}).</div>`;
       }
     }
 
-    // Render Checklist Wajib
+    // Render Checklist Wajib (Tenang & Rapi)
     const wListEl = document.getElementById('wizWajibChecklist');
     if (wListEl) {
       wListEl.innerHTML = wajibList.map((item) => {
         if (item.ok) {
           const isWarn = item.key === 'umum' && isUnderHpp;
-          return `<div class="flex items-center justify-between py-1 px-2.5 rounded-lg ${isWarn ? 'bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900' : 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'}">
-            <span class="flex items-center gap-1.5 font-semibold">
-              <span class="${isWarn ? 'text-red-600' : 'text-emerald-600'} font-bold">${isWarn ? '&#9888;&#65039;' : '&#10003;'}</span>
+          return `<div class="flex items-center justify-between py-1 px-2.5 rounded-md ${isWarn ? 'bg-red-500/10 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'}">
+            <span class="flex items-center gap-1.5 text-[11px] font-medium">
+              <span class="${isWarn ? 'text-red-600' : 'text-emerald-600'} font-bold">${isWarn ? '⚠️' : '✓'}</span>
               <span>${item.label}</span>
             </span>
-            <span class="font-bold truncate max-w-[130px] font-mono-num text-[11px]">${item.detail}</span>
+            <span class="font-bold truncate max-w-[120px] font-mono-num text-[10.5px]">${item.detail}</span>
           </div>`;
         }
-        return `<button type="button" onclick="window.setObatWizardStep(${item.step}, true);setTimeout(()=>{const e=document.getElementById('${item.fieldId}');if(e){e.focus();e.scrollIntoView({behavior:'smooth',block:'center'});}},100);" class="w-full flex items-center justify-between py-1 px-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-300 transition-colors text-left border border-red-200/60 dark:border-red-900/60">
-          <span class="flex items-center gap-1.5 font-bold">
-            <span class="text-red-500 font-extrabold">&#10005;</span>
+        return `<button type="button" onclick="window.setObatWizardStep(${item.step}, true);setTimeout(()=>{const e=document.getElementById('${item.fieldId}');if(e){e.focus();e.scrollIntoView({behavior:'smooth',block:'center'});}},100);" class="w-full flex items-center justify-between py-1 px-2.5 rounded-md bg-slate-100/80 hover:bg-blue-50 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors text-left">
+          <span class="flex items-center gap-1.5 text-[11px] font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             <span>${item.label}</span>
           </span>
-          <span class="text-[10px] underline font-bold text-red-600 dark:text-red-400">Lengkapi (Tahap ${item.step}) &rarr;</span>
+          <span class="text-[10.5px] text-blue-600 dark:text-blue-400 font-semibold">Isi &rarr;</span>
         </button>`;
       }).join('');
     }
@@ -5745,14 +5713,14 @@
     const oListEl = document.getElementById('wizOpsionalChecklist');
     if (oListEl) {
       const ops = [
-        { label: 'Zat Aktif & Dosis', ok: Boolean(zat), text: zat || 'Belum diisi (interaksi obat)' },
-        { label: 'NIE BPOM / KFA', ok: Boolean(nie || kfa), text: (nie || kfa) ? (nie || kfa) : 'Belum diisi (regulasi pabrik)' },
-        { label: 'Multi-Satuan Kemasan', ok: Boolean(satB && satS), text: `1 ${satB} = ${rasB} ${satD || 'Unit'}` }
+        { label: 'Zat Aktif', ok: Boolean(zat), text: zat ? zat : '-' },
+        { label: 'NIE / KFA', ok: Boolean(nie || kfa), text: (nie || kfa) ? (nie || kfa) : '-' },
+        { label: 'Multi-Satuan', ok: Boolean(satB && satS), text: satB ? `1 ${satB} = ${rasB} ${satD || 'Unit'}` : 'Tunggal' }
       ];
       oListEl.innerHTML = ops.map((op) => `
         <div class="flex items-center justify-between py-0.5 px-2 rounded ${op.ok ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}">
           <span class="flex items-center gap-1.5">
-            <span>${op.ok ? '&#10003;' : '&bull;'}</span>
+            <span>${op.ok ? '✓' : '•'}</span>
             <span>${op.label}</span>
           </span>
           <span class="truncate max-w-[120px] text-[10px] font-mono-num">${op.text}</span>
@@ -5764,10 +5732,10 @@
     if (sec5Banner) {
       if (filledWajibCount === 5) {
         sec5Banner.className = 'p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 text-xs space-y-1';
-        sec5Banner.innerHTML = `<div class="font-extrabold text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><span>&#9989;</span><span>Seluruh Data Wajib Telah Lengkap!</span></div><p style="color:var(--ons-text-soft)">Produk akan langsung tersinkron ke Kasir POS FEFO, Pembelian &amp; Scan Faktur PBF, dan Stok Gudang Apotek.</p>`;
+        sec5Banner.innerHTML = `<div class="font-extrabold text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><span>&#9989;</span><span>Seluruh Data Wajib Telah Lengkap!</span></div><p class="text-slate-500 dark:text-slate-400">Produk akan langsung tersinkron ke Kasir POS FEFO, Pembelian Faktur PBF, dan Stok Gudang Apotek.</p>`;
       } else {
-        sec5Banner.className = 'p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-xs space-y-1';
-        sec5Banner.innerHTML = `<div class="font-extrabold text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2"><span>&#9888;&#65039;</span><span>Ada ${5 - filledWajibCount} Kolom Wajib Yang Masih Kosong</span></div><p style="color:var(--ons-text-soft)">Klik tombol di bawah atau gunakan monitor di panel kanan untuk melengkapi data sebelum menyimpan.</p>`;
+        sec5Banner.className = 'p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-800 dark:text-blue-200 text-xs space-y-1';
+        sec5Banner.innerHTML = `<div class="font-extrabold text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2"><span>ℹ️</span><span>Ada ${5 - filledWajibCount} Kolom Wajib Yang Belum Terisi</span></div><p class="text-slate-500 dark:text-slate-400">Silakan lengkapi kolom bertanda bintang sebelum menerbitkan produk.</p>`;
       }
     }
 
