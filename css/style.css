@@ -1033,18 +1033,72 @@ html.dark .ons-wiz-chip:hover {
     max-width: 100% !important;
   }
   .ons-modal-backdrop:not(.is-full) {
-    padding: 0.5rem 0 0 0 !important;
+    padding: 0 !important;
     align-items: flex-end !important;
+    justify-content: center !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
   }
   .ons-modal-box:not(.is-full) {
     width: 100% !important;
     max-width: 100% !important;
-    max-height: 92dvh !important;
-    border-radius: 1.25rem 1.25rem 0 0 !important;
+    max-height: 88dvh !important;
+    border-radius: 1.5rem 1.5rem 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28) !important;
+    padding-bottom: max(1.2rem, env(safe-area-inset-bottom, 1rem)) !important;
+    animation: onsBottomSheetSlideUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+    position: relative;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ons-modal-box:not(.is-full)::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.45);
+    margin: 0.65rem auto 0.45rem auto;
+  }
+  .ons-modal-content,
+  [class*="modal-content"],
+  .ons-confirm-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 88dvh !important;
+    border-radius: 1.5rem 1.5rem 0 0 !important;
     border-left: 0 !important;
     border-right: 0 !important;
     border-bottom: 0 !important;
-    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+    animation: onsBottomSheetSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+  .ons-confirm-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .ons-pos-stepper {
+    height: 2.35rem !important;
+    border-radius: 0.7rem !important;
+  }
+  .ons-pos-stepper button {
+    width: 2.1rem !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+  }
+  .ons-pos-stepper input {
+    width: 2.6rem !important;
+    font-size: 0.88rem !important;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  .ons-input,
+  .ons-select,
+  .ons-textarea {
+    font-size: 16px !important;
   }
   .ons-ws-topbar,
   .ons-ws-header {
@@ -3881,6 +3935,41 @@ html.dark .ons-subtab-dd-meta {
   border-color: rgba(148, 163, 184, 0.25);
 }
 
+@media (max-width: 639px) {
+  .ons-subtab-dd-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.85rem;
+  }
+  .ons-subtab-dd-left {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+  .ons-subtab-dd-lbl {
+    font-size: 0.68rem;
+    align-self: flex-start;
+  }
+  .ons-subtab-dd-select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: 44px;
+    font-size: 0.88rem;
+    padding: 0.55rem 2.2rem 0.55rem 0.85rem;
+    border-radius: 0.75rem;
+  }
+  .ons-subtab-dd-meta {
+    font-size: 0.68rem;
+    align-self: flex-end;
+    padding: 0.2rem 0.55rem;
+  }
+}
+
 /* Dropdown Wrap & Button Trigger (Efek Menarik Saat Diklik) */
 .ons-dd-wrap {
   position: relative;
@@ -4113,30 +4202,80 @@ body.ons-pos-focus-mode #mainViewSlot {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
+/* ============================================================
+   ONS FARMA v18.34.0 — MOBILE EXPERIENCE & BOTTOM SHEET REVAMP
+   ============================================================ */
 .ons-mobile-bottom {
-  background: var(--ons-bg-card);
-  border-color: var(--ons-border);
-  padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
-  padding-top: 0.28rem;
-  box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-top: 1px solid rgba(226, 232, 240, 0.9) !important;
+  padding-bottom: max(0.45rem, env(safe-area-inset-bottom, 0px)) !important;
+  padding-top: 0.35rem !important;
+  height: calc(3.95rem + max(0.45rem, env(safe-area-inset-bottom, 0px))) !important;
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+html.dark .ons-mobile-bottom {
+  background: rgba(13, 24, 41, 0.94) !important;
+  border-top: 1px solid rgba(30, 58, 95, 0.65) !important;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5) !important;
 }
 .ons-mobile-nav-btn {
-  color: var(--ons-text-soft);
-  border-radius: 0.75rem;
-  margin: 0 0.2rem;
-  padding: 0.3rem 0.2rem;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  border-radius: 0.85rem;
+  margin: 0 0.12rem;
+  padding: 0.25rem 0.1rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+html.dark .ons-mobile-nav-btn {
+  color: #94A3B8;
+}
+.ons-mobile-nav-btn .ons-mobile-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 1.7rem;
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ons-mobile-nav-btn .ons-mobile-nav-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.2s ease;
 }
 .ons-mobile-nav-btn.is-active {
-  color: var(--ons-primary);
-  background: var(--ons-primary-tint);
+  color: #1D4ED8 !important;
+}
+html.dark .ons-mobile-nav-btn.is-active {
+  color: #38BDF8 !important;
+}
+.ons-mobile-nav-btn.is-active .ons-mobile-nav-icon {
+  background: rgba(29, 78, 216, 0.12);
+  transform: translateY(-2px);
+}
+html.dark .ons-mobile-nav-btn.is-active .ons-mobile-nav-icon {
+  background: rgba(56, 189, 248, 0.18);
+}
+.ons-mobile-nav-btn.is-active .ons-mobile-nav-label {
   font-weight: 800;
+  transform: scale(1.04);
+}
+.ons-mobile-nav-btn:active {
+  transform: scale(0.92);
 }
 @media (max-width: 767px) {
-  #mainViewSlot {
-    padding-bottom: 5.25rem !important;
+  #mainViewSlot,
+  .ons-main-scroll {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
@@ -4343,7 +4482,17 @@ html.dark .ons-alert-warning {
 @media (max-width: 480px) {
   .ons-kpi-grid,
   [class*="kpi-grid"] {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+  .ons-kpi-card,
+  .ons-dash-stat-tile {
+    padding: 0.65rem 0.75rem !important;
+    border-radius: 0.85rem !important;
+  }
+  .ons-kpi-card .text-xl,
+  .ons-kpi-card .text-2xl {
+    font-size: 1.05rem !important;
   }
   .ons-btn-group {
     flex-direction: column;
@@ -4360,6 +4509,17 @@ html.dark .ons-alert-warning {
   }
   .ons-topbar .ons-search-wrap {
     display: none;
+  }
+}
+
+@keyframes onsBottomSheetSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 

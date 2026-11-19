@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.33.0"/>
+  <meta name="application-version" content="v18.34.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.33.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.34.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -546,7 +546,9 @@
         }
         document.querySelectorAll('[data-mobile-nav]').forEach((el) => {
           const targetId = el.getAttribute('data-mobile-nav');
-          const isMatch = targetId === curView || (targetId === 'obat' && curView === 'gudang');
+          const isMatch = targetId === curView ||
+            (targetId === 'obat' && (curView === 'gudang' || curView === 'obat')) ||
+            (targetId === 'pemeriksaan' && (curView === 'pemeriksaan' || curView === 'klinis'));
           el.classList.toggle('is-active', isMatch);
         });
       };
@@ -1959,17 +1961,17 @@
               <header class="ons-topbar h-14 border-b px-2.5 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-2 sticky top-0 z-30 shadow-sm" style="background:var(--ons-topbar-bg);color:var(--ons-topbar-text);border-color:rgba(255,255,255,0.12)">
                 <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 text-white">
                   <button onclick="window.openMobileDrawer ? window.openMobileDrawer() : window.toggleSidebarCollapsed()" aria-label="Buka Daftar Menu Apotek" class="ons-topbar-icon-btn w-9 h-9 rounded-xl text-white hover:bg-white/20 border-0 md:hidden flex items-center justify-center shrink-0" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF">${svgIcon('menu', 'w-5 h-5')}</button>
-                  <div class="ons-topbar-crest min-w-0">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0 hidden sm:inline-block"></span>
+                  <div class="ons-topbar-crest min-w-0 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0 inline-block"></span>
                     <span class="font-extrabold tracking-wide text-xs sm:text-[13px] truncate">${ONSStore.esc((ONSStore.getStoreProfile && ONSStore.getStoreProfile().nama_usaha) || 'Apotek ONS Farma')}</span>
                   </div>
                   ${(() => {
                     const cm = window.getConnStatusMeta ? window.getConnStatusMeta() : { cls: 'is-cloud', dot: '🟢', label: 'Cloud Sheets', desc: '' };
-                    return `<button id="topbarConnPill" type="button" onclick="window.showConnStatusToast()" class="ons-conn-pill ${cm.cls} shrink-0" title="${ONSStore.esc(cm.desc)}"><span>${cm.dot}</span><span class="hidden sm:inline">${cm.label}</span></button>`;
+                    return `<button id="topbarConnPill" type="button" onclick="window.showConnStatusToast()" class="ons-conn-pill ${cm.cls} shrink-0 hidden sm:inline-flex" title="${ONSStore.esc(cm.desc)}"><span>${cm.dot}</span><span>${cm.label}</span></button>`;
                   })()}
                 </div>
-                <div class="flex items-center gap-1 sm:gap-2 text-white shrink-0">
-                  <button onclick="window.openCommandPalette()" aria-label="Pencarian Cepat dan Pintasan Navigasi" class="ons-topbar-icon-btn text-xs px-2.5 sm:px-3 h-9 rounded-xl text-white hover:bg-white/20 flex items-center gap-1.5 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Pencarian Cepat &amp; Pintasan Fitur (Ctrl+K)">
+                <div class="flex items-center gap-1.5 sm:gap-2 text-white shrink-0">
+                  <button onclick="window.openCommandPalette()" aria-label="Pencarian Cepat dan Pintasan Navigasi" class="ons-topbar-icon-btn text-xs px-2 sm:px-3 h-9 rounded-xl text-white hover:bg-white/20 flex items-center gap-1.5 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Pencarian Cepat &amp; Pintasan Fitur (Ctrl+K)">
                     ${svgIcon('search', 'w-4 h-4 sm:w-3.5 sm:h-3.5 text-white')}
                     <span class="hidden sm:inline font-semibold text-white">Cari Cepat</span>
                     <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">Ctrl+K</kbd>
@@ -1984,7 +1986,7 @@
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   </button>
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden font-bold">Install</button>
-                  <button onclick="window.lockScreenNow()" aria-label="Kunci Layar Segera" title="Kunci Layar Segera" class="ons-topbar-icon-btn h-9 px-2 sm:px-2.5 rounded-xl text-white hover:bg-white/20 flex items-center justify-center gap-1 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline text-white font-medium">Kunci</span></button>
+                  <button onclick="window.lockScreenNow()" aria-label="Kunci Layar Segera" title="Kunci Layar Segera" class="ons-topbar-icon-btn hidden sm:flex h-9 px-2 sm:px-2.5 rounded-xl text-white hover:bg-white/20 items-center justify-center gap-1 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline text-white font-medium">Kunci</span></button>
                   <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-topbar-icon-btn hidden sm:flex w-9 h-9 rounded-xl text-white hover:bg-white/20 items-center justify-center shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
                   <button type="button" onclick="navigateView('settings','profil')" class="w-8 h-8 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 shadow-sm" title="Profil Pengguna">
                     ${(fotoPem && ONSStore.getRole() === 'Pemilik')
@@ -2000,17 +2002,20 @@
               <main id="mainViewSlot" class="flex-1 p-3 sm:p-4 md:p-6 ons-main-scroll"></main>
             </div>
 
-            <!-- #7 Mobile Bottom Nav (<768px) 4-Ikon Cepat seperti Aplikasi Asli -->
-            <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-4 ons-mobile-bottom">
+            <!-- Mobile Bottom Nav 5-Ikon Cepat seperti Native App -->
+            <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-5 ons-mobile-bottom">
               ${[
-                { id: 'dashboard', l: 'Dashboard', i: 'home' },
+                { id: 'dashboard', l: 'Beranda', i: 'home' },
                 { id: 'pos', l: 'Kasir', i: 'pos' },
-                { id: 'obat', l: 'Produk/Stok', i: 'inventory' }
-              ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[48px] text-[11px] font-semibold ${(st.activeView === b.id || (b.id === 'obat' && st.activeView === 'gudang')) ? 'is-active' : ''}">
-                ${svgIcon(b.i, 'w-5 h-5')}<span class="mt-0.5">${b.l}</span>
+                { id: 'obat', l: 'Stok', i: 'inventory' },
+                { id: 'pemeriksaan', l: 'Klinik', i: 'activity' }
+              ].map((b) => `<button data-mobile-nav="${b.id}" onclick="navigateView('${b.id}')" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[48px] text-[10.5px] font-semibold ${(st.activeView === b.id || (b.id === 'obat' && st.activeView === 'gudang') || (b.id === 'pemeriksaan' && (st.activeView === 'pemeriksaan' || st.activeView === 'klinis'))) ? 'is-active' : ''}">
+                <span class="ons-mobile-nav-icon">${svgIcon(b.i, 'w-5 h-5')}</span>
+                <span class="ons-mobile-nav-label mt-0.5">${b.l}</span>
               </button>`).join('')}
-              <button onclick="window.openMobileDrawer()" aria-label="Buka Semua Menu" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[48px] text-[11px] font-semibold">
-                ${svgIcon('menu', 'w-5 h-5')}<span class="mt-0.5">Menu</span>
+              <button onclick="window.openMobileDrawer()" aria-label="Buka Semua Menu" class="ons-mobile-nav-btn flex flex-col items-center justify-center min-h-[48px] text-[10.5px] font-semibold">
+                <span class="ons-mobile-nav-icon">${svgIcon('menu', 'w-5 h-5')}</span>
+                <span class="ons-mobile-nav-label mt-0.5">Menu</span>
               </button>
             </nav>
           </div>
