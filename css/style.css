@@ -5185,6 +5185,7 @@ html.dark .ons-subhero-banner {
 .ons-subhero-banner.is-crm { --subhero-accent: linear-gradient(180deg, #059669, #10B981); }
 .ons-subhero-banner.is-analisis { --subhero-accent: linear-gradient(180deg, #4F46E5, #8B5CF6); }
 .ons-subhero-banner.is-users { --subhero-accent: linear-gradient(180deg, #0284C7, #0D9488); }
+.ons-subhero-banner.is-settings { --subhero-accent: linear-gradient(180deg, #475569, #0284C7); }
 
 /* Executive Subhero Layout & Typography Helpers */
 .ons-subhero-inner {

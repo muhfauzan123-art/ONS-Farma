@@ -13683,80 +13683,99 @@ S. prn 3 dd 1 tab</textarea>
 
   function renderPaymentMethodsTabHtml(canEdit) {
     const list = getPaymentChannelsList();
-    return `<div class="space-y-4 ons-view-enter">
-      <!-- Header Modul Apotek Digital -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 class="text-xl font-bold">Metode Pembayaran</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Kelola saluran pembayaran kasir, kartu debit/EDC, transfer rekening bank, QRIS Standar BI, &amp; asuransi rekanan.</p>
-        </div>
-        <div class="flex items-center gap-2">
-          ${canEdit ? `<button type="button" onclick="window.openAddPaymentChannelModal()" class="ons-btn text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm" style="background:#0D9488">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            + Metode Baru
-          </button>` : ''}
-        </div>
-      </div>
+    const activeCount = list.filter((p) => p.status === 'Aktif' || !p.status).length;
+    const nonCashCount = list.filter((p) => String(p.nama || '').toLowerCase() !== 'tunai').length;
 
-      <!-- Filter Toolbar -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <div class="relative w-64">
-            <input type="text" id="payChannelSearchInput" value="${S().esc(payChannelSearchQ)}" oninput="window.setPaymentChannelSearch(this.value)" placeholder="Cari data" class="ons-input text-xs pl-8 w-full"/>
-            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    return `<div class="space-y-4 ons-view-enter text-xs">
+      <!-- Workstation Card: Metode Pembayaran Apotek Digital -->
+      <div class="ons-card p-5 space-y-4">
+        <!-- Filter & Search Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative w-64">
+              <input type="text" id="payChannelSearchInput" value="${S().esc(payChannelSearchQ)}" oninput="window.setPaymentChannelSearch(this.value)" placeholder="Cari nama metode / akun..." class="ons-input text-xs pl-8 w-full"/>
+              <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border" style="border-color:var(--ons-border)">
+              <span>💳</span> ${list.length} Saluran Terdaftar
+            </span>
           </div>
-          <button type="button" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-            <span>Filter 0</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2 flex items-center gap-1.5" title="Segarkan Data">
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>Segarkan</span>
+            </button>
+            <button type="button" onclick="window.exportPaymentChannels('xlsx')" class="ons-btn ons-btn-ghost text-xs p-2 flex items-center gap-1.5" title="Ekspor Excel">
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Ekspor XLSX</span>
+            </button>
+            ${canEdit ? `<button type="button" onclick="window.openAddPaymentChannelModal()" class="ons-btn ons-btn-primary text-xs font-bold px-3 py-2 flex items-center gap-1.5 shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              + Saluran Baru
+            </button>` : ''}
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
-          <button type="button" onclick="window.exportPaymentChannels('xlsx')" class="ons-btn ons-btn-ghost text-xs p-2" title="Ekspor Excel"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-        </div>
-      </div>
 
-      <!-- Tabel Metode Pembayaran Apotek Digital -->
-      <div class="ons-table-wrap">
-        <table class="ons-table">
-          <thead>
-            <tr>
-              <th style="width:45px">No.</th>
-              <th>Nama</th>
-              <th>Deskripsi</th>
-              <th style="width:110px">MDR</th>
-              <th style="width:140px">Tipe</th>
-              <th style="width:100px">Status</th>
-              <th style="width:120px;text-align:center">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${list.length ? list.map((p, i) => `
-              <tr data-pay-channel-row="${S().esc(p.nama)} ${S().esc(p.deskripsi)} ${S().esc(p.target_akun)}">
-                <td class="font-mono-num">${i + 1}</td>
-                <td class="font-bold text-slate-800 dark:text-slate-100">${S().esc(p.nama)}</td>
-                <td class="text-slate-600 dark:text-slate-300 text-xs">${S().esc(p.deskripsi)}</td>
-                <td class="font-mono-num font-semibold text-slate-700 dark:text-slate-200">${p.mdr_val}${S().esc(p.mdr_type)}</td>
-                <td>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${p.is_asuransi ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
-                    ${p.is_asuransi ? 'Asuransi' : 'Bukan Asuransi'}
-                  </span>
-                </td>
-                <td>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                    ${S().esc(p.status || 'Aktif')}
-                  </span>
-                </td>
-                <td style="text-align:center">
-                  <div class="inline-flex items-center justify-center gap-2">
-                    <button type="button" onclick="window.openAddPaymentChannelModal('${S().esc(p.id)}')" class="px-3 py-1 rounded text-xs border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium">Edit</button>
-                    <button type="button" onclick="window.deletePaymentChannelConfirm('${S().esc(p.id)}')" class="p-1 text-red-500 hover:text-red-700 transition" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                  </div>
-                </td>
+        <!-- Tabel Metode Pembayaran Apotek Digital -->
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead>
+              <tr>
+                <th style="width:45px">No.</th>
+                <th>Nama Saluran</th>
+                <th>Deskripsi &amp; Rekening Target</th>
+                <th style="width:110px">MDR / Biaya</th>
+                <th style="width:140px">Kategori</th>
+                <th style="width:100px">Status</th>
+                <th style="width:120px;text-align:center">Aksi</th>
               </tr>
-            `).join('') : `<tr><td colspan="7" class="text-center py-8 text-slate-400">Data tidak ditemukan</td></tr>`}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${list.length ? list.map((p, i) => `
+                <tr data-pay-channel-row="${S().esc(p.nama)} ${S().esc(p.deskripsi)} ${S().esc(p.target_akun)}">
+                  <td class="font-mono-num">${i + 1}</td>
+                  <td>
+                    <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <span>${String(p.nama || '').toLowerCase().includes('qris') ? '📱' : (String(p.nama || '').toLowerCase().includes('debit') || String(p.nama || '').toLowerCase().includes('edc') ? '💳' : (String(p.nama || '').toLowerCase().includes('transfer') ? '🏦' : (p.is_asuransi ? '🏥' : '💵')))}</span>
+                      <span>${S().esc(p.nama)}</span>
+                    </div>
+                  </td>
+                  <td class="text-xs">
+                    <div>${S().esc(p.deskripsi || '-')}</div>
+                    ${p.target_akun ? `<div class="font-mono-num text-[11px] font-semibold text-blue-600 dark:text-blue-400 mt-0.5">Akun: ${S().esc(p.target_akun)}</div>` : ''}
+                  </td>
+                  <td class="font-mono-num font-semibold text-slate-700 dark:text-slate-200">${p.mdr_val}${S().esc(p.mdr_type)}</td>
+                  <td>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${p.is_asuransi ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
+                      ${p.is_asuransi ? 'Asuransi / Jaminan' : 'Non-Asuransi'}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.status === 'Aktif' || !p.status ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}">
+                      ${S().esc(p.status || 'Aktif')}
+                    </span>
+                  </td>
+                  <td style="text-align:center">
+                    <div class="inline-flex items-center justify-center gap-1.5">
+                      <button type="button" onclick="window.openAddPaymentChannelModal('${S().esc(p.id)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-medium">Edit</button>
+                      <button type="button" onclick="window.deletePaymentChannelConfirm('${S().esc(p.id)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2" title="Hapus"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('') : `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada metode pembayaran yang terdaftar.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Rekap Footer -->
+        <div class="pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center gap-3" style="color:var(--ons-text-soft)">
+            <span>Metode Aktif: <b class="text-emerald-600">${activeCount}</b></span>
+            <span>&bull;</span>
+            <span>Non-Tunai / Digital: <b class="text-blue-600">${nonCashCount}</b></span>
+          </div>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Integrasi POS Kasir, QRIS Standar BI, EDC &amp; Pembukuan Kas</span>
+        </div>
       </div>
     </div>`;
   }
@@ -13766,484 +13785,813 @@ S. prn 3 dd 1 tab</textarea>
     const st = S().AppState;
     settingsTab = (st.subTabs && st.subTabs.settings) || settingsTab || 'profil';
     if (!['profil', 'konfigurasi', 'metode-bayar', 'akun', 'struk', 'vault', 'audit'].includes(settingsTab)) settingsTab = 'profil';
+
     const secrets = settingsCache.secrets || {};
     const audit = settingsCache.audit || [];
     const users = settingsCache.users || [];
     const role = S().getRole();
     const isOwner = role === 'Pemilik';
     const canEditProfile = role === 'Pemilik' || role === 'APJ';
-    const prof = S().getStoreProfile();
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const channelsList = typeof getPaymentChannelsList === 'function' ? getPaymentChannelsList() : [];
+    const cfg = S().getStoreSettings ? S().getStoreSettings() : {};
+    const fotoUrl = profileMediaDraft.foto !== null ? profileMediaDraft.foto : (prof.foto_pemilik_url || '');
+    const logoUrl = profileMediaDraft.logo !== null ? profileMediaDraft.logo : (prof.logo_usaha_url || '');
+    const merged = Object.assign({}, prof, { foto_pemilik_url: fotoUrl, logo_usaha_url: logoUrl });
+    const comp = S().getProfileCompleteness ? S().getProfileCompleteness(merged) : { percent: 100, missing: [] };
+
+    // Staff references for akun tab
+    const staffList = users.length ? users : (Array.isArray(st.staffDirectory) && st.staffDirectory.length ? st.staffDirectory : [
+      { id_user: 'USR-001', username: 'admin', nama_lengkap: 'Administrator', role: 'admin', status_aktif: 'AKTIF' }
+    ]);
+    const apjAcc = staffList.find((u) => u.role === 'APJ' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'APJ') || { id_user: 'USR-002', username: 'apj', nama_lengkap: prof.nama_apj || 'apt. Dewi Kartika, S.Farm', role: 'APJ', no_sipa: prof.sipa_apj || '-' };
+    const kasirAcc = staffList.find((u) => u.role === 'Kasir' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'Kasir') || { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', status_aktif: 'AKTIF' };
+
+    // Struk references for struk tab
+    const tpls = (st && st.strukTemplates) || [];
+    const safeIdx = (strukActiveIdx >= 0 && strukActiveIdx < tpls.length) ? strukActiveIdx : 0;
+    const curTpl = tpls[safeIdx] || {
+      id_tpl: 'TPL-58-DEFAULT',
+      kode: 'STRUK_POS_58MM',
+      nama: 'Struk Kasir Standar 58mm (Apotek ONS Farma)',
+      lebar_mm: 58,
+      template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || ''
+    };
+    const widthNum = Number(curTpl.lebar_mm) === 80 ? 80 : 58;
+
+    // Vault references
+    const bk = S().getLastBackupInfo ? S().getLastBackupInfo() : { label: 'Belum pernah dibackup', isOverdue: true };
+    const isDemo = API().isDemoMode();
+
+    // Audit references
+    const auditDraft = ensureAuditDraft ? ensureAuditDraft() : { items: [] };
+    const auditItems = auditDraft.items || [];
+    const aq = (auditLogSearchQ || '').trim().toLowerCase();
+    const filteredAuditLogs = audit.filter((a) => {
+      if (!aq) return true;
+      return `${a.user_id || ''} ${a.role || ''} ${a.aksi || ''} ${a.entitas || ''} ${a.entitas_id || ''} ${a.diff_sesudah_json || ''} ${a.diff_sebelum_json || ''}`.toLowerCase().includes(aq);
+    });
+
+    let contentHtml = '';
+    if (settingsTab === 'profil') contentHtml = renderProfileTabHtml(prof, canEditProfile);
+    else if (settingsTab === 'konfigurasi') contentHtml = renderConfigurationTabHtml(canEditProfile);
+    else if (settingsTab === 'metode-bayar') contentHtml = renderPaymentMethodsTabHtml(canEditProfile);
+    else if (settingsTab === 'akun') contentHtml = _renderSettingsAkunSubTab(isOwner, users, prof, staffList, apjAcc, kasirAcc);
+    else if (settingsTab === 'struk') contentHtml = _renderSettingsStrukSubTab(prof, tpls, safeIdx, curTpl, widthNum);
+    else if (settingsTab === 'vault') contentHtml = _renderSettingsVaultSubTab(isOwner, secrets, bk, isDemo);
+    else if (settingsTab === 'audit') contentHtml = _renderSettingsAuditSubTab(isOwner, role, audit, prof, auditDraft, auditItems, filteredAuditLogs);
 
     return `<div class="space-y-5 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">Pengaturan Apotek, Konfirmasi Identitas &amp; Sistem</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Konfirmasi pemilik, foto/logo usaha, legalitas SIA/SIPA, metode pembayaran, manajemen akun, desain struk 58/80mm, &amp; audit sistem.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi / PIN Saya</button>
-          <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-emerald text-xs">Snapshot Backup Drive</button>
-        </div>
+      <!-- Top Navigation Tabs (Executive Workstation Cockpit Standard) -->
+      <div class="ons-dash-tab-nav">
+        <button onclick="window.setSettingsTab('profil')" class="ons-dash-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <span>Profil Bisnis</span>
+          <span class="ons-dash-tab-badge">SIA/SIPA</span>
+        </button>
+        <button onclick="window.setSettingsTab('konfigurasi')" class="ons-dash-tab-btn ${settingsTab === 'konfigurasi' ? 'active' : ''}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>Konfigurasi</span>
+          <span class="ons-dash-tab-badge">6 Aturan</span>
+        </button>
+        <button onclick="window.setSettingsTab('metode-bayar')" class="ons-dash-tab-btn ${settingsTab === 'metode-bayar' ? 'active' : ''}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          <span>Metode Pembayaran</span>
+          <span class="ons-dash-tab-badge">${channelsList.length} Saluran</span>
+        </button>
+        <button onclick="window.setSettingsTab('akun')" class="ons-dash-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <span>Pengguna &amp; PIN</span>
+          <span class="ons-dash-tab-badge">${users.length} Akun</span>
+        </button>
+        <button onclick="window.setSettingsTab('struk')" class="ons-dash-tab-btn ${settingsTab === 'struk' ? 'active' : ''}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          <span>Desain Struk</span>
+          <span class="ons-dash-tab-badge">58/80mm</span>
+        </button>
+        <button onclick="window.setSettingsTab('vault')" class="ons-dash-tab-btn ${settingsTab === 'vault' ? 'active' : ''}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <span>Brankas &amp; Reset DB</span>
+          <span class="ons-dash-tab-badge">Cloud &amp; JSON</span>
+        </button>
+        <button onclick="window.setSettingsTab('audit')" class="ons-dash-tab-btn ${settingsTab === 'audit' ? 'active' : ''}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <span>Log Audit Keamanan</span>
+          <span class="ons-dash-tab-badge">${audit.length} Event</span>
+        </button>
       </div>
 
-      <div class="ons-tab-bar">
-        <button onclick="window.setSettingsTab('profil')" class="ons-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">Profil Bisnis (Profil Pemilik &amp; Usaha)</button>
-        <button onclick="window.setSettingsTab('konfigurasi')" class="ons-tab-btn ${settingsTab === 'konfigurasi' ? 'active font-bold shadow-sm' : ''}">⚙️ Konfigurasi Sistem</button>
-        <button onclick="window.setSettingsTab('metode-bayar')" class="ons-tab-btn ${settingsTab === 'metode-bayar' ? 'active' : ''}">Metode Pembayaran</button>
-        <button onclick="window.setSettingsTab('akun')" class="ons-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">Pengguna &amp; Akses (${users.length})</button>
-        <button onclick="window.setSettingsTab('struk')" class="ons-tab-btn ${settingsTab === 'struk' ? 'active' : ''}">Desain Struk Thermal</button>
-        <button onclick="window.setSettingsTab('vault')" class="ons-tab-btn ${settingsTab === 'vault' ? 'active' : ''}">Audit DB, Brankas &amp; Reset</button>
-        <button onclick="window.setSettingsTab('audit')" class="ons-tab-btn ${settingsTab === 'audit' ? 'active' : ''}">Log Audit Aktivitas (${audit.length})</button>
-      </div>
-
-      ${settingsTab === 'profil' ? renderProfileTabHtml(prof, canEditProfile) : ''}
-      ${settingsTab === 'konfigurasi' ? renderConfigurationTabHtml(canEditProfile) : ''}
-      ${settingsTab === 'metode-bayar' ? renderPaymentMethodsTabHtml(canEditProfile) : ''}
-
-      ${settingsTab === 'akun' ? (isOwner ? (() => {
-        const staffList = users.length ? users : (S().AppState.staffDirectory || []);
-        const apjAcc = staffList.find((u) => u.role === 'APJ' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'APJ') || { id_user: 'USR-002', username: 'apj', nama_lengkap: 'Apoteker Penanggung Jawab', role: 'APJ', no_sipa: '-' };
-        const kasirAcc = staffList.find((u) => u.role === 'Kasir' && String(u.status_aktif || 'AKTIF') === 'AKTIF') || staffList.find((u) => u.role === 'Kasir') || { id_user: 'USR-003', username: 'kasir', nama_lengkap: 'Budi Santoso (Kasir)', role: 'Kasir', status_aktif: 'AKTIF' };
-        return `<div class="space-y-4 text-xs">
-          <!-- Panel Edit Cepat Identitas APJ & Kasir Aktif -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div class="ons-card p-4 space-y-2.5 border-l-4" style="border-left-color:#0284C7">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <h3 class="font-bold text-sm">Edit Cepat Identitas APJ Penanggung Jawab</h3>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis memperbarui akun APJ, penanda tangan Surat Pesanan / E-Resep &amp; Audit BPOM.</p>
-                </div>
-                <span class="badge-bpom bpom-terbatas">APJ</span>
+      <!-- Sub-Hero Cockpit Banner (Executive Workstation Standard) -->
+      ${(() => {
+        if (settingsTab === 'profil') {
+          return `<div class="ons-subhero-banner is-settings">
+            <div class="ons-subhero-content">
+              <div class="ons-subhero-header">
+                <span class="ons-subhero-badge">IDENTITAS RESMI &amp; LEGALITAS APOTEK</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-400/30">PMK No. 73/2016</span>
               </div>
-              <input type="hidden" id="quickApjId" value="${S().esc(apjAcc.id_user || 'USR-002')}"/>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div class="sm:col-span-2"><label class="font-semibold block mb-1">Nama Lengkap APJ *</label><input id="quickApjNama" class="ons-input text-xs" value="${S().esc(apjAcc.nama_lengkap || '')}" placeholder="Contoh: apt. Dewi Kartika, S.Farm"/></div>
-                <div><label class="font-semibold block mb-1">Username Login APJ *</label><input id="quickApjUser" class="ons-input font-mono-num text-xs" value="${S().esc(apjAcc.username || 'apj')}"/></div>
-                <div><label class="font-semibold block mb-1">Nomor SIPA APJ</label><input id="quickApjSipa" class="ons-input font-mono-num text-xs" value="${S().esc(apjAcc.no_sipa || '-')}"/></div>
-              </div>
-              <div class="flex flex-wrap gap-2 pt-1">
-                <button type="button" onclick="window.saveQuickStaffCard('APJ')" class="ons-btn ons-btn-primary text-xs">Simpan Nama &amp; SIPA APJ</button>
-                <button type="button" onclick="window.openAddUserModal('${S().esc(apjAcc.id_user || apjAcc.username)}')" class="ons-btn ons-btn-ghost text-xs">Atur Hak Akses APJ</button>
-              </div>
+              <h2 class="ons-subhero-title">Profil Bisnis, Sarana Apotek &amp; Legalitas SIA/SIPA</h2>
+              <p class="ons-subhero-desc">Data resmi pemilik sarana, apoteker penanggung jawab (APJ), nomor izin operasional DPMPTSP &amp; Kemenkes, foto tempat usaha, logo nota, serta zona waktu WITA.</p>
             </div>
-
-            <div class="ons-card p-4 space-y-2.5 border-l-4" style="border-left-color:#10B981">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <h3 class="font-bold text-sm">Edit Cepat Identitas Kasir Aktif</h3>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis memperbarui akun Kasir pada struk POS, Tutup Shift, Pemeriksaan &amp; Audit Harian.</p>
-                </div>
-                <span class="badge-bpom bpom-bebas">KASIR</span>
-              </div>
-              <input type="hidden" id="quickKasirId" value="${S().esc(kasirAcc.id_user || 'USR-003')}"/>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div class="sm:col-span-2"><label class="font-semibold block mb-1">Nama Lengkap Kasir *</label><input id="quickKasirNama" class="ons-input text-xs" value="${S().esc(kasirAcc.nama_lengkap || '')}" placeholder="Contoh: Rina Marlina (Kasir Shift 1)"/></div>
-                <div><label class="font-semibold block mb-1">Username Login Kasir *</label><input id="quickKasirUser" class="ons-input font-mono-num text-xs" value="${S().esc(kasirAcc.username || 'kasir')}"/></div>
-                <div><label class="font-semibold block mb-1">Status Akun Kasir</label>
-                  <select id="quickKasirStatus" class="ons-select text-xs">
-                    <option value="AKTIF" ${String(kasirAcc.status_aktif || 'AKTIF') === 'AKTIF' ? 'selected' : ''}>AKTIF</option>
-                    <option value="NONAKTIF" ${String(kasirAcc.status_aktif || '') === 'NONAKTIF' ? 'selected' : ''}>NONAKTIF</option>
-                  </select>
-                </div>
-              </div>
-              <div class="flex flex-wrap gap-2 pt-1">
-                <button type="button" onclick="window.saveQuickStaffCard('Kasir')" class="ons-btn ons-btn-emerald text-xs">Simpan Nama Kasir</button>
-                <button type="button" onclick="window.openAddUserModal('${S().esc(kasirAcc.id_user || kasirAcc.username)}')" class="ons-btn ons-btn-ghost text-xs">Atur Hak Akses Kasir</button>
-              </div>
+            <div class="ons-subhero-actions">
+              <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
+              <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-ghost text-xs">Snapshot Drive</button>
+              <button onclick="window.saveStoreProfile()" class="ons-btn ons-btn-primary text-xs font-bold">Simpan Profil Bisnis</button>
             </div>
-          </div>
-
-          <!-- Tabel Penuh Akun & Hak Akses RBAC -->
-          <div class="ons-card p-5 space-y-3">
-            <div class="flex flex-wrap justify-between items-center gap-2">
-              <div>
-                <h3 class="font-bold text-sm">Manajemen Akun Pengguna, Matriks Hak Akses &amp; Otorisasi PIN (PENGGUNA_CABANG)</h3>
-                <p style="color:var(--ons-text-soft)">Edit nama Pemilik / APJ / Kasir, atur modul yang boleh diakses per pengguna (bukan sekadar centang statis), atau reset sandi &amp; PIN.</p>
+          </div>`;
+        } else if (settingsTab === 'konfigurasi') {
+          return `<div class="ons-subhero-banner is-settings">
+            <div class="ons-subhero-content">
+              <div class="ons-subhero-header">
+                <span class="ons-subhero-badge">TATA KELOLA &amp; OPERASIONAL TOKO</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-400/30">Kebijakan Toko Aktif</span>
               </div>
-              <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs">+ Tambah Akun Staf Baru</button>
+              <h2 class="ons-subhero-title">Konfigurasi Operasional, Kebijakan Stok &amp; Kasir</h2>
+              <p class="ons-subhero-desc">Kendalikan aturan anti-stok minus, proteksi jual rugi (HPP Guard), blind count tutup shift kasir, expired date guard, dan pembulatan kasir POS.</p>
             </div>
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>Username</th><th>Nama Lengkap</th><th>Role ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? '&amp; Cabang' : 'Outlet'}</th><th>No. SIPA</th><th>Hak Akses Modul</th><th>Status</th><th>Aksi</th></tr></thead>
-                <tbody>
-                  ${staffList.length ? staffList.map((u) => {
-                    const effPerms = S().getUserPermissions ? S().getUserPermissions(u) : [];
-                    const isCustom = Array.isArray(u.hak_akses) && u.hak_akses.length > 0;
-                    return `<tr>
-                      <td class="font-mono-num font-bold">${S().esc(u.username)}</td>
-                      <td class="font-semibold">${S().esc((u.role === 'Pemilik' && S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(u.nama_lengkap, prof.nama_pemilik) : u.nama_lengkap)}</td>
-                      <td>
-                        <span class="badge-bpom ${u.role === 'Pemilik' ? 'bpom-narkotika' : (u.role === 'APJ' ? 'bpom-terbatas' : 'bpom-bebas')}">${S().esc(u.role)}</span>
-                        <span class="font-mono-num text-[11px] ml-1" style="color:var(--ons-text-soft)">${S().esc(u.cabang_id)}</span>
-                      </td>
-                      <td class="font-mono-num">${S().esc(u.no_sipa || '-')}</td>
-                      <td>
-                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-500/10">
-                          ${u.role === 'Pemilik' ? 'Penuh (Pemilik)' : `${isCustom ? 'Custom' : 'Standar'} (${effPerms.length} Izin)`}
-                        </span>
-                      </td>
-                      <td><span class="badge-bpom ${u.status_aktif === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(u.status_aktif)}</span></td>
-                      <td>
-                        <div class="flex flex-wrap gap-1.5">
-                          <button onclick="window.openAddUserModal('${S().esc(u.id_user || u.username)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Edit Nama &amp; Hak</button>
-                          <button onclick="window.openChangeCredModal('${S().esc(u.username)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Sandi / PIN</button>
-                        </div>
-                      </td>
-                    </tr>`;
-                  }).join('') : '<tr><td colspan="7" class="text-center" style="color:var(--ons-text-soft)">Memuat daftar pengguna...</td></tr>'}
-                </tbody>
-              </table>
+            <div class="ons-subhero-actions">
+              <button type="button" onclick="window.saveStoreSettings()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2 shadow-sm">💾 Simpan Konfigurasi</button>
+              <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
             </div>
-          </div>
-
-          <!-- Panel Audit Keamanan, Enkripsi & Cabut Sesi Aktif -->
-          <div class="ons-card p-5 space-y-3 border-l-4" style="border-left-color:#10B981">
-            ${S().AppState.needsPasswordUpgrade && !API().isDemoMode() ? `<div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 flex flex-wrap items-center justify-between gap-2 text-amber-800 dark:text-amber-200">
-              <div><b>&#9888;&#65039; Peringatan Keamanan:</b> Akun Anda masih menggunakan kata sandi / PIN bawaan atau lemah. Segera ganti sekarang demi mencegah akses ilegal!</div>
-              <button type="button" onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi &amp; PIN Sekarang</button>
-            </div>` : ''}
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 class="font-bold text-sm">&#128737;&#65039; Perisai Keamanan &amp; Kontrol Sesi Perangkat</h3>
-                <p class="text-[11px]" style="color:var(--ons-text-soft)">Enkripsi 250x SHA-256 + Salt + Pepper, Token HMAC-SHA256, Proteksi Lockout 5x/15m, &amp; Pembersihan Cache Otomatis.</p>
+          </div>`;
+        } else if (settingsTab === 'metode-bayar') {
+          return `<div class="ons-subhero-banner is-settings">
+            <div class="ons-subhero-content">
+              <div class="ons-subhero-header">
+                <span class="ons-subhero-badge">PAYMENT GATEWAYS &amp; EDC</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-400/30">Multi-Channel</span>
               </div>
-              <div class="flex flex-wrap gap-2">
-                <button type="button" onclick="window.runSecurityHealthCheck()" class="ons-btn ons-btn-primary text-xs">Audit Kesehatan Keamanan</button>
-                <button type="button" onclick="window.revokeAllActiveSessions()" class="ons-btn ons-btn-danger text-xs">Cabut Semua Sesi Aktif</button>
-              </div>
+              <h2 class="ons-subhero-title">Saluran Pembayaran Kasir &amp; Rekening Apotek</h2>
+              <p class="ons-subhero-desc">Kelola saluran pembayaran uang tunai kasir, QRIS Standar BI, EDC kartu debit/kredit, rekening transfer bank apotek, dan penjaminan asuransi rekanan.</p>
             </div>
-            <div id="secAuditResultBox" class="p-3 rounded-xl border hidden text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
-          </div>
-        </div>`;
-      })() : `<div class="ons-card p-5 space-y-2 text-xs">
-        ${S().AppState.needsPasswordUpgrade && !API().isDemoMode() ? `<div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"><b>Peringatan:</b> Anda masih memakai sandi awal. Klik tombol <b>Ganti Sandi / PIN Saya</b> di kanan atas untuk mengamankan akun Anda.</div>` : ''}
-        <div>Gunakan tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk memperbarui kredensial akun Anda (wajib memasukkan kata sandi saat ini untuk keamanan).</div>
-      </div>`) : ''}
-
-      ${settingsTab === 'vault' ? `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-2 border-blue-400/70" style="background:linear-gradient(135deg,rgba(0,102,254,0.06),transparent)">
-          ${(() => {
-            const bk = S().getLastBackupInfo ? S().getLastBackupInfo() : { label: 'Belum pernah dibackup', isOverdue: true };
-            const isDemo = API().isDemoMode();
-            return `<div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="max-w-3xl space-y-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <h3 class="font-extrabold text-sm">💾 Pengamanan Data: Backup &amp; Restore Penuh 1-Klik (.JSON)</h3>
-                  <span class="badge-bpom ${bk.isOverdue ? 'bpom-prekursor' : 'bpom-bebas'} text-[10px]">Backup Terakhir: ${S().esc(bk.label)}</span>
-                  <span class="badge-bpom ${isDemo ? 'bpom-terbatas' : 'bpom-bebas'} text-[10px]">${isDemo ? 'Mode Penyimpanan Lokal Browser' : 'Tersambung Cloud Database'}</span>
-                </div>
-                <p style="color:var(--ons-text-soft)">Unduh 1 file cadangan lengkap berisi seluruh <b>Master Obat, Stok Batch/ED, Riwayat Penjualan, Faktur PBF, Supplier, Member, &amp; Pengaturan Toko</b>. Jika pindah perangkat atau browser dibersihkan, tinggal klik <b>Pulihkan dari File Backup</b>.</p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2 shrink-0">
-                <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup Penuh (.JSON)</button>
-                <label class="ons-btn ons-btn-ghost text-xs font-semibold cursor-pointer">
-                  📂 Pulihkan dari File Backup
-                  <input type="file" accept=".json,application/json" class="hidden" onchange="window.handleRestoreFullBackupFile(this)"/>
-                </label>
-              </div>
-            </div>`;
-          })()}
-        </div>
-
-        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-2 border-emerald-400/80" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),transparent)">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="max-w-3xl">
-              <div class="flex items-center gap-2">
-                <h3 class="font-extrabold text-sm" style="color:var(--ons-primary-ink)">Audit, Pembersihan &amp; Sinkronisasi Database Sheets</h3>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Langsung ke DB Aktif &bull; Tanpa ID</span>
-              </div>
-              <p class="mt-1" style="color:var(--ons-text-soft)">Berjalan langsung pada Google Sheets database utama aplikasi ini. Menghapus tab tidak penting/kosong (<code>Sheet1</code>, tab legacy, tab multi-cabang kosong), menghapus baris kosong, melengkapi kolom skema terbaru, menormalisasi sisa label lama, &amp; menyinkronkan ulang Piutang, Hutang PBF, Batch Stok, SP, Tagihan, dan Jurnal Keuangan.</p>
+            <div class="ons-subhero-actions">
+              ${canEditProfile ? `<button type="button" onclick="window.openAddPaymentChannelModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Metode Baru</button>` : ''}
+              <button type="button" onclick="window.exportPaymentChannels('xlsx')" class="ons-btn ons-btn-ghost text-xs">Ekspor Saluran</button>
             </div>
-            <div class="flex flex-wrap gap-2">
-              <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">1. Pindai Kesehatan DB</button>
-              <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs">2. Perbaiki, Bersihkan &amp; Sinkronkan DB</button>
-            </div>
-          </div>
-          <div id="dbAuditResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
-        </div>
-
-        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs">
-          <h3 class="font-bold text-sm">Brankas Rahasia Script Properties (Read-Back Tersensor)</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            ${Object.keys(secrets).map((k) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg border" style="border-color:var(--ons-border)">
-              <div><b>${S().esc(k)}</b><div class="font-mono-num" style="color:var(--ons-text-soft)">${S().esc(secrets[k] || '(Belum diatur)')}</div></div>
-              <button onclick="window.promptUpdateSecret('${S().esc(k)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Ubah</button>
-            </div>`).join('')}
-          </div>
-        </div>
-
-        <div class="ons-card p-5 lg:col-span-12 space-y-3 text-xs border-red-200">
-          ${renderFactoryResetPanelHtml(isOwner, 'vault')}
-        </div>
-
-        ${isOwner ? `<div class="ons-card p-5 lg:col-span-12 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div>
-            <h3 class="font-bold text-sm">Data Sampel Uji Coba (Saat Katalog Kosong)</h3>
-            <p style="color:var(--ons-text-soft)">Khusus mode uji coba pada Google Sheets yang masih kosong: mengisi 6 contoh produk obat KFA, batch FEFO, PBF, &amp; pelanggan apotek. Tidak menimpa data obat yang sudah ada.</p>
-          </div>
-          <button type="button" onclick="window.seedStarterCatalogFromSettings()" class="ons-btn ons-btn-ghost text-xs">Muat 6 Produk Sampel</button>
-        </div>` : ''}
-
-        <details class="ons-card p-4 lg:col-span-12 text-xs">
-          <summary class="font-bold text-xs cursor-pointer select-none flex items-center justify-between gap-2" style="color:var(--ons-text-soft)">
-            <span>&#9656; Impor Data dari File Spreadsheet v9 Terpisah (Opsional &mdash; Tidak Perlu untuk Merapikan DB Aktif)</span>
-            <span class="text-[11px] font-normal">Klik untuk buka</span>
-          </summary>
-          <div class="mt-3 pt-3 border-t space-y-3" style="border-color:var(--ons-border)">
-            <h3 class="font-bold text-sm">Wizard Migrasi Spreadsheet v9 &rarr; v13 (Impor dari File Lama Lain)</h3>
-            <p style="color:var(--ons-text-soft)">Hanya gunakan jika ingin mengimpor data dari file Google Sheets versi lama terpisah. Membaca berbasis header, normalisasi nomor WA <code>628...</code>, &amp; upsert idempoten dengan Dry-Run Preview.</p>
-            <input id="migSourceId" class="ons-input font-mono-num" placeholder="Tempel ID atau URL Google Sheets Sumber v9 (contoh: 1BxiMVs0XRA5nFMd...)"/>
-            <div class="flex flex-wrap gap-2">
-              <button type="button" onclick="window.runMigrationPreview()" class="ons-btn ons-btn-ghost">1. Pindai Dry-Run Preview</button>
-              <button type="button" onclick="window.runMigrationExecute()" class="ons-btn ons-btn-primary">2. Eksekusi Upsert Batch</button>
-            </div>
-            <div id="migResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
-          </div>
-        </details>
-      </div>` : ''}
-
-      ${settingsTab === 'struk' ? (() => {
-        const tpls = (S().AppState && S().AppState.strukTemplates) || [];
-        const safeIdx = (strukActiveIdx >= 0 && strukActiveIdx < tpls.length) ? strukActiveIdx : 0;
-        const curTpl = tpls[safeIdx] || {
-          id_tpl: 'TPL-58-DEFAULT',
-          kode: 'STRUK_POS_58MM',
-          nama: 'Struk Kasir Standar 58mm (Apotek ONS Farma)',
-          lebar_mm: 58,
-          template_teks: (global.StrukEngine && global.StrukEngine.DEFAULT_STRUK_TEMPLATE) || ''
-        };
-        const widthNum = Number(curTpl.lebar_mm) === 80 ? 80 : 58;
-        const sampleData = buildStrukEditorSampleData(prof);
-        const previewHtml = renderStrukPreviewContent(curTpl.template_teks, sampleData, widthNum);
-        const presets = (global.StrukEngine && global.StrukEngine.TEMPLATE_PRESETS) || [];
-        return `<div class="space-y-5">
-          <!-- Card 1: Desain & Pratinjau Struk Thermal 58mm / 80mm -->
-          <div class="ons-card p-5 space-y-4 text-xs">
-            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
-              <div>
-                <h3 class="font-bold text-sm">Desain &amp; Pratinjau Struk Thermal 58mm / 80mm</h3>
-                <p style="color:var(--ons-text-soft)">Atur tata letak struk kasir dengan direktif <code>[C]</code>, <code>[B]</code>, <code>[LR]Kiri||Kanan</code>, blok item <code>{{#ITEM}}...{{/ITEM}}</code>, dan <code>[QR]</code>.</p>
+          </div>`;
+        } else if (settingsTab === 'akun') {
+          return `<div class="ons-subhero-banner is-settings">
+            <div class="ons-subhero-content">
+              <div class="ons-subhero-header">
+                <span class="ons-subhero-badge">SECURITY &amp; ACCESS CONTROL</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-400/30">Zero-Trust RBAC</span>
               </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <select id="strukTplWidth" onchange="window.previewEditedStruk()" class="ons-select w-32 text-xs font-semibold">
-                  <option value="58" ${widthNum !== 80 ? 'selected' : ''}>58 mm (32 Kolom)</option>
-                  <option value="80" ${widthNum === 80 ? 'selected' : ''}>80 mm (46 Kolom)</option>
-                </select>
-                <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs" title="Hubungkan Printer Thermal Bluetooth">🖨️ Hubungkan BT</button>
-                <button type="button" onclick="window.testPrintBluetoothStruk()" class="ons-btn ons-btn-ghost text-xs text-blue-700 font-semibold" title="Kirim Uji Cetak ESC/POS Langsung ke Printer Bluetooth">⚡ Uji Cetak BT</button>
-                <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs" title="Uji Cetak via Dialog Browser / Print PDF">Uji Cetak (Browser)</button>
-                <button type="button" onclick="window.downloadEditedStrukPng()" class="ons-btn ons-btn-ghost text-xs">Unduh PNG</button>
-                <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template ke Sheets</button>
-              </div>
+              <h2 class="ons-subhero-title">Manajemen Akun Staf, Matriks Hak Akses &amp; PIN Otorisasi</h2>
+              <p class="ons-subhero-desc">Kelola kredensial login pemilik sarana, apoteker penanggung jawab (APJ), kasir operasional, matriks izin per-modul, serta proteksi keamanan sesi.</p>
             </div>
-
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Preset Cepat:</span>
-                ${presets.map((pr) => `<button type="button" onclick="window.applyStrukPreset('${S().esc(pr.id)}')" class="ons-struk-preset-btn ${curTpl.kode === pr.kode ? 'active' : ''}">${S().esc(pr.label)}</button>`).join('')}
-              </div>
-              ${tpls.length > 1 ? `<div class="flex items-center gap-1.5">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
-                <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-xs w-56">
-                  ${tpls.map((t, idx) => `<option value="${idx}" ${idx === safeIdx ? 'selected' : ''}>${S().esc(t.nama || t.kode)} (${Number(t.lebar_mm) === 80 ? '80mm' : '58mm'})</option>`).join('')}
-                </select>
-              </div>` : ''}
+            <div class="ons-subhero-actions">
+              <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Tambah Akun Staf</button>
+              <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
+              <button type="button" onclick="window.runSecurityHealthCheck()" class="ons-btn ons-btn-ghost text-xs">Audit Keamanan</button>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              <div class="lg:col-span-7 space-y-2.5">
-                <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_POS_58MM')}"/>
-                <div>
-                  <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Nama Template Struk</label>
-                  <input id="strukTplNama" class="ons-input text-xs font-bold" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
-                </div>
-                <div>
-                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <label class="font-semibold text-[11px]" style="color:var(--ons-text-soft)">Kode Tata Letak Struk</label>
-                    <button type="button" onclick="window.resetEditedStrukPreset()" class="text-[11px] font-semibold text-blue-600 hover:underline">Pulihkan Template Bawaan</button>
-                  </div>
-                  <textarea id="strukTplText" rows="16" oninput="window.previewEditedStruk()" class="ons-textarea font-mono-num text-[11.5px] leading-relaxed">${S().esc(curTpl.template_teks || '')}</textarea>
-                </div>
-                <div class="p-2.5 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                  <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Sisipkan Variabel / Direktif Cepat (klik untuk menambah ke editor):</div>
-                  <div class="flex flex-wrap gap-1.5">
-                    ${STRUK_TOKEN_SNIPPETS.map((c, idx) => `<button type="button" onclick="window.insertStrukToken(${idx})" class="ons-struk-chip">${S().esc(c.label)}</button>`).join('')}
-                  </div>
-                </div>
+          </div>`;
+        } else if (settingsTab === 'struk') {
+          return `<div class="ons-subhero-banner is-settings">
+            <div class="ons-subhero-content">
+              <div class="ons-subhero-header">
+                <span class="ons-subhero-badge">ESC/POS THERMAL PRINTER</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-400/30">58mm &amp; 80mm</span>
               </div>
-
-              <div class="lg:col-span-5 space-y-2.5">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-bold text-xs">Live Preview</span>
-                    <span id="strukPreviewWidthPill" class="badge-bpom bpom-terbatas">${widthNum} mm &bull; ${widthNum === 80 ? '46' : '32'} Kolom</span>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    <button type="button" onclick="window.setStrukPreviewMode('paper')" class="ons-btn ${strukPreviewMode === 'paper' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">Kertas</button>
-                    <button type="button" onclick="window.setStrukPreviewMode('text')" class="ons-btn ${strukPreviewMode === 'text' ? 'ons-btn-primary' : 'ons-btn-ghost'} text-[11px] py-1 px-2">ESC/POS</button>
-                  </div>
-                </div>
-                <label class="flex items-center gap-2 text-[11px] cursor-pointer" style="color:var(--ons-text-soft)">
-                  <input type="checkbox" ${strukPreviewExtras ? 'checked' : ''} onchange="window.toggleStrukPreviewExtras(this.checked)" class="w-3.5 h-3.5 accent-blue-600"/>
-                  <span>Tampilkan contoh diskon, aturan pakai &amp; kembalian di pratinjau</span>
-                </label>
-                <div id="strukEditorLivePreview" class="ons-struk-paper-tray">${previewHtml}</div>
-              </div>
+              <h2 class="ons-subhero-title">Konfigurasi &amp; Pratinjau Desain Struk Kasir Thermal</h2>
+              <p class="ons-subhero-desc">Kustomisasi format cetak thermal 58mm / 80mm, nota apotek resmi, QR code verifikasi transaksi, barcode, direktif cetak ESC/POS, dan printer Bluetooth.</p>
             </div>
-          </div>
-
-          <!-- Card 2: Aturan Pembulatan Kasir POS Otomatis (Apotek Digital Adoption) -->
-          <div class="ons-card p-5 space-y-4 text-xs">
-            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
-              <div>
-                <h3 class="font-bold text-sm flex items-center gap-2">
-                  <span>🪙 Aturan Pembulatan Kasir POS Otomatis</span>
-                  <span class="badge-bpom bpom-bebas">Apotek Pro</span>
-                </h3>
-                <p style="color:var(--ons-text-soft)">Atur kelipatan pembulatan total tagihan kasir (misal kelipatan Rp 100 terdekat) untuk efisiensi uang receh kembalian.</p>
-              </div>
-              <button type="button" onclick="window.savePosRoundingSettings()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3">Simpan Aturan Pembulatan</button>
+            <div class="ons-subhero-actions">
+              <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs">🖨️ Hubungkan BT</button>
+              <button type="button" onclick="window.testPrintBluetoothStruk()" class="ons-btn ons-btn-ghost text-xs text-blue-600 font-bold">⚡ Uji Cetak BT</button>
+              <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Browser</button>
+              <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template</button>
             </div>
-
-            ${(() => {
-              const roundCfg = typeof S().getPosRoundingConfig === 'function' ? S().getPosRoundingConfig() : { nominal: 100, arah: 'terdekat' };
-              return `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label class="font-semibold block mb-1">Kelipatan Pembulatan *</label>
-                    <select id="cfgRoundNominal" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
-                      <option value="1" ${Number(roundCfg.nominal) === 1 ? 'selected' : ''}>Nonaktif (Tanpa Pembulatan / Rp 1)</option>
-                      <option value="50" ${Number(roundCfg.nominal) === 50 ? 'selected' : ''}>Kelipatan Rp 50</option>
-                      <option value="100" ${Number(roundCfg.nominal) === 100 ? 'selected' : ''}>Kelipatan Rp 100 (Rekomendasi Standar)</option>
-                      <option value="500" ${Number(roundCfg.nominal) === 500 ? 'selected' : ''}>Kelipatan Rp 500</option>
-                      <option value="1000" ${Number(roundCfg.nominal) === 1000 ? 'selected' : ''}>Kelipatan Rp 1.000</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label class="font-semibold block mb-1">Arah / Metode Pembulatan *</label>
-                    <select id="cfgRoundArah" onchange="window.simulasiPosRounding()" class="ons-select text-xs">
-                      <option value="terdekat" ${roundCfg.arah === 'terdekat' ? 'selected' : ''}>Bulat Terdekat (Round: &lt;50 ke bawah, &gt;=50 ke atas)</option>
-                      <option value="keatas" ${roundCfg.arah === 'keatas' ? 'selected' : ''}>Selalu Bulat Ke Atas (Ceil)</option>
-                      <option value="kebawah" ${roundCfg.arah === 'kebawah' ? 'selected' : ''}>Selalu Bulat Ke Bawah (Floor)</option>
-                    </select>
-                  </div>
-
-                  <div class="p-3 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                    <div class="font-bold text-blue-700 dark:text-blue-300">Live Simulator Pembulatan:</div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-slate-500">Contoh Tagihan:</span>
-                      <input id="cfgRoundSimInp" type="number" value="12340" oninput="window.simulasiPosRounding()" class="ons-input font-mono-num text-xs w-24 py-1 text-right"/>
-                    </div>
-                    <div id="cfgRoundSimResult" class="font-mono-num font-extrabold text-xs text-emerald-600">
-                      Hasil: Rp 12.300 (Pembulatan: -Rp 40)
-                    </div>
-                  </div>
-                </div>
-              `;
-            })()}
-          </div>
-        </div>`;
-      })() : ''}
-
-      ${settingsTab === 'audit' ? (() => {
-        const draft = ensureAuditDraft();
-        const items = draft.items || [];
-        const canEditAuditMeta = isOwner || role === 'APJ' || S().canAccessSubTab('settings', 'audit');
-        const aq = auditLogSearchQ.trim().toLowerCase();
-        const filteredAuditLogs = audit.filter((a) => {
-          if (!aq) return true;
-          return `${a.user_id} ${a.role} ${a.aksi} ${a.entitas} ${a.entitas_id} ${a.diff_sesudah_json} ${a.diff_sebelum_json}`.toLowerCase().includes(aq);
-        });
-        return `<div class="space-y-4 text-xs">
-          <!-- Panel 1: Editor Sistem Audit Kepatuhan, Nama APJ & Kasir -->
-          <div class="ons-card p-5 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 class="font-bold text-sm">Editor Sistem Audit Kepatuhan BPOM, Nama APJ &amp; Nama Kasir</h3>
-                <p style="color:var(--ons-text-soft)">Bukan hanya dicentang: edit butir pemeriksaan audit, ubah nama APJ &amp; Kasir penanggung jawab, dan sinkronkan ke sistem.</p>
+          </div>`;
+        } else if (settingsTab === 'vault') {
+          return `<div class="ons-subhero-banner is-settings">
+            <div class="ons-subhero-content">
+              <div class="ons-subhero-header">
+                <span class="ons-subhero-badge">DISASTER RECOVERY &amp; SCRIPT PROPERTIES</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-400/30">Cloud &amp; Local</span>
               </div>
-              <div class="flex flex-wrap gap-2">
-                ${isOwner ? `<button type="button" onclick="window.setSettingsTab('akun')" class="ons-btn ons-btn-ghost text-xs">Kelola Matriks Hak Akses Staf &rarr;</button>` : ''}
-                ${canEditAuditMeta ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
-              </div>
+              <h2 class="ons-subhero-title">Brankas Rahasia, Backup JSON &amp; Pemeliharaan Database</h2>
+              <p class="ons-subhero-desc">Cadangkan database penuh 1-klik (.JSON), audit kesehatan tabel Google Sheets, sensor kunci API/token rahasia, dan pemulihan sistem darurat.</p>
             </div>
+            <div class="ons-subhero-actions">
+              <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup JSON</button>
+              <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">Pindai DB</button>
+              <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs font-bold">Perbaiki DB</button>
+            </div>
+          </div>`;
+        } else {
+          return `<div class="ons-subhero-banner is-settings">
+            <div class="ons-subhero-content">
+              <div class="ons-subhero-header">
+                <span class="ons-subhero-badge">COMPLIANCE &amp; IMMUTABLE AUDIT TRAIL</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-400/30">CDOB Kemenkes</span>
+              </div>
+              <h2 class="ons-subhero-title">Pemeriksaan Kepatuhan CDOB BPOM &amp; Jejak Audit Sistem</h2>
+              <p class="ons-subhero-desc">Verifikasi butir kepatuhan farmasi resmi oleh APJ, audit peran staf, serta jejak audit perubahan data sensitif dengan enkripsi dan redaksi rahasia.</p>
+            </div>
+            <div class="ons-subhero-actions">
+              ${canEditProfile ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
+              <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Sistem Audit</button>
+            </div>
+          </div>`;
+        }
+      })()}
 
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-              <div>
-                <label class="font-semibold block mb-1">Nama APJ Pengaudit *</label>
-                <input id="audSysApjNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.apj_nama || '')}" oninput="window.updateAuditHeaderField('apj_nama', this.value)" placeholder="Nama Apoteker Penanggung Jawab"/>
-              </div>
-              <div>
-                <label class="font-semibold block mb-1">No. SIPA APJ</label>
-                <input id="audSysApjSipa" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input font-mono-num text-xs" value="${S().esc(draft.apj_sipa || '-')}" oninput="window.updateAuditHeaderField('apj_sipa', this.value)" placeholder="No. SIPA APJ"/>
-              </div>
-              <div>
-                <label class="font-semibold block mb-1">Nama Kasir Pelaksana *</label>
-                <input id="audSysKasirNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.kasir_nama || '')}" oninput="window.updateAuditHeaderField('kasir_nama', this.value)" placeholder="Nama Kasir Aktif"/>
-              </div>
-              <div>
-                <label class="font-semibold block mb-1">Catatan Evaluasi Audit</label>
-                <input id="audSysCatatan" class="ons-input text-xs" value="${S().esc(draft.catatan_audit || '')}" oninput="window.updateAuditHeaderField('catatan_audit', this.value)" placeholder="Ringkasan temuan CDOB hari ini"/>
-              </div>
+      <!-- 4 KPI Cockpit Strip Cards -->
+      ${(() => {
+        if (settingsTab === 'profil') {
+          return `<div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Kelengkapan Profil</span>
+              <span class="ons-cockpit-val text-sky-600">${comp.percent || 100}%</span>
+              <span class="ons-cockpit-desc">${comp.missing && comp.missing.length ? comp.missing.length + ' Item Belum Diisi' : 'Data Usaha &amp; Pemilik Lengkap'}</span>
             </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Legalitas SIA / SIPA</span>
+              <span class="ons-cockpit-val text-emerald-600">Terverifikasi</span>
+              <span class="ons-cockpit-desc">DPMPTSP &amp; Standar Kemenkes</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Zona Waktu Apotek</span>
+              <span class="ons-cockpit-val text-blue-600 truncate text-base">${S().esc(merged.zona_waktu || 'Asia/Makassar (WITA)')}</span>
+              <span class="ons-cockpit-desc">Sinkronisasi Jam Transaksi POS</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Status Pajak Toko</span>
+              <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(merged.status_pkp || 'PKP (PPN 11%)')}</span>
+              <span class="ons-cockpit-desc">Faktur &amp; Struk Terkonfigurasi</span>
+            </div>
+          </div>`;
+        } else if (settingsTab === 'konfigurasi') {
+          return `<div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Proteksi Stok Minus</span>
+              <span class="ons-cockpit-val ${cfg.allow_negative_stock ? 'text-amber-600' : 'text-emerald-600'}">${cfg.allow_negative_stock ? 'Diizinkan (Awas)' : 'Terkunci Aman'}</span>
+              <span class="ons-cockpit-desc">${cfg.allow_negative_stock ? 'Kasir boleh jual stok 0' : 'Blokir checkout jika stok 0'}</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Cegah Jual Rugi</span>
+              <span class="ons-cockpit-val ${cfg.cegah_penjualan_rugi !== false ? 'text-emerald-600' : 'text-slate-500'}">${cfg.cegah_penjualan_rugi !== false ? 'HPP Guard Aktif' : 'Nonaktif'}</span>
+              <span class="ons-cockpit-desc">Blokir jual di bawah HPP produk</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Blind Count Shift</span>
+              <span class="ons-cockpit-val ${cfg.blind_count_tutup_shift !== false ? 'text-blue-600' : 'text-slate-500'}">${cfg.blind_count_tutup_shift !== false ? 'Wajib Blind Count' : 'Tutup Bebas'}</span>
+              <span class="ons-cockpit-desc">Cegah manipulasi selisih kas kasir</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Pembulatan Kasir</span>
+              <span class="ons-cockpit-val text-teal-600">Rp ${cfg.pembulatan_kasir || 100}</span>
+              <span class="ons-cockpit-desc">Arah: ${cfg.arah_pembulatan || 'TERDEKAT'}</span>
+            </div>
+          </div>`;
+        } else if (settingsTab === 'metode-bayar') {
+          const actCount = channelsList.filter((p) => p.status === 'Aktif' || !p.status).length;
+          return `<div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Total Metode Bayar</span>
+              <span class="ons-cockpit-val text-teal-600">${channelsList.length} Saluran</span>
+              <span class="ons-cockpit-desc">${actCount} Saluran Status Aktif</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">QRIS Standar BI</span>
+              <span class="ons-cockpit-val text-emerald-600">Terverifikasi</span>
+              <span class="ons-cockpit-desc">MDR 0% / 0.3% Mikro Nasional</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Mesin EDC / Debit</span>
+              <span class="ons-cockpit-val text-blue-600">EDC Multi-Bank</span>
+              <span class="ons-cockpit-desc">BCA, Mandiri, BRI, BNI</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Transfer &amp; Rekening</span>
+              <span class="ons-cockpit-val text-purple-600">Auto-Buku Kas</span>
+              <span class="ons-cockpit-desc">Masuk Jurnal Keuangan Kasir</span>
+            </div>
+          </div>`;
+        } else if (settingsTab === 'akun') {
+          const actStaff = staffList.filter((u) => u.status_aktif === 'AKTIF').length;
+          return `<div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Total Akun Staf</span>
+              <span class="ons-cockpit-val text-blue-600">${staffList.length} Akun</span>
+              <span class="ons-cockpit-desc">${actStaff} Akun Berstatus Aktif</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">APJ Penanggung Jawab</span>
+              <span class="ons-cockpit-val text-sky-600 truncate text-base">${S().esc(apjAcc.nama_lengkap)}</span>
+              <span class="ons-cockpit-desc">SIPA: ${S().esc(apjAcc.no_sipa || '-')}</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Kasir Pelaksana</span>
+              <span class="ons-cockpit-val text-emerald-600 truncate text-base">${S().esc(kasirAcc.nama_lengkap)}</span>
+              <span class="ons-cockpit-desc">Operator POS &amp; Tutup Shift</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Enkripsi Kredensial</span>
+              <span class="ons-cockpit-val text-purple-600">250x SHA-256</span>
+              <span class="ons-cockpit-desc">Salt + Pepper + Lockout Guard</span>
+            </div>
+          </div>`;
+        } else if (settingsTab === 'struk') {
+          return `<div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Template Struk Aktif</span>
+              <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(curTpl.nama || 'Standar 58mm')}</span>
+              <span class="ons-cockpit-desc">Kode: ${S().esc(curTpl.kode || 'STRUK_POS_58MM')}</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Lebar Kertas Thermal</span>
+              <span class="ons-cockpit-val text-blue-600">${widthNum} mm</span>
+              <span class="ons-cockpit-desc">${widthNum === 80 ? '46 Kolom Karakter' : '32 Kolom Karakter'}</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Koneksi Printer</span>
+              <span class="ons-cockpit-val text-teal-600">Bluetooth / Print</span>
+              <span class="ons-cockpit-desc">Web Bluetooth ESC/POS &amp; Dialog</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Validasi Anti-Palsu</span>
+              <span class="ons-cockpit-val text-emerald-600">QR Code HMAC</span>
+              <span class="ons-cockpit-desc">Verifikasi Transaksi Resmi</span>
+            </div>
+          </div>`;
+        } else if (settingsTab === 'vault') {
+          return `<div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Status Backup Terakhir</span>
+              <span class="ons-cockpit-val ${bk.isOverdue ? 'text-amber-600' : 'text-emerald-600'} truncate text-base">${S().esc(bk.label)}</span>
+              <span class="ons-cockpit-desc">${bk.isOverdue ? 'Disarankan Unduh Backup Baru' : 'Cadangan Aman Terkini'}</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Mode Penyimpanan</span>
+              <span class="ons-cockpit-val text-blue-600">${isDemo ? 'Local Browser PWA' : 'Cloud Sheets DB'}</span>
+              <span class="ons-cockpit-desc">${isDemo ? 'Penyimpanan Offline Mandiri' : 'Tersinkron Database Pusat'}</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Brankas Rahasia</span>
+              <span class="ons-cockpit-val text-purple-600">${Object.keys(secrets).length} Parameter</span>
+              <span class="ons-cockpit-desc">Script Properties Terenkripsi</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Integritas Tabel DB</span>
+              <span class="ons-cockpit-val text-teal-600">Skema v13 Aktif</span>
+              <span class="ons-cockpit-desc">Siap Audit &amp; Sinkronisasi</span>
+            </div>
+          </div>`;
+        } else {
+          return `<div class="ons-cockpit-strip">
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Total Log Aktivitas</span>
+              <span class="ons-cockpit-val text-blue-600">${filteredAuditLogs.length} Event</span>
+              <span class="ons-cockpit-desc">${audit.length} Total Riwayat Tersimpan</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Poin Kepatuhan CDOB</span>
+              <span class="ons-cockpit-val text-emerald-600">${auditItems.length} Poin</span>
+              <span class="ons-cockpit-desc">${auditItems.filter((x) => x.checked).length} Poin Terverifikasi</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Apoteker PJ (APJ)</span>
+              <span class="ons-cockpit-val text-sky-600 truncate text-base">${S().esc(auditDraft.apj_nama || prof.nama_apj || 'apt. Dewi Kartika')}</span>
+              <span class="ons-cockpit-desc">SIPA: ${S().esc(auditDraft.apj_sipa || prof.sipa_apj || '-')}</span>
+            </div>
+            <div class="ons-cockpit-card">
+              <span class="ons-cockpit-label">Integritas Log Audit</span>
+              <span class="ons-cockpit-val text-purple-600">Immutable</span>
+              <span class="ons-cockpit-desc">Redaksi Kredensial Otomatis</span>
+            </div>
+          </div>`;
+        }
+      })()}
 
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th style="width:48px">Cek</th><th>Butir Pemeriksaan Audit (Dapat Diedit)</th><th style="width:120px">Penanggung Jawab</th><th>Keterangan / Hasil Verifikasi</th><th style="width:60px">Hapus</th></tr></thead>
-                <tbody>
-                  ${items.map((it, idx) => `<tr>
-                    <td><input type="checkbox" ${it.checked ? 'checked' : ''} onchange="window.updateAuditChecklistRow(${idx}, 'checked', this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer"/></td>
-                    <td><input ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(it.label || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'label', this.value)"/></td>
-                    <td>
-                      <select ${canEditAuditMeta ? '' : 'disabled'} class="ons-select text-xs" onchange="window.updateAuditChecklistRow(${idx}, 'pj_role', this.value)">
-                        <option value="APJ" ${(it.pj_role || 'APJ') === 'APJ' ? 'selected' : ''}>APJ</option>
-                        <option value="Kasir" ${it.pj_role === 'Kasir' ? 'selected' : ''}>Kasir</option>
-                        <option value="Pemilik" ${it.pj_role === 'Pemilik' ? 'selected' : ''}>Pemilik</option>
-                      </select>
-                    </td>
-                    <td><input class="ons-input text-xs" value="${S().esc(it.keterangan || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'keterangan', this.value)" placeholder="Catatan pemeriksaan..."/></td>
-                    <td>${canEditAuditMeta && items.length > 1 ? `<button type="button" onclick="window.removeAuditChecklistRow(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button>` : '-'}</td>
-                  </tr>`).join('')}
-                </tbody>
-              </table>
-            </div>
-
-            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
-              ${isOwner ? `<label class="flex items-center gap-2 cursor-pointer font-semibold">
-                <input id="audSysSyncStaff" type="checkbox" checked class="w-4 h-4 accent-blue-600"/>
-                <span>Sekaligus perbarui Nama APJ, No. SIPA &amp; Nama Kasir di akun <code>PENGGUNA_CABANG</code> &amp; Pejabat Surat</span>
-              </label>` : `<span style="color:var(--ons-text-soft)">Terakhir diperbarui: <b>${S().esc(draft.updated_by || '-')}</b></span>`}
-              <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs px-5 py-2 font-bold">Simpan Sistem Audit &amp; Nama APJ/Kasir</button>
-            </div>
-          </div>
-
-          <!-- Panel 2: Log Audit Immutable -->
-          <div class="ons-card p-4 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-sm">Log Audit Immutable (Dengan Redaksi Secret Otomatis)</h3>
-              <input class="ons-input text-xs w-64" value="${S().esc(auditLogSearchQ)}" oninput="window.setAuditLogSearch(this.value)" placeholder="Cari aksi, user, nama APJ/kasir, entitas..."/>
-            </div>
-            <div class="ons-table-wrap">
-              <table class="ons-table">
-                <thead><tr><th>Waktu</th><th>Pelaku &amp; Peran</th><th>Aksi</th><th>Entitas</th><th>Snapshot Perubahan</th></tr></thead>
-                <tbody>
-                  ${filteredAuditLogs.length ? filteredAuditLogs.map((a) => `<tr>
-                    <td class="font-mono-num text-xs">${S().formatTgl(a.timestamp)}</td>
-                    <td class="text-xs"><b>${S().esc(a.user_id)}</b> (${S().esc(a.role)})</td>
-                    <td><span class="badge-bpom bpom-terbatas">${S().esc(a.aksi)}</span></td>
-                    <td class="font-mono-num text-xs">${S().esc(a.entitas)} #${S().esc(a.entitas_id)}</td>
-                    <td class="font-mono-num text-[11px] max-w-md truncate">${S().esc(a.diff_sesudah_json)}</td>
-                  </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6" style="color:var(--ons-text-soft)">Tidak ada log audit yang sesuai pencarian.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>`;
-      })() : ''}
+      <!-- Sub-Tab Content Body -->
+      ${contentHtml}
     </div>`;
   }
 
+  function _renderSettingsAkunSubTab(isOwner, users, prof, staffList, apjAcc, kasirAcc) {
+    if (!isOwner) {
+      return `<div class="ons-card p-5 space-y-3 text-xs">
+        ${S().AppState.needsPasswordUpgrade && !API().isDemoMode() ? `<div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"><b>Peringatan:</b> Anda masih memakai sandi awal. Klik tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk mengamankan akun Anda.</div>` : ''}
+        <div class="flex items-center gap-2">
+          <span>🔒</span>
+          <div>Gunakan tombol <b>Ganti Sandi / PIN Saya</b> di atas untuk memperbarui kredensial akun Anda (wajib memasukkan kata sandi saat ini demi keamanan).</div>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="space-y-4 text-xs">
+      <!-- Panel Edit Cepat Identitas APJ & Kasir Aktif -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="ons-card p-5 space-y-3 border-l-4" style="border-left-color:#0284C7">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm">Edit Cepat Identitas APJ Penanggung Jawab</h3>
+              <p class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis memperbarui akun APJ, penanda tangan Surat Pesanan / E-Resep &amp; Audit BPOM.</p>
+            </div>
+            <span class="badge-bpom bpom-terbatas">APJ</span>
+          </div>
+          <input type="hidden" id="quickApjId" value="${S().esc(apjAcc.id_user || 'USR-002')}"/>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="sm:col-span-2"><label class="font-semibold block mb-1">Nama Lengkap APJ *</label><input id="quickApjNama" class="ons-input text-xs" value="${S().esc(apjAcc.nama_lengkap || '')}" placeholder="Contoh: apt. Dewi Kartika, S.Farm"/></div>
+            <div><label class="font-semibold block mb-1">Username Login APJ *</label><input id="quickApjUser" class="ons-input font-mono-num text-xs" value="${S().esc(apjAcc.username || 'apj')}"/></div>
+            <div><label class="font-semibold block mb-1">Nomor SIPA APJ</label><input id="quickApjSipa" class="ons-input font-mono-num text-xs" value="${S().esc(apjAcc.no_sipa || '-')}"/></div>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" onclick="window.saveQuickStaffCard('APJ')" class="ons-btn ons-btn-primary text-xs">Simpan Nama &amp; SIPA APJ</button>
+            <button type="button" onclick="window.openAddUserModal('${S().esc(apjAcc.id_user || apjAcc.username)}')" class="ons-btn ons-btn-ghost text-xs">Atur Hak Akses APJ</button>
+          </div>
+        </div>
+
+        <div class="ons-card p-5 space-y-3 border-l-4" style="border-left-color:#10B981">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm">Edit Cepat Identitas Kasir Aktif</h3>
+              <p class="text-[11px]" style="color:var(--ons-text-soft)">Otomatis memperbarui akun Kasir pada struk POS, Tutup Shift, Pemeriksaan &amp; Audit Harian.</p>
+            </div>
+            <span class="badge-bpom bpom-bebas">KASIR</span>
+          </div>
+          <input type="hidden" id="quickKasirId" value="${S().esc(kasirAcc.id_user || 'USR-003')}"/>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="sm:col-span-2"><label class="font-semibold block mb-1">Nama Lengkap Kasir *</label><input id="quickKasirNama" class="ons-input text-xs" value="${S().esc(kasirAcc.nama_lengkap || '')}" placeholder="Contoh: Rina Marlina (Kasir Shift 1)"/></div>
+            <div><label class="font-semibold block mb-1">Username Login Kasir *</label><input id="quickKasirUser" class="ons-input font-mono-num text-xs" value="${S().esc(kasirAcc.username || 'kasir')}"/></div>
+            <div><label class="font-semibold block mb-1">Status Akun Kasir</label>
+              <select id="quickKasirStatus" class="ons-select text-xs">
+                <option value="AKTIF" ${String(kasirAcc.status_aktif || 'AKTIF') === 'AKTIF' ? 'selected' : ''}>AKTIF</option>
+                <option value="NONAKTIF" ${String(kasirAcc.status_aktif || '') === 'NONAKTIF' ? 'selected' : ''}>NONAKTIF</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" onclick="window.saveQuickStaffCard('Kasir')" class="ons-btn ons-btn-emerald text-xs">Simpan Nama Kasir</button>
+            <button type="button" onclick="window.openAddUserModal('${S().esc(kasirAcc.id_user || kasirAcc.username)}')" class="ons-btn ons-btn-ghost text-xs">Atur Hak Akses Kasir</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel Penuh Akun & Hak Akses RBAC -->
+      <div class="ons-card p-5 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Manajemen Akun Pengguna, Matriks Hak Akses &amp; Otorisasi PIN (PENGGUNA_CABANG)</h3>
+            <p style="color:var(--ons-text-soft)">Edit nama Pemilik / APJ / Kasir, atur modul yang boleh diakses per pengguna, atau reset kata sandi &amp; PIN otorisasi.</p>
+          </div>
+          <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Tambah Akun Staf Baru</button>
+        </div>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Nama Lengkap</th>
+                <th>Peran &amp; Outlet</th>
+                <th>No. SIPA</th>
+                <th>Hak Akses Modul</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${staffList.length ? staffList.map((u) => {
+                const effPerms = S().getUserPermissions ? S().getUserPermissions(u) : [];
+                const isCustom = Array.isArray(u.hak_akses) && u.hak_akses.length > 0;
+                return `<tr>
+                  <td class="font-mono-num font-bold">${S().esc(u.username)}</td>
+                  <td class="font-semibold">${S().esc((u.role === 'Pemilik' && S().sanitizeLegacyOwnerName) ? S().sanitizeLegacyOwnerName(u.nama_lengkap, prof.nama_pemilik) : u.nama_lengkap)}</td>
+                  <td>
+                    <span class="badge-bpom ${u.role === 'Pemilik' ? 'bpom-narkotika' : (u.role === 'APJ' ? 'bpom-terbatas' : 'bpom-bebas')}">${S().esc(u.role)}</span>
+                    <span class="font-mono-num text-[11px] ml-1" style="color:var(--ons-text-soft)">${S().esc(u.cabang_id || 'PUSAT')}</span>
+                  </td>
+                  <td class="font-mono-num">${S().esc(u.no_sipa || '-')}</td>
+                  <td>
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-500/10">
+                      ${u.role === 'Pemilik' ? 'Penuh (Pemilik)' : `${isCustom ? 'Custom' : 'Standar'} (${effPerms.length} Izin)`}
+                    </span>
+                  </td>
+                  <td><span class="badge-bpom ${u.status_aktif === 'AKTIF' ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(u.status_aktif || 'AKTIF')}</span></td>
+                  <td>
+                    <div class="flex flex-wrap gap-1.5">
+                      <button onclick="window.openAddUserModal('${S().esc(u.id_user || u.username)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Edit Hak</button>
+                      <button onclick="window.openChangeCredModal('${S().esc(u.username)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Sandi / PIN</button>
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="7" class="text-center py-6" style="color:var(--ons-text-soft)">Memuat daftar pengguna...</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel Audit Keamanan, Enkripsi & Cabut Sesi Aktif -->
+      <div class="ons-card p-5 space-y-3 border-l-4" style="border-left-color:#10B981">
+        ${S().AppState.needsPasswordUpgrade && !API().isDemoMode() ? `<div class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 flex flex-wrap items-center justify-between gap-2 text-amber-800 dark:text-amber-200">
+          <div><b>⚠️ Peringatan Keamanan:</b> Akun Anda masih menggunakan kata sandi / PIN bawaan atau lemah. Segera ganti sekarang demi mencegah akses ilegal!</div>
+          <button type="button" onclick="window.openChangeCredModal()" class="ons-btn ons-btn-primary text-xs">Ganti Sandi &amp; PIN Sekarang</button>
+        </div>` : ''}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-sm">🛡️ Perisai Keamanan &amp; Kontrol Sesi Perangkat</h3>
+            <p class="text-[11px]" style="color:var(--ons-text-soft)">Enkripsi 250x SHA-256 + Salt + Pepper, Token HMAC-SHA256, Proteksi Lockout 5x/15m, &amp; Pembersihan Cache Otomatis.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="window.runSecurityHealthCheck()" class="ons-btn ons-btn-primary text-xs font-semibold">Audit Kesehatan Keamanan</button>
+            <button type="button" onclick="window.revokeAllActiveSessions()" class="ons-btn ons-btn-danger text-xs">Cabut Semua Sesi Aktif</button>
+          </div>
+        </div>
+        <div id="secAuditResultBox" class="p-3 rounded-xl border hidden text-[11px]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+      </div>
+    </div>`;
+  }
+
+  function _renderSettingsStrukSubTab(prof, tpls, safeIdx, curTpl, widthNum) {
+    const cfg = S().getStoreSettings ? S().getStoreSettings() : {};
+    const sampleData = typeof buildStrukEditorSampleData === 'function' ? buildStrukEditorSampleData(prof) : {};
+    const previewHtml = typeof renderStrukPreviewContent === 'function' ? renderStrukPreviewContent(curTpl.template_teks, sampleData, widthNum) : '';
+    const presets = (global.StrukEngine && global.StrukEngine.TEMPLATE_PRESETS) || [];
+
+    return `<div class="space-y-5 text-xs">
+      <!-- Card 1: Desain & Pratinjau Struk Thermal 58mm / 80mm -->
+      <div class="ons-card p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b" style="border-color:var(--ons-border)">
+          <div>
+            <h3 class="font-bold text-sm">Desain &amp; Pratinjau Struk Thermal 58mm / 80mm</h3>
+            <p style="color:var(--ons-text-soft)">Atur tata letak struk kasir dengan direktif <code>[C]</code>, <code>[B]</code>, <code>[LR]Kiri||Kanan</code>, blok item <code>{{#ITEM}}...{{/ITEM}}</code>, dan <code>[QR]</code>.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="strukTplWidth" onchange="window.previewEditedStruk()" class="ons-select w-36 text-xs font-semibold">
+              <option value="58" ${widthNum !== 80 ? 'selected' : ''}>58 mm (32 Kolom)</option>
+              <option value="80" ${widthNum === 80 ? 'selected' : ''}>80 mm (46 Kolom)</option>
+            </select>
+            <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs" title="Hubungkan Printer Thermal Bluetooth">🖨️ Hubungkan BT</button>
+            <button type="button" onclick="window.testPrintBluetoothStruk()" class="ons-btn ons-btn-ghost text-xs text-blue-700 font-semibold" title="Kirim Uji Cetak ESC/POS Langsung ke Printer Bluetooth">⚡ Uji Cetak BT</button>
+            <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs" title="Uji Cetak via Dialog Browser / Print PDF">Uji Cetak (Browser)</button>
+            <button type="button" onclick="window.downloadEditedStrukPng()" class="ons-btn ons-btn-ghost text-xs">Unduh PNG</button>
+            <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template ke Sheets</button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Preset Cepat:</span>
+            ${presets.map((pr) => `<button type="button" onclick="window.applyStrukPreset('${S().esc(pr.id)}')" class="ons-struk-preset-btn ${curTpl.kode === pr.kode ? 'active' : ''}">${S().esc(pr.label)}</button>`).join('')}
+          </div>
+          ${tpls.length > 1 ? `<div class="flex items-center gap-1.5">
+            <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
+            <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-xs w-56">
+              ${tpls.map((t, idx) => `<option value="${idx}" ${idx === safeIdx ? 'selected' : ''}>${S().esc(t.nama || t.kode)} (${Number(t.lebar_mm) === 80 ? '80mm' : '58mm'})</option>`).join('')}
+            </select>
+          </div>` : ''}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <div class="lg:col-span-7 space-y-2.5">
+            <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_POS_58MM')}"/>
+            <div>
+              <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Nama Template Struk</label>
+              <input id="strukTplNama" class="ons-input text-xs font-bold" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <label class="font-semibold text-[11px]" style="color:var(--ons-text-soft)">Kode Tata Letak Struk</label>
+                <button type="button" onclick="window.resetEditedStrukPreset()" class="text-[11px] font-semibold text-blue-600 hover:underline">Pulihkan Template Bawaan</button>
+              </div>
+              <textarea id="strukTplText" rows="16" oninput="window.previewEditedStruk()" class="ons-textarea font-mono-num text-[11.5px] leading-relaxed">${S().esc(curTpl.template_teks || '')}</textarea>
+            </div>
+            <div class="p-2.5 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Sisipkan Variabel / Direktif Cepat (klik untuk menambah ke editor):</div>
+              <div class="flex flex-wrap gap-1.5">
+                ${STRUK_TOKEN_SNIPPETS.map((c, idx) => `<button type="button" onclick="window.insertStrukToken(${idx})" class="ons-struk-chip">${S().esc(c.label)}</button>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs">Simulasi Kertas Thermal Realistis:</span>
+              <span class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-semibold">${widthNum} mm</span>
+            </div>
+            <div id="strukLivePreviewBox" class="ons-thermal-paper-box">
+              ${previewHtml}
+            </div>
+
+            <!-- Card 2: Konfigurasi Pembulatan Otomatis Kasir POS -->
+            <div class="ons-card p-4 space-y-3 text-xs border-l-4" style="border-left-color:#3B82F6">
+              <div class="font-bold text-sm">Pembulatan Otomatis Kasir POS:</div>
+              <div class="space-y-2">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="font-semibold block mb-1">Nilai Pembulatan:</label>
+                    <select id="cfgRoundVal" onchange="window.savePosRoundingConfig()" class="ons-select text-xs">
+                      <option value="0" ${Number(cfg.pos_rounding_value || 0) === 0 ? 'selected' : ''}>Tanpa Pembulatan</option>
+                      <option value="50" ${Number(cfg.pos_rounding_value) === 50 ? 'selected' : ''}>Kelipatan Rp 50</option>
+                      <option value="100" ${Number(cfg.pos_rounding_value || 100) === 100 ? 'selected' : ''}>Kelipatan Rp 100</option>
+                      <option value="500" ${Number(cfg.pos_rounding_value) === 500 ? 'selected' : ''}>Kelipatan Rp 500</option>
+                      <option value="1000" ${Number(cfg.pos_rounding_value) === 1000 ? 'selected' : ''}>Kelipatan Rp 1.000</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="font-semibold block mb-1">Arah Pembulatan:</label>
+                    <select id="cfgRoundDir" onchange="window.savePosRoundingConfig()" class="ons-select text-xs">
+                      <option value="nearest" ${(cfg.pos_rounding_direction || 'nearest') === 'nearest' ? 'selected' : ''}>Terdekat (50/50)</option>
+                      <option value="up" ${cfg.pos_rounding_direction === 'up' ? 'selected' : ''}>Selalu ke Atas (Ceil)</option>
+                      <option value="down" ${cfg.pos_rounding_direction === 'down' ? 'selected' : ''}>Selalu ke Bawah (Floor)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="p-3 rounded-xl border space-y-1.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                  <div class="font-bold text-blue-700 dark:text-blue-300">Live Simulator Pembulatan:</div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-500">Contoh Tagihan:</span>
+                    <input id="cfgRoundSimInp" type="number" value="12340" oninput="window.simulasiPosRounding()" class="ons-input font-mono-num text-xs w-24 py-1 text-right"/>
+                  </div>
+                  <div id="cfgRoundSimResult" class="font-mono-num font-extrabold text-xs text-emerald-600">
+                    Hasil: Rp 12.300 (Pembulatan: -Rp 40)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function _renderSettingsVaultSubTab(isOwner, secrets, bk, isDemo) {
+    return `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
+      <!-- 1-Click Backup & Restore -->
+      <div class="ons-card p-5 lg:col-span-12 space-y-3 border-2 border-blue-400/70" style="background:linear-gradient(135deg,rgba(0,102,254,0.06),transparent)">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="max-w-3xl space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-extrabold text-sm">💾 Pengamanan Data: Backup &amp; Restore Penuh 1-Klik (.JSON)</h3>
+              <span class="badge-bpom ${bk.isOverdue ? 'bpom-prekursor' : 'bpom-bebas'} text-[10px]">Backup Terakhir: ${S().esc(bk.label)}</span>
+              <span class="badge-bpom ${isDemo ? 'bpom-terbatas' : 'bpom-bebas'} text-[10px]">${isDemo ? 'Mode Penyimpanan Lokal Browser' : 'Tersambung Cloud Database'}</span>
+            </div>
+            <p style="color:var(--ons-text-soft)">Unduh 1 file cadangan lengkap berisi seluruh <b>Master Obat, Stok Batch/ED, Riwayat Penjualan, Faktur PBF, Supplier, Member, &amp; Pengaturan Toko</b>. Jika pindah perangkat atau browser dibersihkan, tinggal klik <b>Pulihkan dari File Backup</b>.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup Penuh (.JSON)</button>
+            <label class="ons-btn ons-btn-ghost text-xs font-semibold cursor-pointer">
+              📂 Pulihkan dari File Backup
+              <input type="file" accept=".json,application/json" class="hidden" onchange="window.handleRestoreFullBackupFile(this)"/>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit & Perbaikan Database Sheets -->
+      <div class="ons-card p-5 lg:col-span-12 space-y-3 border-2 border-emerald-400/80" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),transparent)">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="max-w-3xl">
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-sm" style="color:var(--ons-primary-ink)">Audit, Pembersihan &amp; Sinkronisasi Database Sheets</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Langsung ke DB Aktif &bull; Tanpa ID</span>
+            </div>
+            <p class="mt-1" style="color:var(--ons-text-soft)">Berjalan langsung pada Google Sheets database utama aplikasi ini. Menghapus tab tidak penting/kosong (<code>Sheet1</code>, tab legacy, tab multi-cabang kosong), menghapus baris kosong, melengkapi kolom skema terbaru, menormalisasi sisa label lama, &amp; menyinkronkan ulang Piutang, Hutang PBF, Batch Stok, SP, Tagihan, dan Jurnal Keuangan.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">1. Pindai Kesehatan DB</button>
+            <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs font-bold">2. Perbaiki, Bersihkan &amp; Sinkronkan DB</button>
+          </div>
+        </div>
+        <div id="dbAuditResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+      </div>
+
+      <!-- Brankas Rahasia Script Properties -->
+      <div class="ons-card p-5 lg:col-span-12 space-y-3">
+        <h3 class="font-bold text-sm">Brankas Rahasia Script Properties (Read-Back Tersensor)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          ${Object.keys(secrets).map((k) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg border" style="border-color:var(--ons-border)">
+            <div><b>${S().esc(k)}</b><div class="font-mono-num" style="color:var(--ons-text-soft)">${S().esc(secrets[k] || '(Belum diatur)')}</div></div>
+            <button onclick="window.promptUpdateSecret('${S().esc(k)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Ubah</button>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Factory Reset Panel -->
+      <div class="ons-card p-5 lg:col-span-12 space-y-3 border-red-200">
+        ${renderFactoryResetPanelHtml(isOwner, 'vault')}
+      </div>
+
+      <!-- Data Sampel Uji Coba -->
+      ${isOwner ? `<div class="ons-card p-5 lg:col-span-12 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="font-bold text-sm">Data Sampel Uji Coba (Saat Katalog Kosong)</h3>
+          <p style="color:var(--ons-text-soft)">Khusus mode uji coba pada Google Sheets yang masih kosong: mengisi 6 contoh produk obat KFA, batch FEFO, PBF, &amp; pelanggan apotek. Tidak menimpa data obat yang sudah ada.</p>
+        </div>
+        <button type="button" onclick="window.seedStarterCatalogFromSettings()" class="ons-btn ons-btn-ghost text-xs font-semibold">Muat 6 Produk Sampel</button>
+      </div>` : ''}
+
+      <!-- Wizard Migrasi Spreadsheet v9 -->
+      <details class="ons-card p-4 lg:col-span-12">
+        <summary class="font-bold text-xs cursor-pointer select-none flex items-center justify-between gap-2" style="color:var(--ons-text-soft)">
+          <span>▸ Impor Data dari File Spreadsheet v9 Terpisah (Opsional — Tidak Perlu untuk Merapikan DB Aktif)</span>
+          <span class="text-[11px] font-normal">Klik untuk buka</span>
+        </summary>
+        <div class="mt-3 pt-3 border-t space-y-3" style="border-color:var(--ons-border)">
+          <h3 class="font-bold text-sm">Wizard Migrasi Spreadsheet v9 → v13 (Impor dari File Lama Lain)</h3>
+          <p style="color:var(--ons-text-soft)">Hanya gunakan jika ingin mengimpor data dari file Google Sheets versi lama terpisah. Membaca berbasis header, normalisasi nomor WA <code>628...</code>, &amp; upsert idempoten dengan Dry-Run Preview.</p>
+          <input id="migSourceId" class="ons-input font-mono-num" placeholder="Tempel ID atau URL Google Sheets Sumber v9 (contoh: 1BxiMVs0XRA5nFMd...)"/>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="window.runMigrationPreview()" class="ons-btn ons-btn-ghost">1. Pindai Dry-Run Preview</button>
+            <button type="button" onclick="window.runMigrationExecute()" class="ons-btn ons-btn-primary font-bold">2. Eksekusi Upsert Batch</button>
+          </div>
+          <div id="migResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+        </div>
+      </details>
+    </div>`;
+  }
+
+  function _renderSettingsAuditSubTab(isOwner, role, audit, prof, draft, items, filteredAuditLogs) {
+    const canEditAuditMeta = isOwner || role === 'APJ' || S().canAccessSubTab('settings', 'audit');
+
+    return `<div class="space-y-4 text-xs">
+      <!-- Panel 1: Editor Sistem Audit Kepatuhan BPOM, Nama APJ & Kasir -->
+      <div class="ons-card p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Editor Sistem Audit Kepatuhan BPOM, Nama APJ &amp; Nama Kasir</h3>
+            <p style="color:var(--ons-text-soft)">Bukan hanya dicentang: edit butir pemeriksaan audit, ubah nama APJ &amp; Kasir penanggung jawab, dan sinkronkan ke sistem.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            ${isOwner ? `<button type="button" onclick="window.setSettingsTab('akun')" class="ons-btn ons-btn-ghost text-xs">Kelola Matriks Hak Akses Staf &rarr;</button>` : ''}
+            ${canEditAuditMeta ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div>
+            <label class="font-semibold block mb-1">Nama APJ Pengaudit *</label>
+            <input id="audSysApjNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.apj_nama || '')}" oninput="window.updateAuditHeaderField('apj_nama', this.value)" placeholder="Nama Apoteker Penanggung Jawab"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">No. SIPA APJ</label>
+            <input id="audSysApjSipa" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input font-mono-num text-xs" value="${S().esc(draft.apj_sipa || '-')}" oninput="window.updateAuditHeaderField('apj_sipa', this.value)" placeholder="No. SIPA APJ"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Nama Kasir Pelaksana *</label>
+            <input id="audSysKasirNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.kasir_nama || '')}" oninput="window.updateAuditHeaderField('kasir_nama', this.value)" placeholder="Nama Kasir Aktif"/>
+          </div>
+          <div>
+            <label class="font-semibold block mb-1">Catatan Evaluasi Audit</label>
+            <input id="audSysCatatan" class="ons-input text-xs" value="${S().esc(draft.catatan_audit || '')}" oninput="window.updateAuditHeaderField('catatan_audit', this.value)" placeholder="Ringkasan temuan CDOB hari ini"/>
+          </div>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th style="width:48px">Cek</th><th>Butir Pemeriksaan Audit (Dapat Diedit)</th><th style="width:120px">Penanggung Jawab</th><th>Keterangan / Hasil Verifikasi</th><th style="width:60px">Hapus</th></tr></thead>
+            <tbody>
+              ${items.map((it, idx) => `<tr>
+                <td><input type="checkbox" ${it.checked ? 'checked' : ''} onchange="window.updateAuditChecklistRow(${idx}, 'checked', this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer"/></td>
+                <td><input ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(it.label || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'label', this.value)"/></td>
+                <td>
+                  <select ${canEditAuditMeta ? '' : 'disabled'} class="ons-select text-xs" onchange="window.updateAuditChecklistRow(${idx}, 'pj_role', this.value)">
+                    <option value="APJ" ${(it.pj_role || 'APJ') === 'APJ' ? 'selected' : ''}>APJ</option>
+                    <option value="Kasir" ${it.pj_role === 'Kasir' ? 'selected' : ''}>Kasir</option>
+                    <option value="Pemilik" ${it.pj_role === 'Pemilik' ? 'selected' : ''}>Pemilik</option>
+                  </select>
+                </td>
+                <td><input class="ons-input text-xs" value="${S().esc(it.keterangan || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'keterangan', this.value)" placeholder="Catatan pemeriksaan..."/></td>
+                <td>${canEditAuditMeta && items.length > 1 ? `<button type="button" onclick="window.removeAuditChecklistRow(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button>` : '-'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t" style="border-color:var(--ons-border)">
+          ${isOwner ? `<label class="flex items-center gap-2 cursor-pointer font-semibold">
+            <input id="audSysSyncStaff" type="checkbox" checked class="w-4 h-4 accent-blue-600"/>
+            <span>Sekaligus perbarui Nama APJ, No. SIPA &amp; Nama Kasir di akun <code>PENGGUNA_CABANG</code> &amp; Pejabat Surat</span>
+          </label>` : `<span style="color:var(--ons-text-soft)">Terakhir diperbarui: <b>${S().esc(draft.updated_by || '-')}</b></span>`}
+          <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs px-5 py-2 font-bold">Simpan Sistem Audit &amp; Nama APJ/Kasir</button>
+        </div>
+      </div>
+
+      <!-- Panel 2: Log Audit Immutable -->
+      <div class="ons-card p-5 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-bold text-sm">Log Audit Immutable (Dengan Redaksi Secret Otomatis)</h3>
+          <input class="ons-input text-xs w-64" value="${S().esc(auditLogSearchQ)}" oninput="window.setAuditLogSearch(this.value)" placeholder="Cari aksi, user, nama APJ/kasir, entitas..."/>
+        </div>
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead><tr><th>Waktu</th><th>Pelaku &amp; Peran</th><th>Aksi</th><th>Entitas</th><th>Snapshot Perubahan</th></tr></thead>
+            <tbody>
+              ${filteredAuditLogs.length ? filteredAuditLogs.map((a) => `<tr>
+                <td class="font-mono-num text-xs">${S().formatTgl ? S().formatTgl(a.timestamp) : a.timestamp}</td>
+                <td class="text-xs"><b>${S().esc(a.user_id)}</b> (${S().esc(a.role)})</td>
+                <td><span class="badge-bpom bpom-terbatas">${S().esc(a.aksi)}</span></td>
+                <td class="font-mono-num text-xs">${S().esc(a.entitas)} #${S().esc(a.entitas_id)}</td>
+                <td class="font-mono-num text-[11px] max-w-md truncate">${S().esc(a.diff_sesudah_json)}</td>
+              </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6" style="color:var(--ons-text-soft)">Tidak ada log audit yang sesuai pencarian.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
   global.refreshProfileLivePreview = (kind, rawUrl) => {
     const clean = String(rawUrl || '').trim();
     if (kind === 'foto') profileMediaDraft.foto = clean;
