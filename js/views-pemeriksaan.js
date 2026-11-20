@@ -949,7 +949,7 @@
         </div>
       </div>`;
 
-    // 2. Executive Sub-Hero Banner
+    // 2. Executive Sub-Hero Banner (Contextual per Sub-Menu)
     const subHeroBanner = `
       <div class="ons-subhero-banner is-pemeriksaan">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -959,17 +959,33 @@
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Pelayanan Klinik &amp; Pemeriksaan Pasien (POCT)</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">PMK No. 73/2016</span>
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
+                  subTab === 'tensi' ? 'Pemeriksaan Tekanan Darah (Tensi &amp; MAP)' :
+                  (subTab === 'gula' ? 'Pemeriksaan Glukosa Darah (POCT)' :
+                  (subTab === 'kolesterol' ? 'Pemeriksaan Kolesterol Total' :
+                  (subTab === 'asam_urat' ? 'Pemeriksaan Asam Urat (Uric Acid)' :
+                  'Pelayanan Klinik &amp; Pemeriksaan Pasien (POCT)')))
+                }</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">${
+                  subTab === 'tensi' ? 'Kardiovaskular' :
+                  (subTab === 'gula' ? 'Metabolik' :
+                  (subTab === 'kolesterol' ? 'Profil Lipid' :
+                  (subTab === 'asam_urat' ? 'Arthritis Gout' :
+                  'PMK No. 73/2016')))
+                }</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Standar Skrining &amp; Edukasi Kefarmasian: Tensi &amp; MAP, Gula Darah (GDS/GDP), Kolesterol Total, Asam Urat, Antropometri IMT, Triase Red-Flag Rujukan Dokter, Catatan SOAP Klinis, &amp; KIE WhatsApp Pasien.</p>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${
+                subTab === 'tensi' ? 'Skrining hipertensi &amp; hipotensi, pemantauan Mean Arterial Pressure (MAP), histori tekanan darah sistol/diastol, dan edukasi gaya hidup sehat.' :
+                (subTab === 'gula' ? 'Pemeriksaan kadar gula darah sewaktu (GDS), puasa (GDP), dan 2 jam PP (GD2PP) dengan pemantauan batas normal dan konseling diabetes melitus.' :
+                (subTab === 'kolesterol' ? 'Skrining risiko dislipidemia dan penyakit jantung kardiovaskular dengan batas ambang batas &lt; 200 mg/dL serta rujukan konsultasi lanjutan.' :
+                (subTab === 'asam_urat' ? 'Deteksi dini hiperurisemia untuk pencegahan radang sendi gout dengan interpretasi ambang batas normal pria vs wanita.' :
+                'Standar Skrining &amp; Edukasi Kefarmasian: Tensi &amp; MAP, Gula Darah (GDS/GDP), Kolesterol Total, Asam Urat, Antropometri IMT, Triase Red-Flag Rujukan Dokter, Catatan SOAP Klinis, &amp; KIE WhatsApp Pasien.')))
+              }</p>
             </div>
           </div>
-          <div class="hidden sm:flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Layanan POCT Siaga (Instan &lt; 5 Menit)</span>
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="window.openCatatPemeriksaanModal ? window.openCatatPemeriksaanModal() : (window.catatPemeriksaan ? window.catatPemeriksaan() : null)" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Catat Pemeriksaan</button>
+            <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
           </div>
         </div>
       </div>`;

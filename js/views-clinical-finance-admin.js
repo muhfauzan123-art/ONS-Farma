@@ -1902,34 +1902,67 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             ${mesoList.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${klinisTab === 'meso' ? 'bg-white/25 text-white' : 'bg-purple-500/15 text-purple-700 dark:text-purple-300'} font-mono-num">${mesoList.length}</span>` : ''}
           </button>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" onclick="window.openCreateCopyResepDirectModal()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-bold" style="border-color:var(--ons-border-strong)" title="Buat Salinan Resep Baru">+ Copy Resep (p.c.c)</button>
-          <button type="button" onclick="window.openCopyResepArchiveModal()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border" style="border-color:var(--ons-border-strong)">📁 Arsip (${(st.copyResep || []).length})</button>
-          <button type="button" onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Input SOAP Klinis</button>
-        </div>
       </div>`;
 
-    // Executive Sub-Hero Banner
+    // Executive Sub-Hero Banner (Contextual per Sub-Menu)
     const subHeroBanner = `
       <div class="ons-subhero-banner is-klinis">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-2xl bg-teal-600/10 text-teal-600 border border-teal-600/20 flex items-center justify-center shrink-0 shadow-sm">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+              ${klinisTab === 'soap' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>` :
+                (klinisTab === 'erx' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>` :
+                (klinisTab === 'racikan' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>` :
+                (klinisTab === 'kalkulator' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg>` :
+                (klinisTab === 'pio' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>` :
+                `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>`))))}
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Pelayanan Farmasi Klinis &amp; Pengkajian Resep</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">PMK No. 73/2016</span>
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
+                  klinisTab === 'soap' ? 'Kajian Resep &amp; Catatan Medis SOAP' :
+                  (klinisTab === 'erx' ? 'Antrean E-Resep &amp; Resep Dokter Masuk' :
+                  (klinisTab === 'racikan' ? 'Peracikan Obat &amp; Etiket Beyond Use Date (BUD)' :
+                  (klinisTab === 'kalkulator' ? 'Kalkulator Dosis Farmasi Klinis &amp; Preset' :
+                  (klinisTab === 'pio' ? 'Pelayanan Informasi Obat (PIO) &amp; Konseling' :
+                  'Monitoring Efek Samping Obat (MESO BPOM)'))))
+                }</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">${
+                  klinisTab === 'soap' ? 'PMK No. 73/2016' :
+                  (klinisTab === 'erx' ? 'Portal E-Resep' :
+                  (klinisTab === 'racikan' ? 'Formula Farmasi' :
+                  (klinisTab === 'kalkulator' ? '41 Formula Siaga' :
+                  (klinisTab === 'pio' ? 'KIE &amp; Edukasi' :
+                  'Farmakovigilans'))))
+                }</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Standar Pelayanan Kefarmasian di Apotek: pengkajian resep SOAP, integrasi HL7 FHIR SATUSEHAT, antrean E-Resep, kalkulator racikan &amp; etiket BUD, serta farmakovigilans MESO BPOM.</p>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${
+                klinisTab === 'soap' ? 'Pengkajian kelayakan administratif, farmasetik, dan klinis resep dokter dengan dokumentasi catatan SOAP serta integrasi SATUSEHAT.' :
+                (klinisTab === 'erx' ? 'Monitoring antrean resep elektronik dari klinik, puskesmas, dan dokter praktik mitra yang siap diproses dan diracik apotek.' :
+                (klinisTab === 'racikan' ? 'Manajemen peracikan sediaan obat (kapsul, pulveres, sirup, salep), kalkulasi masa simpan BUD, dan cetak etiket aturan pakai.' :
+                (klinisTab === 'kalkulator' ? 'Perhitungan akurat dosis pediatrik (Clark, Young, Dilling), dosis geriatrik, klirens kreatinin (Cockcroft-Gault), dan penyesuaian dosis obat.' :
+                (klinisTab === 'pio' ? 'Kartu informasi obat untuk pasien, jadwal minum obat rutin, edukasi efek samping, instruksi penyimpanan khusus, dan panduan KIE digital.' :
+                'Pelaporan resmi Kejadian Tidak Diinginkan (KTD) dan reaksi alergi obat sesuai format Badan POM RI untuk keamanan farmakoterapi pasien.'))))
+              }</p>
             </div>
           </div>
-          <div class="hidden sm:flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Apoteker Siaga (APJ Validated)</span>
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
+            ${klinisTab === 'soap' ? `
+              <button type="button" onclick="window.openCreateCopyResepDirectModal()" class="ons-btn ons-btn-ghost text-xs font-bold" title="Buat Salinan Resep Baru">+ Copy Resep</button>
+              <button type="button" onclick="window.openCopyResepArchiveModal()" class="ons-btn ons-btn-ghost text-xs">📁 Arsip (${(st.copyResep || []).length})</button>
+              <button type="button" onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input SOAP</button>
+            ` : klinisTab === 'erx' ? `
+              <button type="button" onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input SOAP Baru</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">🔄 Sinkron</button>
+            ` : klinisTab === 'racikan' ? `
+              <button type="button" onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Buat Racikan Baru</button>
+            ` : klinisTab === 'meso' ? `
+              <button type="button" onclick="window.openInputMesoModal ? window.openInputMesoModal() : window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Lapor Form MESO</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">🔄 Sinkron</button>
+            ` : `
+              <button type="button" onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input SOAP</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">🔄 Sinkron</button>
+            `}
           </div>
         </div>
       </div>`;

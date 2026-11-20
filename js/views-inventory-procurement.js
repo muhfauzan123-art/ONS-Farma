@@ -7512,37 +7512,70 @@
             ${hasColdAlarm ? `<span class="ml-1 text-red-400 font-black animate-pulse" title="Peringatan suhu kulkas/ruang">&#9888;</span>` : ''}
           </button>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          ${gudangTab === 'batch' && seeCost ? `<button type="button" onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Input Batch Manual</button>` : ''}
-          ${gudangTab === 'opname' ? `<button type="button" onclick="window.openRiwayatOpnameModal()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border">Riwayat Opname</button><button type="button" onclick="window.startNewOpnameSession()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Mulai Opname</button>` : ''}
-          ${gudangTab === 'penyesuaian' ? `<button type="button" onclick="window.openQuickAdjustmentModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Sesuaikan Stok</button>` : ''}
-          ${gudangTab === 'transfer' ? `<button type="button" onclick="window.openPindahkanStokModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Pindahkan Stok</button>` : ''}
-          ${gudangTab === 'kartu-stok' ? `<button type="button" onclick="window.exportKartuStok('xlsx')" class="ons-btn ons-btn-emerald text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm">Export Excel</button><button type="button" onclick="window.exportKartuStok('pdf')" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border">Cetak PDF</button>` : ''}
-          ${gudangTab === 'coldchain' ? `<button type="button" onclick="window.openTambahLogSuhuModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Catat Suhu Manual</button>` : ''}
-        </div>
       </div>`;
 
-    // 2. Executive Sub-Hero Banner
+    // 2. Executive Sub-Hero Banner Cockpit (Contextual per Sub-Menu)
     const subHeroBanner = `
       <div class="ons-subhero-banner is-persediaan">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 flex items-center justify-center shrink-0 shadow-sm">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              ${gudangTab === 'batch' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>` :
+                (gudangTab === 'opname' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>` :
+                (gudangTab === 'penyesuaian' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>` :
+                (gudangTab === 'transfer' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` :
+                (gudangTab === 'kartu-stok' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>` :
+                `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>`))))}
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Persediaan &amp; Manajemen Stok Gudang (FEFO)</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">CDOB BPOM No. 6/2020</span>
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
+                  gudangTab === 'batch' ? 'Stok Kadaluarsa &amp; FEFO Guardian' :
+                  (gudangTab === 'opname' ? 'Audit Stok Opname Fisik vs Sistem' :
+                  (gudangTab === 'penyesuaian' ? 'Penyesuaian &amp; Koreksi Stok Gudang' :
+                  (gudangTab === 'transfer' ? 'Perpindahan Stok Antar Rak &amp; Gudang' :
+                  (gudangTab === 'kartu-stok' ? 'Kartu Stok Digital Terverifikasi' :
+                  'Monitor Suhu Cold Chain &amp; Ruang Farmasi'))))
+                }</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">${
+                  gudangTab === 'batch' ? 'Prioritas FEFO' :
+                  (gudangTab === 'opname' ? 'Audit Akurasi' :
+                  (gudangTab === 'penyesuaian' ? 'Koreksi Saldo' :
+                  (gudangTab === 'transfer' ? 'Mutasi Internal' :
+                  (gudangTab === 'kartu-stok' ? 'Audit Trail CDOB' :
+                  '2–8°C &amp; 15–25°C'))))
+                }</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Pengawasan kadaluarsa batch (FEFO Guardian), audit berkala stok opname fisik vs sistem, koreksi penyesuaian stok, mutasi gudang &amp; rak, kartu stok digital terverifikasi, serta telemetri suhu kulkas/ruang 2&ndash;8&deg;C.</p>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${
+                gudangTab === 'batch' ? 'Pengawasan masa simpan batch obat, deteksi dini near-ED (&le; 90 hari), dan penguncian otomatis batch kedaluwarsa agar aman dari transaksi kasir.' :
+                (gudangTab === 'opname' ? 'Pencocokan stok fisik di etalase dan rak gudang dengan data sistem, penghitungan selisih unit &amp; nilai rupiah, serta rekonsiliasi hasil opname.' :
+                (gudangTab === 'penyesuaian' ? 'Koreksi kuantitas dan nilai stok karena selisih hitung, kerusakan kemasan, obat pecah, atau sampling uji dengan riwayat audit terdata.' :
+                (gudangTab === 'transfer' ? 'Pemindahan fisik obat antar rak display kasir, etalase depan, gudang penyimpanan utama, atau cold chain dengan pelacakan mutasi real-time.' :
+                (gudangTab === 'kartu-stok' ? 'Buku mutasi elektronik kronologis masuk, keluar, dan saldo akhir per batch obat secara real-time, memenuhi standar regulasi CDOB BPOM No. 6/2020.' :
+                'Pencatatan telemetri suhu kulkas vaksin/insulin (2&ndash;8&deg;C) dan suhu ruang farmasi (15&ndash;25&deg;C) untuk menjamin stabilitas dan mutu sediaan biologis.'))))
+              }</p>
             </div>
           </div>
-          <div class="hidden sm:flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Gudang &amp; Cold Chain Siaga (FEFO Otomatis)</span>
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
+            ${gudangTab === 'batch' ? `
+              ${seeCost ? `<button type="button" onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input Batch Manual</button>` : ''}
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+            ` : gudangTab === 'opname' ? `
+              <button type="button" onclick="window.openRiwayatOpnameModal()" class="ons-btn ons-btn-ghost text-xs">Riwayat Opname</button>
+              <button type="button" onclick="window.startNewOpnameSession()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Mulai Opname</button>
+            ` : gudangTab === 'penyesuaian' ? `
+              <button type="button" onclick="window.openQuickAdjustmentModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Sesuaikan Stok</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+            ` : gudangTab === 'transfer' ? `
+              <button type="button" onclick="window.openPindahkanStokModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Pindahkan Stok</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+            ` : gudangTab === 'kartu-stok' ? `
+              <button type="button" onclick="window.exportKartuStok('xlsx')" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">Export Excel</button>
+              <button type="button" onclick="window.exportKartuStok('pdf')" class="ons-btn ons-btn-ghost text-xs font-bold">🖨️ Cetak PDF</button>
+            ` : gudangTab === 'coldchain' ? `
+              <button type="button" onclick="window.openTambahLogSuhuModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Catat Suhu Manual</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+            ` : ''}
           </div>
         </div>
       </div>`;
