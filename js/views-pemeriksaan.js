@@ -620,35 +620,53 @@
       const gulaHigh = allRows.filter((r) => r.status_gula && r.status_gula !== 'NORMAL').length;
       const lipidAuHigh = allRows.filter((r) => (r.status_kolesterol && r.status_kolesterol !== 'NORMAL') || (r.status_asam_urat && r.status_asam_urat !== 'NORMAL')).length;
       return `<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <div class="ons-kpi-card">
-          <div class="text-[11px] font-bold uppercase opacity-70">Total Pemeriksaan</div>
-          <div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${allRows.length}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hari ini: <b>${todayCount}</b> pasien</div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Pemeriksaan</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Semua Pasien</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${allRows.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Hari ini: <b>${todayCount}</b> pasien periksa</div>
         </div>
-        <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanFilter('KRISIS')">
-          <div class="text-[11px] font-bold uppercase opacity-70">Kritis / Rujuk Dokter</div>
-          <div class="text-2xl font-extrabold font-mono-num ${krisisCount > 0 ? 'text-red-600' : 'text-emerald-600'} mt-1">${krisisCount}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">TD &ge;180/120 &bull; Gula &lt;70/&ge;300</div>
+        <div class="ons-glance-tile cursor-pointer hover:border-red-400" onclick="window.setPemeriksaanFilter('KRISIS')" title="Filter pasien kritis rujukan dokter">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kritis / Rujuk</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${krisisCount > 0 ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-600'}">Triase Merah</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${krisisCount > 0 ? 'text-red-600' : 'text-emerald-600'}">${krisisCount} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">TD &ge;180/120 &bull; Gula &lt;70/&ge;300</div>
         </div>
-        <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanTab('tensi')">
-          <div class="text-[11px] font-bold uppercase opacity-70">Tensi Waspada/Tinggi</div>
-          <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${tensiHigh}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Pra-HT / HT (&ge;130/80 mmHg)</div>
+        <div class="ons-glance-tile cursor-pointer hover:border-amber-400" onclick="window.setPemeriksaanTab('tensi')" title="Buka sub-tab Cek Tensi Darah">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Tensi Waspada</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Kardio</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${tensiHigh} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Pra-HT / HT (&ge;130/80 mmHg)</div>
         </div>
-        <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanTab('gula')">
-          <div class="text-[11px] font-bold uppercase opacity-70">Gula / Metabolik Pantau</div>
-          <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${gulaHigh} <span class="text-xs font-normal opacity-75">/ ${lipidAuHigh} Lip-AU</span></div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">GDS/GDP, Kol, Asam Urat</div>
+        <div class="ons-glance-tile cursor-pointer hover:border-purple-400" onclick="window.setPemeriksaanTab('gula')" title="Buka sub-tab Cek Gula Darah">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Metabolik Pantau</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-purple-300">GDS/Lipid</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-purple-600">${gulaHigh} <span class="text-xs font-normal opacity-75">/ ${lipidAuHigh} AU</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Gula darah, kolesterol &amp; AU</div>
         </div>
-        <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanFilter('KONTROL_DEKAT')">
-          <div class="text-[11px] font-bold uppercase opacity-70">Jadwal Kontrol &le;7 Hari</div>
-          <div class="text-2xl font-extrabold font-mono-num text-sky-600 mt-1">${kontrolDue}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Klik untuk filter kontrol</div>
+        <div class="ons-glance-tile cursor-pointer hover:border-sky-400" onclick="window.setPemeriksaanFilter('KONTROL_DEKAT')" title="Filter pasien jadwal kontrol dekat">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kontrol &le;7 Hari</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-500/10 text-sky-700 dark:text-sky-300">Follow-Up</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-sky-600">${kontrolDue} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Jatuh tempo kontrol &le; 7 hari</div>
         </div>
-        <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanFilter('BELUM_WA')">
-          <div class="text-[11px] font-bold uppercase opacity-70">Terkirim ke WA</div>
-          <div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${waSentCount}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Arsip digital pasien</div>
+        <div class="ons-glance-tile cursor-pointer hover:border-emerald-400" onclick="window.setPemeriksaanFilter('BELUM_WA')" title="Filter arsip WA pasien">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Terkirim ke WA</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">KIE Pasien</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${waSentCount} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Arsip digital edukasi pasien</div>
         </div>
       </div>`;
     }
@@ -708,35 +726,53 @@
     }).length;
 
     return `<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-      <div class="ons-kpi-card">
-        <div class="text-[11px] font-bold uppercase opacity-70">Total Cek ${cfg.title}</div>
-        <div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${subRows.length}</div>
-        <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hari ini: <b>${subRows.filter((r) => String(r.tanggal || '').slice(0, 10) === todayIso).length}</b></div>
+      <div class="ons-glance-tile">
+        <div class="flex items-center justify-between gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Cek ${cfg.title}</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">POCT</span>
+        </div>
+        <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${subRows.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">rekam</span></div>
+        <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Hari ini: <b>${subRows.filter((r) => String(r.tanggal || '').slice(0, 10) === todayIso).length}</b> pasien</div>
       </div>
-      <div class="ons-kpi-card">
-        <div class="text-[11px] font-bold uppercase opacity-70">Rata-Rata Terukur</div>
-        <div class="text-xl font-extrabold font-mono-num text-sky-600 mt-1">${cfg.avgFn(subRows)}</div>
-        <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Tertinggi: <b class="font-mono-num">${cfg.maxFn(subRows)}</b></div>
+      <div class="ons-glance-tile">
+        <div class="flex items-center justify-between gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Rata-Rata Terukur</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-500/10 text-sky-700 dark:text-sky-300">Rerata</span>
+        </div>
+        <div class="text-xl sm:text-2xl font-black font-mono-num mt-2 tracking-tight text-sky-600">${cfg.avgFn(subRows)}</div>
+        <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Tertinggi: <b class="font-mono-num">${cfg.maxFn(subRows)}</b></div>
       </div>
-      <div class="ons-kpi-card">
-        <div class="text-[11px] font-bold uppercase opacity-70">Target Normal</div>
-        <div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${pctNormal}%</div>
-        <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${normalCnt} dari ${subRows.length} cek normal</div>
+      <div class="ons-glance-tile">
+        <div class="flex items-center justify-between gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Target Normal</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Sesuai Acuan</span>
+        </div>
+        <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${pctNormal}% <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">normal</span></div>
+        <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${normalCnt} dari ${subRows.length} cek normal</div>
       </div>
-      <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanFilter('WASPADA')">
-        <div class="text-[11px] font-bold uppercase opacity-70">Perlu Pantau / Tinggi</div>
-        <div class="text-2xl font-extrabold font-mono-num text-red-600 mt-1">${highCnt}</div>
-        <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Rujuk / edukasi terapi</div>
+      <div class="ons-glance-tile cursor-pointer hover:border-red-400" onclick="window.setPemeriksaanFilter('WASPADA')" title="Filter data yang perlu pantau atau tinggi">
+        <div class="flex items-center justify-between gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Perlu Pantau / Tinggi</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-red-500/10 text-red-700 dark:text-red-300">Atensi</span>
+        </div>
+        <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-red-600">${highCnt} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+        <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Rujuk dokter / edukasi terapi</div>
       </div>
-      <div class="ons-kpi-card">
-        <div class="text-[11px] font-bold uppercase opacity-70">Membaik vs Cek Lalu</div>
-        <div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${membaikCnt}</div>
-        <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Pasien ulang terkontrol</div>
+      <div class="ons-glance-tile">
+        <div class="flex items-center justify-between gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Membaik vs Cek Lalu</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Terkontrol</span>
+        </div>
+        <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${membaikCnt} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+        <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Pasien ulang hasil membaik</div>
       </div>
-      <div class="ons-kpi-card cursor-pointer" onclick="window.setPemeriksaanFilter('BELUM_WA')">
-        <div class="text-[11px] font-bold uppercase opacity-70">Jadwal Kontrol &le;7H</div>
-        <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${kontrolDue}</div>
-        <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Terkirim WA: <b>${waSentCount}</b></div>
+      <div class="ons-glance-tile cursor-pointer hover:border-amber-400" onclick="window.setPemeriksaanFilter('BELUM_WA')" title="Filter jadwal kontrol dan status WA">
+        <div class="flex items-center justify-between gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Jadwal Kontrol &le;7H</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Follow-Up</span>
+        </div>
+        <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${kontrolDue} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
+        <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Terkirim WA: <b>${waSentCount}</b> pasien</div>
       </div>
     </div>`;
   }
@@ -752,16 +788,16 @@
         { param: 'Asam Urat Darah (Kemenkes / IRA)', male: '3.4 – 7.0 mg/dL', female: '2.4 – 6.0 mg/dL', diff: true, warn: 'Hiperurisemia: Pria >7.0 | Wanita >6.0 mg/dL • Target terapi pasien Gout (IRA): <6.0 mg/dL (<5.0 bila tofus)' },
         { param: 'IMT & Lingkar Perut (Kemenkes RI)', male: 'IMT 18.5–25.0 | LP < 90 cm', female: 'IMT 18.5–25.0 | LP < 80 cm', diff: true, warn: 'Kurus <18.5 • Gemuk Ringan 25.1–27.0 • Obesitas >27.0 (Asia-Pasifik waspada ≥23.0, obesitas ≥25.0)' }
       ];
-      return `<div class="ons-card p-3.5 sm:p-4 text-xs space-y-2.5">
+      return `<div class="ons-card p-4 sm:p-5 text-xs space-y-3 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="font-extrabold text-sm" style="color:var(--ons-text)">Acuan Nilai Normal Kesehatan Terbaru (Laki-laki vs Perempuan)</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/25">Kemenkes RI P2PTM &bull; PERKI &bull; PERKENI &bull; IRA</span>
+            <span class="font-extrabold text-sm" style="color:var(--ons-text-main)">Acuan Nilai Normal Kesehatan Laboratorium POCT (Laki-laki vs Perempuan)</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">Kemenkes RI P2PTM &bull; PERKI &bull; PERKENI &bull; IRA</span>
           </div>
-          <button type="button" onclick="window.togglePemeriksaanClinicalMatrix()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">${showClinicalMatrix ? 'Sembunyikan Tabel Acuan' : 'Tampilkan Tabel Acuan L/P'}</button>
+          <button type="button" onclick="window.togglePemeriksaanClinicalMatrix()" class="ons-btn ons-btn-ghost text-xs py-1 px-3 rounded-xl border">${showClinicalMatrix ? 'Sembunyikan Tabel Acuan' : 'Tampilkan Tabel Acuan L/P'}</button>
         </div>
         ${showClinicalMatrix ? `<div class="ons-table-wrap rounded-xl border" style="border-color:var(--ons-border)">
-          <table class="ons-table text-[11px]">
+          <table class="ons-table text-xs">
             <thead>
               <tr>
                 <th>Pemeriksaan / Pedoman</th>
@@ -779,7 +815,7 @@
               </tr>`).join('')}
             </tbody>
           </table>
-        </div>` : `<div class="text-[11px]" style="color:var(--ons-text-soft)">Ringkasan cepat: Tensi &lt;120/80 &bull; Nadi 60–100 &bull; GDP 70–99 / GDS &amp; 2JPP &lt;140 &bull; Kolesterol &lt;200 (HDL L&ge;40 / P&ge;50) &bull; Asam Urat L 3.4–7.0 / P 2.4–6.0 &bull; IMT 18.5–25.0 (LP L&lt;90 / P&lt;80 cm).</div>`}
+        </div>` : `<div class="text-xs" style="color:var(--ons-text-soft)">Ringkasan cepat: Tensi &lt;120/80 &bull; Nadi 60–100 &bull; GDP 70–99 / GDS &amp; 2JPP &lt;140 &bull; Kolesterol &lt;200 (HDL L&ge;40 / P&ge;50) &bull; Asam Urat L 3.4–7.0 / P 2.4–6.0 &bull; IMT 18.5–25.0 (LP L&lt;90 / P&lt;80 cm).</div>`}
       </div>`;
     }
 
@@ -828,10 +864,10 @@
     };
     const cfg = info[subTab];
     if (!cfg) return '';
-    return `<div class="ons-card p-3.5 text-xs">
-      <div class="font-bold mb-2" style="color:var(--ons-text)">${S().esc(cfg.title)}</div>
+    return `<div class="ons-card p-4 text-xs rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
+      <div class="font-bold mb-2.5 text-sm" style="color:var(--ons-text-main)">${S().esc(cfg.title)}</div>
       <div class="flex flex-wrap gap-2">
-        ${cfg.items.map((it) => `<div class="px-2.5 py-1.5 rounded-lg border font-medium ${it.cls}"><b>${S().esc(it.lbl)}:</b> <span class="font-mono-num">${S().esc(it.rng)}</span></div>`).join('')}
+        ${cfg.items.map((it) => `<div class="px-3 py-1.5 rounded-xl border font-medium ${it.cls}"><b>${S().esc(it.lbl)}:</b> <span class="font-mono-num">${S().esc(it.rng)}</span></div>`).join('')}
       </div>
     </div>`;
   }
@@ -870,43 +906,86 @@
 
     const hasActiveFilter = !!(searchQ.trim() || filterMode !== 'SEMUA');
 
-    return `<div class="space-y-4">
-      <div class="ons-card p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div class="flex flex-wrap items-center gap-2">
-            <h2 class="text-lg font-extrabold tracking-tight">Pemeriksaan Kesehatan Pasien (POCT)</h2>
-            <span class="badge-bpom bpom-bebas">Permenkes RI No. 73/2016</span>
-            <span class="badge-bpom bpom-terbatas">Standar Pelayanan Farmasi Klinik</span>
+    const tensiCount = allRows.filter((r) => Number(r.tensi_sistol || 0) > 0).length;
+    const gulaCount = allRows.filter((r) => Number(r.gula_darah || 0) > 0).length;
+    const kolesterolCount = allRows.filter((r) => Number(r.kolesterol_total || 0) > 0).length;
+    const asamUratCount = allRows.filter((r) => Number(r.asam_urat || 0) > 0).length;
+
+    // 1. Executive Sub-Menu Header Navigation (Cockpit Bar)
+    const subTabHeader = `
+      <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Pelayanan Klinik">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setPemeriksaanTab('semua')" class="ons-dash-tab-btn ${subTab === 'semua' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <span>Semua Pemeriksaan</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${subTab === 'semua' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${allRows.length}</span>
+          </button>
+          <button type="button" onclick="window.setPemeriksaanTab('tensi')" class="ons-dash-tab-btn ${subTab === 'tensi' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Cek Tensi Darah</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${subTab === 'tensi' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${tensiCount}</span>
+          </button>
+          <button type="button" onclick="window.setPemeriksaanTab('gula')" class="ons-dash-tab-btn ${subTab === 'gula' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+            <span>Cek Gula Darah</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${subTab === 'gula' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${gulaCount}</span>
+          </button>
+          <button type="button" onclick="window.setPemeriksaanTab('kolesterol')" class="ons-dash-tab-btn ${subTab === 'kolesterol' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>Cek Kolesterol</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${subTab === 'kolesterol' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${kolesterolCount}</span>
+          </button>
+          <button type="button" onclick="window.setPemeriksaanTab('asam_urat')" class="ons-dash-tab-btn ${subTab === 'asam_urat' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span>Cek Asam Urat</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${subTab === 'asam_urat' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${asamUratCount}</span>
+          </button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="window.printRekapPemeriksaanA4()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Cetak Rekap Pemeriksaan Format A4">🖨️ Rekap A4</button>
+          <button type="button" onclick="window.exportPemeriksaanXlsx()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Ekspor Catatan ke Excel">📥 Export Excel</button>
+          ${subTab !== 'semua' ? `<button type="button" onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm" title="Mulai Pemeriksaan Paket Lengkap">+ Paket 4-in-1</button>` : ''}
+          <button type="button" onclick="window.openPemeriksaanModal('','${S().esc(subTab)}')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Catat ${S().esc(focusLabels[subTab] || 'Pemeriksaan')}</button>
+        </div>
+      </div>`;
+
+    // 2. Executive Sub-Hero Banner
+    const subHeroBanner = `
+      <div class="ons-subhero-banner is-pemeriksaan">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-600/10 text-cyan-600 border border-cyan-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Pelayanan Klinik &amp; Pemeriksaan Pasien (POCT)</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">PMK No. 73/2016</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">Standar Skrining &amp; Edukasi Kefarmasian: Tensi &amp; MAP, Gula Darah (GDS/GDP), Kolesterol Total, Asam Urat, Antropometri IMT, Triase Red-Flag Rujukan Dokter, Catatan SOAP Klinis, &amp; KIE WhatsApp Pasien.</p>
+            </div>
           </div>
-          <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Standar Skrining &amp; Edukasi Kefarmasian: Tensi &amp; MAP, Gula Darah, Kolesterol, Asam Urat, Antropometri IMT, Triage Red-Flag Rujukan Dokter, Catatan SOAP, &amp; KIE WhatsApp.</p>
+          <div class="hidden sm:flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Layanan POCT Siaga (Instan &lt; 5 Menit)</span>
+            </span>
+          </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="window.openPemeriksaanModal('','${S().esc(subTab)}')" class="ons-btn ons-btn-primary text-xs min-h-[42px]">+ Catat ${S().esc(focusLabels[subTab] || 'Pemeriksaan Baru')}</button>
-          ${subTab !== 'semua' ? `<button onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs min-h-[42px]">Paket Cek 4-in-1</button>` : ''}
-          <button onclick="window.printRekapPemeriksaanA4()" class="ons-btn ons-btn-ghost text-xs min-h-[42px]">Rekap A4</button>
-          <button onclick="window.exportPemeriksaanXlsx()" class="ons-btn ons-btn-ghost text-xs min-h-[42px]">Export Excel</button>
-        </div>
-      </div>
+      </div>`;
 
+    return `<div class="space-y-4 ons-view-enter">
+      ${subTabHeader}
+      ${subHeroBanner}
       ${renderSpecializedKpiStrip(allRows, subTab)}
-
-      <!-- 5 Sub-Menu Pemeriksaan Pasien -->
-      <div class="ons-tab-bar" role="tablist" aria-label="Sub-Menu Pemeriksaan Kesehatan">
-        <button onclick="window.setPemeriksaanTab('semua')" class="ons-tab-btn ${subTab === 'semua' ? 'active' : ''}">Semua Pemeriksaan (${allRows.length})</button>
-        <button onclick="window.setPemeriksaanTab('tensi')" class="ons-tab-btn ${subTab === 'tensi' ? 'active' : ''}">Cek Tensi Darah (${allRows.filter((r) => Number(r.tensi_sistol || 0) > 0).length})</button>
-        <button onclick="window.setPemeriksaanTab('gula')" class="ons-tab-btn ${subTab === 'gula' ? 'active' : ''}">Cek Gula Darah (${allRows.filter((r) => Number(r.gula_darah || 0) > 0).length})</button>
-        <button onclick="window.setPemeriksaanTab('kolesterol')" class="ons-tab-btn ${subTab === 'kolesterol' ? 'active' : ''}">Cek Kolesterol (${allRows.filter((r) => Number(r.kolesterol_total || 0) > 0).length})</button>
-        <button onclick="window.setPemeriksaanTab('asam_urat')" class="ons-tab-btn ${subTab === 'asam_urat' ? 'active' : ''}">Cek Asam Urat (${allRows.filter((r) => Number(r.asam_urat || 0) > 0).length})</button>
-      </div>
-
       ${renderGuidanceBanner(subTab)}
 
       <!-- Toolbar Pencarian & Filter + Tabel Riwayat -->
-      <div class="ons-card p-4 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
-            <input type="text" value="${S().esc(searchQ)}" oninput="window.setPemeriksaanSearch(this.value)" class="ons-input max-w-xs text-xs" placeholder="Cari pasien, No. WA, terapi, atau kode cek..."/>
-            <select onchange="window.setPemeriksaanFilter(this.value)" class="ons-select w-52 text-xs">
+      <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+            <input type="text" value="${S().esc(searchQ)}" oninput="window.setPemeriksaanSearch(this.value)" class="ons-input max-w-xs text-xs rounded-xl" placeholder="Cari pasien, No. WA, terapi, atau kode cek..."/>
+            <select onchange="window.setPemeriksaanFilter(this.value)" class="ons-select w-56 text-xs rounded-xl">
               <option value="SEMUA" ${filterMode === 'SEMUA' ? 'selected' : ''}>Semua Status Pemeriksaan</option>
               <option value="KRISIS" ${filterMode === 'KRISIS' ? 'selected' : ''}>Prioritas Kritis / Rujuk Dokter</option>
               <option value="WASPADA" ${filterMode === 'WASPADA' ? 'selected' : ''}>Perlu Perhatian / Tinggi</option>
@@ -914,19 +993,19 @@
               <option value="KONTROL_DEKAT" ${filterMode === 'KONTROL_DEKAT' ? 'selected' : ''}>Jadwal Kontrol &le; 7 Hari / Lewat</option>
               <option value="BELUM_WA" ${filterMode === 'BELUM_WA' ? 'selected' : ''}>Belum Dikirim ke WA</option>
             </select>
-            ${hasActiveFilter ? `<button onclick="window.resetPemeriksaanFilter()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Reset</button>` : ''}
+            ${hasActiveFilter ? `<button onclick="window.resetPemeriksaanFilter()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 rounded-xl border">Reset</button>` : ''}
           </div>
-          <div class="text-xs" style="color:var(--ons-text-soft)">Menampilkan <b>${list.length}</b> catatan pemeriksaan tersimpan</div>
+          <div class="text-xs" style="color:var(--ons-text-soft)">Menampilkan <b class="font-mono-num text-blue-600">${list.length}</b> catatan pemeriksaan tersimpan</div>
         </div>
 
-        ${list.length === 0 ? `<div class="p-8 text-center rounded-xl border border-dashed space-y-3" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+        ${list.length === 0 ? `<div class="p-8 text-center rounded-2xl border border-dashed space-y-3" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
           <div class="font-bold text-sm">Belum ada catatan pemeriksaan pada kategori / filter ini</div>
           <div class="text-xs" style="color:var(--ons-text-soft)">Klik tombol di bawah untuk mencatat hasil cek Tensi, Gula Darah, Kolesterol, atau Asam Urat pasien dan kirimkan salinannya ke WhatsApp mereka.</div>
           <div class="flex flex-wrap justify-center gap-2">
             ${hasActiveFilter ? `<button onclick="window.resetPemeriksaanFilter()" class="ons-btn ons-btn-ghost text-xs">Tampilkan Semua</button>` : ''}
             <button onclick="window.openPemeriksaanModal('','${S().esc(subTab)}')" class="ons-btn ons-btn-primary text-xs">+ Mulai Pemeriksaan Pasien</button>
           </div>
-        </div>` : `<div class="ons-table-wrap">
+        </div>` : `<div class="ons-table-wrap rounded-xl border" style="border-color:var(--ons-border)">
           <table class="ons-table">
             <thead>
               <tr>
