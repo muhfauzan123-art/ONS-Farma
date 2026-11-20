@@ -1869,62 +1869,142 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     const erxQueue = erxAll.filter((rx) => !eq || `${rx.id_klinis} ${rx.nama_pasien} ${rx.dokter_asal} ${rx.soap_notes}`.toLowerCase().includes(eq));
     const antreCount = erxAll.filter((x) => x.status_klinis === 'ANTRIAN_VALIDASI_APJ').length;
 
-    return `<div class="space-y-5 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">Layanan Klinis Farmasi, Racikan &amp; MESO SATUSEHAT</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Dokumentasi SOAP PMK 73 &amp; HL7 FHIR R4, kalkulator racikan multi-bahan + etiket live, serta algoritma Naranjo MESO BPOM.</p>
+    // Sub-Tab Header Bar Universal
+    const subTabHeader = `
+      <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Pelayanan Apotek">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setKlinisTab('soap')" class="ons-dash-tab-btn ${klinisTab === 'soap' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+            <span>Kajian Resep &amp; SOAP</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${klinisTab === 'soap' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${(st.rekamKlinis || []).length}</span>
+          </button>
+          <button type="button" onclick="window.setKlinisTab('erx')" class="ons-dash-tab-btn ${klinisTab === 'erx' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>Antrean E-Resep</span>
+            ${antreCount > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${klinisTab === 'erx' ? 'bg-white/25 text-white' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'} font-mono-num">${antreCount} Antre</span>` : ''}
+          </button>
+          <button type="button" onclick="window.setKlinisTab('racikan')" class="ons-dash-tab-btn ${klinisTab === 'racikan' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+            <span>Racikan &amp; Etiket</span>
+          </button>
+          <button type="button" onclick="window.setKlinisTab('kalkulator')" class="ons-dash-tab-btn ${klinisTab === 'kalkulator' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg>
+            <span>Kalkulator Dosis</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${klinisTab === 'kalkulator' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}">41 Preset</span>
+          </button>
+          <button type="button" onclick="window.setKlinisTab('pio')" class="ons-dash-tab-btn ${klinisTab === 'pio' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Kartu PIO &amp; Jadwal</span>
+          </button>
+          <button type="button" onclick="window.setKlinisTab('meso')" class="ons-dash-tab-btn ${klinisTab === 'meso' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>MESO (BPOM)</span>
+            ${mesoList.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${klinisTab === 'meso' ? 'bg-white/25 text-white' : 'bg-purple-500/15 text-purple-700 dark:text-purple-300'} font-mono-num">${mesoList.length}</span>` : ''}
+          </button>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <div class="ons-tab-bar">
-            <button onclick="window.setKlinisTab('soap')" class="ons-tab-btn ${klinisTab === 'soap' ? 'active' : ''}">Kajian Resep &amp; SOAP (${(st.rekamKlinis || []).length})</button>
-            <button onclick="window.setKlinisTab('erx')" class="ons-tab-btn ${klinisTab === 'erx' ? 'active' : ''}">Antrean E-Resep (${antreCount}/${erxAll.length})</button>
-            <button onclick="window.setKlinisTab('racikan')" class="ons-tab-btn ${klinisTab === 'racikan' ? 'active' : ''}">Racikan &amp; Etiket</button>
-            <button onclick="window.setKlinisTab('kalkulator')" class="ons-tab-btn ${klinisTab === 'kalkulator' ? 'active' : ''}">Kalkulator Dosis &amp; Template</button>
-            <button onclick="window.setKlinisTab('pio')" class="ons-tab-btn ${klinisTab === 'pio' ? 'active' : ''}">Kartu PIO &amp; Jadwal</button>
-            <button onclick="window.setKlinisTab('meso')" class="ons-tab-btn ${klinisTab === 'meso' ? 'active' : ''}">MESO (Naranjo) (${mesoList.length})</button>
-          </div>
-          <button onclick="window.openCreateCopyResepDirectModal()" class="ons-btn ons-btn-ghost text-xs text-blue-700 font-semibold" title="Buat Salinan Resep Baru">+ Buat Copy Resep (p.c.c)</button>
-          <button onclick="window.openCopyResepArchiveModal()" class="ons-btn ons-btn-ghost text-xs">Arsip Copy Resep (${(st.copyResep || []).length})</button>
-          <button onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs">+ Input SOAP Klinis</button>
+          <button type="button" onclick="window.openCreateCopyResepDirectModal()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-bold" style="border-color:var(--ons-border-strong)" title="Buat Salinan Resep Baru">+ Copy Resep (p.c.c)</button>
+          <button type="button" onclick="window.openCopyResepArchiveModal()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border" style="border-color:var(--ons-border-strong)">📁 Arsip (${(st.copyResep || []).length})</button>
+          <button type="button" onclick="window.openInputResepModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Input SOAP Klinis</button>
         </div>
-      </div>
+      </div>`;
+
+    // Executive Sub-Hero Banner
+    const subHeroBanner = `
+      <div class="ons-subhero-banner is-klinis">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600/10 text-teal-600 border border-teal-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Pelayanan Farmasi Klinis &amp; Pengkajian Resep</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">PMK No. 73/2016</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">Standar Pelayanan Kefarmasian di Apotek: pengkajian resep SOAP, integrasi HL7 FHIR SATUSEHAT, antrean E-Resep, kalkulator racikan &amp; etiket BUD, serta farmakovigilans MESO BPOM.</p>
+            </div>
+          </div>
+          <div class="hidden sm:flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Apoteker Siaga (APJ Validated)</span>
+            </span>
+          </div>
+        </div>
+      </div>`;
+
+    return `<div class="space-y-4 ons-view-enter">
+      ${subTabHeader}
+      ${subHeroBanner}
 
       ${klinisTab === 'erx' ? `
         <div class="space-y-4">
-          <div class="ons-card p-4 flex flex-wrap items-center justify-between gap-3">
-            <div class="text-xs">
-              <div class="font-bold text-sm">Tautan Khusus Mini-Portal Dokter Mitra (E-Resep):</div>
-              <code class="font-mono-num text-blue-600 break-all">${S().esc(erxUrl)}</code>
+          <!-- Mini-Portal Dokter Card -->
+          <div class="ons-card p-4 sm:p-5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm border-l-4 border-l-blue-600">
+            <div class="text-xs space-y-1">
+              <div class="font-extrabold text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                <span>🌐</span> <span>Tautan Khusus Mini-Portal Dokter Mitra (E-Resep Digital):</span>
+              </div>
+              <div class="text-[11px]" style="color:var(--ons-text-soft)">Bagikan tautan ini kepada dokter mitra apotek agar dapat meresepkan obat secara digital dari klinik / praktik mandiri.</div>
+              <code class="font-mono-num text-xs px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold block max-w-xl break-all mt-1">${S().esc(erxUrl)}</code>
             </div>
-            <div class="flex gap-2">
-              <button onclick="navigator.clipboard?.writeText('${S().esc(erxUrl)}');toast('Tautan E-Resep Dokter Mitra disalin!','ok')" class="ons-btn ons-btn-ghost text-xs">Salin Tautan</button>
+            <div class="flex gap-2 shrink-0">
+              <button type="button" onclick="navigator.clipboard?.writeText('${S().esc(erxUrl)}');toast('Tautan E-Resep Dokter Mitra disalin!','ok')" class="ons-btn ons-btn-primary text-xs px-3.5 py-2 rounded-xl shadow-sm font-bold flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Salin Tautan</span>
+              </button>
             </div>
           </div>
 
-          <div class="ons-card p-4 space-y-3">
+          <!-- 2 Glance Asset Tiles -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Menunggu Verifikasi APJ</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Antrean Masuk</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${antreCount} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">resep</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Wajib pengesahan PIN APJ sebelum diteruskan ke kasir</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total E-Resep Diterima</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Dokter Mitra</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${erxAll.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">resep</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Arsip E-Resep digital dokter mitra tersimpan rapi</div>
+            </div>
+          </div>
+
+          <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-sm">Antrean E-Resep Dokter Masuk (Verifikasi PIN APJ &rarr; Kasir POS)</h3>
+              <div>
+                <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Antrean E-Resep Dokter Masuk</h3>
+                <div class="text-xs" style="color:var(--ons-text-soft)">Verifikasi legalitas PIN APJ sebelum dikirim ke Kasir POS</div>
+              </div>
               <div class="flex items-center gap-2">
-                <input class="ons-input text-xs w-56" placeholder="Cari dokter, pasien, resep..." value="${S().esc(erxSearchQ)}" oninput="window.setErxSearchQ(this.value)"/>
-                <span class="badge-bpom bpom-prekursor">${antreCount} Menunggu PIN APJ</span>
+                <input class="ons-input text-xs w-60 rounded-xl" placeholder="Cari dokter, pasien, resep..." value="${S().esc(erxSearchQ)}" oninput="window.setErxSearchQ(this.value)"/>
+                <span class="badge-bpom bpom-prekursor font-bold px-2.5 py-1">${antreCount} Menunggu PIN</span>
               </div>
             </div>
-            <div class="space-y-2">
-              ${erxQueue.length === 0 ? '<div class="text-xs py-6 text-center" style="color:var(--ons-text-soft)">Belum ada E-Resep masuk dari dokter mitra. Resep offline dapat langsung di-input melalui tombol <b>+ Input SOAP Klinis</b> di atas.</div>' : erxQueue.map((rx) => `
-                <div class="p-3.5 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-                  <div class="space-y-1">
+            <div class="space-y-2.5">
+              ${erxQueue.length === 0 ? '<div class="text-xs py-8 text-center" style="color:var(--ons-text-soft)">Belum ada E-Resep masuk dari dokter mitra. Resep offline dapat langsung di-input melalui tombol <b>+ Input SOAP Klinis</b> di atas.</div>' : erxQueue.map((rx) => `
+                <div class="p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-3.5 text-xs shadow-sm transition-all hover:border-blue-400" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+                  <div class="space-y-1.5 flex-1 min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                      <span class="font-mono-num font-bold">${S().esc(rx.id_klinis)}</span>
-                      <span class="badge-bpom ${rx.status_klinis === 'TERVERIFIKASI_APJ' ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(rx.status_klinis)}</span>
-                      <b>${S().esc(rx.nama_pasien)}</b> &bull; <span>${S().esc(rx.dokter_asal)} (${S().esc(rx.no_sip_dokter || '-')})</span>
+                      <span class="font-mono-num font-extrabold text-blue-600 px-2 py-0.5 rounded-md bg-blue-500/10">${S().esc(rx.id_klinis)}</span>
+                      <span class="badge-bpom ${rx.status_klinis === 'TERVERIFIKASI_APJ' ? 'bpom-bebas' : 'bpom-prekursor'} font-bold">${S().esc(rx.status_klinis)}</span>
+                      <span class="font-bold text-sm" style="color:var(--ons-text-main)">${S().esc(rx.nama_pasien)}</span>
+                      <span class="text-slate-400">&bull;</span>
+                      <span style="color:var(--ons-text-soft)">dr. ${S().esc(rx.dokter_asal)} (${S().esc(rx.no_sip_dokter || 'SIP: -')})</span>
                     </div>
-                    <div class="font-mono-num whitespace-pre-line p-2.5 rounded-lg border text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(rx.soap_notes || '-')}</div>
-                    ${rx.cdss_warning ? `<div class="text-amber-600 font-semibold">${S().esc(rx.cdss_warning)}</div>` : ''}
+                    <div class="font-mono-num whitespace-pre-line p-3 rounded-xl border text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">${S().esc(rx.soap_notes || '-')}</div>
+                    ${rx.cdss_warning ? `<div class="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1"><span>⚠️</span> <span>${S().esc(rx.cdss_warning)}</span></div>` : ''}
                   </div>
                   <div class="flex flex-wrap gap-2 shrink-0">
-                    ${rx.status_klinis === 'ANTRIAN_VALIDASI_APJ' ? `<button onclick="window.approveErxWithPinModal('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3">Verifikasi PIN APJ</button>` : ''}
-                    <button onclick="window.loadErxToPosCart('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3">Muat ke POS &rarr;</button>
+                    <button type="button" onclick="window.openErxDetailModal('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 rounded-xl border">Detail</button>
+                    ${rx.status_klinis === 'ANTRIAN_VALIDASI_APJ' ? `<button type="button" onclick="window.verifyErxWithPin('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 rounded-xl font-bold shadow-sm">Verifikasi PIN APJ &rarr; POS</button>` : `<button type="button" onclick="window.sendErxToPosCart('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 rounded-xl font-bold shadow-sm">Kirim ke POS</button>`}
                   </div>
                 </div>`).join('')}
             </div>
@@ -1946,196 +2026,349 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         const waPreview = S().buildPioScheduleWaText ? S().buildPioScheduleWaText({ nama_pasien: pioState.pasien, items: pioItems, catatan_apoteker: pioState.catatan }) : '';
         const waHref = (S().buildWaUrl && pioState.noWa) ? S().buildWaUrl(pioState.noWa, waPreview) : ('https://wa.me/?text=' + encodeURIComponent(waPreview));
         const pioHistory = (st.rekamKlinis || []).filter((k) => String(k.layanan_jenis || '').toUpperCase() === 'PIO');
-        return `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
-            <h3 class="font-bold text-sm">Builder Kartu PIO &amp; Jadwal Minum Obat Pasien (PMK 73)</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div><label class="font-semibold block mb-1">Pilih Pasien / Member</label>
-                <select class="ons-select text-xs" onchange="window.pickPioMember(this.value)">
-                  <option value="">-- Custom / Pasien Umum --</option>
-                  ${(st.members || []).map((m) => `<option value="${S().esc(m.id_member)}" ${pioState.idMember === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.no_hp || '-')})</option>`).join('')}
-                </select>
+        return `<div class="space-y-4">
+          <!-- 2 Glance Asset Tiles -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Edukasi PIO Tersimpan</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Konseling Pasien</span>
               </div>
-              <div><label class="font-semibold block mb-1">Nama Pasien *</label><input class="ons-input text-xs" value="${S().esc(pioState.pasien)}" oninput="window.setPioMeta('pasien', this.value)"/></div>
-              <div class="sm:col-span-2"><label class="font-semibold block mb-1">No. WhatsApp Pasien (Gratis Kirim via wa.me)</label><input class="ons-input font-mono-num text-xs" value="${S().esc(pioState.noWa)}" oninput="window.setPioMeta('noWa', this.value)"/></div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${pioHistory.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">sesi</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Terdokumentasi otomatis ke riwayat pelayanan farmasi</div>
             </div>
-            <div>
-              <label class="font-semibold block mb-1">Pilih Waktu Minum Obat Utama</label>
-              <div class="flex flex-wrap gap-2">
-                ${[
-                  { k: 'PAGI', l: '07:00 Pagi' },
-                  { k: 'SIANG', l: '13:00 Siang' },
-                  { k: 'SORE', l: '17:00 Sore' },
-                  { k: 'MALAM', l: '21:00 Malam' }
-                ].map((slot) => {
-                  const active = (pioState.jadwalKeys || []).includes(slot.k);
-                  return `<button type="button" onclick="window.togglePioJadwal('${slot.k}')" class="ons-btn text-xs py-1 px-3 ${active ? 'ons-btn-primary' : 'ons-btn-ghost'}">${slot.l}</button>`;
-                }).join('')}
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Waktu Minum Terjadwal</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500/10 text-teal-700 dark:text-teal-300">Kepatuhan Terapi</span>
               </div>
-            </div>
-            <div><label class="font-semibold block mb-1">Daftar Obat &amp; Aturan Pakai (1 obat per baris, format: Nama (Aturan))</label><textarea rows="4" class="ons-textarea font-mono-num text-xs" oninput="window.setPioMeta('itemsText', this.value)">${S().esc(pioState.itemsText)}</textarea></div>
-            <div><label class="font-semibold block mb-1">Catatan Edukasi / Interaksi Apoteker</label><input class="ons-input text-xs" value="${S().esc(pioState.catatan)}" oninput="window.setPioMeta('catatan', this.value)"/></div>
-            <div class="flex flex-wrap gap-2 pt-1">
-              <button onclick="window.submitPioRecord()" class="ons-btn ons-btn-emerald text-xs">Simpan Arsip PIO &rarr; SOAP</button>
-              <button onclick="window.printPioCard()" class="ons-btn ons-btn-ghost text-xs">Cetak Kartu PIO</button>
-              <a target="_blank" rel="noopener" href="${S().esc(waHref)}" class="ons-btn ons-btn-primary text-xs">Kirim Jadwal WA (Gratis)</a>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-teal-600">${(pioState.jadwalKeys || []).length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">waktu</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${(pioState.jadwalKeys || []).join(', ') || 'Belum dipilih'}</div>
             </div>
           </div>
 
-          <div class="ons-card p-5 lg:col-span-6 space-y-3 text-xs">
-            <h3 class="font-bold text-sm">Pratinjau Kartu PIO &amp; Pesan WhatsApp Otomatis</h3>
-            <pre class="p-3 rounded-xl border whitespace-pre-wrap font-sans text-xs max-h-64 overflow-y-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(waPreview)}</pre>
-            <div class="pt-2 border-t space-y-2" style="border-color:var(--ons-border)">
-              <div class="font-bold text-xs">Riwayat Edukasi PIO Tersimpan (${pioHistory.length})</div>
-              <div class="space-y-1.5 max-h-40 overflow-y-auto">
-                ${pioHistory.length ? pioHistory.map((p) => `<div class="p-2 rounded-lg border text-[11px]" style="border-color:var(--ons-border)">
-                  <div class="flex justify-between"><b>${S().esc(p.nama_pasien)}</b><span class="font-mono-num" style="color:var(--ons-text-soft)">${S().formatTgl(p.tanggal)}</span></div>
-                  <div style="color:var(--ons-text-soft)">${S().esc(p.soap_notes)}</div>
-                </div>`).join('') : '<div style="color:var(--ons-text-soft)">Belum ada log PIO baru sesi ini.</div>'}
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="ons-card p-5 lg:col-span-6 space-y-3.5 text-xs rounded-2xl shadow-sm">
+              <div>
+                <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Builder Kartu PIO &amp; Jadwal Minum Obat Pasien (PMK 73)</h3>
+                <p class="text-[11px]" style="color:var(--ons-text-soft)">Susun pengingat aturan pakai dan edukasi apoteker untuk pasien rawat jalan.</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Pilih Pasien / Member</label>
+                  <select class="ons-select text-xs rounded-xl" onchange="window.pickPioMember(this.value)">
+                    <option value="">-- Custom / Pasien Umum --</option>
+                    ${(st.members || []).map((m) => `<option value="${S().esc(m.id_member)}" ${pioState.idMember === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)} (${S().esc(m.no_hp || '-')})</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Nama Pasien *</label>
+                  <input class="ons-input text-xs rounded-xl" value="${S().esc(pioState.pasien)}" oninput="window.setPioMeta('pasien', this.value)"/>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">No. WhatsApp Pasien (Gratis Kirim via wa.me)</label>
+                  <input class="ons-input font-mono-num text-xs rounded-xl" placeholder="Cth: 081234567890" value="${S().esc(pioState.noWa)}" oninput="window.setPioMeta('noWa', this.value)"/>
+                </div>
+              </div>
+              <div>
+                <label class="font-bold text-[10px] block mb-1.5" style="color:var(--ons-text-soft)">Pilih Waktu Minum Obat Utama</label>
+                <div class="flex flex-wrap gap-2">
+                  ${[
+                    { k: 'PAGI', l: '07:00 Pagi' },
+                    { k: 'SIANG', l: '13:00 Siang' },
+                    { k: 'SORE', l: '17:00 Sore' },
+                    { k: 'MALAM', l: '21:00 Malam' }
+                  ].map((slot) => {
+                    const active = (pioState.jadwalKeys || []).includes(slot.k);
+                    return `<button type="button" onclick="window.togglePioJadwal('${slot.k}')" class="ons-btn text-xs py-1.5 px-3.5 rounded-xl font-bold transition-all ${active ? 'ons-btn-primary shadow-sm' : 'ons-btn-ghost border'}">${slot.l}</button>`;
+                  }).join('')}
+                </div>
+              </div>
+              <div>
+                <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Daftar Obat &amp; Aturan Pakai (1 obat per baris, format: Nama (Aturan))</label>
+                <textarea rows="4" class="ons-textarea font-mono-num text-xs rounded-xl" oninput="window.setPioMeta('itemsText', this.value)">${S().esc(pioState.itemsText)}</textarea>
+              </div>
+              <div>
+                <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Catatan Edukasi / Interaksi Apoteker</label>
+                <input class="ons-input text-xs rounded-xl" placeholder="Cth: Minum sesudah makan, hindari susu bersamaan..." value="${S().esc(pioState.catatan)}" oninput="window.setPioMeta('catatan', this.value)"/>
+              </div>
+              <div class="flex flex-wrap gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+                <button type="button" onclick="window.submitPioRecord()" class="ons-btn ons-btn-emerald text-xs py-2 px-3.5 rounded-xl font-bold shadow-sm">💾 Simpan Arsip PIO &rarr; SOAP</button>
+                <button type="button" onclick="window.printPioCard()" class="ons-btn ons-btn-ghost text-xs py-2 px-3.5 rounded-xl border font-bold">🖨️ Cetak Kartu PIO</button>
+                <a target="_blank" rel="noopener" href="${S().esc(waHref)}" class="ons-btn ons-btn-primary text-xs py-2 px-3.5 rounded-xl font-bold shadow-sm">📲 Kirim Jadwal WA (Gratis)</a>
+              </div>
+            </div>
+
+            <div class="ons-card p-5 lg:col-span-6 space-y-3.5 text-xs rounded-2xl shadow-sm">
+              <div>
+                <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Pratinjau Pesan WhatsApp &amp; Kartu Edukasi</h3>
+                <p class="text-[11px]" style="color:var(--ons-text-soft)">Teks otomatis yang akan diterima pasien di aplikasi WhatsApp.</p>
+              </div>
+              <pre class="p-3.5 rounded-2xl border whitespace-pre-wrap font-sans text-xs max-h-64 overflow-y-auto leading-relaxed shadow-inner" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(waPreview)}</pre>
+              <div class="pt-2.5 border-t space-y-2.5" style="border-color:var(--ons-border)">
+                <div class="font-extrabold text-xs" style="color:var(--ons-text-main)">Riwayat Edukasi PIO Tersimpan (${pioHistory.length})</div>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                  ${pioHistory.length ? pioHistory.map((p) => `<div class="p-3 rounded-xl border text-[11px] shadow-sm" style="border-color:var(--ons-border);background:var(--ons-bg-card)">
+                    <div class="flex justify-between items-center"><b>${S().esc(p.nama_pasien)}</b><span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${S().formatTgl(p.tanggal)}</span></div>
+                    <div class="mt-1" style="color:var(--ons-text-soft)">${S().esc(p.soap_notes)}</div>
+                  </div>`).join('') : '<div class="py-4 text-center text-xs" style="color:var(--ons-text-soft)">Belum ada log PIO baru sesi ini.</div>'}
+                </div>
               </div>
             </div>
           </div>
         </div>`;
       })() : klinisTab === 'kalkulator' ? renderDosageCalculatorTabHtml(false) : klinisTab === 'racikan' ? `
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div class="ons-card p-5 lg:col-span-7 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-sm">Kalkulator Racikan / Puyer Multi-Bahan &rarr; POS</h3>
-              <button onclick="window.addRacikanIngredient()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Bahan Obat</button>
-            </div>
-            <div class="grid grid-cols-3 gap-2 text-xs">
-              <div><label class="font-semibold block mb-1">Jumlah Bungkus / Kapsul</label><input type="number" min="1" value="${racikanState.jumlahBungkus}" oninput="window.setRacikanMeta('jumlahBungkus', Number(this.value||1))" class="ons-input font-mono-num"/></div>
-              <div><label class="font-semibold block mb-1">Jasa Racik / Tuslah (Rp)</label><input type="number" min="0" value="${racikanState.jasaRacik}" oninput="window.setRacikanMeta('jasaRacik', Number(this.value||0))" class="ons-input font-mono-num"/></div>
-              <div><label class="font-semibold block mb-1">Embalase / Kemasan (Rp)</label><input type="number" min="0" value="${racikanState.embalase}" oninput="window.setRacikanMeta('embalase', Number(this.value||0))" class="ons-input font-mono-num"/></div>
-            </div>
-            <div class="space-y-2">
-              ${ingRows.map((row) => `
-                <div class="p-3 rounded-xl border space-y-2 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <select class="ons-select flex-1 min-w-[200px]" onchange="window.updateRacikanIng(${row.idx}, 'id_obat', this.value)">
-                      ${st.masterObat.map((o) => {
-                        const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
-                        const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
-                        return `<option value="${o.id_obat}" ${o.id_obat === row.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)} (${S().rp(h1)}/${S().esc(s1)})</option>`;
-                      }).join('')}
-                    </select>
-                    <button onclick="window.removeRacikanIng(${row.idx})" ${ingRows.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button>
-                  </div>
-                  <div class="grid grid-cols-3 gap-2">
-                    <div><label class="text-[11px]">Dosis/Bungkus (mg)</label><input type="number" min="1" value="${row.dosis_mg}" oninput="window.updateRacikanIng(${row.idx}, 'dosis_mg', Number(this.value||1))" class="ons-input font-mono-num"/></div>
-                    <div><label class="text-[11px]">Kekuatan Sediaan (mg)</label><input type="number" min="1" value="${row.kekuatan_mg}" oninput="window.updateRacikanIng(${row.idx}, 'kekuatan_mg', Number(this.value||1))" class="ons-input font-mono-num"/></div>
-                    <div class="flex flex-col justify-end font-mono-num text-right">
-                      <span class="font-bold text-blue-600">${row.exactTabs.toFixed(2)} &rarr; ${row.bulat} unit</span>
-                      <span class="text-[11px]" style="color:var(--ons-text-soft)">${S().rp(row.subHarga)}</span>
-                    </div>
-                  </div>
-                </div>`).join('')}
-            </div>
-            <div class="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-xs" style="border-color:var(--ons-border)">
-              <div>
-                <div>Bahan: <b class="font-mono-num">${S().rp(totalBahanRp)}</b> + Tuslah &amp; Embalase: <b class="font-mono-num">${S().rp(Number(racikanState.jasaRacik) + Number(racikanState.embalase))}</b></div>
-                <div class="text-sm font-extrabold text-emerald-600 font-mono-num">Estimasi Total Resep Racikan: ${S().rp(totalRacikanRp)}</div>
+        <div class="space-y-4">
+          <!-- 2 Glance Asset Tiles -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Estimasi Total Resep Racikan</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Total Tagihan</span>
               </div>
-              <button onclick="window.addRacikanToPos()" class="ons-btn ons-btn-emerald text-xs">Masukkan Semua Bahan ke POS (${ingRows.length}) &rarr;</button>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${S().rp(totalRacikanRp)}</div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Bahan: ${S().rp(totalBahanRp)} + Tuslah/Embalase: ${S().rp(Number(racikanState.jasaRacik || 0) + Number(racikanState.embalase || 0))}</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Bahan Obat Aktif</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-purple-300">Komposisi</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-purple-600">${ingRows.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">formula racikan</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Otomatis konversi miligram ke unit butir tablet/kapsul</div>
             </div>
           </div>
 
-          <div class="ons-card p-5 lg:col-span-5 space-y-3">
-            <h3 class="font-bold text-sm">Pratinjau Langsung Etiket Putih / Biru</h3>
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div><label class="font-semibold block mb-1">Jenis Etiket</label>
-                <select class="ons-select" onchange="window.setEtiketDraft('jenis', this.value)">
-                  <option value="putih" ${etiketDraft.jenis === 'putih' ? 'selected' : ''}>Putih (Obat Oral / Dalam)</option>
-                  <option value="biru" ${etiketDraft.jenis === 'biru' ? 'selected' : ''}>Biru (Obat Luar)</option>
-                </select>
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="ons-card p-5 lg:col-span-7 space-y-4 rounded-2xl shadow-sm">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Kalkulator Racikan / Puyer Multi-Bahan &rarr; POS</h3>
+                  <div class="text-xs" style="color:var(--ons-text-soft)">Kalkulasi otomatis jumlah tablet yang harus digerus</div>
+                </div>
+                <button type="button" onclick="window.addRacikanIngredient()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-bold" style="border-color:var(--ons-border-strong)">+ Tambah Bahan Obat</button>
               </div>
-              <div><label class="font-semibold block mb-1">Nama Pasien</label><input id="etPasien" class="ons-input" value="${S().esc(etiketDraft.pasien)}" oninput="window.setEtiketDraft('pasien', this.value)"/></div>
-              <div class="col-span-2"><label class="font-semibold block mb-1">Nama Obat / Racikan</label><input id="etObat" class="ons-input" value="${S().esc(etiketDraft.obat)}" oninput="window.setEtiketDraft('obat', this.value)"/></div>
-              <div class="col-span-2"><label class="font-semibold block mb-1">Aturan Pakai</label><input id="etAturan" class="ons-input" value="${S().esc(etiketDraft.aturan)}" oninput="window.setEtiketDraft('aturan', this.value)"/></div>
+              <div class="grid grid-cols-3 gap-2.5 text-xs">
+                <div>
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Jumlah Bungkus / Kapsul</label>
+                  <input type="number" min="1" value="${racikanState.jumlahBungkus}" oninput="window.setRacikanMeta('jumlahBungkus', Number(this.value||1))" class="ons-input font-mono-num rounded-xl"/>
+                </div>
+                <div>
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Jasa Racik / Tuslah (Rp)</label>
+                  <input type="number" min="0" value="${racikanState.jasaRacik}" oninput="window.setRacikanMeta('jasaRacik', Number(this.value||0))" class="ons-input font-mono-num rounded-xl"/>
+                </div>
+                <div>
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Embalase / Kemasan (Rp)</label>
+                  <input type="number" min="0" value="${racikanState.embalase}" oninput="window.setRacikanMeta('embalase', Number(this.value||0))" class="ons-input font-mono-num rounded-xl"/>
+                </div>
+              </div>
+              <div class="space-y-2.5">
+                ${ingRows.map((row) => `
+                  <div class="p-3.5 rounded-2xl border space-y-2.5 text-xs shadow-sm" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <select class="ons-select flex-1 min-w-[200px] rounded-xl font-bold" onchange="window.updateRacikanIng(${row.idx}, 'id_obat', this.value)">
+                        ${st.masterObat.map((o) => {
+                          const h1 = Number(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : (o.harga_umum || 0));
+                          const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
+                          return `<option value="${o.id_obat}" ${o.id_obat === row.id_obat ? 'selected' : ''}>${S().esc(o.nama_dagang)} (${S().rp(h1)}/${S().esc(s1)})</option>`;
+                        }).join('')}
+                      </select>
+                      <button type="button" onclick="window.removeRacikanIng(${row.idx})" ${ingRows.length <= 1 ? 'disabled' : ''} class="ons-btn ons-btn-danger text-xs px-2.5 py-1.5 rounded-lg" title="Hapus bahan">&times;</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2.5">
+                      <div><label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Dosis/Bungkus (mg)</label><input type="number" min="1" value="${row.dosis_mg}" oninput="window.updateRacikanIng(${row.idx}, 'dosis_mg', Number(this.value||1))" class="ons-input font-mono-num rounded-xl"/></div>
+                      <div><label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Kekuatan Sediaan (mg)</label><input type="number" min="1" value="${row.kekuatan_mg}" oninput="window.updateRacikanIng(${row.idx}, 'kekuatan_mg', Number(this.value||1))" class="ons-input font-mono-num rounded-xl"/></div>
+                      <div class="flex flex-col justify-end font-mono-num text-right">
+                        <span class="font-extrabold text-blue-600">${row.exactTabs.toFixed(2)} &rarr; ${row.bulat} unit</span>
+                        <span class="text-[11px]" style="color:var(--ons-text-soft)">${S().rp(row.subHarga)}</span>
+                      </div>
+                    </div>
+                  </div>`).join('')}
+              </div>
+              <div class="p-4 rounded-2xl border flex flex-wrap items-center justify-between gap-3 text-xs bg-emerald-500/5" style="border-color:var(--ons-border)">
+                <div>
+                  <div style="color:var(--ons-text-soft)">Bahan: <b class="font-mono-num text-slate-800 dark:text-slate-200">${S().rp(totalBahanRp)}</b> + Tuslah/Embalase: <b class="font-mono-num text-slate-800 dark:text-slate-200">${S().rp(Number(racikanState.jasaRacik) + Number(racikanState.embalase))}</b></div>
+                  <div class="text-base font-black text-emerald-600 font-mono-num mt-0.5">Estimasi Total Resep: ${S().rp(totalRacikanRp)}</div>
+                </div>
+                <button type="button" onclick="window.addRacikanToPos()" class="ons-btn ons-btn-emerald text-xs py-2 px-4 rounded-xl font-bold shadow-sm">Masukkan Semua Bahan ke POS (${ingRows.length}) &rarr;</button>
+              </div>
             </div>
-            <div id="klinisEtiketBox" class="ons-etiket-box ${etiketDraft.jenis} space-y-1 text-center text-xs">
-              ${(() => {
-                const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-                return `<div class="font-extrabold tracking-wide">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
-                  <div class="text-[10px]">${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>`;
-              })()}
-              <div class="border-y border-slate-800 py-1 font-bold">${S().esc(etiketDraft.pasien)} &bull; ${new Date().toLocaleDateString('id-ID')}</div>
-              <div class="font-bold text-sm">${S().esc(etiketDraft.obat)}</div>
-              <div class="font-extrabold underline">${S().esc(etiketDraft.aturan)}</div>
-              <div class="text-[10px] font-semibold">${etiketDraft.jenis === 'biru' ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA LEKAS SEMBUH'}</div>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="window.printEtiketSample('PUTIH')" class="ons-btn ons-btn-ghost flex-1 text-xs">Cetak Putih</button>
-              <button onclick="window.printEtiketSample('BIRU')" class="ons-btn ons-btn-primary flex-1 text-xs">Cetak Biru</button>
+
+            <div class="ons-card p-5 lg:col-span-5 space-y-3.5 rounded-2xl shadow-sm">
+              <div>
+                <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Pratinjau Langsung Etiket Putih / Biru</h3>
+                <div class="text-xs" style="color:var(--ons-text-soft)">Etiket standar kefarmasian live preview</div>
+              </div>
+              <div class="grid grid-cols-2 gap-2.5 text-xs">
+                <div>
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Jenis Etiket</label>
+                  <select class="ons-select rounded-xl" onchange="window.setEtiketDraft('jenis', this.value)">
+                    <option value="putih" ${etiketDraft.jenis === 'putih' ? 'selected' : ''}>Putih (Obat Oral / Dalam)</option>
+                    <option value="biru" ${etiketDraft.jenis === 'biru' ? 'selected' : ''}>Biru (Obat Luar)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Nama Pasien</label>
+                  <input id="etPasien" class="ons-input rounded-xl" value="${S().esc(etiketDraft.pasien)}" oninput="window.setEtiketDraft('pasien', this.value)"/>
+                </div>
+                <div class="col-span-2">
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Nama Obat / Racikan</label>
+                  <input id="etObat" class="ons-input rounded-xl" value="${S().esc(etiketDraft.obat)}" oninput="window.setEtiketDraft('obat', this.value)"/>
+                </div>
+                <div class="col-span-2">
+                  <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Aturan Pakai</label>
+                  <input id="etAturan" class="ons-input rounded-xl" value="${S().esc(etiketDraft.aturan)}" oninput="window.setEtiketDraft('aturan', this.value)"/>
+                </div>
+              </div>
+              <div id="klinisEtiketBox" class="ons-etiket-box ${etiketDraft.jenis} space-y-1 text-center text-xs p-4 rounded-2xl shadow-inner">
+                ${(() => {
+                  const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+                  return `<div class="font-black tracking-wide text-sm">${S().esc((prof.nama_usaha || 'APOTEK ONS FARMA').toUpperCase())}</div>
+                    <div class="text-[10px] opacity-90">${S().esc(prof.nama_pemilik || 'Apoteker Penanggung Jawab')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || '-')}</div>`;
+                })()}
+                <div class="border-y border-slate-800 dark:border-slate-200 py-1.5 font-bold my-1">${S().esc(etiketDraft.pasien)} &bull; ${new Date().toLocaleDateString('id-ID')}</div>
+                <div class="font-bold text-sm">${S().esc(etiketDraft.obat)}</div>
+                <div class="font-black text-base underline tracking-tight">${S().esc(etiketDraft.aturan)}</div>
+                <div class="text-[10px] font-bold mt-1">${etiketDraft.jenis === 'biru' ? 'OBAT LUAR • TIDAK UNTUK DITELAN' : 'OBAT DALAM • SEMOGA LEKAS SEMBUH'}</div>
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button type="button" onclick="window.printEtiketSample('PUTIH')" class="ons-btn ons-btn-ghost flex-1 text-xs py-2 rounded-xl border font-bold">Cetak Putih</button>
+                <button type="button" onclick="window.printEtiketSample('BIRU')" class="ons-btn ons-btn-primary flex-1 text-xs py-2 rounded-xl font-bold shadow-sm">Cetak Biru</button>
+              </div>
             </div>
           </div>
         </div>
       ` : klinisTab === 'meso' ? `
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div class="ons-card p-5 lg:col-span-7 space-y-3 text-xs">
-            <div class="flex items-center justify-between">
-              <h3 class="font-bold text-sm">Algoritma Evaluasi Kausalitas Naranjo (MESO 10 Kriteria BPOM)</h3>
-              <span class="badge-bpom ${naranjoScore >= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num">Skor: ${naranjoScore} (${naranjoCat})</span>
+        <div class="space-y-4">
+          <!-- 2 Glance Asset Tiles -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Skor Kausalitas Naranjo</span>
+                <span class="badge-bpom ${naranjoScore >= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num font-bold">Skor ${naranjoScore}</span>
+              </div>
+              <div class="text-xl font-black mt-2 tracking-tight ${naranjoScore >= 5 ? 'text-red-600' : 'text-amber-600'}">${naranjoCat}</div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Tingkat kepastian hubungan efek samping obat</div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <div><label class="font-semibold block mb-1">Nama Pasien</label><input class="ons-input" value="${S().esc(mesoState.pasien)}" oninput="window.setMesoMeta('pasien', this.value)"/></div>
-              <div><label class="font-semibold block mb-1">Obat Dicurigai (ROTD)</label><input class="ons-input" value="${S().esc(mesoState.obat)}" oninput="window.setMesoMeta('obat', this.value)"/></div>
-              <div><label class="font-semibold block mb-1">Manifestasi Gejala ROTD</label><input class="ons-input" value="${S().esc(mesoState.gejala)}" oninput="window.setMesoMeta('gejala', this.value)"/></div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Laporan MESO Tersimpan</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-purple-300">Farmakovigilans</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-purple-600">${mesoList.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">kasus ROTD</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Kepatuhan farmakovigilans BPOM &amp; SATUSEHAT</div>
             </div>
-            <div class="space-y-1.5 border rounded-xl p-3 max-h-80 overflow-y-auto" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-              ${NARANJO_CRITERIA.map((cr, idx) => `
-                <label class="flex items-center justify-between gap-2 p-1.5 rounded hover:bg-blue-500/10 cursor-pointer">
-                  <span>${cr.label}</span>
-                  <select class="ons-select w-28 text-xs py-1 min-h-0 h-7" onchange="window.setMesoScore(${idx}, Number(this.value))">
-                    <option value="0" ${mesoState.scores[idx] === 0 ? 'selected' : ''}>Tidak Tahu (0)</option>
-                    <option value="${cr.pts}" ${mesoState.scores[idx] === cr.pts ? 'selected' : ''}>Ya (+${cr.pts})</option>
-                    <option value="-1" ${mesoState.scores[idx] === -1 ? 'selected' : ''}>Tidak (-1)</option>
-                  </select>
-                </label>`).join('')}
-            </div>
-            <button onclick="window.submitNaranjoWorkspace()" class="ons-btn ons-btn-emerald w-full text-xs">Simpan Penilaian Kausalitas MESO ke Rekam Klinis</button>
           </div>
-          <div class="ons-card p-5 lg:col-span-5 space-y-3">
-            <h3 class="font-bold text-sm">Riwayat Laporan MESO Tersimpan (${mesoList.length})</h3>
-            <div class="space-y-2 max-h-[420px] overflow-y-auto text-xs">
-              ${mesoList.length ? mesoList.map((m) => `<div class="p-3 rounded-xl border space-y-1" style="border-color:var(--ons-border)">
-                <div class="flex justify-between"><b>${S().esc(m.nama_pasien)}</b><span class="font-mono-num" style="color:var(--ons-text-soft)">${S().formatTgl(m.tanggal)}</span></div>
-                <div class="text-amber-600 font-semibold">${S().esc(m.cdss_warning || 'MESO')}</div>
-                <div style="color:var(--ons-text-soft)">${S().esc(m.soap_notes)}</div>
-              </div>`).join('') : '<div class="py-6 text-center text-xs" style="color:var(--ons-text-soft)">Belum ada pelaporan MESO tercatat.</div>'}
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="ons-card p-5 lg:col-span-7 space-y-3.5 text-xs rounded-2xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Algoritma Evaluasi Kausalitas Naranjo (10 Kriteria BPOM)</h3>
+                  <div class="text-xs" style="color:var(--ons-text-soft)">Penilaian Reaksi Obat yang Tidak Diinginkan (ROTD)</div>
+                </div>
+                <span class="badge-bpom ${naranjoScore >= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num font-bold px-2.5 py-1">Skor: ${naranjoScore}</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div><label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Nama Pasien</label><input class="ons-input rounded-xl" value="${S().esc(mesoState.pasien)}" oninput="window.setMesoMeta('pasien', this.value)"/></div>
+                <div><label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Obat Dicurigai (ROTD)</label><input class="ons-input rounded-xl" value="${S().esc(mesoState.obat)}" oninput="window.setMesoMeta('obat', this.value)"/></div>
+                <div><label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Manifestasi Gejala ROTD</label><input class="ons-input rounded-xl" value="${S().esc(mesoState.gejala)}" oninput="window.setMesoMeta('gejala', this.value)"/></div>
+              </div>
+              <div class="space-y-1.5 border rounded-2xl p-3 max-h-80 overflow-y-auto shadow-inner" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                ${NARANJO_CRITERIA.map((cr, idx) => `
+                  <label class="flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-blue-500/10 cursor-pointer transition-colors">
+                    <span class="text-xs leading-snug">${cr.label}</span>
+                    <select class="ons-select w-28 text-xs py-1 min-h-0 h-8 rounded-xl font-bold shrink-0" onchange="window.setMesoScore(${idx}, Number(this.value))">
+                      <option value="0" ${mesoState.scores[idx] === 0 ? 'selected' : ''}>Tidak Tahu (0)</option>
+                      <option value="${cr.pts}" ${mesoState.scores[idx] === cr.pts ? 'selected' : ''}>Ya (+${cr.pts})</option>
+                      <option value="-1" ${mesoState.scores[idx] === -1 ? 'selected' : ''}>Tidak (-1)</option>
+                    </select>
+                  </label>`).join('')}
+              </div>
+              <button type="button" onclick="window.submitNaranjoWorkspace()" class="ons-btn ons-btn-emerald w-full text-xs py-2.5 rounded-xl font-bold shadow-sm">Simpan Penilaian Kausalitas MESO ke Rekam Klinis</button>
+            </div>
+            <div class="ons-card p-5 lg:col-span-5 space-y-3.5 rounded-2xl shadow-sm">
+              <div>
+                <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Riwayat Laporan MESO Tersimpan (${mesoList.length})</h3>
+                <div class="text-xs" style="color:var(--ons-text-soft)">Log arsip efek samping obat apotek</div>
+              </div>
+              <div class="space-y-2.5 max-h-[440px] overflow-y-auto text-xs">
+                ${mesoList.length ? mesoList.map((m) => `<div class="p-3.5 rounded-2xl border space-y-1.5 shadow-sm" style="border-color:var(--ons-border);background:var(--ons-bg-card)">
+                  <div class="flex justify-between items-center"><b>${S().esc(m.nama_pasien)}</b><span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${S().formatTgl(m.tanggal)}</span></div>
+                  <div class="text-amber-600 dark:text-amber-400 font-bold">${S().esc(m.cdss_warning || 'MESO')}</div>
+                  <div style="color:var(--ons-text-soft)">${S().esc(m.soap_notes)}</div>
+                </div>`).join('') : '<div class="py-8 text-center text-xs" style="color:var(--ons-text-soft)">Belum ada pelaporan MESO tercatat.</div>'}
+              </div>
             </div>
           </div>
         </div>
       ` : `
-        <div class="ons-card p-4 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap gap-2 items-center">
-              <input class="ons-input text-xs w-60" placeholder="Cari pasien, dokter, catatan SOAP..." value="${S().esc(klinisSearchQ)}" oninput="window.setKlinisSearchQ(this.value)"/>
-              <div class="ons-tab-bar">
-                ${['SEMUA', 'SKRINING_RESEP', 'PIO', 'PTO', 'MESO', 'ERX_DOKTER'].map((f) => `<button onclick="window.setKlinisFilter('${f}')" class="ons-tab-btn ${klinisFilter === f ? 'active' : ''}">${f === 'SEMUA' ? 'Semua' : f.replace('_', ' ')}</button>`).join('')}
+        <div class="space-y-4">
+          <!-- 4 Glance Asset Tiles -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Pengkajian Resep</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">PMK 73</span>
               </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight" style="color:var(--ons-text-main)">${(st.rekamKlinis || []).length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">rekam</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Dokumentasi asuhan kefarmasian SOAP terstandar</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Validasi PIN APJ</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Legalitas Resep</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${(st.rekamKlinis || []).filter(k => k.apj_pin_verified_by).length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">tervalidasi</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Diverifikasi resmi oleh Apoteker Penanggung Jawab</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Peringatan CDSS</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Anti-KTD</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${(st.rekamKlinis || []).filter(k => k.cdss_warning && k.cdss_warning !== 'Aman').length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">catatan</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Deteksi dini interaksi obat &amp; alergi pasien</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Hasil Filter Layanan</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500/10 text-teal-700 dark:text-teal-300">Audit Data</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-teal-600">${filteredKlinis.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">rekam</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Sesuai filter jenis layanan &amp; pencarian aktif</div>
             </div>
           </div>
-          <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>ID &amp; Jenis</th><th>Pasien &amp; Dokter</th><th>Peringatan CDSS</th><th>Catatan SOAP / PIO</th><th>Verifikator APJ</th><th>FHIR JSON</th></tr></thead>
-              <tbody>
-                ${filteredKlinis.length ? filteredKlinis.map((k) => `<tr>
-                  <td class="font-mono-num text-xs"><b>${S().esc(k.id_klinis)}</b><br/><span class="badge-bpom bpom-terbatas">${S().esc(k.layanan_jenis || 'KLINIS')}</span><br/>${S().formatTgl(k.tanggal)}</td>
-                  <td class="text-xs"><b>${S().esc(k.nama_pasien)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(k.dokter_asal)}</span></td>
-                  <td class="text-xs max-w-xs">${k.cdss_warning ? `<span class="text-amber-600 font-semibold">${S().esc(k.cdss_warning)}</span>` : 'Aman'}</td>
-                  <td class="text-xs max-w-xs whitespace-pre-line">${S().esc(k.soap_notes || '-')}</td>
-                  <td class="text-xs font-semibold text-emerald-600">${S().esc(k.apj_pin_verified_by || 'Menunggu')}</td>
-                  <td><button onclick="window.openFhirJsonModal('${S().esc(k.id_klinis)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">Lihat FHIR R4</button></td>
-                </tr>`).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs">Belum ada catatan klinis sesuai filter ini.</td></tr>'}
-              </tbody>
-            </table>
+
+          <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+              <div class="flex flex-wrap gap-2 items-center flex-1 min-w-[260px]">
+                <input class="ons-input text-xs w-64 rounded-xl" placeholder="Cari pasien, dokter, catatan SOAP..." value="${S().esc(klinisSearchQ)}" oninput="window.setKlinisSearchQ(this.value)"/>
+                <div class="flex flex-wrap gap-1">
+                  ${['SEMUA', 'SKRINING_RESEP', 'PIO', 'PTO', 'MESO', 'ERX_DOKTER'].map((f) => `<button type="button" onclick="window.setKlinisFilter('${f}')" class="ons-pos-chip ${klinisFilter === f ? 'is-active' : ''}">${f === 'SEMUA' ? 'Semua' : f.replace('_', ' ')}</button>`).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table">
+                <thead><tr><th>ID &amp; Jenis</th><th>Pasien &amp; Dokter</th><th>Peringatan CDSS</th><th>Catatan SOAP / PIO</th><th>Verifikator APJ</th><th>FHIR JSON</th></tr></thead>
+                <tbody>
+                  ${filteredKlinis.length ? filteredKlinis.map((k) => `<tr>
+                    <td class="font-mono-num text-xs"><b>${S().esc(k.id_klinis)}</b><br/><span class="badge-bpom bpom-terbatas mt-0.5 inline-block">${S().esc(k.layanan_jenis || 'KLINIS')}</span><br/><span class="text-[10px] text-slate-400">${S().formatTgl(k.tanggal)}</span></td>
+                    <td class="text-xs"><b>${S().esc(k.nama_pasien)}</b><br/><span style="color:var(--ons-text-soft)">${S().esc(k.dokter_asal)}</span></td>
+                    <td class="text-xs max-w-xs">${k.cdss_warning ? `<span class="text-amber-600 dark:text-amber-400 font-bold">${S().esc(k.cdss_warning)}</span>` : '<span class="text-emerald-600 font-semibold">Aman</span>'}</td>
+                    <td class="text-xs max-w-xs whitespace-pre-line">${S().esc(k.soap_notes || '-')}</td>
+                    <td class="text-xs font-bold text-emerald-600">${S().esc(k.apj_pin_verified_by || 'Menunggu')}</td>
+                    <td><button type="button" onclick="window.openFhirJsonModal('${S().esc(k.id_klinis)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 rounded-lg border font-semibold">Lihat FHIR R4</button></td>
+                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Belum ada catatan klinis sesuai filter ini.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       `}
     </div>`;
   }
-
   global.setKlinisTab = (t) => {
     klinisTab = t || 'soap';
     if (S().AppState.subTabs) S().AppState.subTabs.klinis = klinisTab;
