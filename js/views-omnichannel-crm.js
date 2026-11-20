@@ -388,167 +388,553 @@
     } catch (e) { global.toast(e.message, 'err'); }
   }
 
-  function renderCrmWaView() {
-    if (!S().canSeeFinancialCost()) {
-      return `<div class="ons-card p-6 text-center text-sm">Akses Pusat CRM WhatsApp &amp; Broadcast khusus untuk Pemilik &amp; APJ.</div>`;
-    }
-    const st = S().AppState;
-    crmTab = (st.subTabs && st.subTabs['crm-wa']) || crmTab || 'kontak';
-    if (!(st.crmKontak || []).length && !renderCrmWaView._autoFetched) {
-      renderCrmWaView._autoFetched = true;
-      setTimeout(() => loadCrmAndQueue(), 20);
-    }
+  // =========================================================================
+  // CRM & NOTIFIKASI WA - EXECUTIVE WORKSTATION COCKPIT REVAMP (v18.37.14)
+  // 4 SUB-MENUS: kontak, blast, antrean, tele-refill
+  // =========================================================================
 
-    const contacts = st.crmKontak || [];
-    const queue = st.antrianNotif || [];
-    const activeOptIn = contacts.filter((c) => c.status_aktif !== 'OPT_OUT');
-    const pendingQ = queue.filter((q) => q.status === 'ANTRI');
-    const sentQ = queue.filter((q) => q.status === 'TERKIRIM');
-
-    const normSeg = (s) => {
-      const u = String(s || '').toUpperCase();
-      return (u.includes('PRB') || u.includes('KRONIS')) ? 'TERAPI_RUTIN' : (u || 'UMUM');
-    };
-    const filteredContacts = contacts.filter((c) => {
-      const sg = normSeg(c.segmen);
-      const okSeg = crmFilterSeg === 'SEMUA' || sg === crmFilterSeg || String(c.segmen || '') === crmFilterSeg;
-      const q = crmSearchQ.toLowerCase();
-      const okQ = !q || [c.nama, c.no_wa_08, c.no_wa_62, c.catatan_medis].some((v) => String(v || '').toLowerCase().includes(q));
-      return okSeg && okQ;
-    });
-    const filteredTargets = contacts.filter((c) => (crmFilterSeg === 'SEMUA' || normSeg(c.segmen) === crmFilterSeg || c.segmen === crmFilterSeg) && c.status_aktif !== 'OPT_OUT');
-
-    return `<div class="space-y-5 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">WhatsApp CRM, Broadcast Edukasi &amp; Antrean Fonnte</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Arsitektur /gas-notifikasi-wa-crm: normalisasi 62/08, proteksi Opt-Out pasien, &amp; antrean non-blocking.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="ONSViewsOmniCrm.syncCrmNow()" class="ons-btn ons-btn-primary text-xs">Sinkronkan Member &amp; Pembeli Online</button>
-          <button onclick="ONSViewsOmniCrm.openAddCrmModal()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Kontak</button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Total Kontak CRM</div><div class="text-2xl font-extrabold font-mono-num mt-1">${contacts.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Pasien Opt-In (Aktif WA)</div><div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${activeOptIn.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Antrean Menunggu</div><div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${pendingQ.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">WA Terkirim (Log)</div><div class="text-2xl font-extrabold font-mono-num text-blue-600 mt-1">${sentQ.length}</div></div>
-      </div>
-
-      <div class="ons-card p-4 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="ons-tab-bar">
-            <button onclick="ONSViewsOmniCrm.setCrmTab('kontak')" class="ons-tab-btn ${crmTab === 'kontak' ? 'active' : ''}">Kontak &amp; Opt-Out</button>
-            <button onclick="ONSViewsOmniCrm.setCrmTab('blast')" class="ons-tab-btn ${crmTab === 'blast' ? 'active' : ''}">Broadcast WA Massal</button>
-            <button onclick="ONSViewsOmniCrm.setCrmTab('antrean')" class="ons-tab-btn ${crmTab === 'antrean' ? 'active' : ''}">Antrean Notifikasi (${pendingQ.length})</button>
-            <button onclick="ONSViewsOmniCrm.setCrmTab('tele-refill')" class="ons-tab-btn ${crmTab === 'tele-refill' ? 'active' : ''}">💊 Pantauan Obat Rutin (Tele-Refill H-3)</button>
-          </div>
-          <button onclick="ONSViewsOmniCrm.loadCrmAndQueue()" class="ons-btn ons-btn-ghost text-xs">Muat Data Server</button>
-        </div>
-
-        ${crmTab === 'kontak' ? `
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap gap-2">
-              ${['SEMUA', 'TERAPI_RUTIN', 'ONLINE', 'UMUM'].map((sg) =>
-                `<button onclick="ONSViewsOmniCrm.setCrmSeg('${sg}')" class="ons-btn ${crmFilterSeg === sg ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3">${sg}</button>`
-              ).join('')}
+  function _renderCrmKontakSubTab(st, contacts, activeOptIn, optOutCount, queue, pendingQ, sentQ, failedQ, normSeg, filteredContacts, filteredTargets) {
+    const terapiRutinCount = contacts.filter((c) => normSeg(c.segmen) === 'TERAPI_RUTIN').length;
+    return `
+      <!-- SUBHERO BANNER: KONTAK & OPT-OUT -->
+      <div class="ons-subhero-banner is-crm mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
+            <div>
+              <div class="ons-subhero-badge">
+                <span class="ons-badge-dot"></span>
+                <span>Normalisasi 62/08 &amp; Proteksi Privasi</span>
+              </div>
+              <h2 class="ons-subhero-title">Manajemen Kontak Pasien CRM &amp; Privasi WhatsApp</h2>
+              <p class="ons-subhero-desc">
+                Database nomor WhatsApp pelanggan apotek tersentralisasi, normalisasi otomatis format 08/62, segmentasi klinis (Terapi Rutin, Online, Umum), dan kepatuhan regulasi Opt-Out pasien.
+              </p>
+            </div>
+          </div>
+          <div class="ons-subhero-actions">
+            <span class="ons-chip ons-chip-success">
+              <span class="ons-chip-dot"></span>
+              Database CRM Tersinkronisasi
+            </span>
+            <button type="button" onclick="ONSViewsOmniCrm.syncCrmNow()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5" title="Tarik member &amp; pembeli online">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Sinkronkan Member &amp; Online</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.openAddCrmModal()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ Tambah Kontak</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.loadCrmAndQueue()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5" title="Segarkan Data Server">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>Segarkan</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COCKPIT STRIP: 4 KPI CARDS -->
+      <div class="ons-cockpit-strip mb-4">
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Total Kontak Pasien</span>
+            <span class="ons-cockpit-badge font-mono-num">${contacts.length}</span>
+          </div>
+          <div class="ons-cockpit-val">${contacts.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Kontak</span></div>
+          <div class="ons-cockpit-sub">Database pelanggan &amp; member apotek</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Pasien Opt-In (Aktif WA)</span>
+            <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${activeOptIn.length}</span>
+          </div>
+          <div class="ons-cockpit-val text-emerald-600">${activeOptIn.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
+          <div class="ons-cockpit-sub">Persetujuan WhatsApp resmi aktif</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Pasien Opt-Out</span>
+            <span class="ons-cockpit-badge text-rose-600 bg-rose-500/10 font-mono-num">${optOutCount}</span>
+          </div>
+          <div class="ons-cockpit-val ${optOutCount > 0 ? 'text-rose-600' : ''}">${optOutCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
+          <div class="ons-cockpit-sub">Privasi pasien dijaga (dikecualikan siaran)</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Segmen Terapi Rutin / PRB</span>
+            <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10 font-mono-num">${terapiRutinCount}</span>
+          </div>
+          <div class="ons-cockpit-val text-teal-600">${terapiRutinCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
+          <div class="ons-cockpit-sub">Hipertensi, Diabetes &amp; Penyakit Kronis</div>
+        </div>
+      </div>
+
+      <!-- WORKSTATION CARD: KONTAK & OPT-OUT -->
+      <div class="ons-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-xs font-bold mr-1" style="color:var(--ons-text-soft)">Filter Segmen:</span>
+            ${[
+              { id: 'SEMUA', label: 'Semua Kontak', count: contacts.length },
+              { id: 'TERAPI_RUTIN', label: '💊 Terapi Rutin / PRB', count: terapiRutinCount },
+              { id: 'ONLINE', label: '🌐 Resep Online / WA', count: contacts.filter(c => normSeg(c.segmen) === 'ONLINE').length },
+              { id: 'UMUM', label: '🛍️ Pelanggan Umum', count: contacts.filter(c => normSeg(c.segmen) === 'UMUM').length }
+            ].map((sg) => `
+              <button type="button" onclick="ONSViewsOmniCrm.setCrmSeg('${sg.id}')" class="ons-btn ${crmFilterSeg === sg.id ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3 flex items-center gap-1.5">
+                <span>${sg.label}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] ${crmFilterSeg === sg.id ? 'bg-white/20' : 'bg-slate-500/10'} font-mono-num">${sg.count}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
             <input class="ons-input w-64 text-xs" value="${S().esc(crmSearchQ)}" oninput="ONSViewsOmniCrm.setCrmSearch(this.value)" placeholder="Cari nama pasien / nomor 08 / 62..."/>
           </div>
-          <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>Pasien</th><th>WA Format 08 / 62</th><th>Segmen</th><th>Catatan Klinis</th><th>Status</th><th>Aksi</th></tr></thead>
-              <tbody>
-                ${filteredContacts.length === 0 ? `<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Klik "Sinkronkan Member &amp; Pembeli Online" untuk memuat kontak otomatis.</td></tr>` : filteredContacts.map((c) => `<tr>
-                  <td class="font-bold text-xs">${S().esc(c.nama)}</td>
-                  <td class="font-mono-num text-xs">${S().esc(c.no_wa_08)} <span style="color:var(--ons-text-soft)">(${S().esc(c.no_wa_62)})</span></td>
-                  <td><span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-500/10">${S().esc(normSeg(c.segmen))}</span></td>
-                  <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(c.catatan_medis || '-')}</td>
-                  <td><span class="badge-bpom ${c.status_aktif === 'OPT_OUT' ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(c.status_aktif)}</span></td>
-                  <td>
-                    <div class="flex flex-wrap gap-1.5">
-                      <a href="${S().esc(waHref(c.no_wa_62 || c.no_wa_08, 'Halo Kak ' + c.nama + ', salam sehat dari ' + ((S().getStoreProfile && S().getStoreProfile().nama_usaha) || 'Apotek ONS Farma') + '. '))}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2">Chat WA</a>
-                      <button onclick="ONSViewsOmniCrm.toggleOptOut('${S().esc(c.id_kontak)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2">${c.status_aktif === 'OPT_OUT' ? 'Aktifkan WA' : 'Opt-Out'}</button>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead>
+              <tr>
+                <th>Pasien</th>
+                <th>Nomor WhatsApp</th>
+                <th>Segmen Pasien</th>
+                <th>Catatan Klinis / Alergi</th>
+                <th>Status Privasi</th>
+                <th class="text-right">Aksi Cepat</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredContacts.length === 0 ? `
+                <tr>
+                  <td colspan="6" class="text-center py-10">
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                      <div class="w-12 h-12 rounded-full flex items-center justify-center bg-slate-500/10 text-slate-400">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                      </div>
+                      <div class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada kontak ditemukan</div>
+                      <div class="text-xs text-slate-400 max-w-sm text-center">Klik tombol "Sinkronkan Member &amp; Online" di atas untuk memuat kontak pasien dari database.</div>
+                      <button type="button" onclick="ONSViewsOmniCrm.syncCrmNow()" class="ons-btn ons-btn-primary text-xs mt-2">Sinkronkan Sekarang</button>
                     </div>
                   </td>
-                </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : ''}
+                </tr>
+              ` : filteredContacts.map((c) => {
+                const isOptOut = c.status_aktif === 'OPT_OUT';
+                const storeProf = (typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {}) || {};
+                const namaUsaha = storeProf.nama_usaha || 'Apotek ONS Farma';
+                const chatGreeting = 'Halo Kak ' + c.nama + ', salam sehat dari ' + namaUsaha + '. Ada yang bisa kami bantu terkait kebutuhan obat atau konsultasi kesehatan Anda hari ini?';
+                const directWaLink = waHref(c.no_wa_62 || c.no_wa_08, chatGreeting);
 
-        ${crmTab === 'blast' ? `
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div class="space-y-3">
-              <div>
-                <label class="text-xs font-bold block mb-1">Target Segmen Pasien</label>
-                <select id="blastSegmen" onchange="ONSViewsOmniCrm.setCrmSeg(this.value)" class="ons-select">
-                  <option value="SEMUA" ${crmFilterSeg === 'SEMUA' ? 'selected' : ''}>SEMUA PASIEN AKTIF</option>
-                  <option value="TERAPI_RUTIN" ${crmFilterSeg === 'TERAPI_RUTIN' ? 'selected' : ''}>PASIEN TERAPI RUTIN / KRONIS</option>
-                  <option value="ONLINE" ${crmFilterSeg === 'ONLINE' ? 'selected' : ''}>PELANGGAN RESEP WA / KONSULTASI</option>
-                  <option value="UMUM" ${crmFilterSeg === 'UMUM' ? 'selected' : ''}>PELANGGAN UMUM</option>
-                </select>
-              </div>
-              <div class="flex flex-wrap gap-1.5">
-                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Halo Kak {nama}, Apotek ONS Farma mengingatkan jadwal kontrol dan tebus ulang obat rutin Anda. Silakan balas chat ini atau kunjungi apotek kami ya!')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reminder Kontrol Rutin</button>
-                <button onclick="ONSViewsOmniCrm.fillBlastTpl('Salam sehat Kak {nama}! Apoteker ONS Farma siap melayani konsultasi penggunaan obat dan penyiapan resep Anda secara langsung maupun via WhatsApp.')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Info Konsultasi Apoteker</button>
-              </div>
-              <div>
-                <label class="text-xs font-bold block mb-1">Isi Pesan WhatsApp (Gunakan <code>{nama}</code> untuk personalisasi)</label>
-                <textarea id="blastPesanTxt" oninput="ONSViewsOmniCrm.refreshBlastManualList()" class="ons-textarea" rows="5" placeholder="Tulis pesan edukasi kesehatan atau reminder tebus obat..."></textarea>
-              </div>
-              <button onclick="ONSViewsOmniCrm.sendBlastNow()" class="ons-btn ons-btn-ghost w-full">Antrikan Broadcast Otomatis via Fonnte (${filteredTargets.length} Penerima)</button>
-            </div>
-            <div class="p-4 rounded-xl border space-y-2.5 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-              <div class="flex items-center justify-between gap-2">
-                <div class="font-bold text-sm text-emerald-600">Kirim WA Manual Satu-per-Satu (100% Gratis)</div>
-                <span class="badge-bpom bpom-bebas">${filteredTargets.length} Aktif</span>
-              </div>
-              <p style="color:var(--ons-text-soft)">Klik tombol <b>Kirim WA</b> di bawah untuk membuka WhatsApp langsung ke pasien tanpa perlu langganan Fonnte berbayar:</p>
-              <div id="blastManualListWrap" class="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                ${filteredTargets.length === 0 ? `<div class="py-4 text-center" style="color:var(--ons-text-soft)">Tidak ada kontak aktif pada segmen ini.</div>` : filteredTargets.slice(0, 20).map((c) => {
-                  const defaultMsg = 'Halo Kak ' + c.nama + ', salam sehat dari Apotek kami.';
-                  return `<div class="p-2 rounded-lg border flex items-center justify-between gap-2" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-                    <div class="min-w-0">
-                      <div class="font-bold truncate">${S().esc(c.nama)}</div>
-                      <div class="font-mono-num text-[11px]" style="color:var(--ons-text-soft)">${S().esc(c.no_wa_08 || c.no_wa_62)}</div>
-                    </div>
-                    <a data-wa-name="${S().esc(c.nama)}" data-wa-phone="${S().esc(c.no_wa_62 || c.no_wa_08)}" href="${S().esc(waHref(c.no_wa_62 || c.no_wa_08, defaultMsg))}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 shrink-0">Kirim WA</a>
-                  </div>`;
-                }).join('')}
-              </div>
-            </div>
-          </div>
-        ` : ''}
+                return `
+                  <tr>
+                    <td>
+                      <div class="font-bold text-xs text-slate-900 dark:text-slate-100">${S().esc(c.nama)}</div>
+                      <div class="text-[10px] text-slate-400 font-mono-num">ID: ${S().esc(c.id_kontak || '-')}</div>
+                    </td>
+                    <td>
+                      <div class="font-mono-num text-xs font-semibold text-slate-800 dark:text-slate-200">${S().esc(c.no_wa_08)}</div>
+                      <div class="text-[10px] font-mono-num text-slate-400">Format Intl: ${S().esc(c.no_wa_62 || '-')}</div>
+                    </td>
+                    <td>
+                      <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full inline-block ${
+                        normSeg(c.segmen) === 'TERAPI_RUTIN' ? 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20' :
+                        normSeg(c.segmen) === 'ONLINE' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20' :
+                        'bg-slate-500/10 text-slate-600 dark:text-slate-400'
+                      }">
+                        ${normSeg(c.segmen) === 'TERAPI_RUTIN' ? '💊 ' : normSeg(c.segmen) === 'ONLINE' ? '🌐 ' : '🛍️ '}${S().esc(normSeg(c.segmen))}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title="${S().esc(c.catatan_medis || '-')}">
+                        ${S().esc(c.catatan_medis || '-')}
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge-bpom ${isOptOut ? 'bpom-keras' : 'bpom-bebas'}">
+                        ${isOptOut ? '⛔ OPT-OUT' : '🟢 AKTIF WA'}
+                      </span>
+                    </td>
+                    <td class="text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <a href="${S().esc(directWaLink)}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 flex items-center gap-1 shadow-sm" title="Buka WhatsApp Langsung">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                          <span>Chat WA</span>
+                        </a>
+                        <button type="button" onclick="ONSViewsOmniCrm.toggleOptOut('${S().esc(c.id_kontak)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5" title="${isOptOut ? 'Aktifkan kembali agar bisa menerima broadcast' : 'Kecualikan dari broadcast massal'}">
+                          ${isOptOut ? 'Aktifkan' : 'Opt-Out'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
 
-        ${crmTab === 'antrean' ? `
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="text-xs" style="color:var(--ons-text-soft)">Menampilkan ${queue.length} log antrean notifikasi WhatsApp terbaru.</div>
-            <button onclick="ONSViewsOmniCrm.processQueueNow()" class="ons-btn ons-btn-emerald text-xs">Proses Antrean Sekarang (${pendingQ.length} Antri)</button>
+        <div class="flex flex-wrap items-center justify-between text-xs pt-2 border-t" style="border-color:var(--ons-border); color:var(--ons-text-soft)">
+          <div>Menampilkan <b>${filteredContacts.length}</b> dari total <b>${contacts.length}</b> kontak pasien terdaftar.</div>
+          <div class="flex items-center gap-3">
+            <span>Opt-In: <b class="text-emerald-600">${activeOptIn.length}</b></span>
+            <span>&bull;</span>
+            <span>Opt-Out: <b class="text-rose-600">${optOutCount}</b></span>
           </div>
-          <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>Waktu</th><th>Tujuan</th><th>Nama</th><th>Event</th><th>Status</th><th>Pesan</th><th>Manual WA</th></tr></thead>
-              <tbody>
-                ${queue.length === 0 ? `<tr><td colspan="7" class="text-center py-6 text-xs">Antrean notifikasi WhatsApp masih kosong.</td></tr>` : queue.slice(0, 50).map((q) => `<tr>
-                  <td class="text-xs whitespace-nowrap">${S().formatTgl(q.created_at, true)}</td>
-                  <td class="font-mono-num text-xs">${S().esc(q.tujuan)}</td>
-                  <td class="text-xs font-bold">${S().esc(q.nama_penerima)}</td>
-                  <td class="text-xs">${S().esc(q.jenis_event)}</td>
-                  <td><span class="badge-bpom ${q.status === 'TERKIRIM' ? 'bpom-bebas' : (q.status === 'GAGAL' ? 'bpom-keras' : 'bpom-prekursor')}">${S().esc(q.status)}</span></td>
-                  <td class="text-xs max-w-xs truncate" title="${S().esc(q.pesan || q.catatan_error)}">${S().esc((q.pesan || '').slice(0, 65))}</td>
-                  <td><a href="${waHref(q.tujuan, q.pesan)}" target="_blank" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Buka WA</a></td>
-                </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : ''}
+        </div>
       </div>
-    </div>`;
+    `;
   }
 
+  function _renderCrmBlastSubTab(st, contacts, activeOptIn, optOutCount, queue, pendingQ, sentQ, failedQ, normSeg, filteredContacts, filteredTargets) {
+    const storeProf = (typeof S().getStoreProfile === 'function' ? S().getStoreProfile() : {}) || {};
+    const namaUsaha = storeProf.nama_usaha || 'Apotek ONS Farma';
+
+    return `
+      <!-- SUBHERO BANNER: BROADCAST WA -->
+      <div class="ons-subhero-banner is-crm mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+            </div>
+            <div>
+              <div class="ons-subhero-badge">
+                <span class="ons-badge-dot"></span>
+                <span>Fonnte Cloud API Terintegrasi</span>
+              </div>
+              <h2 class="ons-subhero-title">Pusat Siaran WhatsApp Edukasi &amp; Pengingat Terapi</h2>
+              <p class="ons-subhero-desc">
+                Kirim siaran edukasi kesehatan, reminder tebus obat, dan informasi apotek ke ratusan pasien tertarget secara personal dengan variabel <code>{nama}</code> dan antrean non-blocking.
+              </p>
+            </div>
+          </div>
+          <div class="ons-subhero-actions">
+            <span class="ons-chip ons-chip-success">
+              <span class="ons-chip-dot"></span>
+              WhatsApp Cloud Siap Siaran
+            </span>
+            <button type="button" onclick="ONSViewsOmniCrm.sendBlastNow()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <span>Kirim Siaran Massal</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('antrean')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+              <span>Antrean Notif (${pendingQ.length})</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('tele-refill')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <span>💊 Pantau Tele-Refill</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COCKPIT STRIP: 4 KPI CARDS -->
+      <div class="ons-cockpit-strip mb-4">
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Target Kontak Penerima</span>
+            <span class="ons-cockpit-badge bg-emerald-500/10 text-emerald-600 font-mono-num">${filteredTargets.length}</span>
+          </div>
+          <div class="ons-cockpit-val text-emerald-600">${filteredTargets.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
+          <div class="ons-cockpit-sub">Penerima aktif (bebas Opt-Out)</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Segmen Siaran Terpilih</span>
+            <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10">${crmFilterSeg}</span>
+          </div>
+          <div class="ons-cockpit-val text-teal-600">${crmFilterSeg}</div>
+          <div class="ons-cockpit-sub">Target kelompok penerima</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Status Gateway Cloud</span>
+            <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">Fonnte API</span>
+          </div>
+          <div class="ons-cockpit-val text-blue-600">Siap Kirim</div>
+          <div class="ons-cockpit-sub">Normalisasi format 62/08 otomatis</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Personalisasi Nama</span>
+            <span class="ons-cockpit-badge text-purple-600 bg-purple-500/10">Aktif</span>
+          </div>
+          <div class="ons-cockpit-val text-purple-600 font-mono text-base">{nama}</div>
+          <div class="ons-cockpit-sub">Otomatis diganti nama pasien</div>
+        </div>
+      </div>
+
+      <!-- WORKSTATION LAYOUT: 2 KOLOM FORM & PREVIEW -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- KOLOM KIRI: FORMULIR BROADCAST (7 cols) -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="ons-card p-4 space-y-3.5">
+            <div class="flex items-center justify-between pb-2 border-b" style="border-color:var(--ons-border)">
+              <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span>Formulir Pesan Siaran WhatsApp Cerdas</span>
+              </h3>
+              <span class="text-xs text-emerald-600 font-semibold font-mono-num">${filteredTargets.length} Penerima Terpilih</span>
+            </div>
+
+            <div>
+              <label class="text-xs font-bold block mb-1">Target Segmen Pasien *</label>
+              <select id="blastSegmen" onchange="ONSViewsOmniCrm.setCrmSeg(this.value)" class="ons-select text-xs font-semibold">
+                <option value="SEMUA" ${crmFilterSeg === 'SEMUA' ? 'selected' : ''}>SEMUA PASIEN AKTIF (${contacts.filter(c => c.status_aktif !== 'OPT_OUT').length} Pasien)</option>
+                <option value="TERAPI_RUTIN" ${crmFilterSeg === 'TERAPI_RUTIN' ? 'selected' : ''}>PASIEN TERAPI RUTIN / KRONIS (${contacts.filter(c => normSeg(c.segmen) === 'TERAPI_RUTIN' && c.status_aktif !== 'OPT_OUT').length} Pasien)</option>
+                <option value="ONLINE" ${crmFilterSeg === 'ONLINE' ? 'selected' : ''}>PELANGGAN RESEP WA / KONSULTASI (${contacts.filter(c => normSeg(c.segmen) === 'ONLINE' && c.status_aktif !== 'OPT_OUT').length} Pasien)</option>
+                <option value="UMUM" ${crmFilterSeg === 'UMUM' ? 'selected' : ''}>PELANGGAN UMUM (${contacts.filter(c => normSeg(c.segmen) === 'UMUM' && c.status_aktif !== 'OPT_OUT').length} Pasien)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-xs font-bold block mb-1.5" style="color:var(--ons-text-soft)">Template Cepat Siaran (1-Klik Isi):</label>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="ONSViewsOmniCrm.fillBlastTpl('Halo Kak {nama}, salam sehat dari ${namaUsaha}! Apotek mengingatkan jadwal kontrol dan tebus ulang obat rutin Anda agar kondisi kesehatan tetap terjaga. Silakan balas pesan ini atau kunjungi apotek kami ya!')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">
+                  💊 Reminder Kontrol Rutin
+                </button>
+                <button type="button" onclick="ONSViewsOmniCrm.fillBlastTpl('Salam sehat Kak {nama}! Apoteker ${namaUsaha} siap melayani konsultasi penggunaan obat dan penyiapan resep dokter Anda secara langsung maupun via WhatsApp. Jangan ragu hubungi kami jika ada pertanyaan seputar obat.')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">
+                  🩺 Info Konsultasi Apoteker
+                </button>
+                <button type="button" onclick="ONSViewsOmniCrm.fillBlastTpl('Halo Kak {nama}, tips sehat hari ini dari ${namaUsaha}: Pastikan meminum obat hipertensi &amp; gula darah secara teratur di jam yang sama setiap hari untuk hasil terapi optimal. Salam sehat selalu!')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">
+                  🌿 Edukasi Kepatuhan Obat
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-bold">Isi Pesan WhatsApp *</label>
+                <span class="text-[11px] text-slate-400">Gunakan tag <code>{nama}</code> untuk nama pasien</span>
+              </div>
+              <textarea id="blastPesanTxt" oninput="ONSViewsOmniCrm.refreshBlastManualList()" class="ons-textarea text-xs leading-relaxed" rows="6" placeholder="Tulis pesan edukasi kesehatan, pengingat minum obat, atau informasi apotek di sini..."></textarea>
+            </div>
+
+            <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <div class="font-bold flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>Arsitektur Antrean Non-Blocking (/gas-notifikasi-wa-crm)</span>
+              </div>
+              <div class="text-[11px] text-blue-600 dark:text-blue-300">
+                Pesan akan dimasukkan ke tabel <code>ANTRIAN_NOTIF</code> di server dan dikirimkan oleh background job dengan jeda aman per pesan agar terhindar dari pemblokiran WhatsApp. Pasien yang telah Opt-Out otomatis dikecualikan.
+              </div>
+            </div>
+
+            <div class="pt-2 border-t flex flex-wrap items-center justify-between gap-2" style="border-color:var(--ons-border)">
+              <div class="text-xs text-slate-400">Total <b>${filteredTargets.length}</b> pasien akan menerima siaran ini.</div>
+              <button type="button" onclick="ONSViewsOmniCrm.sendBlastNow()" class="ons-btn ons-btn-primary text-xs font-bold py-2 px-4 shadow-sm flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <span>Antrikan Siaran ke Server</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KOLOM KANAN: PRATINJAU PENERIMA & DIRECT SEND (5 cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b" style="border-color:var(--ons-border)">
+              <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>Pratinjau Penerima &amp; Kirim Manual</span>
+              </h3>
+              <span class="text-xs font-mono-num font-bold text-emerald-600">${filteredTargets.length}</span>
+            </div>
+            <div class="text-xs text-slate-500">
+              Anda juga dapat mengirimkan pesan langsung ke pasien satu per satu melalui tombol WhatsApp di bawah:
+            </div>
+
+            <div id="blastManualListWrap" class="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+              ${filteredTargets.length === 0 ? `
+                <div class="text-center py-8 text-xs text-slate-400">Tidak ada target pasien pada filter segmen ini.</div>
+              ` : filteredTargets.slice(0, 40).map((c) => {
+                const defaultMsg = 'Halo Kak ' + c.nama + ', salam sehat dari ' + namaUsaha + '. ';
+                return `
+                  <div class="flex items-center justify-between p-2.5 rounded-lg border text-xs bg-slate-500/5 hover:bg-slate-500/10 transition-colors" style="border-color:var(--ons-border)">
+                    <div class="min-w-0 pr-2">
+                      <div class="font-bold truncate text-slate-800 dark:text-slate-200">${S().esc(c.nama)}</div>
+                      <div class="text-[10px] font-mono-num text-slate-400">${S().esc(c.no_wa_08)} &bull; <span class="text-teal-600">${S().esc(normSeg(c.segmen))}</span></div>
+                    </div>
+                    <a data-wa-phone="${S().esc(c.no_wa_62 || c.no_wa_08)}" data-wa-name="${S().esc(c.nama)}" href="${S().esc(waHref(c.no_wa_62 || c.no_wa_08, defaultMsg))}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 shrink-0 flex items-center gap-1 shadow-sm">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                      <span>Kirim WA</span>
+                    </a>
+                  </div>
+                `;
+              }).join('')}
+              ${filteredTargets.length > 40 ? `<div class="text-center text-[11px] py-2 text-slate-400">... dan ${filteredTargets.length - 40} kontak lainnya dalam antrean siaran massal.</div>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderCrmAntreanSubTab(st, contacts, activeOptIn, optOutCount, queue, pendingQ, sentQ, failedQ, normSeg, filteredContacts, filteredTargets) {
+    return `
+      <!-- SUBHERO BANNER: ANTREAN NOTIFIKASI -->
+      <div class="ons-subhero-banner is-crm mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            </div>
+            <div>
+              <div class="ons-subhero-badge">
+                <span class="ons-badge-dot"></span>
+                <span>Arsitektur Asynchronous Non-Blocking</span>
+              </div>
+              <h2 class="ons-subhero-title">Monitor Antrean Notifikasi &amp; Riwayat Pengiriman WA</h2>
+              <p class="ons-subhero-desc">
+                Log pengiriman pesan berjalan di latar belakang tanpa mengunci kasir atau POS. Dilengkapi status real-time, pencatatan kegagalan pengiriman, dan fallback direct WhatsApp.
+              </p>
+            </div>
+          </div>
+          <div class="ons-subhero-actions">
+            <span class="ons-chip ons-chip-success">
+              <span class="ons-chip-dot"></span>
+              Antrean Non-Blocking Siaga
+            </span>
+            <button type="button" onclick="ONSViewsOmniCrm.processQueueNow()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Kirim batch antrean sekarang">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Proses Antrean Sekarang (${pendingQ.length})</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.loadCrmAndQueue()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5" title="Segarkan Data Antrean">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Segarkan Status</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('kontak')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <span>Daftar Kontak</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COCKPIT STRIP: 4 KPI CARDS -->
+      <div class="ons-cockpit-strip mb-4">
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Menunggu Pengiriman</span>
+            <span class="ons-cockpit-badge ${pendingQ.length > 0 ? 'bg-amber-500/10 text-amber-600 font-bold' : ''} font-mono-num">${pendingQ.length}</span>
+          </div>
+          <div class="ons-cockpit-val ${pendingQ.length > 0 ? 'text-amber-600' : ''}">${pendingQ.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pesan</span></div>
+          <div class="ons-cockpit-sub">Pesan dalam antrean non-blocking</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Berhasil Terkirim</span>
+            <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${sentQ.length}</span>
+          </div>
+          <div class="ons-cockpit-val text-emerald-600">${sentQ.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pesan</span></div>
+          <div class="ons-cockpit-sub">Terkirim ke WhatsApp pasien</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Gagal / Butuh Retry</span>
+            <span class="ons-cockpit-badge ${failedQ.length > 0 ? 'bg-rose-500/10 text-rose-600' : ''} font-mono-num">${failedQ.length}</span>
+          </div>
+          <div class="ons-cockpit-val ${failedQ.length > 0 ? 'text-rose-600' : ''}">${failedQ.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pesan</span></div>
+          <div class="ons-cockpit-sub">Nomor tidak aktif / offline</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Total Riwayat Notifikasi</span>
+            <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${queue.length}</span>
+          </div>
+          <div class="ons-cockpit-val text-blue-600">${queue.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Log</span></div>
+          <div class="ons-cockpit-sub">Audit trail pengiriman notifikasi</div>
+        </div>
+      </div>
+
+      <!-- WORKSTATION CARD: ANTREAN NOTIFIKASI -->
+      <div class="ons-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b" style="border-color:var(--ons-border)">
+          <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Menampilkan <b>${Math.min(queue.length, 50)}</b> log antrean notifikasi WhatsApp terbaru (Maks. 50 entri).
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="ONSViewsOmniCrm.processQueueNow()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3 flex items-center gap-1.5">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Proses Antrean (${pendingQ.length} Antri)</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.loadCrmAndQueue()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Segarkan</button>
+          </div>
+        </div>
+
+        <div class="ons-table-wrap">
+          <table class="ons-table">
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Tujuan WA</th>
+                <th>Nama Pasien</th>
+                <th>Jenis Notifikasi</th>
+                <th>Status</th>
+                <th>Isi Pesan / Log</th>
+                <th class="text-right">Fallback Manual</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${queue.length === 0 ? `
+                <tr>
+                  <td colspan="7" class="text-center py-10">
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                      <div class="w-12 h-12 rounded-full flex items-center justify-center bg-slate-500/10 text-slate-400">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                      </div>
+                      <div class="text-sm font-semibold text-slate-600 dark:text-slate-300">Antrean Notifikasi Kosong</div>
+                      <div class="text-xs text-slate-400">Semua notifikasi transaksi dan pengingat telah selesai diproses.</div>
+                    </div>
+                  </td>
+                </tr>
+              ` : queue.slice(0, 50).map((q) => {
+                const isSent = q.status === 'TERKIRIM';
+                const isFailed = q.status === 'GAGAL';
+                const isPending = q.status === 'ANTRI';
+                return `
+                  <tr>
+                    <td class="text-xs font-mono-num whitespace-nowrap text-slate-600 dark:text-slate-400">
+                      ${S().formatTgl ? S().formatTgl(q.created_at, true) : (q.created_at || '-')}
+                    </td>
+                    <td class="font-mono-num text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      ${S().esc(q.tujuan)}
+                    </td>
+                    <td class="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      ${S().esc(q.nama_penerima || '-')}
+                    </td>
+                    <td>
+                      <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-500/10 text-slate-700 dark:text-slate-300 font-mono">
+                        ${S().esc(q.jenis_event || 'NOTIF')}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge-bpom ${isSent ? 'bpom-bebas' : (isFailed ? 'bpom-keras' : 'bpom-terbatas')}">
+                        ${isSent ? '🟢 TERKIRIM' : (isFailed ? '⛔ GAGAL' : '⏳ ANTRI')}
+                      </span>
+                    </td>
+                    <td class="text-xs max-w-xs truncate text-slate-600 dark:text-slate-400" title="${S().esc(q.pesan || q.catatan_error || '')}">
+                      ${S().esc((q.pesan || q.catatan_error || '-').slice(0, 65))}
+                    </td>
+                    <td class="text-right">
+                      <a href="${waHref(q.tujuan, q.pesan)}" target="_blank" rel="noopener" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 inline-flex items-center gap-1" title="Buka WhatsApp jika pengiriman otomatis terkendala">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        <span>Buka WA</span>
+                      </a>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between text-xs pt-2 border-t" style="border-color:var(--ons-border); color:var(--ons-text-soft)">
+          <div>Status antrean: <b>${pendingQ.length}</b> menunggu, <b>${sentQ.length}</b> berhasil, <b>${failedQ.length}</b> gagal.</div>
+          <button type="button" onclick="ONSViewsOmniCrm.loadCrmAndQueue()" class="hover:underline">Muat ulang data server &rarr;</button>
+        </div>
+      </div>
+    `;
+  }
 
   const TELE_REFILL_KEY = 'ons_farma_tele_refill_patients_v2';
 
@@ -625,34 +1011,85 @@
     const usahaNama = prof.nama_usaha || 'Apotek ONS Farma';
 
     return `
-      <div class="space-y-4 text-xs">
-        <!-- Cockpit Tracker -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#0D9488">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Total Pasien Terapi Rutin</div>
-            <div class="text-2xl font-extrabold font-mono-num mt-1">${totalCount} Pasien</div>
-            <div class="text-[10px] text-teal-600 dark:text-teal-400 mt-0.5">Hipertensi, DM, Jantung &amp; PRB</div>
+      <!-- SUBHERO BANNER: TELE-REFILL H-3 -->
+      <div class="ons-subhero-banner is-crm mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </div>
+            <div>
+              <div class="ons-subhero-badge">
+                <span class="ons-badge-dot"></span>
+                <span>Standar Care Kefarmasian PMK 73/2016</span>
+              </div>
+              <h2 class="ons-subhero-title">Radar Tele-Refill Pasien Kronis &amp; Pengingat Obat Rutin (H-3)</h2>
+              <p class="ons-subhero-desc">
+                Pemantauan kepatuhan terapi pasien hipertensi, diabetes, jantung, dan PRB BPJS. Deteksi otomatis perkiraan obat habis H-3 s.d H-0 guna mencegah putus obat dan komplikasi klinis.
+              </p>
+            </div>
           </div>
-          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#F59E0B">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Prioritas Refill Segera (H-3 s.d H-0)</div>
-            <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${urgentCount} Pasien</div>
-            <div class="text-[10px] text-amber-600 mt-0.5">Obat hampir/sudah habis</div>
-          </div>
-          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#EF4444">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Terlewat Jadwal Tebus (Overdue)</div>
-            <div class="text-2xl font-extrabold font-mono-num text-red-600 mt-1">${overdueCount} Pasien</div>
-            <div class="text-[10px] text-red-500 mt-0.5">Potensi putus terapi</div>
-          </div>
-          <div class="ons-card p-3.5 border-l-4" style="border-left-color:#10B981">
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Tingkat Kepatuhan Minum Obat</div>
-            <div class="text-2xl font-extrabold font-mono-num text-emerald-600 mt-1">${compliancePct}%</div>
-            <div class="text-[10px] text-emerald-600 mt-0.5">Target kepatuhan terapi &gt;90%</div>
+          <div class="ons-subhero-actions">
+            <span class="ons-chip ons-chip-success">
+              <span class="ons-chip-dot"></span>
+              Tele-Refill Guardian Aktif
+            </span>
+            <button type="button" onclick="ONSViewsOmniCrm.openAddTeleRefillModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Daftarkan Pasien Terapi Rutin">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ Pasien Terapi Rutin</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.printTeleRefillReportA4()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5" title="Cetak Rekap A4">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>🖨️ Cetak Rekap A4</span>
+            </button>
+            <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('blast')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <span>Broadcast Pengingat</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        <!-- Action Header & Filters -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5">
+      <!-- COCKPIT STRIP: 4 KPI CARDS -->
+      <div class="ons-cockpit-strip mb-4">
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Total Pasien Terapi Rutin</span>
+            <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10 font-mono-num">${totalCount}</span>
+          </div>
+          <div class="ons-cockpit-val text-teal-600">${totalCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
+          <div class="ons-cockpit-sub">Hipertensi, DM, Jantung &amp; PRB</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Prioritas Refill (H-3 s.d H-0)</span>
+            <span class="ons-cockpit-badge ${urgentCount > 0 ? 'bg-amber-500/10 text-amber-600 font-bold animate-pulse' : ''} font-mono-num">${urgentCount}</span>
+          </div>
+          <div class="ons-cockpit-val ${urgentCount > 0 ? 'text-amber-600' : ''}">${urgentCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
+          <div class="ons-cockpit-sub">Obat hampir atau habis hari ini</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Terlewat Jadwal (Overdue)</span>
+            <span class="ons-cockpit-badge ${overdueCount > 0 ? 'bg-rose-500/10 text-rose-600 font-bold' : ''} font-mono-num">${overdueCount}</span>
+          </div>
+          <div class="ons-cockpit-val ${overdueCount > 0 ? 'text-rose-600' : ''}">${overdueCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
+          <div class="ons-cockpit-sub">Potensi putus terapi &amp; relaps</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Tingkat Kepatuhan Terapi</span>
+            <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${compliancePct}%</span>
+          </div>
+          <div class="ons-cockpit-val text-emerald-600">${compliancePct}%</div>
+          <div class="ons-cockpit-sub">Target kepatuhan terapi &gt;90%</div>
+        </div>
+      </div>
+
+      <!-- WORKSTATION CARD: TABEL PANTAUAN TERAPI RUTIN -->
+      <div class="ons-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b" style="border-color:var(--ons-border)">
           <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-xs font-bold mr-1" style="color:var(--ons-text-soft)">Filter Countdown:</span>
             ${[
               { id: 'SEMUA', lbl: 'Semua (' + totalCount + ')' },
               { id: 'H3', lbl: '⚠️ Segera Habis H-3 (' + computed.filter(p => p.statusGroup === 'H3').length + ')' },
@@ -660,72 +1097,80 @@
               { id: 'OVERDUE', lbl: '⛔ Terlewat (' + overdueCount + ')' },
               { id: 'AMAN', lbl: '🟢 Aman (' + safeCount + ')' }
             ].map(f => `
-              <button type="button" onclick="ONSViewsOmniCrm.setTeleRefillFilter('${f.id}')" class="ons-btn ${teleRefillFilterStatus === f.id ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3">${f.lbl}</button>
+              <button type="button" onclick="ONSViewsOmniCrm.setTeleRefillFilter('${f.id}')" class="ons-btn ${teleRefillFilterStatus === f.id ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3">
+                ${f.lbl}
+              </button>
             `).join('')}
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <input class="ons-input w-56 text-xs" value="${S().esc(teleRefillSearchQ)}" oninput="ONSViewsOmniCrm.setTeleRefillSearch(this.value)" placeholder="Cari pasien / nomor WA / obat..."/>
-            <button type="button" onclick="ONSViewsOmniCrm.printTeleRefillReportA4()" class="ons-btn ons-btn-ghost text-xs" title="Cetak Rekap A4">&#128424; Cetak Rekap A4</button>
-            <button type="button" onclick="ONSViewsOmniCrm.openAddTeleRefillModal()" class="ons-btn ons-btn-emerald text-xs font-bold">+ Pasien Terapi Rutin</button>
+            <input class="ons-input w-56 text-xs" value="${S().esc(teleRefillSearchQ)}" oninput="ONSViewsOmniCrm.setTeleRefillSearch(this.value)" placeholder="Cari pasien / no WA / obat..."/>
           </div>
         </div>
 
-        <!-- Tabel Pantauan Terapi -->
         <div class="ons-table-wrap">
           <table class="ons-table">
             <thead>
               <tr>
-                <th>Pasien</th>
+                <th>Pasien &amp; Kontak</th>
                 <th>Obat Rutin Terapi</th>
                 <th>Tgl Tebus Terakhir</th>
                 <th>Perkiraan Habis</th>
                 <th>Status Countdown</th>
-                <th>Aksi WhatsApp Pengingat Refill</th>
+                <th class="text-right">Aksi WhatsApp Pengingat Refill</th>
               </tr>
             </thead>
             <tbody>
               ${filtered.length === 0 ? `
-                <tr><td colspan="6" class="text-center py-8 text-xs" style="color:var(--ons-text-soft)">Tidak ada data pasien terapi rutin pada filter ini.</td></tr>
-              ` : filtered.map((p, idx) => {
-                let badgeCls = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                <tr>
+                  <td colspan="6" class="text-center py-10">
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                      <div class="w-12 h-12 rounded-full flex items-center justify-center bg-slate-500/10 text-slate-400">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                      </div>
+                      <div class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada pasien terapi rutin pada filter ini</div>
+                      <div class="text-xs text-slate-400">Gunakan tombol "+ Pasien Terapi Rutin" untuk mendaftarkan jadwal tebus obat pasien.</div>
+                    </div>
+                  </td>
+                </tr>
+              ` : filtered.map((p) => {
+                let badgeCls = 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700/50';
                 let badgeText = '🟢 Aman (' + p.sisaHari + ' hari)';
                 if (p.statusGroup === 'H3') {
-                  badgeCls = 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse font-bold';
+                  badgeCls = 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700/50 animate-pulse font-bold';
                   badgeText = '⚠️ Sisa ' + p.sisaHari + ' hari (Segera Habis)';
                 } else if (p.statusGroup === 'H0') {
-                  badgeCls = 'bg-rose-100 text-rose-900 border-rose-300 font-extrabold';
+                  badgeCls = 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-700/50 font-extrabold';
                   badgeText = '🔴 HABIS HARI INI';
                 } else if (p.statusGroup === 'OVERDUE') {
-                  badgeCls = 'bg-red-100 text-red-900 border-red-300 font-bold';
+                  badgeCls = 'bg-red-100 text-red-900 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-700/50 font-bold';
                   badgeText = '⛔ Terlewat ' + Math.abs(p.sisaHari) + ' hari';
                 }
 
-                const reminderMsg = `Halo Ibu/Bpk ${p.nama_pasien}, salam sehat dari ${usahaNama}. Berdasarkan pemantauan apotek kami, persediaan obat rutin Anda (${p.nama_obat} - ${p.aturan_pakai}) diperkirakan habis ${p.sisaHari === 0 ? 'hari ini' : (p.sisaHari < 0 ? 'beberapa hari lalu' : ('dalam ' + p.sisaHari + ' hari lagi (tgl ' + p.tgl_habis + ')'))}. Mohon jangan lewatkan jadwal kontrol dan penyiapan obat kembali agar kondisi kesehatan tetap optimal. Kami siap membantu penyiapan obat Anda langsung di apotek. Terima kasih.`;
-
-                const waUrl = S().buildWaUrl ? S().buildWaUrl(p.no_wa, reminderMsg) : ('https://wa.me/?text=' + encodeURIComponent(reminderMsg));
+                const reminderMsg = 'Halo Ibu/Bpk ' + p.nama_pasien + ', salam sehat dari ' + usahaNama + '. Berdasarkan pemantauan apotek kami, persediaan obat rutin Anda (' + p.nama_obat + ' - ' + p.aturan_pakai + ') diperkirakan habis ' + (p.sisaHari === 0 ? 'hari ini' : (p.sisaHari < 0 ? 'beberapa hari lalu' : ('dalam ' + p.sisaHari + ' hari lagi (tgl ' + p.tgl_habis + ')'))) + '. Mohon jangan lewatkan jadwal kontrol dan penyiapan obat kembali agar kondisi kesehatan tetap optimal. Kami siap membantu penyiapan obat Anda langsung di apotek. Terima kasih.';
+                const waUrl = waHref(p.no_wa, reminderMsg);
 
                 return `
                   <tr>
                     <td>
-                      <div class="font-bold text-slate-900 dark:text-slate-100">${S().esc(p.nama_pasien)}</div>
+                      <div class="font-bold text-xs text-slate-900 dark:text-slate-100">${S().esc(p.nama_pasien)}</div>
                       <div class="text-[11px] font-mono-num text-slate-500">${S().esc(p.no_wa)} &bull; <span class="text-teal-700 dark:text-teal-300 font-semibold">${S().esc(p.status_prb || 'Rutin')}</span></div>
                     </td>
                     <td>
-                      <div class="font-semibold text-slate-800 dark:text-slate-200">${S().esc(p.nama_obat)}</div>
+                      <div class="font-semibold text-xs text-slate-800 dark:text-slate-200">${S().esc(p.nama_obat)}</div>
                       <div class="text-[11px] text-slate-500">Signa: ${S().esc(p.aturan_pakai || 'Sesuai Anjuran')}</div>
                     </td>
-                    <td class="font-mono-num text-xs whitespace-nowrap">${S().esc(p.tgl_tebus)}</td>
+                    <td class="font-mono-num text-xs whitespace-nowrap text-slate-600 dark:text-slate-400">${S().esc(p.tgl_tebus)}</td>
                     <td class="font-mono-num text-xs font-bold whitespace-nowrap text-blue-700 dark:text-blue-300">${S().esc(p.tgl_habis)}</td>
                     <td>
                       <span class="px-2.5 py-1 rounded-full text-[11px] border inline-block ${badgeCls}">${badgeText}</span>
                     </td>
-                    <td>
-                      <div class="flex flex-wrap items-center gap-1.5">
+                    <td class="text-right">
+                      <div class="flex items-center justify-end gap-1.5">
                         <a href="${S().esc(waUrl)}" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 shadow-sm flex items-center gap-1" title="Kirim Pesan WhatsApp Personal">
                           <span>📲 Kirim WA H-3</span>
                         </a>
                         <button type="button" onclick="ONSViewsOmniCrm.renewTeleRefill('${S().esc(p.id)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Catat Penebusan Baru (+30 Hari)">+30 Hari</button>
-                        <button type="button" onclick="ONSViewsOmniCrm.deleteTeleRefill('${S().esc(p.id)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-1.5" title="Hapus">&times;</button>
+                        <button type="button" onclick="ONSViewsOmniCrm.deleteTeleRefill('${S().esc(p.id)}')" class="ons-btn ons-btn-danger text-[11px] py-1 px-2" title="Hapus">&times;</button>
                       </div>
                     </td>
                   </tr>
@@ -734,10 +1179,110 @@
             </tbody>
           </table>
         </div>
+
+        <div class="flex flex-wrap items-center justify-between text-xs pt-2 border-t" style="border-color:var(--ons-border); color:var(--ons-text-soft)">
+          <div>Menampilkan <b>${filtered.length}</b> dari total <b>${totalCount}</b> pasien terapi rutin terpantau.</div>
+          <div class="flex items-center gap-3">
+            <span>Prioritas Segera: <b class="text-amber-600">${urgentCount}</b></span>
+            <span>&bull;</span>
+            <span>Terlewat: <b class="text-rose-600">${overdueCount}</b></span>
+            <span>&bull;</span>
+            <span>Aman: <b class="text-emerald-600">${safeCount}</b></span>
+          </div>
+        </div>
       </div>
     `;
   }
 
+  function renderCrmWaView() {
+    if (!S().canSeeFinancialCost()) {
+      return `<div class="ons-card p-6 text-center text-sm">Akses Pusat CRM WhatsApp &amp; Broadcast khusus untuk Pemilik &amp; APJ.</div>`;
+    }
+    const st = S().AppState;
+    crmTab = (st.subTabs && st.subTabs['crm-wa']) || crmTab || 'kontak';
+    if (!['kontak', 'blast', 'antrean', 'tele-refill'].includes(crmTab)) {
+      crmTab = 'kontak';
+    }
+
+    if (!(st.crmKontak || []).length && !renderCrmWaView._autoFetched) {
+      renderCrmWaView._autoFetched = true;
+      setTimeout(() => loadCrmAndQueue(), 20);
+    }
+
+    const contacts = st.crmKontak || [];
+    const queue = st.antrianNotif || [];
+    const activeOptIn = contacts.filter((c) => c.status_aktif !== 'OPT_OUT');
+    const optOutCount = contacts.length - activeOptIn.length;
+    const pendingQ = queue.filter((q) => q.status === 'ANTRI');
+    const sentQ = queue.filter((q) => q.status === 'TERKIRIM');
+    const failedQ = queue.filter((q) => q.status === 'GAGAL');
+
+    const normSeg = (s) => {
+      const u = String(s || '').toUpperCase();
+      return (u.includes('PRB') || u.includes('KRONIS')) ? 'TERAPI_RUTIN' : (u || 'UMUM');
+    };
+
+    const filteredContacts = contacts.filter((c) => {
+      const sg = normSeg(c.segmen);
+      const okSeg = crmFilterSeg === 'SEMUA' || sg === crmFilterSeg || String(c.segmen || '') === crmFilterSeg;
+      const q = crmSearchQ.toLowerCase();
+      const okQ = !q || [c.nama, c.no_wa_08, c.no_wa_62, c.catatan_medis].some((v) => String(v || '').toLowerCase().includes(q));
+      return okSeg && okQ;
+    });
+
+    const filteredTargets = contacts.filter((c) => (crmFilterSeg === 'SEMUA' || normSeg(c.segmen) === crmFilterSeg || c.segmen === crmFilterSeg) && c.status_aktif !== 'OPT_OUT');
+
+    const teleList = _getTeleRefillList();
+    const today = new Date().toISOString().slice(0, 10);
+    const todayMs = new Date(today + 'T00:00:00').getTime();
+    const teleUrgent = teleList.filter((p) => {
+      const diff = Math.round((new Date(String(p.tgl_habis || today) + 'T00:00:00').getTime() - todayMs) / 86400000);
+      return diff <= 3;
+    }).length;
+
+    let subTabHtml = '';
+    if (crmTab === 'kontak') {
+      subTabHtml = _renderCrmKontakSubTab(st, contacts, activeOptIn, optOutCount, queue, pendingQ, sentQ, failedQ, normSeg, filteredContacts, filteredTargets);
+    } else if (crmTab === 'blast') {
+      subTabHtml = _renderCrmBlastSubTab(st, contacts, activeOptIn, optOutCount, queue, pendingQ, sentQ, failedQ, normSeg, filteredContacts, filteredTargets);
+    } else if (crmTab === 'antrean') {
+      subTabHtml = _renderCrmAntreanSubTab(st, contacts, activeOptIn, optOutCount, queue, pendingQ, sentQ, failedQ, normSeg, filteredContacts, filteredTargets);
+    } else if (crmTab === 'tele-refill') {
+      subTabHtml = _renderTeleRefillSubTab();
+    }
+
+    return `
+      <div class="space-y-4 ons-view-enter">
+        <!-- TOP EXECUTIVE TAB BAR NAVIGATION -->
+        <div class="ons-dash-tab-nav mb-4">
+          <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('kontak')" class="ons-dash-tab-btn ${crmTab === 'kontak' ? 'is-active' : ''}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Kontak &amp; Opt-Out</span>
+            <span class="ons-dash-tab-badge font-mono-num">${contacts.length}</span>
+          </button>
+          <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('blast')" class="ons-dash-tab-btn ${crmTab === 'blast' ? 'is-active' : ''}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+            <span>Broadcast WhatsApp</span>
+            <span class="ons-dash-tab-badge font-mono-num">${filteredTargets.length}</span>
+          </button>
+          <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('antrean')" class="ons-dash-tab-btn ${crmTab === 'antrean' ? 'is-active' : ''}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            <span>Antrean Notifikasi</span>
+            <span class="ons-dash-tab-badge font-mono-num ${pendingQ.length > 0 ? 'bg-amber-500 text-white font-bold' : ''}">${pendingQ.length}</span>
+          </button>
+          <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('tele-refill')" class="ons-dash-tab-btn ${crmTab === 'tele-refill' ? 'is-active' : ''}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <span>💊 Pantauan Obat Rutin (Tele-Refill H-3)</span>
+            <span class="ons-dash-tab-badge font-mono-num ${teleUrgent > 0 ? 'bg-rose-500 text-white font-bold animate-pulse' : ''}">${teleUrgent || teleList.length}</span>
+          </button>
+        </div>
+
+        ${subTabHtml}
+      </div>
+    `;
+  }
+
+  global.setCrmTab = (t) => { if (global.ONSViewsOmniCrm && typeof global.ONSViewsOmniCrm.setCrmTab === "function") global.ONSViewsOmniCrm.setCrmTab(t); };
   global.ONSViewsOmniCrm = {
     renderOmnichannelView,
     renderCrmWaView,
