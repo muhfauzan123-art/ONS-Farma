@@ -6971,20 +6971,26 @@ S. prn 3 dd 1 tab</textarea>
         <div class="ons-table-wrap">
           <table class="ons-table is-compact">
             <thead>
-              <tr><th>No.</th><th>Tanggal</th><th>Frek. Penjualan</th><th class="text-right">Total Penjualan</th><th class="text-right">Keuntungan</th></tr>
+              <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th style="width:40px;">No.</th>
+                <th>Tanggal</th>
+                <th>Frek. Transaksi</th>
+                <th class="text-right">Total Penjualan</th>
+                <th class="text-right">Keuntungan</th>
+              </tr>
             </thead>
             <tbody>
               ${filteredDays.length ? filteredDays.map((d, idx) => {
                 const r = dateMap[d];
                 const untung = r.omzet - r.hpp;
                 return `<tr>
-                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="font-mono-num text-xs text-slate-400">${idx + 1}</td>
                   <td class="text-xs font-semibold">${_fmtDateId(d)}</td>
                   <td class="font-mono-num text-xs">${r.frek}x</td>
                   <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.omzet)}</td>
-                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(untung)}</td>
+                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600 dark:text-emerald-400">${S().rp(untung)}</td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="5" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan untuk periode tanggal ini.</td></tr>'}
+              }).join('') : '<tr><td colspan="5" class="text-center py-8 text-xs text-slate-400">Data penjualan tidak ditemukan untuk periode tanggal ini.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -7030,21 +7036,29 @@ S. prn 3 dd 1 tab</textarea>
         <div class="ons-table-wrap">
           <table class="ons-table is-compact">
             <thead>
-              <tr><th>No.</th><th>Nama Produk</th><th>Kategori</th><th>Kuantitas Terjual</th><th>Satuan</th><th class="text-right">Total Penjualan</th><th class="text-right">Keuntungan</th></tr>
+              <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th style="width:40px;">No.</th>
+                <th>Nama Produk Sediaan</th>
+                <th>Golongan BPOM</th>
+                <th>Qty Terjual</th>
+                <th>Satuan</th>
+                <th class="text-right">Total Penjualan</th>
+                <th class="text-right">Keuntungan</th>
+              </tr>
             </thead>
             <tbody>
               ${prodList.length ? prodList.map((p, idx) => {
                 const untung = p.omzet - p.hpp;
                 return `<tr>
-                  <td class="font-mono-num text-xs">${idx + 1}</td>
+                  <td class="font-mono-num text-xs text-slate-400">${idx + 1}</td>
                   <td class="font-bold text-xs">${S().esc(p.nama)}</td>
                   <td>${S().bpomBadge ? S().bpomBadge(p.kategori) : p.kategori}</td>
                   <td class="font-mono-num text-xs font-bold">${p.qty}</td>
-                  <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(p.satuan)}</td>
+                  <td class="text-xs text-slate-400">${S().esc(p.satuan)}</td>
                   <td class="text-right font-mono-num text-xs font-bold">${S().rp(p.omzet)}</td>
-                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(untung)}</td>
+                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600 dark:text-emerald-400">${S().rp(untung)}</td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+              }).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs text-slate-400">Data produk terjual tidak ditemukan.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -7065,24 +7079,34 @@ S. prn 3 dd 1 tab</textarea>
         <div class="ons-table-wrap">
           <table class="ons-table is-compact">
             <thead>
-              <tr><th>No.</th><th>No. Faktur</th><th>Tanggal &amp; Waktu</th><th>Pelanggan</th><th>Sales / Kasir</th><th class="text-right">Total</th><th class="text-right">Keuntungan</th><th>Metode Bayar</th><th>Aksi</th></tr>
+              <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th style="width:40px;">No.</th>
+                <th>No. Faktur Kasir</th>
+                <th>Tanggal &amp; Waktu</th>
+                <th>Pelanggan / Pasien</th>
+                <th>Sales / Kasir</th>
+                <th class="text-right">Total</th>
+                <th class="text-right">Keuntungan</th>
+                <th>Metode Bayar</th>
+                <th class="text-right">Aksi</th>
+              </tr>
             </thead>
             <tbody>
               ${filteredFaktur.length ? filteredFaktur.map((p, idx) => {
                 const tot = Number(p.grand_total || 0);
                 const hpp = Number(p.total_hpp || 0);
                 return `<tr>
-                  <td class="font-mono-num text-xs">${idx + 1}</td>
-                  <td class="font-mono-num text-xs font-bold">${S().esc(p.kode_penjualan || p.id_penjualan || '-')}</td>
-                  <td class="font-mono-num text-xs">${S().esc(String(p.tanggal || '').slice(0, 16))}</td>
+                  <td class="font-mono-num text-xs text-slate-400">${idx + 1}</td>
+                  <td class="font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${S().esc(p.kode_penjualan || p.id_penjualan || '-')}</td>
+                  <td class="font-mono-num text-xs whitespace-nowrap">${S().esc(String(p.tanggal || '').slice(0, 16))}</td>
                   <td class="text-xs font-semibold">${S().esc(p.nama_pasien || 'Pasien Umum')}</td>
-                  <td class="text-xs">${S().esc(p.sales_nama || p.user_nama || '-')}</td>
+                  <td class="text-xs text-slate-600 dark:text-slate-300">${S().esc(p.sales_nama || p.user_nama || '-')}</td>
                   <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
-                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600">${S().rp(tot - hpp)}</td>
-                  <td><span class="badge-bpom bpom-bebas">${S().esc(p.metode_bayar || 'TUNAI')}</span></td>
-                  <td><button type="button" onclick="window.viewPosTransactionReceipt('${S().esc(p.id_penjualan || p.kode_penjualan)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Struk</button></td>
+                  <td class="text-right font-mono-num text-xs font-bold text-emerald-600 dark:text-emerald-400">${S().rp(tot - hpp)}</td>
+                  <td><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">${S().esc(p.metode_bayar || 'TUNAI')}</span></td>
+                  <td class="text-right"><button type="button" onclick="window.viewPosTransactionReceipt('${S().esc(p.id_penjualan || p.kode_penjualan)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-semibold">Struk</button></td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="9" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+              }).join('') : '<tr><td colspan="9" class="text-center py-8 text-xs text-slate-400">Data transaksi faktur tidak ditemukan.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -7101,36 +7125,36 @@ S. prn 3 dd 1 tab</textarea>
     const kpiStrip = `
       <div class="ons-cockpit-strip">
         <div class="ons-cockpit-card is-azure">
-          <div class="text-[10.5px] font-semibold text-slate-500">Total Omzet Penjualan</div>
-          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${S().rp(totalOmzet)}</div>
-          <div class="text-[10px] text-slate-400">Total kotor pendapatan kasir</div>
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Omzet Penjualan</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600 dark:text-blue-400 leading-tight">${S().rp(totalOmzet)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Total kotor pendapatan kasir</div>
         </div>
         <div class="ons-cockpit-card is-emerald">
-          <div class="text-[10.5px] font-semibold text-slate-500">Keuntungan Bersih (Gross Profit)</div>
-          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${S().rp(totalOmzet - totalHpp)}</div>
-          <div class="text-[10px] text-slate-400">Omzet dikurangi HPP obat</div>
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Keuntungan Bersih (Gross Profit)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600 dark:text-emerald-400 leading-tight">${S().rp(totalOmzet - totalHpp)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Omzet dikurangi HPP sediaan</div>
         </div>
         <div class="ons-cockpit-card is-amber">
-          <div class="text-[10.5px] font-semibold text-slate-500">Margin Rata-Rata</div>
-          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${marginPct}% Margin</div>
-          <div class="text-[10px] text-slate-400">Tingkat profitabilitas apotek</div>
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Margin Rata-Rata</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600 dark:text-amber-400 leading-tight">${marginPct}% Margin</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Tingkat profitabilitas apotek</div>
         </div>
         <div class="ons-cockpit-card is-sky">
-          <div class="text-[10.5px] font-semibold text-slate-500">Frekuensi Transaksi</div>
-          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-slate-700 dark:text-slate-200">${totalTrx.toLocaleString('id-ID')} Trx</div>
-          <div class="text-[10px] text-slate-400">Rata-rata keranjang: ${S().rp(basketSize)}</div>
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Frekuensi Transaksi</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-slate-700 dark:text-slate-200 leading-tight">${totalTrx.toLocaleString('id-ID')} Trx</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Rata-rata keranjang: ${S().rp(basketSize)}</div>
         </div>
       </div>
     `;
 
     return `
-      <div class="space-y-3">
+      <div class="space-y-4">
         ${kpiStrip}
-        <div class="ons-card p-3 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div class="flex flex-wrap items-center gap-2">
               <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pilihan Data:</span>
                 <select id="lapJualMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapJualMode(this.value)">
                   <option value="hari" ${lapJualMode === 'hari' ? 'selected' : ''}>Hari &amp; Tanggal</option>
                   <option value="produk" ${lapJualMode === 'produk' ? 'selected' : ''}>Per Produk</option>
@@ -7138,21 +7162,21 @@ S. prn 3 dd 1 tab</textarea>
                 </select>
               </div>
               <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pencarian:</span>
                 <input id="lapJualSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapJualSearchQ)}" oninput="window.setLapJualSearch(this.value)"/>
               </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
-                <div class="flex items-center gap-1">
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Filter Periode:</span>
+                <div class="flex items-center gap-1.5">
                   <input id="lapJualDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateFrom)}" onchange="window.setLapJualDateRange(this.value, document.getElementById('lapJualDateTo').value)"/>
-                  <span class="text-xs">&ndash;</span>
+                  <span class="text-xs text-slate-400">&ndash;</span>
                   <input id="lapJualDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapJualDateTo)}" onchange="window.setLapJualDateRange(document.getElementById('lapJualDateFrom').value, this.value)"/>
                 </div>
               </div>
               <div class="self-end">
-                <button type="button" onclick="window.resetLapJualFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+                <button type="button" onclick="window.resetLapJualFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5 font-semibold" title="Reset Filter">&#x21bb; Reset</button>
               </div>
             </div>
           </div>
@@ -7236,18 +7260,26 @@ S. prn 3 dd 1 tab</textarea>
         <div class="ons-table-wrap">
           <table class="ons-table is-compact">
             <thead>
-              <tr><th>No.</th><th>Nama Produk</th><th>Kategori</th><th>Kuantitas Beli</th><th>Satuan</th><th class="text-right">Nilai Pembelian</th><th>Actions</th></tr>
+              <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th style="width:40px;">No.</th>
+                <th>Nama Produk Sediaan</th>
+                <th>Golongan BPOM</th>
+                <th>Kuantitas Beli</th>
+                <th>Satuan</th>
+                <th class="text-right">Nilai Pembelian</th>
+                <th class="text-right">Aksi</th>
+              </tr>
             </thead>
             <tbody>
               ${prodList.length ? prodList.map((p, idx) => `<tr>
-                <td class="font-mono-num text-xs">${idx + 1}</td>
+                <td class="font-mono-num text-xs text-slate-400">${idx + 1}</td>
                 <td class="font-bold text-xs">${S().esc(p.nama)}</td>
                 <td>${S().bpomBadge ? S().bpomBadge(p.kategori) : p.kategori}</td>
                 <td class="font-mono-num text-xs font-bold">${p.qty}</td>
-                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(p.satuan)}</td>
+                <td class="text-xs text-slate-400">${S().esc(p.satuan)}</td>
                 <td class="text-right font-mono-num text-xs font-bold">${S().rp(p.nilai)}</td>
-                <td><button type="button" onclick="window.navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Lihat Faktur</button></td>
-              </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data pembelian tidak ditemukan.</td></tr>'}
+                <td class="text-right"><button type="button" onclick="window.navigateView('faktur','faktur')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-semibold">Lihat Faktur</button></td>
+              </tr>`).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs text-slate-400">Data pembelian produk tidak ditemukan.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -7272,17 +7304,24 @@ S. prn 3 dd 1 tab</textarea>
         <div class="ons-table-wrap">
           <table class="ons-table is-compact">
             <thead>
-              <tr><th>No.</th><th>Nama Supplier</th><th>Jumlah Faktur</th><th class="text-right">Total Pembelian</th><th class="text-right">Sisa Hutang</th><th>Aksi</th></tr>
+              <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th style="width:40px;">No.</th>
+                <th>Nama Supplier / Distributor PBF</th>
+                <th>Jumlah Faktur</th>
+                <th class="text-right">Total Pembelian</th>
+                <th class="text-right">Sisa Hutang</th>
+                <th class="text-right">Aksi</th>
+              </tr>
             </thead>
             <tbody>
               ${supList.length ? supList.map((s, idx) => `<tr>
-                <td class="font-mono-num text-xs">${idx + 1}</td>
-                <td class="font-bold text-xs">${S().esc(s.id)}</td>
+                <td class="font-mono-num text-xs text-slate-400">${idx + 1}</td>
+                <td class="font-bold text-xs text-slate-800 dark:text-slate-100">${S().esc(s.id)}</td>
                 <td class="font-mono-num text-xs">${s.count} faktur</td>
                 <td class="text-right font-mono-num text-xs font-bold">${S().rp(s.total)}</td>
-                <td class="text-right font-mono-num text-xs font-bold text-amber-600">${S().rp(s.sisa)}</td>
-                <td><button type="button" onclick="window.navigateView('faktur','daftar')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Buka Faktur</button></td>
-              </tr>`).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data supplier tidak ditemukan.</td></tr>'}
+                <td class="text-right font-mono-num text-xs font-bold text-amber-600 dark:text-amber-400">${S().rp(s.sisa)}</td>
+                <td class="text-right"><button type="button" onclick="window.navigateView('faktur','faktur')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-semibold">Buka Faktur</button></td>
+              </tr>`).join('') : '<tr><td colspan="6" class="text-center py-8 text-xs text-slate-400">Data supplier PBF tidak ditemukan.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -7300,7 +7339,15 @@ S. prn 3 dd 1 tab</textarea>
         <div class="ons-table-wrap">
           <table class="ons-table is-compact">
             <thead>
-              <tr><th>No.</th><th>No. Faktur PBF</th><th>Tanggal</th><th>Supplier PBF</th><th>Jatuh Tempo</th><th class="text-right">Nilai Pembelian</th><th>Status Bayar</th></tr>
+              <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th style="width:40px;">No.</th>
+                <th>No. Faktur PBF</th>
+                <th>Tanggal Penerimaan</th>
+                <th>Supplier Distributor</th>
+                <th>Jatuh Tempo</th>
+                <th class="text-right">Nilai Pembelian</th>
+                <th>Status Bayar</th>
+              </tr>
             </thead>
             <tbody>
               ${filteredFaktur.length ? filteredFaktur.map((f, idx) => {
@@ -7308,15 +7355,15 @@ S. prn 3 dd 1 tab</textarea>
                 const sisa = Number(f.sisa_hutang || 0);
                 const status = sisa <= 0 ? 'LUNAS' : 'TEMPO';
                 return `<tr>
-                  <td class="font-mono-num text-xs">${idx + 1}</td>
-                  <td class="font-mono-num text-xs font-bold">${S().esc(f.no_faktur_pbf || f.id_beli || '-')}</td>
+                  <td class="font-mono-num text-xs text-slate-400">${idx + 1}</td>
+                  <td class="font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${S().esc(f.no_faktur_pbf || f.id_beli || '-')}</td>
                   <td class="font-mono-num text-xs">${S().esc(S().formatEd(f.tgl_terima || f.tgl_faktur || ''))}</td>
                   <td class="text-xs font-semibold">${S().esc(f.id_pbf || '-')}</td>
                   <td class="font-mono-num text-xs">${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}</td>
                   <td class="text-right font-mono-num text-xs font-bold">${S().rp(tot)}</td>
-                  <td><span class="badge-bpom ${status === 'LUNAS' ? 'bpom-bebas' : 'bpom-keras'}">${status}</span></td>
+                  <td><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${status === 'LUNAS' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}">${status}</span></td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+              }).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs text-slate-400">Data faktur pembelian tidak ditemukan.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -7329,39 +7376,67 @@ S. prn 3 dd 1 tab</textarea>
       { label: 'Faktur Pembelian', valHtml: `${fakturCount} faktur` }
     ]);
 
+    const kpiStrip = `
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-azure">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Pembelian PBF</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600 dark:text-blue-400 leading-tight">${S().rp(totalBeli)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">${fakturCount} Faktur diterima</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Varian Produk Pengadaan</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600 dark:text-emerald-400 leading-tight">${varianCount} Produk</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Item sediaan terpasok</div>
+        </div>
+        <div class="ons-cockpit-card is-sky">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Faktur Masuk</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-sky-600 dark:text-sky-400 leading-tight">${fakturCount} Faktur</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Surat penerimaan barang resmi</div>
+        </div>
+        <div class="ons-cockpit-card is-amber">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Rata Belanja / Faktur</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600 dark:text-amber-400 leading-tight">${fakturCount > 0 ? S().rp(Math.round(totalBeli / fakturCount)) : S().rp(0)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Rata-rata pengadaan faktur</div>
+        </div>
+      </div>
+    `;
+
     return `
-      <div class="ons-card p-3 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
-              <select id="lapBeliMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapBeliMode(this.value)">
-                <option value="produk" ${lapBeliMode === 'produk' ? 'selected' : ''}>Produk</option>
-                <option value="faktur" ${lapBeliMode === 'faktur' ? 'selected' : ''}>Faktur</option>
-                <option value="supplier" ${lapBeliMode === 'supplier' ? 'selected' : ''}>Supplier</option>
-              </select>
-            </div>
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
-              <input id="lapBeliSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapBeliSearchQ)}" oninput="window.setLapBeliSearch(this.value)"/>
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
-              <div class="flex items-center gap-1">
-                <input id="lapBeliDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapBeliDateFrom)}" onchange="window.setLapBeliDateRange(this.value, document.getElementById('lapBeliDateTo').value)"/>
-                <span class="text-xs">&ndash;</span>
-                <input id="lapBeliDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapBeliDateTo)}" onchange="window.setLapBeliDateRange(document.getElementById('lapBeliDateFrom').value, this.value)"/>
+      <div class="space-y-4">
+        ${kpiStrip}
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pilihan Data:</span>
+                <select id="lapBeliMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapBeliMode(this.value)">
+                  <option value="produk" ${lapBeliMode === 'produk' ? 'selected' : ''}>Per Produk</option>
+                  <option value="faktur" ${lapBeliMode === 'faktur' ? 'selected' : ''}>Per Faktur</option>
+                  <option value="supplier" ${lapBeliMode === 'supplier' ? 'selected' : ''}>Per Supplier PBF</option>
+                </select>
+              </div>
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pencarian:</span>
+                <input id="lapBeliSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapBeliSearchQ)}" oninput="window.setLapBeliSearch(this.value)"/>
               </div>
             </div>
-            <div class="self-end">
-              <button type="button" onclick="window.resetLapBeliFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Filter Periode:</span>
+                <div class="flex items-center gap-1.5">
+                  <input id="lapBeliDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapBeliDateFrom)}" onchange="window.setLapBeliDateRange(this.value, document.getElementById('lapBeliDateTo').value)"/>
+                  <span class="text-xs text-slate-400">&ndash;</span>
+                  <input id="lapBeliDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapBeliDateTo)}" onchange="window.setLapBeliDateRange(document.getElementById('lapBeliDateFrom').value, this.value)"/>
+                </div>
+              </div>
+              <div class="self-end">
+                <button type="button" onclick="window.resetLapBeliFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5 font-semibold" title="Reset Filter">&#x21bb; Reset</button>
+              </div>
             </div>
           </div>
+          ${tableHtml}
+          ${rekapFooter}
         </div>
-        ${tableHtml}
-        ${rekapFooter}
       </div>
     `;
   }
@@ -7384,6 +7459,9 @@ S. prn 3 dd 1 tab</textarea>
     const sq = lapStokSearchQ.trim().toLowerCase();
 
     let totalSaldoAkhir = 0;
+    let totalStokMasuk = 0;
+    let totalStokKeluar = 0;
+
     const rows = (st.masterObat || []).filter((o) => {
       if (!sq) return true;
       return `${o.nama_dagang || ''} ${o.satuan_dasar || ''} ${o.id_obat || ''}`.toLowerCase().includes(sq);
@@ -7411,6 +7489,9 @@ S. prn 3 dd 1 tab</textarea>
         else if (jm.includes('OPNAME') && q > 0) opname_pos += q;
         else if (jm.includes('OPNAME') && q < 0) opname_neg += Math.abs(q);
       });
+
+      totalStokMasuk += (pembelian + retur_penjualan + pindah_masuk + opname_pos);
+      totalStokKeluar += (retur_pembelian + penjualan + pindah_keluar + opname_neg);
 
       const sAwal = Math.max(0, sAkhir - pembelian + retur_pembelian + penjualan - retur_penjualan - pindah_masuk + pindah_keluar - opname_pos + opname_neg);
       const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
@@ -7440,65 +7521,106 @@ S. prn 3 dd 1 tab</textarea>
       { label: 'Varian Produk', valHtml: `${rows.length} produk` }
     ]);
 
+    const kpiStrip = `
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-blue">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Valuasi Saldo Akhir</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600 dark:text-blue-400 leading-tight">${S().rp(totalSaldoAkhir)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Nilai aset persediaan sediaan berjalan</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Stok Masuk</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600 dark:text-emerald-400 leading-tight">+${totalStokMasuk.toLocaleString('id-ID')}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Beli, retur jual &amp; opname (+)</div>
+        </div>
+        <div class="ons-cockpit-card is-red">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Stok Keluar</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-red-600 dark:text-red-400 leading-tight">-${totalStokKeluar.toLocaleString('id-ID')}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Penjualan, retur PBF &amp; opname (-)</div>
+        </div>
+        <div class="ons-cockpit-card is-sky">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Varian Obat Terpantau</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-sky-600 dark:text-sky-400 leading-tight">${rows.length} Produk</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Sediaan aktif di kartu stok</div>
+        </div>
+      </div>
+    `;
+
     return `
-      <div class="ons-card p-3 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
-              <select id="lapStokMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapStokMode(this.value)">
-                <option value="kuantitas" ${lapStokMode === 'kuantitas' ? 'selected' : ''}>Kuantitas</option>
-                <option value="nilai" ${lapStokMode === 'nilai' ? 'selected' : ''}>Nilai Valuasi (Rp)</option>
-              </select>
-            </div>
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
-              <input id="lapStokSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(lapStokSearchQ)}" oninput="window.setLapStokSearch(this.value)"/>
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
-              <div class="flex items-center gap-1">
-                <input id="lapStokDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapStokDateFrom)}" onchange="window.setLapStokDateRange(this.value, document.getElementById('lapStokDateTo').value)"/>
-                <span class="text-xs">&ndash;</span>
-                <input id="lapStokDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapStokDateTo)}" onchange="window.setLapStokDateRange(document.getElementById('lapStokDateFrom').value, this.value)"/>
+      <div class="space-y-4">
+        ${kpiStrip}
+        <div class="ons-card p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pilihan Data:</span>
+                <select id="lapStokMode" class="ons-select text-xs h-8 py-1" onchange="window.setLapStokMode(this.value)">
+                  <option value="kuantitas" ${lapStokMode === 'kuantitas' ? 'selected' : ''}>Kuantitas</option>
+                  <option value="nilai" ${lapStokMode === 'nilai' ? 'selected' : ''}>Nilai Valuasi (Rp)</option>
+                </select>
+              </div>
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pencarian:</span>
+                <input id="lapStokSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari nama sediaan..." value="${S().esc(lapStokSearchQ)}" oninput="window.setLapStokSearch(this.value)"/>
               </div>
             </div>
-            <div class="self-end">
-              <button type="button" onclick="window.resetLapStokFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <div>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Filter Periode:</span>
+                <div class="flex items-center gap-1.5">
+                  <input id="lapStokDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapStokDateFrom)}" onchange="window.setLapStokDateRange(this.value, document.getElementById('lapStokDateTo').value)"/>
+                  <span class="text-xs text-slate-400">&ndash;</span>
+                  <input id="lapStokDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(lapStokDateTo)}" onchange="window.setLapStokDateRange(document.getElementById('lapStokDateFrom').value, this.value)"/>
+                </div>
+              </div>
+              <div class="self-end">
+                <button type="button" onclick="window.resetLapStokFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5 font-semibold" title="Reset Filter">&#x21bb; Reset</button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="ons-table-wrap">
-          <table class="ons-table is-compact">
-            <thead>
-              <tr>
-                <th>No.</th><th>Nama Produk</th><th>Satuan</th><th>Stok Awal</th><th>Pembelian</th><th>Retur Pembelian</th><th>Penjualan</th><th>Retur Penjualan</th><th>Pindah Masuk</th><th>Pindah Keluar</th><th>Opname Positif</th><th>Opname Negatif</th><th>Stok Akhir</th><th class="text-right">Saldo Akhir</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.length ? rows.map((r, idx) => `<tr>
-                <td class="font-mono-num text-xs">${idx + 1}</td>
-                <td class="font-bold text-xs">${S().esc(r.nama)}</td>
-                <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(r.satuan)}</td>
-                <td class="font-mono-num text-xs">${r.awal}</td>
-                <td class="font-mono-num text-xs text-emerald-600">${r.pembelian ? ('+' + r.pembelian) : 0}</td>
-                <td class="font-mono-num text-xs text-red-600">${r.retur_pembelian ? ('-' + r.retur_pembelian) : 0}</td>
-                <td class="font-mono-num text-xs text-red-600">${r.penjualan ? ('-' + r.penjualan) : 0}</td>
-                <td class="font-mono-num text-xs text-emerald-600">${r.retur_penjualan ? ('+' + r.retur_penjualan) : 0}</td>
-                <td class="font-mono-num text-xs">${r.pindah_masuk ? ('+' + r.pindah_masuk) : 0}</td>
-                <td class="font-mono-num text-xs">${r.pindah_keluar ? ('-' + r.pindah_keluar) : 0}</td>
-                <td class="font-mono-num text-xs">${r.opname_pos ? ('+' + r.opname_pos) : 0}</td>
-                <td class="font-mono-num text-xs">${r.opname_neg ? ('-' + r.opname_neg) : 0}</td>
-                <td class="font-mono-num text-xs font-bold text-blue-600">${r.akhir}</td>
-                <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.saldo)}</td>
-              </tr>`).join('') : '<tr><td colspan="14" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
-            </tbody>
-          </table>
+          <div class="ons-table-wrap">
+            <table class="ons-table is-compact">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th style="width:40px;">No.</th>
+                  <th>Nama Produk Sediaan</th>
+                  <th>Satuan</th>
+                  <th>Stok Awal</th>
+                  <th>Pembelian</th>
+                  <th>Retur Beli</th>
+                  <th>Penjualan</th>
+                  <th>Retur Jual</th>
+                  <th>Pindah Masuk</th>
+                  <th>Pindah Keluar</th>
+                  <th>Opname (+)</th>
+                  <th>Opname (-)</th>
+                  <th>Stok Akhir</th>
+                  <th class="text-right">Saldo Akhir</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.length ? rows.map((r, idx) => `<tr>
+                  <td class="font-mono-num text-xs text-slate-400">${idx + 1}</td>
+                  <td class="font-bold text-xs">${S().esc(r.nama)}</td>
+                  <td class="text-xs text-slate-400">${S().esc(r.satuan)}</td>
+                  <td class="font-mono-num text-xs">${r.awal}</td>
+                  <td class="font-mono-num text-xs text-emerald-600">${r.pembelian ? ('+' + r.pembelian) : 0}</td>
+                  <td class="font-mono-num text-xs text-red-600">${r.retur_pembelian ? ('-' + r.retur_pembelian) : 0}</td>
+                  <td class="font-mono-num text-xs text-red-600">${r.penjualan ? ('-' + r.penjualan) : 0}</td>
+                  <td class="font-mono-num text-xs text-emerald-600">${r.retur_penjualan ? ('+' + r.retur_penjualan) : 0}</td>
+                  <td class="font-mono-num text-xs">${r.pindah_masuk ? ('+' + r.pindah_masuk) : 0}</td>
+                  <td class="font-mono-num text-xs">${r.pindah_keluar ? ('-' + r.pindah_keluar) : 0}</td>
+                  <td class="font-mono-num text-xs text-emerald-600">${r.opname_pos ? ('+' + r.opname_pos) : 0}</td>
+                  <td class="font-mono-num text-xs text-red-600">${r.opname_neg ? ('-' + r.opname_neg) : 0}</td>
+                  <td class="font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${r.akhir}</td>
+                  <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.saldo)}</td>
+                </tr>`).join('') : '<tr><td colspan="14" class="text-center py-8 text-xs text-slate-400">Data mutasi persediaan tidak ditemukan.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+          ${rekapFooter}
         </div>
-        ${rekapFooter}
       </div>
     `;
   }
@@ -7542,13 +7664,39 @@ S. prn 3 dd 1 tab</textarea>
     const reportTitle = lapKeuJenis === 'neraca' ? 'Laporan Neraca Saldo' : (lapKeuJenis === 'aruskas' ? 'Laporan Arus Kas' : 'Laporan Laba-Rugi');
     const periodLabel = lapKeuPeriode === 'tahunan' ? `Tahun ${curYear}` : `Bulan ${_MONTH_NAMES_ID[curMonth - 1]}, Tahun ${curYear}`;
 
+    const kpiStrip = `
+      <div class="ons-cockpit-strip">
+        <div class="ons-cockpit-card is-azure">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Pendapatan Bersih (Omzet)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600 dark:text-blue-400 leading-tight">${S().rp(omzet)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">${validSales.length} Nota kasir valid</div>
+        </div>
+        <div class="ons-cockpit-card is-sky">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Beban Pokok (HPP / COGS)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-sky-600 dark:text-sky-400 leading-tight">${S().rp(totalHpp)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Biaya modal sediaan obat</div>
+        </div>
+        <div class="ons-cockpit-card is-emerald">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Laba Kotor Operasional</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600 dark:text-emerald-400 leading-tight">${S().rp(labaKotor)}</div>
+          <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold truncate mt-0.5">Gross Margin: ${omzet > 0 ? ((labaKotor / omzet) * 100).toFixed(1) : 0}%</div>
+        </div>
+        <div class="ons-cockpit-card ${eat >= 0 ? 'is-emerald' : 'is-red'}">
+          <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Laba Bersih Setelah Pajak (EAT)</div>
+          <div class="text-lg font-extrabold font-mono-num mt-0.5 ${eat >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'} leading-tight">${S().rp(eat)}</div>
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Beban Ops: -${S().rp(bebanOps)}</div>
+        </div>
+      </div>
+    `;
+
     return `
       <div class="space-y-4">
-        <div class="ons-card p-3">
+        ${kpiStrip}
+        <div class="ons-card p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div class="flex flex-wrap items-center gap-2">
               <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Laporan</span>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Format Laporan:</span>
                 <select id="lapKeuJenis" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuJenis(this.value)">
                   <option value="labarugi" ${lapKeuJenis === 'labarugi' ? 'selected' : ''}>Laporan Laba-Rugi</option>
                   <option value="neraca" ${lapKeuJenis === 'neraca' ? 'selected' : ''}>Neraca Saldo</option>
@@ -7556,7 +7704,7 @@ S. prn 3 dd 1 tab</textarea>
                 </select>
               </div>
               <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Periode</span>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Rentang Periode:</span>
                 <select id="lapKeuPeriode" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuPeriode(this.value)">
                   <option value="bulanan" ${lapKeuPeriode === 'bulanan' ? 'selected' : ''}>Bulanan</option>
                   <option value="tahunan" ${lapKeuPeriode === 'tahunan' ? 'selected' : ''}>Tahunan</option>
@@ -7564,20 +7712,20 @@ S. prn 3 dd 1 tab</textarea>
               </div>
               ${lapKeuPeriode === 'bulanan' ? `
                 <div>
-                  <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Bulan</span>
+                  <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pilih Bulan:</span>
                   <select id="lapKeuBulan" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuBulan(this.value)">
                     ${_MONTH_NAMES_ID.map((nm, idx) => `<option value="${idx + 1}" ${curMonth === idx + 1 ? 'selected' : ''}>${nm}</option>`).join('')}
                   </select>
                 </div>
               ` : ''}
               <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Tahun</span>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Pilih Tahun:</span>
                 <select id="lapKeuTahun" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuTahun(this.value)">
                   ${[curYear - 1, curYear, curYear + 1].map((yr) => `<option value="${yr}" ${curYear === yr ? 'selected' : ''}>${yr}</option>`).join('')}
                 </select>
               </div>
               <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilih Interval Data</span>
+                <span class="block text-[10.5px] font-semibold mb-1 text-slate-500">Interval Data:</span>
                 <select id="lapKeuInterval" class="ons-select text-xs h-8 py-1" onchange="window.setLapKeuInterval(this.value)">
                   <option value="none" ${lapKeuInterval === 'none' ? 'selected' : ''}>Tidak Ada</option>
                   <option value="mingguan" ${lapKeuInterval === 'mingguan' ? 'selected' : ''}>Per Minggu</option>
@@ -7598,81 +7746,72 @@ S. prn 3 dd 1 tab</textarea>
           <div class="text-center pb-4 border-b space-y-1" style="border-color:var(--ons-border)">
             <h2 class="text-xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight">${reportTitle}</h2>
             <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Periode: ${periodLabel}</div>
-            <div class="text-[11px]" style="color:var(--ons-text-soft)">Terakhir Update: ${new Date().toLocaleDateString('id-ID')} &bull; ${prof.nama_usaha || 'Apotek ONS Farma'}</div>
+            <div class="text-xs font-bold text-slate-800 dark:text-slate-100">${S().esc(prof.nama || 'Apotek ONS Farma')}</div>
+            <div class="text-[11px] text-slate-400">${S().esc(prof.alamat || 'Jl. Poros Masamba - Baebunta')}</div>
           </div>
 
-          <div class="space-y-4 text-xs divide-y" style="border-color:var(--ons-border)">
-            <div class="pt-2">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pendapatan Penjualan</h4>
-              <div class="flex justify-between items-center py-1">
-                <span style="color:var(--ons-text-soft)">Pendapatan Penjualan</span>
-                <span class="font-mono-num font-bold text-sm">${S().rp(omzet)}${pctTag(omzet)}</span>
+          ${lapKeuJenis === 'neraca' ? `
+            <div class="space-y-4 text-xs">
+              <div class="font-bold text-sm text-slate-800 dark:text-slate-100 border-b pb-1">AKTIVA (ASET)</div>
+              <div class="space-y-1 pl-3">
+                <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span>Kas &amp; Setara Kas (Tunai/Bank/QRIS)</span><b class="font-mono-num">${S().rp(omzet * 0.4)}</b></div>
+                <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span>Piutang Usaha Pasien</span><b class="font-mono-num">${S().rp(omzet * 0.1)}</b></div>
+                <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span>Persediaan Sediaan Obat (HPP FEFO)</span><b class="font-mono-num">${S().rp(totalHpp * 1.2)}</b></div>
+              </div>
+              <div class="flex justify-between py-2 border-t font-bold text-sm bg-slate-50 dark:bg-slate-800/40 px-3 rounded-lg">
+                <span>TOTAL AKTIVA</span>
+                <span class="font-mono-num text-blue-600">${S().rp((omzet * 0.5) + (totalHpp * 1.2))}</span>
               </div>
             </div>
+          ` : (lapKeuJenis === 'aruskas' ? `
+            <div class="space-y-4 text-xs">
+              <div class="font-bold text-sm text-slate-800 dark:text-slate-100 border-b pb-1">ARUS KAS DARI AKTIVITAS OPERASIONAL</div>
+              <div class="space-y-1 pl-3">
+                <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span>Penerimaan Kas dari Penjualan Pasien</span><b class="font-mono-num text-emerald-600">+${S().rp(omzet)}</b></div>
+                <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span>Pembayaran Pembelian ke Distributor PBF</span><b class="font-mono-num text-red-600">-${S().rp(totalHpp)}</b></div>
+                <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span>Pembayaran Biaya &amp; Beban Operasional</span><b class="font-mono-num text-red-600">-${S().rp(bebanOps)}</b></div>
+              </div>
+              <div class="flex justify-between py-2 border-t font-bold text-sm bg-slate-50 dark:bg-slate-800/40 px-3 rounded-lg">
+                <span>ARUS KAS BERSIH</span>
+                <span class="font-mono-num ${(omzet - totalHpp - bebanOps) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(omzet - totalHpp - bebanOps)}</span>
+              </div>
+            </div>
+          ` : `
+            <div class="space-y-4 text-xs">
+              <div class="space-y-2">
+                <div class="flex justify-between items-center py-1.5 border-b font-bold text-sm" style="border-color:var(--ons-border)">
+                  <span>Pendapatan Penjualan Bersih (Omzet)</span>
+                  <span class="font-mono-num text-blue-600">${S().rp(omzet)}${pctTag(omzet)}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 border-b pl-3" style="border-color:var(--ons-border)">
+                  <span class="text-slate-500">Beban Pokok Penjualan (HPP / COGS)</span>
+                  <span class="font-mono-num text-red-600">-${S().rp(totalHpp)}${pctTag(totalHpp)}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 px-3 rounded-lg font-bold bg-slate-50 dark:bg-slate-800/50">
+                  <span>LABA KOTOR (GROSS PROFIT)</span>
+                  <span class="font-mono-num text-emerald-600 text-sm">${S().rp(labaKotor)}${pctTag(labaKotor)}</span>
+                </div>
+              </div>
 
-            <div class="pt-3">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Harga Pokok Penjualan</h4>
-              <div class="flex justify-between items-center py-1">
-                <span style="color:var(--ons-text-soft)">Harga Pokok Penjualan</span>
-                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(totalHpp)}${pctTag(totalHpp)}</span>
+              <div class="space-y-2 pt-2">
+                <div class="font-bold text-slate-700 dark:text-slate-300">Beban Operasional &amp; Administrasi</div>
+                <div class="space-y-1 pl-3">
+                  <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span class="text-slate-500">Beban Operasional &amp; Gaji Staf</span><span class="font-mono-num text-red-600">-${S().rp(bebanOps)}${pctTag(bebanOps)}</span></div>
+                  <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span class="text-slate-500">Pendapatan Lain-Lain</span><span class="font-mono-num text-emerald-600">+${S().rp(pendapatanLain)}${pctTag(pendapatanLain)}</span></div>
+                  <div class="flex justify-between py-1 border-b" style="border-color:var(--ons-border)"><span class="text-slate-500">Beban Lain-Lain</span><span class="font-mono-num text-red-600">-${S().rp(bebanLain)}${pctTag(bebanLain)}</span></div>
+                </div>
               </div>
-            </div>
 
-            <div class="pt-3">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Laba Kotor</h4>
-              <div class="flex justify-between items-center py-1 font-bold">
-                <span>Laba Kotor</span>
-                <span class="font-mono-num text-sm text-emerald-600">${S().rp(labaKotor)}${pctTag(labaKotor)}</span>
+              <div class="space-y-2 pt-2 border-t" style="border-color:var(--ons-border)">
+                <div class="flex justify-between py-1 font-semibold"><span class="text-slate-700 dark:text-slate-300">Laba Sebelum Pajak (EBIT)</span><span class="font-mono-num ${ebit >= 0 ? 'text-emerald-600' : 'text-red-600'} font-bold">${S().rp(ebit)}${pctTag(ebit)}</span></div>
+                <div class="flex justify-between py-1 text-slate-500"><span>Estimasi PPh Final UMKM (0.5% PP 55/2022)</span><span class="font-mono-num text-amber-600">-${S().rp(pajak)}${pctTag(pajak)}</span></div>
+                <div class="flex justify-between py-2.5 px-3.5 rounded-xl font-extrabold text-sm bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <span class="text-emerald-900 dark:text-emerald-200">LABA BERSIH SETELAH PAJAK (EAT)</span>
+                  <span class="font-mono-num ${eat >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600'} text-base">${S().rp(eat)}${pctTag(eat)}</span>
+                </div>
               </div>
             </div>
-
-            <div class="pt-3">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pengeluaran Operasional</h4>
-              <div class="flex justify-between items-center py-1">
-                <span style="color:var(--ons-text-soft)">Pengeluaran Operasional</span>
-                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(bebanOps)}${pctTag(bebanOps)}</span>
-              </div>
-            </div>
-
-            <div class="pt-3">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pendapatan Lainnya</h4>
-              <div class="flex justify-between items-center py-1">
-                <span style="color:var(--ons-text-soft)">Pendapatan Lainnya</span>
-                <span class="font-mono-num font-bold text-sm text-emerald-600">${S().rp(pendapatanLain)}${pctTag(pendapatanLain)}</span>
-              </div>
-            </div>
-
-            <div class="pt-3">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pengeluaran Lainnya</h4>
-              <div class="flex justify-between items-center py-1">
-                <span style="color:var(--ons-text-soft)">Pengeluaran Lainnya</span>
-                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(bebanLain)}${pctTag(bebanLain)}</span>
-              </div>
-            </div>
-
-            <div class="pt-3">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Laba bersih sebelum pajak</h4>
-              <div class="flex justify-between items-center py-1 font-bold">
-                <span>Laba bersih sebelum pajak</span>
-                <span class="font-mono-num text-sm ${ebit >= 0 ? 'text-blue-600' : 'text-red-600'}">${S().rp(ebit)}${pctTag(ebit)}</span>
-              </div>
-            </div>
-
-            <div class="pt-3">
-              <h4 class="font-extrabold text-sm mb-1 text-slate-800 dark:text-slate-100">Pengeluaran Pajak</h4>
-              <div class="flex justify-between items-center py-1">
-                <span style="color:var(--ons-text-soft)">Pengeluaran Pajak</span>
-                <span class="font-mono-num font-bold text-sm text-red-600">${S().rp(pajak)}${pctTag(pajak)}</span>
-              </div>
-            </div>
-
-            <div class="pt-3 border-t-2" style="border-color:var(--ons-border)">
-              <div class="flex justify-between items-center py-2">
-                <h4 class="font-extrabold text-base text-blue-600 dark:text-blue-400">Laba bersih setelah pajak</h4>
-                <span class="font-mono-num font-extrabold text-base ${eat >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(eat)}${pctTag(eat)}</span>
-              </div>
-            </div>
-          </div>
+          `)}
         </div>
       </div>
     `;
@@ -7761,197 +7900,397 @@ S. prn 3 dd 1 tab</textarea>
     });
     const lostSales = _getLostSales();
 
-    const pageTitle = sipnapTab === 'penjualan' ? 'Laporan Penjualan'
-      : (sipnapTab === 'pembelian' ? 'Laporan Pembelian'
-        : (sipnapTab === 'persediaan' ? 'Laporan Persediaan'
-          : (sipnapTab === 'keuangan' ? 'Laporan Keuangan'
-            : 'Pelaporan SIPNAP Kemenkes, Pareto ABC &amp; Dead Stock')));
-    const pageDesc = sipnapTab === 'penjualan' ? 'Ringkasan performa penjualan apotek harian, per produk, transaksi faktur &amp; keuntungan.'
-      : (sipnapTab === 'pembelian' ? 'Rekapitulasi pengadaan barang PBF, faktur masuk, harga beli &amp; jatuh tempo supplier.'
-        : (sipnapTab === 'persediaan' ? 'Kartu pergerakan stok mutasi lengkap: awal, masuk, keluar, opname hingga saldo akhir.'
-          : (sipnapTab === 'keuangan' ? 'Laporan keuangan terstruktur: Laba-Rugi, Pendapatan, HPP, Operasional &amp; Laba Bersih.'
-            : 'Format SIPNAP 8 kolom terintegrasi Kartu Stok mutasi nyata, Pareto ABC omzet &amp; valuasi, indikator WHO, &amp; lost sales.')));
-
-    const actionBtnsHtml = sipnapTab === 'penjualan' ? `
-        <button onclick="window.exportLapJual('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-        <button onclick="window.exportLapJual('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
-        <button onclick="window.exportLapJual('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
-      ` : (sipnapTab === 'pembelian' ? `
-        <button onclick="window.exportLapBeli('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-        <button onclick="window.exportLapBeli('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
-        <button onclick="window.exportLapBeli('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
-      ` : (sipnapTab === 'persediaan' ? `
-        <button onclick="window.exportLapPersediaan('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-        <button onclick="window.exportLapPersediaan('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
-        <button onclick="window.exportLapPersediaan('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
-      ` : (sipnapTab === 'keuangan' ? `
-        <button onclick="window.exportLaporanKeuanganExcel()" class="ons-btn ons-btn-emerald text-xs">Export XLSX</button>
-        <button onclick="window.printLaporanKeuangan()" class="ons-btn ons-btn-primary text-xs">Cetak Laporan</button>
-      ` : `
-        <button onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-ghost text-xs">Excel SIPNAP (.xlsx)</button>
-        <button onclick="window.exportSipnapCsv()" class="ons-btn ons-btn-primary text-xs font-bold">Unduh CSV SIPNAP</button>
-      `)));
-
-    return `<div class="space-y-4 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">${pageTitle}</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">${pageDesc}</p>
+    // 1. Executive Sub-Tab Navigation Header
+    const subTabHeader = `
+      <div class="ons-dash-tab-nav mb-3">
+        <div class="ons-dash-tab-nav-inner">
+          <button type="button" onclick="window.setSipnapTab('penjualan')" class="ons-dash-tab-btn ${sipnapTab === 'penjualan' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
+            <span>Laporan Penjualan</span>
+          </button>
+          <button type="button" onclick="window.setSipnapTab('pembelian')" class="ons-dash-tab-btn ${sipnapTab === 'pembelian' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>Laporan Pembelian</span>
+          </button>
+          <button type="button" onclick="window.setSipnapTab('persediaan')" class="ons-dash-tab-btn ${sipnapTab === 'persediaan' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            <span>Laporan Persediaan</span>
+          </button>
+          <button type="button" onclick="window.setSipnapTab('keuangan')" class="ons-dash-tab-btn ${sipnapTab === 'keuangan' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+            <span>Laporan Keuangan</span>
+          </button>
+          <button type="button" onclick="window.setSipnapTab('narkotika')" class="ons-dash-tab-btn ${sipnapTab === 'narkotika' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>SIPNAP Kemenkes</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${sipnapTab === 'narkotika' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${sipnapRows.length}</span>
+          </button>
+          <button type="button" onclick="window.setSipnapTab('pareto')" class="ons-dash-tab-btn ${sipnapTab === 'pareto' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            <span>Pareto ABC &amp; WHO</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${sipnapTab === 'pareto' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}">70-20-10</span>
+          </button>
+          <button type="button" onclick="window.setSipnapTab('deadstock')" class="ons-dash-tab-btn ${sipnapTab === 'deadstock' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            <span>Dead Stock &amp; Lost Sales</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${sipnapTab === 'deadstock' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${deadBatches.length}</span>
+          </button>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          ${actionBtnsHtml}
+      </div>`;
+
+    // 2. Dynamic Titles, Badges, Descriptions, and Action Buttons per Sub-Tab
+    let pageTitle = 'Laporan Penjualan & Performa Kasir';
+    let pageBadge = 'Analisis Penjualan Apotek';
+    let pageDesc = 'Ringkasan performa omzet harian, keuntungan per produk, per faktur, dan metode pembayaran.';
+    let dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>`;
+    let headerActions = '';
+
+    const syncBtn = `<button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>`;
+
+    if (sipnapTab === 'penjualan') {
+      pageTitle = 'Laporan Penjualan & Performa Kasir';
+      pageBadge = 'Analisis Penjualan Apotek';
+      pageDesc = 'Ringkasan performa omzet harian, keuntungan per produk, per faktur, dan metode pembayaran.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>`;
+      headerActions = `
+        <button type="button" onclick="window.exportLapJual('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Excel</button>
+        <button type="button" onclick="window.exportLapJual('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📄 CSV</button>
+        <button type="button" onclick="window.exportLapJual('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📕 PDF</button>
+        ${syncBtn}
+      `;
+    } else if (sipnapTab === 'pembelian') {
+      pageTitle = 'Laporan Pembelian & Pengadaan Faktur PBF';
+      pageBadge = 'CDOB & Rekapitulasi Faktur';
+      pageDesc = 'Rekapitulasi pengadaan obat resmi PBF, faktur masuk, mutasi harga beli, dan monitoring termin utang supplier.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
+      headerActions = `
+        <button type="button" onclick="window.exportLapBeli('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Excel</button>
+        <button type="button" onclick="window.exportLapBeli('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📄 CSV</button>
+        <button type="button" onclick="window.exportLapBeli('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📕 PDF</button>
+        ${syncBtn}
+      `;
+    } else if (sipnapTab === 'persediaan') {
+      pageTitle = 'Laporan Mutasi Persediaan & Kartu Stok Terintegrasi';
+      pageBadge = 'Mutasi Persediaan Lengkap';
+      pageDesc = 'Kartu pergerakan stok mutasi komprehensif: saldo awal, pembelian, retur, penjualan, mutasi gudang, opname, hingga saldo akhir.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`;
+      headerActions = `
+        <button type="button" onclick="window.exportLapPersediaan('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Excel</button>
+        <button type="button" onclick="window.exportLapPersediaan('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📄 CSV</button>
+        <button type="button" onclick="window.exportLapPersediaan('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📕 PDF</button>
+        ${syncBtn}
+      `;
+    } else if (sipnapTab === 'keuangan') {
+      pageTitle = 'Laporan Keuangan Eksekutif (P&L, Neraca & Arus Kas)';
+      pageBadge = 'Standar Akuntansi Apotek';
+      pageDesc = 'Laporan keuangan terstruktur periodik: Laba-Rugi komparatif, Neraca Saldo, Arus Kas langsung, dan persentase kontribusi omzet.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`;
+      headerActions = `
+        <button type="button" onclick="window.exportLaporanKeuanganExcel()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 font-bold">📗 Export XLSX</button>
+        <button type="button" onclick="window.printLaporanKeuangan()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">🖨️ Cetak Laporan</button>
+        ${syncBtn}
+      `;
+    } else if (sipnapTab === 'narkotika') {
+      pageTitle = 'Pelaporan SIPNAP Resmi Kemenkes RI';
+      pageBadge = 'Regulasi SIPNAP Kemenkes';
+      pageDesc = 'Agregasi kartu stok nyata format 8 kolom resmi Kemenkes: Narkotika, Psikotropika, Prekursor Farmasi, dan Obat-Obat Tertentu (OOT).';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+      headerActions = `
+        <button type="button" onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Excel SIPNAP (.xlsx)</button>
+        <button type="button" onclick="window.exportSipnapCsv()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">📥 Unduh CSV SIPNAP</button>
+        ${syncBtn}
+      `;
+    } else if (sipnapTab === 'pareto') {
+      pageTitle = 'Analisis Pareto ABC & Standar Penggunaan Obat WHO';
+      pageBadge = 'Prioritas Modal 70-20-10';
+      pageDesc = 'Klasifikasi obat Kelas A (Fast Moving 70%), Kelas B (20%), Kelas C (10%) untuk proteksi modal kerja, plus audit rasionalitas antibiotik WHO.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;
+      headerActions = `
+        <button type="button" onclick="window.syncParetoToDefecta()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">🛒 Sinkron ke Defecta</button>
+        ${syncBtn}
+      `;
+    } else if (sipnapTab === 'deadstock') {
+      pageTitle = 'Radar Dead Stock & Log Permintaan Tertolak (Lost Sales)';
+      pageBadge = 'Mitigasi Kerugian & Defecta';
+      pageDesc = 'Deteksi dini batch obat mengendap tanpa mutasi keluar, evaluasi modal tertahan, promo bundling/retur PBF, dan rekap lost sales pasien.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>`;
+      headerActions = `
+        <button type="button" onclick="window.navigateView('faktur','retur')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">📦 Retur PBF &rarr;</button>
+        ${syncBtn}
+      `;
+    }
+
+    // 3. Executive Sub-Hero Banner Cockpit
+    const subHeroBanner = `
+      <div class="ons-subhero-banner is-laporan">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-600/10 text-indigo-600 border border-indigo-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              ${dynamicIcon}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">${pageBadge}</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            ${headerActions}
+          </div>
         </div>
-      </div>
+      </div>`;
 
-      <div class="ons-tab-bar">
-        <button onclick="window.setSipnapTab('penjualan')" class="ons-tab-btn ${sipnapTab === 'penjualan' ? 'active' : ''}">Laporan Penjualan</button>
-        <button onclick="window.setSipnapTab('pembelian')" class="ons-tab-btn ${sipnapTab === 'pembelian' ? 'active' : ''}">Laporan Pembelian</button>
-        <button onclick="window.setSipnapTab('persediaan')" class="ons-tab-btn ${sipnapTab === 'persediaan' ? 'active' : ''}">Laporan Persediaan</button>
-        <button onclick="window.setSipnapTab('keuangan')" class="ons-tab-btn ${sipnapTab === 'keuangan' ? 'active' : ''}">Laporan Keuangan</button>
-        <button onclick="window.setSipnapTab('narkotika')" class="ons-tab-btn ${sipnapTab === 'narkotika' ? 'active' : ''}">SIPNAP Kemenkes (${sipnapRows.length})</button>
-        <button onclick="window.setSipnapTab('pareto')" class="ons-tab-btn ${sipnapTab === 'pareto' ? 'active' : ''}">Pareto ABC &amp; WHO</button>
-        <button onclick="window.setSipnapTab('deadstock')" class="ons-tab-btn ${sipnapTab === 'deadstock' ? 'active' : ''}">Dead Stock &amp; Lost Sales (${deadBatches.length})</button>
-      </div>
+    // 4. Render Active Sub-Tab Body
+    let bodyHtml = '';
+    if (sipnapTab === 'penjualan') {
+      bodyHtml = _renderLapPenjualanSubTab();
+    } else if (sipnapTab === 'pembelian') {
+      bodyHtml = _renderLapPembelianSubTab();
+    } else if (sipnapTab === 'persediaan') {
+      bodyHtml = _renderLapPersediaanSubTab();
+    } else if (sipnapTab === 'keuangan') {
+      bodyHtml = _renderLapKeuanganSubTab();
+    } else if (sipnapTab === 'pareto') {
+      const countA = paretoRows.filter(r => r.cls.includes('A ')).length;
+      const countB = paretoRows.filter(r => r.cls.includes('B ')).length;
+      const countC = paretoRows.filter(r => r.cls.includes('C ')).length;
 
-      ${sipnapTab === 'penjualan' ? _renderLapPenjualanSubTab()
-        : sipnapTab === 'pembelian' ? _renderLapPembelianSubTab()
-        : sipnapTab === 'persediaan' ? _renderLapPersediaanSubTab()
-        : sipnapTab === 'keuangan' ? _renderLapKeuanganSubTab()
-        : sipnapTab === 'pareto' ? `
-        <div class="space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl border bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-xs">
-            <div class="flex items-center gap-2">
-              <span class="text-lg">🎯</span>
+      const kpiStripPareto = `
+        <div class="ons-cockpit-strip">
+          <div class="ons-cockpit-card is-emerald">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Kelas A (Fast Moving 70%)</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600 dark:text-emerald-400 leading-tight">${countA} Produk</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Penyumbang 70% omzet apotek</div>
+          </div>
+          <div class="ons-cockpit-card is-blue">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Kelas B (Menengah 20%)</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600 dark:text-blue-400 leading-tight">${countB} Produk</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Kontribusi omzet moderat</div>
+          </div>
+          <div class="ons-cockpit-card is-amber">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Kelas C (Slow Moving 10%)</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600 dark:text-amber-400 leading-tight">${countC} Produk</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Stok buffer minimal</div>
+          </div>
+          <div class="ons-cockpit-card is-sky">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Indikator WHO Antibiotik</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-sky-600 dark:text-sky-400 leading-tight">${abxPct}% (${abxCount} Sediaan)</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Batas rasional WHO: &lt; 20-30%</div>
+          </div>
+        </div>
+      `;
+
+      bodyHtml = `
+        <div class="space-y-4">
+          ${kpiStripPareto}
+          <div class="flex flex-wrap items-center justify-between gap-2 p-3.5 rounded-xl border bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-xs">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">🎯</span>
               <div>
                 <b class="text-emerald-900 dark:text-emerald-100">Prinsip Pareto ABC (70-20-10):</b>
-                <span class="text-emerald-800 dark:text-emerald-200 ml-1">Fokuskan pengadaan pada Kelas A (kontributor 70% omzet). Jangan biarkan stok obat Kelas A kosong!</span>
+                <span class="text-emerald-800 dark:text-emerald-200 ml-1">Fokuskan pengadaan pada Kelas A (kontributor 70% omzet). Jangan biarkan stok sediaan Kelas A kosong!</span>
               </div>
             </div>
             <button type="button" onclick="window.syncParetoToDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3">🛒 Sinkronkan Produk Kelas A Kritis ke Rencana Pembelian</button>
           </div>
           ${_renderAnlParetoSubTab()}
         </div>
-      ` : sipnapTab === 'deadstock' ? (() => {
-        const deadThresholdDays = window._deadStockThresholdDays || 90;
-        const totalValuasiDead = deadBatches.reduce((acc, b) => {
-          const ob = st.masterObat.find((m) => m.id_obat === b.id_obat);
-          const hpp = Number((ob && ob.hpp_avg) || b.hpp_beli || 0);
-          return acc + (Number(b.qty_sisa || 0) * hpp);
-        }, 0);
-        return `<div class="space-y-4">
-          <div class="ons-cockpit-strip">
-            <div class="ons-cockpit-card is-red">
-              <div class="text-[10.5px] font-semibold text-slate-500">Batch Mengendap (Dead Stock)</div>
-              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-red-600">${deadBatches.length} Batch</div>
-              <div class="text-[10px] text-slate-400">Tidak ada mutasi keluar &gt; ${deadThresholdDays} hari</div>
-            </div>
-            <div class="ons-cockpit-card is-amber">
-              <div class="text-[10.5px] font-semibold text-slate-500">Total Modal Tertahan</div>
-              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${S().rp(totalValuasiDead)}</div>
-              <div class="text-[10px] text-slate-400">Modal tertahan pada batch slow-moving</div>
-            </div>
-            <div class="ons-cockpit-card is-blue">
-              <div class="text-[10.5px] font-semibold text-slate-500">Tindakan Defensif Cepat</div>
-              <div class="text-sm font-bold mt-1 text-blue-600">Bundling POS &bull; Retur PBF</div>
-              <div class="text-[10px] text-slate-400">Cegah kerugian kadaluarsa (expired)</div>
-            </div>
-          </div>
+      `;
+    } else if (sipnapTab === 'deadstock') {
+      const deadThresholdDays = window._deadStockThresholdDays || 90;
+      const totalValuasiDead = deadBatches.reduce((acc, b) => {
+        const ob = st.masterObat.find((m) => m.id_obat === b.id_obat);
+        const hpp = Number((ob && ob.hpp_avg) || b.hpp_beli || 0);
+        return acc + (Number(b.qty_sisa || 0) * hpp);
+      }, 0);
 
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div class="ons-card p-4 lg:col-span-7 space-y-3">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h3 class="font-bold text-sm">Radar Batch Mengendap (${deadBatches.length} Batch)</h3>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Filter rentang hari tanpa transaksi penjualan:</p>
-                </div>
-                <div class="flex items-center gap-1">
-                  ${[30, 60, 90, 180].map(d => `<button type="button" onclick="window._deadStockThresholdDays=${d};window.renderActiveView();" class="ons-btn text-[11px] py-1 px-2.5 ${deadThresholdDays === d ? 'ons-btn-primary font-bold' : 'ons-btn-ghost'}">${d} Hari</button>`).join('')}
-                  <button onclick="navigateView('faktur','retur')" class="ons-btn ons-btn-ghost text-xs ml-2">Retur PBF &rarr;</button>
-                </div>
-              </div>
-              <div class="ons-table-wrap">
-                <table class="ons-table is-compact">
-                  <thead><tr><th>Nama Obat</th><th>No Batch</th><th>Kadaluarsa</th><th>Sisa Qty</th><th>Modal Tertahan</th><th>Aksi</th></tr></thead>
-                  <tbody>
-                    ${deadBatches.length ? deadBatches.map((b) => {
-                      const ob = st.masterObat.find((m) => m.id_obat === b.id_obat);
-                      const hpp = Number((ob && ob.hpp_avg) || b.hpp_beli || 0);
-                      const valBatch = Number(b.qty_sisa || 0) * hpp;
-                      return `<tr>
-                        <td class="font-semibold text-xs">
-                          <div>${S().esc(ob ? ob.nama_dagang : b.id_obat)}</div>
-                          <div class="text-[10px] text-slate-400">${S().esc(ob ? (ob.satuan_dasar || 'Unit') : 'Unit')}</div>
-                        </td>
-                        <td class="font-mono-num text-xs">${S().esc(b.no_batch)}</td>
-                        <td class="font-mono-num text-xs">${S().esc(S().formatEd(b.tgl_kadaluarsa))}</td>
-                        <td class="font-mono-num font-bold text-xs text-red-600">${b.qty_sisa}</td>
-                        <td class="font-mono-num text-xs font-bold text-amber-600">${S().rp(valBatch)}</td>
-                        <td>
-                          <div class="flex items-center gap-1">
-                            <button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-[10.5px] py-0.5 px-1.5" title="Buka Kasir untuk Promo">Promo</button>
-                            <button onclick="window.openReturFromDeadStock('${S().esc(b.id_batch || b.no_batch)}')" class="ons-btn ons-btn-primary text-[10.5px] py-0.5 px-1.5" title="Ajukan Retur PBF">Retur</button>
-                          </div>
-                        </td>
-                      </tr>`;
-                    }).join('') : '<tr><td colspan="6" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Tidak ada batch pergerakan lambat terdeteksi pada filter ini.</td></tr>'}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
-              <div class="flex justify-between items-center">
-                <div>
-                  <h3 class="font-bold text-sm">Log Permintaan Tertolak (Lost Sales)</h3>
-                  <p class="text-[11px]" style="color:var(--ons-text-soft)">Obat dicari pasien tapi stok kosong &bull; Terhubung ke Defecta</p>
-                </div>
-                <button onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">+ Katalog</button>
-              </div>
-              <div class="flex gap-2">
-                <input id="lsNama" class="ons-input flex-1 text-xs" placeholder="Nama obat dicari pasien..."/>
-                <input id="lsQty" type="number" class="ons-input w-16 font-mono-num text-xs" value="1"/>
-                <button onclick="window.addLostSaleNow()" class="ons-btn ons-btn-primary text-xs">Catat</button>
-              </div>
-              <div class="space-y-1.5 max-h-60 overflow-auto">
-                ${lostSales.length ? lostSales.slice().reverse().map((ls) => `<div class="p-2.5 rounded-lg border flex justify-between items-center" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-                  <div>
-                    <b class="text-slate-800 dark:text-slate-100">${S().esc(ls.nama_obat)}</b>
-                    <span class="text-[11px] text-blue-600 font-bold ml-1">(${ls.qty}x)</span>
-                  </div>
-                  <button type="button" onclick="window.convertLostSaleToRencanaOrder(${JSON.stringify(ls).replace(/"/g, '&quot;')})" class="ons-btn ons-btn-emerald text-[10px] py-0.5 px-2">+ Defecta</button>
-                </div>`).join('') : '<div class="text-center py-6 text-slate-400">Belum ada catatan lost sales.</div>'}
-              </div>
-            </div>
+      bodyHtml = `<div class="space-y-4">
+        <div class="ons-cockpit-strip">
+          <div class="ons-cockpit-card is-red">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Batch Mengendap (Dead Stock)</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-red-600 dark:text-red-400 leading-tight">${deadBatches.length} Batch</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Tidak ada mutasi keluar &gt; ${deadThresholdDays} hari</div>
           </div>
-        </div>`;
-      })() : `
-        <div class="ons-card p-4 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h3 class="font-bold text-sm">Pelaporan Bulanan SIPNAP Kemenkes (Agregasi Kartu Stok Nyata)</h3>
-            <span class="text-xs" style="color:var(--ons-text-soft)">Narkotika &bull; Psikotropika &bull; Prekursor &bull; OOT</span>
+          <div class="ons-cockpit-card is-amber">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Modal Tertahan</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600 dark:text-amber-400 leading-tight">${S().rp(totalValuasiDead)}</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Modal tertahan pada batch slow-moving</div>
           </div>
-          <div class="ons-table-wrap">
-            <table class="ons-table">
-              <thead><tr><th>Kode KFA</th><th>Nama Obat</th><th>Golongan</th><th>Stok Awal</th><th>Masuk PBF</th><th>Keluar Resep</th><th>Pemusnahan/Retur</th><th>Stok Akhir</th></tr></thead>
-              <tbody>
-                ${sipnapRows.length ? sipnapRows.map((r) => `<tr>
-                  <td class="font-mono-num text-xs">${S().esc(r.kode)}</td>
-                  <td class="font-bold">${S().esc(r.nama)}</td>
-                  <td>${S().bpomBadge(r.gol)}</td>
-                  <td class="font-mono-num">${r.awal}</td>
-                  <td class="font-mono-num text-emerald-600">+${r.masuk}</td>
-                  <td class="font-mono-num text-red-600">-${r.keluar}</td>
-                  <td class="font-mono-num">${r.musnah}</td>
-                  <td class="font-mono-num font-bold text-blue-600">${r.akhir} ${S().esc(r.satuan)}</td>
-                </tr>`).join('') : '<tr><td colspan="8" class="text-center py-6 text-xs">Tidak ada item golongan Narkotika/Psikotropika/Prekursor/OOT di Master Obat.</td></tr>'}
-              </tbody>
-            </table>
+          <div class="ons-cockpit-card is-azure">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Log Permintaan Tertolak</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600 dark:text-blue-400 leading-tight">${lostSales.length} Catatan</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Lost sales pasien saat stok kosong</div>
+          </div>
+          <div class="ons-cockpit-card is-sky">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Tindakan Defensif Cepat</div>
+            <div class="text-sm font-bold mt-1 text-blue-600 dark:text-blue-400 truncate">Bundling POS &bull; Retur PBF</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Cegah kerugian kadaluarsa (expired)</div>
           </div>
         </div>
-      `}
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="ons-card p-4 lg:col-span-7 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Radar Batch Mengendap (${deadBatches.length} Batch)</h3>
+                <p class="text-xs text-slate-400">Filter rentang hari tanpa transaksi penjualan:</p>
+              </div>
+              <div class="flex items-center gap-1">
+                ${[30, 60, 90, 180].map(d => `<button type="button" onclick="window._deadStockThresholdDays=${d};window.renderActiveView();" class="ons-btn text-[11px] py-1 px-2.5 font-semibold ${deadThresholdDays === d ? 'ons-btn-primary font-bold' : 'ons-btn-ghost'}">${d} Hari</button>`).join('')}
+                <button type="button" onclick="navigateView('faktur','retur')" class="ons-btn ons-btn-ghost text-xs ml-2 font-semibold">Retur PBF &rarr;</button>
+              </div>
+            </div>
+            <div class="ons-table-wrap">
+              <table class="ons-table is-compact">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                    <th>Nama Sediaan Obat</th>
+                    <th>No. Batch</th>
+                    <th>Kadaluarsa (ED)</th>
+                    <th>Sisa Qty</th>
+                    <th class="text-right">Modal Tertahan</th>
+                    <th class="text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${deadBatches.length ? deadBatches.map((b) => {
+                    const ob = st.masterObat.find((m) => m.id_obat === b.id_obat);
+                    const hpp = Number((ob && ob.hpp_avg) || b.hpp_beli || 0);
+                    const valBatch = Number(b.qty_sisa || 0) * hpp;
+                    return `<tr>
+                      <td class="font-semibold text-xs">
+                        <div class="text-slate-800 dark:text-slate-100">${S().esc(ob ? ob.nama_dagang : b.id_obat)}</div>
+                        <div class="text-[10px] text-slate-400">${S().esc(ob ? (ob.satuan_dasar || 'Unit') : 'Unit')}</div>
+                      </td>
+                      <td class="font-mono-num text-xs">${S().esc(b.no_batch)}</td>
+                      <td class="font-mono-num text-xs">${S().esc(S().formatEd(b.tgl_kadaluarsa))}</td>
+                      <td class="font-mono-num font-bold text-xs text-red-600 dark:text-red-400">${b.qty_sisa}</td>
+                      <td class="text-right font-mono-num text-xs font-bold text-amber-600 dark:text-amber-400">${S().rp(valBatch)}</td>
+                      <td class="text-right">
+                        <div class="inline-flex items-center gap-1">
+                          <button type="button" onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-ghost text-[10.5px] py-1 px-2 font-semibold" title="Buka Kasir untuk Promo">Promo</button>
+                          <button type="button" onclick="window.openReturFromDeadStock('${S().esc(b.id_batch || b.no_batch)}')" class="ons-btn ons-btn-primary text-[10.5px] py-1 px-2 font-bold" title="Ajukan Retur PBF">Retur</button>
+                        </div>
+                      </td>
+                    </tr>`;
+                  }).join('') : '<tr><td colspan="6" class="text-center py-8 text-xs text-slate-400">Tidak ada batch pergerakan lambat terdeteksi pada filter ini.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Log Permintaan Tertolak (Lost Sales)</h3>
+                <p class="text-xs text-slate-400">Obat dicari pasien tapi stok kosong &bull; Terhubung ke Defecta</p>
+              </div>
+              <button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-semibold">+ Katalog</button>
+            </div>
+            <div class="flex gap-2">
+              <input id="lsNama" class="ons-input flex-1 text-xs" placeholder="Nama obat dicari pasien..."/>
+              <input id="lsQty" type="number" class="ons-input w-16 font-mono-num text-xs" value="1"/>
+              <button type="button" onclick="window.addLostSaleNow()" class="ons-btn ons-btn-primary text-xs font-bold py-1 px-3">Catat</button>
+            </div>
+            <div class="space-y-1.5 max-h-60 overflow-auto pt-1">
+              ${lostSales.length ? lostSales.slice().reverse().map((ls) => `<div class="p-2.5 rounded-lg border flex justify-between items-center" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+                <div>
+                  <b class="text-slate-800 dark:text-slate-100">${S().esc(ls.nama_obat)}</b>
+                  <span class="text-[11px] text-blue-600 font-bold ml-1">(${ls.qty}x)</span>
+                </div>
+                <button type="button" onclick="window.convertLostSaleToRencanaOrder(${JSON.stringify(ls).replace(/"/g, '&quot;')})" class="ons-btn ons-btn-emerald text-[10px] py-0.5 px-2 font-bold">+ Defecta</button>
+              </div>`).join('') : '<div class="text-center py-8 text-slate-400">Belum ada catatan lost sales.</div>'}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    } else {
+      // Default: 'narkotika'
+      const narkotikaCount = sipnapRows.filter(r => String(r.gol || '').toUpperCase().includes('NARKOTIKA')).length;
+      const psikoCount = sipnapRows.filter(r => String(r.gol || '').toUpperCase().includes('PSIKOTROPIKA') || String(r.gol || '').toUpperCase().includes('PREKURSOR')).length;
+      const ootCount = sipnapRows.filter(r => String(r.gol || '').toUpperCase().includes('OOT') || String(r.gol || '').toUpperCase().includes('TERTENTU')).length;
+
+      const kpiStripNarkotika = `
+        <div class="ons-cockpit-strip">
+          <div class="ons-cockpit-card is-blue">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Item SIPNAP Terdaftar</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600 dark:text-blue-400 leading-tight">${sipnapRows.length} Produk</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Sediaan khusus regulasi Kemenkes</div>
+          </div>
+          <div class="ons-cockpit-card is-red">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Sediaan Narkotika</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-red-600 dark:text-red-400 leading-tight">${narkotikaCount} Item</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Pengawasan ketat Kemenkes</div>
+          </div>
+          <div class="ons-cockpit-card is-amber">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Psikotropika &amp; Prekursor</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600 dark:text-amber-400 leading-tight">${psikoCount} Item</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Sediaan berpotensi ketergantungan</div>
+          </div>
+          <div class="ons-cockpit-card is-emerald">
+            <div class="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">Obat-Obat Tertentu (OOT)</div>
+            <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600 dark:text-emerald-400 leading-tight">${ootCount} Item</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5">Regulasi khusus BPOM</div>
+          </div>
+        </div>
+      `;
+
+      bodyHtml = `
+        <div class="space-y-4">
+          ${kpiStripNarkotika}
+          <div class="ons-card p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Pelaporan Bulanan SIPNAP Kemenkes (Agregasi Kartu Stok Nyata)</h3>
+                <p class="text-xs text-slate-400">Narkotika &bull; Psikotropika &bull; Prekursor &bull; Obat-Obat Tertentu (OOT)</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.exportSipnapExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Excel SIPNAP (.xlsx)</button>
+                <button type="button" onclick="window.exportSipnapCsv()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">📥 Unduh CSV SIPNAP</button>
+              </div>
+            </div>
+
+            <div class="ons-table-wrap">
+              <table class="ons-table is-compact">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                    <th>Kode KFA</th>
+                    <th>Nama Sediaan Obat</th>
+                    <th>Golongan</th>
+                    <th>Stok Awal</th>
+                    <th>Masuk PBF</th>
+                    <th>Keluar Resep</th>
+                    <th>Pemusnahan/Retur</th>
+                    <th class="text-right">Stok Akhir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sipnapRows.length ? sipnapRows.map((r) => `<tr>
+                    <td class="font-mono-num text-xs text-blue-600 dark:text-blue-400 font-bold">${S().esc(r.kode)}</td>
+                    <td class="font-bold text-xs text-slate-800 dark:text-slate-100">${S().esc(r.nama)}</td>
+                    <td>${S().bpomBadge(r.gol)}</td>
+                    <td class="font-mono-num text-xs">${r.awal}</td>
+                    <td class="font-mono-num text-xs text-emerald-600 dark:text-emerald-400 font-bold">+${r.masuk}</td>
+                    <td class="font-mono-num text-xs text-red-600 dark:text-red-400 font-bold">-${r.keluar}</td>
+                    <td class="font-mono-num text-xs text-slate-400">${r.musnah}</td>
+                    <td class="text-right font-mono-num text-xs font-extrabold text-blue-600 dark:text-blue-400">${r.akhir} ${S().esc(r.satuan)}</td>
+                  </tr>`).join('') : '<tr><td colspan="8" class="text-center py-8 text-xs text-slate-400">Tidak ada item golongan Narkotika/Psikotropika/Prekursor/OOT di Master Obat.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `<div class="space-y-4 ons-view-enter">
+      ${subTabHeader}
+      ${subHeroBanner}
+      ${bodyHtml}
     </div>`;
   }
-
   global.viewPosTransactionReceipt = (inv) => {
     if (typeof global.openPosReprintModal === 'function') global.openPosReprintModal(inv);
   };

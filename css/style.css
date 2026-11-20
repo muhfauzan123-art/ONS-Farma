@@ -5181,6 +5181,7 @@ html.dark .ons-subhero-banner {
 .ons-subhero-banner.is-master { --subhero-accent: linear-gradient(180deg, #0D9488, #14B8A6); }
 .ons-subhero-banner.is-kontak { --subhero-accent: linear-gradient(180deg, #0284C7, #3B82F6); }
 .ons-subhero-banner.is-keuangan { --subhero-accent: linear-gradient(180deg, #059669, #0284C7); }
+.ons-subhero-banner.is-laporan { --subhero-accent: linear-gradient(180deg, #0284C7, #6366F1); }
 
 /* Executive Subhero Layout & Typography Helpers */
 .ons-subhero-inner {
