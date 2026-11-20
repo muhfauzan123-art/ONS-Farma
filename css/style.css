@@ -5179,6 +5179,64 @@ html.dark .ons-subhero-banner {
 .ons-subhero-banner.is-pemeriksaan { --subhero-accent: linear-gradient(180deg, #0284C7, #06B6D4); }
 .ons-subhero-banner.is-konsinyasi { --subhero-accent: linear-gradient(180deg, #6366F1, #8B5CF6); }
 
+/* Executive Subhero Layout & Typography Helpers */
+.ons-subhero-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+.ons-subhero-main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.ons-subhero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.ons-subhero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.ons-subhero-pill-text {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--ons-text-soft, #64748B);
+}
+.ons-subhero-pill-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.ons-subhero-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ons-text-main, #0F172A);
+  margin: 0.2rem 0;
+  letter-spacing: -0.01em;
+}
+.ons-subhero-desc {
+  font-size: 0.75rem;
+  color: var(--ons-text-soft, #64748B);
+  margin: 0;
+  line-height: 1.45;
+}
+.ons-subhero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* POS Executive Comfort Controls */
 .ons-pos-total-box {
   background: linear-gradient(135deg, #0A192F 0%, #1E3A8A 60%, #0284C7 100%);

@@ -10697,32 +10697,37 @@
 
     // 2. Executive Sub-Hero Banner Cockpit
     const subHeroBanner = `
-      <section class="ons-subhero-banner is-pembelian ons-view-enter" aria-label="Executive Cockpit Pembelian">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-pill">
-              <span class="ons-subhero-dot" style="background:#0284C7"></span>
-              <span class="ons-subhero-pill-text font-bold">PENGADAAN FARMASI CDOB</span>
-              <span class="ons-subhero-pill-badge" style="background:rgba(2,132,199,0.15);color:#0284C7">BPOM Terintegrasi</span>
+      <div class="ons-subhero-banner is-pembelian">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 border border-sky-500/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             </div>
-            <h1 class="ons-subhero-title">${
-              fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta' :
-              (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM' :
-              (fakturTab === 'input' ? 'Penerimaan Faktur PBF (GRN)' :
-              (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF)' : 'Faktur Pembelian &amp; Penerimaan PBF')))
-            }</h1>
-            <p class="ons-subhero-desc">${
-              fakturTab === 'rencana' ? 'Perencanaan kebutuhan stok obat apotek, analisa ambang ROP buffer stock, defecta cerdas, dan kalkulasi penawaran sales distributor.' :
-              (fakturTab === 'sp' ? 'Pengelolaan pesanan resmi regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak form A4, dan pelacakan status kiriman PBF.' :
-              (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), dan pembentukan hutang dagang.' :
-              (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, kartu stok, dan nota kredit otomatis disesuaikan.' :
-              'Monitoring faktur resmi PBF, verifikasi DPP/PPN, histori penerimaan batch, serta pelacakan sisa hutang dagang dan termin jatuh tempo.')))
-            }</p>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
+                  fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta' :
+                  (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM' :
+                  (fakturTab === 'input' ? 'Penerimaan Faktur PBF (GRN)' :
+                  (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF)' : 'Faktur Pembelian &amp; Penerimaan PBF')))
+                }</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">BPOM Terintegrasi</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${
+                fakturTab === 'rencana' ? 'Perencanaan kebutuhan stok obat apotek, analisa ambang ROP buffer stock, defecta cerdas, dan kalkulasi penawaran sales distributor.' :
+                (fakturTab === 'sp' ? 'Pengelolaan pesanan resmi regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak form A4, dan pelacakan status kiriman PBF.' :
+                (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), dan pembentukan hutang dagang.' :
+                (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, kartu stok, dan nota kredit otomatis disesuaikan.' :
+                'Monitoring faktur resmi PBF, verifikasi DPP/PPN, histori penerimaan batch, serta pelacakan sisa hutang dagang dan termin jatuh tempo.')))
+              }</p>
+            </div>
           </div>
-          <div class="ons-subhero-actions">
+          <div class="flex flex-wrap items-center gap-2">
             ${fakturTab === 'rencana' ? `
-              <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs">📋 Usulan (${allPlans.length})</button>
-              <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs">📦 Defecta (${lowStockDefecta.length})</button>
+              <div class="inline-flex rounded-xl p-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'RENCANA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">📋 Usulan (${allPlans.length})</button>
+                <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'DEFECTA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">📦 Defecta (${lowStockDefecta.length})</button>
+              </div>
               <button type="button" onclick="window.openRopCalculatorModal()" class="ons-btn ons-btn-ghost text-xs">🧮 Hitung ROP</button>
               <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs">+ Usulan Baru</button>
               <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">⚡ Buat SP Otomatis</button>
@@ -10731,7 +10736,7 @@
               <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
             ` : fakturTab === 'input' ? `
               <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs font-bold">&larr; Daftar Faktur</button>
-              <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-primary text-xs font-bold">Upload &amp; Scan Faktur</button>
+              <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">Upload &amp; Scan Faktur</button>
             ` : fakturTab === 'retur' ? `
               <button type="button" onclick="window.openCreateReturPembelianModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Retur Pembelian</button>
               <button type="button" onclick="window.openReturDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${returDrafts.length})</button>
@@ -10743,7 +10748,7 @@
             `}
           </div>
         </div>
-      </section>
+      </div>
     `;
 
     return `<div class="space-y-4 ons-view-enter">
@@ -10752,11 +10757,6 @@
 
       ${(fakturTab === 'rencana' || fakturTab === 'defecta' || fakturTab === 'order') ? (rencanaSubMode === 'DEFECTA' ? _renderDefectaTabContent(st) : `
         <div class="space-y-4">
-          <div class="flex items-center gap-1.5 pb-1">
-            <span class="text-xs font-bold text-slate-500 uppercase mr-1">Pilihan Tampilan:</span>
-            <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn text-xs py-1 px-3 ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📋 Daftar Rencana Usulan (${allPlans.length})</button>
-            <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn text-xs py-1 px-3 ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📦 Defecta &amp; Ambang ROP (${lowStockDefecta.length})</button>
-          </div>
           <!-- 4 Executive Glance Tiles Rencana Pembelian -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="ons-glance-tile">
@@ -14984,36 +14984,39 @@
 
     // 2. Executive Sub-Hero Banner Cockpit
     const subHeroBanner = `
-      <section class="ons-subhero-banner is-konsinyasi ons-view-enter" aria-label="Executive Cockpit Konsinyasi">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-pill">
-              <span class="ons-subhero-dot" style="background:#6366F1"></span>
-              <span class="ons-subhero-pill-text font-bold">MITRA TITIP JUAL DISTRIBUTOR</span>
-              <span class="ons-subhero-pill-badge" style="background:rgba(99,102,241,0.15);color:#6366F1">Laku Baru Bayar</span>
+      <div class="ons-subhero-banner is-konsinyasi">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-4"/><circle cx="8" cy="12" r="2"/><path d="m21 12-2-2-2 2"/></svg>
             </div>
-            <h1 class="ons-subhero-title">${
-              konsSubTab === 'masuk' ? 'Konsinyasi Masuk (Penerimaan Titipan)' :
-              (konsSubTab === 'status' ? 'Status Konsinyasi &amp; Rekonsiliasi Laku-Bayar' :
-              (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang Titip)' :
-              (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi &amp; Audit Etalase' : 'Penerimaan Barang Konsinyasi Baru')))
-            }</h1>
-            <p class="ons-subhero-desc">${
-              konsSubTab === 'masuk' ? 'Pencatatan nota titip barang distributor rekanan. Stok fisik bertambah di kasir tanpa membentuk utang dagang di awal.' :
-              (konsSubTab === 'status' ? 'Prinsip Laku-Baru-Bayar: Tagihan supplier terbentuk secara otomatis HANYA ketika obat titipan berhasil laku terjual di Kasir POS.' :
-              (konsSubTab === 'retur' ? 'Pengembalian fisik sediaan titip jual yang tak laku atau menjelang expired date kepada pihak penitip tanpa risiko penalti.' :
-              (konsSubTab === 'stok' ? 'Audit ketersediaan fisik barang konsinyasi, lokasi rak penyimpanan apotek, dan pemantauan masa kadaluarsa (ED) batch.' :
-              'Form pencatatan penerimaan fisik barang konsinyasi baru ke persediaan apotek.')))
-            }</p>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
+                  konsSubTab === 'masuk' ? 'Konsinyasi Masuk (Penerimaan Titipan)' :
+                  (konsSubTab === 'status' ? 'Status Konsinyasi &amp; Rekonsiliasi Laku-Bayar' :
+                  (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang Titip)' :
+                  (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi &amp; Audit Etalase' : 'Penerimaan Barang Konsinyasi Baru')))
+                }</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">Laku Baru Bayar</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${
+                konsSubTab === 'masuk' ? 'Pencatatan nota titip barang distributor rekanan. Stok fisik bertambah di kasir tanpa membentuk utang dagang di awal.' :
+                (konsSubTab === 'status' ? 'Prinsip Laku-Baru-Bayar: Tagihan supplier terbentuk secara otomatis HANYA ketika obat titipan berhasil laku terjual di Kasir POS.' :
+                (konsSubTab === 'retur' ? 'Pengembalian fisik sediaan titip jual yang tak laku atau menjelang expired date kepada pihak penitip tanpa risiko penalti.' :
+                (konsSubTab === 'stok' ? 'Audit ketersediaan fisik barang konsinyasi, lokasi rak penyimpanan apotek, dan pemantauan masa kadaluarsa (ED) batch.' :
+                'Form pencatatan penerimaan fisik barang konsinyasi baru ke persediaan apotek.')))
+              }</p>
+            </div>
           </div>
-          <div class="ons-subhero-actions">
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input Konsinyasi</button>
             <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${knsDrafts.length})</button>
             <button type="button" onclick="window.printKonsinyasiStokA4()" class="ons-btn ons-btn-ghost text-xs font-bold">🖨️ Cetak Stok A4</button>
             <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
           </div>
         </div>
-      </section>
+      </div>
     `;
 
     let bodyHtml = '';
