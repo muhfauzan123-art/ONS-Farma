@@ -1880,16 +1880,54 @@
 
     const { allMeta, filtered } = _getFilteredMasterObatMeta();
     const obatCount = (st.masterObat || []).length;
+    const katCount = _getMasterKategoriList().length;
+    const satCount = _getMasterSatuanList().length;
+    const rakCount = _getMasterRakList().length;
+    const gudangCount = _getMasterGudangList().length;
+    const katPelCount = _getMasterKatPelangganList().length;
+    const pajakCount = _getMasterPajakList().length;
 
-    const tabs = [
-      { id: 'obat', label: 'Master Produk', count: obatCount },
-      { id: 'kategori', label: 'Master Kategori', count: _getMasterKategoriList().length },
-      { id: 'satuan', label: 'Master Satuan', count: _getMasterSatuanList().length },
-      { id: 'rak', label: 'Master Rak', count: _getMasterRakList().length },
-      { id: 'gudang', label: 'Master Gudang', count: _getMasterGudangList().length },
-      { id: 'kategori-pelanggan', label: 'Master Kategori Pelanggan', count: _getMasterKatPelangganList().length },
-      { id: 'pajak', label: 'Master Pajak', count: _getMasterPajakList().length }
-    ];
+    // 1. Modern Sub-Tab Navigation Bar (Workstation Standard)
+    const subTabHeader = `
+      <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Master Data">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setMasterTab('obat')" class="ons-dash-tab-btn ${masterTab === 'obat' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+            <span>Master Produk</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${masterTab === 'obat' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${obatCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterTab('kategori')" class="ons-dash-tab-btn ${masterTab === 'kategori' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+            <span>Master Kategori</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${masterTab === 'kategori' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${katCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterTab('satuan')" class="ons-dash-tab-btn ${masterTab === 'satuan' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            <span>Master Satuan</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${masterTab === 'satuan' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${satCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterTab('rak')" class="ons-dash-tab-btn ${masterTab === 'rak' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>
+            <span>Master Rak</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${masterTab === 'rak' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${rakCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterTab('gudang')" class="ons-dash-tab-btn ${masterTab === 'gudang' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+            <span>Master Gudang</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${masterTab === 'gudang' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${gudangCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterTab('kategori-pelanggan')" class="ons-dash-tab-btn ${masterTab === 'kategori-pelanggan' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Kategori Pelanggan</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${masterTab === 'kategori-pelanggan' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${katPelCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterTab('pajak')" class="ons-dash-tab-btn ${masterTab === 'pajak' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>
+            <span>Master Pajak</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${masterTab === 'pajak' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${pajakCount}</span>
+          </button>
+        </div>
+      </div>`;
 
     const exportBtns = (fnName) => S().canSeeFinancialCost() ? `
       <div class="ons-dd-wrap inline-block">
@@ -1903,15 +1941,22 @@
       </div>
     ` : '';
 
-    let pageTitle = 'Master Data Apotek';
-    let pageDesc = 'Kelola terpusat katalog Obat KFA, multi-satuan, referensi harga & rak gudang penyimpanan.';
+    const syncBtn = `<button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>`;
+
+    // 2. Dynamic Titles, Badges, Descriptions, and Action Buttons per Sub-Tab
+    let pageTitle = 'Master Produk Obat & Alkes (KFA)';
+    let pageBadge = 'KFA & NIE BPOM';
+    let pageDesc = 'Katalog induk sediaan obat, zat aktif, kode KFA SATUSEHAT, nomor izin edar BPOM, multi-satuan, dan harga jual.';
+    let dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`;
     let headerActions = '';
 
     if (masterTab === 'obat') {
-      pageTitle = 'Master Produk';
-      pageDesc = 'Kelola terpusat katalog Obat KFA, satuan multi-kemasan, referensi harga & rak penyimpanan.';
+      pageTitle = 'Master Produk Obat & Alkes (KFA)';
+      pageBadge = 'KFA & NIE BPOM';
+      pageDesc = 'Katalog induk sediaan obat, zat aktif, kode KFA SATUSEHAT, nomor izin edar BPOM, multi-satuan, dan harga jual.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn text-xs py-1.5 px-3 text-white font-bold" style="background:#0D9488" title="+ Tambah Obat Baru">+ Tambah Obat</button>
+        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Obat Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Obat</span></button>
         <div class="ons-dd-wrap inline-block">
           <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">⚙️ Alat &amp; Massal &#9662;</button>
           <div class="ons-dd-items hidden">
@@ -1929,44 +1974,85 @@
           </div>
         </div>
         ${exportBtns('exportMasterObat')}
+        ${syncBtn}
       `;
     } else if (masterTab === 'kategori') {
-      pageTitle = 'Daftar Kategori';
-      pageDesc = 'Katalog kategori produk/obat untuk mempermudah klasifikasi dan filter.';
+      pageTitle = 'Master Kategori Produk Farmasi';
+      pageBadge = 'Klasifikasi Etalase';
+      pageDesc = 'Pengelompokan sediaan farmasi (Obat Bebas, Keras, Herbal, Kosmetika, Alkes) untuk mempermudah klasifikasi etalase dan POS.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddKategoriModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Kategori</button>
+        <button type="button" onclick="window.openAddKategoriModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Kategori Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Kategori</span></button>
+        ${syncBtn}
       `;
     } else if (masterTab === 'satuan') {
-      pageTitle = 'Daftar Satuan';
-      pageDesc = 'Daftar satuan kemasan dasar dan multi-tingkat (Box, Strip, Tablet, dsb.).';
+      pageTitle = 'Master Satuan Kemasan & Konversi Multi-Tingkat';
+      pageBadge = 'Konversi Kemasan';
+      pageDesc = 'Standardisasi satuan kemasan dasar dan tingkat lanjut (Box, Strip, Botol, Vial, Tablet) untuk konversi POS dan pengadaan.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddSatuanModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Satuan Kemasan</button>
+        <button type="button" onclick="window.openAddSatuanModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Satuan Kemasan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Satuan Kemasan</span></button>
+        ${syncBtn}
       `;
     } else if (masterTab === 'rak') {
-      pageTitle = 'Daftar Rak Penyimpanan';
-      pageDesc = 'Lokasi penyimpanan fisik obat dan barang di apotek/gudang.';
+      pageTitle = 'Master Rak & Lokasi Penyimpanan Fisik';
+      pageBadge = 'Tata Letak Apotek';
+      pageDesc = 'Pemetaan lokasi rak penyimpanan fisik obat di ruang peracikan, etalase depan, atau chiller agar pengambilan obat cepat dan akurat.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddRakModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Rak</button>
+        <button type="button" onclick="window.openAddRakModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Rak Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Rak</span></button>
+        ${syncBtn}
       `;
     } else if (masterTab === 'gudang') {
-      pageTitle = 'Daftar Gudang';
-      pageDesc = 'Gudang utama, instalasi farmasi, dan cabang penyimpanan stok.';
+      pageTitle = 'Master Gudang & Cabang Penyimpanan Stok';
+      pageBadge = 'Multi-Gudang Sediaan';
+      pageDesc = 'Pengelolaan instalasi farmasi, gudang utama, gudang karantina, dan ruang penyimpanan khusus untuk pengendalian persediaan.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddGudangModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Gudang</button>
+        <button type="button" onclick="window.openAddGudangModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Gudang Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Gudang</span></button>
+        ${syncBtn}
       `;
     } else if (masterTab === 'kategori-pelanggan') {
-      pageTitle = 'Daftar Kategori Pelanggan';
-      pageDesc = 'Klasifikasi keanggotaan pelanggan (Umum, Terapi Rutin, Pasien Mitra, Karyawan, VIP).';
+      pageTitle = 'Kategori Pelanggan & Margin Khusus';
+      pageBadge = 'Segmentasi Pasien';
+      pageDesc = 'Klasifikasi kelompok pelanggan (Umum, Terapi Rutin, Pasien Mitra, Karyawan, VIP) dengan kebijakan diskon dan margin harga khusus.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddKatPelangganModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Tambah Kategori</button>
+        <button type="button" onclick="window.openAddKatPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Kategori Pelanggan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Kategori</span></button>
+        ${syncBtn}
       `;
     } else if (masterTab === 'pajak') {
-      pageTitle = 'Pajak';
-      pageDesc = 'Konfigurasi tarif pajak pertambahan nilai (PPN) atau non-pajak untuk transaksi.';
+      pageTitle = 'Master Tarif Pajak Pertambahan Nilai (PPN)';
+      pageBadge = 'Fiskal & PPN 11%';
+      pageDesc = 'Konfigurasi tarif PPN transaksi penjualan dan faktur pembelian, pembebasan pajak untuk sediaan tertentu, dan kepatuhan faktur pajak.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddPajakModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488">+ Pajak</button>
+        <button type="button" onclick="window.openAddPajakModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Tarif Pajak"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Pajak</span></button>
+        ${syncBtn}
       `;
     }
+
+    // 3. Executive Sub-Hero Banner Cockpit
+    const subHeroBanner = `
+      <div class="ons-subhero-banner is-master">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600/10 text-teal-600 border border-teal-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              ${dynamicIcon}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">${pageBadge}</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            ${headerActions}
+          </div>
+        </div>
+      </div>`;
 
     const bodyHtml = masterTab === 'kategori'
       ? _renderMasterKategoriSubTab()
@@ -1982,22 +2068,9 @@
                 ? _renderMasterPajakSubTab()
                 : _renderMasterObatSubTab(seeCost, allMeta, filtered))))));
 
-    return `<div class="space-y-3 ons-view-enter">
-      <div class="ons-md-shell space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="min-w-0">
-            <h1 class="text-base sm:text-lg font-extrabold tracking-tight">${S().esc(pageTitle)}</h1>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">${headerActions}</div>
-        </div>
-        <div class="ons-md-tabs" role="tablist" aria-label="Sub Menu Master Data">
-          ${tabs.map((tb) => `<button type="button" role="tab" aria-selected="${masterTab === tb.id ? 'true' : 'false'}" onclick="window.setMasterTab('${tb.id}')" class="ons-md-tab ${masterTab === tb.id ? 'active' : ''}">
-            <span>${S().esc(tb.label)}</span>
-            <span class="ons-md-tab-count">${tb.count}</span>
-          </button>`).join('')}
-        </div>
-      </div>
+    return `<div class="space-y-4 ons-view-enter">
+      ${subTabHeader}
+      ${subHeroBanner}
       ${bodyHtml}
     </div>`;
   }
@@ -2034,58 +2107,123 @@
     const dokCount = (st.masterDokter || []).length;
     const salesCount = _getSalesStaffList().length;
 
-    const tabs = [
-      ...(canSupplier ? [{ id: 'supplier', label: 'Supplier / PBF', count: supCount }] : []),
-      { id: 'pelanggan', label: 'Pelanggan / Pasien', count: pelCount },
-      { id: 'dokter', label: 'Dokter Mitra', count: dokCount },
-      { id: 'sales', label: 'Sales / Pelayan', count: salesCount }
-    ];
+    // 1. Sub-Tab Navigation Bar
+    const subTabHeader = `
+      <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Buku Kontak">
+        <div class="flex flex-wrap items-center gap-1.5">
+          ${canSupplier ? `
+          <button type="button" onclick="window.setKontakTab('supplier')" class="ons-dash-tab-btn ${kontakTab === 'supplier' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Supplier / PBF</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${kontakTab === 'supplier' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${supCount}</span>
+          </button>` : ''}
+          <button type="button" onclick="window.setKontakTab('pelanggan')" class="ons-dash-tab-btn ${kontakTab === 'pelanggan' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Pelanggan / Pasien</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${kontakTab === 'pelanggan' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${pelCount}</span>
+          </button>
+          <button type="button" onclick="window.setKontakTab('dokter')" class="ons-dash-tab-btn ${kontakTab === 'dokter' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 2a2 2 0 0 0-2 2v2H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2V4a2 2 0 0 0-2-2h-2Z"/><path d="M10 12h4"/><path d="M12 10v4"/></svg>
+            <span>Dokter Mitra</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${kontakTab === 'dokter' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${dokCount}</span>
+          </button>
+          <button type="button" onclick="window.setKontakTab('sales')" class="ons-dash-tab-btn ${kontakTab === 'sales' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m19 8 2 2-4 4"/></svg>
+            <span>Sales / Pelayan</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${kontakTab === 'sales' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${salesCount}</span>
+          </button>
+        </div>
+      </div>`;
 
     const exportBtns = (fnName) => `
-      <button onclick="window.${fnName}('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-      <button onclick="window.${fnName}('csv')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">CSV</button>
-      <button onclick="window.${fnName}('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">PDF</button>
+      <div class="ons-dd-wrap inline-block">
+        <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📤 Ekspor &#9662;</button>
+        <div class="ons-dd-items hidden">
+          <div class="ons-float-hdr">Format Unduhan</div>
+          <button type="button" onclick="window.${fnName}('xlsx')" class="ons-float-item"><span>📗</span><span>Export Excel (.xlsx)</span></button>
+          <button type="button" onclick="window.${fnName}('csv')" class="ons-float-item"><span>📄</span><span>Export CSV</span></button>
+          <button type="button" onclick="window.${fnName}('pdf')" class="ons-float-item"><span>📕</span><span>Export PDF</span></button>
+        </div>
+      </div>
     `;
 
-    let pageTitle = 'Buku Kontak Apotek';
-    let pageDesc = 'Direktori terpadu Supplier PBF, Pelanggan Apotek, Dokter Mitra & Sales / Tenaga Pelayan.';
+    const syncBtn = `<button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>`;
+
+    let pageTitle = 'Master Supplier & Pedagang Besar Farmasi (PBF)';
+    let pageBadge = 'CDOB Terdaftar';
+    let pageDesc = 'Direktori rekanan PBF resmi, izin CDOB, nomor faktur/tagihan, lead-time pengiriman, dan kontak WhatsApp sales.';
+    let dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
     let headerActions = '';
 
     if (kontakTab === 'supplier') {
-      pageTitle = 'Daftar Supplier PBF';
-      pageDesc = 'Direktori pedagang besar farmasi (PBF) resmi dengan izin CDOB & kontak WhatsApp.';
+      pageTitle = 'Master Supplier & Pedagang Besar Farmasi (PBF)';
+      pageBadge = 'CDOB Terdaftar';
+      pageDesc = 'Direktori rekanan PBF resmi, izin CDOB, nomor faktur/tagihan, lead-time pengiriman, dan kontak WhatsApp sales.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
       headerActions = `
-        <button onclick="window.openSupplierPbfModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Supplier Baru</button>
-        <button onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Buat SP</button>
+        <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Supplier Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Supplier Baru</span></button>
+        <button type="button" onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
+        <button type="button" onclick="window.navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📋 Buat SP</button>
         ${exportBtns('exportMasterSupplier')}
+        ${syncBtn}
       `;
     } else if (kontakTab === 'pelanggan') {
-      pageTitle = 'Daftar Pelanggan';
-      pageDesc = 'Buku kontak pelanggan apotek, data rekam medis, status keanggotaan & pantauan terapi.';
+      pageTitle = 'Buku Kontak Pelanggan & Pasien Apotek';
+      pageBadge = 'Data Rekam Medis';
+      pageDesc = 'Database pasien dan pelanggan apotek, riwayat terapi rutin, nomor WhatsApp KIE, dan kartu loyalitas keanggotaan.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
       headerActions = `
-        <button onclick="window.openMasterPelangganModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Pelanggan Baru</button>
-        <button onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Pantau Terapi Rutin</button>
+        <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Pelanggan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Pelanggan Baru</span></button>
+        <button type="button" onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
+        <button type="button" onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">🩺 Pantau Terapi</button>
         ${exportBtns('exportMasterPelanggan')}
+        ${syncBtn}
       `;
     } else if (kontakTab === 'dokter') {
-      pageTitle = 'Daftar Dokter Mitra';
-      pageDesc = 'Direktori dokter penulis resep, nomor SIP, klinik mitra & integrasi SatuSehat.';
+      pageTitle = 'Master Dokter Penulis Resep & Mitra Medis';
+      pageBadge = 'SIP & SatuSehat ID';
+      pageDesc = 'Direktori dokter penulis resep, nomor Surat Izin Praktik (SIP), faskes/klinik mitra, dan integrasi SATUSEHAT ID.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 2a2 2 0 0 0-2 2v2H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2V4a2 2 0 0 0-2-2h-2Z"/><path d="M10 12h4"/><path d="M12 10v4"/></svg>`;
       headerActions = `
-        <button onclick="window.openMasterDokterModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Dokter Baru</button>
-        <button onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Import</button>
-        <button onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Antrean E-Resep</button>
+        <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Dokter Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Dokter Baru</span></button>
+        <button type="button" onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
+        <button type="button" onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">🧾 Antrean E-Resep</button>
         ${exportBtns('exportMasterDokter')}
+        ${syncBtn}
       `;
     } else {
-      pageTitle = 'Daftar Sales & Pelayan';
-      pageDesc = 'Daftar tenaga kasir & sales pelayan apotek untuk komisi dan pencatatan transaksi.';
+      pageTitle = 'Daftar Tenaga Pelayan Kasir & Sales Apotek';
+      pageBadge = 'Tenaga Pelayan Apotek';
+      pageDesc = 'Pencatatan tenaga pelayan kasir, asisten apoteker (TTK), perhitungan poin omzet transaksi, dan performa kasir.';
+      dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m19 8 2 2-4 4"/></svg>`;
       headerActions = `
-        <button onclick="window.openMasterSalesModal('')" class="ons-btn text-xs py-1.5 px-2.5 text-white font-medium" style="background:#0D9488"><i class="fa fa-plus mr-1"></i> + Sales/Pelayan Baru</button>
+        <button type="button" onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Sales/Pelayan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Sales/Pelayan Baru</span></button>
         ${exportBtns('exportMasterSales')}
+        ${syncBtn}
       `;
     }
+
+    // 2. Executive Sub-Hero Banner Cockpit
+    const subHeroBanner = `
+      <div class="ons-subhero-banner is-kontak">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-sky-600/10 text-sky-600 border border-sky-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              ${dynamicIcon}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">${pageBadge}</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            ${headerActions}
+          </div>
+        </div>
+      </div>`;
 
     const bodyHtml = kontakTab === 'supplier'
       ? _renderMasterSupplierSubTab()
@@ -2095,22 +2233,9 @@
           ? _renderMasterDokterSubTab()
           : _renderMasterSalesSubTab()));
 
-    return `<div class="space-y-3 ons-view-enter">
-      <div class="ons-md-shell space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="min-w-0">
-            <h1 class="text-base sm:text-lg font-extrabold tracking-tight">${S().esc(pageTitle)}</h1>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">${headerActions}</div>
-        </div>
-        <div class="ons-md-tabs" role="tablist" aria-label="Sub Menu Kontak">
-          ${tabs.map((tb) => `<button type="button" role="tab" aria-selected="${kontakTab === tb.id ? 'true' : 'false'}" onclick="window.setKontakTab('${tb.id}')" class="ons-md-tab ${kontakTab === tb.id ? 'active' : ''}">
-            <span>${S().esc(tb.label)}</span>
-            <span class="ons-md-tab-count">${tb.count}</span>
-          </button>`).join('')}
-        </div>
-      </div>
+    return `<div class="space-y-4 ons-view-enter">
+      ${subTabHeader}
+      ${subHeroBanner}
       ${bodyHtml}
     </div>`;
   }
@@ -2125,6 +2250,7 @@
     global.renderActiveView();
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
+
 
   /* ==========================================================================
      MASTER DATA: KATEGORI, SATUAN, RAK, GUDANG, KATEGORI PELANGGAN & PAJAK CRUD
