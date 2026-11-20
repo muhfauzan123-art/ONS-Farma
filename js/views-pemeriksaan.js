@@ -955,7 +955,11 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-2xl bg-cyan-600/10 text-cyan-600 border border-cyan-600/20 flex items-center justify-center shrink-0 shadow-sm">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              ${subTab === 'tensi' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>` :
+                (subTab === 'gula' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>` :
+                (subTab === 'kolesterol' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/></svg>` :
+                (subTab === 'asam_urat' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><polyline points="9 11 12 14 22 4"/></svg>` :
+                `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`)))}
             </div>
             <div>
               <div class="flex items-center gap-2">
@@ -984,7 +988,13 @@
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="window.openCatatPemeriksaanModal ? window.openCatatPemeriksaanModal() : (window.catatPemeriksaan ? window.catatPemeriksaan() : null)" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Catat Pemeriksaan</button>
+            <button type="button" onclick="window.openCatatPemeriksaanModal ? window.openCatatPemeriksaanModal('${subTab}') : (window.catatPemeriksaan ? window.catatPemeriksaan('${subTab}') : null)" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">${
+              subTab === 'tensi' ? '+ Catat Tensi Darah' :
+              (subTab === 'gula' ? '+ Catat Gula Darah' :
+              (subTab === 'kolesterol' ? '+ Catat Kolesterol' :
+              (subTab === 'asam_urat' ? '+ Catat Asam Urat' :
+              '+ Catat Pemeriksaan')))
+            }</button>
             <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
           </div>
         </div>
