@@ -9431,42 +9431,42 @@
     } catch (e) {}
 
     return `
-      <!-- 1. EXECUTIVE KPI METRIC CARDS DEFECTA -->
+      <!-- 1. EXECUTIVE GLANCE TILES DEFECTA -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <button type="button" onclick="window.setDefectaStatusFilter('SEMUA')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">TOTAL PERLU RESTOK</span>
-            <span class="text-sm">⚠️</span>
+        <div onclick="window.setDefectaStatusFilter('SEMUA')" class="ons-glance-tile cursor-pointer transition-all ${defectaStatusFilter === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label">TOTAL PERLU RESTOK</span>
+            <span class="ons-glance-tile-badge badge-blue">Ambang ROP</span>
           </div>
-          <div class="text-2xl font-extrabold font-mono-num text-slate-900 dark:text-white mt-1">${lowStock.length} <span class="text-xs font-normal text-slate-500">Item</span></div>
-          <div class="text-[10.5px] text-slate-500 mt-0.5">Ambang ROP &amp; Buffer Minimum</div>
-        </button>
+          <div class="ons-glance-tile-value font-mono-num text-slate-900 dark:text-white mt-1">${lowStock.length} <span class="text-xs font-normal text-slate-500">Item</span></div>
+          <div class="ons-glance-tile-hint">Di bawah titik pesan ulang ROP</div>
+        </div>
 
-        <button type="button" onclick="window.setDefectaStatusFilter('KOSONG')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'KOSONG' ? 'ring-2 ring-red-500 shadow-sm' : 'hover:border-red-400'}">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-red-600 dark:text-red-400">STOK HABIS (OOS)</span>
-            <span class="text-sm">🔴</span>
+        <div onclick="window.setDefectaStatusFilter('KOSONG')" class="ons-glance-tile cursor-pointer transition-all ${defectaStatusFilter === 'KOSONG' ? 'ring-2 ring-rose-500 shadow-sm' : 'hover:border-rose-400'}">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label text-rose-600 dark:text-rose-400">STOK HABIS (OOS)</span>
+            <span class="ons-glance-tile-badge badge-rose">Prioritas Darurat</span>
           </div>
-          <div class="text-2xl font-extrabold font-mono-num text-red-600 mt-1">${emptyCount} <span class="text-xs font-normal text-red-500">Item</span></div>
-          <div class="text-[10.5px] text-red-600 dark:text-red-400 mt-0.5">Prioritas Terbitkan SP Darurat</div>
-        </button>
+          <div class="ons-glance-tile-value font-mono-num text-rose-600 mt-1">${emptyCount} <span class="text-xs font-normal text-rose-500">Item</span></div>
+          <div class="ons-glance-tile-hint">Stok fisik kosong (0 unit)</div>
+        </div>
 
-        <button type="button" onclick="window.setDefectaStatusFilter('DIBAWAH_MIN')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${defectaStatusFilter === 'DIBAWAH_MIN' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400">MENIPIS &le; BUFFER MIN</span>
-            <span class="text-sm">🟡</span>
+        <div onclick="window.setDefectaStatusFilter('DIBAWAH_MIN')" class="ons-glance-tile cursor-pointer transition-all ${defectaStatusFilter === 'DIBAWAH_MIN' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label text-amber-600 dark:text-amber-400">MENIPIS &le; BUFFER MIN</span>
+            <span class="ons-glance-tile-badge badge-amber">Buffer Kritis</span>
           </div>
-          <div class="text-2xl font-extrabold font-mono-num text-amber-600 mt-1">${belowMinCount} <span class="text-xs font-normal text-amber-500">Item</span></div>
-          <div class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-0.5">Cadangan fisik hampir habis</div>
-        </button>
+          <div class="ons-glance-tile-value font-mono-num text-amber-600 mt-1">${belowMinCount} <span class="text-xs font-normal text-amber-500">Item</span></div>
+          <div class="ons-glance-tile-hint">Cadangan fisik hampir habis</div>
+        </div>
 
-        <div class="ons-card p-3.5 text-left">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400">ESTIMASI NILAI PO</span>
-            <span class="text-sm">💰</span>
+        <div onclick="window.setDefectaStatusFilter('SEMUA')" class="ons-glance-tile cursor-pointer transition-all hover:border-emerald-400">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label text-emerald-600 dark:text-emerald-400">ESTIMASI NILAI PO</span>
+            <span class="ons-glance-tile-badge badge-emerald">Kebutuhan Dana</span>
           </div>
-          <div class="text-xl font-extrabold font-mono-num text-blue-700 dark:text-blue-300 mt-1">${S().rp(estTotalPo)}</div>
-          <div class="text-[10.5px] text-slate-500 mt-0.5">${lowStock.length} produk siap dipesan</div>
+          <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400 mt-1">${S().rp(estTotalPo)}</div>
+          <div class="ons-glance-tile-hint">${lowStock.length} produk siap dipesan</div>
         </div>
       </div>
 
@@ -10663,57 +10663,92 @@
       return S().isCriticalStock ? S().isCriticalStock(o, s) : s <= 0;
     });
 
-    return `<div class="space-y-5 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="badge-bpom bpom-bebas">PEMBELIAN &amp; PENGADAAN APOTEK</span>
-            <span class="text-xs" style="color:var(--ons-text-soft)">CDOB Kompatibel &bull; BPOM Terintegrasi</span>
-          </div>
-          <h1 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">${
-            fakturTab === 'rencana' ? 'Rencana Pembelian' :
-            (fakturTab === 'sp' ? 'Pesanan Pembelian' :
-            (fakturTab === 'input' ? 'Terima Faktur Pembelian (GRN)' :
-            (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF)' :
-            (fakturTab === 'hutang' ? 'Pembayaran Utang Usaha' :
-            (fakturTab === 'konsinyasi' ? 'Konsinyasi Masuk' : 'Faktur Pembelian')))))
-          }</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${
-            fakturTab === 'rencana' ? 'Perencanaan kebutuhan pengadaan apotek, analisa ambang ROP buffer stock, defecta, penawaran sales, dan konversi ke Surat Pesanan BPOM.' :
-            (fakturTab === 'sp' ? 'Pengelolaan Surat Pesanan (SP) regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak A4, dan pelacakan status.' :
-            (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), perhitungan DPP/PPN, dan update stok.' :
-            (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, Kartu Stok &amp; hutang otomatis disesuaikan.' :
-            (fakturTab === 'hutang' ? 'Monitoring saldo hutang dagang supplier rekanan PBF, jatuh tempo tempo/kredit, pencatatan cicilan &amp; pelunasan faktur, dan bukti pengeluaran kas.' :
-            (fakturTab === 'konsinyasi' ? 'Titip jual distributor, mutasi stok konsinyasi, pelacakan penjualan laku bayar, dan settlement tagihan distributor.' :
-            'Penerimaan fisik barang PBF, scan OCR/PDF faktur, pencatatan batch &amp; tanggal kadaluarsa (FEFO), perhitungan DPP/PPN, dan pembentukan Utang Usaha.')))))
-          }</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          ${(fakturTab === 'rencana') ? `
-            <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📋 Usulan Rencana (${allPlans.length})</button>
-            <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📦 Defecta ROP (${lowStockDefecta.length})</button>
-            <button type="button" onclick="window.openRopCalculatorModal()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3 shadow-sm flex items-center gap-1.5">🧮 Kalkulator ROP</button>
-            <button type="button" onclick="window.openPenawaranSalesModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Penawaran Sales</button>
-            <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">+ Rencana Baru</button>
-            <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs font-bold py-1.5 px-3 shadow-sm">⚡ Pesanan Otomatis</button>
-          ` : (fakturTab === 'input') ? `
-            <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-bold">← Kembali ke Daftar Faktur</button>
-          ` : (fakturTab === 'hutang') ? `
-            <button type="button" onclick="window.setHutangProcView('TAGIHAN')" class="ons-btn ${hutangProcView === 'TAGIHAN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📋 Tagihan Utang Usaha</button>
-            <button type="button" onclick="window.setHutangProcView('RIWAYAT')" class="ons-btn ${hutangProcView === 'RIWAYAT' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1.5 px-3">📜 Riwayat Pembayaran</button>
-            <button type="button" onclick="window.openCatatUtangModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 font-bold shadow-sm">+ Catat Utang Manual</button>
-          ` : ''}
-
-          <div class="ons-tab-bar overflow-x-auto max-w-full">
-            <button onclick="window.setFakturTab('rencana')" class="ons-tab-btn ${fakturTab === 'rencana' || fakturTab === 'defecta' ? 'active font-bold' : ''}">📋 Rencana Pembelian (${allPlans.length + lowStockDefecta.length})</button>
-            <button onclick="window.setFakturTab('sp')" class="ons-tab-btn ${fakturTab === 'sp' ? 'active font-bold' : ''}">📄 Pesanan Pembelian (${(st.suratPesanan || []).length})</button>
-            <button onclick="window.setFakturTab('faktur')" class="ons-tab-btn ${fakturTab === 'faktur' || fakturTab === 'input' || fakturTab === 'daftar' || fakturTab === 'harga' ? 'active font-bold' : ''}">📥 Faktur Pembelian (${allFaktur.length})</button>
-            <button onclick="window.setFakturTab('retur')" class="ons-tab-btn ${fakturTab === 'retur' ? 'active font-bold' : ''}">🔄 Retur Pembelian (${nearEdBatches.length})</button>
-            
-            <button onclick="window.setFakturTab('konsinyasi')" class="ons-tab-btn ${fakturTab === 'konsinyasi' ? 'active font-bold' : ''}">🤝 Konsinyasi Masuk</button>
-          </div>
+    // 1. Executive Sub-Menu Header Navigation (Cockpit Bar)
+    const subTabHeader = `
+      <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Pembelian &amp; Pengadaan Apotek">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setFakturTab('rencana')" class="ons-dash-tab-btn ${fakturTab === 'rencana' || fakturTab === 'defecta' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Rencana Pembelian</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'rencana' || fakturTab === 'defecta' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${allPlans.length}</span>
+            ${lowStockDefecta.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white animate-pulse font-mono-num">${lowStockDefecta.length} Defecta</span>` : ''}
+          </button>
+          <button type="button" onclick="window.setFakturTab('sp')" class="ons-dash-tab-btn ${fakturTab === 'sp' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h6"/></svg>
+            <span>Pesanan Pembelian (SP)</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'sp' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${(st.suratPesanan || []).length}</span>
+            ${(st.suratPesanan || []).filter(s => !s.status_sp || s.status_sp === 'MENUNGGU_BARANG' || s.status_sp === 'TERBIT').length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white animate-pulse font-mono-num">${(st.suratPesanan || []).filter(s => !s.status_sp || s.status_sp === 'MENUNGGU_BARANG' || s.status_sp === 'TERBIT').length} Menunggu</span>` : ''}
+          </button>
+          <button type="button" onclick="window.setFakturTab('faktur')" class="ons-dash-tab-btn ${fakturTab === 'faktur' || fakturTab === 'input' || fakturTab === 'daftar' || fakturTab === 'harga' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>Faktur Pembelian</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'faktur' || fakturTab === 'input' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${allFaktur.length}</span>
+            ${dueSoonCount > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-500 text-white animate-pulse font-mono-num">${dueSoonCount} Tempo &le;7h</span>` : ''}
+          </button>
+          <button type="button" onclick="window.setFakturTab('retur')" class="ons-dash-tab-btn ${fakturTab === 'retur' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            <span>Retur Pembelian (BAR)</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'retur' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${returHistory.length}</span>
+            ${nearEdBatches.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white animate-pulse font-mono-num">${nearEdBatches.length} Near-ED</span>` : ''}
+          </button>
         </div>
       </div>
+    `;
+
+    // 2. Executive Sub-Hero Banner Cockpit
+    const subHeroBanner = `
+      <section class="ons-subhero-banner is-pembelian ons-view-enter" aria-label="Executive Cockpit Pembelian">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-pill">
+              <span class="ons-subhero-dot" style="background:#0284C7"></span>
+              <span class="ons-subhero-pill-text font-bold">PENGADAAN FARMASI CDOB</span>
+              <span class="ons-subhero-pill-badge" style="background:rgba(2,132,199,0.15);color:#0284C7">BPOM Terintegrasi</span>
+            </div>
+            <h1 class="ons-subhero-title">${
+              fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta' :
+              (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM' :
+              (fakturTab === 'input' ? 'Penerimaan Faktur PBF (GRN)' :
+              (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF)' : 'Faktur Pembelian &amp; Penerimaan PBF')))
+            }</h1>
+            <p class="ons-subhero-desc">${
+              fakturTab === 'rencana' ? 'Perencanaan kebutuhan stok obat apotek, analisa ambang ROP buffer stock, defecta cerdas, dan kalkulasi penawaran sales distributor.' :
+              (fakturTab === 'sp' ? 'Pengelolaan pesanan resmi regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak form A4, dan pelacakan status kiriman PBF.' :
+              (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), dan pembentukan hutang dagang.' :
+              (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, kartu stok, dan nota kredit otomatis disesuaikan.' :
+              'Monitoring faktur resmi PBF, verifikasi DPP/PPN, histori penerimaan batch, serta pelacakan sisa hutang dagang dan termin jatuh tempo.')))
+            }</p>
+          </div>
+          <div class="ons-subhero-actions">
+            ${fakturTab === 'rencana' ? `
+              <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs">📋 Usulan (${allPlans.length})</button>
+              <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs">📦 Defecta (${lowStockDefecta.length})</button>
+              <button type="button" onclick="window.openRopCalculatorModal()" class="ons-btn ons-btn-ghost text-xs">🧮 Hitung ROP</button>
+              <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs">+ Usulan Baru</button>
+              <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">⚡ Buat SP Otomatis</button>
+            ` : fakturTab === 'sp' ? `
+              <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Surat Pesanan (SP)</button>
+              <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
+            ` : fakturTab === 'input' ? `
+              <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs font-bold">&larr; Daftar Faktur</button>
+              <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-primary text-xs font-bold">Upload &amp; Scan Faktur</button>
+            ` : fakturTab === 'retur' ? `
+              <button type="button" onclick="window.openCreateReturPembelianModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Retur Pembelian</button>
+              <button type="button" onclick="window.openReturDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${returDrafts.length})</button>
+              <button type="button" onclick="window.exportReturHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
+            ` : `
+              <button type="button" onclick="window.setFakturTab('input')" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Terima Faktur (GRN)</button>
+              <button type="button" onclick="window.openFakturDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${fakturDrafts.length})</button>
+              <button type="button" onclick="window.exportFakturList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
+            `}
+          </div>
+        </div>
+      </section>
+    `;
+
+    return `<div class="space-y-4 ons-view-enter">
+      ${subTabHeader}
+      ${subHeroBanner}
 
       ${(fakturTab === 'rencana' || fakturTab === 'defecta' || fakturTab === 'order') ? (rencanaSubMode === 'DEFECTA' ? _renderDefectaTabContent(st) : `
         <div class="space-y-4">
@@ -10722,39 +10757,39 @@
             <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="ons-btn text-xs py-1 px-3 ${rencanaSubMode === 'RENCANA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📋 Daftar Rencana Usulan (${allPlans.length})</button>
             <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="ons-btn text-xs py-1 px-3 ${rencanaSubMode === 'DEFECTA' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📦 Defecta &amp; Ambang ROP (${lowStockDefecta.length})</button>
           </div>
-          <!-- 4 Executive KPI Cards Rencana Pembelian -->
+          <!-- 4 Executive Glance Tiles Rencana Pembelian -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="ons-card p-3.5 border-l-4 border-l-blue-500">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Item Rencana</span>
-                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <div class="ons-glance-tile">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">TOTAL USULAN RENCANA</span>
+                <span class="ons-glance-tile-badge badge-blue">Defecta &amp; Staf</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1">${allPlans.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Item</span></div>
-              <div class="text-[10px]" style="color:var(--ons-text-soft)">Dari defecta &amp; usulan staf</div>
+              <div class="ons-glance-tile-value font-mono-num">${allPlans.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Item</span></div>
+              <div class="ons-glance-tile-hint">Kebutuhan restok apotek</div>
             </div>
-            <div class="ons-card p-3.5 border-l-4 border-l-emerald-500">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Estimasi Nilai Total</span>
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div class="ons-glance-tile">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">ESTIMASI NILAI PENGADAAN</span>
+                <span class="ons-glance-tile-badge badge-emerald">Modal Pembelian</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1 text-emerald-600 dark:text-emerald-400">${S().rp(totalPlansRp)}</div>
-              <div class="text-[10px]" style="color:var(--ons-text-soft)">Kebutuhan modal pengadaan</div>
+              <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalPlansRp)}</div>
+              <div class="ons-glance-tile-hint">Estimasi total pengadaan</div>
             </div>
-            <div class="ons-card p-3.5 border-l-4 border-l-indigo-500">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Item Dipilih Buat SP</span>
-                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+            <div class="ons-glance-tile ${selectedPlans.length > 0 ? 'ring-2 ring-blue-500 shadow-sm' : ''}">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">PRODUK SIAP JADI SP</span>
+                <span class="ons-glance-tile-badge ${selectedPlans.length > 0 ? 'badge-blue' : 'badge-neutral'}">${selectedPlans.length > 0 ? 'Dicentang' : 'Pilih Produk'}</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1 ${selectedPlans.length > 0 ? 'text-indigo-600 dark:text-indigo-400' : ''}">${selectedPlans.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Item</span></div>
-              <div class="text-[10px]" style="color:var(--ons-text-soft)">Siap di-generate jadi SP resmi</div>
+              <div class="ons-glance-tile-value font-mono-num ${selectedPlans.length > 0 ? 'text-blue-600 dark:text-blue-400' : ''}">${selectedPlans.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Item</span></div>
+              <div class="ons-glance-tile-hint">Siap generate ke SP resmi BPOM</div>
             </div>
-            <div class="ons-card p-3.5 border-l-4 border-l-amber-500">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Nilai SP Terpilih</span>
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <div class="ons-glance-tile">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">NILAI SP TERPILIH</span>
+                <span class="ons-glance-tile-badge badge-amber">PO Siap Kirim</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1 text-amber-600 dark:text-amber-400">${S().rp(selectedPlansRp)}</div>
-              <div class="text-[10px]" style="color:var(--ons-text-soft)">Total PO siap dikirim ke PBF</div>
+              <div class="ons-glance-tile-value font-mono-num text-amber-600 dark:text-amber-400">${S().rp(selectedPlansRp)}</div>
+              <div class="ons-glance-tile-hint">Total pesanan yang akan dibuat</div>
             </div>
           </div>
           ${!planBannerDismissed ? `
@@ -11165,7 +11200,43 @@
         </div>
       ` : fakturTab === 'harga' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : fakturTab === 'retur' ? `
         <div class="space-y-4">
-          <div class="ons-card p-4 space-y-3">
+          <!-- 4 Executive Glance Tiles Retur Pembelian -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="ons-glance-tile cursor-pointer" onclick="window.setReturFilterMode('ALL')">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">TOTAL BATCH TERPANTAU</span>
+                <span class="ons-glance-tile-badge badge-blue">Batch Aktif</span>
+              </div>
+              <div class="ons-glance-tile-value font-mono-num">${allActiveBatches.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Batch</span></div>
+              <div class="ons-glance-tile-hint">Dapat diproses retur bila rusak/recall</div>
+            </div>
+            <div class="ons-glance-tile cursor-pointer ${nearEdBatches.length > 0 ? 'ring-2 ring-amber-500 shadow-sm' : ''}" onclick="window.setReturFilterMode('NEAR_ED')">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label text-amber-600 dark:text-amber-400">KRITIS NEAR-ED (&le;180 HARI)</span>
+                <span class="ons-glance-tile-badge badge-amber">Tukar Guling PBF</span>
+              </div>
+              <div class="ons-glance-tile-value font-mono-num text-amber-600">${nearEdBatches.length} <span class="text-xs font-normal text-amber-500">Batch</span></div>
+              <div class="ons-glance-tile-hint">Prioritas retur sebelum kadaluarsa</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">TOTAL RIWAYAT RETUR (BAR)</span>
+                <span class="ons-glance-tile-badge badge-rose">BAR Terbit</span>
+              </div>
+              <div class="ons-glance-tile-value font-mono-num">${filteredReturHistory.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Transaksi</span></div>
+              <div class="ons-glance-tile-hint">Pengembalian resmi ke supplier</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">NILAI RETUR DISETUJUI</span>
+                <span class="ons-glance-tile-badge badge-emerald">Potong Hutang PBF</span>
+              </div>
+              <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(filteredReturHistory.reduce((s, r) => s + r.total_retur, 0))}</div>
+              <div class="ons-glance-tile-hint">Pengurangan saldo hutang dagang</div>
+            </div>
+          </div>
+
+          <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 class="font-bold text-sm">Radar &amp; Pembuatan BAR-PBF (Retur Pembelian)</h3>
@@ -11243,37 +11314,37 @@
       ` : fakturTab === 'konsinyasi' ? renderKonsinyasiTabHtml(st) : fakturTab === 'hutang' ? _renderPembayaranUtangTab(st) : fakturPilihanData === 'MARGIN' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : `
         <div class="space-y-4">
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="ons-card p-3.5 border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturListFilter('SEMUA')">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Total Pembelian Faktur</span>
-                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturListFilter('SEMUA')">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">TOTAL PEMBELIAN FAKTUR</span>
+                <span class="ons-glance-tile-badge badge-blue">Semua Faktur</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1">${S().rp(totalPembelianNetto)}</div>
-              <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">${allFaktur.length} Faktur tercatat (Klik: Semua)</div>
+              <div class="ons-glance-tile-value font-mono-num">${S().rp(totalPembelianNetto)}</div>
+              <div class="ons-glance-tile-hint">${allFaktur.length} Faktur resmi tercatat</div>
             </div>
-            <div class="ons-card p-3.5 border-l-4 ${totalSisaHutang > 0 ? 'border-l-red-500 ring-1 ring-red-500/20' : 'border-l-emerald-500'} cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturListFilter('BELUM_LUNAS')">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Sisa Hutang Dagang PBF</span>
-                <span class="w-2 h-2 rounded-full ${totalSisaHutang > 0 ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}"></span>
+            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all ${totalSisaHutang > 0 ? 'ring-2 ring-rose-500 shadow-sm' : ''}" onclick="window.setFakturListFilter('BELUM_LUNAS')">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : ''}">SISA HUTANG DAGANG PBF</span>
+                <span class="ons-glance-tile-badge ${totalSisaHutang > 0 ? 'badge-rose' : 'badge-emerald'}">${totalSisaHutang > 0 ? 'Belum Lunas' : 'Lunas 100%'}</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1 ${totalSisaHutang > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(totalSisaHutang)}</div>
-              <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Filter Belum Lunas &bull; <a href="javascript:void(0)" onclick="event.stopPropagation();window.navigateView('finance','hutang')" class="text-blue-600 font-bold hover:underline">&rarr; Kelola di Keuangan</a></div>
+              <div class="ons-glance-tile-value font-mono-num ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(totalSisaHutang)}</div>
+              <div class="ons-glance-tile-hint">Kewajiban bayar distributor</div>
             </div>
-            <div class="ons-card p-3.5 border-l-4 ${dueSoonCount > 0 ? 'border-l-amber-500 ring-1 ring-amber-500/20' : 'border-l-emerald-500'} cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturListFilter('JATUH_TEMPO')">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Jatuh Tempo &le; 7 Hari</span>
-                <span class="w-2 h-2 rounded-full ${dueSoonCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}"></span>
+            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all ${dueSoonCount > 0 ? 'ring-2 ring-amber-500 shadow-sm' : ''}" onclick="window.setFakturListFilter('JATUH_TEMPO')">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">JATUH TEMPO &le; 7 HARI</span>
+                <span class="ons-glance-tile-badge ${dueSoonCount > 0 ? 'badge-amber' : 'badge-emerald'}">${dueSoonCount > 0 ? 'Mendesak' : 'Aman'}</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1 ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${dueSoonCount} <span class="text-xs font-normal">Faktur</span></div>
-              <div class="text-[10px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">Nominal: ${S().rp(dueSoonNominal)}</div>
+              <div class="ons-glance-tile-value font-mono-num ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${dueSoonCount} <span class="text-xs font-normal">Faktur</span></div>
+              <div class="ons-glance-tile-hint">Nominal: <b class="font-mono-num">${S().rp(dueSoonNominal)}</b></div>
             </div>
-            <div class="ons-card p-3.5 border-l-4 border-l-indigo-500 cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturTab('konsinyasi')">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Konsinyasi Belum Settle</span>
-                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturTab('konsinyasi')">
+              <div class="ons-glance-tile-header">
+                <span class="ons-glance-tile-label">KONSINYASI BELUM SETTLE</span>
+                <span class="ons-glance-tile-badge badge-indigo">Titip Jual</span>
               </div>
-              <div class="text-xl font-black font-mono-num mt-1 text-indigo-600 dark:text-indigo-400">${S().rp(konsPendingNominal)}</div>
-              <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Titip jual &rarr; Klik buka tab</div>
+              <div class="ons-glance-tile-value font-mono-num text-indigo-600 dark:text-indigo-400">${S().rp(konsPendingNominal)}</div>
+              <div class="ons-glance-tile-hint">Titip jual distributor rekanan</div>
             </div>
           </div>
 

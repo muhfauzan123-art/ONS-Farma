@@ -267,13 +267,16 @@
 
     const needAdjustItems = evaluated.filter((x) => x.calc.needsAction && x.calc.saranUmum > x.calc.hargaUmum);
 
-    const kpiFilterBtn = (val, title, count, sub, cls) => {
+    const kpiFilterBtn = (val, title, count, sub, cls, badgeText, badgeClass) => {
       const active = priceFilterStatus === val;
-      return `<button type="button" onclick="window.setPriceFilterStatus('${val}')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${active ? 'ring-2 ring-blue-500' : ''}">
-        <div class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">${title}</div>
-        <div class="text-2xl font-extrabold font-mono-num mt-0.5 ${cls}">${count}</div>
-        <div class="text-[11px] mt-0.5 truncate" style="color:var(--ons-text-soft)">${sub}</div>
-      </button>`;
+      return `<div onclick="window.setPriceFilterStatus('${val}')" class="ons-glance-tile cursor-pointer transition-all ${active ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
+        <div class="ons-glance-tile-header">
+          <span class="ons-glance-tile-label ${active ? 'text-blue-600 font-bold' : ''}">${title}</span>
+          <span class="ons-glance-tile-badge ${badgeClass || 'badge-blue'}">${badgeText || 'Filter'}</span>
+        </div>
+        <div class="ons-glance-tile-value font-mono-num mt-1 ${cls}">${count} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+        <div class="ons-glance-tile-hint truncate">${sub}</div>
+      </div>`;
     };
 
     return `<div class="space-y-4">
@@ -288,10 +291,10 @@
       ` : ''}
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        ${kpiFilterBtn('WAJIB_NAIK', 'Wajib Naik (Rugi / BEP)', wajibCount, 'Harga jual <= HPP faktur', wajibCount ? 'text-red-600' : 'text-emerald-600')}
-        ${kpiFilterBtn('ACTION', 'Perlu Evaluasi Naik', wajibCount + saranCount, `Margin < ${priceTargetMargin}% target apotek`, (wajibCount + saranCount) ? 'text-amber-600' : 'text-emerald-600')}
-        ${kpiFilterBtn('BARU_NAIK', 'HPP Faktur Naik', baruNaikCount, 'Dibanding rata-rata HPP lama', baruNaikCount ? 'text-blue-600' : '')}
-        ${kpiFilterBtn('SEMUA', 'Margin Sudah Aman', amanCount, `Total ${evaluated.length} produk katalog`, 'text-emerald-600')}
+        ${kpiFilterBtn('WAJIB_NAIK', 'Wajib Naik (BEP/Rugi)', wajibCount, 'Harga jual <= HPP faktur', wajibCount ? 'text-rose-600' : 'text-emerald-600', 'Mendesak', 'badge-rose')}
+        ${kpiFilterBtn('ACTION', 'Perlu Evaluasi Naik', wajibCount + saranCount, `Margin < ${priceTargetMargin}% target apotek`, (wajibCount + saranCount) ? 'text-amber-600' : 'text-emerald-600', 'Margin Rendah', 'badge-amber')}
+        ${kpiFilterBtn('BARU_NAIK', 'HPP Faktur Naik', baruNaikCount, 'Dibanding rata-rata HPP lama', baruNaikCount ? 'text-blue-600' : '', 'Faktur Baru', 'badge-blue')}
+        ${kpiFilterBtn('SEMUA', 'Margin Sudah Aman', amanCount, `Total ${evaluated.length} produk katalog`, 'text-emerald-600', 'Stabil', 'badge-emerald')}
       </div>
 
       <div class="ons-card p-4 space-y-3">
@@ -617,41 +620,41 @@
 
     return `<div class="space-y-4">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <button type="button" onclick="window.setSpFilterStatus('SEMUA')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold" style="color:var(--ons-text-soft)">TOTAL PESANAN (SP)</span>
-            <span class="text-sm">📋</span>
+        <div onclick="window.setSpFilterStatus('SEMUA')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label">TOTAL PESANAN (SP)</span>
+            <span class="ons-glance-tile-badge badge-blue">Regulasi BPOM</span>
           </div>
-          <div class="text-2xl font-extrabold font-mono-num mt-1 text-slate-900 dark:text-white">${allSp.length} <span class="text-xs font-normal text-slate-500">SP</span></div>
-          <div class="text-[10.5px] text-slate-500 mt-0.5">Semua golongan BPOM CDOB</div>
-        </button>
+          <div class="ons-glance-tile-value font-mono-num mt-1 text-slate-900 dark:text-white">${allSp.length} <span class="text-xs font-normal text-slate-500">SP</span></div>
+          <div class="ons-glance-tile-hint">Semua golongan BPOM CDOB</div>
+        </div>
 
-        <button type="button" onclick="window.setSpFilterStatus('MENUNGGU')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400">MENUNGGU PENGIRIMAN</span>
-            <span class="text-sm">⏳</span>
+        <div onclick="window.setSpFilterStatus('MENUNGGU')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label text-amber-600 dark:text-amber-400">MENUNGGU PENGIRIMAN</span>
+            <span class="ons-glance-tile-badge badge-amber">Dalam Proses</span>
           </div>
-          <div class="text-2xl font-extrabold font-mono-num mt-1 text-amber-600">${waitingCnt} <span class="text-xs font-normal text-amber-500">SP</span></div>
-          <div class="text-[10.5px] text-amber-600 dark:text-amber-400 mt-0.5">Siap cetak A4 / kirim WA PBF</div>
-        </button>
+          <div class="ons-glance-tile-value font-mono-num mt-1 text-amber-600">${waitingCnt} <span class="text-xs font-normal text-amber-500">SP</span></div>
+          <div class="ons-glance-tile-hint">Siap cetak A4 / kirim WA PBF</div>
+        </div>
 
-        <button type="button" onclick="window.setSpFilterStatus('SEBAGIAN')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400">DITERIMA SEBAGIAN</span>
-            <span class="text-sm">📦</span>
+        <div onclick="window.setSpFilterStatus('SEBAGIAN')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label text-blue-600 dark:text-blue-400">DITERIMA SEBAGIAN</span>
+            <span class="ons-glance-tile-badge badge-blue">Kiriman Susulan</span>
           </div>
-          <div class="text-2xl font-extrabold font-mono-num mt-1 text-blue-600">${partialCnt} <span class="text-xs font-normal text-blue-500">SP</span></div>
-          <div class="text-[10.5px] text-blue-600 dark:text-blue-400 mt-0.5">Ada sisa kiriman susulan</div>
-        </button>
+          <div class="ons-glance-tile-value font-mono-num mt-1 text-blue-600">${partialCnt} <span class="text-xs font-normal text-blue-500">SP</span></div>
+          <div class="ons-glance-tile-hint">Menunggu sisa barang PBF</div>
+        </div>
 
-        <button type="button" onclick="window.setSpFilterStatus('SELESAI')" class="ons-card p-3.5 text-left cursor-pointer transition-all ${spFilterStatus === 'SELESAI' ? 'ring-2 ring-emerald-500 shadow-sm' : 'hover:border-emerald-400'}">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">SELESAI DITERIMA</span>
-            <span class="text-sm">✅</span>
+        <div onclick="window.setSpFilterStatus('SELESAI')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'SELESAI' ? 'ring-2 ring-emerald-500 shadow-sm' : 'hover:border-emerald-400'}">
+          <div class="ons-glance-tile-header">
+            <span class="ons-glance-tile-label text-emerald-600 dark:text-emerald-400">SELESAI DITERIMA</span>
+            <span class="ons-glance-tile-badge badge-emerald">Lengkap</span>
           </div>
-          <div class="text-2xl font-extrabold font-mono-num mt-1 text-emerald-600">${doneCnt} <span class="text-xs font-normal text-emerald-500">SP</span></div>
-          <div class="text-[10.5px] text-emerald-600 dark:text-emerald-400 mt-0.5">Faktur &amp; kartu stok sinkron</div>
-        </button>
+          <div class="ons-glance-tile-value font-mono-num mt-1 text-emerald-600">${doneCnt} <span class="text-xs font-normal text-emerald-500">SP</span></div>
+          <div class="ons-glance-tile-hint">Faktur &amp; kartu stok sinkron</div>
+        </div>
       </div>
 
       <div class="ons-card p-4 space-y-3">
