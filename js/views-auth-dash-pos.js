@@ -1978,22 +1978,22 @@
       { id: 'persediaan', label: 'Persediaan &amp; FEFO', icon: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>' }
     ];
 
-    const tabBarHtml = `<div class="ons-card p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2.5 shadow-sm border" style="border-color:var(--ons-border)">
-      <div class="ons-tab-bar" role="tablist" aria-label="Sub-Menu Dashboard Apotek">
-        ${activeTabList.map((tb) => `<button type="button" role="tab" aria-selected="${dashSubTab === tb.id ? 'true' : 'false'}" onclick="window.setDashboardTab('${tb.id}')" class="ons-tab-btn flex items-center gap-2 px-3 py-2 text-xs font-bold transition-all ${dashSubTab === tb.id ? 'active shadow-sm' : ''}">
+    const tabBarHtml = `<div class="ons-dash-tab-nav mb-4">
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5" role="tablist" aria-label="Sub-Menu Dashboard Apotek">
+        ${activeTabList.map((tb) => `<button type="button" role="tab" aria-selected="${dashSubTab === tb.id ? 'true' : 'false'}" onclick="window.setDashboardTab('${tb.id}')" class="ons-dash-tab-btn ${dashSubTab === tb.id ? 'is-active' : ''}">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${tb.icon}</svg>
           <span>${tb.label}</span>
         </button>`).join('')}
       </div>
-      <div class="flex flex-wrap items-center gap-2 text-xs">
-        <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+      <div class="flex items-center gap-2 text-xs">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Live Real-Time
+          <span class="hidden sm:inline">Live Real-Time</span>
         </span>
         ${canFin && seeCost ? `<button type="button" onclick="navigateView('finance','pnl')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 py-1 px-2.5" title="Buka Laporan Laba Rugi"><span>Laba/Rugi</span><span aria-hidden="true">&rarr;</span></button>` : ''}
         <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 py-1 px-2.5" title="Segarkan Data Terbaru">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          <span>Segarkan</span>
+          <span class="hidden sm:inline">Segarkan</span>
         </button>
       </div>
     </div>`;
@@ -2278,45 +2278,52 @@
     return `<div class="space-y-5 ons-view-enter">
       ${tabBarHtml}
 
-      <!-- Fluid Hero Greeting Cockpit -->
-      <div class="ons-hero-welcome p-4 sm:p-6 space-y-4 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
-        <div class="flex items-start gap-3.5 sm:gap-4 min-w-0">
-          <div class="relative shrink-0 pt-0.5">
-            <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/90 dark:border-slate-700 shadow-md object-cover bg-white"/>
-            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${activeShift ? 'bg-emerald-500' : 'bg-amber-500'} border-2 border-white dark:border-slate-800" title="${activeShift ? 'Shift Kasir Terbuka' : 'Shift Belum Dibuka'}"></span>
+      <!-- Executive Medical Hero Cockpit -->
+      <div class="ons-dash-hero space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0">
+          <div class="flex items-start gap-3.5 sm:gap-4 min-w-0">
+            <div class="relative shrink-0 pt-0.5">
+              <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/40 shadow-lg object-cover bg-white"/>
+              <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${activeShift ? 'bg-emerald-400' : 'bg-amber-400'} border-2 border-[#0A192F]" title="${activeShift ? 'Shift Kasir Terbuka' : 'Shift Belum Dibuka'}"></span>
+            </div>
+            <div class="flex-1 min-w-0 space-y-1.5">
+              <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-white/15 text-white border border-white/20">${S().esc(fullDateLabel)}</span>
+                <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-sky-400/20 text-sky-200 border border-sky-400/30">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('Cabang ' + S().esc(cabId)) : 'Outlet Utama'} &bull; ${S().esc(S().getRole())}</span>
+                ${canShift ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold ${activeShift ? 'bg-emerald-400/20 text-emerald-200 border border-emerald-400/30' : 'bg-amber-400/20 text-amber-200 border border-amber-400/30'} cursor-pointer hover:bg-white/20 transition-colors">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
+              </div>
+              <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight leading-snug break-words text-white">${greetText}, ${S().esc(activeUserDisplay)}</h1>
+              <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-sky-100/80 leading-relaxed">
+                <span class="font-bold text-white">${S().esc(usahaNama)}</span>
+                <span aria-hidden="true" class="opacity-45">&bull;</span>
+                <span class="font-mono-num">SIA: ${S().esc(prof.no_sia || '-')}</span>
+                <span aria-hidden="true" class="opacity-45">&bull;</span>
+                <span>${S().esc(prof.jam_operasional || 'Siap Melayani')}</span>
+              </div>
+            </div>
           </div>
-          <div class="flex-1 min-w-0 space-y-1.5">
-            <div class="flex flex-wrap items-center gap-1.5">
-              <span class="badge-bpom bpom-bebas font-semibold">${S().esc(fullDateLabel)}</span>
-              <span class="badge-bpom bpom-terbatas font-semibold">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('Cabang ' + S().esc(cabId)) : 'Outlet Utama'} &bull; ${S().esc(S().getRole())}</span>
-              ${canShift ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="badge-bpom ${activeShift ? 'bpom-bebas' : 'bpom-prekursor'} cursor-pointer font-semibold">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
-            </div>
-            <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight leading-snug break-words" style="color:var(--ons-text-main)">${greetText}, ${S().esc(activeUserDisplay)}</h1>
-            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs sm:text-sm leading-relaxed" style="color:var(--ons-text-soft)">
-              <span class="font-semibold" style="color:var(--ons-text-main)">${S().esc(usahaNama)}</span>
-              <span aria-hidden="true" class="opacity-45">&bull;</span>
-              <span class="font-mono-num">SIA: ${S().esc(prof.no_sia || '-')}</span>
-              <span aria-hidden="true" class="opacity-45">&bull;</span>
-              <span>${S().esc(prof.jam_operasional || 'Siap Melayani')}</span>
-            </div>
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
+            ${canPos ? `<button type="button" onclick="navigateView('pos','kasir')" class="ons-dash-hero-btn ons-dash-hero-btn-primary shadow-lg"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>+ Kasir POS (F2)</span></button>` : ''}
+            ${seeCost ? `<button type="button" onclick="window.openOwnerDailyDigestModal()" class="ons-dash-hero-btn bg-emerald-500/20 hover:bg-emerald-500/30 text-white border-emerald-400/30" title="Kirim Rekap Harian ke WA Pemilik"><span>📲 Rekap WA</span></button>` : ''}
+            <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-dash-hero-btn" title="Pusat Pencarian Cepat"><span>Cari</span> <span class="bg-white/20 px-1 py-0.2 rounded text-[10px]">Ctrl+K</span></button>
           </div>
         </div>
-        <div class="pt-3.5 border-t flex flex-wrap items-center justify-between gap-2.5" style="border-color:var(--ons-border)">
-          <div class="flex flex-wrap items-center gap-2">
-            ${canPos ? `<button onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-3.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>+ Kasir POS (F2)</span></button>` : ''}
-            ${canFaktur && seeCost ? `<button onclick="navigateView('faktur','faktur')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span>+ Faktur PBF</span></button>` : ''}
-            ${canDefecta && seeCost ? `<button onclick="navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>+ Surat Pesanan</span></button>` : ''}
-            ${canGudang ? `<button onclick="navigateView('gudang','opname')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>+ Stok Opname</span></button>` : ''}
-            ${canPoct ? `<button onclick="navigateView('pemeriksaan','semua')" class="ons-btn ons-btn-ghost text-xs">Pemeriksaan POCT</button>` : ''}
-            <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs" title="Pusat Pencarian &amp; Navigasi Cepat">Cari Cepat <span class="ons-shortcut-kbd ml-1">Ctrl+K</span></button>
+
+        <!-- Secondary Action Pills -->
+        <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${canFaktur && seeCost ? `<button type="button" onclick="navigateView('faktur','faktur')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">+ Faktur PBF</button>` : ''}
+            ${canDefecta && seeCost ? `<button type="button" onclick="navigateView('faktur','sp')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">+ Surat Pesanan</button>` : ''}
+            ${canGudang ? `<button type="button" onclick="navigateView('gudang','opname')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">+ Stok Opname</button>` : ''}
+            ${canPoct ? `<button type="button" onclick="navigateView('pemeriksaan','semua')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">Pemeriksaan POCT</button>` : ''}
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center gap-2">
             ${seeCost ? (() => {
               const bk = S().getLastBackupInfo ? S().getLastBackupInfo() : { isOverdue: false, label: '-' };
-              return `<button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ${bk.isOverdue ? 'ons-btn-amber' : 'ons-btn-ghost'} text-xs font-semibold relative" title="Backup 1-Klik Seluruh Data ke File JSON (Terakhir: ${S().esc(bk.label)})">💾 Backup Data${bk.isOverdue ? ' <span class="inline-block w-2 h-2 rounded-full bg-red-500 ml-0.5"></span>' : ''}</button>`;
+              return `<button type="button" onclick="window.runQuickBackupNow()" class="ons-dash-hero-btn text-[11px] py-1 px-2.5 ${bk.isOverdue ? 'bg-amber-500/30 border-amber-300' : ''}" title="Backup Data (Terakhir: ${S().esc(bk.label)})">💾 Backup Data${bk.isOverdue ? ' ⚠️' : ''}</button>`;
             })() : ''}
-            ${seeCost ? `<button onclick="window.openOwnerDailyDigestModal()" class="ons-btn ons-btn-emerald text-xs font-semibold" title="Kirim Ringkasan Harian ke WA Pemilik">📲 Rekap WA Pemilik</button>` : ''}
-            <button onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Segarkan Data Terbaru">Segarkan</button>
+            <button type="button" onclick="bootLoadState(true)" class="ons-dash-hero-btn text-[11px] py-1 px-2.5" title="Segarkan Data">Segarkan</button>
           </div>
         </div>
       </div>
@@ -2324,36 +2331,47 @@
       ${st.masterObat.length === 0 ? `<div class="ons-card p-4 border-l-4 flex flex-wrap items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.06)">
         <div class="min-w-0">
           <div class="font-bold text-sm">Belum Ada Produk Obat di ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Katalog Cabang Ini' : 'Katalog Apotek Ini'}</div>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Tambahkan daftar obat melalui menu <b>Master Katalog Obat</b> atau catat penerimaan barang lewat <b>Faktur Masuk</b> agar transaksi POS dan pemantauan stok langsung aktif.</p>
+          <p class="text-xs text-slate-500">Tambahkan daftar obat melalui menu <b>Master Katalog Obat</b> atau catat penerimaan barang lewat <b>Faktur Masuk</b> agar transaksi POS dan pemantauan stok langsung aktif.</p>
         </div>
         ${canObat ? `<button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-primary text-xs shrink-0">Buka Master Katalog Obat &rarr;</button>` : ''}
       </div>` : ''}
 
-      <!-- 4 Kartu KPI Utama Executive dengan Aksen Semantik & Emblim Rp -->
-      <!-- Row Tambahan: Database & Status Persediaan Standar Apotek Digital -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-blue-500 transition-colors" onclick="navigateView('gudang','batch')">
-          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Total Nilai Aset Stok</div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-blue-700 dark:text-blue-300">${S().rp(invStatus.totalNilaiAset || 0)}</div>
-          <div class="text-[10px] text-slate-500 truncate">${st.masterObat.length} SKU &bull; ${activeBatches.length} batch fisik</div>
+      <!-- 4 Executive Glance Tiles: Database & Status Persediaan -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div class="ons-glance-tile cursor-pointer" onclick="navigateView('gudang','batch')">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Total Nilai Aset Stok</span>
+            <span class="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center text-xs">📦</span>
+          </div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-blue-600 dark:text-blue-400">${S().rp(invStatus.totalNilaiAset || 0)}</div>
+          <div class="text-[10.5px] text-slate-500 truncate mt-1">${st.masterObat.length} SKU &bull; ${activeBatches.length} batch fisik</div>
         </div>
-        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-amber-500 transition-colors" onclick="setPosSubTab('tertolak');navigateView('pos','kasir');">
-          <div class="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide flex items-center justify-between">
-            <span>Penjualan Tertolak</span>
-            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+
+        <div class="ons-glance-tile cursor-pointer" onclick="setPosSubTab('tertolak');navigateView('pos','kasir');">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10.5px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Penjualan Tertolak</span>
+            <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center text-xs">⚠️</span>
           </div>
           <div class="text-base sm:text-lg font-extrabold font-mono-num text-amber-600">${_getDashLostSales().length} Item</div>
-          <div class="text-[10px] text-slate-500 truncate">Permintaan obat batal &rarr; Defecta</div>
+          <div class="text-[10.5px] text-slate-500 truncate mt-1">Permintaan batal &rarr; Defecta</div>
         </div>
-        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-emerald-500 transition-colors" onclick="navigateView('obat','pelanggan')">
-          <div class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Pelanggan / CRM</div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-emerald-700 dark:text-emerald-300">${st.members.length} Member</div>
-          <div class="text-[10px] text-slate-500 truncate">Data pasien &amp; terapi rutin</div>
+
+        <div class="ons-glance-tile cursor-pointer" onclick="navigateView('obat','pelanggan')">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Pelanggan / CRM</span>
+            <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xs">👥</span>
+          </div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400">${st.members.length} Member</div>
+          <div class="text-[10.5px] text-slate-500 truncate mt-1">Data pasien &amp; terapi rutin</div>
         </div>
-        <div class="ons-card p-3 space-y-1 cursor-pointer hover:border-purple-500 transition-colors" onclick="navigateView('faktur','pbf')">
-          <div class="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Distributor &amp; Mitra</div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-purple-700 dark:text-purple-300">${st.supplierPbf.length} PBF &bull; ${(st.masterDokter || st.dokterPerujuk || []).length} Dokter</div>
-          <div class="text-[10px] text-slate-500 truncate">Jaringan pengadaan apotek</div>
+
+        <div class="ons-glance-tile cursor-pointer" onclick="navigateView('faktur','pbf')">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10.5px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Distributor &amp; Mitra</span>
+            <span class="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center text-xs">🏛️</span>
+          </div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-purple-600 dark:text-purple-400">${st.supplierPbf.length} PBF &bull; ${(st.masterDokter || st.dokterPerujuk || []).length} Dokter</div>
+          <div class="text-[10.5px] text-slate-500 truncate mt-1">Jaringan pengadaan apotek</div>
         </div>
       </div>
 
@@ -3060,38 +3078,38 @@
 
     return `<div class="space-y-5">
       <!-- Sub-Hero Executive Banner Penjualan -->
-      <div class="ons-card p-4 sm:p-5 border-l-4 space-y-3 rounded-2xl shadow-sm" style="border-left-color:#0066FE;background:linear-gradient(135deg, rgba(0,102,254,0.06) 0%, rgba(16,185,129,0.04) 100%)">
+      <div class="ons-subhero-banner is-penjualan space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
               </span>
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Analisis Performa Penjualan &amp; Margin Apotek</h2>
             </div>
-            <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Evaluasi pertumbuhan omzet, margin keuntungan kotor, rata-rata belanja kasir, dan ranking loyalitas pelanggan.</p>
+            <p class="text-xs text-slate-500 mt-1">Evaluasi pertumbuhan omzet, margin keuntungan kotor, rata-rata belanja kasir, dan ranking loyalitas pelanggan.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canPos ? `<button type="button" onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>Kasir POS (F2)</span></button>` : ''}
             <button type="button" onclick="window.openDashUserSalesModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Performa User Kasir &rsaquo;</button>
           </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2.5 border-t text-xs" style="border-color:var(--ons-border)">
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Rata-rata Nota (Basket Size)</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 mt-0.5">${S().rp(avgBasket)}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 text-xs">
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Rata-rata Nota (ATV)</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-0.5">${S().rp(avgBasket)}</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Transaksi Selesai</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num mt-0.5">${rTrxCount} nota</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Transaksi Selesai</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-slate-800 dark:text-slate-100 mt-0.5">${rTrxCount} nota</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Rasio Retur Penjualan</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Rasio Retur</div>
             <div class="text-sm sm:text-base font-extrabold font-mono-num text-amber-600 mt-0.5">${returRatio}% (${rRetur.length} retur)</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Margin Keuntungan' : 'Permintaan Tertolak'}</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num ${seeCost ? 'text-emerald-600' : 'text-rose-600'} mt-0.5">${seeCost ? (profitMarginPct + '% (' + S().rp(rTotalProfit) + ')') : (rLost.length + ' kasus')}</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">${seeCost ? 'Margin Keuntungan' : 'Permintaan Tertolak'}</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num ${seeCost ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'} mt-0.5">${seeCost ? (profitMarginPct + '% (' + S().rp(rTotalProfit) + ')') : (rLost.length + ' kasus')}</div>
           </div>
         </div>
       </div>
@@ -3422,16 +3440,16 @@
 
     return `<div class="space-y-5">
       <!-- Sub-Hero Executive Banner Pembelian & PBF -->
-      <div class="ons-card p-4 sm:p-5 border-l-4 space-y-3 rounded-2xl shadow-sm" style="border-left-color:#0284C7;background:linear-gradient(135deg, rgba(2,132,199,0.06) 0%, rgba(217,119,6,0.04) 100%)">
+      <div class="ons-subhero-banner is-pembelian space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center shrink-0">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
               </span>
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Pusat Kendali Pengadaan Obat &amp; Hutang PBF</h2>
             </div>
-            <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Kelola siklus pengadaan apotek dari rencana stok defecta, pesanan Surat Pesanan (SP) aktif, hingga jatuh tempo faktur PBF tempo.</p>
+            <p class="text-xs text-slate-500 mt-1">Kelola siklus pengadaan apotek dari rencana stok defecta, pesanan Surat Pesanan (SP) aktif, hingga jatuh tempo faktur PBF tempo.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>+ Rencana Order (Defecta)</span></button>` : ''}
@@ -3439,21 +3457,21 @@
             ${canFin ? `<button type="button" onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Buku Hutang PBF &rsaquo;</button>` : ''}
           </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2.5 border-t text-xs" style="border-color:var(--ons-border)">
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Total Komitmen Pengadaan</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 mt-0.5">${S().rp(rencanaPembelianRp + pesananAktifRp + hutangPembelianRp)}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 text-xs">
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Komitmen Pengadaan</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-0.5">${S().rp(rencanaPembelianRp + pesananAktifRp + hutangPembelianRp)}</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Surat Pesanan Aktif</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Pesanan Aktif</div>
             <div class="text-sm sm:text-base font-extrabold font-mono-num text-sky-600 mt-0.5">${openSpList.length} SP (${S().rp(pesananAktifRp)})</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Faktur Belum Lunas</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Faktur Belum Lunas</div>
             <div class="text-sm sm:text-base font-extrabold font-mono-num text-amber-600 mt-0.5">${openFakturList.length} Faktur (${S().rp(hutangPembelianRp)})</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Jatuh Tempo &le;7 Hari</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Jatuh Tempo &le;7 Hari</div>
             <div class="text-sm sm:text-base font-extrabold font-mono-num ${apNearDueCount > 0 ? 'text-rose-600' : 'text-emerald-600'} mt-0.5">${apNearDueCount} faktur ${apNearDueCount > 0 ? '⚠️' : '✓'}</div>
           </div>
         </div>
@@ -3658,38 +3676,38 @@
 
     return `<div class="space-y-5">
       <!-- Sub-Hero Executive Banner Persediaan -->
-      <div class="ons-card p-4 sm:p-5 border-l-4 space-y-3 rounded-2xl shadow-sm" style="border-left-color:#10B981;background:linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(2,132,199,0.04) 100%)">
+      <div class="ons-subhero-banner is-persediaan space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
               </span>
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Valuasi Persediaan, Arus Mutasi &amp; Kontrol FEFO</h2>
             </div>
-            <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Arus pergerakan barang real-time dari saldo awal, penerimaan faktur, penjualan POS kasir, opname, hingga saldo akhir aset.</p>
+            <p class="text-xs text-slate-500 mt-1">Arus pergerakan barang real-time dari saldo awal, penerimaan faktur, penjualan POS kasir, opname, hingga saldo akhir aset.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canGudang ? `<button type="button" onclick="navigateView('gudang','opname')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Stok Opname</span></button>` : ''}
-            ${canGudang ? `<button type="button" onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Batch &amp; FEFO &rsaquo;</button>` : ''}
-            ${canGudang ? `<button type="button" onclick="navigateView('gudang','mutasi')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Buku Mutasi &rsaquo;</button>` : ''}
+            ${canGudang ? `<button type="button" onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Kontrol FEFO ED &rsaquo;</button>` : ''}
+            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Defecta Kritis &rsaquo;</button>` : ''}
           </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2.5 border-t text-xs" style="border-color:var(--ons-border)">
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">${seeCost ? 'Total Valuasi Aset (HPP)' : 'Total Stok Fisik'}</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-emerald-600 mt-0.5">${seeCost ? S().rp(persediaanAkhirRp) : (invStatus.currentStockUnits + ' unit')}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 text-xs">
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">${seeCost ? 'Total Valuasi Aset (HPP)' : 'Total Stok Fisik'}</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 mt-0.5">${seeCost ? S().rp(persediaanAkhirRp) : (invStatus.currentStockUnits + ' unit')}</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Katalog Obat Terdaftar</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num mt-0.5">${totalKatalog} produk</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Katalog Obat Terdaftar</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-slate-800 dark:text-slate-100 mt-0.5">${totalKatalog} produk</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Ketersediaan Stok Aman</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Ketersediaan Stok Aman</div>
             <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 mt-0.5">${safeStockPct}% (${safeStockCount} produk)</div>
           </div>
-          <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            <div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Batch Aktif Terdaftar</div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Batch Aktif Terdaftar</div>
             <div class="text-sm sm:text-base font-extrabold font-mono-num text-indigo-600 mt-0.5">${invStatus.activeBatches.length} batch</div>
           </div>
         </div>

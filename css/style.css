@@ -5011,3 +5011,178 @@ html.dark ::-webkit-scrollbar-thumb {
 html.dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+
+/* ==========================================================================
+   DASHBOARD ULTRA-COMFORT & EXECUTIVE COCKPIT DESIGN SYSTEM (v18.37.0)
+   ========================================================================== */
+
+/* 1. Dashboard Master Navigation Bar */
+.ons-dash-tab-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--ons-bg-card, #FFFFFF);
+  border: 1px solid var(--ons-border, rgba(226, 232, 240, 0.9));
+  border-radius: 1.15rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+}
+html.dark .ons-dash-tab-nav {
+  background: #0E182A;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.ons-dash-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  color: var(--ons-text-soft, #64748B);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ons-dash-tab-btn:hover {
+  color: #1D4ED8;
+  background: rgba(37, 99, 235, 0.06);
+}
+html.dark .ons-dash-tab-btn:hover {
+  color: #60A5FA;
+  background: rgba(59, 130, 246, 0.12);
+}
+.ons-dash-tab-btn.is-active {
+  background: linear-gradient(135deg, #1E3A8A 0%, #0284C7 100%);
+  color: #FFFFFF !important;
+  border-color: transparent;
+  box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.35);
+}
+html.dark .ons-dash-tab-btn.is-active {
+  background: linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%);
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 16px -2px rgba(2, 132, 199, 0.45);
+}
+
+/* 2. Executive Hero Banner */
+.ons-dash-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.35rem;
+  padding: 1.35rem 1.6rem;
+  background: linear-gradient(135deg, #0A192F 0%, #1E3A8A 55%, #0284C7 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8px 30px -6px rgba(10, 25, 47, 0.35), 0 20px 40px -15px rgba(2, 132, 199, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.ons-dash-hero::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+.ons-dash-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.85rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.16s ease;
+  cursor: pointer;
+}
+.ons-dash-hero-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+}
+.ons-dash-hero-btn-primary {
+  background: #FFFFFF;
+  color: #0F172A !important;
+  font-weight: 800;
+  border-color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.ons-dash-hero-btn-primary:hover {
+  background: #F8FAFC;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* 3. Executive Glance Tiles */
+.ons-glance-tile {
+  background: var(--ons-bg-card, #FFFFFF);
+  border: 1px solid var(--ons-border, rgba(226, 232, 240, 0.85));
+  border-radius: 1.15rem;
+  padding: 1rem 1.15rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+html.dark .ons-glance-tile {
+  background: #0E182A;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+.ons-glance-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.14);
+}
+
+/* 4. Sub-Hero Banners (Penjualan, Pembelian, Persediaan) */
+.ons-subhero-banner {
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.45rem;
+  background: var(--ons-bg-card, #FFFFFF);
+  border: 1px solid var(--ons-border, rgba(226, 232, 240, 0.85));
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.04), 0 8px 20px -4px rgba(15, 23, 42, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+html.dark .ons-subhero-banner {
+  background: #0E182A;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.ons-subhero-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--subhero-accent, #2563EB);
+}
+.ons-subhero-banner.is-penjualan { --subhero-accent: linear-gradient(180deg, #2563EB, #0284C7); }
+.ons-subhero-banner.is-pembelian { --subhero-accent: linear-gradient(180deg, #0284C7, #D97706); }
+.ons-subhero-banner.is-persediaan { --subhero-accent: linear-gradient(180deg, #059669, #10B981); }
+
+/* 5. Calmed Charts & Feeds */
+.ons-chart-box {
+  background: var(--ons-bg-card, #FFFFFF);
+  border: 1px solid var(--ons-border, rgba(226, 232, 240, 0.85));
+  border-radius: 1.2rem;
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.03), 0 6px 18px -4px rgba(15, 23, 42, 0.04);
+}
+html.dark .ons-chart-box {
+  background: #0E182A;
+  border-color: rgba(255, 255, 255, 0.07);
+}
