@@ -12814,7 +12814,7 @@
     return rows;
   }
 
-  function renderKonsinyasiTabHtml(st) {
+  function renderKonsinyasiTabHtml(st, isStandalone) {
     const sum = st.konsinyasiSummary || { items: [], settlements: [], totals: { qty_terjual: 0, qty_sisa: 0, tagihan_belum_bayar: 0, sudah_dibayar: 0 } };
     const allItems = Array.isArray(sum.items) ? sum.items : [];
     const suppliers = Array.from(new Set(allItems.map((it) => it.id_pbf).filter(Boolean)));
@@ -13281,7 +13281,7 @@
     }
 
     return `<div class="space-y-4">
-      ${subNavHtml}
+      ${isStandalone ? '' : subNavHtml}
       ${bodyHtml}
     </div>`;
   }
@@ -15015,13 +15015,16 @@
       </div>
     `;
 
-    // 2. Executive Sub-Hero Banner Cockpit
+    // 2. Executive Sub-Hero Banner Cockpit (Contextual per Sub-Menu)
     const subHeroBanner = `
       <div class="ons-subhero-banner is-konsinyasi">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-sm">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-4"/><circle cx="8" cy="12" r="2"/><path d="m21 12-2-2-2 2"/></svg>
+              ${konsSubTab === 'masuk' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="12 18 12 12 16 14"/><path d="M12 18l-4-2"/></svg>` :
+                (konsSubTab === 'status' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="m3 9 9-4 9 4"/><path d="m3 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L9 9"/><path d="m15 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L21 9"/></svg>` :
+                (konsSubTab === 'retur' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>` :
+                `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`))} 
             </div>
             <div>
               <div class="flex items-center gap-2">
@@ -15031,22 +15034,38 @@
                   (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang Titip)' :
                   (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi &amp; Audit Etalase' : 'Penerimaan Barang Konsinyasi Baru')))
                 }</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">Laku Baru Bayar</span>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">${
+                  konsSubTab === 'masuk' ? 'Titipan Baru' :
+                  (konsSubTab === 'status' ? 'Laku Baru Bayar' :
+                  (konsSubTab === 'retur' ? 'Bebas Risiko Utang' :
+                  'Stok Titip Aktif'))
+                }</span>
               </div>
               <p class="text-xs" style="color:var(--ons-text-soft)">${
                 konsSubTab === 'masuk' ? 'Pencatatan nota titip barang distributor rekanan. Stok fisik bertambah di kasir tanpa membentuk utang dagang di awal.' :
                 (konsSubTab === 'status' ? 'Prinsip Laku-Baru-Bayar: Tagihan supplier terbentuk secara otomatis HANYA ketika obat titipan berhasil laku terjual di Kasir POS.' :
                 (konsSubTab === 'retur' ? 'Pengembalian fisik sediaan titip jual yang tak laku atau menjelang expired date kepada pihak penitip tanpa risiko penalti.' :
-                (konsSubTab === 'stok' ? 'Audit ketersediaan fisik barang konsinyasi, lokasi rak penyimpanan apotek, dan pemantauan masa kadaluarsa (ED) batch.' :
+                (konsSubTab === 'stok' ? 'Audit ketersediaan fisik barang konsinyasi, lokasi rak penyimpanan apotek, dan pemantauan masa kadaluarsa (ED) batch titipan.' :
                 'Form pencatatan penerimaan fisik barang konsinyasi baru ke persediaan apotek.')))
               }</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input Konsinyasi</button>
-            <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${knsDrafts.length})</button>
-            <button type="button" onclick="window.printKonsinyasiStokA4()" class="ons-btn ons-btn-ghost text-xs font-bold">🖨️ Cetak Stok A4</button>
-            <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+            ${konsSubTab === 'masuk' ? `
+              <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input Konsinyasi</button>
+              <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${knsDrafts.length})</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+            ` : konsSubTab === 'status' ? `
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">🔄 Rekonsiliasi Penjualan</button>
+              <button type="button" onclick="window.printKonsinyasiStokA4()" class="ons-btn ons-btn-ghost text-xs font-bold">🖨️ Cetak Rekap</button>
+            ` : konsSubTab === 'retur' ? `
+              <button type="button" onclick="window.openCreateReturKonsinyasiModal ? window.openCreateReturKonsinyasiModal() : window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Buat Retur Konsinyasi</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">🔄 Sinkron</button>
+            ` : `
+              <button type="button" onclick="window.printKonsinyasiStokA4()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">🖨️ Cetak Stok A4</button>
+              <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-ghost text-xs font-bold">+ Input Baru</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs">🔄 Sinkron</button>
+            `}
           </div>
         </div>
       </div>
