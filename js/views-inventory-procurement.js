@@ -7915,7 +7915,7 @@
                     <td class="font-mono-num text-xs text-right">${hppVal > 0 ? S().rp(hppVal) : '-'}</td>
                     <td class="font-mono-num font-extrabold text-xs text-right text-emerald-600">${q > 0 ? ('+' + q) : '-'}</td>
                     <td class="font-mono-num font-extrabold text-xs text-right text-red-600">${q < 0 ? Math.abs(q) : '-'}</td>
-                    <td class="font-mono-num font-extrabold text-xs text-right text-blue-600 bg-blue-50/50 dark:bg-blue-900/20">${m.stok_akhir}</td>
+                    <td class="font-mono-num font-extrabold text-xs text-right text-blue-600 bg-blue-50/50 dark:bg-blue-900/20">${m.stok_akhir !== undefined ? m.stok_akhir : (m.sisa_stok !== undefined ? m.sisa_stok : (m.stok_sisa !== undefined ? m.stok_sisa : '-'))}</td>
                   </tr>`;
                 }).join('')}
               </tbody>
