@@ -5177,6 +5177,7 @@ html.dark .ons-subhero-banner {
 .ons-subhero-banner.is-tertolak { --subhero-accent: linear-gradient(180deg, #D97706, #F59E0B); }
 .ons-subhero-banner.is-klinis { --subhero-accent: linear-gradient(180deg, #0284C7, #0D9488); }
 .ons-subhero-banner.is-pemeriksaan { --subhero-accent: linear-gradient(180deg, #0284C7, #06B6D4); }
+.ons-subhero-banner.is-konsinyasi { --subhero-accent: linear-gradient(180deg, #6366F1, #8B5CF6); }
 
 /* POS Executive Comfort Controls */
 .ons-pos-total-box {
