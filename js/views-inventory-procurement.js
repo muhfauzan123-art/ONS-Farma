@@ -6784,10 +6784,47 @@
     const selectedCount = edSelectedIds.size;
     return `<div class="space-y-4">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Total Batch Tersedia</div><div class="text-lg font-bold font-mono-num">${sorted.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Kadaluarsa / Kritis &le; 90h</div><div class="text-lg font-bold font-mono-num text-red-600">${expiredCount} ED &bull; ${kritisCount} Kritis</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Stok Karantina Recall</div><div class="text-lg font-bold font-mono-num text-amber-600">${sorted.reduce((s, b) => s + Number(b.qty_karantina || 0), 0)} Unit</div></div>
-        ${seeCost ? `<div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Valuasi Persediaan (HPP)</div><div class="text-lg font-bold font-mono-num text-blue-600">${S().rp(totalNilaiGudang)}</div></div>` : `<div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Ditampilkan</div><div class="text-lg font-bold font-mono-num text-blue-600">${filteredBatches.length}</div></div>`}
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Batch Gudang</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">FEFO System</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${sorted.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">batch</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Batch aktif &amp; terarsip di rak gudang</div>
+        </div>
+        <div class="ons-glance-tile cursor-pointer hover:border-red-400" onclick="window.setGudangBatchFilter('KRITIS')" title="Filter batch kadaluarsa atau kritis ≤90 hari">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kadaluarsa / Kritis &le;90H</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${expiredCount > 0 ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-600'}">Atensi ED</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${expiredCount > 0 ? 'text-red-600' : 'text-amber-600'}">${expiredCount} <span class="text-xs font-semibold text-red-600">ED</span> &bull; ${kritisCount} <span class="text-xs font-semibold text-amber-600">Kritis</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Klik untuk isolasi &amp; persiapan retur PBF</div>
+        </div>
+        <div class="ons-glance-tile cursor-pointer hover:border-amber-400" onclick="window.setGudangBatchFilter('KARANTINA')" title="Filter batch karantina recall">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Karantina / Recall</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Isolasi</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${sorted.reduce((s, b) => s + Number(b.qty_karantina || 0), 0)} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">unit</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Terkunci dari transaksi kasir POS</div>
+        </div>
+        ${seeCost ? `
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Valuasi Persediaan</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">HPP Beli</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${S().rp(totalNilaiGudang)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Total aset stok aktif di gudang apotek</div>
+        </div>` : `
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Batch Ditampilkan</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Audit</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${filteredBatches.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">batch</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Sesuai filter pencarian &amp; tanggal ED</div>
+        </div>`}
       </div>
 
       <div class="ons-card p-4 space-y-3">
@@ -6910,10 +6947,38 @@
     return `<div class="space-y-4">
       ${infoBanner}
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Aktif Dipindai</div><div class="text-lg font-bold font-mono-num">${activeForOpname.length}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Batch Sudah Diisi Hitungan</div><div class="text-lg font-bold font-mono-num text-blue-600">${opnameCounted}</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Net Selisih (Satuan 1)</div><div class="text-lg font-bold font-mono-num ${opnameSelisihUnit === 0 ? 'text-emerald-600' : 'text-amber-600'}">${opnameSelisihUnit > 0 ? '+' : ''}${opnameSelisihUnit} unit dasar</div></div>
-        <div class="ons-card p-3.5"><div class="text-xs" style="color:var(--ons-text-soft)">Dampak Nilai HPP Selisih</div><div class="text-lg font-bold font-mono-num ${opnameSelisihRp >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(opnameSelisihRp)}</div></div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Batch Aktif Dipindai</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Master SO</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${activeForOpname.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">batch</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Batch aktif tersedia untuk dihitung</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Sudah Dihitung</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500/10 text-teal-700 dark:text-teal-300">Progress</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-teal-600">${opnameCounted} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">diisi</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Hitungan fisik telah dimasukkan petugas</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Net Selisih Fisik</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${opnameSelisihUnit === 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'}">Varians</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${opnameSelisihUnit === 0 ? 'text-emerald-600' : 'text-amber-600'}">${opnameSelisihUnit > 0 ? '+' : ''}${opnameSelisihUnit} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">unit dasar</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Perbedaan total fisik vs catatan sistem</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Dampak Valuasi Selisih</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${opnameSelisihRp >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'}">Finansial HPP</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${S().rp(opnameSelisihRp)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Estimasi nilai rupiah penyesuaian opname</div>
+        </div>
       </div>
       <div class="ons-card p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -7080,7 +7145,51 @@
     const rekapLabel = `Rekap dari ${S().formatTgl(adjDateFrom || todayStr)} s.d. ${S().formatTgl(adjDateTo || todayStr)}`;
 
     return `<div class="space-y-4">
-      <div class="ons-card p-4 space-y-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Penyesuaian</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Histori</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${filtered.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">rekam</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${prodSet.size} produk obat disesuaikan</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Penyesuaian Positif (+)</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Koreksi Masuk</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">+${posSum} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">unit</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Stok bertambah via penyesuaian</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Penyesuaian Negatif (-)</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-red-500/10 text-red-600">Rusak / Hilang</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-red-600">${negSum} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">unit</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Stok berkurang akibat susut/rusak</div>
+        </div>
+        ${seeCost ? `
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Net Nilai Selisih HPP</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${totalNilai >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'}">Finansial</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${S().rp(totalNilai)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Dampak finansial bersih terhadap buku kas</div>
+        </div>` : `
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Periode Filter</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-500/10 text-sky-700 dark:text-sky-300">Waktu</span>
+          </div>
+          <div class="text-sm font-bold mt-2 tracking-tight text-sky-600">${rekapLabel}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Filter rentang tanggal aktif</div>
+        </div>`}
+      </div>
+
+      <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
             <select class="ons-select text-xs w-44" onchange="window.setAdjFilterType(this.value)" aria-label="Pilihan Data Penyesuaian">
@@ -7162,8 +7271,55 @@
     const cmpObj = st.branchStockCompare && !Array.isArray(st.branchStockCompare) ? st.branchStockCompare : null;
     const compList = (cmpObj && Array.isArray(cmpObj.items)) ? cmpObj.items : (Array.isArray(st.branchStockCompare) ? st.branchStockCompare : []);
 
+    const internalCount = rows.filter((r) => r.kind === 'INTERNAL').length;
+    const cabangCount = rows.filter((r) => r.kind === 'CABANG').length;
+
     return `<div class="space-y-4">
-      <div class="ons-card p-4 space-y-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Mutasi Stok</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Histori</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${rows.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">transaksi</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Total transaksi perpindahan stok tersimpan</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Mutasi Internal (Gudang/Rak)</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500/10 text-teal-700 dark:text-teal-300">Internal</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-teal-600">${internalCount} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">mutasi</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Perpindahan antar rak / gudang apotek</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Mutasi Antar-Cabang</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-purple-300">Cabang</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-purple-600">${cabangCount} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">mutasi</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Distribusi persediaan antar unit cabang</div>
+        </div>
+        ${seeCost ? `
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Valuasi Stok Dipindah</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">HPP</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${S().rp(totalNilai)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Total nilai aset dalam alur perpindahan</div>
+        </div>` : `
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Draft Tersimpan</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Draft</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${drafts.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">draft</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Siap dilanjutkan atau diverifikasi</div>
+        </div>`}
+      </div>
+
+      <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
             <input class="ons-input text-xs w-52" placeholder="Cari data transaksi / produk..." value="${S().esc(trfSearchQ)}" oninput="window.setTrfSearchQ(this.value)"/>
@@ -7321,29 +7477,120 @@
     const canAdj = seeCost || S().canAccessSubTab('gudang', 'penyesuaian');
     const canTrf = seeCost || S().canAccessSubTab('gudang', 'transfer');
 
-    return `<div class="space-y-5 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">Persediaan &amp; Stok Apotek</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Pantau stok kadaluarsa FEFO, stok opname, penyesuaian stok, perpindahan gudang/rak, kartu stok BPOM &amp; suhu 2&ndash;8&deg;C.</p>
+    // 1. Executive Sub-Menu Header Navigation (Cockpit Bar)
+    const subTabHeader = `
+      <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Persediaan Apotek">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setGudangTab('batch')" class="ons-dash-tab-btn ${gudangTab === 'batch' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Stok Kadaluarsa (FEFO)</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${gudangTab === 'batch' ? 'bg-white/25 text-white' : 'bg-emerald-600/15 text-emerald-600'} font-mono-num">${sorted.length}</span>
+            ${expiredCount > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-red-500 text-white animate-pulse font-mono-num">${expiredCount} ED</span>` : ''}
+          </button>
+          ${canOpname ? `<button type="button" onclick="window.setGudangTab('opname')" class="ons-dash-tab-btn ${gudangTab === 'opname' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+            <span>Stok Opname</span>
+            ${opnameSessionActive ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white animate-pulse">Sesi Aktif</span>` : ''}
+          </button>` : ''}
+          ${canAdj ? `<button type="button" onclick="window.setGudangTab('penyesuaian')" class="ons-dash-tab-btn ${gudangTab === 'penyesuaian' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span>Penyesuaian Stok</span>
+          </button>` : ''}
+          ${canTrf ? `<button type="button" onclick="window.setGudangTab('transfer')" class="ons-dash-tab-btn ${gudangTab === 'transfer' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            <span>Perpindahan Stok</span>
+          </button>` : ''}
+          <button type="button" onclick="window.setGudangTab('kartu-stok')" class="ons-dash-tab-btn ${gudangTab === 'kartu-stok' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Kartu Stok Digital</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${gudangTab === 'kartu-stok' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${(st.mutasiStok || []).length}</span>
+          </button>
+          <button type="button" onclick="window.setGudangTab('coldchain')" class="ons-dash-tab-btn ${gudangTab === 'coldchain' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+            <span>Monitor Suhu (2-8&deg;C)</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${gudangTab === 'coldchain' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${coldLogs.length}</span>
+            ${hasColdAlarm ? `<span class="ml-1 text-red-400 font-black animate-pulse" title="Peringatan suhu kulkas/ruang">&#9888;</span>` : ''}
+          </button>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <div class="ons-tab-bar">
-            <button onclick="window.setGudangTab('batch')" class="ons-tab-btn ${gudangTab === 'batch' ? 'active' : ''}">Stok Kadaluarsa (${sorted.length})</button>
-            ${canOpname ? `<button onclick="window.setGudangTab('opname')" class="ons-tab-btn ${gudangTab === 'opname' ? 'active' : ''}">Stok Opname</button>` : ''}
-            ${canAdj ? `<button onclick="window.setGudangTab('penyesuaian')" class="ons-tab-btn ${gudangTab === 'penyesuaian' ? 'active' : ''}">Penyesuaian Stok</button>` : ''}
-            ${canTrf ? `<button onclick="window.setGudangTab('transfer')" class="ons-tab-btn ${gudangTab === 'transfer' ? 'active' : ''}">Perpindahan Stok</button>` : ''}
-            <button onclick="window.setGudangTab('kartu-stok')" class="ons-tab-btn ${gudangTab === 'kartu-stok' ? 'active' : ''}">Kartu Stok Digital (${(st.mutasiStok || []).length})</button>
-            <button onclick="window.setGudangTab('coldchain')" class="ons-tab-btn ${gudangTab === 'coldchain' ? 'active' : ''}">Monitor Suhu (Ruang &amp; Kulkas) (${coldLogs.length})${hasColdAlarm ? ' &#9888;' : ''}</button>
+          ${gudangTab === 'batch' && seeCost ? `<button type="button" onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Input Batch Manual</button>` : ''}
+          ${gudangTab === 'opname' ? `<button type="button" onclick="window.openRiwayatOpnameModal()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border">Riwayat Opname</button><button type="button" onclick="window.startNewOpnameSession()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Mulai Opname</button>` : ''}
+          ${gudangTab === 'penyesuaian' ? `<button type="button" onclick="window.openQuickAdjustmentModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Sesuaikan Stok</button>` : ''}
+          ${gudangTab === 'transfer' ? `<button type="button" onclick="window.openPindahkanStokModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Pindahkan Stok</button>` : ''}
+          ${gudangTab === 'kartu-stok' ? `<button type="button" onclick="window.exportKartuStok('xlsx')" class="ons-btn ons-btn-emerald text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm">Export Excel</button><button type="button" onclick="window.exportKartuStok('pdf')" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border">Cetak PDF</button>` : ''}
+          ${gudangTab === 'coldchain' ? `<button type="button" onclick="window.openTambahLogSuhuModal()" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Catat Suhu Manual</button>` : ''}
+        </div>
+      </div>`;
+
+    // 2. Executive Sub-Hero Banner
+    const subHeroBanner = `
+      <div class="ons-subhero-banner is-persediaan">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Persediaan &amp; Manajemen Stok Gudang (FEFO)</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">CDOB BPOM No. 6/2020</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">Pengawasan kadaluarsa batch (FEFO Guardian), audit berkala stok opname fisik vs sistem, koreksi penyesuaian stok, mutasi gudang &amp; rak, kartu stok digital terverifikasi, serta telemetri suhu kulkas/ruang 2&ndash;8&deg;C.</p>
+            </div>
+          </div>
+          <div class="hidden sm:flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Gudang &amp; Cold Chain Siaga (FEFO Otomatis)</span>
+            </span>
           </div>
         </div>
-      </div>
+      </div>`;
+
+    return `<div class="space-y-4 ons-view-enter">
+      ${subTabHeader}
+      ${subHeroBanner}
 
       ${gudangTab === 'coldchain' ? _renderSuhuMonitoringSuite(st, coldLogs) : (gudangTab === 'transfer' && canTrf ? _renderGudangTransferTab(st, seeCost)
       : (gudangTab === 'penyesuaian' && canAdj ? _renderGudangPenyesuaianTab(st, seeCost)
       : (gudangTab === 'opname' && canOpname ? _renderGudangOpnameTab(st, activeForOpname, rakList, opnameCounted, opnameSelisihUnit, opnameSelisihRp)
       : (gudangTab === 'kartu-stok' ? `
-        <div class="ons-card p-4 space-y-4">
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-1.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Mutasi Kartu Stok</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">CDOB BPOM</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${mutasiRows.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">log</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Seluruh riwayat arus masuk/keluar produk</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-1.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Barang Masuk (+)</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Penerimaan</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">+${mutasiRows.filter((m) => Number(m.qty_ubah || 0) > 0).reduce((s, m) => s + Number(m.qty_ubah || 0), 0)} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">unit</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Faktur PBF, retur &amp; koreksi (+)</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-1.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Barang Keluar (-)</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-red-500/10 text-red-600">Pengeluaran</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-red-600">${Math.abs(mutasiRows.filter((m) => Number(m.qty_ubah || 0) < 0).reduce((s, m) => s + Number(m.qty_ubah || 0), 0))} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">unit</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Kasir POS, racikan &amp; koreksi (-)</div>
+            </div>
+            <div class="ons-glance-tile">
+              <div class="flex items-center justify-between gap-1.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kepatuhan Mutasi</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-500/10 text-teal-700 dark:text-teal-300">Tervalidasi</span>
+              </div>
+              <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-teal-600">100% <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">sinkron</span></div>
+              <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Format siap audit BBPOM &amp; Kemenkes</div>
+            </div>
+          </div>
+          <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
           ${global.ONSProcurementPro ? global.ONSProcurementPro.renderStockFlowSummary(mutasiRows) : ''}
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap gap-2 flex-1">
@@ -7400,6 +7647,7 @@
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       ` : _renderGudangKadaluarsaTab(st, sorted, expiredCount, kritisCount, totalNilaiGudang, seeCost)))))}
     </div>`;
@@ -7645,90 +7893,90 @@
       <!-- 4 Executive KPI Cards -->
       ${suhuActiveKategori === 'kulkas' ? `
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="ons-card p-3.5 border-l-4 ${hasKulkasAlarm ? 'border-l-red-500 ring-1 ring-red-500/20' : 'border-l-blue-500'}">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Suhu Kulkas Terkini</span>
-              <span class="w-2 h-2 rounded-full ${hasKulkasAlarm ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}"></span>
+          <div class="ons-glance-tile ${hasKulkasAlarm ? 'border-red-500 ring-1 ring-red-500/20' : ''}">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Suhu Kulkas (2-8&deg;C)</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${hasKulkasAlarm ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-blue-500/10 text-blue-600'}">Chiller Aktif</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 ${hasKulkasAlarm ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${hasKulkasAlarm ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">
               ${latestKulkas ? (Number(latestKulkas.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}
             </div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">
-              ${latestKulkas ? `<span class="badge-bpom ${hasKulkasAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(latestKulkas.status_alarm || 'NORMAL')}</span>` : 'Menunggu input'}
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+              ${latestKulkas ? `<span class="badge-bpom ${hasKulkasAlarm ? 'bpom-keras' : 'bpom-bebas'}">${S().esc(latestKulkas.status_alarm || 'NORMAL')}</span>` : 'Menunggu pencatatan shift'}
             </div>
           </div>
 
-          <div class="ons-card p-3.5 border-l-4 border-l-emerald-500">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kelembapan Terkini</span>
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <div class="ons-glance-tile">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kelembapan Relatif</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">RH %</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 text-emerald-600 dark:text-emerald-400">
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600 dark:text-emerald-400">
               ${latestKulkas ? (Number(latestKulkas.kelembapan || 55) + '% RH') : '-'}
             </div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Target Chiller: 45&ndash;65% RH</div>
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Target Chiller: 45&ndash;65% RH</div>
           </div>
 
-          <div class="ons-card p-3.5 border-l-4 border-l-indigo-500">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Rata-rata ${suhuSelectedMonth}</span>
-              <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+          <div class="ons-glance-tile">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Rata-Rata ${suhuSelectedMonth}</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">Bulan Aktif</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 text-indigo-600 dark:text-indigo-400">${avgKulkas}&deg;C</div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Min: ${minKulkas}&deg;C &bull; Max: ${maxKulkas}&deg;C</div>
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-indigo-600 dark:text-indigo-400">${avgKulkas}&deg;C</div>
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Min: ${minKulkas}&deg;C &bull; Max: ${maxKulkas}&deg;C</div>
           </div>
 
-          <div class="ons-card p-3.5 border-l-4 border-l-amber-500">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kepatuhan CDOB (2&ndash;8&deg;C)</span>
-              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <div class="ons-glance-tile">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kepatuhan CDOB</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${complianceKulkasPct >= 95 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'}">Cold Chain</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 ${complianceKulkasPct >= 95 ? 'text-emerald-600' : 'text-amber-600'}">${complianceKulkasPct}%</div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">${coldItems.length} produk obat cold-chain</div>
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${complianceKulkasPct >= 95 ? 'text-emerald-600' : 'text-amber-600'}">${complianceKulkasPct}%</div>
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${coldItems.length} produk obat cold-chain</div>
           </div>
         </div>
       ` : (suhuActiveKategori === 'ruangan' ? `
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="ons-card p-3.5 border-l-4 ${hasRuanganAlarm ? 'border-l-red-500 ring-1 ring-red-500/20' : 'border-l-emerald-500'}">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Suhu Ruangan Terkini</span>
-              <span class="w-2 h-2 rounded-full ${hasRuanganAlarm ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}"></span>
+          <div class="ons-glance-tile ${hasRuanganAlarm ? 'border-red-500 ring-1 ring-red-500/20' : ''}">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Suhu Ruang (15-25&deg;C)</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${hasRuanganAlarm ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-600'}">Ruang Apotek</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 ${hasRuanganAlarm ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${hasRuanganAlarm ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">
               ${latestRuangan ? (Number(latestRuangan.suhu_celcius || 0).toFixed(1) + '&deg;C') : 'Belum Dicatat'}
             </div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
               ${latestRuangan ? (Number(latestRuangan.suhu_celcius || 0) <= 25 ? '<span class="badge-bpom bpom-bebas">SEJUK AC (15–25°C)</span>' : (Number(latestRuangan.suhu_celcius || 0) <= 30 ? '<span class="badge-bpom bpom-terbatas">KAMAR (≤30°C)</span>' : '<span class="badge-bpom bpom-keras">KRITIS PANAS</span>')) : 'Menunggu input'}
             </div>
           </div>
 
-          <div class="ons-card p-3.5 border-l-4 border-l-blue-500">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kelembapan Ruang Terkini</span>
-              <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          <div class="ons-glance-tile">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kelembapan Ruang</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">BPOM</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 text-blue-600 dark:text-blue-400">
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600 dark:text-blue-400">
               ${latestRuangan ? (Number(latestRuangan.kelembapan || 60) + '% RH') : '-'}
             </div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Standar BPOM: Target &le; 70% RH</div>
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Standar BPOM: Target &le; 70% RH</div>
           </div>
 
-          <div class="ons-card p-3.5 border-l-4 border-l-indigo-500">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Rata-rata ${suhuSelectedMonth}</span>
-              <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+          <div class="ons-glance-tile">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Rata-Rata ${suhuSelectedMonth}</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">Bulan Aktif</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 text-indigo-600 dark:text-indigo-400">${avgRuangan}&deg;C</div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Min: ${minRuangan}&deg;C &bull; Max: ${maxRuangan}&deg;C</div>
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-indigo-600 dark:text-indigo-400">${avgRuangan}&deg;C</div>
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Min: ${minRuangan}&deg;C &bull; Max: ${maxRuangan}&deg;C</div>
           </div>
 
-          <div class="ons-card p-3.5 border-l-4 border-l-amber-500">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Kepatuhan Suhu Ruangan</span>
-              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <div class="ons-glance-tile">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kepatuhan Ruang</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Stabilitas</span>
             </div>
-            <div class="text-xl font-black font-mono-num mt-1 text-emerald-600 dark:text-emerald-400">${complianceRuanganPct}%</div>
-            <div class="text-[10px] mt-0.5" style="color:var(--ons-text-soft)">Stabilitas sediaan tablet, sirup &amp; salep</div>
+            <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600 dark:text-emerald-400">${complianceRuanganPct}%</div>
+            <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Stabilitas sediaan tablet, sirup &amp; salep</div>
           </div>
         </div>
       ` : `
