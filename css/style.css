@@ -5183,6 +5183,7 @@ html.dark .ons-subhero-banner {
 .ons-subhero-banner.is-keuangan { --subhero-accent: linear-gradient(180deg, #059669, #0284C7); }
 .ons-subhero-banner.is-laporan { --subhero-accent: linear-gradient(180deg, #0284C7, #6366F1); }
 .ons-subhero-banner.is-crm { --subhero-accent: linear-gradient(180deg, #059669, #10B981); }
+.ons-subhero-banner.is-analisis { --subhero-accent: linear-gradient(180deg, #4F46E5, #8B5CF6); }
 
 /* Executive Subhero Layout & Typography Helpers */
 .ons-subhero-inner {

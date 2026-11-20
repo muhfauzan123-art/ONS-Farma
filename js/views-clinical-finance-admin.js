@@ -8668,7 +8668,7 @@ S. prn 3 dd 1 tab</textarea>
               <th>Klasifikasi</th>
               <th>Stok Saat Ini</th>
               <th class="text-right">Nilai Stok</th>
-              <th>Actions</th>
+              <th class="text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -8676,89 +8676,144 @@ S. prn 3 dd 1 tab</textarea>
               <tr>
                 <td class="font-mono-num text-xs">${idx + 1}</td>
                 <td class="text-xs">
-                  <div class="font-bold">${S().esc(r.nama)}</div>
-                  <div class="text-[10px]" style="color:var(--ons-text-soft)">${S().esc(r.id_obat)} &bull; ${S().esc(r.satuan)}</div>
+                  <div class="font-bold text-slate-900 dark:text-slate-100">${S().esc(r.nama)}</div>
+                  <div class="text-[10px] text-slate-400 font-mono-num">${S().esc(r.id_obat)} &bull; ${S().esc(r.satuan)}</div>
                 </td>
                 <td class="font-mono-num text-xs font-semibold">${r.terjual} ${S().esc(r.satuan)}</td>
                 <td class="text-right font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${S().rp(r.omzet)}</td>
                 <td class="text-right font-mono-num text-xs font-bold text-emerald-600 dark:text-emerald-400">${S().rp(r.keuntungan)}</td>
-                <td class="font-mono-num text-xs">${r.pct}% <span class="text-[10px]" style="color:var(--ons-text-soft)">(Kum. ${r.cumPct}%)</span></td>
+                <td class="font-mono-num text-xs">${r.pct}% <span class="text-[10px] text-slate-400">(Kum. ${r.cumPct}%)</span></td>
                 <td><span class="${r.badgeCls}">Pareto ${r.klasifikasi}</span></td>
                 <td class="font-mono-num text-xs font-bold">${r.stokSaatIni}</td>
                 <td class="text-right font-mono-num text-xs">${S().rp(r.nilaiStok)}</td>
-                <td>
-                  <button type="button" onclick="navigateView('defecta','order')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Order via Defecta">Defecta</button>
+                <td class="text-right">
+                  <button type="button" onclick="navigateView('defecta','order')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 shadow-sm" title="Order via Defecta">Order Defecta</button>
                 </td>
               </tr>
-            `).join('') : '<tr><td colspan="10" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+            `).join('') : '<tr><td colspan="10" class="text-center py-8 text-xs text-slate-400">Data analisis Pareto tidak ditemukan.</td></tr>'}
           </tbody>
         </table>
       </div>
     `;
 
     const rekapFooter = _renderLapRekapFooter('anlPareto', `Akumulasi Hasil Analisis dari ${_fmtDateId(anlParetoDateFrom)} s.d. ${_fmtDateId(anlParetoDateTo)}`, [
-      { label: 'Pareto A', valHtml: `${countA} produk (${S().rp(sumA)})`, cls: 'text-blue-600 dark:text-blue-400' },
-      { label: 'Pareto B', valHtml: `${countB} produk (${S().rp(sumB)})`, cls: 'text-emerald-600 dark:text-emerald-400' },
-      { label: 'Pareto C', valHtml: `${countC} produk (${S().rp(sumC)})`, cls: 'text-slate-500' },
-      { label: 'Total Produk', valHtml: `${rows.length} produk` }
+      { label: 'Pareto A (70-80% Omzet)', valHtml: `${countA} produk (${S().rp(sumA)})`, cls: 'text-blue-600 dark:text-blue-400 font-bold' },
+      { label: 'Pareto B (15-20% Omzet)', valHtml: `${countB} produk (${S().rp(sumB)})`, cls: 'text-emerald-600 dark:text-emerald-400 font-bold' },
+      { label: 'Pareto C (5-10% Omzet)', valHtml: `${countC} produk (${S().rp(sumC)})`, cls: 'text-slate-500' },
+      { label: 'Total SKU', valHtml: `${rows.length} produk` }
     ]);
 
-    const paretoVisualBar = `
-      <div class="ons-cockpit-strip">
-        <div class="ons-cockpit-card is-azure">
-          <div class="text-[10.5px] font-semibold text-slate-500">Pareto A (Prioritas Utama &bull; 70-80% Omzet)</div>
-          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-blue-600">${countA} Produk &bull; ${S().rp(sumA)}</div>
-          <div class="text-[10px] text-slate-400">Kontributor profit terbesar &bull; Pastikan buffer stock aman</div>
-        </div>
-        <div class="ons-cockpit-card is-emerald">
-          <div class="text-[10.5px] font-semibold text-slate-500">Pareto B (Moving Menengah &bull; 15-20% Omzet)</div>
-          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-emerald-600">${countB} Produk &bull; ${S().rp(sumB)}</div>
-          <div class="text-[10px] text-slate-400">Rotasi stabil &bull; Evaluasi pengadaan berkala</div>
-        </div>
-        <div class="ons-cockpit-card is-amber">
-          <div class="text-[10.5px] font-semibold text-slate-500">Pareto C (Slow Moving &bull; 5-10% Omzet)</div>
-          <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${countC} Produk &bull; ${S().rp(sumC)}</div>
-          <div class="text-[10px] text-slate-400">Efisiensi modal &bull; Batasi pembelian &amp; pantau ED</div>
-        </div>
-      </div>
-    `;
-
     return `
-      <div class="space-y-3">
-        ${paretoVisualBar}
-        <div class="ons-card p-3 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
-            <div class="flex flex-wrap items-center gap-2">
-              <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</span>
-                <select id="anlParetoMode" class="ons-select text-xs h-8 py-1" onchange="window.setAnlParetoMode(this.value)">
-                  <option value="penjualan" ${anlParetoMode === 'penjualan' ? 'selected' : ''}>Nilai Penjualan</option>
-                  <option value="keuntungan" ${anlParetoMode === 'keuntungan' ? 'selected' : ''}>Keuntungan</option>
-                  <option value="kuantitas" ${anlParetoMode === 'kuantitas' ? 'selected' : ''}>Kuantitas Terjual</option>
-                </select>
-              </div>
-              <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
-                <input id="anlParetoSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlParetoSearchQ)}" oninput="window.setAnlParetoSearch(this.value)"/>
-              </div>
+      <!-- SUBHERO BANNER: ANALISIS PARETO ABC -->
+      <div class="ons-subhero-banner is-analisis mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <div>
-                <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl.</span>
-                <div class="flex items-center gap-1">
-                  <input id="anlParetoDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateFrom)}" onchange="window.setAnlParetoDateRange(this.value, document.getElementById('anlParetoDateTo').value)"/>
-                  <span class="text-xs">&ndash;</span>
-                  <input id="anlParetoDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateTo)}" onchange="window.setAnlParetoDateRange(document.getElementById('anlParetoDateFrom').value, this.value)"/>
-                </div>
+            <div>
+              <div class="ons-subhero-badge">
+                <span class="ons-badge-dot"></span>
+                <span>Prinsip Pareto 80/20 &amp; Tata Kelola Modal</span>
               </div>
-              <div class="self-end">
-                <button type="button" onclick="window.resetAnlParetoFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
-              </div>
+              <h2 class="ons-subhero-title">Analisis Pareto ABC &amp; Kontribusi Omzet Apotek</h2>
+              <p class="ons-subhero-desc">
+                Klasifikasi inventaris farmasi berbasis kontribusi: Kelas A (Fast Moving 70-80% omzet), Kelas B (Medium Moving 15-20%), dan Kelas C (Slow Moving 5-10%) guna memprioritaskan alokasi dana dan mencegah kekosongan stok.
+              </p>
             </div>
           </div>
-          ${tableHtml}
-          ${rekapFooter}
+          <div class="ons-subhero-actions">
+            <span class="ons-chip ons-chip-success">
+              <span class="ons-chip-dot"></span>
+              Analisis Pareto Real-Time
+            </span>
+            <button type="button" onclick="window.exportAnlPareto('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Export Excel</span>
+            </button>
+            <button type="button" onclick="window.exportAnlPareto('pdf')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>Cetak PDF</span>
+            </button>
+            <button type="button" onclick="window.exportAnlPareto('csv')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <span>CSV</span>
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- COCKPIT STRIP: 4 KPI CARDS -->
+      <div class="ons-cockpit-strip mb-4">
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Kelas A (Prioritas Utama)</span>
+            <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${countA} Produk</span>
+          </div>
+          <div class="ons-cockpit-val text-blue-600">${S().rp(sumA)}</div>
+          <div class="ons-cockpit-sub">Kontributor 70-80% omzet &bull; Pastikan buffer aman</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Kelas B (Moving Menengah)</span>
+            <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${countB} Produk</span>
+          </div>
+          <div class="ons-cockpit-val text-emerald-600">${S().rp(sumB)}</div>
+          <div class="ons-cockpit-sub">Rotasi stabil &bull; 15-20% kontribusi pendapatan</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Kelas C (Slow Moving)</span>
+            <span class="ons-cockpit-badge text-amber-600 bg-amber-500/10 font-mono-num">${countC} Produk</span>
+          </div>
+          <div class="ons-cockpit-val text-amber-600">${S().rp(sumC)}</div>
+          <div class="ons-cockpit-sub">Efisiensi modal &bull; Batasi order &amp; monitor ED</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Total Valuasi Omzet Teranalisis</span>
+            <span class="ons-cockpit-badge text-purple-600 bg-purple-500/10 font-mono-num">${rows.length} SKU</span>
+          </div>
+          <div class="ons-cockpit-val text-purple-600">${S().rp(totalMetric)}</div>
+          <div class="ons-cockpit-sub">Basis kalkulasi: [${anlParetoMode.toUpperCase()}]</div>
+        </div>
+      </div>
+
+      <!-- WORKSTATION CARD: ANALISIS PARETO -->
+      <div class="ons-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b text-xs" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Metrik Perangkingan:</span>
+              <select id="anlParetoMode" class="ons-select text-xs h-8 py-1 font-semibold" onchange="window.setAnlParetoMode(this.value)">
+                <option value="penjualan" ${anlParetoMode === 'penjualan' ? 'selected' : ''}>Nilai Penjualan (Omzet)</option>
+                <option value="keuntungan" ${anlParetoMode === 'keuntungan' ? 'selected' : ''}>Keuntungan Bersih (Margin)</option>
+                <option value="kuantitas" ${anlParetoMode === 'kuantitas' ? 'selected' : ''}>Kuantitas Terjual (Unit)</option>
+              </select>
+            </div>
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Pencarian Cepat:</span>
+              <input id="anlParetoSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari nama obat / kode / kelas..." value="${S().esc(anlParetoSearchQ)}" oninput="window.setAnlParetoSearch(this.value)"/>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Rentang Tanggal Trx:</span>
+              <div class="flex items-center gap-1">
+                <input id="anlParetoDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateFrom)}" onchange="window.setAnlParetoDateRange(this.value, document.getElementById('anlParetoDateTo').value)"/>
+                <span class="text-xs text-slate-400">&ndash;</span>
+                <input id="anlParetoDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateTo)}" onchange="window.setAnlParetoDateRange(document.getElementById('anlParetoDateFrom').value, this.value)"/>
+              </div>
+            </div>
+            <div class="self-end">
+              <button type="button" onclick="window.resetAnlParetoFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5 flex items-center gap-1" title="Reset Filter">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        ${tableHtml}
+        ${rekapFooter}
       </div>
     `;
   }
@@ -8890,8 +8945,8 @@ S. prn 3 dd 1 tab</textarea>
               <th>Penjualan Terakhir</th>
               <th>Periode Pembelian</th>
               <th>Rata-rata Penjualan</th>
-              <th>Stok Minimal</th>
-              <th>Stok Maksimal</th>
+              <th>Stok Min</th>
+              <th>Stok Max</th>
               <th>Target Stok</th>
               <th>Stok Terkini</th>
               <th class="text-right">Pemenuhan Stok</th>
@@ -8904,12 +8959,12 @@ S. prn 3 dd 1 tab</textarea>
             ${filtered.length ? filtered.map((r, idx) => `
               <tr>
                 <td class="font-mono-num text-xs">${idx + 1}</td>
-                <td class="font-bold text-xs">${S().esc(r.nama)}</td>
+                <td class="font-bold text-xs text-slate-900 dark:text-slate-100">${S().esc(r.nama)}</td>
                 <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(r.satuan)}</td>
                 <td class="font-mono-num text-xs">${r.terjual}</td>
                 <td class="font-mono-num text-xs">${r.lastSold}</td>
                 <td class="text-xs">${r.periodeBeli}</td>
-                <td class="font-mono-num text-xs">${r.rataRataPenjualan}</td>
+                <td class="font-mono-num text-xs font-semibold">${r.rataRataPenjualan}</td>
                 <td class="font-mono-num text-xs">${r.stokMin}</td>
                 <td class="font-mono-num text-xs">${r.stokMax}</td>
                 <td class="font-mono-num text-xs font-semibold">${r.targetStok}</td>
@@ -8919,42 +8974,120 @@ S. prn 3 dd 1 tab</textarea>
                 <td><span class="badge-bpom ${r.pareto === 'A' ? 'bpom-bebas' : 'bpom-terbatas'}">${r.pareto}</span></td>
                 <td><span class="badge-bpom bpom-bebas">${S().esc(r.jenisSp)}</span></td>
               </tr>
-            `).join('') : '<tr><td colspan="15" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+            `).join('') : '<tr><td colspan="15" class="text-center py-8 text-xs text-slate-400">Data analisis pembelian tidak ditemukan.</td></tr>'}
           </tbody>
         </table>
       </div>
     `;
 
-    const rekapFooter = _renderLapRekapFooter('anlBeli', `Rekap dari ${_fmtDateId(startIso)} s.d. ${_fmtDateId(todayIso)}`, [
-      { label: 'Potensial Loss', valHtml: `${countLoss} produk`, cls: 'text-red-600 dark:text-red-400' },
-      { label: 'Understock', valHtml: `${countUnder} produk`, cls: 'text-amber-600 dark:text-amber-400' },
-      { label: 'Deadstock', valHtml: `${countDead} produk`, cls: 'text-slate-500' },
-      { label: 'Overstock', valHtml: `${countOver} produk`, cls: 'text-blue-600 dark:text-blue-400' }
+    const rekapFooter = _renderLapRekapFooter('anlBeli', `Rekap Analisis dari ${_fmtDateId(startIso)} s.d. ${_fmtDateId(todayIso)}`, [
+      { label: 'Potensial Loss Sales', valHtml: `${countLoss} produk`, cls: 'text-red-600 dark:text-red-400 font-bold' },
+      { label: 'Understock (Segera Order)', valHtml: `${countUnder} produk`, cls: 'text-amber-600 dark:text-amber-400 font-bold' },
+      { label: 'Overstock (Modal Tertahan)', valHtml: `${countOver} produk`, cls: 'text-blue-600 dark:text-blue-400 font-bold' },
+      { label: 'Deadstock (Mengendap)', valHtml: `${countDead} produk`, cls: 'text-slate-500' }
     ]);
 
     return `
-      <div class="ons-card p-3 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+      <!-- SUBHERO BANNER: ANALISIS PEMBELIAN -->
+      <div class="ons-subhero-banner is-analisis mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            </div>
+            <div>
+              <div class="ons-subhero-badge">
+                <span class="ons-badge-dot"></span>
+                <span>Smart Buffer Stock &amp; Lead Time CDOB</span>
+              </div>
+              <h2 class="ons-subhero-title">Analisis Pembelian Cerdas &amp; Estimasi Kebutuhan Pengadaan</h2>
+              <p class="ons-subhero-desc">
+                Perhitungan otomatis ambang batas buffer stock, lead time kiriman PBF, konsumsi rata-rata harian, serta estimasi kuantitas pemenuhan stok guna mencegah loss sales dan overstock.
+              </p>
+            </div>
+          </div>
+          <div class="ons-subhero-actions">
+            <span class="ons-chip ons-chip-success">
+              <span class="ons-chip-dot"></span>
+              Sistem Defecta Terintegrasi
+            </span>
+            <button type="button" onclick="window.generateAutoPoFromAnalysis()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Generate SP Otomatis dari Defecta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Pesanan Otomatis</span>
+            </button>
+            <button type="button" onclick="window.openAnlPoConfigModal()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm" title="Atur Lead Time & Buffer Stock">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>Konfigurasi PO</span>
+            </button>
+            <button type="button" onclick="window.exportAnlBeli('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <span>Excel</span>
+            </button>
+            <button type="button" onclick="window.exportAnlBeli('csv')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <span>CSV</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COCKPIT STRIP: 4 KPI CARDS -->
+      <div class="ons-cockpit-strip mb-4">
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Potensial Loss Sales</span>
+            <span class="ons-cockpit-badge ${countLoss > 0 ? 'bg-rose-500/10 text-rose-600 font-bold' : ''} font-mono-num">${countLoss} SKU</span>
+          </div>
+          <div class="ons-cockpit-val ${countLoss > 0 ? 'text-rose-600' : ''}">${countLoss} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Stok habis &bull; Potensi kehilangan pembeli</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Understock (Segera Pesan)</span>
+            <span class="ons-cockpit-badge ${countUnder > 0 ? 'bg-amber-500/10 text-amber-600 font-bold' : ''} font-mono-num">${countUnder} SKU</span>
+          </div>
+          <div class="ons-cockpit-val ${countUnder > 0 ? 'text-amber-600' : ''}">${countUnder} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Stok di bawah ambang batas buffer safety</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Overstock (Tahan Order)</span>
+            <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${countOver} SKU</span>
+          </div>
+          <div class="ons-cockpit-val text-blue-600">${countOver} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Stok melebihi target stok maksimum</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Deadstock (>90 Hari Diam)</span>
+            <span class="ons-cockpit-badge text-slate-600 bg-slate-500/10 font-mono-num">${countDead} SKU</span>
+          </div>
+          <div class="ons-cockpit-val text-slate-600 dark:text-slate-300">${countDead} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Stok mengendap &bull; Opsi retur PBF / bundling</div>
+        </div>
+      </div>
+
+      <!-- WORKSTATION CARD: ANALISIS PEMBELIAN -->
+      <div class="ons-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b text-xs" style="border-color:var(--ons-border)">
           <div class="flex flex-wrap items-center gap-2">
             <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Referensi Data</span>
-              <select id="anlBeliRefPeriod" class="ons-select text-xs h-8 py-1" onchange="window.setAnlBeliRefPeriod(this.value)">
-                <option value="1m" ${anlBeliRefPeriod === '1m' ? 'selected' : ''}>1 Bulan Terakhir</option>
-                <option value="3m" ${anlBeliRefPeriod === '3m' ? 'selected' : ''}>3 Bulan Terakhir</option>
-                <option value="6m" ${anlBeliRefPeriod === '6m' ? 'selected' : ''}>6 Bulan Terakhir</option>
-                <option value="12m" ${anlBeliRefPeriod === '12m' ? 'selected' : ''}>1 Tahun Terakhir</option>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Referensi Penjualan:</span>
+              <select id="anlBeliRefPeriod" class="ons-select text-xs h-8 py-1 font-semibold" onchange="window.setAnlBeliRefPeriod(this.value)">
+                <option value="1m" ${anlBeliRefPeriod === '1m' ? 'selected' : ''}>1 Bulan Terakhir (30 Hari)</option>
+                <option value="3m" ${anlBeliRefPeriod === '3m' ? 'selected' : ''}>3 Bulan Terakhir (90 Hari)</option>
+                <option value="6m" ${anlBeliRefPeriod === '6m' ? 'selected' : ''}>6 Bulan Terakhir (180 Hari)</option>
+                <option value="12m" ${anlBeliRefPeriod === '12m' ? 'selected' : ''}>1 Tahun Terakhir (365 Hari)</option>
               </select>
             </div>
             <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
-              <input id="anlBeliSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlBeliSearchQ)}" oninput="window.setAnlBeliSearch(this.value)"/>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari Data:</span>
+              <input id="anlBeliSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari nama produk / kode..." value="${S().esc(anlBeliSearchQ)}" oninput="window.setAnlBeliSearch(this.value)"/>
             </div>
             <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Status</span>
-              <select id="anlBeliStatusFilter" class="ons-select text-xs h-8 py-1" onchange="window.setAnlBeliStatusFilter(this.value)">
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Status Persediaan:</span>
+              <select id="anlBeliStatusFilter" class="ons-select text-xs h-8 py-1 font-semibold" onchange="window.setAnlBeliStatusFilter(this.value)">
                 <option value="SEMUA" ${anlBeliStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Status</option>
-                <option value="UNDERSTOCK" ${anlBeliStatusFilter === 'UNDERSTOCK' ? 'selected' : ''}>Understock</option>
-                <option value="POTENSIAL_LOSS" ${anlBeliStatusFilter === 'POTENSIAL_LOSS' ? 'selected' : ''}>Potensial Loss</option>
+                <option value="UNDERSTOCK" ${anlBeliStatusFilter === 'UNDERSTOCK' ? 'selected' : ''}>Understock (Segera Pesan)</option>
+                <option value="POTENSIAL_LOSS" ${anlBeliStatusFilter === 'POTENSIAL_LOSS' ? 'selected' : ''}>Potensial Loss Sales</option>
                 <option value="DEADSTOCK" ${anlBeliStatusFilter === 'DEADSTOCK' ? 'selected' : ''}>Deadstock</option>
                 <option value="OVERSTOCK" ${anlBeliStatusFilter === 'OVERSTOCK' ? 'selected' : ''}>Overstock</option>
                 <option value="AMAN" ${anlBeliStatusFilter === 'AMAN' ? 'selected' : ''}>Stok Aman</option>
@@ -8962,7 +9095,10 @@ S. prn 3 dd 1 tab</textarea>
             </div>
           </div>
           <div class="self-end">
-            <button type="button" onclick="window.resetAnlBeliFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            <button type="button" onclick="window.resetAnlBeliFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5 flex items-center gap-1" title="Reset Filter">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Reset</span>
+            </button>
           </div>
         </div>
         ${tableHtml}
@@ -9039,27 +9175,27 @@ S. prn 3 dd 1 tab</textarea>
               <th>No.</th>
               <th>Nama Produk</th>
               <th>Satuan</th>
-              <th class="text-right">Referensi Harga Pokok <span title="HPP Modal Rata-rata/Master" style="color:var(--ons-text-soft)">(i)</span></th>
-              <th class="text-right">Harga Pokok Terakhir <span title="HPP Faktur Terbaru" style="color:var(--ons-text-soft)">(i)</span></th>
-              <th>Perubahan <span title="Selisih Kenaikan HPP" style="color:var(--ons-text-soft)">(i)</span></th>
-              <th>Markup</th>
-              <th class="text-right">Harga Jual</th>
-              <th class="text-right">Rekomendasi Harga Jual</th>
-              <th>Actions</th>
+              <th class="text-right">Referensi HPP <span title="HPP Modal Rata-rata/Master" style="color:var(--ons-text-soft)">(i)</span></th>
+              <th class="text-right">HPP Terakhir <span title="HPP Faktur Terbaru" style="color:var(--ons-text-soft)">(i)</span></th>
+              <th>Perubahan HPP</th>
+              <th>Target Markup</th>
+              <th class="text-right">Harga Jual Saat Ini</th>
+              <th class="text-right">Rekomendasi Harga Baru</th>
+              <th class="text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
             ${filtered.length ? filtered.map((r, idx) => {
               const isChecked = anlHargaSelected.has(r.id_obat);
               const chgHtml = r.deltaPct > 0
-                ? `<span class="badge-bpom bpom-narkotika font-bold">+${r.deltaPct}% (+${S().rp(r.deltaHpp)})</span>`
+                ? `<span class="badge-bpom bpom-narkotika font-bold">+?${r.deltaPct}% (+?${S().rp(r.deltaHpp)})</span>`.replace('?', '')
                 : (r.deltaPct < 0
                   ? `<span class="badge-bpom bpom-bebas font-bold">${r.deltaPct}% (${S().rp(r.deltaHpp)})</span>`
                   : '<span style="color:var(--ons-text-soft)">0%</span>');
               return `<tr>
                 <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="window.toggleAnlHargaItemSelect('${r.id_obat}', this.checked)" aria-label="Pilih ${S().esc(r.nama)}"/></td>
                 <td class="font-mono-num text-xs">${idx + 1}</td>
-                <td class="font-bold text-xs">${S().esc(r.nama)}</td>
+                <td class="font-bold text-xs text-slate-900 dark:text-slate-100">${S().esc(r.nama)}</td>
                 <td class="text-xs" style="color:var(--ons-text-soft)">${S().esc(r.satuan)}</td>
                 <td class="text-right font-mono-num text-xs">${S().rp(r.hppRef)}</td>
                 <td class="text-right font-mono-num text-xs font-semibold">${S().rp(r.hppLast)}</td>
@@ -9067,51 +9203,129 @@ S. prn 3 dd 1 tab</textarea>
                 <td class="font-mono-num text-xs font-semibold">${r.markup}%</td>
                 <td class="text-right font-mono-num text-xs font-bold">${S().rp(r.hargaJual)}</td>
                 <td class="text-right font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400">${S().rp(r.rekomendasiHarga)}</td>
-                <td>
-                  <button type="button" onclick="window.applySinglePriceFromAnalysis('${r.id_obat}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Terapkan Rekomendasi">Update</button>
+                <td class="text-right">
+                  <button type="button" onclick="window.applySinglePriceFromAnalysis('${r.id_obat}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 shadow-sm" title="Terapkan Rekomendasi">Update</button>
                 </td>
               </tr>`;
-            }).join('') : '<tr><td colspan="11" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Data tidak ditemukan.</td></tr>'}
+            }).join('') : '<tr><td colspan="11" class="text-center py-8 text-xs text-slate-400">Data analisis harga produk tidak ditemukan.</td></tr>'}
           </tbody>
         </table>
       </div>
     `;
 
-    const rekapFooter = _renderLapRekapFooter('anlHarga', 'Ringkasan Analisis', [
-      { label: 'Harga Naik', valHtml: `${countNaik} produk`, cls: 'text-red-600 dark:text-red-400' },
-      { label: 'Harga Turun', valHtml: `${countTurun} produk`, cls: 'text-emerald-600 dark:text-emerald-400' },
-      { label: 'Perlu Penyesuaian', valHtml: `${countPerlu} produk`, cls: 'text-amber-600 dark:text-amber-400' },
-      { label: 'Telah Disesuaikan/Diabaikan', valHtml: `${countAman} produk`, cls: 'text-slate-500' }
+    const rekapFooter = _renderLapRekapFooter('anlHarga', 'Ringkasan Analisis Harga & Margin Jual', [
+      { label: 'HPP Faktur Naik', valHtml: `${countNaik} produk`, cls: 'text-red-600 dark:text-red-400 font-bold' },
+      { label: 'Perlu Naikkan Harga', valHtml: `${countPerlu} produk`, cls: 'text-amber-600 dark:text-amber-400 font-bold' },
+      { label: 'HPP Faktur Turun', valHtml: `${countTurun} produk`, cls: 'text-emerald-600 dark:text-emerald-400 font-bold' },
+      { label: 'Margin Sudah Aman', valHtml: `${countAman} produk`, cls: 'text-slate-500' }
     ]);
 
     return `
-      <div class="ons-card p-3 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+      <!-- SUBHERO BANNER: ANALISIS HARGA PRODUK -->
+      <div class="ons-subhero-banner is-analisis mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </div>
+            <div>
+              <div class="ons-subhero-badge">
+                <span class="ons-badge-dot"></span>
+                <span>Proteksi Margin &amp; Deteksi Kenaikan HPP</span>
+              </div>
+              <h2 class="ons-subhero-title">Analisis Kenaikan Harga Faktur PBF &amp; Target Margin Jual</h2>
+              <p class="ons-subhero-desc">
+                Deteksi dini perubahan harga beli faktur distributor PBF, audit margin laba kotor, dan rekomendasi pembaruan harga jual otomatis per produk atau massal (bulk update).
+              </p>
+            </div>
+          </div>
+          <div class="ons-subhero-actions">
+            <span class="ons-chip ons-chip-success">
+              <span class="ons-chip-dot"></span>
+              Margin Protection Siaga
+            </span>
+            <button type="button" onclick="window.applyBulkPriceFromAnalysis()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Terapkan Rekomendasi Harga Baru Sekaligus">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Update Harga Massal (${anlHargaSelected.size > 0 ? anlHargaSelected.size : countPerlu})</span>
+            </button>
+            <button type="button" onclick="window.exportAnlHarga('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Export Excel</span>
+            </button>
+            <button type="button" onclick="window.exportAnlHarga('csv')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5">
+              <span>CSV</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COCKPIT STRIP: 4 KPI CARDS -->
+      <div class="ons-cockpit-strip mb-4">
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>HPP Faktur Naik</span>
+            <span class="ons-cockpit-badge ${countNaik > 0 ? 'bg-rose-500/10 text-rose-600 font-bold' : ''} font-mono-num">${countNaik} SKU</span>
+          </div>
+          <div class="ons-cockpit-val ${countNaik > 0 ? 'text-rose-600' : ''}">${countNaik} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Harga beli faktur terbaru naik dibanding rata-rata</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Perlu Penyesuaian Harga</span>
+            <span class="ons-cockpit-badge ${countPerlu > 0 ? 'bg-amber-500/10 text-amber-600 font-bold' : ''} font-mono-num">${countPerlu} SKU</span>
+          </div>
+          <div class="ons-cockpit-val ${countPerlu > 0 ? 'text-amber-600' : ''}">${countPerlu} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Harga jual di bawah target margin ${anlHargaTargetMarkup}%</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>HPP Faktur Turun</span>
+            <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${countTurun} SKU</span>
+          </div>
+          <div class="ons-cockpit-val text-emerald-600">${countTurun} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Harga beli lebih murah &bull; Potensi margin meningkat</div>
+        </div>
+        <div class="ons-cockpit-card">
+          <div class="ons-cockpit-label">
+            <span>Harga Sesuai / Aman</span>
+            <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${countAman} SKU</span>
+          </div>
+          <div class="ons-cockpit-val text-blue-600">${countAman} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
+          <div class="ons-cockpit-sub">Margin laba kotor apotek terlindungi optimal</div>
+        </div>
+      </div>
+
+      <!-- WORKSTATION CARD: ANALISIS HARGA -->
+      <div class="ons-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b text-xs" style="border-color:var(--ons-border)">
           <div class="flex flex-wrap items-center gap-2">
             <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Harga Pembanding</span>
-              <select id="anlHargaHppBasis" class="ons-select text-xs h-8 py-1" onchange="window.setAnlHargaHppBasis(this.value)">
-                <option value="ref" ${anlHargaHppBasis === 'ref' ? 'selected' : ''}>Referensi Harga Pokok</option>
-                <option value="last" ${anlHargaHppBasis === 'last' ? 'selected' : ''}>Harga Pokok Terakhir</option>
-                <option value="avg" ${anlHargaHppBasis === 'avg' ? 'selected' : ''}>Harga Pokok Rata-Rata</option>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Dasar Acuan HPP:</span>
+              <select id="anlHargaHppBasis" class="ons-select text-xs h-8 py-1 font-semibold" onchange="window.setAnlHargaHppBasis(this.value)">
+                <option value="ref" ${anlHargaHppBasis === 'ref' ? 'selected' : ''}>Referensi Harga Pokok (Master)</option>
+                <option value="last" ${anlHargaHppBasis === 'last' ? 'selected' : ''}>Harga Pokok Faktur Terakhir</option>
+                <option value="avg" ${anlHargaHppBasis === 'avg' ? 'selected' : ''}>Harga Pokok Rata-Rata Berjalan</option>
               </select>
             </div>
             <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari</span>
-              <input id="anlHargaSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari data..." value="${S().esc(anlHargaSearchQ)}" oninput="window.setAnlHargaSearch(this.value)"/>
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Cari Data Produk:</span>
+              <input id="anlHargaSearchInp" class="ons-input text-xs h-8 py-1 w-44 sm:w-56" placeholder="Cari nama produk / kode..." value="${S().esc(anlHargaSearchQ)}" oninput="window.setAnlHargaSearch(this.value)"/>
             </div>
             <div>
-              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Status</span>
-              <select id="anlHargaStatusFilter" class="ons-select text-xs h-8 py-1" onchange="window.setAnlHargaStatusFilter(this.value)">
+              <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Filter Status Margin:</span>
+              <select id="anlHargaStatusFilter" class="ons-select text-xs h-8 py-1 font-semibold" onchange="window.setAnlHargaStatusFilter(this.value)">
                 <option value="SEMUA" ${anlHargaStatusFilter === 'SEMUA' ? 'selected' : ''}>Semua Produk</option>
-                <option value="NAIK" ${anlHargaStatusFilter === 'NAIK' ? 'selected' : ''}>Harga Naik</option>
-                <option value="PERLU" ${anlHargaStatusFilter === 'PERLU' ? 'selected' : ''}>Perlu Penyesuaian</option>
-                <option value="AMAN" ${anlHargaStatusFilter === 'AMAN' ? 'selected' : ''}>Telah Disesuaikan / Aman</option>
+                <option value="NAIK" ${anlHargaStatusFilter === 'NAIK' ? 'selected' : ''}>HPP Naik (Faktur)</option>
+                <option value="PERLU" ${anlHargaStatusFilter === 'PERLU' ? 'selected' : ''}>Perlu Penyesuaian Harga</option>
+                <option value="AMAN" ${anlHargaStatusFilter === 'AMAN' ? 'selected' : ''}>Telah Sesuai / Margin Aman</option>
               </select>
             </div>
           </div>
           <div class="self-end">
-            <button type="button" onclick="window.resetAnlHargaFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5" title="Reset Filter">&#x21bb; Reset</button>
+            <button type="button" onclick="window.resetAnlHargaFilter()" class="ons-btn ons-btn-ghost text-xs h-8 px-2.5 flex items-center gap-1" title="Reset Filter">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Reset</span>
+            </button>
           </div>
         </div>
         ${tableHtml}
@@ -9125,47 +9339,52 @@ S. prn 3 dd 1 tab</textarea>
     anlTab = (st.subTabs && st.subTabs.analisis) || anlTab || 'pareto';
     if (!['pareto', 'pembelian', 'harga'].includes(anlTab)) anlTab = 'pareto';
 
-    const pageTitle = anlTab === 'pareto' ? 'Analisis Pareto A-B-C'
-      : (anlTab === 'pembelian' ? 'Analisis Pembelian' : 'Analisis Harga Produk');
-    const pageDesc = anlTab === 'pareto' ? 'Klasifikasi kontribusi produk Kelas A (70% omzet), B (20%), dan C (10%) untuk prioritas modal.'
-      : (anlTab === 'pembelian' ? 'Perhitungan buffer stock, lead time PBF, estimasi kebutuhan pemenuhan stok &amp; pesanan otomatis.'
-        : 'Evaluasi kenaikan HPP faktur distributor, target markup apotek &amp; rekomendasi pembaruan harga jual.');
+    const totalSkus = (st.masterObat || []).length;
+    const underCount = (st.masterObat || []).filter((o) => {
+      const stok = S().getTotalStok(o.id_obat);
+      const minVal = S().getStokMin ? S().getStokMin(o) : null;
+      return minVal !== null ? stok <= minVal : stok <= 0;
+    }).length;
+    const needPriceCount = (st.masterObat || []).filter((o) => {
+      const hpp = Number(o.hpp_terakhir || o.hpp_avg || 0);
+      const targetRatio = Math.min(0.85, Math.max(0.05, anlHargaTargetMarkup / 100));
+      const targetPrice = hpp > 0 ? (hpp / (1 - targetRatio)) : Number(o.harga_umum || 0);
+      return Math.ceil(targetPrice / 100) * 100 > Number(o.harga_umum || 0);
+    }).length;
 
-    const actionBtns = anlTab === 'pareto' ? `
-      <button onclick="window.exportAnlPareto('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-      <button onclick="window.exportAnlPareto('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
-      <button onclick="window.exportAnlPareto('pdf')" class="ons-btn ons-btn-ghost text-xs">PDF</button>
-    ` : (anlTab === 'pembelian' ? `
-      <button onclick="window.openAnlPoConfigModal()" class="ons-btn ons-btn-ghost text-xs">&#9881; Konfigurasi PO</button>
-      <button onclick="window.generateAutoPoFromAnalysis()" class="ons-btn ons-btn-primary text-xs">&#10024; Pesanan Otomatis</button>
-      <button onclick="window.exportAnlBeli('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-      <button onclick="window.exportAnlBeli('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
-    ` : `
-      <button onclick="window.applyBulkPriceFromAnalysis()" class="ons-btn ons-btn-emerald text-xs font-bold">&#10003; Update Sekaligus</button>
-      <button onclick="window.exportAnlHarga('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-      <button onclick="window.exportAnlHarga('csv')" class="ons-btn ons-btn-ghost text-xs">CSV</button>
-    `);
+    let subTabHtml = '';
+    if (anlTab === 'pareto') {
+      subTabHtml = _renderAnlParetoSubTab();
+    } else if (anlTab === 'pembelian') {
+      subTabHtml = _renderAnlPembelianSubTab();
+    } else if (anlTab === 'harga') {
+      subTabHtml = _renderAnlHargaSubTab();
+    }
 
-    return `<div class="space-y-4 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">${pageTitle}</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">${pageDesc}</p>
+    return `
+      <div class="space-y-4 ons-view-enter">
+        <!-- TOP EXECUTIVE TAB BAR NAVIGATION -->
+        <div class="ons-dash-tab-nav mb-4">
+          <button type="button" onclick="window.setAnlTab('pareto')" class="ons-dash-tab-btn ${anlTab === 'pareto' ? 'is-active' : ''}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Analisis Pareto A-B-C</span>
+            <span class="ons-dash-tab-badge font-mono-num">${totalSkus}</span>
+          </button>
+          <button type="button" onclick="window.setAnlTab('pembelian')" class="ons-dash-tab-btn ${anlTab === 'pembelian' ? 'is-active' : ''}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span>Analisis Pembelian (Smart SP)</span>
+            <span class="ons-dash-tab-badge font-mono-num ${underCount > 0 ? 'bg-amber-500 text-white font-bold' : ''}">${underCount}</span>
+          </button>
+          <button type="button" onclick="window.setAnlTab('harga')" class="ons-dash-tab-btn ${anlTab === 'harga' ? 'is-active' : ''}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <span>Analisis Kenaikan Harga</span>
+            <span class="ons-dash-tab-badge font-mono-num ${needPriceCount > 0 ? 'bg-rose-500 text-white font-bold animate-pulse' : ''}">${needPriceCount}</span>
+          </button>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          ${actionBtns}
-        </div>
-      </div>
 
-      <div class="ons-tab-bar">
-        <button onclick="window.setAnlTab('pareto')" class="ons-tab-btn ${anlTab === 'pareto' ? 'active' : ''}">Analisis Pareto</button>
-        <button onclick="window.setAnlTab('pembelian')" class="ons-tab-btn ${anlTab === 'pembelian' ? 'active' : ''}">Analisis Pembelian</button>
-        <button onclick="window.setAnlTab('harga')" class="ons-tab-btn ${anlTab === 'harga' ? 'active' : ''}">Analisis Harga</button>
+        ${subTabHtml}
       </div>
-
-      ${anlTab === 'pareto' ? _renderAnlParetoSubTab()
-        : (anlTab === 'pembelian' ? _renderAnlPembelianSubTab() : _renderAnlHargaSubTab())}
-    </div>`;
+    `;
   }
 
   global.setAnlTab = (t) => {
