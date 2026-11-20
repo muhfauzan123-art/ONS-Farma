@@ -5173,6 +5173,30 @@ html.dark .ons-subhero-banner {
 .ons-subhero-banner.is-penjualan { --subhero-accent: linear-gradient(180deg, #2563EB, #0284C7); }
 .ons-subhero-banner.is-pembelian { --subhero-accent: linear-gradient(180deg, #0284C7, #D97706); }
 .ons-subhero-banner.is-persediaan { --subhero-accent: linear-gradient(180deg, #059669, #10B981); }
+.ons-subhero-banner.is-retur { --subhero-accent: linear-gradient(180deg, #E11D48, #F43F5E); }
+.ons-subhero-banner.is-tertolak { --subhero-accent: linear-gradient(180deg, #D97706, #F59E0B); }
+
+/* POS Executive Comfort Controls */
+.ons-pos-total-box {
+  background: linear-gradient(135deg, #0A192F 0%, #1E3A8A 60%, #0284C7 100%);
+  border-radius: 1rem;
+  padding: 0.5rem 1.15rem;
+  box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+html.dark .ons-pos-total-box {
+  background: linear-gradient(135deg, #071324 0%, #172554 60%, #0369A1 100%);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 18px -2px rgba(2, 132, 199, 0.45);
+}
+.ons-pos-total-box .ons-pos-total-hero {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
 
 /* 5. Calmed Charts & Feeds */
 .ons-chart-box {

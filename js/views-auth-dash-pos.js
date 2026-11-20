@@ -4515,47 +4515,75 @@
     const draftCount = (st.carts || []).filter((c) => (c.items && c.items.length > 0) || c.held_at).length;
     const rekapRangeTxt = _formatIndoRangeCaption(filteredSales, posHistStart, posHistEnd, posHistPeriod);
 
-    return `<div class="space-y-3.5 ons-view-enter">
+    return `<div class="space-y-4 ons-view-enter">
       ${subTabHeader}
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 class="text-xl font-extrabold" style="color:var(--ons-primary)">Daftar Penjualan</h2>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Riwayat struk penjualan, faktur tempo, draft tertunda, cetak ulang struk &amp; audit retur.</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" onclick="window.openPosDraftModal()" class="ons-btn ons-btn-emerald text-xs px-3.5 font-bold">Draft (${draftCount})</button>
-          <button type="button" onclick="window.setPosSubTab('kasir')" class="ons-btn ons-btn-primary text-xs px-3.5 font-bold">+ Faktur Penjualan</button>
+
+      <!-- Executive Sub-Hero Banner -->
+      <div class="ons-subhero-banner is-penjualan">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Daftar Penjualan &amp; Riwayat Struk</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">Audit Transaksi</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">Arsip struk kasir, faktur tempo, cetak ulang struk thermal Bluetooth, manajemen antrean draft, dan verifikasi nota retur.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="window.openPosDraftModal()" class="ons-btn ons-btn-ghost text-xs px-3.5 py-2 font-bold border rounded-xl" style="border-color:var(--ons-border-strong)">📋 Draft Tertunda (${draftCount})</button>
+            <button type="button" onclick="window.setPosSubTab('kasir')" class="ons-btn ons-btn-primary text-xs px-4 py-2 font-bold rounded-xl shadow-sm">+ Buka Kasir Baru</button>
+          </div>
         </div>
       </div>
 
+      <!-- 4 Glance Asset Tiles -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-card p-3.5" style="border-top:3px solid #0066FE">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Transaksi Hari Ini</div>
-          <div class="text-xl font-extrabold font-mono-num mt-1">${ds.countToday} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">nota aktif</span></div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ds.todayRetur ? `<span class="text-red-600 font-bold">&#8617; ${ds.todayRetur} retur hari ini</span> &bull; ` : ''}Total arsip: ${ds.totalCount} nota</div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Transaksi Hari Ini</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Nota Valid</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight" style="color:var(--ons-text-main)">${ds.countToday} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">nota</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${ds.todayRetur ? `<span class="text-red-600 font-bold">&#8617; ${ds.todayRetur} retur &bull; </span>` : ''}Total arsip: ${ds.totalCount} nota</div>
         </div>
-        <div class="ons-card p-3.5" style="border-top:3px solid #059669">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Omzet Bersih Hari Ini</div>
-          <div class="text-xl font-extrabold font-mono-num text-emerald-600 mt-1">${S().rp(ds.omzetToday)}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">${ds.returNominalToday > 0 ? `<span class="text-red-600 font-semibold">Dikurangi retur: -${S().rp(ds.returNominalToday)}</span>` : 'Nilai penjualan non-retur hari ini'}</div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Omzet Bersih Hari Ini</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Net Sales</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${S().rp(ds.omzetToday)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${ds.returNominalToday > 0 ? `<span class="text-red-600 font-semibold">Dikurangi retur: -${S().rp(ds.returNominalToday)}</span>` : 'Nilai penjualan non-retur hari ini'}</div>
         </div>
-        <div class="ons-card p-3.5" style="border-top:3px solid #0284C7">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Tunai vs Non-Tunai</div>
-          <div class="text-sm font-extrabold font-mono-num mt-1 text-blue-600">${S().rp(ds.tunaiToday)} <span class="text-[11px] font-normal" style="color:var(--ons-text-soft)">Tunai</span></div>
-          <div class="text-[11px] font-mono-num mt-0.5" style="color:var(--ons-text-soft)">Non-Tunai/Tempo: <b>${S().rp(ds.nonTunaiToday)}</b></div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Tunai vs Non-Tunai</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-500/10 text-sky-600">Cash Flow</span>
+          </div>
+          <div class="text-base font-black font-mono-num mt-2 text-blue-600">${S().rp(ds.tunaiToday)} <span class="text-[11px] font-normal" style="color:var(--ons-text-soft)">Tunai</span></div>
+          <div class="text-[11px] font-mono-num mt-1 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Non-Tunai / Tempo: <b>${S().rp(ds.nonTunaiToday)}</b></div>
         </div>
-        ${seeCost ? `<div class="ons-card p-3.5" style="border-top:3px solid #D97706">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Total Laba (Filter Aktif)</div>
-          <div class="text-xl font-extrabold font-mono-num ${activeLaba >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-1">${S().rp(activeLaba)}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Hari ini: <b class="font-mono-num">${S().rp(ds.labaToday)}</b> &bull; Margin <b class="font-mono-num">${filteredMarginPct}%</b></div>
-        </div>` : `<div class="ons-card p-3.5" style="border-top:3px solid #D97706">
-          <div class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--ons-text-soft)">Rata-Rata Nilai Nota</div>
-          <div class="text-xl font-extrabold font-mono-num text-amber-600 mt-1">${S().rp(avgBasketToday)}</div>
-          <div class="text-[11px] mt-1" style="color:var(--ons-text-soft)">Rata-rata belanja per transaksi hari ini</div>
+        ${seeCost ? `<div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Laba (Filter Aktif)</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${activeLaba >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'}">Margin</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${activeLaba >= 0 ? 'text-emerald-600' : 'text-red-600'}">${S().rp(activeLaba)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Hari ini: <b class="font-mono-num">${S().rp(ds.labaToday)}</b> &bull; Margin <b class="font-mono-num">${filteredMarginPct}%</b></div>
+        </div>` : `<div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Rata-Rata Nilai Nota</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-600">Basket</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${S().rp(avgBasketToday)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Rata-rata belanja per transaksi hari ini</div>
         </div>`}
       </div>
 
-      ${allReturRows.length > 0 ? `<div class="ons-retur-alert-bar text-xs">
+      ${allReturRows.length > 0 ? `<div class="ons-retur-alert-bar text-xs rounded-xl">
         <div class="flex items-start gap-2.5 min-w-0 flex-1">
           <span class="ons-retur-stamp shrink-0 mt-0.5">&#8617; PENANDA RETUR</span>
           <div class="min-w-0">
@@ -4564,16 +4592,16 @@
           </div>
         </div>
         ${posHistFilter === 'RETUR'
-          ? `<button type="button" onclick="window.setPosHistFilter('SEMUA')" class="ons-btn ons-btn-ghost text-xs shrink-0">Tampilkan Semua Transaksi</button>`
-          : `<button type="button" onclick="window.setPosHistFilter('RETUR')" class="ons-btn ons-btn-danger text-xs shrink-0">Filter Hanya Retur (${allReturRows.length}) &rarr;</button>`}
+          ? `<button type="button" onclick="window.setPosHistFilter('SEMUA')" class="ons-btn ons-btn-ghost text-xs shrink-0 rounded-lg">Tampilkan Semua Transaksi</button>`
+          : `<button type="button" onclick="window.setPosHistFilter('RETUR')" class="ons-btn ons-btn-danger text-xs shrink-0 rounded-lg">Filter Hanya Retur (${allReturRows.length}) &rarr;</button>`}
       </div>` : ''}
 
-      <div class="ons-card p-4 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+      <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[260px]">
             <div>
-              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Pilihan Data</label>
-              <select aria-label="Pilihan Data Penjualan" class="ons-select text-xs h-9 py-1 w-44" onchange="window.setPosHistFilter(this.value)">
+              <label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Pilihan Data</label>
+              <select aria-label="Pilihan Data Penjualan" class="ons-select text-xs h-9 py-1 w-44 rounded-xl" onchange="window.setPosHistFilter(this.value)">
                 ${[
                   { id: 'SEMUA', lbl: `Semua Transaksi (${periodRows.length})` },
                   { id: 'LUNAS', lbl: 'Struk Penjualan (Lunas)' },
@@ -4583,15 +4611,15 @@
               </select>
             </div>
             <div class="flex-1 min-w-[180px] max-w-xs">
-              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Cari data</label>
+              <label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Cari Data Penjualan</label>
               <div class="relative">
-                <input id="posHistSearchInp" class="ons-input text-xs h-9 py-1 pr-7" placeholder="Cari No. Struk, Pelanggan, Kasir, Obat..." value="${S().esc(posHistQ)}" oninput="window.setPosHistQ(this.value)"/>
-                <button id="posHistClearBtn" type="button" onclick="window.setPosHistQ('')" aria-label="Bersihkan pencarian" class="${posHistQ.trim() ? '' : 'hidden '}absolute right-2 top-1/2 -translate-y-1/2 text-sm px-1 font-bold" style="color:var(--ons-text-soft)">&times;</button>
+                <input id="posHistSearchInp" class="ons-input text-xs h-9 py-1 pr-7 rounded-xl" placeholder="Cari No. Struk, Pelanggan, Kasir, Obat..." value="${S().esc(posHistQ)}" oninput="window.setPosHistQ(this.value)"/>
+                <button id="posHistClearBtn" type="button" onclick="window.setPosHistQ('')" aria-label="Bersihkan pencarian" class="${posHistQ.trim() ? '' : 'hidden '}absolute right-2.5 top-1/2 -translate-y-1/2 text-sm px-1 font-bold text-slate-400 hover:text-slate-600">&times;</button>
               </div>
             </div>
             <div>
-              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Metode</label>
-              <select aria-label="Filter metode pembayaran" class="ons-select text-xs h-9 py-1 w-36" onchange="window.setPosHistMethod(this.value)">
+              <label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Metode Pembayaran</label>
+              <select aria-label="Filter metode pembayaran" class="ons-select text-xs h-9 py-1 w-36 rounded-xl" onchange="window.setPosHistMethod(this.value)">
                 ${[
                   { id: 'SEMUA', lbl: 'Semua Metode' },
                   { id: 'TUNAI', lbl: 'Tunai' },
@@ -4604,17 +4632,17 @@
             </div>
           </div>
 
-          <div class="flex flex-wrap items-end gap-1.5">
+          <div class="flex flex-wrap items-end gap-2">
             <div>
-              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl</label>
-              <div class="flex items-center gap-1">
-                <input id="posHistDateStart" type="date" value="${S().esc(posHistStart)}" onchange="window.setPosHistDateRange(this.value, document.getElementById('posHistDateEnd')?.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num"/>
-                <span class="text-xs">-</span>
-                <input id="posHistDateEnd" type="date" value="${S().esc(posHistEnd)}" onchange="window.setPosHistDateRange(document.getElementById('posHistDateStart')?.value, this.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num"/>
+              <label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Rentang Tanggal</label>
+              <div class="flex items-center gap-1.5">
+                <input id="posHistDateStart" type="date" value="${S().esc(posHistStart)}" onchange="window.setPosHistDateRange(this.value, document.getElementById('posHistDateEnd')?.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num rounded-xl"/>
+                <span class="text-xs text-slate-400">-</span>
+                <input id="posHistDateEnd" type="date" value="${S().esc(posHistEnd)}" onchange="window.setPosHistDateRange(document.getElementById('posHistDateStart')?.value, this.value)" class="ons-input text-xs h-9 py-1 w-32 font-mono-num rounded-xl"/>
               </div>
             </div>
             ${seeCost ? `<div class="ons-dd-wrap inline-block">
-              <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-emerald text-xs h-9 font-semibold">📤 Ekspor &#9662;</button>
+              <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-emerald text-xs h-9 px-3.5 font-semibold rounded-xl">📤 Ekspor &#9662;</button>
               <div class="ons-dd-items hidden">
                 <div class="ons-float-hdr">Unduh Riwayat Penjualan</div>
                 <button type="button" onclick="window.exportPosHistoryExcel('xlsx')" class="ons-float-item"><span>📗</span><span>Export Excel (.xlsx)</span></button>
@@ -4622,11 +4650,11 @@
                 <button type="button" onclick="window.exportPosHistoryExcel('pdf')" class="ons-float-item"><span>📕</span><span>Export PDF</span></button>
               </div>
             </div>` : ''}
-            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs h-9">Segarkan</button>
+            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-primary text-xs h-9 px-3.5 rounded-xl">Segarkan</button>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t" style="border-color:var(--ons-border)">
           <div class="flex flex-wrap items-center gap-1.5">
             ${[
               { id: 'ALL', lbl: 'Semua Waktu' },
@@ -4648,29 +4676,32 @@
         </div>
       </div>
 
-      <div class="ons-pos-rekap-foot text-xs">
+      <div class="ons-pos-rekap-foot text-xs rounded-2xl shadow-sm">
         <button type="button" onclick="window.togglePosRekapFoot()" class="w-full flex items-center justify-between text-left font-extrabold text-sm" style="color:var(--ons-primary)">
-          <span>Rekap dari ${S().esc(rekapRangeTxt)}</span>
+          <div class="flex items-center gap-2">
+            <span>Rekap dari ${S().esc(rekapRangeTxt)}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600">Ringkasan</span>
+          </div>
           <span aria-hidden="true">${posRekapExpanded ? '&#9650;' : '&#9660;'}</span>
         </button>
-        ${posRekapExpanded ? `<div class="grid grid-cols-1 ${seeCost ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4 pt-3 mt-2 border-t" style="border-color:var(--ons-border)">
-          <div class="flex items-center justify-between gap-2">
+        ${posRekapExpanded ? `<div class="grid grid-cols-1 ${seeCost ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4 pt-3.5 mt-2.5 border-t" style="border-color:var(--ons-border)">
+          <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-500/5">
             <span style="color:var(--ons-text-soft)">Total Penjualan</span>
-            <span id="posRekapTotalSales" class="font-mono-num font-extrabold text-sm text-emerald-600">: ${S().rp(activeNominal)}</span>
+            <span id="posRekapTotalSales" class="font-mono-num font-extrabold text-sm text-emerald-600">${S().rp(activeNominal)}</span>
           </div>
-          ${seeCost ? `<div class="flex items-center justify-between gap-2">
+          ${seeCost ? `<div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-500/5">
             <span style="color:var(--ons-text-soft)">Total Laba</span>
-            <span id="posRekapTotalLaba" class="font-mono-num font-extrabold text-sm ${activeLaba >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600'}">: ${S().rp(activeLaba)}</span>
+            <span id="posRekapTotalLaba" class="font-mono-num font-extrabold text-sm ${activeLaba >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600'}">${S().rp(activeLaba)}</span>
           </div>` : ''}
-          <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-500/5">
             <div>
               <div style="color:var(--ons-text-soft)">Jumlah Transaksi Penjualan</div>
               <div class="text-[10px] italic" style="color:var(--ons-text-soft)">*Tidak termasuk data retur penuh</div>
             </div>
-            <span id="posRekapCountSales" class="font-mono-num font-extrabold text-sm">: ${activeCount} transaksi</span>
+            <span id="posRekapCountSales" class="font-mono-num font-extrabold text-sm">${activeCount} transaksi</span>
           </div>
         </div>
-        <div class="text-[10px] italic mt-2 pt-2 border-t" style="color:var(--ons-text-soft);border-color:var(--ons-border)">*Rekap dihitung berdasarkan filter tanggal, filter data yang aktif, dan kata kunci pencarian.</div>` : ''}
+        <div class="text-[10px] italic mt-2.5 pt-2 border-t" style="color:var(--ons-text-soft);border-color:var(--ons-border)">*Rekap dihitung berdasarkan filter tanggal, filter data yang aktif, dan kata kunci pencarian.</div>` : ''}
       </div>
     </div>`;
   }
@@ -4712,34 +4743,68 @@
     }, 0);
     const rekapRangeTxt = _formatIndoRangeCaption(filtered, posReturStart, posReturEnd, posReturPeriod);
 
-    return `<div class="space-y-3.5 ons-view-enter">
+    return `<div class="space-y-4 ons-view-enter">
       ${subTabHeader}
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 class="text-xl font-extrabold" style="color:var(--ons-primary)">Retur Penjualan</h2>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Daftar transaksi retur penuh &amp; retur sebagian yang diotorisasi PIN APJ/Pemilik serta pemulihan stok batch FEFO.</p>
+
+      <!-- Executive Sub-Hero Banner -->
+      <div class="ons-subhero-banner is-retur">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 border border-rose-500/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Retur Penjualan &amp; Otorisasi Void</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/20">PIN APJ Required</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">Daftar retur penuh / sebagian yang diotorisasi PIN APJ/Pemilik, pengembalian kas pelanggan, dan pemulihan stok batch FEFO otomatis.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="window.openPosPickInvoiceForReturnModal()" class="ons-btn ons-btn-danger text-xs px-4 py-2 font-bold rounded-xl shadow-sm">+ Proses Retur Nota</button>
+          </div>
         </div>
-        <button type="button" onclick="window.openPosPickInvoiceForReturnModal()" class="ons-btn ons-btn-danger text-xs px-3.5 font-bold">+ Proses Retur Nota</button>
       </div>
 
-      <div class="ons-card p-4 space-y-3">
-        <div class="flex flex-wrap items-end justify-between gap-2">
-          <div class="flex-1 min-w-[220px] max-w-sm">
-            <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Cari data</label>
-            <input id="posReturSearchInp" class="ons-input text-xs h-9" placeholder="Cari No. Retur, No. Faktur Asal, Pelanggan, Obat..." value="${S().esc(posReturQ)}" oninput="window.setPosReturQ(this.value)"/>
+      <!-- 2 Glance Asset Tiles -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Dana Retur Dikembalikan</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-500/10 text-rose-600">Pengembalian Kas</span>
           </div>
-          <div class="flex flex-wrap items-end gap-1.5">
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-red-600">-${S().rp(totalReturNominal)}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Rentang filter aktif: ${S().esc(rekapRangeTxt)}</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Frekuensi Retur Nota</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Audit Transaksi</span>
+          </div>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${filtered.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">transaksi retur</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Seluruh stok obat telah dikembalikan ke kartu batch fisik</div>
+        </div>
+      </div>
+
+      <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div class="flex-1 min-w-[220px] max-w-sm">
+            <label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Cari Data Retur</label>
+            <input id="posReturSearchInp" class="ons-input text-xs h-9 rounded-xl" placeholder="Cari No. Retur, No. Faktur Asal, Pelanggan, Obat..." value="${S().esc(posReturQ)}" oninput="window.setPosReturQ(this.value)"/>
+          </div>
+          <div class="flex flex-wrap items-end gap-2">
             <div>
-              <label class="text-[10px] font-bold block mb-0.5" style="color:var(--ons-text-soft)">Filter Tgl</label>
-              <div class="flex items-center gap-1">
-                <input id="posReturDateStart" type="date" value="${S().esc(posReturStart)}" onchange="window.setPosReturDateRange(this.value, document.getElementById('posReturDateEnd')?.value)" class="ons-input text-xs h-9 w-32 font-mono-num"/>
-                <span class="text-xs">-</span>
-                <input id="posReturDateEnd" type="date" value="${S().esc(posReturEnd)}" onchange="window.setPosReturDateRange(document.getElementById('posReturDateStart')?.value, this.value)" class="ons-input text-xs h-9 w-32 font-mono-num"/>
+              <label class="text-[10px] font-bold block mb-1" style="color:var(--ons-text-soft)">Rentang Tanggal</label>
+              <div class="flex items-center gap-1.5">
+                <input id="posReturDateStart" type="date" value="${S().esc(posReturStart)}" onchange="window.setPosReturDateRange(this.value, document.getElementById('posReturDateEnd')?.value)" class="ons-input text-xs h-9 w-32 font-mono-num rounded-xl"/>
+                <span class="text-xs text-slate-400">-</span>
+                <input id="posReturDateEnd" type="date" value="${S().esc(posReturEnd)}" onchange="window.setPosReturDateRange(document.getElementById('posReturDateStart')?.value, this.value)" class="ons-input text-xs h-9 w-32 font-mono-num rounded-xl"/>
               </div>
             </div>
             ${['ALL', 'TODAY', '7D', '30D'].map((pr) => `<button type="button" onclick="window.setPosReturPeriod('${pr}')" class="ons-pos-chip ${!posReturStart && !posReturEnd && posReturPeriod === pr ? 'is-active' : ''}">${pr === 'ALL' ? 'Semua' : (pr === 'TODAY' ? 'Hari Ini' : pr)}</button>`).join('')}
-            <button type="button" onclick="window.setPosHistFilter('RETUR');window.exportPosHistoryExcel('xlsx');" class="ons-btn ons-btn-emerald text-xs h-9">Export Excel</button>
-            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs h-9">Segarkan</button>
+            <button type="button" onclick="window.setPosHistFilter('RETUR');window.exportPosHistoryExcel('xlsx');" class="ons-btn ons-btn-emerald text-xs h-9 px-3.5 rounded-xl font-semibold">Export Excel</button>
+            <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs h-9 px-3.5 rounded-xl border" style="border-color:var(--ons-border-strong)">Segarkan</button>
           </div>
         </div>
 
@@ -4760,14 +4825,14 @@
                   <td class="text-xs"><button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="font-mono-num font-bold text-blue-600 hover:underline">${S().esc(p.no_invoice)}</button></td>
                   <td class="text-xs font-semibold">${S().esc(mem ? mem.nama_pasien : (p.pelanggan_nama || 'Pasien Umum'))}</td>
                   <td class="text-xs max-w-[260px]">
-                    <div class="truncate">${prodText}</div>
+                    <div class="truncate font-semibold">${prodText}</div>
                     <div class="text-[10px]" style="color:var(--ons-text-soft)">PIN: <b>${S().esc(ret.authorizer)}</b> &bull; <i>${S().esc(ret.alasan)}</i></div>
                   </td>
                   <td class="text-xs font-mono-num font-extrabold text-red-600">-${S().rp(retVal)}</td>
                   <td class="text-xs">
                     <div class="flex flex-wrap gap-1">
-                      <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Bukti Retur</button>
-                      <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2">Nota Void</button>
+                      <button type="button" onclick="window.openPosDetailItemsModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 rounded-lg border">Bukti Retur</button>
+                      <button type="button" onclick="window.openPosReprintModal('${S().esc(p.no_invoice)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 rounded-lg">Nota Void</button>
                     </div>
                   </td>
                 </tr>`;
@@ -4777,16 +4842,16 @@
         </div>
       </div>
 
-      <div class="ons-pos-rekap-foot text-xs">
-        <div class="font-extrabold text-sm mb-2" style="color:var(--ons-primary)">Rekap dari ${S().esc(rekapRangeTxt)}</div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t" style="border-color:var(--ons-border)">
-          <div class="flex items-center justify-between gap-2">
+      <div class="ons-pos-rekap-foot text-xs rounded-2xl shadow-sm">
+        <div class="font-extrabold text-sm mb-2.5" style="color:var(--ons-primary)">Rekap dari ${S().esc(rekapRangeTxt)}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t" style="border-color:var(--ons-border)">
+          <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-500/5">
             <span style="color:var(--ons-text-soft)">Total Retur Penjualan</span>
-            <span class="font-mono-num font-extrabold text-sm text-red-600">: ${S().rp(totalReturNominal)}</span>
+            <span class="font-mono-num font-extrabold text-sm text-red-600">${S().rp(totalReturNominal)}</span>
           </div>
-          <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-500/5">
             <span style="color:var(--ons-text-soft)">Jumlah Transaksi Retur</span>
-            <span class="font-mono-num font-extrabold text-sm">: ${filtered.length}x</span>
+            <span class="font-mono-num font-extrabold text-sm">${filtered.length}x</span>
           </div>
         </div>
       </div>
@@ -4802,50 +4867,86 @@
     });
     const totalEstNilai = filtered.reduce((s, ls) => s + (Number(ls.qty || 1) * Number(ls.est_harga || 0)), 0);
 
-    return `<div class="space-y-3.5 ons-view-enter">
+    return `<div class="space-y-4 ons-view-enter">
       ${subTabHeader}
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 class="text-xl font-extrabold" style="color:var(--ons-primary)">Penjualan Tertolak (Lost Sales)</h2>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Catat permintaan pelanggan yang gagal dilayani karena stok habis / item belum tersedia untuk perencanaan pengadaan (Defecta).</p>
-        </div>
-        <div class="flex items-center gap-2 text-xs">
-          <span class="px-3 py-1.5 rounded-xl border font-mono-num font-bold bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300">${filtered.length} kejadian${totalEstNilai > 0 ? ` &bull; Est. Peluang ${S().rp(totalEstNilai)}` : ''}</span>
-          ${S().canAccessView('faktur') ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs">Buka Defecta &rarr;</button>` : ''}
+
+      <!-- Executive Sub-Hero Banner -->
+      <div class="ons-subhero-banner is-tertolak">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Penjualan Tertolak (Lost Sales)</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">Radar Pengadaan</span>
+              </div>
+              <p class="text-xs" style="color:var(--ons-text-soft)">Pencatatan permintaan obat/alkes yang gagal dilayani karena stok habis atau belum ada di katalog untuk dihubungkan langsung ke Buku Defecta.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            ${S().canAccessView('faktur') ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs px-4 py-2 font-bold rounded-xl shadow-sm">Buka Buku Defecta &rarr;</button>` : ''}
+          </div>
         </div>
       </div>
 
-      <div class="ons-card p-4 space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end p-3 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-          <div class="sm:col-span-4">
-            <label class="text-[10px] font-bold block mb-1">Nama Obat / Produk yg Dicari *</label>
-            <input id="posTertolakNama" class="ons-input text-xs h-9" placeholder="Cth: Salbutamol Nebules 2.5mg"/>
+      <!-- 2 Glance Asset Tiles -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Permintaan Tertolak</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Permintaan Pelanggan</span>
           </div>
-          <div class="sm:col-span-2">
-            <label class="text-[10px] font-bold block mb-1">Qty Diminta</label>
-            <input id="posTertolakQty" type="number" min="1" value="1" class="ons-input text-xs h-9 font-mono-num"/>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${filtered.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">kejadian</span></div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Dapat langsung diteruskan ke SP Pesanan Pembelian / Defecta</div>
+        </div>
+        <div class="ons-glance-tile">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Estimasi Peluang Omzet Hilang</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-500/10 text-rose-600">Opportunity Loss</span>
           </div>
-          <div class="sm:col-span-2">
-            <label class="text-[10px] font-bold block mb-1">Est. Harga (Rp)</label>
-            <input id="posTertolakHarga" type="number" min="0" value="0" class="ons-input text-xs h-9 font-mono-num" placeholder="Opsional"/>
+          <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-rose-600">${totalEstNilai > 0 ? S().rp(totalEstNilai) : 'Rp 0'}</div>
+          <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Potensi omzet yang terlewat akibat keterbatasan persediaan</div>
+        </div>
+      </div>
+
+      <div class="ons-card p-4 sm:p-5 space-y-4 rounded-2xl shadow-sm">
+        <div class="p-4 rounded-2xl border space-y-2.5" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+          <div class="text-xs font-extrabold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+            <span>➕</span> <span>Form Cepat Catat Penjualan Tertolak</span>
           </div>
-          <div class="sm:col-span-2">
-            <label class="text-[10px] font-bold block mb-1">Alasan Tertolak</label>
-            <select id="posTertolakAlasan" class="ons-select text-xs h-9">
-              <option value="Stok habis sementara">Stok habis sementara</option>
-              <option value="Produk belum ada di katalog">Belum ada di katalog</option>
-              <option value="Harga tidak sesuai">Harga tidak sesuai</option>
-              <option value="Resep kadaluarsa / butuh konfirmasi">Konfirmasi resep</option>
-            </select>
-          </div>
-          <div class="sm:col-span-2">
-            <button type="button" onclick="window.submitPosLostSaleInline()" class="ons-btn ons-btn-primary w-full h-9 text-xs font-bold">+ Catat Tertolak</button>
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+            <div class="sm:col-span-4">
+              <label class="text-[10px] font-bold block mb-1">Nama Obat / Produk yg Dicari *</label>
+              <input id="posTertolakNama" class="ons-input text-xs h-9 rounded-xl" placeholder="Cth: Salbutamol Nebules 2.5mg"/>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="text-[10px] font-bold block mb-1">Qty Diminta</label>
+              <input id="posTertolakQty" type="number" min="1" value="1" class="ons-input text-xs h-9 font-mono-num rounded-xl"/>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="text-[10px] font-bold block mb-1">Est. Harga (Rp)</label>
+              <input id="posTertolakHarga" type="number" min="0" value="0" class="ons-input text-xs h-9 font-mono-num rounded-xl" placeholder="Opsional"/>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="text-[10px] font-bold block mb-1">Alasan Tertolak</label>
+              <select id="posTertolakAlasan" class="ons-select text-xs h-9 rounded-xl">
+                <option value="Stok habis sementara">Stok habis sementara</option>
+                <option value="Produk belum ada di katalog">Belum ada di katalog</option>
+                <option value="Harga tidak sesuai">Harga tidak sesuai</option>
+                <option value="Resep kadaluarsa / butuh konfirmasi">Konfirmasi resep</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <button type="button" onclick="window.submitPosLostSaleInline()" class="ons-btn ons-btn-primary w-full h-9 text-xs font-bold rounded-xl shadow-sm">+ Catat Tertolak</button>
+            </div>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <input id="posTertolakSearch" class="ons-input text-xs h-9 max-w-xs" placeholder="Cari produk tertolak atau alasan..." value="${S().esc(posTertolakQ)}" oninput="window.setPosTertolakQ(this.value)"/>
-          <span class="text-[11px]" style="color:var(--ons-text-soft)">Terhubung langsung dengan metrik Penjualan Tertolak di Dashboard.</span>
+          <input id="posTertolakSearch" class="ons-input text-xs h-9 max-w-xs rounded-xl" placeholder="Cari produk tertolak atau alasan..." value="${S().esc(posTertolakQ)}" oninput="window.setPosTertolakQ(this.value)"/>
+          <span class="text-[11px]" style="color:var(--ons-text-soft)">Terhubung langsung dengan metrik Penjualan Tertolak di Dashboard &amp; Defecta.</span>
         </div>
 
         <div class="ons-table-wrap">
@@ -4864,8 +4965,8 @@
                   <td class="text-xs"><span class="badge-bpom bpom-prekursor">${S().esc(ls.alasan || 'Stok habis')}</span></td>
                   <td class="text-xs">
                     <div class="flex gap-1.5">
-                      ${S().canAccessView('faktur') ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Ajukan Defecta</button>` : ''}
-                      <button type="button" onclick="window.deletePosLostSale(${origIdx})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Hapus</button>
+                      ${S().canAccessView('faktur') ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 rounded-lg border">Ajukan Defecta</button>` : ''}
+                      <button type="button" onclick="window.deletePosLostSale(${origIdx})" class="ons-btn ons-btn-danger text-[11px] py-1 px-2.5 rounded-lg">Hapus</button>
                     </div>
                   </td>
                 </tr>`;
@@ -4890,54 +4991,54 @@
 
     return `<div class="space-y-3">
       <!-- Panel Kanan 1: Rincian Sub-total, Diskon, Biaya & Tombol Bayar/Tunda -->
-      <div class="ons-pos-fee-panel ons-pos-ticket space-y-2.5 text-xs">
+      <div class="ons-pos-fee-panel ons-pos-ticket space-y-2.5 text-xs rounded-2xl shadow-sm p-4">
         <div class="ons-pos-fee-row">
           <span class="font-semibold" style="color:var(--ons-text-soft)">Sub-total</span>
-          <input id="posRightSubTotalInp" readonly class="ons-input font-mono-num text-right text-xs h-8 py-1 font-bold" style="background:var(--ons-bg-subtle)" value="${totals.subtotal}"/>
+          <input id="posRightSubTotalInp" readonly class="ons-input font-mono-num text-right text-xs h-8 py-1 font-bold rounded-xl" style="background:var(--ons-bg-subtle)" value="${totals.subtotal}"/>
         </div>
 
         <div class="ons-pos-fee-row">
           <div class="flex items-center gap-1.5">
             <span class="font-semibold">Diskon Faktur</span>
-            <div class="ons-pos-disc-toggle">
+            <div class="ons-pos-disc-toggle rounded-lg overflow-hidden border">
               <button type="button" onclick="window.setCartDiscMode('PCT')" class="${cart.diskon_mode === 'PCT' ? 'is-active' : ''}">%</button>
               <button type="button" onclick="window.setCartDiscMode('RP')" class="${cart.diskon_mode !== 'PCT' ? 'is-active' : ''}">Rp</button>
             </div>
           </div>
           <div class="flex items-center gap-1">
-            <input id="posRightDiscInp" type="number" min="0" max="${cart.diskon_mode === 'PCT' ? 100 : totals.subAfterItemDisc}" value="${cart.diskon_input || 0}" oninput="window.onPosFeeChange('diskon_input', this.value)" onchange="window.applyCartDiscInput(this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+            <input id="posRightDiscInp" type="number" min="0" max="${cart.diskon_mode === 'PCT' ? 100 : totals.subAfterItemDisc}" value="${cart.diskon_input || 0}" oninput="window.onPosFeeChange('diskon_input', this.value)" onchange="window.applyCartDiscInput(this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1 rounded-xl"/>
             <span class="text-[11px] font-bold shrink-0">${cart.diskon_mode === 'PCT' ? '%' : 'Rp'}</span>
           </div>
         </div>
 
         ${cart.items.length ? `<div class="flex flex-wrap gap-1 justify-end">
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 0)" class="ons-quick-denom text-[10px] py-0.5 px-1.5">Reset</button>
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 5)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-emerald-600">Member 5%</button>
-          <button type="button" onclick="window.applyPosDiscPreset('PCT', 10)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-indigo-600">Lansia 10%</button>
-          <button type="button" onclick="window.applyPosDiscPreset('RP', 5000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-amber-600">-5rb</button>
-          <button type="button" onclick="window.applyPosDiscPreset('RP', 10000)" class="ons-quick-denom text-[10px] py-0.5 px-1.5 font-bold text-rose-600">-10rb</button>
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 0)" class="ons-quick-denom text-[10px] py-0.5 px-2 rounded-lg">Reset</button>
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 5)" class="ons-quick-denom text-[10px] py-0.5 px-2 rounded-lg font-bold text-emerald-600 bg-emerald-500/10">Member 5%</button>
+          <button type="button" onclick="window.applyPosDiscPreset('PCT', 10)" class="ons-quick-denom text-[10px] py-0.5 px-2 rounded-lg font-bold text-indigo-600 bg-indigo-500/10">Lansia 10%</button>
+          <button type="button" onclick="window.applyPosDiscPreset('RP', 5000)" class="ons-quick-denom text-[10px] py-0.5 px-2 rounded-lg font-bold text-amber-600 bg-amber-500/10">-5rb</button>
+          <button type="button" onclick="window.applyPosDiscPreset('RP', 10000)" class="ons-quick-denom text-[10px] py-0.5 px-2 rounded-lg font-bold text-rose-600 bg-rose-500/10">-10rb</button>
         </div>` : ''}
 
-        ${totals.itemDiscTotal > 0 ? `<div class="flex justify-between text-[11px] text-emerald-600 font-semibold">
+        ${totals.itemDiscTotal > 0 ? `<div class="flex justify-between text-[11px] text-emerald-600 font-semibold p-2 rounded-xl bg-emerald-500/5">
           <span>Promo Near-ED Item</span>
           <span class="font-mono-num">-${S().rp(totals.itemDiscTotal)}</span>
         </div>` : ''}
 
         <div class="ons-pos-fee-row">
           <span class="font-semibold" style="color:var(--ons-text-soft)">Biaya Servis</span>
-          <input id="posBiayaServisInp" type="number" min="0" value="${Number(cart.biaya_servis || 0)}" oninput="window.onPosFeeChange('biaya_servis', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+          <input id="posBiayaServisInp" type="number" min="0" value="${Number(cart.biaya_servis || 0)}" oninput="window.onPosFeeChange('biaya_servis', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1 rounded-xl"/>
         </div>
         <div class="ons-pos-fee-row">
           <span class="font-semibold" style="color:var(--ons-text-soft)">Biaya Embalase</span>
-          <input id="posBiayaEmbalaseInp" type="number" min="0" value="${Number(cart.biaya_embalase || 0)}" oninput="window.onPosFeeChange('biaya_embalase', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+          <input id="posBiayaEmbalaseInp" type="number" min="0" value="${Number(cart.biaya_embalase || 0)}" oninput="window.onPosFeeChange('biaya_embalase', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1 rounded-xl"/>
         </div>
         <div class="ons-pos-fee-row">
           <span class="font-semibold" style="color:var(--ons-text-soft)">Ongkos Kirim</span>
-          <input id="posOngkosKirimInp" type="number" min="0" value="${Number(cart.ongkos_kirim || 0)}" oninput="window.onPosFeeChange('ongkos_kirim', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+          <input id="posOngkosKirimInp" type="number" min="0" value="${Number(cart.ongkos_kirim || 0)}" oninput="window.onPosFeeChange('ongkos_kirim', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1 rounded-xl"/>
         </div>
         <div class="ons-pos-fee-row">
           <span class="font-semibold" style="color:var(--ons-text-soft)">Biaya Lainnya</span>
-          <input id="posBiayaLainnyaInp" type="number" min="0" value="${Number(cart.biaya_lainnya || 0)}" oninput="window.onPosFeeChange('biaya_lainnya', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1"/>
+          <input id="posBiayaLainnyaInp" type="number" min="0" value="${Number(cart.biaya_lainnya || 0)}" oninput="window.onPosFeeChange('biaya_lainnya', this.value)" class="ons-input font-mono-num text-right text-xs h-8 py-1 rounded-xl"/>
         </div>
 
         ${totals.pembulatan !== 0 ? `
@@ -4949,46 +5050,46 @@
           <span class="font-mono-num text-right text-xs font-bold">${totals.pembulatan > 0 ? '+' : ''}${S().rp(totals.pembulatan)}</span>
         </div>` : ''}
 
-        ${seeCost && cart.items.length ? `<div class="flex justify-between text-[11px] font-mono-num pt-1 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+        ${seeCost && cart.items.length ? `<div class="flex justify-between text-[11px] font-mono-num pt-1.5 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
           <span>Est. Laba Kotor (HPP ${S().rp(estHppCart)})</span>
           <span id="posRightLabaSpan" class="${(totals.grandTotal - estHppCart) >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}">${S().rp(totals.grandTotal - estHppCart)}</span>
         </div>` : ''}
 
         <!-- CTA Utama: Bayar & Tunda -->
-        <div class="grid grid-cols-2 gap-2 pt-1.5">
-          <button id="posBayarPrimaryBtn" type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-btn ons-btn-primary py-2.5 text-xs font-extrabold shadow-sm justify-center">
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button id="posBayarPrimaryBtn" type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-btn ons-btn-primary py-2.5 text-xs font-extrabold shadow-sm justify-center rounded-xl">
             <span>Bayar</span>
             <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono-num">F2</span>
           </button>
-          <button id="posTundaPrimaryBtn" type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost py-2.5 text-xs font-bold border justify-center" style="border-color:var(--ons-border-strong)" title="Tahan transaksi sementara (F4)">
+          <button id="posTundaPrimaryBtn" type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost py-2.5 text-xs font-bold border justify-center rounded-xl" style="border-color:var(--ons-border-strong)" title="Tahan transaksi sementara (F4)">
             <span>Tunda</span>
             <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-200 dark:bg-slate-700 font-mono-num">F4</span>
           </button>
         </div>
 
         <!-- Pilihan Metode Bayar Cepat -->
-        <div class="grid grid-cols-5 gap-1 pt-0.5">
-          <button type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-pos-chip text-[10px] justify-center py-1">Tunai</button>
-          <button type="button" onclick="window.posQuickCheckoutShortcut('QRIS')" class="ons-pos-chip text-[10px] justify-center py-1" title="Shortcut [F8]">QRIS BI</button>
-          <button type="button" onclick="window.posQuickCheckoutShortcut('TRANSFER')" class="ons-pos-chip text-[10px] justify-center py-1">Transfer</button>
-          <button type="button" onclick="window.posQuickCheckoutShortcut('SPLIT')" class="ons-pos-chip text-[10px] justify-center py-1">Split Pay</button>
-          <button type="button" onclick="window.posQuickCheckoutShortcut('PIUTANG')" class="ons-pos-chip text-[10px] justify-center py-1 text-amber-700 dark:text-amber-300">Piutang/Tempo</button>
+        <div class="grid grid-cols-5 gap-1 pt-1">
+          <button type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-pos-chip text-[10px] justify-center py-1 rounded-lg">Tunai</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('QRIS')" class="ons-pos-chip text-[10px] justify-center py-1 rounded-lg" title="Shortcut [F8]">QRIS BI</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('TRANSFER')" class="ons-pos-chip text-[10px] justify-center py-1 rounded-lg">Transfer</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('SPLIT')" class="ons-pos-chip text-[10px] justify-center py-1 rounded-lg">Split</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('PIUTANG')" class="ons-pos-chip text-[10px] justify-center py-1 text-amber-700 dark:text-amber-300 rounded-lg">Tempo</button>
         </div>
       </div>
 
       <!-- Panel Kanan 2: Pelanggan [+] & Dokter [+] -->
-      <div class="ons-pos-fee-panel ons-pos-ticket space-y-2.5 text-xs">
+      <div class="ons-pos-fee-panel ons-pos-ticket space-y-2.5 text-xs rounded-2xl shadow-sm p-4">
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="font-bold">Pelanggan</span>
             <span class="px-1.5 py-0.5 rounded text-[10px] font-mono-num bg-blue-600 text-white font-bold">F7</span>
           </div>
           <div class="flex items-center gap-1 flex-1 min-w-[140px]">
-            <select aria-label="Pilih Pelanggan" onchange="window.onPosMemberChange(this.value)" class="ons-select text-xs h-8 py-1 flex-1">
+            <select aria-label="Pilih Pelanggan" onchange="window.onPosMemberChange(this.value)" class="ons-select text-xs h-8 py-1 flex-1 rounded-xl">
               <option value="UMUM" ${cart.id_member === 'UMUM' ? 'selected' : ''}>Pasien Umum</option>
               ${st.members.map((m) => `<option value="${m.id_member}" ${cart.id_member === m.id_member ? 'selected' : ''}>${S().esc(m.nama_pasien)}</option>`).join('')}
             </select>
-            <button type="button" onclick="window.openPosQuickAddCustomerModal()" class="ons-btn ons-btn-ghost px-2 h-8 min-h-0 text-sm font-extrabold" title="Tambah Pelanggan Baru">+</button>
+            <button type="button" onclick="window.openPosQuickAddCustomerModal()" class="ons-btn ons-btn-ghost px-2 h-8 min-h-0 text-sm font-extrabold rounded-xl border" style="border-color:var(--ons-border-strong)" title="Tambah Pelanggan Baru">+</button>
           </div>
         </div>
         <div class="flex items-center justify-between gap-2">
@@ -4997,7 +5098,7 @@
             <span class="px-1.5 py-0.5 rounded text-[10px] font-mono-num bg-blue-600 text-white font-bold">F6</span>
           </div>
           <div class="flex items-center gap-1 flex-1 min-w-[140px]">
-            <select aria-label="Pilih Dokter" onchange="window.onPosDoctorChange(this.value)" class="ons-select text-xs h-8 py-1 flex-1">
+            <select aria-label="Pilih Dokter" onchange="window.onPosDoctorChange(this.value)" class="ons-select text-xs h-8 py-1 flex-1 rounded-xl">
               <option value="" ${!cart.dokter_nama ? 'selected' : ''}>Tanpa Dokter / OTC</option>
               ${dokterList.map((d) => {
                 const nm = d.nama_dokter || d.nama || '';
@@ -5005,33 +5106,33 @@
               }).join('')}
               ${cart.dokter_nama && !dokterList.some((d) => (d.nama_dokter || d.nama) === cart.dokter_nama) ? `<option value="${S().esc(cart.dokter_nama)}" selected>${S().esc(cart.dokter_nama)}</option>` : ''}
             </select>
-            <button type="button" onclick="window.openPosQuickAddDoctorModal()" class="ons-btn ons-btn-ghost px-2 h-8 min-h-0 text-sm font-extrabold" title="Input / Tambah Dokter Resep">+</button>
+            <button type="button" onclick="window.openPosQuickAddDoctorModal()" class="ons-btn ons-btn-ghost px-2 h-8 min-h-0 text-sm font-extrabold rounded-xl border" style="border-color:var(--ons-border-strong)" title="Input / Tambah Dokter Resep">+</button>
           </div>
         </div>
       </div>
 
       <!-- Panel Kanan 3: Sales, Kanal Penjualan, Kode Eksternal, Catatan -->
-      <div class="ons-pos-fee-panel space-y-2 text-xs">
+      <div class="ons-pos-fee-panel space-y-2 text-xs rounded-2xl shadow-sm p-4">
         <div class="ons-pos-fee-row">
           <span class="font-semibold">Sales/Pelayan</span>
-          <select aria-label="Sales atau Pelayan" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].sales_nama=this.value" class="ons-select text-xs h-8 py-1">
+          <select aria-label="Sales atau Pelayan" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].sales_nama=this.value" class="ons-select text-xs h-8 py-1 rounded-xl">
             <option value="">Pilih Sales</option>
             ${staffOpts.map((nm) => `<option value="${S().esc(nm)}" ${(cart.sales_nama || '') === nm ? 'selected' : ''}>${S().esc(nm)}</option>`).join('')}
           </select>
         </div>
         <div class="ons-pos-fee-row">
           <span class="font-semibold">Kanal Penjualan</span>
-          <select aria-label="Kanal Penjualan" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs h-8 py-1">
+          <select aria-label="Kanal Penjualan" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].channel=this.value" class="ons-select text-xs h-8 py-1 rounded-xl">
             ${['Toko Fisik / Langsung', 'Resep Dokter', 'Pasien Rutin', 'Lainnya'].map((ch) => `<option value="${ch}" ${(cart.channel || 'Toko Fisik / Langsung') === ch ? 'selected' : ''}>${ch}</option>`).join('')}
           </select>
         </div>
         <div class="ons-pos-fee-row">
-          <span class="font-semibold">Kode Invoice Eksternal</span>
-          <input class="ons-input text-xs h-8 py-1 font-mono-num" placeholder="No. Resep / Ojol" value="${S().esc(cart.kode_eksternal || '')}" oninput="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].kode_eksternal=this.value"/>
+          <span class="font-semibold">Kode Eksternal</span>
+          <input class="ons-input text-xs h-8 py-1 font-mono-num rounded-xl" placeholder="No. Resep / Ojol" value="${S().esc(cart.kode_eksternal || '')}" oninput="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].kode_eksternal=this.value"/>
         </div>
         <div class="ons-pos-fee-row">
           <span class="font-semibold">Catatan</span>
-          <input class="ons-input text-xs h-8 py-1" placeholder="Catatan kasir..." value="${S().esc(cart.catatan || '')}" oninput="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].catatan=this.value"/>
+          <input class="ons-input text-xs h-8 py-1 rounded-xl" placeholder="Catatan kasir..." value="${S().esc(cart.catatan || '')}" oninput="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].catatan=this.value"/>
         </div>
       </div>
     </div>`;
@@ -5048,17 +5149,47 @@
     const member = st.members.find((m) => m.id_member === cart.id_member);
     const cdss = S().checkCartCdss(cart);
     const fGol = st.posFilterGol || '';
+    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
+    const branchLabel = (S().getBranchLabel && S().getBranchLabel(st.cabangId || 'ONS-01')) || (st.cabangId || 'Gudang Utama');
+    const todayYmd = toLocalYmd_(new Date());
 
     const returCountPos = (st.penjualan || []).filter((p) => String(p.status_trx || '').toUpperCase().includes('RETUR')).length;
     const lostCountPos = _getDashLostSales().length;
     const subTabHeader = `
-      <div class="flex flex-wrap items-center justify-between gap-2 ons-view-enter">
-        <div class="ons-tab-bar" role="tablist" aria-label="Sub-Menu Penjualan">
-          <button type="button" onclick="window.setPosSubTab('kasir')" class="ons-tab-btn ${posSubTab === 'kasir' ? 'active' : ''}">Kasir${cart.items.length ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-600/15 text-blue-600">${cart.items.length}</span>` : ''}</button>
-          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-tab-btn ${posSubTab === 'riwayat' ? 'active' : ''}">Daftar Penjualan <span class="ml-1 text-[10px] opacity-75 font-mono-num">(${st.penjualan.length})</span></button>
-          <button type="button" onclick="window.setPosSubTab('retur')" class="ons-tab-btn ${posSubTab === 'retur' ? 'active' : ''}">Retur Penjualan${returCountPos > 0 ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-600 dark:text-red-300">${returCountPos}</span>` : ''}</button>
-          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-tab-btn ${posSubTab === 'tertolak' ? 'active' : ''}">Penjualan Tertolak${lostCountPos > 0 ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300">${lostCountPos}</span>` : ''}</button>
-          ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<button type="button" onclick="window.setPosSubTab('tutup-shift')" class="ons-tab-btn ${posSubTab === 'tutup-shift' ? 'active' : ''}">Tutup Shift &amp; Kas${st.activeShift ? ' <span class="ml-1 inline-block w-2 h-2 rounded-full bg-emerald-500"></span>' : ''}</button>` : ''}
+      <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Penjualan">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setPosSubTab('kasir')" class="ons-dash-tab-btn ${posSubTab === 'kasir' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg>
+            <span>Kasir POS (FEFO)</span>
+            ${cart.items.length ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${posSubTab === 'kasir' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'}">${cart.items.length}</span>` : ''}
+          </button>
+          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-dash-tab-btn ${posSubTab === 'riwayat' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Daftar Penjualan</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${posSubTab === 'riwayat' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${(st.penjualan || []).length}</span>
+          </button>
+          <button type="button" onclick="window.setPosSubTab('retur')" class="ons-dash-tab-btn ${posSubTab === 'retur' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>Retur Penjualan</span>
+            ${returCountPos > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${posSubTab === 'retur' ? 'bg-white/25 text-white' : 'bg-red-500/15 text-red-600 dark:text-red-300'} font-mono-num">${returCountPos}</span>` : ''}
+          </button>
+          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-dash-tab-btn ${posSubTab === 'tertolak' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg>
+            <span>Penjualan Tertolak</span>
+            ${lostCountPos > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${posSubTab === 'tertolak' ? 'bg-white/25 text-white' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'} font-mono-num">${lostCountPos}</span>` : ''}
+          </button>
+          ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `
+          <button type="button" onclick="window.setPosSubTab('tutup-shift')" class="ons-dash-tab-btn ${posSubTab === 'tutup-shift' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Tutup Shift &amp; Kas</span>
+            ${st.activeShift ? `<span class="ml-1 inline-block w-2 h-2 rounded-full ${posSubTab === 'tutup-shift' ? 'bg-emerald-300' : 'bg-emerald-500'} animate-pulse"></span>` : ''}
+          </button>` : ''}
+        </div>
+        <div class="hidden sm:flex items-center gap-2 text-xs" style="color:var(--ons-text-soft)">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>${branchLabel} &bull; Kasir Aktif</span>
+          </span>
         </div>
       </div>`;
 
@@ -5089,46 +5220,45 @@
     const offQueue = API().getOfflineQueue();
     const dailyStats = buildPosDailySummaryStats(st.penjualan, seeCost);
     const crossSell = pickSmartCrossSellCandidate(cart, st.masterObat);
-    const prof = S().getStoreProfile ? S().getStoreProfile() : {};
-    const branchLabel = (S().getBranchLabel && S().getBranchLabel(st.cabangId || 'ONS-01')) || (st.cabangId || 'Gudang Utama');
-    const todayYmd = toLocalYmd_(new Date());
 
-    return `<div class="space-y-3 ons-view-enter">
+    return `<div class="space-y-3.5 ons-view-enter">
       ${subTabHeader}
 
       <!-- Shift & Multi-Cart Antrean Bar -->
-      <div class="ons-pos-bar px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div class="flex flex-wrap items-center gap-1.5">
+      <div class="ons-pos-bar px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5 text-xs rounded-2xl shadow-sm">
+        <div class="flex flex-wrap items-center gap-2">
           ${st.activeShift ? `
-            <span class="ons-pos-live-dot"></span>
-            <span class="badge-bpom bpom-bebas">SHIFT AKTIF</span>
-            <span class="font-mono-num font-bold">${S().esc(st.activeShift.id_shift)}</span>
-            <span class="hidden sm:inline" style="color:var(--ons-text-soft)">&bull; ${dailyStats.countToday} trx (${S().rp(dailyStats.omzetToday)})</span>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+              <span class="ons-pos-live-dot"></span>
+              <span class="font-extrabold uppercase tracking-wide text-[10px]">SHIFT AKTIF</span>
+              <span class="font-mono-num font-extrabold">${S().esc(st.activeShift.id_shift)}</span>
+              <span class="hidden sm:inline opacity-75 font-mono-num">&bull; ${dailyStats.countToday} trx (${S().rp(dailyStats.omzetToday)})</span>
+            </div>
           ` : `
-            <button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">+ Buka Shift Kasir</button>
+            <button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 rounded-xl shadow-sm">+ Buka Shift Kasir</button>
           `}
-          <span class="mx-1 opacity-30">|</span>
+          <span class="mx-1 opacity-25">|</span>
           ${st.carts.map((c, idx) => {
             const tabTot = (c.items || []).reduce((s, it) => s + Math.max(0, Number(it.harga_jual || 0) * Number(it.qty || 0) - Number(it.diskon_item || 0)), 0);
-            return `<div class="inline-flex items-center rounded-lg overflow-hidden border" style="border-color:${idx === st.activeCartIdx ? '#0066FE' : 'var(--ons-border)'}">
-              <button type="button" onclick="window.switchPosCart(${idx})" class="ons-btn rounded-none border-0 text-[11px] py-1 px-2.5 min-h-0 h-7 ${idx === st.activeCartIdx ? 'ons-btn-primary' : 'ons-btn-ghost'}">
+            return `<div class="inline-flex items-center rounded-xl overflow-hidden border transition-all" style="border-color:${idx === st.activeCartIdx ? '#0066FE' : 'var(--ons-border)'}">
+              <button type="button" onclick="window.switchPosCart(${idx})" class="ons-btn rounded-none border-0 text-xs py-1 px-3 min-h-0 h-8 ${idx === st.activeCartIdx ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">
                 <span>${S().esc(c.label)}</span>
-                <span class="font-mono-num opacity-90">(${c.items.length})${tabTot > 0 ? ` &bull; ${S().rp(tabTot)}` : ''}</span>
+                <span class="font-mono-num opacity-90 text-[11px]">(${c.items.length})${tabTot > 0 ? ` &bull; ${S().rp(tabTot)}` : ''}</span>
               </button>
-              ${st.carts.length > 1 ? `<button type="button" onclick="window.closePosCartTab(${idx})" title="Tutup antrean" class="px-1.5 py-1 text-xs hover:bg-red-500/20 text-red-500 font-bold">&times;</button>` : ''}
+              ${st.carts.length > 1 ? `<button type="button" onclick="window.closePosCartTab(${idx})" title="Tutup antrean" class="px-2 py-1 text-xs hover:bg-red-500/20 text-red-500 font-bold">&times;</button>` : ''}
             </div>`;
           }).join('')}
-          <button type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 min-h-0 h-7" title="Tahan transaksi pelanggan saat ini">+ Hold Antrean</button>
-          <button type="button" onclick="window.openDaftarAntreanTertahanModal()" class="ons-btn ${st.carts.length > 1 ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7" title="Lihat semua antrean pelanggan tertahan">📋 Antrean (${st.carts.length})</button>
+          <button type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 min-h-0 h-8 rounded-xl border" style="border-color:var(--ons-border-strong)" title="Tahan transaksi pelanggan saat ini">+ Hold Antrean</button>
+          <button type="button" onclick="window.openDaftarAntreanTertahanModal()" class="ons-btn ${st.carts.length > 1 ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl" title="Lihat semua antrean pelanggan tertahan">📋 Antrean (${st.carts.length})</button>
         </div>
-        <div class="flex flex-wrap items-center gap-1.5">
-          ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-[11px] py-1 px-2">Sinkron ${offQueue.length}</button>` : ''}
+        <div class="flex flex-wrap items-center gap-2">
+          ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-xs py-1 px-2.5 rounded-xl font-bold">Sinkron ${offQueue.length}</button>` : ''}
           ${(() => {
             const isFocus = typeof document !== 'undefined' && document.body && document.body.classList && document.body.classList.contains('ons-pos-focus-mode');
-            return `<button type="button" onclick="window.togglePosFocusMode()" class="ons-btn ${isFocus ? 'ons-btn-primary font-bold' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold hidden md:inline-flex" title="Sembunyikan sidebar sementara agar layar kasir lebih lega">${isFocus ? '✕ Keluar Fokus' : '⛶ Mode Fokus'}</button>`;
+            return `<button type="button" onclick="window.togglePosFocusMode()" class="ons-btn ${isFocus ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl font-semibold hidden md:inline-flex" title="Sembunyikan sidebar sementara agar layar kasir lebih lega">${isFocus ? '✕ Keluar Fokus' : '⛶ Mode Fokus'}</button>`;
           })()}
           <div class="ons-dd-wrap inline-block">
-            <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-[11px] py-1 px-2.5 min-h-0 h-7 font-semibold" title="Laci Kas, Printer Bluetooth &amp; Shift">
+            <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl font-semibold border" style="border-color:var(--ons-border-strong)" title="Laci Kas, Printer Bluetooth &amp; Shift">
               ⚙️ Kas &amp; Printer${S().ThermalPrinter && S().ThermalPrinter.characteristic ? ' (BT Aktif)' : ''} &#9662;
             </button>
             <div class="ons-dd-items hidden">
@@ -5143,23 +5273,25 @@
       </div>
 
       <!-- Hero Search & Total Bar (Apotek Digital Style) -->
-      <div class="ons-pos-hero-strip">
+      <div class="ons-pos-hero-strip p-3.5 sm:p-4 rounded-2xl shadow-sm">
         <div class="ons-pos-dropdown flex-1 min-w-[260px]">
-          <div class="ons-pos-search-pill">
-            <span class="text-slate-400 text-sm" aria-hidden="true">&#128269;</span>
-            <input id="posSearchInput" placeholder="[F2] Tulis nama, kode, zat aktif, atau kategori produk..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
+          <div class="ons-pos-search-pill rounded-xl">
+            <span class="text-slate-400 text-base" aria-hidden="true">&#128269;</span>
+            <input id="posSearchInput" placeholder="[F2] Cari nama obat, kode, zat aktif, atau scan barcode..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
             <button id="posSearchClearBtn" type="button" onclick="window.clearPosSearchInput()" class="${String(st.posSearchQ || '').trim() ? '' : 'hidden'} px-2 py-0.5 rounded text-sm font-bold text-red-500 hover:bg-red-500/10" title="Bersihkan pencarian">&times;</button>
-            <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 min-h-0 h-8 rounded-full" title="Scan Barcode Kamera">Scan</button>
+            <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-xs py-1 px-3 min-h-0 h-8 rounded-lg font-bold shadow-sm" title="Scan Barcode Kamera">Scan Barcode</button>
           </div>
           <div id="posSearchDropdown" class="ons-pos-search-menu ${String(st.posSearchQ || '').trim() ? '' : 'hidden'}">${String(st.posSearchQ || '').trim() ? renderPosSearchDropdownHtml(catalog) : ''}</div>
         </div>
-        <div class="flex items-center gap-2 ml-auto">
-          <button type="button" onclick="window.openRacikanModalFromPos && window.openRacikanModalFromPos()" class="ons-pos-bar-tool font-semibold" title="Resep Dokter &amp; Obat Racikan (Compound)">&#128138; + Racikan / Resep</button>
-          <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool font-semibold" title="Kalkulator Dosis &amp; Aturan Pakai">&#129658; Hitung Dosis</button>
-          <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool font-semibold" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
-          <div class="text-right pl-2 border-l" style="border-color:var(--ons-border)">
-            <div class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--ons-text-soft)">Total Tagihan</div>
-            <div id="posHeroTotalDisplay" class="ons-pos-total-hero">${S().rp(grandTotal)}</div>
+        <div class="flex flex-wrap items-center gap-2.5 ml-auto">
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="window.openRacikanModalFromPos && window.openRacikanModalFromPos()" class="ons-pos-bar-tool font-bold rounded-xl" title="Resep Dokter &amp; Obat Racikan (Compound)">&#128138; + Racikan / Resep</button>
+            <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool font-bold rounded-xl" title="Kalkulator Dosis &amp; Aturan Pakai">&#129658; Hitung Dosis</button>
+            <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool font-bold rounded-xl text-red-600 dark:text-red-400" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
+          </div>
+          <div class="ons-pos-total-box flex flex-col items-end justify-center">
+            <div class="text-[9px] uppercase tracking-wider font-extrabold text-blue-200">TOTAL TAGIHAN</div>
+            <div id="posHeroTotalDisplay" class="ons-pos-total-hero text-xl sm:text-2xl font-black">${S().rp(grandTotal)}</div>
           </div>
         </div>
       </div>
@@ -5167,30 +5299,30 @@
       <!-- Area Kerja Kasir 12 Kolom -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
         <!-- Kiri (8 Kolom): Tabel Item Keranjang + Katalog Cepat FEFO -->
-        <div class="lg:col-span-8 space-y-3">
-          ${member ? `<div class="p-2.5 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-2" style="background:var(--ons-primary-tint);border-color:var(--ons-primary);">
+        <div class="lg:col-span-8 space-y-3.5">
+          ${member ? `<div class="p-3 rounded-2xl border text-xs flex flex-wrap items-center justify-between gap-2 shadow-sm" style="background:var(--ons-primary-tint);border-color:var(--ons-primary);">
             <div class="min-w-0 flex-1"><b>Pasien:</b> ${S().esc(member.nama_pasien)} &bull; <b>Alergi:</b> <span class="text-red-600 font-bold">${S().esc(member.alergi_list || 'Tidak Ada')}</span> &bull; <b>Kondisi:</b> ${S().esc(member.penyakit_kronis || '-')}</div>
             <div class="flex items-center gap-1.5 shrink-0">
-              ${typeof global.openMemberProfileDrawer === 'function' ? `<button type="button" onclick="window.openMemberProfileDrawer('${S().esc(member.id_member)}')" class="ons-btn ons-btn-ghost text-[10px] py-0.5 px-2 min-h-0 h-6">Profil</button>` : ''}
+              ${typeof global.openMemberProfileDrawer === 'function' ? `<button type="button" onclick="window.openMemberProfileDrawer('${S().esc(member.id_member)}')" class="ons-btn ons-btn-ghost text-[10px] py-1 px-2.5 min-h-0 h-7 rounded-lg font-bold">Profil</button>` : ''}
             </div>
           </div>` : ''}
 
           ${cdss.alerts.length ? `<div class="space-y-1.5">
-            ${cdss.alerts.map((al) => `<div class="p-2.5 rounded-xl text-xs font-semibold border ${al.level === 'DANGER' ? 'bg-red-500/15 border-red-500 text-red-700 dark:text-red-300' : 'bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300'}">${S().esc(al.msg)}</div>`).join('')}
+            ${cdss.alerts.map((al) => `<div class="p-3 rounded-2xl text-xs font-semibold border shadow-sm ${al.level === 'DANGER' ? 'bg-red-500/15 border-red-500 text-red-700 dark:text-red-300' : 'bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300'}">${S().esc(al.msg)}</div>`).join('')}
           </div>` : ''}
 
-          ${isBelowHppCart ? `<div class="p-2.5 rounded-xl text-xs font-bold border bg-red-500/15 border-red-500 text-red-700 dark:text-red-300">
+          ${isBelowHppCart ? `<div class="p-3 rounded-2xl text-xs font-bold border bg-red-500/15 border-red-500 text-red-700 dark:text-red-300 shadow-sm">
             &#9888;&#65039; PERINGATAN ANTI-RUGI: Total jual (${S().rp(grandTotal)})${seeCost ? ` di bawah modal HPP (${S().rp(estHppCart)})` : ' di bawah batas modal minimum'}. Checkout mewajibkan PIN APJ!
           </div>` : ''}
 
           <!-- Tabel Item Keranjang -->
-          <div class="ons-card p-3 space-y-2">
+          <div class="ons-card p-3.5 sm:p-4 space-y-2.5 rounded-2xl shadow-sm">
             <div class="ons-table-wrap min-h-[210px]">
               <table class="ons-table">
                 <thead>
                   <tr>
                     <th class="w-10">No.</th>
-                    <th>Produk & Signa</th>
+                    <th>Produk &amp; Signa</th>
                     <th>Kuantitas</th>
                     <th>Satuan / Kemasan</th>
                     <th class="text-right">Harga Satuan</th>
@@ -5212,7 +5344,7 @@
                         <div class="font-bold leading-snug">${S().esc(it.nama_dagang)}</div>
                         ${it.racikan_nama ? `<div class="mt-0.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 inline-flex items-center gap-1">&#128138; ${S().esc(it.racikan_nama)}</span></div>` : ''}
                         <div class="flex flex-wrap items-center gap-1 mt-1">
-                          <select aria-label="Aturan Pakai" onchange="window.posSetAturanPakai(${idx}, this.value);renderActiveView();" class="ons-select text-[10px] py-0.5 px-1.5 min-h-0 h-6 max-w-[175px]">
+                          <select aria-label="Aturan Pakai" onchange="window.posSetAturanPakai(${idx}, this.value);renderActiveView();" class="ons-select text-[10px] py-0.5 px-1.5 min-h-0 h-6 max-w-[175px] rounded-lg">
                             ${['', '3 x 1 Sesudah Makan', '3 x 1 Sebelum Makan', '2 x 1 Sesudah Makan', '1 x 1 Malam Hari', '1 x 1 Pagi Hari', 'Oles Tipis 2x Sehari (Obat Luar)'].map((opt) => `<option value="${S().esc(opt)}" ${(it.aturan_pakai || '') === opt ? 'selected' : ''}>${opt || 'Signa / Etiket...'}</option>`).join('')}
                           </select>
                           <button type="button" onclick="window.openCartEtiketModal(${idx})" class="ons-pos-signa-chip">Etiket</button>
@@ -5221,14 +5353,14 @@
                         </div>
                       </td>
                       <td class="align-top">
-                        <div class="ons-pos-stepper">
+                        <div class="ons-pos-stepper rounded-xl overflow-hidden border">
                           <button type="button" onclick="window.posStepQty(${idx}, -1)" title="Kurangi qty">&minus;</button>
                           <input type="number" min="1" value="${it.qty}" onchange="window.posUpdateQty(${idx}, this.value)"/>
                           <button type="button" onclick="window.posStepQty(${idx}, 1)" title="Tambah qty">+</button>
                         </div>
                       </td>
                       <td class="align-top">
-                        <select aria-label="Satuan Jual" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] font-bold py-1 px-1.5 min-h-0 h-8 min-w-[125px] max-w-[170px] bg-blue-50/70 dark:bg-slate-800 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 shadow-sm cursor-pointer" title="Klik untuk ubah satuan jual (Satuan 1 / 2 / 3)">
+                        <select aria-label="Satuan Jual" onchange="window.posChangeUnit(${idx}, this.value)" class="ons-select text-[11px] font-bold py-1 px-2 min-h-0 h-8 min-w-[125px] max-w-[170px] bg-blue-50/70 dark:bg-slate-800 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 shadow-sm cursor-pointer rounded-xl" title="Klik untuk ubah satuan jual (Satuan 1 / 2 / 3)">
                           ${(it.unitOptions || []).map((u) => `<option value="${S().esc(u.label)}" ${u.label === it.satuan ? 'selected' : ''}>${S().esc(u.displayText || u.label)}</option>`).join('')}
                         </select>
                         ${Number(it.faktor_konversi || 1) > 1 ? `<div class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 font-mono-num">(1 ${S().esc(it.satuan)} = ${it.faktor_konversi} ${ob ? S().esc(ob.satuan_1 || ob.satuan_dasar || 'unit') : 'unit'})</div>` : ''}
@@ -5239,19 +5371,19 @@
                       </td>
                       <td class="text-right font-mono-num font-extrabold text-xs text-blue-600 align-top">${S().rp(netLine)}</td>
                       <td class="align-top">
-                        <button type="button" onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-7" title="Hapus item">&times;</button>
+                        <button type="button" onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-7 rounded-lg" title="Hapus item">&times;</button>
                       </td>
                     </tr>`;
                   }).join('') : `<tr>
-                    <td colspan="7" class="text-center py-10 text-sm" style="color:var(--ons-text-soft)">
-                      <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 mb-2.5">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    <td colspan="7" class="text-center py-12 text-sm" style="color:var(--ons-text-soft)">
+                      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-600 mb-3 shadow-sm">
+                        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                       </div>
-                      <div class="font-bold text-base mb-1" style="color:var(--ons-text-main)">Silahkan Pilih Produk</div>
-                      <div class="text-xs max-w-md mx-auto mb-3">Ketik nama obat atau barcode di kolom pencarian (<span class="ons-shortcut-kbd">F2</span>), scan barcode kamera, atau klik produk pada katalog di bawah.</div>
+                      <div class="font-extrabold text-base mb-1" style="color:var(--ons-text-main)">Keranjang Masih Kosong</div>
+                      <div class="text-xs max-w-md mx-auto mb-3.5">Ketik nama obat atau barcode di kolom pencarian (<span class="ons-shortcut-kbd">F2</span>), scan barcode kamera, atau klik produk pada katalog cepat di bawah.</div>
                       <div class="flex flex-wrap items-center justify-center gap-2">
-                        <button type="button" onclick="document.getElementById('posSearchInput')?.focus()" class="ons-btn ons-btn-primary text-xs py-1 px-3">Cari Produk (F2)</button>
-                        <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-ghost text-xs py-1 px-3">Scan Barcode</button>
+                        <button type="button" onclick="document.getElementById('posSearchInput')?.focus()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 rounded-xl shadow-sm">Cari Produk (F2)</button>
+                        <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3.5 rounded-xl border" style="border-color:var(--ons-border-strong)">Scan Barcode</button>
                       </div>
                     </td>
                   </tr>`}
@@ -5259,32 +5391,32 @@
               </table>
             </div>
 
-            ${crossSell ? `<div class="p-2.5 rounded-xl border text-[11px] flex items-center justify-between gap-2" style="border-color:var(--ons-border);background:rgba(16,185,129,0.06)">
+            ${crossSell ? `<div class="p-3 rounded-2xl border text-[11px] flex items-center justify-between gap-2 shadow-sm" style="border-color:var(--ons-border);background:rgba(16,185,129,0.06)">
               <div class="min-w-0">
                 <span class="font-bold text-emerald-700 dark:text-emerald-300">Saran Pendamping Apoteker:</span>
                 <b>${S().esc(crossSell.nama_dagang)}</b> &bull; <span class="font-mono-num">${S().rp(crossSell.harga_umum)}/${S().esc(crossSell.satuan_dasar)}</span>
               </div>
-              <button type="button" onclick="window.posAddToCart('${S().esc(crossSell.id_obat)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 min-h-0 h-7 shrink-0">+ Tambah</button>
+              <button type="button" onclick="window.posAddToCart('${S().esc(crossSell.id_obat)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-3 min-h-0 h-7 shrink-0 rounded-xl font-bold shadow-sm">+ Tambah</button>
             </div>` : ''}
           </div>
 
           <!-- Katalog Produk Cepat FEFO (Dapat Diciutkan) -->
-          <div class="ons-card p-3 space-y-2.5">
+          <div class="ons-card p-3.5 sm:p-4 space-y-3 rounded-2xl shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="window.togglePosCatalogPanel()" class="font-extrabold text-xs flex items-center gap-1.5" style="color:var(--ons-primary)">
                   <span>${posCatalogExpanded ? '&#9660;' : '&#9654;'} Katalog Produk FEFO</span>
                 </button>
-                <span id="posCatalogMeta" class="text-[11px] font-mono-num" style="color:var(--ons-text-soft)">${catalog.length} dari ${st.masterObat.length} item</span>
+                <span id="posCatalogMeta" class="text-[11px] font-mono-num px-2 py-0.5 rounded-md bg-slate-500/10 font-bold" style="color:var(--ons-text-soft)">${catalog.length} dari ${st.masterObat.length} item</span>
               </div>
               <div class="flex flex-wrap items-center gap-1.5">
-                <button type="button" onclick="window.togglePosCatalogViewMode()" class="ons-btn ons-btn-ghost text-[11px] py-0.5 px-2.5 min-h-0 h-7">${posCatalogView === 'LIST' ? 'Tampilan Kartu' : 'Daftar Cepat'}</button>
+                <button type="button" onclick="window.togglePosCatalogViewMode()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 min-h-0 h-7 rounded-xl border" style="border-color:var(--ons-border-strong)">${posCatalogView === 'LIST' ? 'Tampilan Kartu' : 'Daftar Cepat'}</button>
               </div>
             </div>
             ${posCatalogExpanded ? `
-              <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t" style="border-color:var(--ons-border)">
                 <div class="flex flex-wrap items-center gap-2">
-                  <select class="ons-select text-xs font-semibold py-1 px-2.5 min-w-[160px]" onchange="ONSStore.AppState.posFilterGol=this.value;window.refreshPosCatalogView();" aria-label="Filter Golongan BPOM">
+                  <select class="ons-select text-xs font-semibold py-1 px-2.5 min-w-[160px] rounded-xl" onchange="ONSStore.AppState.posFilterGol=this.value;window.refreshPosCatalogView();" aria-label="Filter Golongan BPOM">
                     ${[
                       { id: '', lbl: '🏷️ Semua Golongan BPOM' },
                       { id: 'BEBAS', lbl: '🟢 Obat Bebas' },
@@ -5296,7 +5428,7 @@
                       { id: 'NARKOTIKA', lbl: '⚪ Narkotika' }
                     ].map((g) => `<option value="${g.id}" ${fGol === g.id ? 'selected' : ''}>${g.lbl}</option>`).join('')}
                   </select>
-                  <select class="ons-select text-xs font-semibold py-1 px-2.5 min-w-[135px]" onchange="window.setPosStockFilter(this.value)" aria-label="Filter Status Stok">
+                  <select class="ons-select text-xs font-semibold py-1 px-2.5 min-w-[135px] rounded-xl" onchange="window.setPosStockFilter(this.value)" aria-label="Filter Status Stok">
                     ${[
                       { id: 'ALL', lbl: '📦 Semua Stok' },
                       { id: 'READY', lbl: '✅ Siap Jual' },
@@ -5304,7 +5436,7 @@
                       { id: 'NEAR_ED', lbl: '⏳ Hampir ED' }
                     ].map((sf) => `<option value="${sf.id}" ${posStockFilter === sf.id ? 'selected' : ''}>${sf.lbl}</option>`).join('')}
                   </select>
-                  ${(fGol || posStockFilter !== 'ALL') ? `<button type="button" onclick="window.resetPosCatalogFilters()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-red-600 font-semibold">✕ Reset</button>` : ''}
+                  ${(fGol || posStockFilter !== 'ALL') ? `<button type="button" onclick="window.resetPosCatalogFilters()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 text-red-600 font-semibold rounded-xl">✕ Reset</button>` : ''}
                 </div>
               </div>
               <div id="posCatalogGrid" class="${posCatalogView === 'LIST' ? 'space-y-2' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5'} max-h-[42vh] overflow-y-auto pr-1">
@@ -5321,27 +5453,26 @@
       </div>
 
       <!-- Bottom Action & Status Strip -->
-      <div class="ons-pos-bottom-bar">
+      <div class="ons-pos-bottom-bar rounded-2xl p-3 shadow-sm">
         <div class="flex flex-wrap items-center gap-1.5">
-          <button type="button" onclick="window.openCartEtiketModal(0)" class="ons-pos-bar-tool font-semibold" title="Cetak Etiket Obat Putih/Biru">&#127991; Cetak Etiket</button>
-          <button type="button" onclick="window.openCopyResepFromPosModal()" class="ons-pos-bar-tool font-semibold" title="Salinan Resep p.c.c">&#128221; Copy Resep</button>
-          <button type="button" onclick="window.openKasMasukModal()" class="ons-pos-bar-tool font-semibold" title="Catat Kas Masuk Laci (Modal Tambahan / Tukar Receh)">+ Kas Masuk</button>
-          <button type="button" onclick="window.openKasKeluarModal()" class="ons-pos-bar-tool font-semibold" title="Catat Kas Keluar Laci (Petty Cash Operasional / Beli Plastik)">- Kas Keluar</button>
-          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-pos-bar-tool font-semibold" title="Daftar Penjualan &amp; Draft">&#128203; Riwayat Penjualan</button>
-          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-pos-bar-tool font-semibold" title="Catat Penjualan Tertolak / Lost Sales">&#9888; Obat Kosong</button>
-          <span class="px-2.5 py-1 rounded-md font-semibold text-[11px] border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(prof.status_pajak || 'Non-PKP')}</span>
+          <button type="button" onclick="window.openCartEtiketModal(0)" class="ons-pos-bar-tool font-semibold rounded-xl" title="Cetak Etiket Obat Putih/Biru">&#127991; Cetak Etiket</button>
+          <button type="button" onclick="window.openCopyResepFromPosModal()" class="ons-pos-bar-tool font-semibold rounded-xl" title="Salinan Resep p.c.c">&#128221; Copy Resep</button>
+          <button type="button" onclick="window.openKasMasukModal()" class="ons-pos-bar-tool font-semibold rounded-xl" title="Catat Kas Masuk Laci (Modal Tambahan / Tukar Receh)">+ Kas Masuk</button>
+          <button type="button" onclick="window.openKasKeluarModal()" class="ons-pos-bar-tool font-semibold rounded-xl" title="Catat Kas Keluar Laci (Petty Cash Operasional / Beli Plastik)">- Kas Keluar</button>
+          <button type="button" onclick="window.setPosSubTab('riwayat')" class="ons-pos-bar-tool font-semibold rounded-xl" title="Daftar Penjualan &amp; Draft">&#128203; Riwayat Penjualan</button>
+          <button type="button" onclick="window.setPosSubTab('tertolak')" class="ons-pos-bar-tool font-semibold rounded-xl text-amber-700 dark:text-amber-300" title="Catat Penjualan Tertolak / Lost Sales">&#9888; Obat Kosong</button>
+          <span class="px-2.5 py-1 rounded-xl font-semibold text-[11px] border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(prof.status_pajak || 'Non-PKP')}</span>
         </div>
         <div class="flex flex-wrap items-center gap-2 ml-auto">
           <label class="flex items-center gap-1.5 text-[11px] font-semibold" style="color:var(--ons-text-soft)">
             <span>Tgl. Transaksi:</span>
-            <input type="date" value="${S().esc(cart.tgl_transaksi || todayYmd)}" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].tgl_transaksi=this.value" class="ons-input text-xs font-mono-num py-0.5 px-2 h-7 w-36"/>
+            <input type="date" value="${S().esc(cart.tgl_transaksi || todayYmd)}" onchange="ONSStore.AppState.carts[ONSStore.AppState.activeCartIdx].tgl_transaksi=this.value" class="ons-input text-xs font-mono-num py-1 px-2.5 h-8 w-36 rounded-xl"/>
           </label>
-          <span class="px-2.5 py-1 rounded font-bold text-xs border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">${S().esc(branchLabel)}</span>
+          <span class="px-3 py-1 rounded-xl font-bold text-xs border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">${S().esc(branchLabel)}</span>
         </div>
       </div>
     </div>`;
   }
-
   global.toggleDashAuditCheck = async (itemId, isChecked) => {
     const cur = S().getAuditSystem();
     const nextItems = (cur.items || []).map((it) => it.id === itemId ? Object.assign({}, it, { checked: !!isChecked }) : it);
