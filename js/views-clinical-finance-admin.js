@@ -1918,8 +1918,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>`))))}
             </div>
             <div>
-              <div>
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
                   klinisTab === 'soap' ? 'Kajian Resep &amp; Catatan Medis SOAP' :
                   (klinisTab === 'erx' ? 'Antrean E-Resep &amp; Resep Dokter Masuk' :
                   (klinisTab === 'racikan' ? 'Peracikan Obat &amp; Etiket Beyond Use Date (BUD)' :
@@ -1927,7 +1926,6 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                   (klinisTab === 'pio' ? 'Pelayanan Informasi Obat (PIO) &amp; Konseling' :
                   'Monitoring Efek Samping Obat (MESO BPOM)'))))
                 }</h2>
-              </div>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -4263,9 +4261,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               ${dynamicIcon}
             </div>
             <div>
-              <div>
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
-              </div>
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -8011,9 +8007,7 @@ S. prn 3 dd 1 tab</textarea>
               ${dynamicIcon}
             </div>
             <div>
-              <div>
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
-              </div>
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -8684,26 +8678,18 @@ S. prn 3 dd 1 tab</textarea>
     ]);
 
     return `
-      <!-- SUBHERO BANNER: ANALISIS PARETO ABC -->
+      <!-- SUBHERO BANNER: ANALISIS PARETO ABC (Unified Standard) -->
       <div class="ons-subhero-banner is-analisis mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-600/10 text-indigo-600 border border-indigo-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </div>
             <div>
-              
-                <span>Prinsip Pareto 80/20 &amp; Tata Kelola Modal</span>
-              </div>
-              <h2 class="ons-subhero-title">Analisis Pareto ABC &amp; Kontribusi Omzet Apotek</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Analisis Pareto ABC &amp; Kontribusi Omzet Apotek</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Analisis Pareto Real-Time
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.exportAnlPareto('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export Excel</span>
@@ -8965,26 +8951,18 @@ S. prn 3 dd 1 tab</textarea>
     ]);
 
     return `
-      <!-- SUBHERO BANNER: ANALISIS PEMBELIAN -->
+      <!-- SUBHERO BANNER: ANALISIS PEMBELIAN (Unified Standard) -->
       <div class="ons-subhero-banner is-analisis mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-600/10 text-indigo-600 border border-indigo-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             </div>
             <div>
-              
-                <span>Smart Buffer Stock &amp; Lead Time CDOB</span>
-              </div>
-              <h2 class="ons-subhero-title">Analisis Pembelian Cerdas &amp; Estimasi Kebutuhan Pengadaan</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Analisis Pembelian Cerdas &amp; Estimasi Kebutuhan Pengadaan</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Sistem Defecta Terintegrasi
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.generateAutoPoFromAnalysis()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Generate SP Otomatis dari Defecta">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
               <span>Pesanan Otomatis</span>
@@ -9195,26 +9173,18 @@ S. prn 3 dd 1 tab</textarea>
     ]);
 
     return `
-      <!-- SUBHERO BANNER: ANALISIS HARGA PRODUK -->
+      <!-- SUBHERO BANNER: ANALISIS HARGA PRODUK (Unified Standard) -->
       <div class="ons-subhero-banner is-analisis mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-600/10 text-indigo-600 border border-indigo-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             </div>
             <div>
-              
-                <span>Proteksi Margin &amp; Deteksi Kenaikan HPP</span>
-              </div>
-              <h2 class="ons-subhero-title">Analisis Kenaikan Harga Faktur PBF &amp; Target Margin Jual</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Analisis Kenaikan Harga Faktur PBF &amp; Target Margin Jual</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Margin Protection Siaga
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.applyBulkPriceFromAnalysis()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Terapkan Rekomendasi Harga Baru Sekaligus">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
               <span>Update Harga Massal (${anlHargaSelected.size > 0 ? anlHargaSelected.size : countPerlu})</span>
@@ -9921,26 +9891,18 @@ S. prn 3 dd 1 tab</textarea>
     const loginHost = (window.location && window.location.host) || 'onsfarma.vercel.app';
 
     return `
-      <!-- SUBHERO BANNER: DAFTAR PENGGUNA -->
+      <!-- SUBHERO BANNER: DAFTAR PENGGUNA (Unified Standard) -->
       <div class="ons-subhero-banner is-users mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div>
-              
-                <span>Otentikasi &amp; Direktori Karyawan</span>
-              </div>
-              <h2 class="ons-subhero-title">Direktori Pengguna &amp; Manajemen Akun Staf</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Direktori Pengguna &amp; Manajemen Akun Staf</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Akun Multi-Level Aktif
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Tambah Pengguna Baru">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>+ Pengguna Baru</span>
@@ -10089,26 +10051,18 @@ S. prn 3 dd 1 tab</textarea>
     const allRoles = [...baseRoles, ...customRoles.map((r) => ({ id: r.name, name: r.name, status: 'Aktif', editable: true, isCustom: true, desc: 'Peran kustom staf apotek dengan alokasi hak akses dinamis.' }))];
 
     return `
-      <!-- SUBHERO BANNER: PERAN & HAK AKSES -->
+      <!-- SUBHERO BANNER: PERAN & HAK AKSES (Unified Standard) -->
       <div class="ons-subhero-banner is-users mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
             <div>
-              
-                <span>Role-Based Access Control (RBAC)</span>
-              </div>
-              <h2 class="ons-subhero-title">Konfigurasi Peran &amp; Matriks Hak Akses Staf</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Konfigurasi Peran &amp; Matriks Hak Akses Staf</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Matriks Hak Akses Terkunci
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openAddRoleModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Buat Peran Baru">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>+ Peran Baru</span>
@@ -10585,26 +10539,18 @@ S. prn 3 dd 1 tab</textarea>
     const jadwalList = typeof _getJadwalKerjaList === 'function' ? _getJadwalKerjaList() : [];
 
     return `
-      <!-- SUBHERO BANNER: JADWAL KERJA -->
+      <!-- SUBHERO BANNER: JADWAL KERJA (Unified Standard) -->
       <div class="ons-subhero-banner is-users mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <div>
-              
-                <span>Model Roster 2 Shift Apotek Digital</span>
-              </div>
-              <h2 class="ons-subhero-title">Penjadwalan Shift Operasional Staf Apotek</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Penjadwalan Shift Operasional Staf Apotek</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Roster Jaga Terjadwal
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openEditJadwalModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Atur Jadwal Staf">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>Atur Jadwal Staf</span>
@@ -10614,12 +10560,6 @@ S. prn 3 dd 1 tab</textarea>
             </button>
             <button type="button" onclick="window.copyJadwalToNextWeek()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1 shadow-sm" title="Salin jadwal ke pekan depan">
               <span>📋 Salin ke Pekan Depan</span>
-            </button>
-            <button type="button" onclick="window.printJadwalRosterA4()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Cetak Roster Mingguan">
-              <span>🖨️ Cetak Roster A4</span>
-            </button>
-            <button type="button" onclick="window.exportJadwalRoster('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Ekspor Excel">
-              <span>📊 Excel</span>
             </button>
           </div>
         </div>
@@ -10756,26 +10696,18 @@ S. prn 3 dd 1 tab</textarea>
     const totalJamMasuk = Math.round(filtered.reduce((s, l) => s + Number(l.jam_kerja || 0), 0) * 100) / 100;
 
     return `
-      <!-- SUBHERO BANNER: RIWAYAT PRESENSI -->
+      <!-- SUBHERO BANNER: RIWAYAT PRESENSI (Unified Standard) -->
       <div class="ons-subhero-banner is-users mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
             </div>
             <div>
-              
-                <span>Audit Kehadiran &amp; Kalkulasi Jam Kerja</span>
-              </div>
-              <h2 class="ons-subhero-title">Riwayat Presensi &amp; Akumulasi Jam Kerja Masuk</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Riwayat Presensi &amp; Akumulasi Jam Kerja Masuk</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Presensi Digital Siaga
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openInputPresensiModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Catat Presensi Baru">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>+ Catat Presensi</span>
@@ -10785,9 +10717,6 @@ S. prn 3 dd 1 tab</textarea>
             </button>
             <button type="button" onclick="window.openPengaturanGajiModal()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1" title="Atur tarif upah per jam kerja masuk">
               <span>⚙️ Tarif Gaji</span>
-            </button>
-            <button type="button" onclick="window.exportAttendanceHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1">
-              <span>📊 Excel</span>
             </button>
           </div>
         </div>
@@ -10971,26 +10900,18 @@ S. prn 3 dd 1 tab</textarea>
     const allSessions = [currentShift, ...pastShifts];
 
     return `
-      <!-- SUBHERO BANNER: RIWAYAT SHIFT -->
+      <!-- SUBHERO BANNER: RIWAYAT SHIFT (Unified Standard) -->
       <div class="ons-subhero-banner is-users mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             </div>
             <div>
-              
-                <span>Integritas Kas Kasir &amp; Serah Terima Sesi</span>
-              </div>
-              <h2 class="ons-subhero-title">Riwayat Sesi Shift &amp; Rekonsiliasi Kasir POS</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Riwayat Sesi Shift &amp; Rekonsiliasi Kasir POS</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Sesi Kasir Terpantau
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.exportShiftHistory('xlsx')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Ekspor Excel</span>
@@ -11109,26 +11030,18 @@ S. prn 3 dd 1 tab</textarea>
     ];
 
     return `
-      <!-- SUBHERO BANNER: LOG AKTIVITAS -->
+      <!-- SUBHERO BANNER: LOG AKTIVITAS (Unified Standard) -->
       <div class="ons-subhero-banner is-users mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             </div>
             <div>
-              
-                <span>Sistem Audit Trail &amp; Keamanan Apotek</span>
-              </div>
-              <h2 class="ons-subhero-title">Log Aktivitas Pengguna &amp; Audit Operasional Staf</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Log Aktivitas Pengguna &amp; Audit Operasional Staf</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Log Audit Real-Time
-            </span>
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm" title="Segarkan Log">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
               <span>Segarkan Log</span>
@@ -13795,158 +13708,107 @@ S. prn 3 dd 1 tab</textarea>
     else if (settingsTab === 'audit') contentHtml = _renderSettingsAuditSubTab(isOwner, role, audit, prof, auditDraft, auditItems, filteredAuditLogs);
 
     return `<div class="space-y-5 ons-view-enter">
-      <!-- Top Navigation Tabs (Executive Workstation Cockpit Standard) -->
-      <div class="ons-dash-tab-nav">
-        <button onclick="window.setSettingsTab('profil')" class="ons-dash-tab-btn ${settingsTab === 'profil' ? 'active' : ''}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-          <span>Profil Bisnis</span>
-          <span class="ons-dash-tab-badge">SIA/SIPA</span>
-        </button>
-        <button onclick="window.setSettingsTab('konfigurasi')" class="ons-dash-tab-btn ${settingsTab === 'konfigurasi' ? 'active' : ''}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          <span>Konfigurasi</span>
-          <span class="ons-dash-tab-badge">6 Aturan</span>
-        </button>
-        <button onclick="window.setSettingsTab('metode-bayar')" class="ons-dash-tab-btn ${settingsTab === 'metode-bayar' ? 'active' : ''}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-          <span>Metode Pembayaran</span>
-          <span class="ons-dash-tab-badge">${channelsList.length} Saluran</span>
-        </button>
-        <button onclick="window.setSettingsTab('akun')" class="ons-dash-tab-btn ${settingsTab === 'akun' ? 'active' : ''}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-          <span>Pengguna &amp; PIN</span>
-          <span class="ons-dash-tab-badge">${users.length} Akun</span>
-        </button>
-        <button onclick="window.setSettingsTab('struk')" class="ons-dash-tab-btn ${settingsTab === 'struk' ? 'active' : ''}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-          <span>Desain Struk</span>
-          <span class="ons-dash-tab-badge">58/80mm</span>
-        </button>
-        <button onclick="window.setSettingsTab('vault')" class="ons-dash-tab-btn ${settingsTab === 'vault' ? 'active' : ''}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-          <span>Brankas &amp; Reset DB</span>
-          <span class="ons-dash-tab-badge">Cloud &amp; JSON</span>
-        </button>
-        <button onclick="window.setSettingsTab('audit')" class="ons-dash-tab-btn ${settingsTab === 'audit' ? 'active' : ''}">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          <span>Log Audit Keamanan</span>
-          <span class="ons-dash-tab-badge">${audit.length} Event</span>
-        </button>
+      <!-- Top Navigation Tabs (Unified Standard) -->
+      <div class="ons-dash-tab-nav mb-4" role="tablist" aria-label="Sub-Menu Pengaturan">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setSettingsTab('profil')" class="ons-dash-tab-btn ${settingsTab === 'profil' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span>Profil &amp; Legalitas</span>
+          </button>
+          <button type="button" onclick="window.setSettingsTab('konfigurasi')" class="ons-dash-tab-btn ${settingsTab === 'konfigurasi' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>Konfigurasi</span>
+          </button>
+          <button type="button" onclick="window.setSettingsTab('metode-bayar')" class="ons-dash-tab-btn ${settingsTab === 'metode-bayar' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <span>Metode Bayar</span>
+          </button>
+          <button type="button" onclick="window.setSettingsTab('akun')" class="ons-dash-tab-btn ${settingsTab === 'akun' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span>Pengguna &amp; PIN</span>
+          </button>
+          <button type="button" onclick="window.setSettingsTab('struk')" class="ons-dash-tab-btn ${settingsTab === 'struk' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            <span>Desain Struk</span>
+          </button>
+          <button type="button" onclick="window.setSettingsTab('vault')" class="ons-dash-tab-btn ${settingsTab === 'vault' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>Brankas &amp; Backup</span>
+          </button>
+          <button type="button" onclick="window.setSettingsTab('audit')" class="ons-dash-tab-btn ${settingsTab === 'audit' ? 'is-active' : ''}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            <span>Log Audit</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Sub-Hero Cockpit Banner (Executive Workstation Standard) -->
+      <!-- Sub-Hero Cockpit Banner (Unified Standard) -->
       ${(() => {
-        if (settingsTab === 'profil') {
-          return `<div class="ons-subhero-banner is-settings">
-            <div class="ons-subhero-content">
-              <div class="ons-subhero-header">
-                
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-400/30">PMK No. 73/2016</span>
+        const cfgIcon = settingsTab === 'profil'
+          ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
+          : (settingsTab === 'konfigurasi'
+            ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`
+            : (settingsTab === 'metode-bayar'
+              ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`
+              : (settingsTab === 'akun'
+                ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>`
+                : (settingsTab === 'struk'
+                  ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`
+                  : (settingsTab === 'vault'
+                    ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`
+                    : `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`)))));
+
+        const cfgTitle = settingsTab === 'profil' ? 'Profil Bisnis, Sarana Apotek &amp; Legalitas SIA/SIPA'
+          : (settingsTab === 'konfigurasi' ? 'Konfigurasi Operasional, Kebijakan Stok &amp; Kasir'
+          : (settingsTab === 'metode-bayar' ? 'Saluran Pembayaran Kasir &amp; Rekening Apotek'
+          : (settingsTab === 'akun' ? 'Manajemen Akun Staf, Matriks Hak Akses &amp; PIN Otorisasi'
+          : (settingsTab === 'struk' ? 'Konfigurasi &amp; Pratinjau Desain Struk Kasir Thermal'
+          : (settingsTab === 'vault' ? 'Brankas Rahasia, Backup JSON &amp; Pemeliharaan Database'
+          : 'Pemeriksaan Kepatuhan CDOB BPOM &amp; Jejak Audit Sistem')))));
+
+        const cfgActions = settingsTab === 'profil' ? `
+          <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
+          <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-ghost text-xs">Snapshot Drive</button>
+          <button onclick="window.saveStoreProfile()" class="ons-btn ons-btn-primary text-xs font-bold">Simpan Profil Bisnis</button>
+        ` : (settingsTab === 'konfigurasi' ? `
+          <button type="button" onclick="window.saveStoreSettings()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2 shadow-sm">💾 Simpan Konfigurasi</button>
+          <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
+        ` : (settingsTab === 'metode-bayar' ? `
+          ${canEditProfile ? `<button type="button" onclick="window.openAddPaymentChannelModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Metode Baru</button>` : ''}
+          <button type="button" onclick="window.exportPaymentChannels('xlsx')" class="ons-btn ons-btn-ghost text-xs">Ekspor Saluran</button>
+        ` : (settingsTab === 'akun' ? `
+          <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Tambah Akun Staf</button>
+          <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
+          <button type="button" onclick="window.runSecurityHealthCheck()" class="ons-btn ons-btn-ghost text-xs">Audit Keamanan</button>
+        ` : (settingsTab === 'struk' ? `
+          <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs">🖨️ Hubungkan BT</button>
+          <button type="button" onclick="window.testPrintBluetoothStruk()" class="ons-btn ons-btn-ghost text-xs text-blue-600 font-bold">⚡ Uji Cetak BT</button>
+          <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Browser</button>
+          <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template</button>
+        ` : (settingsTab === 'vault' ? `
+          <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup JSON</button>
+          <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">Pindai DB</button>
+          <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs font-bold">Perbaiki DB</button>
+        ` : `
+          ${canEditProfile ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
+          <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Sistem Audit</button>
+        `)))));
+
+        return `<div class="ons-subhero-banner is-settings mb-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-slate-600/10 text-slate-700 dark:text-slate-300 border border-slate-600/20 flex items-center justify-center shrink-0 shadow-sm">
+                ${cfgIcon}
               </div>
-              <h2 class="ons-subhero-title">Profil Bisnis, Sarana Apotek &amp; Legalitas SIA/SIPA</h2>
-              
-            </div>
-            <div class="ons-subhero-actions">
-              <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
-              <button onclick="window.runDriveBackupSnapshot()" class="ons-btn ons-btn-ghost text-xs">Snapshot Drive</button>
-              <button onclick="window.saveStoreProfile()" class="ons-btn ons-btn-primary text-xs font-bold">Simpan Profil Bisnis</button>
-            </div>
-          </div>`;
-        } else if (settingsTab === 'konfigurasi') {
-          return `<div class="ons-subhero-banner is-settings">
-            <div class="ons-subhero-content">
-              <div class="ons-subhero-header">
-                
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-400/30">Kebijakan Toko Aktif</span>
+              <div>
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${cfgTitle}</h2>
               </div>
-              <h2 class="ons-subhero-title">Konfigurasi Operasional, Kebijakan Stok &amp; Kasir</h2>
-              
             </div>
-            <div class="ons-subhero-actions">
-              <button type="button" onclick="window.saveStoreSettings()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2 shadow-sm">💾 Simpan Konfigurasi</button>
-              <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
+            <div class="flex flex-wrap items-center gap-2">
+              ${cfgActions}
             </div>
-          </div>`;
-        } else if (settingsTab === 'metode-bayar') {
-          return `<div class="ons-subhero-banner is-settings">
-            <div class="ons-subhero-content">
-              <div class="ons-subhero-header">
-                
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-400/30">Multi-Channel</span>
-              </div>
-              <h2 class="ons-subhero-title">Saluran Pembayaran Kasir &amp; Rekening Apotek</h2>
-              
-            </div>
-            <div class="ons-subhero-actions">
-              ${canEditProfile ? `<button type="button" onclick="window.openAddPaymentChannelModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Metode Baru</button>` : ''}
-              <button type="button" onclick="window.exportPaymentChannels('xlsx')" class="ons-btn ons-btn-ghost text-xs">Ekspor Saluran</button>
-            </div>
-          </div>`;
-        } else if (settingsTab === 'akun') {
-          return `<div class="ons-subhero-banner is-settings">
-            <div class="ons-subhero-content">
-              <div class="ons-subhero-header">
-                
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-400/30">Zero-Trust RBAC</span>
-              </div>
-              <h2 class="ons-subhero-title">Manajemen Akun Staf, Matriks Hak Akses &amp; PIN Otorisasi</h2>
-              
-            </div>
-            <div class="ons-subhero-actions">
-              <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Tambah Akun Staf</button>
-              <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
-              <button type="button" onclick="window.runSecurityHealthCheck()" class="ons-btn ons-btn-ghost text-xs">Audit Keamanan</button>
-            </div>
-          </div>`;
-        } else if (settingsTab === 'struk') {
-          return `<div class="ons-subhero-banner is-settings">
-            <div class="ons-subhero-content">
-              <div class="ons-subhero-header">
-                
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-400/30">58mm &amp; 80mm</span>
-              </div>
-              <h2 class="ons-subhero-title">Konfigurasi &amp; Pratinjau Desain Struk Kasir Thermal</h2>
-              
-            </div>
-            <div class="ons-subhero-actions">
-              <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs">🖨️ Hubungkan BT</button>
-              <button type="button" onclick="window.testPrintBluetoothStruk()" class="ons-btn ons-btn-ghost text-xs text-blue-600 font-bold">⚡ Uji Cetak BT</button>
-              <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Browser</button>
-              <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template</button>
-            </div>
-          </div>`;
-        } else if (settingsTab === 'vault') {
-          return `<div class="ons-subhero-banner is-settings">
-            <div class="ons-subhero-content">
-              <div class="ons-subhero-header">
-                
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-400/30">Cloud &amp; Local</span>
-              </div>
-              <h2 class="ons-subhero-title">Brankas Rahasia, Backup JSON &amp; Pemeliharaan Database</h2>
-              
-            </div>
-            <div class="ons-subhero-actions">
-              <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup JSON</button>
-              <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">Pindai DB</button>
-              <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs font-bold">Perbaiki DB</button>
-            </div>
-          </div>`;
-        } else {
-          return `<div class="ons-subhero-banner is-settings">
-            <div class="ons-subhero-content">
-              <div class="ons-subhero-header">
-                
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-400/30">CDOB Kemenkes</span>
-              </div>
-              <h2 class="ons-subhero-title">Pemeriksaan Kepatuhan CDOB BPOM &amp; Jejak Audit Sistem</h2>
-              
-            </div>
-            <div class="ons-subhero-actions">
-              ${canEditProfile ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
-              <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Sistem Audit</button>
-            </div>
-          </div>`;
-        }
+          </div>
+        </div>`;
       })()}
 
       <!-- 4 KPI Cockpit Strip Cards -->

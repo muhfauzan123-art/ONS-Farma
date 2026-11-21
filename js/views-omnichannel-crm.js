@@ -398,21 +398,17 @@
     return `
       <!-- SUBHERO BANNER: KONTAK & OPT-OUT -->
       <div class="ons-subhero-banner is-crm mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div>
-              
-              <h2 class="ons-subhero-title">Manajemen Kontak Pasien CRM &amp; Privasi WhatsApp</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Manajemen Kontak Pasien CRM &amp; Privasi WhatsApp</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Database CRM Tersinkronisasi
+          <div class="flex flex-wrap items-center gap-2">
+            Database CRM Tersinkronisasi
             </span>
             <button type="button" onclick="ONSViewsOmniCrm.syncCrmNow()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5" title="Tarik member &amp; pembeli online">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -587,21 +583,17 @@
     return `
       <!-- SUBHERO BANNER: BROADCAST WA -->
       <div class="ons-subhero-banner is-crm mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
             </div>
             <div>
-              
-              <h2 class="ons-subhero-title">Pusat Siaran WhatsApp Edukasi &amp; Pengingat Terapi</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Pusat Siaran WhatsApp Edukasi &amp; Pengingat Terapi</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              WhatsApp Cloud Siap Siaran
+          <div class="flex flex-wrap items-center gap-2">
+            WhatsApp Cloud Siap Siaran
             </span>
             <button type="button" onclick="ONSViewsOmniCrm.sendBlastNow()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -764,21 +756,17 @@
     return `
       <!-- SUBHERO BANNER: ANTREAN NOTIFIKASI -->
       <div class="ons-subhero-banner is-crm mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
             </div>
             <div>
-              
-              <h2 class="ons-subhero-title">Monitor Antrean Notifikasi &amp; Riwayat Pengiriman WA</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Monitor Antrean Notifikasi &amp; Riwayat Pengiriman WA</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Antrean Non-Blocking Siaga
+          <div class="flex flex-wrap items-center gap-2">
+            Antrean Non-Blocking Siaga
             </span>
             <button type="button" onclick="ONSViewsOmniCrm.processQueueNow()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Kirim batch antrean sekarang">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -998,21 +986,17 @@
     return `
       <!-- SUBHERO BANNER: TELE-REFILL H-3 -->
       <div class="ons-subhero-banner is-crm mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <div class="ons-subhero-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             </div>
             <div>
-              
-              <h2 class="ons-subhero-title">Radar Tele-Refill Pasien Kronis &amp; Pengingat Obat Rutin (H-3)</h2>
-              
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Radar Tele-Refill Pasien Kronis &amp; Pengingat Obat Rutin (H-3)</h2>
             </div>
           </div>
-          <div class="ons-subhero-actions">
-            <span class="ons-chip ons-chip-success">
-              <span class="ons-chip-dot"></span>
-              Tele-Refill Guardian Aktif
+          <div class="flex flex-wrap items-center gap-2">
+            Tele-Refill Guardian Aktif
             </span>
             <button type="button" onclick="ONSViewsOmniCrm.openAddTeleRefillModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Daftarkan Pasien Terapi Rutin">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>

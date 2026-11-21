@@ -962,15 +962,13 @@
                 `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`)))}
             </div>
             <div>
-              <div>
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
                   subTab === 'tensi' ? 'Pemeriksaan Tekanan Darah (Tensi &amp; MAP)' :
                   (subTab === 'gula' ? 'Pemeriksaan Glukosa Darah (POCT)' :
                   (subTab === 'kolesterol' ? 'Pemeriksaan Kolesterol Total' :
                   (subTab === 'asam_urat' ? 'Pemeriksaan Asam Urat (Uric Acid)' :
                   'Pelayanan Klinik &amp; Pemeriksaan Pasien (POCT)')))
                 }</h2>
-              </div>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">

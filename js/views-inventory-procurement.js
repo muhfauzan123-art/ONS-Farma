@@ -2156,9 +2156,7 @@
               ${dynamicIcon}
             </div>
             <div>
-              <div>
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
-              </div>
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -10965,19 +10963,34 @@
       </div>
     `;
 
-    // 2. Executive Sub-Hero Banner Cockpit (Standard Layout)
+    // 2. Executive Sub-Hero Banner Cockpit (Unified Standard)
+    const dynamicFakturIcon = fakturTab === 'rencana'
+      ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h6"/></svg>`
+      : (fakturTab === 'sp'
+        ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`
+        : (fakturTab === 'input'
+          ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`
+          : (fakturTab === 'retur'
+            ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>`
+            : `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`)));
+
+    const pageFakturTitle = fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta Kritis' :
+      (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM' :
+      (fakturTab === 'input' ? 'Penerimaan Fisik Faktur PBF (GRN)' :
+      (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF)' : 'Faktur Pembelian &amp; Penerimaan PBF Resmi')));
+
     const subHeroBanner = `
       <div class="ons-subhero-banner is-pembelian mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <h2 class="ons-subhero-title">${
-              fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta Kritis' :
-              (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM &amp; Monitoring Distribusi' :
-              (fakturTab === 'input' ? 'Penerimaan Fisik Faktur PBF (GRN) &amp; Smart Scanner' :
-              (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF) &amp; Penyesuaian Hutang' : 'Faktur Pembelian &amp; Penerimaan PBF Resmi')))
-            }</h2>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-sky-600/10 text-sky-600 border border-sky-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              ${dynamicFakturIcon}
+            </div>
+            <div>
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${pageFakturTitle}</h2>
+            </div>
           </div>
-          <div class="ons-subhero-actions">
+          <div class="flex flex-wrap items-center gap-2">
             ${fakturTab === 'rencana' ? `
               <div class="inline-flex rounded-xl p-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'RENCANA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">📋 Usulan (${allPlans.length})</button>
@@ -11003,8 +11016,7 @@
             `}
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
 
     return `<div class="space-y-4 ons-view-enter">
       ${subTabHeader}
@@ -15091,19 +15103,31 @@
       </div>
     `;
 
-    // 2. Executive Sub-Hero Banner Cockpit (Standard Layout)
+    // 2. Executive Sub-Hero Banner Cockpit (Unified Standard)
+    const dynamicKonsIcon = konsSubTab === 'masuk'
+      ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`
+      : (konsSubTab === 'status'
+        ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`
+        : (konsSubTab === 'retur'
+          ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>`
+          : `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>`));
+
+    const pageKonsTitle = konsSubTab === 'masuk' ? 'Konsinyasi Masuk (Titipan Rekanan)' :
+      (konsSubTab === 'status' ? 'Status Konsinyasi &amp; Rekonsiliasi Laku-Bayar' :
+      (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang)' : 'Stok Fisik Konsinyasi &amp; Etalase'));
+
     const subHeroBanner = `
       <div class="ons-subhero-banner is-konsinyasi mb-4">
-        <div class="ons-subhero-inner">
-          <div class="ons-subhero-main">
-            <h2 class="ons-subhero-title">${
-              konsSubTab === 'masuk' ? 'Konsinyasi Masuk (Penerimaan Titipan Rekanan)' :
-              (konsSubTab === 'status' ? 'Status Konsinyasi &amp; Rekonsiliasi Laku-Bayar' :
-              (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang Titip)' :
-              (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi &amp; Audit Etalase' : 'Penerimaan Barang Konsinyasi Baru')))
-            }</h2>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-600/10 text-indigo-600 border border-indigo-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              ${dynamicKonsIcon}
+            </div>
+            <div>
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${pageKonsTitle}</h2>
+            </div>
           </div>
-          <div class="ons-subhero-actions">
+          <div class="flex flex-wrap items-center gap-2">
             ${konsSubTab === 'masuk' ? `
               <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input Konsinyasi</button>
               <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${knsDrafts.length})</button>
@@ -15121,8 +15145,7 @@
             `}
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
 
     // 3. Dedicated 4 KPI Cockpit Strip Cards
     const cockpitStrip = konsSubTab === 'input' ? '' : `
