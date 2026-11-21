@@ -146,16 +146,30 @@
       handleDetected(v);
     };
     global.__toggleScannerTorch = async () => {
-      if (!stream) return;
+      if (!stream) {
+        if (typeof global.toast === 'function') global.toast('Kamera belum aktif.', 'info');
+        return;
+      }
       const track = stream.getVideoTracks && stream.getVideoTracks()[0];
-      if (!track || typeof track.applyConstraints !== 'function') return;
+      if (!track || typeof track.applyConstraints !== 'function') {
+        if (typeof global.toast === 'function') global.toast('Kamera tidak mendukung kendali senter flash.', 'info');
+        return;
+      }
       try {
         torchOn = !torchOn;
         await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+        const floatBtn = document.getElementById('onsBarcodeTorchFloatingBtn');
+        const iconEl = document.getElementById('onsTorchIcon');
+        const labelEl = document.getElementById('onsTorchLabel');
         const btn = document.getElementById('onsBarcodeTorchBtn');
+        if (floatBtn) {
+          floatBtn.classList.toggle('is-torch-on', torchOn);
+        }
+        if (labelEl) labelEl.textContent = torchOn ? 'Matikan' : 'Senter';
         if (btn) btn.textContent = torchOn ? 'Matikan Senter' : 'Senter / Flash';
+        if (global.playFeedback) global.playFeedback('key');
       } catch (e) {
-        if (typeof global.toast === 'function') global.toast('Senter tidak didukung kamera ini.', 'warn');
+        if (typeof global.toast === 'function') global.toast('Senter flash tidak didukung perangkat/kamera ini.', 'warn');
       }
     };
 
@@ -169,12 +183,19 @@
       </div>
       <div class="relative rounded-xl overflow-hidden bg-slate-950 aspect-[4/3] flex items-center justify-center border" style="border-color:var(--ons-border)">
         <video id="onsBarcodeVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+        <!-- Floating Torch Button in Viewfinder -->
+        <button type="button" id="onsBarcodeTorchFloatingBtn" onclick="window.__toggleScannerTorch()" class="absolute top-2.5 right-2.5 z-20 px-3 py-1.5 rounded-full flex items-center gap-1.5 bg-black/65 hover:bg-black/85 text-white text-xs font-bold border border-white/20 backdrop-blur shadow-md active:scale-95 transition-all" title="Nyalakan / Matikan Senter Flash">
+          <span id="onsTorchIcon">🔦</span>
+          <span id="onsTorchLabel">Senter</span>
+        </button>
+        <!-- Laser Scan Reticle with Animated Beam -->
         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div class="w-4/5 h-1/2 rounded-xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.45)] flex items-end justify-center pb-2">
+          <div class="w-4/5 h-1/2 rounded-xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.45)] flex items-end justify-center pb-2 relative overflow-hidden">
+            <div class="ons-scanner-laser-beam absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent"></div>
             <span class="px-2 py-0.5 rounded bg-emerald-600/90 text-white text-[10px] font-bold">Area Pindai Barcode / QR</span>
           </div>
         </div>
-        <div id="onsBarcodeCamStatus" class="absolute top-2 inset-x-3 text-center text-[11px] px-2.5 py-1 rounded bg-black/65 text-white">Menghubungkan kamera...</div>
+        <div id="onsBarcodeCamStatus" class="absolute top-2.5 left-2.5 right-28 text-left text-[11px] px-2.5 py-1 rounded bg-black/65 text-white truncate">Menghubungkan kamera...</div>
       </div>
       <div class="flex flex-wrap items-center gap-2 pt-1">
         <input id="onsBarcodeManualInp" class="ons-input flex-1 min-w-[180px] font-mono-num text-xs" placeholder="Atau scan USB gun / ketik kode EAN, KFA, Batch lalu Enter..." onkeydown="if(event.key==='Enter'){event.preventDefault();window.__submitManualBarcodeFromModal();}"/>
@@ -392,7 +413,103 @@
   if (typeof global.__printBarcodeStickersNow !== 'function') global.__printBarcodeStickersNow = () => {};
   if (typeof global.__setBarcodeCopyCount !== 'function') global.__setBarcodeCopyCount = () => {};
 
+  
+  global.showQuickProductScannerSheet = (obat, batch, code) => {
+    if (!obat) return;
+    const S = global.ONSStore;
+    const stok = S.getTotalStok ? S.getTotalStok(obat.id_obat) : 0;
+    const bpom = obat.golongan_bpom || 'OBAT BEBAS';
+    const harga = Number(obat.harga_umum || obat.harga_jual_1 || 0);
+    const rak = obat.rak_lokasi || 'Belum diatur';
+
+    const html = `
+      <div id="onsQuickProductSheet" class="p-4 sm:p-5 space-y-4 text-xs">
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
+              💊
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">${S.esc(obat.nama_dagang)}</h3>
+                ${S.bpomBadge ? S.bpomBadge(bpom) : `<span class="badge-bpom bpom-bebas">${S.esc(bpom)}</span>`}
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">${S.esc(obat.zat_aktif || 'Zat aktif standar')} &bull; ${S.esc(obat.bentuk_sediaan || 'Sediaan')}</p>
+            </div>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 text-base">&times;</button>
+        </div>
+
+        <!-- Metric Badges Grid -->
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+            <div class="text-[10px] text-slate-400 uppercase font-bold">Harga Jual</div>
+            <div class="text-sm font-black text-blue-600 dark:text-blue-400 font-mono-num mt-0.5">${S.rp(harga)}</div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+            <div class="text-[10px] text-slate-400 uppercase font-bold">Total Stok</div>
+            <div class="text-sm font-black ${stok > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} font-mono-num mt-0.5">${stok} ${S.esc(obat.satuan_dasar || 'Pcs')}</div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+            <div class="text-[10px] text-slate-400 uppercase font-bold">Lokasi Rak</div>
+            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate mt-1">${S.esc(rak)}</div>
+          </div>
+        </div>
+
+        <!-- Detail Meta List -->
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-1.5 text-[11px]">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Barcode / KFA:</span>
+            <span class="font-mono font-bold text-slate-700 dark:text-slate-300">${S.esc(obat.barcode_ean || obat.kode_kfa || code || '-')}</span>
+          </div>
+          ${batch ? `
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Batch FEFO Aktif:</span>
+            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">${S.esc(batch.no_batch || '-')} (Exp: ${S.formatTgl ? S.formatTgl(batch.tgl_kadaluarsa) : batch.tgl_kadaluarsa})</span>
+          </div>` : ''}
+          ${obat.nie_bpom ? `
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">NIE BPOM:</span>
+            <span class="font-mono text-slate-600 dark:text-slate-400">${S.esc(obat.nie_bpom)}</span>
+          </div>` : ''}
+        </div>
+
+        <!-- Actions -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          <button
+            type="button"
+            onclick="ONSStore.closeModal(); navigateView('pos', 'kasir'); setTimeout(() => { if(window.posAddToCart) window.posAddToCart('${S.esc(obat.id_obat)}'); }, 80);"
+            class="ons-btn ons-btn-primary py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md"
+          >
+            <span>🛒</span>
+            <span>+ Masuk Kasir POS</span>
+          </button>
+          <button
+            type="button"
+            onclick="ONSStore.closeModal(); navigateView('obat', 'obat'); setTimeout(() => { if(window.onMasterSearch) window.onMasterSearch('${S.esc(obat.nama_dagang)}'); }, 80);"
+            class="ons-btn ons-btn-ghost py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700"
+          >
+            <span>📋</span>
+            <span>Lihat di Master Stok</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onclick="ONSStore.closeModal(); setTimeout(() => { window.triggerGlobalMobileScanner && window.triggerGlobalMobileScanner(); }, 80);"
+          class="w-full text-center text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
+        >
+          🔄 Pindai Barcode Obat Lain
+        </button>
+      </div>
+    `;
+
+    S.openModal(html, { mode: 'spotlight', maxWidth: '520px' });
+  };
+
   global.ONSBarcode = {
+    showQuickProductScannerSheet: global.showQuickProductScannerSheet,
     openScannerModal,
     matchProductByBarcode,
     openPrintBarcodeLabelsModal

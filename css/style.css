@@ -6548,3 +6548,80 @@ html.dark .ons-shortcut-card {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
   transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   Batch 2 - Item 1: Floating Barcode Scanner FAB Suite (v18.49.0)
+   ========================================================================== */
+.ons-scanner-fab-host {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 16px));
+  bottom: calc(4.65rem + env(safe-area-inset-bottom, 0px));
+  z-index: 45;
+  pointer-events: auto;
+  transition: bottom 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Auto lift when POS checkout dock is active */
+body.ons-has-pos-cart .ons-scanner-fab-host {
+  bottom: calc(8.65rem + env(safe-area-inset-bottom, 0px));
+}
+
+.ons-scanner-fab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.38rem;
+  padding-right: 0.85rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #059669 0%, #0066FE 100%);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 24px -4px rgba(0, 102, 254, 0.45), 0 4px 12px rgba(5, 150, 105, 0.35);
+  cursor: pointer;
+  outline: none;
+  touch-action: manipulation;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+  user-select: none;
+}
+.ons-scanner-fab-btn:active {
+  transform: scale(0.93);
+  box-shadow: 0 4px 12px rgba(0, 102, 254, 0.3);
+}
+
+.ons-scanner-fab-icon {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.ons-scanner-fab-pill {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Viewfinder Laser Beam & Torch */
+.ons-scanner-laser-beam {
+  animation: onsLaserScan 2s ease-in-out infinite alternate;
+}
+@keyframes onsLaserScan {
+  0% { top: 8%; opacity: 0.35; }
+  50% { opacity: 1; filter: drop-shadow(0 0 6px #34D399); }
+  100% { top: 92%; opacity: 0.35; }
+}
+
+#onsBarcodeTorchFloatingBtn.is-torch-on {
+  background: rgba(245, 158, 11, 0.9) !important;
+  color: #FFFFFF !important;
+  border-color: #FDE68A !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.75) !important;
+}

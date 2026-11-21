@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.48.0"/>
+  <meta name="application-version" content="v18.49.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.48.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.49.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.48.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.49.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.48.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.48.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.48.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.49.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.49.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.49.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.48.0"></script>
-  <script src="./js/struk-engine.js?v=18.48.0"></script>
-  <script src="./js/demo-engine.js?v=18.48.0"></script>
-  <script src="./js/api-turbo.js?v=18.48.0"></script>
-  <script src="./js/store.js?v=18.48.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.48.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.48.0"></script>
+  <script src="./js/config.js?v=18.49.0"></script>
+  <script src="./js/struk-engine.js?v=18.49.0"></script>
+  <script src="./js/demo-engine.js?v=18.49.0"></script>
+  <script src="./js/api-turbo.js?v=18.49.0"></script>
+  <script src="./js/store.js?v=18.49.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.49.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.49.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.48.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.48.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.48.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.48.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.48.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.48.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.49.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.49.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.49.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.49.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.49.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.49.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1403,6 +1403,75 @@
         }
       };
 
+      // Floating Mobile Barcode Scanner FAB Suite (v18.49.0)
+      window.updateScannerFabContext = function () {
+        const host = document.getElementById('onsMobileScannerFabHost');
+        const lbl = document.getElementById('onsScannerFabLabel');
+        if (!host || !lbl) return;
+        const cur = ONSStore.AppState.activeView;
+        const labels = {
+          pos: 'Scan Kasir',
+          obat: 'Scan Stok',
+          gudang: 'Scan Opname',
+          defecta: 'Scan Faktur',
+          faktur: 'Scan Faktur',
+          pemeriksaan: 'Scan Pasien'
+        };
+        lbl.textContent = labels[cur] || 'Scan Barcode';
+
+        // Check if POS has active cart items to auto-adjust elevation above dock
+        const isPos = cur === 'pos';
+        const hasCart = isPos && (typeof window.getPosActiveCart === 'function' ? ((window.getPosActiveCart()?.items || []).length > 0) : false);
+        if (document.body) {
+          document.body.classList.toggle('ons-has-pos-cart', Boolean(hasCart));
+        }
+      };
+
+      window.triggerGlobalMobileScanner = function () {
+        if (typeof global.playFeedback === 'function') global.playFeedback('key');
+        const cur = ONSStore.AppState.activeView;
+
+        if (cur === 'pos') {
+          if (typeof window.startPosCameraScan === 'function') {
+            window.startPosCameraScan();
+            return;
+          }
+        } else if (cur === 'obat') {
+          if (typeof window.scanMasterObatBarcode === 'function') {
+            window.scanMasterObatBarcode();
+            return;
+          }
+        } else if (cur === 'gudang') {
+          if (typeof window.scanOpnameBarcodeNow === 'function') {
+            window.scanOpnameBarcodeNow();
+            return;
+          }
+        }
+
+        // Default: Universal Quick Product Scanner
+        if (window.ONSBarcode && typeof window.ONSBarcode.openScannerModal === 'function') {
+          window.ONSBarcode.openScannerModal({
+            title: 'Pindai Cepat Barcode Obat',
+            hint: 'Arahkan kamera ke kemasan obat untuk cek info stok, harga, dan rak lokasi.',
+            onDetect: (code) => {
+              const hit = window.ONSBarcode.matchProductByBarcode(code, ONSStore.AppState.masterObat, ONSStore.AppState.stokBatch);
+              const ob = hit && hit.obat;
+              if (ob) {
+                if (typeof window.showQuickProductScannerSheet === 'function') {
+                  window.showQuickProductScannerSheet(ob, hit.batch, code);
+                } else if (typeof window.toast === 'function') {
+                  window.toast('Ditemukan: ' + ob.nama_dagang + ' (Stok: ' + ONSStore.getTotalStok(ob.id_obat) + ')', 'ok');
+                }
+              } else {
+                if (typeof window.toast === 'function') window.toast('Kode "' + code + '" tidak ditemukan di master data obat.', 'warn');
+              }
+            }
+          });
+        } else if (typeof window.toast === 'function') {
+          window.toast('Modul kamera barcode sedang disiapkan...', 'info');
+        }
+      };
+
       window.renderActiveView = function () {
         window.closeOnsFloatMenu();
         const slot = document.getElementById('mainViewSlot');
@@ -1442,6 +1511,7 @@
         void slot.offsetWidth;
         slot.classList.add('ons-view-enter');
         _enhanceSubTabBarsToDropdowns(slot);
+        if (typeof window.updateScannerFabContext === 'function') window.updateScannerFabContext();
       };
 
       function buildOperationalAlerts() {
@@ -2037,6 +2107,25 @@
               <main id="mainViewSlot" class="flex-1 p-3 sm:p-4 md:p-6 ons-main-scroll"></main>
             </div>
 
+            <!-- Floating Mobile Barcode Scanner FAB (v18.49.0) -->
+            <div id="onsMobileScannerFabHost" class="ons-scanner-fab-host md:hidden">
+              <button
+                id="onsMobileScannerFab"
+                type="button"
+                onclick="window.triggerGlobalMobileScanner()"
+                class="ons-scanner-fab-btn group"
+                aria-label="Pindai Barcode Obat dengan Kamera"
+                title="Pindai Barcode / QR Obat Cepat"
+              >
+                <div class="ons-scanner-fab-icon">
+                  <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/>
+                  </svg>
+                </div>
+                <span id="onsScannerFabLabel" class="ons-scanner-fab-pill">Scan Barcode</span>
+              </button>
+            </div>
+
             <!-- Mobile Bottom Nav 5-Ikon Cepat seperti Native App -->
             <nav aria-label="Navigasi Cepat Mobile" class="ons-mobile-only fixed bottom-0 inset-x-0 border-t z-40 grid grid-cols-5 ons-mobile-bottom">
               ${[
@@ -2058,7 +2147,7 @@
         window.renderActiveView();
       };
 
-      // Hotkey POS, Global Navigation & Shortcut Cheat Sheet (v18.48.0)
+      // Hotkey POS, Global Navigation & Shortcut Cheat Sheet (v18.49.0)
       window.addEventListener('keydown', (e) => {
         if (!ONSApi.getSession()) return;
         if (e.key === 'Escape') {
