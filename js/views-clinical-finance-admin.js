@@ -3597,7 +3597,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 <td class="text-right font-mono-num text-xs text-slate-500">${S().rp(pt.total_tagihan)}</td>
                 <td class="text-right font-mono-num text-xs font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600 dark:text-amber-400'}">${S().rp(pt.sisa_piutang || 0)}</td>
                 <td>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isPaid ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'}">${S().esc(pt.status_piutang)}</span>
+                  <span class="ons-status-badge ${isPaid ? 'ons-status-success' : 'ons-status-warning'} text-[10px]">${S().esc(pt.status_piutang)}</span>
                 </td>
                 <td class="text-right">
                   <div class="inline-flex items-center gap-1">

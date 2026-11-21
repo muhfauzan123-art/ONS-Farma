@@ -1087,6 +1087,30 @@
   /**
    * Normalisasi label program pelanggan agar tidak menampilkan label PRB / BPJS
    */
+  /**
+   * Helper Universal Status Badge Bernapas (v18.42.0)
+   * Menghasilkan HTML pil status warna lembut berdenyut secara otomatis
+   */
+  function renderStatusBadge(status, customLabel) {
+    const raw = String(status || '').trim().toUpperCase();
+    const lbl = customLabel || raw.replace(/_/g, ' ');
+
+    const isSuccess = ['LUNAS', 'AKTIF', 'SELESAI', 'SELESAI_DITERIMA', 'TERVERIFIKASI', 'TERVERIFIKASI_APJ', 'DIJUAL', 'SIAP_SERAH', 'AMAN', 'NORMAL', 'PASIEN_DATANG'].includes(raw);
+    const isDanger = ['BATAL', 'VOID', 'EXPIRED', 'KADALUARSA', 'NEAR_ED', 'KRITIS', 'DEFECTA', 'JATUH_TEMPO', 'RUSAK', 'DITOLAK'].includes(raw);
+    const isWarning = ['TEMPO', 'BELUM_LUNAS', 'PENDING', 'DRAFT', 'VALIDASI_APJ', 'ANTRIAN_VALIDASI_APJ', 'MENUNGGU', 'MENUNGGU_BARANG', 'SEBAGIAN', 'TERTAHAN'].includes(raw);
+
+    let variantCls = 'ons-status-info';
+    if (isSuccess) {
+      variantCls = 'ons-status-success';
+    } else if (isDanger) {
+      variantCls = 'ons-status-danger';
+    } else if (isWarning) {
+      variantCls = 'ons-status-warning';
+    }
+
+    return `<span class="ons-status-badge ${variantCls}"><span>${esc(lbl)}</span></span>`;
+  }
+
   function formatMemberProgram(raw) {
     const s = String(raw || 'UMUM').trim().toUpperCase();
     if (!s || s === 'UMUM') return 'UMUM';
@@ -2448,6 +2472,8 @@
     formatNumberWithDots,
     formatDots: formatNumberWithDots,
     maskNumberInput,
+    renderStatusBadge,
+    statusBadge: renderStatusBadge,
     esc,
     formatTgl,
     daysUntil,

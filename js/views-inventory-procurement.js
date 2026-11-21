@@ -423,7 +423,7 @@
                   ${S().bpomBadge(o.golongan_bpom)}
                   ${m.isCold ? `<span class="badge-bpom bpom-terbatas">CHILLER 2-8&deg;C</span>` : ''}
                   ${m.isNearEd ? `<span class="badge-bpom bpom-keras">NEAR ED</span>` : ''}
-                  <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded ${isAktifJual ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}">${isAktifJual ? 'Dijual' : 'Nonaktif'}</span>
+                  <span class="ons-status-badge ${isAktifJual ? 'ons-status-success' : 'ons-status-warning'} text-[10px]">${isAktifJual ? 'Dijual' : 'Nonaktif'}</span>
                 </div>
                 <h3 class="font-bold text-sm leading-snug">
                   <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="hover:text-blue-600 text-left transition-colors">${S().esc(o.nama_dagang)}</button>
@@ -4759,7 +4759,7 @@
           <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
             ${S().bpomBadge(o.golongan_bpom)}
             <span class="font-mono-num text-[11px] px-2 py-0.5 rounded border font-semibold" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">${S().esc(o.id_obat)}</span>
-            <span class="text-[10px] font-bold px-1.5 py-0.2 rounded ${isAktifJual ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600'}">${isAktifJual ? 'Dijual' : 'Nonaktif'}</span>
+            <span class="ons-status-badge ${isAktifJual ? 'ons-status-success' : 'ons-status-warning'} text-[10px]">${isAktifJual ? 'Dijual' : 'Nonaktif'}</span>
             ${m.isCold ? `<span class="badge-bpom bpom-terbatas">COLD CHAIN 2-8&deg;C</span>` : ''}
             ${nearEd.hasNearEd ? `<span class="badge-bpom bpom-prekursor">PROMO NEAR-ED -${nearEd.suggestedDiscPct}%</span>` : ''}
           </div>

@@ -6050,3 +6050,199 @@ html.dark .ons-pos-denom-card:hover {
 .ons-pos-denom-card:active {
   transform: scale(0.965);
 }
+
+/* ==========================================================================
+   PULSING SOFT STATUS BADGES SUITE (v18.42.0)
+   ========================================================================== */
+@keyframes onsStatusPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.72);
+  }
+}
+
+.ons-status-badge,
+.ons-badge,
+.badge-bpom {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.38rem !important;
+  padding: 0.22rem 0.65rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.015em !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Pulsing Status Dot pseudo-element for all badges */
+.ons-status-badge::before,
+.ons-badge::before,
+.badge-bpom::before {
+  content: '';
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 9999px;
+  display: inline-block;
+  flex-shrink: 0;
+  animation: onsStatusPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 1. EMERALD / SUCCESS / AMAN / LUNAS / SELESAI / AKTIF */
+.ons-status-success,
+.ons-badge-emerald,
+.bpom-bebas {
+  background: #ECFDF5 !important;
+  color: #065F46 !important;
+  border: 1px solid #A7F3D0 !important;
+}
+.ons-status-success::before,
+.ons-badge-emerald::before,
+.bpom-bebas::before {
+  background: #10B981 !important;
+  box-shadow: 0 0 7px rgba(16, 185, 129, 0.7) !important;
+}
+html.dark .ons-status-success,
+html.dark .ons-badge-emerald,
+html.dark .bpom-bebas {
+  background: rgba(16, 185, 129, 0.16) !important;
+  color: #34D399 !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+}
+html.dark .ons-status-success::before,
+html.dark .ons-badge-emerald::before,
+html.dark .bpom-bebas::before {
+  background: #34D399 !important;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.9) !important;
+}
+
+/* 2. AMBER / WARNING / TEMPO / MENUNGGU / DRAFT / VALIDASI */
+.ons-status-warning,
+.ons-badge-amber,
+.bpom-prekursor,
+.bpom-oot {
+  background: #FFFBEB !important;
+  color: #92400E !important;
+  border: 1px solid #FDE68A !important;
+}
+.ons-status-warning::before,
+.ons-badge-amber::before,
+.bpom-prekursor::before,
+.bpom-oot::before {
+  background: #F59E0B !important;
+  box-shadow: 0 0 7px rgba(245, 158, 11, 0.7) !important;
+}
+html.dark .ons-status-warning,
+html.dark .ons-badge-amber,
+html.dark .bpom-prekursor,
+html.dark .bpom-oot {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #FBBF24 !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+}
+html.dark .ons-status-warning::before,
+html.dark .ons-badge-amber::before,
+html.dark .bpom-prekursor::before,
+html.dark .bpom-oot::before {
+  background: #FBBF24 !important;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
+}
+
+/* 3. RED / DANGER / NEAR-ED / KRITIS / DEFECTA / BATAL / JATUH TEMPO */
+.ons-status-danger,
+.ons-badge-rose,
+.ons-badge-red,
+.bpom-keras {
+  background: #FEF2F2 !important;
+  color: #991B1B !important;
+  border: 1px solid #FECACA !important;
+}
+.ons-status-danger::before,
+.ons-badge-rose::before,
+.ons-badge-red::before,
+.bpom-keras::before {
+  background: #EF4444 !important;
+  box-shadow: 0 0 7px rgba(239, 68, 68, 0.75) !important;
+}
+html.dark .ons-status-danger,
+html.dark .ons-badge-rose,
+html.dark .ons-badge-red,
+html.dark .bpom-keras {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #F87171 !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+}
+html.dark .ons-status-danger::before,
+html.dark .ons-badge-rose::before,
+html.dark .ons-badge-red::before,
+html.dark .bpom-keras::before {
+  background: #F87171 !important;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.9) !important;
+}
+
+/* 4. BLUE / INFO / TERBATAS / DIPROSES / DITERIMA */
+.ons-status-info,
+.ons-badge-blue,
+.bpom-terbatas {
+  background: #EFF6FF !important;
+  color: #1E40AF !important;
+  border: 1px solid #BFDBFE !important;
+}
+.ons-status-info::before,
+.ons-badge-blue::before,
+.bpom-terbatas::before {
+  background: #3B82F6 !important;
+  box-shadow: 0 0 7px rgba(59, 130, 246, 0.7) !important;
+}
+html.dark .ons-status-info,
+html.dark .ons-badge-blue,
+html.dark .bpom-terbatas {
+  background: rgba(59, 130, 246, 0.18) !important;
+  color: #60A5FA !important;
+  border-color: rgba(96, 165, 250, 0.35) !important;
+}
+html.dark .ons-status-info::before,
+html.dark .ons-badge-blue::before,
+html.dark .bpom-terbatas::before {
+  background: #60A5FA !important;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.9) !important;
+}
+
+/* 5. PURPLE / VIOLET / NARKOTIKA & PSIKOTROPIKA */
+.ons-status-purple,
+.ons-badge-purple,
+.bpom-narkotika,
+.bpom-psikotropika {
+  background: #FAF5FF !important;
+  color: #6B21A8 !important;
+  border: 1px solid #E9D5FF !important;
+}
+.ons-status-purple::before,
+.ons-badge-purple::before,
+.bpom-narkotika::before,
+.bpom-psikotropika::before {
+  background: #8B5CF6 !important;
+  box-shadow: 0 0 7px rgba(139, 92, 246, 0.7) !important;
+}
+html.dark .ons-status-purple,
+html.dark .ons-badge-purple,
+html.dark .bpom-narkotika,
+html.dark .bpom-psikotropika {
+  background: rgba(139, 92, 246, 0.2) !important;
+  color: #C4B5FD !important;
+  border-color: rgba(196, 181, 253, 0.35) !important;
+}
+html.dark .ons-status-purple::before,
+html.dark .ons-badge-purple::before,
+html.dark .bpom-narkotika::before,
+html.dark .bpom-psikotropika::before {
+  background: #C4B5FD !important;
+  box-shadow: 0 0 8px rgba(196, 181, 253, 0.9) !important;
+}
