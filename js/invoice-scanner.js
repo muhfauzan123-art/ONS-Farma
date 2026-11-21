@@ -879,6 +879,11 @@
     ].join('\n');
   }
 
+  
+  // Global event stubs
+  if (typeof global.__closeScannerCamModal !== 'function') global.__closeScannerCamModal = () => S.closeModal();
+  if (typeof global.__snapScannerCamPhoto !== 'function') global.__snapScannerCamPhoto = () => {};
+
   global.ONSInvoiceScanner = {
     preprocessInvoiceImage,
     extractFromPdfFile,

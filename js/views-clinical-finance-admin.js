@@ -11624,7 +11624,7 @@ S. prn 3 dd 1 tab</textarea>
   global.deletePresensi = (idPresensi) => {
     if (!confirm('Yakin ingin menghapus catatan presensi ini?')) return;
     let logs = _getPresensiLogs();
-    logs = logs.filter((x) => x.id_presensi !== idPresensi);
+    logs = logs.filter((x) => x.id_presensi !== idPresensi && x.id !== idPresensi);
     _savePresensiLogs(logs);
     S().closeModal();
     global.toast('Catatan presensi berhasil dihapus.', 'ok');
@@ -15630,6 +15630,103 @@ S. prn 3 dd 1 tab</textarea>
     global.toast('Obat dari E-Resep ' + idKlinis + ' dimuat ke Kasir POS!', 'ok');
     global.navigateView('pos');
   };
+  global.verifyErxWithPin = (idKlinis) => global.approveErxWithPinModal(idKlinis);
+  global.sendErxToPosCart = (idKlinis) => global.loadErxToPosCart(idKlinis);
+  global.openErxDetailModal = (idKlinis) => {
+    const rx = (S().AppState.rekamKlinis || []).find((k) => k.id_klinis === idKlinis);
+    if (!rx) return global.toast('Data E-Resep tidak ditemukan.', 'warn');
+    S().openModal(`<div class="p-5 space-y-3.5 text-xs">
+      <div class="flex items-center justify-between pb-2 border-b" style="border-color:var(--ons-border)">
+        <h3 class="font-bold text-sm">Detail E-Resep: ${S().esc(rx.id_klinis)}</h3>
+        <button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div>Pasien: <b>${S().esc(rx.nama_pasien)}</b></div>
+        <div>Dokter: <b>dr. ${S().esc(rx.dokter_asal)}</b></div>
+        <div>SIP: <b>${S().esc(rx.no_sip_dokter || '-')}</b></div>
+        <div>Status: <span class="badge-bpom ${rx.status_klinis === 'TERVERIFIKASI_APJ' ? 'bpom-bebas' : 'bpom-prekursor'}">${S().esc(rx.status_klinis)}</span></div>
+      </div>
+      <div class="p-3 rounded-xl border font-mono whitespace-pre-line text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        ${S().esc(rx.soap_notes || '-')}
+      </div>
+      ${rx.cdss_warning ? `<div class="p-2.5 rounded-lg border bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold">⚠️ ${S().esc(rx.cdss_warning)}</div>` : ''}
+      <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Tutup</button>
+        ${rx.status_klinis === 'ANTRIAN_VALIDASI_APJ' ? `<button type="button" onclick="ONSStore.closeModal();window.approveErxWithPinModal('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-emerald text-xs font-bold">Verifikasi PIN APJ</button>` : `<button type="button" onclick="ONSStore.closeModal();window.loadErxToPosCart('${S().esc(rx.id_klinis)}')" class="ons-btn ons-btn-primary text-xs font-bold">Muat ke POS</button>`}
+      </div>
+    </div>`, '520px');
+  };
+
+  global.saveStoreProfile = global.submitStoreProfileForm;
+
+  global.convertLostSaleToRencanaOrder = (ls) => {
+    if (!ls) return;
+    const st = S().AppState;
+    const ob = (st.masterObat || []).find((m) => m.id_obat === ls.id_obat || m.nama_dagang === ls.nama_obat);
+    const plansKey = 'ons_farma_v164_rencana_beli';
+    let plans = [];
+    try { plans = JSON.parse(localStorage.getItem(plansKey) || '[]'); } catch (e) {}
+    if (!Array.isArray(plans)) plans = [];
+    const idObat = ob ? ob.id_obat : (ls.id_obat || ('OBT-' + Date.now()));
+    const namaProd = ob ? ob.nama_dagang : (ls.nama_obat || 'Produk Permintaan');
+    const existing = plans.find((p) => p.id_obat === idObat);
+    if (existing) {
+      existing.kuantitas = Number(existing.kuantitas || 0) + Math.max(1, Number(ls.qty || 1));
+    } else {
+      plans.unshift({
+        id_plan: 'PLN-' + Date.now(),
+        id_obat: idObat,
+        nama_produk: namaProd,
+        nama_supplier: (ob && ob.pbf_utama) || 'PBF Rekanan',
+        jenis_sp: (ob && typeof global.resolveObatJenisSp === 'function' ? global.resolveObatJenisSp(ob) : 'REGULER'),
+        kuantitas: Math.max(1, Number(ls.qty || 1)),
+        satuan: (ob && (ob.satuan_1 || ob.satuan_dasar)) || 'Box',
+        harga_beli: (ob && Number(ob.hpp_terakhir || ob.hpp_avg || 0)) || 0,
+        keterangan: 'Konversi dari Permintaan Tertolak (Lost Sales)'
+      });
+    }
+    try { localStorage.setItem(plansKey, JSON.stringify(plans)); } catch (e) {}
+    if (global.toast) global.toast(`"${namaProd}" berhasil dimasukkan ke Rencana Pembelian (Defecta).`, 'ok');
+  };
+
+  global.toggleUserStatus = (idUser) => {
+    const st = S().AppState;
+    const u = (st.pengguna || []).find((x) => x.id_user === idUser);
+    if (!u) return;
+    const nextStatus = u.status_aktif === 'NONAKTIF' ? 'AKTIF' : 'NONAKTIF';
+    u.status_aktif = nextStatus;
+    if (typeof S().saveState === 'function') S().saveState();
+    if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
+      try { API().callApi('user.save', u, { isWrite: true }); } catch (e) {}
+    }
+    if (typeof S().logAuditEvent === 'function') S().logAuditEvent('UBAH_STATUS_USER', `Ubah status pengguna ${u.nama_lengkap} (${u.id_user}) menjadi ${nextStatus}`);
+    if (global.toast) global.toast(`Status pengguna ${u.nama_lengkap}: ${nextStatus}`, 'ok');
+    global.renderActiveView();
+  };
+
+  global.deletePresensiLog = (idPresensi) => global.deletePresensi(idPresensi);
+
+  global.openInputMesoModal = () => {
+    if (typeof global.openInputResepModal === 'function') {
+      global.openInputResepModal();
+      setTimeout(() => {
+        const sel = document.getElementById('klJenis');
+        if (sel) sel.value = 'MESO';
+      }, 50);
+    }
+  };
+
+  global.openEditUserModal = (targetIdOrUsername) => {
+    if (typeof global.openAddUserModal === 'function') {
+      return global.openAddUserModal(targetIdOrUsername);
+    }
+  };
+
+  if (typeof global._refreshDocDynForm !== 'function') {
+    global._refreshDocDynForm = () => {};
+  }
+
+
 
   function buildStrukEditorSampleData(profObj) {
     const prof = profObj || (S().getStoreProfile ? S().getStoreProfile() : {});

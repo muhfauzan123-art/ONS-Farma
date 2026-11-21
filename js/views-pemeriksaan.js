@@ -2644,6 +2644,14 @@
     }
   };
 
+
+  global.openCatatPemeriksaanModal = (focus) => {
+    if (typeof global.openPemeriksaanModal === 'function') {
+      global.openPemeriksaanModal(null, focus || 'semua');
+    }
+  };
+  global.catatPemeriksaan = global.openCatatPemeriksaanModal;
+
   global.ONSViewsPemeriksaan = {
     renderPemeriksaanView,
     evalPemeriksaanStatus,

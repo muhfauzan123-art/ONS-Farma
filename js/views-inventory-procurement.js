@@ -10344,12 +10344,12 @@
                 <div class="font-bold text-xs">🏢 ${S().esc(pbf)}</div>
                 <div class="text-[11px] text-slate-500">${list.length} produk (${list.map((x) => S().esc(x.nama_dagang)).slice(0, 3).join(', ')}${list.length > 3 ? '...' : ''})</div>
               </div>
-              <button type="button" onclick="S().closeModal();window.openSpForSpecificPbfGroup('${S().esc(pbf)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold whitespace-nowrap shadow-sm">Buka SP ${S().esc(pbf)} &rarr;</button>
+              <button type="button" onclick="ONSStore.closeModal();window.openSpForSpecificPbfGroup('${S().esc(pbf)}')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold whitespace-nowrap shadow-sm">Buka SP ${S().esc(pbf)} &rarr;</button>
             </div>`;
           }).join('')}
         </div>
         <div class="flex justify-end gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
-          <button type="button" onclick="S().closeModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Tutup</button>
+          <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Tutup</button>
         </div>
       </div>`, '540px');
     }
@@ -15763,6 +15763,79 @@
 
     return S().printHtmlZone(docHtml, 'Rekap Stok Konsinyasi - ' + dStamp);
   };
+
+
+  global.openTambahLogSuhuModal = () => {
+    const inp = document.getElementById('suhuNilaiInp');
+    if (inp) {
+      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      inp.focus();
+      inp.select();
+    } else {
+      if (typeof global.setGudangTab === 'function') global.setGudangTab('coldchain');
+    }
+  };
+
+  global.openCreateReturKonsinyasiModal = () => {
+    const st = S().AppState;
+    const sum = st.konsinyasiSummary || { items: [] };
+    const allItems = (sum.items || []).filter((it) => Number(it.qty_sisa || 0) > 0);
+    if (!allItems.length) {
+      return global.toast('Tidak ada stok barang konsinyasi aktif yang dapat diretur.', 'info');
+    }
+    const opts = allItems.map((it) => `<option value="${S().esc(it.id_batch || it.id_konsinyasi)}">${S().esc(it.nama_dagang)} (Batch: ${S().esc(it.no_batch || '-')}) - Sisa: ${it.qty_sisa}</option>`).join('');
+    S().openModal(`<div class="p-6 space-y-3.5 text-xs">
+      <div class="flex justify-between items-center"><h3 class="font-bold text-base text-amber-600">+ Buat Retur Konsinyasi</h3><button onclick="ONSStore.closeModal()" class="text-xl px-1">&times;</button></div>
+      <div>
+        <label class="font-semibold block mb-1">Pilih Produk Konsinyasi *</label>
+        <select id="knsPickBatch" class="ons-select" onchange="window._onPickReturKonsinyasiChange(this.value)">${opts}</select>
+      </div>
+      <div><label class="font-semibold block mb-1">Qty Ditarik / Diretur *</label><input id="knsReturQty" type="number" min="1" value="${allItems[0].qty_sisa}" max="${allItems[0].qty_sisa}" class="ons-input font-mono-num"/></div>
+      <div><label class="font-semibold block mb-1">Alasan Penarikan</label><input id="knsReturAlasan" class="ons-input" value="Penarikan barang konsinyasi tak laku / selesai periode"/></div>
+      <button type="button" onclick="window.submitReturnKonsinyasi(document.getElementById('knsPickBatch').value)" class="ons-btn ons-btn-amber w-full py-2.5 font-bold">Proses Retur Konsinyasi</button>
+    </div>`, '460px');
+  };
+
+  global._onPickReturKonsinyasiChange = (idBatch) => {
+    const st = S().AppState;
+    const sum = st.konsinyasiSummary || { items: [] };
+    const item = (sum.items || []).find(it => (it.id_batch || it.id_konsinyasi) === idBatch);
+    if (item) {
+      const qInp = document.getElementById('knsReturQty');
+      if (qInp) {
+        qInp.value = item.qty_sisa;
+        qInp.max = item.qty_sisa;
+      }
+    }
+  };
+
+  global.updateGrnItemField = (idx, field, val) => {
+    if (typeof global.updateGrnItem === 'function') {
+      global.updateGrnItem(idx, field, val);
+    }
+  };
+
+  global.onGrnProductChange = (idx, idObat) => {
+    const ob = (S().AppState.masterObat || []).find((o) => o.id_obat === idObat);
+    if (grnItems && grnItems[idx]) {
+      grnItems[idx].id_obat = idObat;
+      if (ob) {
+        grnItems[idx].nama_dagang = ob.nama_dagang;
+        grnItems[idx].satuan = ob.satuan_1 || ob.satuan_dasar || 'Unit';
+        if (!grnItems[idx].hpp_unit) grnItems[idx].hpp_unit = Number(ob.hpp_terakhir || ob.hpp_avg || 0);
+      }
+    }
+    global.renderActiveView();
+  };
+
+  
+  // Expose Kartu Stok modal dialog and state to window
+  global.modalKartuStokState = modalKartuStokState;
+  global.renderObatKartuStokModalDialog = renderObatKartuStokModalDialog;
+
+  if (typeof global.filterRiwayatOpnameModal !== 'function') {
+    global.filterRiwayatOpnameModal = () => {};
+  }
 
   global.ONSViewsInventoryProcurement = { renderMasterObatView, renderKontakView, renderGudangView, renderDefectaView, renderFakturView, renderKonsinyasiView };
 

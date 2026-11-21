@@ -5615,7 +5615,7 @@
             <p class="text-[11px] text-slate-500">Uang tambahan ke laci kasir (tambah modal receh / tukar uang kembalian).</p>
           </div>
         </div>
-        <button type="button" onclick="S().closeModal()" class="text-xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
       </div>
       <div class="space-y-3">
         <div>
@@ -5631,7 +5631,7 @@
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2.5 border-t" style="border-color:var(--ons-border)">
-        <button type="button" onclick="S().closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
         <button type="button" onclick="window.submitKasDrawerTx('IN')" class="ons-btn ons-btn-emerald text-xs font-bold px-4">+ Simpan Kas Masuk</button>
       </div>
     </div>`, '460px');
@@ -5647,7 +5647,7 @@
             <p class="text-[11px] text-slate-500">Pengeluaran kecil dari laci kasir (beli kantong plastik, galon air, operasional).</p>
           </div>
         </div>
-        <button type="button" onclick="S().closeModal()" class="text-xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
+        <button type="button" onclick="ONSStore.closeModal()" class="text-xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
       </div>
       <div class="space-y-3">
         <div>
@@ -5663,7 +5663,7 @@
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2.5 border-t" style="border-color:var(--ons-border)">
-        <button type="button" onclick="S().closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
+        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
         <button type="button" onclick="window.submitKasDrawerTx('OUT')" class="ons-btn ons-btn-danger text-xs font-bold px-4">- Simpan Kas Keluar</button>
       </div>
     </div>`, '460px');
@@ -8602,6 +8602,40 @@
         if (window.openRacikanModalFromPos) window.openRacikanModalFromPos();
       }
     });
+  }
+
+  
+  // Public Store catalog fallback declarations
+  if (typeof global.filterPublicCatalog !== 'function') global.filterPublicCatalog = (q) => { if (typeof global.renderPublicCatalogGrid === 'function') global.renderPublicCatalogGrid(q); };
+  if (typeof global.clearPublicSearch !== 'function') global.clearPublicSearch = () => { const inp = document.getElementById('pubKatSearch'); if (inp) { inp.value = ''; global.filterPublicCatalog(''); } };
+  if (typeof global.openPublicTrackModal !== 'function') global.openPublicTrackModal = () => {};
+  if (typeof global.togglePublicDarkMode !== 'function') global.togglePublicDarkMode = () => { if (typeof S().toggleDarkMode === 'function') S().toggleDarkMode(); };
+  if (typeof global.copyPublicStoreUrl !== 'function') global.copyPublicStoreUrl = () => {};
+  if (typeof global.setPublicCatalogFilter !== 'function') global.setPublicCatalogFilter = () => {};
+  if (typeof global.setPublicSortMode !== 'function') global.setPublicSortMode = () => {};
+  if (typeof global.clearPublicCart !== 'function') global.clearPublicCart = () => {};
+  if (typeof global.submitPublicStoreOrder !== 'function') global.submitPublicStoreOrder = () => {};
+  if (typeof global.scrollToPublicCart !== 'function') global.scrollToPublicCart = () => {};
+  if (typeof global.setPublicCategoryPill !== 'function') global.setPublicCategoryPill = () => {};
+  if (typeof global.openPublicProductModal !== 'function') global.openPublicProductModal = () => {};
+  if (typeof global.stepPublicCartQty !== 'function') global.stepPublicCartQty = () => {};
+  if (typeof global.addToPublicCart !== 'function') global.addToPublicCart = () => {};
+  if (typeof global.runPublicTrackOrder !== 'function') global.runPublicTrackOrder = () => {};
+
+  // Expose racikan dialog and state to window
+  global.posModalRacikanState = posModalRacikanState;
+  global.renderPosModalRacikanDialog = renderPosModalRacikanDialog;
+
+  // Expose invoice detail for anti-kebocoran links
+  global.openPosInvoiceDetail = (noInvoice) => {
+    if (typeof global.openPosDetailItemsModal === 'function') {
+      return global.openPosDetailItemsModal(noInvoice);
+    }
+  };
+
+  // Safe global S accessor
+  if (!global.S) {
+    global.S = () => global.ONSStore || {};
   }
 
   global.ONSViewsAuthDashPos = { renderPublicStandaloneIfApplicable, renderLoginView, renderDashboardView, renderPosView };

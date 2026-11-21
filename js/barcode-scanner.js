@@ -379,6 +379,15 @@
     renderLabelsGrid();
   }
 
+  
+  // Global event stubs
+  if (typeof global.__closeBarcodeScannerModal !== 'function') global.__closeBarcodeScannerModal = () => S.closeModal();
+  if (typeof global.__toggleScannerTorch !== 'function') global.__toggleScannerTorch = () => {};
+  if (typeof global.__submitManualBarcodeFromModal !== 'function') global.__submitManualBarcodeFromModal = () => {};
+  if (typeof global.__refreshBarcodeLabelsPreview !== 'function') global.__refreshBarcodeLabelsPreview = () => {};
+  if (typeof global.__printBarcodeStickersNow !== 'function') global.__printBarcodeStickersNow = () => {};
+  if (typeof global.__setBarcodeCopyCount !== 'function') global.__setBarcodeCopyCount = () => {};
+
   global.ONSBarcode = {
     openScannerModal,
     matchProductByBarcode,
