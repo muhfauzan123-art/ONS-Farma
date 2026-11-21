@@ -830,7 +830,15 @@
                       </div>
                     </td>
                   </tr>`;
-                }).join('') : '<tr><td colspan="10" class="text-center py-8 text-xs">Data tidak ditemukan. Klik <b>+ Pesanan Baru</b> atau buat dari <b>Rencana Pembelian</b> / <b>Defecta</b>.</td></tr>'}
+                }).join('') : S().renderEmptyState({
+                    icon: 'receipt',
+                    tone: 'blue',
+                    title: 'Belum Ada Surat Pesanan (SP)',
+                    desc: 'Tidak ada surat pesanan yang cocok dengan filter atau tanggal saat ini.',
+                    actionLabel: '+ Buat SP Baru',
+                    actionOnClick: 'window.openSpModal()',
+                    colspan: 10
+                  })}
               </tbody>
             </table>
           `}

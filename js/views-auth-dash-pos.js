@@ -4474,10 +4474,15 @@
           </div>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="${seeCost ? 9 : 8}" class="text-center py-8 text-xs">
-      <div class="font-semibold mb-1">Data tidak ditemukan pada filter saat ini.</div>
-      <button type="button" onclick="window.resetPosHistFilters()" class="ons-btn ons-btn-ghost text-[11px] py-1 px-3 mt-1">Reset Filter Pencarian</button>
-    </td></tr>`;
+    }).join('') || S().renderEmptyState({
+      icon: 'receipt',
+      tone: 'blue',
+      title: 'Riwayat Transaksi Tidak Ditemukan',
+      desc: 'Tidak ada transaksi penjualan yang cocok dengan filter kasir atau periode tanggal ini.',
+      actionLabel: 'Reset Filter Pencarian',
+      actionOnClick: 'window.resetPosHistFilters()',
+      colspan: seeCost ? 9 : 8
+    });
 
     return { summaryHtml, rowsHtml, activeNominal, activeLaba, activeCount: activeSubset.length };
   }

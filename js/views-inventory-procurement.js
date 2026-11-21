@@ -483,7 +483,14 @@
             ${actionButtons(o)}
           </div>
         </div>`;
-      }).join('')}
+      }).join('') || S().renderEmptyState({
+        icon: hasFilter ? 'search' : 'box',
+        tone: hasFilter ? 'amber' : 'blue',
+        title: hasFilter ? 'Produk Obat Tidak Ditemukan' : 'Master Obat Masih Kosong',
+        desc: hasFilter ? 'Tidak ada obat yang cocok dengan pencarian atau filter yang dipilih.' : 'Apotek Anda belum memiliki master data obat.',
+        actionLabel: hasFilter ? 'Reset Filter' : '+ Tambah Obat Baru',
+        actionOnClick: hasFilter ? 'window.resetMasterFilter()' : 'window.openObatModal()'
+      })}
     </div>` : `
     <div class="ons-card p-3">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11.5px]" style="color:var(--ons-text-soft)">
@@ -610,7 +617,17 @@
                 </td>
                 <td class="text-right min-w-[135px]">${actionButtons(o)}</td>
               </tr>`;
-            }).join('')}
+            }).join('') || S().renderEmptyState({
+              icon: hasFilter ? 'search' : 'box',
+              tone: hasFilter ? 'amber' : 'blue',
+              title: hasFilter ? 'Produk Obat Tidak Ditemukan' : 'Master Data Obat Masih Kosong',
+              desc: hasFilter ? 'Tidak ada produk obat yang cocok dengan kriteria pencarian atau filter aktif.' : 'Apotek Anda belum memiliki master data obat. Tambahkan produk pertama Anda sekarang.',
+              actionLabel: hasFilter ? 'Reset Filter Pencarian' : '+ Tambah Obat Baru',
+              actionOnClick: hasFilter ? 'window.resetMasterFilter()' : 'window.openObatModal()',
+              secondaryLabel: hasFilter ? '+ Tambah Obat Baru' : undefined,
+              secondaryOnClick: hasFilter ? 'window.openObatModal()' : undefined,
+              colspan: seeCost ? 11 : 10
+            })}
           </tbody>
         </table>
       </div>
@@ -887,7 +904,17 @@
                 <td><span class="badge-bpom ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(p.status_pbf || 'AKTIF')}</span></td>
                 <td class="text-right">${actionHtml(p)}</td>
               </tr>`;
-            }).join('')}
+            }).join('') || S().renderEmptyState({
+              icon: 'users',
+              tone: 'blue',
+              title: 'Data Supplier PBF Tidak Ditemukan',
+              desc: 'Tidak ada supplier yang cocok dengan filter atau kata kunci.',
+              actionLabel: 'Reset Filter',
+              actionOnClick: 'window.resetMasterSupplierFilter()',
+              secondaryLabel: '+ Tambah Supplier Baru',
+              secondaryOnClick: 'window.openPbfModal()',
+              colspan: 8
+            })}
           </tbody>
         </table>
       </div>
@@ -1049,7 +1076,17 @@
                 </td>
                 <td class="text-right">${actionHtml(m)}</td>
               </tr>`;
-            }).join('')}
+            }).join('') || S().renderEmptyState({
+              icon: 'users',
+              tone: 'blue',
+              title: 'Data Pelanggan Tidak Ditemukan',
+              desc: 'Tidak ada pelanggan yang cocok dengan kriteria filter pencarian.',
+              actionLabel: 'Reset Filter',
+              actionOnClick: 'window.resetMasterPelangganFilter()',
+              secondaryLabel: '+ Tambah Pelanggan',
+              secondaryOnClick: 'window.openPelangganModal()',
+              colspan: 7
+            })}
           </tbody>
         </table>
       </div>
@@ -1197,7 +1234,17 @@
                 <td><span class="badge-bpom ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">${S().esc(d.status_dokter || 'AKTIF')}</span></td>
                 <td class="text-right">${actionHtml(d)}</td>
               </tr>`;
-            }).join('')}
+            }).join('') || S().renderEmptyState({
+              icon: 'users',
+              tone: 'blue',
+              title: 'Data Dokter Mitra Tidak Ditemukan',
+              desc: 'Tidak ada dokter yang cocok dengan filter status saat ini.',
+              actionLabel: 'Reset Filter',
+              actionOnClick: 'window.resetMasterDokterFilter()',
+              secondaryLabel: '+ Tambah Dokter',
+              secondaryOnClick: 'window.openDokterModal()',
+              colspan: 7
+            })}
           </tbody>
         </table>
       </div>
@@ -7165,7 +7212,15 @@
                   </td>
                   ${seeCost ? `<td><button onclick="window.triggerRecallBatch('${b.id_batch}','${S().esc(b.no_batch)}')" ${b.status_batch !== 'AKTIF' ? 'disabled' : ''} class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Recall BPOM</button></td>` : ''}
                 </tr>`;
-              }).join('') || `<tr><td colspan="${seeCost ? 13 : 11}" class="text-center py-6 text-xs">Data tidak ditemukan.</td></tr>`}
+              }).join('') || S().renderEmptyState({
+                    icon: 'box',
+                    tone: 'blue',
+                    title: 'Data Batch FEFO Tidak Ditemukan',
+                    desc: 'Tidak ada batch obat aktif pada rak atau filter gudang saat ini.',
+                    actionLabel: 'Reset Filter Batch',
+                    actionOnClick: 'window.resetEdSearch()',
+                    colspan: seeCost ? 13 : 11
+                  })}
             </tbody>
           </table>
         </div>
@@ -9971,7 +10026,17 @@
                     </div>
                   </td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="10" class="text-center py-8 text-xs text-slate-500">Seluruh stok obat memenuhi ambang cadangan aman. Tidak ada produk yang perlu restok!</td></tr>'}
+              }).join('') : S().renderEmptyState({
+                    icon: 'check',
+                    tone: 'emerald',
+                    title: 'Semua Stok Memenuhi Cadangan Aman!',
+                    desc: 'Seluruh stok obat saat ini berada di atas batas minimum. Belum ada item yang memerlukan restok darurat.',
+                    actionLabel: '+ Buat SP Manual ke PBF',
+                    actionOnClick: 'window.openSpModal()',
+                    secondaryLabel: 'Buka Master Obat',
+                    secondaryOnClick: "window.navigateView('obat')",
+                    colspan: 10
+                  })}
             </tbody>
           </table>
         </div>
@@ -12556,7 +12621,15 @@
                   </div>
                 </td>
               </tr>`;
-            }).join('') : '<tr><td colspan="7" class="text-center py-8 text-xs">Data tidak ditemukan.</td></tr>'}
+            }).join('') : S().renderEmptyState({
+                    icon: 'receipt',
+                    tone: 'blue',
+                    title: 'Faktur Pembelian Tidak Ditemukan',
+                    desc: 'Belum ada faktur pembelian PBF yang sesuai dengan filter atau kata kunci.',
+                    actionLabel: '+ Input Faktur Baru',
+                    actionOnClick: 'window.openFakturModal()',
+                    colspan: 7
+                  })}
           </tbody>
         </table>
       </div>
