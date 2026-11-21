@@ -1821,6 +1821,51 @@
     return sectionsHtml;
   }
 
+  /**
+   * Sparkline Micro-Charts Generator (Batch 2 - Item 2, v18.50.0)
+   * Menghasilkan visualisasi tren 7 hari berbasis SVG murni berukuran mikro (0 KB external dependency).
+   * Dilengkapi kurva halus, gradien area tembus pandang, dan glowing pulse dot titik akhir.
+   */
+  function renderSparklineSvg(series, opts = {}) {
+    const vals = Array.isArray(series) ? series.map((v) => Number(v || 0)) : [];
+    if (vals.length < 2) return '';
+    const w = Number(opts.width || 88);
+    const h = Number(opts.height || 26);
+    const padX = 4;
+    const padY = 4;
+    const color = String(opts.color || '#0066FE');
+    const id = String(opts.id || ('spk_' + Math.random().toString(36).slice(2, 7)));
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const range = (max - min) || 1;
+    const dx = (w - 2 * padX) / (vals.length - 1);
+
+    const pts = vals.map((v, i) => {
+      const x = Math.round((padX + i * dx) * 10) / 10;
+      const y = Math.round((h - padY - ((v - min) / range) * (h - 2 * padY)) * 10) / 10;
+      return { x, y, v };
+    });
+
+    const dLine = 'M ' + pts.map((p) => `${p.x} ${p.y}`).join(' L ');
+    const dArea = `${dLine} L ${pts[pts.length - 1].x} ${h - 1} L ${pts[0].x} ${h - 1} Z`;
+    const last = pts[pts.length - 1];
+
+    return `
+      <svg class="ons-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="overflow:visible;" aria-hidden="true">
+        <defs>
+          <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${color}" stop-opacity="0.38"/>
+            <stop offset="100%" stop-color="${color}" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+        <path d="${dArea}" fill="url(#${id})" stroke="none"/>
+        <path d="${dLine}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${last.x}" cy="${last.y}" r="3.2" fill="${color}" stroke="#FFFFFF" stroke-width="1.5"/>
+      </svg>
+    `;
+  }
+  global.renderSparklineSvg = renderSparklineSvg;
+
   function showShortcutCheatSheet() {
     if (global.playFeedback) global.playFeedback('key');
 
@@ -3245,6 +3290,7 @@
     renderEmptyState,
     showShortcutCheatSheet,
     renderShortcutItems,
+    renderSparklineSvg,
     SHORTCUT_REGISTRY,
     emptyState: renderEmptyState,
     Feedback,

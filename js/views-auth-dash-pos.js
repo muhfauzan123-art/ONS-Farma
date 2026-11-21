@@ -2067,6 +2067,8 @@
     const days = [];
     const omzSeries = [];
     const labaSeries = [];
+    const trxSeries = [];
+    const apSeries = [];
     for (let offset = 6; offset >= 0; offset--) {
       const dt = new Date(nowDt.getFullYear(), nowDt.getMonth(), nowDt.getDate() - offset);
       const iso = toLocalYmd_(dt);
@@ -2074,6 +2076,9 @@
       const daySales = validSales.filter((p) => toLocalYmd_(p.tanggal) === iso);
       omzSeries.push(daySales.reduce((acc, p) => acc + Number(p.grand_total || 0), 0));
       labaSeries.push(seeCost ? daySales.reduce((acc, p) => acc + _calcPosTrxLaba(st, p), 0) : 0);
+      trxSeries.push(daySales.length);
+      const dayFaktur = (st.fakturPbf || []).filter((f) => sameCabang_(f, cabId) && toLocalYmd_(f.tanggal_faktur || f.created_at || '') === iso);
+      apSeries.push(dayFaktur.reduce((acc, f) => acc + Number(f.netto_hutang || 0), 0));
     }
     const maxVal = Math.max(...omzSeries, 100000);
     const total7Hari = omzSeries.reduce((a, b) => a + b, 0);
@@ -2378,14 +2383,17 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
         <div class="ons-kpi-card is-blue" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold flex flex-wrap items-center gap-1.5" style="color:var(--ons-text-soft)">
                 <span>Omzet Penjualan Hari Ini</span>
                 ${vsAvgPct !== null ? `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold font-mono-num ${vsAvgPct >= 0 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'}">${vsAvgPct >= 0 ? '+' : ''}${vsAvgPct}% vs avg</span>` : ''}
               </div>
-              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-blue-600 tracking-tight leading-tight break-words">${S().rp(omzetHariIni)}</div>
+              <div class="flex items-baseline justify-between gap-2 mt-1.5">
+                <div class="text-xl xl:text-[22px] font-extrabold font-mono-num text-blue-600 tracking-tight leading-tight break-words">${S().rp(omzetHariIni)}</div>
+                <div class="shrink-0 pt-0.5" title="Tren Omzet 7 Hari">${S().renderSparklineSvg ? S().renderSparklineSvg(omzSeries, { color: '#0066FE', id: 'spk-omz-dash', width: 88, height: 26 }) : ''}</div>
+              </div>
             </div>
-            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 font-extrabold text-[15px] tracking-tight" aria-hidden="true">Rp</span>
+            <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 font-extrabold text-[15px] tracking-tight shrink-0" aria-hidden="true">Rp</span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
             <span class="font-semibold truncate" style="color:var(--ons-text-soft)"><b class="text-emerald-600">${todaySales.length} nota</b> hari ini &bull; Total ${S().rp(omzetTotal)}</span>
@@ -2395,11 +2403,14 @@
 
         ${seeCost ? `<div class="ons-kpi-card is-emerald" ${canFin ? `onclick="navigateView('finance','pnl')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Laba Penjualan</div>
-              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 ${(marginTotal || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'} tracking-tight leading-tight break-words">${S().rp(marginTotal || 0)}</div>
+              <div class="flex items-baseline justify-between gap-2 mt-1.5">
+                <div class="text-xl xl:text-[22px] font-extrabold font-mono-num ${(marginTotal || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'} tracking-tight leading-tight break-words">${S().rp(marginTotal || 0)}</div>
+                <div class="shrink-0 pt-0.5" title="Tren Margin Laba 7 Hari">${S().renderSparklineSvg ? S().renderSparklineSvg(labaSeries, { color: '#10B981', id: 'spk-laba-dash', width: 88, height: 26 }) : ''}</div>
+              </div>
             </div>
-            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 font-extrabold text-[13px] tracking-tight" aria-hidden="true">${marginPct}%</span>
+            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 font-extrabold text-[13px] tracking-tight shrink-0" aria-hidden="true">${marginPct}%</span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
             <span class="truncate" style="color:var(--ons-text-soft)">Hari ini: <b class="text-emerald-600 font-mono-num">${S().rp(marginHariIni || 0)}</b> &bull; Total ${validSales.length} nota</span>
@@ -2407,11 +2418,14 @@
           </div>
         </div>` : `<div class="ons-kpi-card is-emerald" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pemeriksaan Pasien (POCT)</div>
-              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-emerald-600 tracking-tight leading-tight">${poctTodayCount} Pasien</div>
+              <div class="flex items-baseline justify-between gap-2 mt-1.5">
+                <div class="text-xl xl:text-[22px] font-extrabold font-mono-num text-emerald-600 tracking-tight leading-tight">${poctTodayCount} Pasien</div>
+                <div class="shrink-0 pt-0.5" title="Tren Transaksi 7 Hari">${S().renderSparklineSvg ? S().renderSparklineSvg(trxSeries, { color: '#10B981', id: 'spk-poct-dash', width: 88, height: 26 }) : ''}</div>
+              </div>
             </div>
-            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+            <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 shrink-0"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
             <span class="truncate" style="color:var(--ons-text-soft)">${branchPoct.length} riwayat pemeriksaan klinik</span>
@@ -2421,11 +2435,14 @@
 
         <div class="ons-kpi-card ${warningEdCount ? 'is-red' : 'is-emerald'}" ${canGudang ? `onclick="navigateView('gudang','batch')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Kesehatan Stok &amp; FEFO</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 tracking-tight ${warningEdCount ? 'text-red-600' : 'text-emerald-600'}">${warningEdCount} Batch ED</div>
+              <div class="flex items-baseline justify-between gap-2 mt-1.5">
+                <div class="text-2xl font-extrabold font-mono-num tracking-tight ${warningEdCount ? 'text-red-600' : 'text-emerald-600'}">${warningEdCount} Batch ED</div>
+                <div class="shrink-0 pt-0.5" title="Tren Transaksi Penjualan 7 Hari">${S().renderSparklineSvg ? S().renderSparklineSvg(trxSeries, { color: warningEdCount ? '#EF4444' : '#10B981', id: 'spk-trx-dash', width: 88, height: 26 }) : ''}</div>
+              </div>
             </div>
-            <span class="ons-kpi-ico ${warningEdCount ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
+            <span class="ons-kpi-ico ${warningEdCount ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'} shrink-0"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
             <span class="${defectaCount ? 'text-amber-600 font-bold' : 'text-emerald-600 font-semibold'} truncate">${expiredBatches.length ? expiredBatches.length + ' kadaluarsa &bull; ' : ''}${defectaCount} item menipis</span>
@@ -2435,11 +2452,14 @@
 
         ${seeCost ? `<div class="ons-kpi-card is-amber" ${canFin ? `onclick="navigateView('finance','hutang')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Hutang PBF &amp; Piutang</div>
-              <div class="text-xl xl:text-[22px] font-extrabold font-mono-num mt-1.5 text-amber-600 tracking-tight leading-tight break-words">${S().rp(apTotal)}</div>
+              <div class="flex items-baseline justify-between gap-2 mt-1.5">
+                <div class="text-xl xl:text-[22px] font-extrabold font-mono-num text-amber-600 tracking-tight leading-tight break-words">${S().rp(apTotal)}</div>
+                <div class="shrink-0 pt-0.5" title="Tren Tagihan PBF">${S().renderSparklineSvg ? S().renderSparklineSvg(apSeries, { color: '#F59E0B', id: 'spk-ap-dash', width: 88, height: 26 }) : ''}</div>
+              </div>
             </div>
-            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
+            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600 shrink-0"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
             <span class="truncate" style="color:var(--ons-text-soft)">${openFaktur.length} faktur (${apNearDueCount} tempo &le;7h)${piutangTotal > 0 ? ' &bull; Piutang ' + S().rp(piutangTotal) : ''}</span>
@@ -2447,11 +2467,14 @@
           </div>
         </div>` : `<div class="ons-kpi-card is-amber" ${canShift ? `onclick="navigateView('pos','tutup-shift')"` : ''}>
           <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Status Shift &amp; Laci Kas</div>
-              <div class="text-2xl font-extrabold font-mono-num mt-1.5 tracking-tight ${activeShift ? 'text-emerald-600' : 'text-amber-600'}">${activeShift ? 'Shift Buka' : 'Belum Buka'}</div>
+              <div class="flex items-baseline justify-between gap-2 mt-1.5">
+                <div class="text-2xl font-extrabold font-mono-num tracking-tight ${activeShift ? 'text-emerald-600' : 'text-amber-600'}">${activeShift ? 'Shift Buka' : 'Belum Buka'}</div>
+                <div class="shrink-0 pt-0.5" title="Tren Transaksi 7 Hari">${S().renderSparklineSvg ? S().renderSparklineSvg(trxSeries, { color: '#F59E0B', id: 'spk-shift-dash', width: 88, height: 26 }) : ''}</div>
+              </div>
             </div>
-            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+            <span class="ons-kpi-ico bg-amber-500/10 text-amber-600 shrink-0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
           </div>
           <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
             <span class="truncate" style="color:var(--ons-text-soft)">${activeShift ? ('Modal awal ' + S().rp(activeShift.modal_awal || 0)) : 'Klik untuk buka / rekap shift'}</span>

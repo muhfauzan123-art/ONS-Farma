@@ -6625,3 +6625,29 @@ body.ons-has-pos-cart .ons-scanner-fab-host {
   border-color: #FDE68A !important;
   box-shadow: 0 0 18px rgba(245, 158, 11, 0.75) !important;
 }
+
+/* ==========================================================================
+   Batch 2 - Item 2: Sparkline Micro-Charts Trend 7 Hari (v18.50.0)
+   ========================================================================== */
+.ons-sparkline {
+  display: block;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.ons-sparkline:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 2px 6px rgba(0, 102, 254, 0.25));
+}
+.ons-sparkline path[stroke] {
+  transition: stroke-width 0.15s ease;
+}
+.ons-sparkline:hover path[stroke] {
+  stroke-width: 2.8;
+}
+.ons-sparkline circle {
+  animation: onsSparklinePulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes onsSparklinePulse {
+  0%, 100% { r: 3.2; opacity: 1; }
+  50% { r: 4.6; opacity: 0.7; }
+}
