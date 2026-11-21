@@ -4036,21 +4036,12 @@
 
   function playPosBeep(kind) {
     if (!posBeepEnabled) return;
-    try {
-      const AC = global.AudioContext || global.webkitAudioContext;
-      if (!AC) return;
-      const ctx = new AC();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = kind === 'err' ? 'sawtooth' : 'sine';
-      osc.frequency.value = kind === 'err' ? 320 : 920;
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (kind === 'err' ? 0.14 : 0.055));
-      osc.start();
-      osc.stop(ctx.currentTime + (kind === 'err' ? 0.15 : 0.06));
-    } catch (e) {}
+    if (S().playFeedback) {
+      const ev = (kind === 'err' || kind === 'error') ? 'error'
+        : ((kind === 'success' || kind === 'pay' || kind === 'checkout') ? 'success'
+        : ((kind === 'add' || kind === 'cart') ? 'add' : 'scan'));
+      S().playFeedback(ev);
+    }
   }
 
   function getPosActiveCart() {
@@ -5180,8 +5171,12 @@
             ${st.activeShift ? `<span class="ml-1 inline-block w-2 h-2 rounded-full ${posSubTab === 'tutup-shift' ? 'bg-emerald-300' : 'bg-emerald-500'} animate-pulse"></span>` : ''}
           </button>` : ''}
         </div>
-        <div class="hidden sm:flex items-center gap-2 text-xs" style="color:var(--ons-text-soft)">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+        <div class="flex items-center gap-2 text-xs" style="color:var(--ons-text-soft)">
+          <button type="button" onclick="window.togglePosBeepSetting()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 rounded-xl border flex items-center gap-1.5 shadow-2xs font-semibold" title="Klik untuk mengaktifkan / menonaktifkan suara bip & getar kasir">
+            <span>${posBeepEnabled ? '🔊' : '🔇'}</span>
+            <span class="hidden md:inline">${posBeepEnabled ? 'Suara Kasir' : 'Senyap'}</span>
+          </button>
+          <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>${branchLabel} &bull; Kasir Aktif</span>
           </span>
@@ -5944,8 +5939,9 @@
   global.togglePosBeepSetting = () => {
     posBeepEnabled = !posBeepEnabled;
     try { localStorage.setItem('ons_pos_beep', posBeepEnabled ? '1' : '0'); } catch (e) {}
-    if (posBeepEnabled) playPosBeep('ok');
-    global.toast('Suara bip POS ' + (posBeepEnabled ? 'diaktifkan' : 'dimatikan') + '.', 'info');
+    if (S().Feedback) S().Feedback.setSoundEnabled(posBeepEnabled);
+    if (posBeepEnabled) playPosBeep('add');
+    global.toast('Suara & getar POS ' + (posBeepEnabled ? 'diaktifkan' : 'dimatikan') + '.', 'info');
     global.renderActiveView();
   };
 
@@ -6427,7 +6423,7 @@
       _repriceCartItem(obat, itemObj, tierMode);
       cart.items.push(itemObj);
     }
-    playPosBeep('ok');
+    playPosBeep('add');
     global.renderActiveView();
   };
 
@@ -7750,6 +7746,7 @@
     }
     inp.value = S().formatDots(Number(raw));
     global.updatePosTunaiChange(baseTotal);
+    if (S().playFeedback) S().playFeedback('key');
   };
 
   global.togglePosTunaiNumpad = () => {
@@ -7949,7 +7946,7 @@
       } else {
         res = await API().callApi('pos.checkout', payload, { isWrite: true, requestId: cart._activeCheckoutId });
       }
-      playPosBeep('ok');
+      playPosBeep('success');
       S().closeModal();
       const notaNo = res.no_invoice || (res.penjualan && res.penjualan.no_invoice) || ('INV-' + Date.now());
       const itemsCopy = cart.items.map((it) => ({

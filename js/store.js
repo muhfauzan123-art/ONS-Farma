@@ -980,6 +980,167 @@
   }
 
   /**
+   * Subtle Audio & Haptic Feedback Suite (v18.47.0)
+   * Menggunakan Web Audio API synthesizer murni (tanpa file audio eksternal) dan navigator.vibrate
+   */
+  const Feedback = (() => {
+    let _audioCtx = null;
+    let _soundEnabled = typeof localStorage !== 'undefined' ? (localStorage.getItem('ons_feedback_sound') !== '0') : true;
+    let _hapticEnabled = typeof localStorage !== 'undefined' ? (localStorage.getItem('ons_feedback_haptic') !== '0') : true;
+
+    function getAudioCtx() {
+      if (!_audioCtx) {
+        const AC = global.AudioContext || global.webkitAudioContext;
+        if (AC) _audioCtx = new AC();
+      }
+      if (_audioCtx && _audioCtx.state === 'suspended') {
+        _audioCtx.resume().catch(() => {});
+      }
+      return _audioCtx;
+    }
+
+    function isSoundEnabled() { return _soundEnabled; }
+    function isHapticEnabled() { return _hapticEnabled; }
+
+    function setSoundEnabled(val) {
+      _soundEnabled = Boolean(val);
+      try { localStorage.setItem('ons_feedback_sound', _soundEnabled ? '1' : '0'); } catch (e) {}
+    }
+
+    function setHapticEnabled(val) {
+      _hapticEnabled = Boolean(val);
+      try { localStorage.setItem('ons_feedback_haptic', _hapticEnabled ? '1' : '0'); } catch (e) {}
+    }
+
+    function toggleSound() {
+      setSoundEnabled(!_soundEnabled);
+      return _soundEnabled;
+    }
+
+    function toggleHaptic() {
+      setHapticEnabled(!_hapticEnabled);
+      return _hapticEnabled;
+    }
+
+    function vibrate(pattern) {
+      if (!_hapticEnabled) return;
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+    }
+
+    function play(event = 'click') {
+      const ev = String(event || 'click').toLowerCase().trim();
+
+      // Haptic Pattern on Mobile
+      if (_hapticEnabled) {
+        if (ev === 'scan') vibrate(50);
+        else if (ev === 'add' || ev === 'cart') vibrate(40);
+        else if (ev === 'success' || ev === 'pay' || ev === 'checkout') vibrate([40, 50, 80]);
+        else if (ev === 'error' || ev === 'err' || ev === 'warn') vibrate([80, 50, 80]);
+        else if (ev === 'key' || ev === 'click') vibrate(15);
+      }
+
+      // Audio Synthesis via Web Audio API
+      if (!_soundEnabled) return;
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        if (ev === 'scan') {
+          // Crisp 880Hz (A5) barcode beep 70ms
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (ev === 'add' || ev === 'cart') {
+          // Soft rising chime: 523Hz (C5) -> 659Hz (E5)
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(523.25, now);
+          gain1.gain.setValueAtTime(0.05, now);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          osc1.start(now);
+          osc1.stop(now + 0.065);
+
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(659.25, now + 0.04);
+          gain2.gain.setValueAtTime(0.06, now + 0.04);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(now + 0.04);
+          osc2.stop(now + 0.13);
+        } else if (ev === 'success' || ev === 'pay' || ev === 'checkout') {
+          // Pleasant success major triad chord: C5 (523), E5 (659), G5 (784)
+          [523.25, 659.25, 783.99].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+            gain.gain.setValueAtTime(0.05, now + idx * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.04);
+            osc.stop(now + 0.3);
+          });
+        } else if (ev === 'error' || ev === 'err' || ev === 'warn') {
+          // Subtle warm low thud (220Hz triangle wave)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(220, now);
+          gain.gain.setValueAtTime(0.07, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.16);
+        } else if (ev === 'key' || ev === 'click') {
+          // Tactile micro-click 1200Hz 15ms
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1200, now);
+          gain.gain.setValueAtTime(0.02, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.022);
+        }
+      } catch (e) {}
+    }
+
+    return {
+      play,
+      vibrate,
+      isSoundEnabled,
+      isHapticEnabled,
+      setSoundEnabled,
+      setHapticEnabled,
+      toggleSound,
+      toggleHaptic
+    };
+  })();
+
+  global.playFeedback = Feedback.play;
+  global.ONSFeedback = Feedback;
+
+  /**
    * Progressive Toast Notification & Undo Suite (v18.46.0)
    * Dilengkapi countdown progress bar visual, auto-dismiss pausable on hover, tone gradient, dan tombol Undo instan.
    */
@@ -2905,6 +3066,8 @@
     renderSkeleton,
     renderEmptyState,
     emptyState: renderEmptyState,
+    Feedback,
+    playFeedback: Feedback.play,
     esc,
     formatTgl,
     daysUntil,

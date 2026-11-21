@@ -120,9 +120,13 @@
       const clean = String(val || '').trim();
       if (!clean || stopped) return;
       cleanup();
-      playScanBeep();
-      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-        try { navigator.vibrate(70); } catch (e) {}
+      if (global.playFeedback) {
+        global.playFeedback('scan');
+      } else {
+        playScanBeep();
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+          try { navigator.vibrate(70); } catch (e) {}
+        }
       }
       S.closeModal();
       if (typeof cfg.onDetect === 'function') cfg.onDetect(clean);
