@@ -980,24 +980,125 @@
   }
 
   /**
-   * Toast Notification ringan & tidak menumpuk
+   * Progressive Toast Notification & Undo Suite (v18.46.0)
+   * Dilengkapi countdown progress bar visual, auto-dismiss pausable on hover, tone gradient, dan tombol Undo instan.
    */
-  function showToast(msg, type = 'info') {
+  function showToast(msg, type = 'info', duration = 4000, undoOpts = null) {
+    if (typeof type === 'number') {
+      const tmp = duration;
+      duration = type;
+      type = (typeof tmp === 'string') ? tmp : 'info';
+    }
+    if (typeof duration === 'function' || (typeof duration === 'object' && duration !== null && duration.onUndo)) {
+      undoOpts = duration;
+      duration = 4000;
+    }
+
+    const tNorm = String(type || 'info').toLowerCase().trim();
+    const toneCls = (tNorm === 'ok' || tNorm === 'success') ? 'ons-toast-ok'
+      : ((tNorm === 'err' || tNorm === 'error') ? 'ons-toast-err'
+      : ((tNorm === 'warn' || tNorm === 'warning') ? 'ons-toast-warn' : 'ons-toast-info'));
+
+    const iconSvg = (tNorm === 'ok' || tNorm === 'success')
+      ? `<svg class="w-5 h-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>`
+      : ((tNorm === 'err' || tNorm === 'error')
+      ? `<svg class="w-5 h-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 6.75h.008v.008H12v-.008Z"/></svg>`
+      : ((tNorm === 'warn' || tNorm === 'warning')
+      ? `<svg class="w-5 h-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>`
+      : `<svg class="w-5 h-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>`));
+
     let wrap = document.getElementById('onsToastPortal');
     if (!wrap) {
       wrap = document.createElement('div');
       wrap.id = 'onsToastPortal';
-      wrap.style.cssText = 'position:fixed;bottom:1.25rem;right:1.25rem;z-index:10050;display:flex;flex-direction:column;gap:0.5rem;max-width:380px;';
       document.body.appendChild(wrap);
     }
-    const bg = type === 'ok' ? '#006C4A' : (type === 'err' ? '#DC2626' : (type === 'warn' ? '#D97706' : '#09202A'));
-    const el = document.createElement('div');
-    el.style.cssText = `background:${bg};color:#fff;padding:0.75rem 1rem;border-radius:0.75rem;box-shadow:0 10px 25px rgba(0,0,0,.28);font-size:0.84rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;`;
-    el.innerHTML = `<span>${esc(msg)}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;font-weight:700;cursor:pointer;font-size:1rem;">&times;</button>`;
-    wrap.appendChild(el);
-    setTimeout(() => { if (el.parentNode) el.remove(); }, 4200);
+
+    const toast = document.createElement('div');
+    toast.className = `ons-progressive-toast ${toneCls}`;
+
+    let undoCallback = null;
+    let undoLabel = 'Urungkan';
+    if (typeof undoOpts === 'function') {
+      undoCallback = undoOpts;
+    } else if (undoOpts && typeof undoOpts.onUndo === 'function') {
+      undoCallback = undoOpts.onUndo;
+      if (undoOpts.undoLabel) undoLabel = undoOpts.undoLabel;
+    }
+
+    const undoButtonHtml = undoCallback ? `
+      <button type="button" class="ons-toast-undo-btn shrink-0" title="Klik untuk membatalkan aksi ini">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
+        ${esc(undoLabel)}
+      </button>` : '';
+
+    toast.innerHTML = `
+      <div class="flex items-center gap-2.5 min-w-0 flex-1">
+        ${iconSvg}
+        <span class="leading-snug text-white font-medium text-xs sm:text-[13px] break-words">${esc(msg)}</span>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        ${undoButtonHtml}
+        <button type="button" class="p-1 text-white/70 hover:text-white rounded-lg transition-colors leading-none" title="Tutup notifikasi">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="ons-toast-progress-track">
+        <div class="ons-toast-progress-fill" style="animation-duration:${Math.max(1000, duration)}ms;"></div>
+      </div>
+    `;
+
+    const closeBtn = toast.querySelector('button[title="Tutup notifikasi"]');
+    const undoBtn = toast.querySelector('.ons-toast-undo-btn');
+
+    let dismissed = false;
+    let timeoutId = null;
+
+    const dismissToast = () => {
+      if (dismissed) return;
+      dismissed = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      toast.classList.add('is-leaving');
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 260);
+    };
+
+    if (closeBtn) closeBtn.onclick = dismissToast;
+
+    if (undoBtn && undoCallback) {
+      undoBtn.onclick = (e) => {
+        e.stopPropagation();
+        dismissToast();
+        try {
+          undoCallback();
+          showToast('Aksi berhasil dibatalkan.', 'ok', 2500);
+        } catch (err) {
+          console.error('[Undo Error]', err);
+        }
+      };
+    }
+
+    const startTimer = () => {
+      timeoutId = setTimeout(dismissToast, duration);
+    };
+
+    toast.addEventListener('mouseenter', () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    });
+
+    toast.addEventListener('mouseleave', () => {
+      if (!dismissed) startTimer();
+    });
+
+    wrap.appendChild(toast);
+    startTimer();
+    return toast;
   }
   global.toast = showToast;
+  global.onsShowToast = showToast;
+  global.onsShowSuccess = (m, d, u) => showToast(m, 'success', d, u);
+  global.onsShowError   = (m, d, u) => showToast(m, 'error', d, u);
+  global.onsShowWarning = (m, d, u) => showToast(m, 'warning', d, u);
+  global.onsShowInfo    = (m, d, u) => showToast(m, 'info', d, u);
 
   let _modalCloseHook = null;
 
@@ -2906,53 +3007,12 @@ window.onsConfirmDelete = function(itemName, onConfirm, onCancel) {
 // Shortcut: ganti semua confirm('Hapus?') yang masih ada dengan onsConfirmDelete
 window.onsConfirm = window.onsConfirmDelete; // alias
 
-// ===== ITEM #5: TOAST NOTIFICATION SYSTEM =====
-window.onsShowToast = function(msg, type, duration) {
-  type = type || 'info';
-  duration = duration || 3500;
-  var colors = {
-    success: { bg: '#dcfce7', border: '#86efac', text: '#166534', icon: '✅' },
-    error:   { bg: '#fee2e2', border: '#fca5a5', text: '#991b1b', icon: '❌' },
-    warning: { bg: '#fef3c7', border: '#fcd34d', text: '#92400e', icon: '⚠️' },
-    info:    { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af', icon: 'ℹ️' }
-  };
-  var c = colors[type] || colors.info;
-
-  // Dark mode override
-  var isDark = document.documentElement.classList.contains('dark');
-  if (isDark) {
-    var darkColors = {
-      success: { bg: 'rgba(22,101,52,0.9)', border: '#16a34a', text: '#86efac', icon: '✅' },
-      error:   { bg: 'rgba(153,27,27,0.9)', border: '#dc2626', text: '#fca5a5', icon: '❌' },
-      warning: { bg: 'rgba(120,53,15,0.9)', border: '#d97706', text: '#fde68a', icon: '⚠️' },
-      info:    { bg: 'rgba(30,64,175,0.9)', border: '#3b82f6', text: '#93c5fd', icon: 'ℹ️' }
-    };
-    c = darkColors[type] || darkColors.info;
-  }
-
-  var container = document.getElementById('ons-toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'ons-toast-container';
-    document.body.appendChild(container);
-  }
-  var toast = document.createElement('div');
-  toast.style.cssText = 'background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.text + ';padding:0.85rem 1.1rem;border-radius:0.75rem;box-shadow:0 8px 24px rgba(0,0,0,0.18);display:flex;align-items:flex-start;gap:0.6rem;font-size:0.875rem;font-weight:500;animation:ons-toast-in 0.3s ease both;max-width:340px;word-break:break-word;backdrop-filter:blur(8px)';
-  toast.innerHTML = '<span style="font-size:1.15rem;line-height:1.3;flex-shrink:0">' + c.icon + '</span><span style="flex:1;line-height:1.5">' + msg + '</span><button onclick="this.closest(\'div\').style.animation=\'ons-toast-out 0.25s ease forwards\';setTimeout(()=>this.closest(\'div\').remove(),250)" style="background:none;border:none;cursor:pointer;color:inherit;opacity:0.6;font-size:1.2rem;line-height:1;padding:0 0 0 0.3rem;flex-shrink:0">×</button>';
-  container.appendChild(toast);
-  setTimeout(function() {
-    if (toast.parentNode) {
-      toast.style.animation = 'ons-toast-out 0.3s ease forwards';
-      setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
-    }
-  }, duration);
-  return toast;
-};
-
-window.onsShowSuccess = function(msg, dur) { return window.onsShowToast(msg, 'success', dur); };
-window.onsShowError   = function(msg, dur) { return window.onsShowToast(msg, 'error', dur); };
-window.onsShowWarning = function(msg, dur) { return window.onsShowToast(msg, 'warning', dur); };
-window.onsShowInfo    = function(msg, dur) { return window.onsShowToast(msg, 'info', dur); };
+// ===== ITEM #5: TOAST NOTIFICATION SYSTEM (Unified with showToast) =====
+window.onsShowToast = function(msg, type, duration, undoOpts) { return showToast(msg, type, duration, undoOpts); };
+window.onsShowSuccess = function(msg, dur, undoOpts) { return showToast(msg, 'success', dur, undoOpts); };
+window.onsShowError   = function(msg, dur, undoOpts) { return showToast(msg, 'error', dur, undoOpts); };
+window.onsShowWarning = function(msg, dur, undoOpts) { return showToast(msg, 'warning', dur, undoOpts); };
+window.onsShowInfo    = function(msg, dur, undoOpts) { return showToast(msg, 'info', dur, undoOpts); };
 
 // ===== ITEM #7: PAGE TRANSITION HELPER =====
 window.onsAnimateView = function(containerEl) {

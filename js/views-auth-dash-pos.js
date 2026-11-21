@@ -6536,9 +6536,17 @@
     if (!cart || !cart.items || !cart.items[idx]) return;
     const item = cart.items[idx];
     const nama = item.nama_dagang || item.id_obat || 'item';
-    if (typeof global.confirm === 'function' && !global.confirm('Hapus "' + nama + '" dari keranjang belanja?')) return;
     cart.items.splice(idx, 1);
     global.renderActiveView();
+    if (typeof global.toast === 'function') {
+      global.toast('"' + nama + '" dihapus dari keranjang', 'info', 5000, {
+        undoLabel: 'Urungkan',
+        onUndo: () => {
+          cart.items.splice(idx, 0, item);
+          global.renderActiveView();
+        }
+      });
+    }
   };
 
   global.switchPosCart = (idx) => {

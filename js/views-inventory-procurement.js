@@ -12164,8 +12164,21 @@
   };
 
   global.removePurchasePlan = (idPlan) => {
-    _writeLocalList(PLANS_KEY, _readLocalList(PLANS_KEY).filter((p) => p.id_plan !== idPlan));
+    const list = _readLocalList(PLANS_KEY);
+    const target = list.find((p) => p.id_plan === idPlan);
+    _writeLocalList(PLANS_KEY, list.filter((p) => p.id_plan !== idPlan));
     global.renderActiveView();
+    if (target && typeof global.toast === 'function') {
+      global.toast('"' + (target.nama_dagang || 'Obat') + '" dihapus dari rencana', 'info', 5000, {
+        undoLabel: 'Urungkan',
+        onUndo: () => {
+          const cur = _readLocalList(PLANS_KEY);
+          cur.push(target);
+          _writeLocalList(PLANS_KEY, cur);
+          global.renderActiveView();
+        }
+      });
+    }
   };
 
   global.clearAllPurchasePlans = () => {
