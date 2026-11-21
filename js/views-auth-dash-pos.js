@@ -5176,6 +5176,10 @@
             <span>${posBeepEnabled ? '🔊' : '🔇'}</span>
             <span class="hidden md:inline">${posBeepEnabled ? 'Suara Kasir' : 'Senyap'}</span>
           </button>
+          <button type="button" onclick="window.showShortcutCheatSheet && window.showShortcutCheatSheet()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 rounded-xl border flex items-center gap-1.5 shadow-2xs font-semibold" title="Lihat Pintasan Tombol POS & Kasir [?]">
+            <span>⌨️</span>
+            <span class="hidden md:inline">Pintasan [?]</span>
+          </button>
           <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>${branchLabel} &bull; Kasir Aktif</span>

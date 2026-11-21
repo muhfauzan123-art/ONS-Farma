@@ -1712,6 +1712,184 @@
   /**
    * Harga Jual Satuan Dasar & Konversi Kemasan (Umum / Bebas Tiering Pelanggan)
    */
+  
+  /**
+   * Keyboard Shortcut Cheat Sheet Suite (v18.48.0)
+   * Menyajikan panduan lengkap hotkey apotek digital dengan pencarian instan dan keycaps visual.
+   */
+  const SHORTCUT_REGISTRY = [
+    {
+      category: '⚡ Global & Navigasi Cepat',
+      desc: 'Bisa digunakan dari mana saja di seluruh aplikasi ONS Farma',
+      items: [
+        { keys: ['Ctrl', 'K'], label: 'Command Palette', desc: 'Buka pusat pencarian cepat, navigasi fitur, dan aksi kilat' },
+        { keys: ['?'], label: 'Cheat Sheet Pintasan', desc: 'Buka atau tutup dialog panduan tombol shortcut ini' },
+        { keys: ['Esc'], label: 'Tutup Dialog / Modal', desc: 'Menutup dialog, popup modal, laci drawer, atau menu terbuka' },
+        { keys: ['Alt', '1'], label: 'Dashboard Utama', desc: 'Navigasi langsung ke ringkasan operasional apotek' },
+        { keys: ['Alt', '2'], label: 'Kasir POS', desc: 'Langsung menuju modul kasir & transaksi penjualan' },
+        { keys: ['Alt', '3'], label: 'Master Data Obat', desc: 'Katalog obat, harga jual bertingkat, dan stok apotek' },
+        { keys: ['Alt', '4'], label: 'Gudang & Batch FEFO', desc: 'Cek stok fisik gudang, nomor batch, dan expiry date' },
+        { keys: ['Alt', '5'], label: 'Pengadaan & SP PBF', desc: 'Defecta otomatis dan surat pesanan resmi distributor' },
+        { keys: ['Alt', '6'], label: 'Keuangan & Kas', desc: 'Buku kas, mutasi pendapatan, dan pengeluaran harian' },
+        { keys: ['Alt', 'D'], label: 'Ganti Mode Gelap / Terang', desc: 'Beralih antara tema gelap (dark mode) dan terang' }
+      ]
+    },
+    {
+      category: '🛒 Kasir & Transaksi POS',
+      desc: 'Dioptimalkan untuk kecepatan transaksi kasir dengan keyboard fisik / USB barcode gun',
+      items: [
+        { keys: ['F2'], label: 'Fokus Cari / Scan Barcode', desc: 'Langsung meletakkan kursor di kotak pencarian obat & scan barcode' },
+        { keys: ['Enter'], label: 'Tambah Item / Konfirmasi', desc: 'Memasukkan produk terpilih ke keranjang belanja atau konfirmasi input' },
+        { keys: ['F4'], label: 'Bayar Tunai (Cash)', desc: 'Buka dialog pembayaran tunai dengan tombol pecahan cepat & numpad sentuh' },
+        { keys: ['F8'], label: 'Bayar Non-Tunai / QRIS', desc: 'Buka pembayaran dompet digital QRIS dinamis & transfer bank' },
+        { keys: ['F9'], label: 'Tahan / Antrean (Hold Cart)', desc: 'Simpan keranjang pelanggan saat ini ke antrean tertunda atau panggil antrean' },
+        { keys: ['F7'], label: 'Pelanggan Baru', desc: 'Buka form cepat tambah data pelanggan / pasien apotek' },
+        { keys: ['F1'], label: 'Bantuan Kasir / Fokus Cari', desc: 'Fokus ke kotak pencarian produk atau buka panduan kasir' }
+      ]
+    },
+    {
+      category: '📋 Formulir & Interaksi Tabel',
+      desc: 'Pintasan navigasi formulir isian obat, faktur, dan data master',
+      items: [
+        { keys: ['Tab'], label: 'Input Form Berikutnya', desc: 'Pindah fokus kursor ke kolom isian berikutnya secara berurutan' },
+        { keys: ['Shift', 'Tab'], label: 'Input Form Sebelumnya', desc: 'Pindah fokus kursor mundur ke kolom isian sebelumnya' },
+        { keys: ['Enter'], label: 'Submit / Simpan', desc: 'Menjalankan tombol aksi utama atau konfirmasi dialog' },
+        { keys: ['Esc'], label: 'Batalkan Form', desc: 'Menutup form tanpa menyimpan perubahan' }
+      ]
+    }
+  ];
+
+  function renderShortcutItems(query = '') {
+    const q = String(query || '').toLowerCase().trim();
+    let totalMatches = 0;
+
+    const sectionsHtml = SHORTCUT_REGISTRY.map((group) => {
+      const filteredItems = group.items.filter((it) => {
+        if (!q) return true;
+        const inKeys = it.keys.some((k) => k.toLowerCase().includes(q));
+        const inLabel = it.label.toLowerCase().includes(q);
+        const inDesc = it.desc.toLowerCase().includes(q);
+        const inCat = group.category.toLowerCase().includes(q);
+        return inKeys || inLabel || inDesc || inCat;
+      });
+
+      if (!filteredItems.length) return '';
+      totalMatches += filteredItems.length;
+
+      const itemsHtml = filteredItems.map((it) => {
+        const kbdHtml = it.keys.map((k) => `<kbd class="ons-kbd">${esc(k)}</kbd>`).join('<span class="text-xs font-bold text-slate-400 dark:text-slate-500 mx-0.5">+</span>');
+        return `
+          <div class="ons-shortcut-card">
+            <div class="min-w-0 flex-1">
+              <div class="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <span>${esc(it.label)}</span>
+              </div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">${esc(it.desc)}</div>
+            </div>
+            <div class="shrink-0 flex items-center gap-1">
+              ${kbdHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
+            <h4 class="text-xs font-extrabold text-slate-700 dark:text-slate-300 tracking-wide flex items-center gap-1.5">
+              ${esc(group.category)}
+            </h4>
+            <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">${filteredItems.length} pintasan</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    }).filter(Boolean).join('');
+
+    if (!totalMatches) {
+      return `
+        <div class="py-8 text-center">
+          <div class="text-3xl mb-2">🔍</div>
+          <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Tidak ada pintasan yang cocok dengan "${esc(query)}"</p>
+          <p class="text-[11px] text-slate-400 mt-1">Coba kata kunci lain seperti: pos, bayar, alt, f2, esc</p>
+        </div>
+      `;
+    }
+
+    return sectionsHtml;
+  }
+
+  function showShortcutCheatSheet() {
+    if (global.playFeedback) global.playFeedback('key');
+
+    const html = `
+      <div id="onsShortcutCheatSheetModal" class="p-4 sm:p-5 space-y-4">
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shrink-0 shadow-2xs">
+              ⌨️
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">Pintasan Keyboard (Shortcuts)</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">Apotek Pro</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Navigasi kilat & transaksi kasir apotek dengan keyboard fisik</p>
+            </div>
+          </div>
+          <button type="button" onclick="ONSStore.closeModal(); if(window.playFeedback) window.playFeedback('key');" class="ons-btn ons-btn-ghost w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-base" title="Tutup (Esc)">&times;</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+            🔍
+          </span>
+          <input
+            id="shortcutFilterInp"
+            type="text"
+            placeholder="Cari tombol atau fungsi (contoh: pos, bayar, alt, f2, esc)..."
+            autocomplete="off"
+            class="ons-input pl-8 pr-8 py-2 text-xs rounded-xl w-full"
+            oninput="window.filterShortcutCheatSheet(this.value)"
+          />
+          <button
+            type="button"
+            onclick="const inp = document.getElementById('shortcutFilterInp'); if(inp){ inp.value=''; window.filterShortcutCheatSheet(''); inp.focus(); }"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+            title="Bersihkan pencarian"
+          >&times;</button>
+        </div>
+
+        <!-- Content List -->
+        <div id="shortcutListContainer" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+          ${renderShortcutItems('')}
+        </div>
+
+        <!-- Footer Info -->
+        <div class="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <span>Tips: Tekan <kbd class="ons-kbd text-[10px] min-w-5 h-5 px-1 font-bold">?</kbd> kapan saja untuk membuka panduan ini</span>
+          <button type="button" onclick="ONSStore.closeModal(); if(window.playFeedback) window.playFeedback('key');" class="ons-btn ons-btn-subtle text-xs py-1 px-3 rounded-lg font-bold">Tutup</button>
+        </div>
+      </div>
+    `;
+
+    openModal(html, { mode: 'spotlight', maxWidth: '780px' });
+    setTimeout(() => {
+      const inp = document.getElementById('shortcutFilterInp');
+      if (inp) inp.focus();
+    }, 50);
+  }
+
+  global.filterShortcutCheatSheet = (query) => {
+    const el = document.getElementById('shortcutListContainer');
+    if (el) el.innerHTML = renderShortcutItems(query);
+  };
+  global.showShortcutCheatSheet = showShortcutCheatSheet;
+
   function getEffectiveObatPrice(obat, qtyBase = 1, tierMode = 'UMUM') {
     if (!obat) return { harga: 0, tierApplied: 'UMUM', isGrosirAuto: false };
     const h1 = Number(obat.harga_jual_1 !== undefined && obat.harga_jual_1 !== '' ? obat.harga_jual_1 : (obat.harga_umum || 0));
@@ -3065,6 +3243,9 @@
     statusBadge: renderStatusBadge,
     renderSkeleton,
     renderEmptyState,
+    showShortcutCheatSheet,
+    renderShortcutItems,
+    SHORTCUT_REGISTRY,
     emptyState: renderEmptyState,
     Feedback,
     playFeedback: Feedback.play,

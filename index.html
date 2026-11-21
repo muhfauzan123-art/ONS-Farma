@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.47.0"/>
+  <meta name="application-version" content="v18.48.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.47.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.48.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.47.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.48.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.47.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.47.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.47.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.48.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.48.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.48.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.47.0"></script>
-  <script src="./js/struk-engine.js?v=18.47.0"></script>
-  <script src="./js/demo-engine.js?v=18.47.0"></script>
-  <script src="./js/api-turbo.js?v=18.47.0"></script>
-  <script src="./js/store.js?v=18.47.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.47.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.47.0"></script>
+  <script src="./js/config.js?v=18.48.0"></script>
+  <script src="./js/struk-engine.js?v=18.48.0"></script>
+  <script src="./js/demo-engine.js?v=18.48.0"></script>
+  <script src="./js/api-turbo.js?v=18.48.0"></script>
+  <script src="./js/store.js?v=18.48.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.48.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.48.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.47.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.47.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.47.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.47.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.47.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.47.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.48.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.48.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.48.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.48.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.48.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.48.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -874,6 +874,7 @@
               <button type="button" onclick="ONSStore.toggleDarkMode();window.closeMobileDrawer();renderApp();" class="ons-btn ons-btn-ghost text-xs py-2 justify-center">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}<span>${st.darkMode ? 'Mode Terang' : 'Mode Malam'}</span></button>
               <button type="button" onclick="window.closeMobileDrawer();bootLoadState(true);window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-btn ons-btn-ghost text-xs py-2 justify-center"><span>↻ Segarkan</span></button>
             </div>
+            <button type="button" onclick="window.closeMobileDrawer();window.showShortcutCheatSheet && window.showShortcutCheatSheet();" class="ons-btn ons-btn-ghost text-xs py-1.5 w-full justify-center text-slate-500 dark:text-slate-400"><span>⌨️ Pintasan Keyboard [?]</span></button>
             <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn ons-nav-logout-btn">${svgIcon('logout')}<span>Keluar Sesi</span></button>
           </div>
         </div>`;
@@ -1506,6 +1507,7 @@
         let currentEntries = [];
 
         const quickShortcuts = [
+          { show: true, title: 'Pintasan Keyboard (Cheat Sheet)', sub: 'Panduan lengkap tombol hotkey POS & navigasi sistem', kbd: '?', tone: 'bg-indigo-500/10 text-indigo-600', icon: 'settings', run: () => { ONSStore.closeModal(); setTimeout(() => window.showShortcutCheatSheet && window.showShortcutCheatSheet(), 50); } },
           { show: ONSStore.canAccessView('pos'), title: 'Kasir POS FEFO', sub: 'Transaksi cepat & scan barcode', kbd: 'F2', tone: 'bg-blue-500/10 text-blue-600', icon: 'pos', run: () => { ONSStore.closeModal(); navigateView('pos', 'kasir'); setTimeout(() => document.getElementById('posSearchInput')?.focus(), 40); } },
           { show: ONSStore.canAccessView('pemeriksaan'), title: 'Pemeriksaan Pasien', sub: 'Tensi, Gula, Kolesterol & Asam Urat', kbd: 'POCT', tone: 'bg-emerald-500/10 text-emerald-600', icon: 'activity', run: () => { ONSStore.closeModal(); navigateView('pemeriksaan', 'semua'); } },
           { show: seeCost && ONSStore.canAccessView('obat'), title: 'Tambah Produk Obat', sub: 'Buka Studio Wizard 5 Langkah', kbd: '+OBT', tone: 'bg-amber-500/10 text-amber-600', icon: 'pill', run: () => { ONSStore.closeModal(); navigateView('obat', 'obat'); setTimeout(() => window.openObatWizardModal && window.openObatWizardModal(), 40); } },
@@ -1680,6 +1682,18 @@
           if (clearBtn) clearBtn.classList.toggle('hidden', !q);
 
           const navMatches = flatNav.filter((n) => !q || `${n.label} ${n.grp} ${n.sect} ${n.kw}`.toLowerCase().includes(q)).slice(0, q ? 14 : 10);
+          if (q && ('pintasan keyboard shortcut hotkey tombol bantuan cheat sheet'.includes(q) || q.includes('short') || q.includes('pintas') || q.includes('hotkey'))) {
+            navMatches.unshift({
+              viewId: 'pos',
+              subTab: 'kasir',
+              grp: 'Bantuan & Pintasan',
+              sect: 'Sistem',
+              label: 'Pintasan Keyboard (Cheat Sheet)',
+              icon: 'settings',
+              kw: 'shortcut hotkey tombol cepat bantuan key cheat sheet keyboard',
+              customRun: () => { ONSStore.closeModal(); setTimeout(() => window.showShortcutCheatSheet && window.showShortcutCheatSheet(), 50); }
+            });
+          }
           const canSeeObat = ONSStore.canAccessView('pos') || ONSStore.canAccessView('obat');
           const obatMatches = canSeeObat ? (st.masterObat || []).filter((o) => !q || `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi}`.toLowerCase().includes(q)).slice(0, q ? 10 : 6) : [];
           const canSeePasien = ONSStore.canAccessView('obat') || ONSStore.canAccessView('pemeriksaan') || ONSStore.canAccessView('crm-wa') || ONSStore.canAccessView('klinis');
@@ -1737,7 +1751,7 @@
                 desc: `Buka halaman ${n.label} pada seksi ${n.sect}.`,
                 badgeHtml: `<span class="badge-bpom bpom-terbatas">${ONSStore.esc(n.sect)}</span>`,
                 metaHtml: `<div><b>Rute:</b> <span class="font-mono-num">${ONSStore.esc(n.viewId)}${n.subTab ? '#' + ONSStore.esc(n.subTab) : ''}</span></div>`,
-                run: () => { ONSStore.closeModal(); navigateView(n.viewId, n.subTab); }
+                run: () => { if (typeof n.customRun === 'function') { n.customRun(); } else { ONSStore.closeModal(); navigateView(n.viewId, n.subTab); } }
               });
               return `<div data-cmdk-idx="${idx}" onmouseenter="window.hoverCmdkEntry(${idx})" onclick="window.execCmdkEntry(${idx})" class="ons-cmdk-row">
                 <div class="flex items-center gap-3 min-w-0">
@@ -1993,6 +2007,10 @@
                     <span class="hidden sm:inline font-semibold text-white">Cari Cepat</span>
                     <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">Ctrl+K</kbd>
                   </button>
+                  <button onclick="window.showShortcutCheatSheet && window.showShortcutCheatSheet()" aria-label="Pintasan Keyboard" class="ons-topbar-icon-btn text-xs px-2 sm:px-2.5 h-9 rounded-xl text-white hover:bg-white/20 hidden md:flex items-center gap-1 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Pintasan Keyboard (Tekan ?)">
+                    <span class="text-xs">⌨️</span>
+                    <kbd class="ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">?</kbd>
+                  </button>
                   <div id="headerAlertHost" class="relative">
                     <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-topbar-icon-btn w-9 h-9 rounded-xl text-white hover:bg-white/20 flex items-center justify-center relative shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Radar Notifikasi Apotek">
                       ${svgIcon('bell', 'w-4 h-4')}
@@ -2040,7 +2058,7 @@
         window.renderActiveView();
       };
 
-      // Hotkey POS & Global Command Palette (F2 scan, F4 Tunai, F8 QRIS, F9 Hold Antrean, Esc tutup, Ctrl+K Command)
+      // Hotkey POS, Global Navigation & Shortcut Cheat Sheet (v18.48.0)
       window.addEventListener('keydown', (e) => {
         if (!ONSApi.getSession()) return;
         if (e.key === 'Escape') {
@@ -2055,6 +2073,49 @@
           else window.openCommandPalette();
           return;
         }
+
+        // '?' or Shift+'/' Cheat Sheet Shortcut (when not focused in editable input)
+        const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+        const isEditable = tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable);
+        if (!isEditable && (e.key === '?' || (e.shiftKey && e.key === '/'))) {
+          e.preventDefault();
+          const curCheat = document.getElementById('onsShortcutCheatSheetModal');
+          if (curCheat) {
+            ONSStore.closeModal();
+          } else if (typeof window.showShortcutCheatSheet === 'function') {
+            window.showShortcutCheatSheet();
+          }
+          return;
+        }
+
+        // Alt + [1-8] View Navigation & Alt + D Dark Mode
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          const keyNum = parseInt(e.key, 10);
+          const navMap = {
+            1: ['dashboard', 'ringkasan'],
+            2: ['pos', 'kasir'],
+            3: ['obat', 'obat'],
+            4: ['gudang', 'batch'],
+            5: ['defecta', 'sp'],
+            6: ['finance', 'kas'],
+            7: ['crm', 'pelanggan'],
+            8: ['settings', 'profil']
+          };
+          if (navMap[keyNum]) {
+            e.preventDefault();
+            ONSStore.closeModal();
+            ONSStore.closeDrawer();
+            window.navigateView(navMap[keyNum][0], navMap[keyNum][1]);
+            return;
+          }
+          if (e.key.toLowerCase() === 'd') {
+            e.preventDefault();
+            ONSStore.toggleDarkMode();
+            if (typeof window.renderApp === 'function') window.renderApp();
+            return;
+          }
+        }
+
         if (e.key === 'F2') {
           e.preventDefault();
           window.navigateView('pos');
