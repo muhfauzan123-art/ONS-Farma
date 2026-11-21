@@ -7466,12 +7466,21 @@
     const invPreview = 'INV-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-POS';
     const qrisStr = S().buildQrisEmvcoPayload(total, invPreview);
     const totalQty = cart.items.reduce((s, it) => s + Number(it.qty || 0), 0);
-    const roundUp = (step, v) => Math.ceil(Math.max(1, v) / step) * step;
-    const baseBanknotes = [20000, 50000, 100000, 200000];
-    const extraAbove = total > 200000 ? [roundUp(50000, total), roundUp(100000, total)] : [roundUp(10000, total)];
-    const smartDenoms = Array.from(new Set(
-      baseBanknotes.concat(extraAbove)
-    )).filter((v) => v >= total || baseBanknotes.includes(v)).sort((a, b) => a - b).slice(0, 6);
+    function _computeSmartCashDenominations(tot) {
+      const t = Math.max(0, Number(tot || 0));
+      if (t <= 0) return [];
+      const roundUp = (step, v) => Math.ceil(v / step) * step;
+      const candidates = new Set();
+      if (t < 100000 && t % 5000 !== 0) candidates.add(roundUp(5000, t));
+      if (t < 100000 && t % 10000 !== 0) candidates.add(roundUp(10000, t));
+      if (t >= 50000 && t % 50000 !== 0) candidates.add(roundUp(50000, t));
+      if (t >= 100000 && t % 100000 !== 0) candidates.add(roundUp(100000, t));
+      [10000, 20000, 50000, 100000, 200000, 500000].forEach((bn) => {
+        if (bn > t && bn <= Math.max(100000, t * 2.2)) candidates.add(bn);
+      });
+      return Array.from(candidates).filter((v) => v > t).sort((a, b) => a - b).slice(0, 4);
+    }
+    const smartDenoms = _computeSmartCashDenominations(total);
 
     S().openModal(`<div class="p-6 space-y-4">
       <div class="flex justify-between items-start gap-2">
@@ -7537,19 +7546,70 @@
         <div id="posSplitStatusSpan" class="text-[11px] font-bold text-emerald-600">Total Split seimbang (${S().rp(total)})</div>
       </div>` : ''}
 
-      ${metode === 'TUNAI' ? `<div class="space-y-2.5">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-semibold">Uang Tunai Diterima (Rp)</label>
-          <span class="text-[11px]" style="color:var(--ons-text-soft)">Tekan Enter untuk langsung terbit struk</span>
+      ${metode === 'TUNAI' ? `<div class="space-y-3">
+        <!-- Hero Button: Uang Pas -->
+        <button type="button" onclick="window.setPosTunaiExact(${total})" class="ons-pos-cash-hero-btn w-full min-h-[46px] p-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-between shadow-md transition-all active:scale-[0.98]">
+          <span class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sm shadow-inner">💵</span>
+            <span>Uang Pas (Tanpa Kembalian)</span>
+          </span>
+          <span class="font-mono-num font-black text-xs sm:text-sm px-2.5 py-1 rounded-lg bg-white/25 tracking-wide">${S().rp(total)}</span>
+        </button>
+
+        <!-- Input Nominal Tunai -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Uang Tunai Diterima (Rp)</label>
+            <span class="text-[11px]" style="color:var(--ons-text-soft)">Tekan Enter untuk cetak struk</span>
+          </div>
+          <input id="posTunaiBayar" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-xl font-black py-2.5 rounded-xl text-blue-600 dark:text-blue-400" value="${S().formatDots(total)}" oninput="window.maskNumberInput(this); window.updatePosTunaiChange(${total});" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
         </div>
-        <input id="posTunaiBayar" type="text" inputmode="numeric" class="ons-input ons-currency-input font-mono-num text-lg font-extrabold" value="${S().formatDots(total)}" oninput="window.maskNumberInput(this); window.updatePosTunaiChange(${total});" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('posModalConfirmBtn')?.click();}"/>
-        <div class="flex gap-1.5 flex-wrap">
-          <button type="button" onclick="window.setPosTunaiExact(${total})" class="ons-quick-denom">Uang Pas</button>
-          ${smartDenoms.map((v) => `<button type="button" onclick="window.setPosTunaiVal(${v}, ${total})" class="ons-quick-denom">${S().rp(v)}</button>`).join('')}
+
+        <!-- Pecahan Uang Kertas Cepat dengan Estimasi Kembalian -->
+        ${smartDenoms.length ? `
+        <div class="space-y-1">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Pecahan Uang Kertas Cepat:</div>
+          <div class="grid grid-cols-2 sm:grid-cols-${Math.min(4, smartDenoms.length)} gap-1.5">
+            ${smartDenoms.map((d) => {
+              const change = d - total;
+              return `
+              <button type="button" onclick="window.setPosTunaiVal(${d}, ${total})" class="ons-pos-denom-card p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all hover:border-blue-500 hover:bg-blue-500/5 active:scale-[0.97]" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <span class="font-black text-xs font-mono-num" style="color:var(--ons-text-main)">${S().rp(d)}</span>
+                <span class="text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 font-mono-num">Kembali ${S().rp(change)}</span>
+              </button>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+
+        <!-- Bar Tambah Lembaran & Numpad Touch Toggle -->
+        <div class="flex items-center justify-between gap-1.5 pt-0.5 text-xs">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 shrink-0">+ Lembaran:</span>
+          <div class="flex items-center gap-1 flex-wrap justify-end">
+            <button type="button" onclick="window.addPosTunaiBill(10000, ${total})" class="ons-quick-denom text-[10.5px] font-bold py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500">+10rb</button>
+            <button type="button" onclick="window.addPosTunaiBill(20000, ${total})" class="ons-quick-denom text-[10.5px] font-bold py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500">+20rb</button>
+            <button type="button" onclick="window.addPosTunaiBill(50000, ${total})" class="ons-quick-denom text-[10.5px] font-bold py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500">+50rb</button>
+            <button type="button" onclick="window.addPosTunaiBill(100000, ${total})" class="ons-quick-denom text-[10.5px] font-bold py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500">+100rb</button>
+            <button type="button" onclick="window.clearPosTunaiInput(${total})" class="ons-quick-denom text-[10.5px] font-bold py-1 px-2 rounded-lg text-red-500 border border-red-500/30 hover:bg-red-500/10" title="Bersihkan input">C</button>
+            <button type="button" onclick="window.togglePosTunaiNumpad()" class="ons-quick-denom text-[10.5px] font-bold py-1 px-2 rounded-lg text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500/10" title="Buka/Tutup Papan Angka Layar Sentuh">🔢 Touch</button>
+          </div>
         </div>
-        <div class="p-3 rounded-xl flex justify-between items-center font-bold border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-          <span class="text-xs" id="posKembalianLabel">Kembalian Pelanggan:</span>
-          <span id="posKembalianSpan" class="text-lg font-mono-num text-emerald-600">Rp 0</span>
+
+        <!-- Papan Angka Layar Sentuh (Virtual Numpad) -->
+        <div id="posTunaiNumpadBox" class="hidden pt-1">
+          <div class="grid grid-cols-3 gap-1.5 max-w-[280px] mx-auto p-2 rounded-2xl border shadow-sm" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            ${[1, 2, 3, 4, 5, 6, 7, 8, 9, '000', 0, '⌫'].map((k) => `
+              <button type="button" onclick="window.handlePosNumpadKey('${k}', ${total})" class="ons-btn font-mono-num font-bold text-sm py-2 rounded-xl border flex items-center justify-center active:scale-[0.96] transition-all" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">${k}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Kembalian Box -->
+        <div id="posKembalianBox" class="p-3.5 rounded-xl flex justify-between items-center font-bold border transition-all" style="background:var(--ons-bg-subtle);border-color:rgba(16, 185, 129, 0.4)">
+          <div class="flex items-center gap-2">
+            <span id="posKembalianIcon" class="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">✓</span>
+            <span class="text-xs" id="posKembalianLabel">Kembalian Pelanggan:</span>
+          </div>
+          <span id="posKembalianSpan" class="text-xl font-mono-num text-emerald-600 font-black">Rp 0</span>
         </div>
       </div>` : ''}
 
@@ -7597,17 +7657,38 @@
     const inp = document.getElementById('posTunaiBayar');
     const lbl = document.getElementById('posKembalianLabel');
     const sp = document.getElementById('posKembalianSpan');
+    const ico = document.getElementById('posKembalianIcon');
+    const box = document.getElementById('posKembalianBox');
+    const confirmBtn = document.getElementById('posModalConfirmBtn');
     if (!inp || !sp) return;
     const paid = window.parseNumber ? window.parseNumber(inp.value || 0) : Number(inp.value || 0);
     const diff = paid - net;
     if (diff < 0) {
       if (lbl) lbl.textContent = 'Uang Kurang:';
+      if (ico) {
+        ico.textContent = '!';
+        ico.className = 'w-6 h-6 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 flex items-center justify-center text-xs font-black';
+      }
+      if (box) box.style.borderColor = 'rgba(239, 68, 68, 0.4)';
       sp.textContent = S().rp(Math.abs(diff));
-      sp.className = 'text-lg font-mono-num text-red-600';
+      sp.className = 'text-xl font-mono-num text-red-600 font-extrabold';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
     } else {
-      if (lbl) lbl.textContent = 'Kembalian Pelanggan:';
+      if (lbl) lbl.textContent = diff === 0 ? 'Uang Pas (Tanpa Kembalian):' : 'Kembalian Pelanggan:';
+      if (ico) {
+        ico.textContent = '✓';
+        ico.className = 'w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black';
+      }
+      if (box) box.style.borderColor = 'rgba(16, 185, 129, 0.4)';
       sp.textContent = S().rp(diff);
-      sp.className = 'text-lg font-mono-num text-emerald-600';
+      sp.className = 'text-xl font-mono-num text-emerald-600 font-extrabold';
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
     }
   };
 
@@ -7620,6 +7701,45 @@
   global.setPosTunaiVal = (val, baseTotal) => {
     const inp = document.getElementById('posTunaiBayar');
     if (inp) { inp.value = S().formatDots(val); global.updatePosTunaiChange(baseTotal); }
+  };
+
+  global.addPosTunaiBill = (billVal, baseTotal) => {
+    const inp = document.getElementById('posTunaiBayar');
+    if (!inp) return;
+    const currentVal = window.parseNumber ? window.parseNumber(inp.value || 0) : Number(inp.value || 0);
+    const nextVal = currentVal + Number(billVal || 0);
+    inp.value = S().formatDots(nextVal);
+    global.updatePosTunaiChange(baseTotal);
+  };
+
+  global.clearPosTunaiInput = (baseTotal) => {
+    const inp = document.getElementById('posTunaiBayar');
+    if (inp) {
+      inp.value = '0';
+      global.updatePosTunaiChange(baseTotal);
+      inp.focus();
+      inp.select && inp.select();
+    }
+  };
+
+  global.handlePosNumpadKey = (key, baseTotal) => {
+    const inp = document.getElementById('posTunaiBayar');
+    if (!inp) return;
+    let raw = String(window.parseNumber ? window.parseNumber(inp.value || 0) : 0);
+    if (key === '⌫') {
+      raw = raw.length > 1 ? raw.slice(0, -1) : '0';
+    } else if (key === '000') {
+      raw = raw === '0' ? '0' : (raw + '000');
+    } else {
+      raw = raw === '0' ? String(key) : (raw + String(key));
+    }
+    inp.value = S().formatDots(Number(raw));
+    global.updatePosTunaiChange(baseTotal);
+  };
+
+  global.togglePosTunaiNumpad = () => {
+    const np = document.getElementById('posTunaiNumpadBox');
+    if (np) np.classList.toggle('hidden');
   };
 
   global.updatePosPiutangSisa = (baseTotal) => {
