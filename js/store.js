@@ -1121,6 +1121,268 @@
   }
 
   /**
+   * Generator Wireframe Shimmer Skeleton Loading Interaktif (v18.44.0)
+   * Menyajikan visualisasi wireframe presisi sesuai jenis tampilan (Dashboard, Table, POS, Struk, Form)
+   */
+  function renderSkeleton(type = 'dashboard') {
+    const t = String(type || 'dashboard').toLowerCase().trim();
+
+    if (t === 'dashboard') {
+      return `<div class="ons-skeleton-container space-y-4">
+        <div class="p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="ons-skeleton ons-skeleton-avatar"></div>
+            <div class="space-y-2">
+              <div class="ons-skeleton h-5 w-48 sm:w-64"></div>
+              <div class="ons-skeleton h-3.5 w-36 sm:w-44"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="ons-skeleton h-9 w-24 rounded-xl"></div>
+            <div class="ons-skeleton h-9 w-28 rounded-xl"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          ${[1, 2, 3, 4].map(() => `
+            <div class="ons-skeleton-card space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="ons-skeleton h-3.5 w-20"></div>
+                <div class="ons-skeleton w-7 h-7 rounded-lg"></div>
+              </div>
+              <div class="ons-skeleton h-7 w-32"></div>
+              <div class="ons-skeleton h-3 w-28"></div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-7 ons-skeleton-card space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="ons-skeleton h-4 w-40"></div>
+              <div class="ons-skeleton h-7 w-20 rounded-lg"></div>
+            </div>
+            <div class="space-y-3.5 pt-2">
+              ${[85, 60, 45, 30].map(() => `
+                <div class="space-y-1.5">
+                  <div class="flex justify-between">
+                    <div class="ons-skeleton h-3 w-28"></div>
+                    <div class="ons-skeleton h-3 w-16"></div>
+                  </div>
+                  <div class="ons-skeleton h-2 w-full rounded-full"></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="lg:col-span-5 ons-skeleton-card space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="ons-skeleton h-4 w-36"></div>
+              <div class="ons-skeleton h-7 w-16 rounded-lg"></div>
+            </div>
+            <div class="space-y-2 pt-2">
+              ${[1, 2, 3, 4].map(() => `
+                <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                  <div class="space-y-1">
+                    <div class="ons-skeleton h-3.5 w-36"></div>
+                    <div class="ons-skeleton h-2.5 w-24"></div>
+                  </div>
+                  <div class="ons-skeleton h-4 w-16"></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    if (t === 'pos') {
+      return `<div class="ons-skeleton-container space-y-3">
+        <div class="flex flex-col sm:flex-row items-center gap-2">
+          <div class="ons-skeleton h-11 flex-1 rounded-2xl w-full"></div>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <div class="ons-skeleton h-11 w-24 rounded-xl"></div>
+            <div class="ons-skeleton h-11 w-28 rounded-xl"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+          <div class="lg:col-span-8 space-y-3">
+            <div class="flex items-center gap-2 overflow-x-auto pb-1">
+              ${[1, 2, 3, 4, 5].map(() => `<div class="ons-skeleton h-8 w-20 rounded-full shrink-0"></div>`).join('')}
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+              ${[1, 2, 3, 4, 5, 6].map(() => `
+                <div class="ons-skeleton-card space-y-3 p-3">
+                  <div class="flex justify-between items-start">
+                    <div class="space-y-1 flex-1">
+                      <div class="ons-skeleton h-4 w-28"></div>
+                      <div class="ons-skeleton h-3 w-20"></div>
+                    </div>
+                    <div class="ons-skeleton h-4 w-12 rounded-full"></div>
+                  </div>
+                  <div class="ons-skeleton h-2.5 w-24"></div>
+                  <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div class="ons-skeleton h-5 w-20"></div>
+                    <div class="ons-skeleton h-7 w-12 rounded-lg"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="lg:col-span-4 ons-skeleton-card space-y-4 p-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div class="ons-skeleton h-5 w-32"></div>
+              <div class="ons-skeleton h-6 w-16 rounded-full"></div>
+            </div>
+            <div class="space-y-3 py-2">
+              ${[1, 2, 3].map(() => `
+                <div class="flex items-center justify-between">
+                  <div class="space-y-1">
+                    <div class="ons-skeleton h-3.5 w-28"></div>
+                    <div class="ons-skeleton h-3 w-16"></div>
+                  </div>
+                  <div class="ons-skeleton h-7 w-20 rounded-lg"></div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+              <div class="flex justify-between">
+                <div class="ons-skeleton h-3.5 w-20"></div>
+                <div class="ons-skeleton h-3.5 w-24"></div>
+              </div>
+              <div class="flex justify-between">
+                <div class="ons-skeleton h-5 w-24"></div>
+                <div class="ons-skeleton h-6 w-32"></div>
+              </div>
+              <div class="ons-skeleton h-12 w-full rounded-xl mt-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    if (t === 'struk' || t === 'nota') {
+      return `<div class="ons-skeleton-container max-w-md mx-auto p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl space-y-4">
+        <div class="text-center space-y-2 pb-3 border-b border-dashed border-slate-300 dark:border-slate-700">
+          <div class="ons-skeleton w-12 h-12 rounded-full mx-auto"></div>
+          <div class="ons-skeleton h-5 w-48 mx-auto"></div>
+          <div class="ons-skeleton h-3 w-36 mx-auto"></div>
+          <div class="ons-skeleton h-3 w-28 mx-auto"></div>
+        </div>
+        <div class="space-y-2 py-2">
+          ${[1, 2, 3, 4].map(() => `
+            <div class="flex items-center justify-between text-xs">
+              <div class="space-y-1">
+                <div class="ons-skeleton h-3.5 w-32"></div>
+                <div class="ons-skeleton h-2.5 w-20"></div>
+              </div>
+              <div class="ons-skeleton h-3.5 w-16"></div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="pt-3 border-t border-dashed border-slate-300 dark:border-slate-700 space-y-2">
+          <div class="flex justify-between">
+            <div class="ons-skeleton h-3 w-20"></div>
+            <div class="ons-skeleton h-3 w-20"></div>
+          </div>
+          <div class="flex justify-between">
+            <div class="ons-skeleton h-5 w-24"></div>
+            <div class="ons-skeleton h-5 w-28"></div>
+          </div>
+        </div>
+        <div class="pt-4 text-center space-y-2">
+          <div class="ons-skeleton w-24 h-24 mx-auto rounded-xl"></div>
+          <div class="ons-skeleton h-3 w-36 mx-auto"></div>
+        </div>
+      </div>`;
+    }
+
+    if (t === 'form' || t === 'settings' || t === 'profil') {
+      return `<div class="ons-skeleton-container space-y-4">
+        <div class="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+          <div class="ons-skeleton h-8 w-24 rounded-lg"></div>
+          <div class="ons-skeleton h-8 w-28 rounded-lg"></div>
+          <div class="ons-skeleton h-8 w-24 rounded-lg"></div>
+        </div>
+        <div class="ons-skeleton-card space-y-4">
+          <div class="ons-skeleton h-5 w-44"></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${[1, 2, 3, 4, 5, 6].map(() => `
+              <div class="space-y-1.5">
+                <div class="ons-skeleton h-3.5 w-28"></div>
+                <div class="ons-skeleton h-10 w-full rounded-xl"></div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div class="ons-skeleton h-9 w-20 rounded-xl"></div>
+            <div class="ons-skeleton h-9 w-28 rounded-xl"></div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // Default: Table Wireframe Skeleton (Master Obat, Gudang, Faktur, Defecta, Finance, dll)
+    return `<div class="ons-skeleton-container space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="space-y-1.5">
+          <div class="ons-skeleton h-6 w-48"></div>
+          <div class="ons-skeleton h-3.5 w-64"></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="ons-skeleton h-9 w-24 rounded-xl"></div>
+          <div class="ons-skeleton h-9 w-32 rounded-xl"></div>
+        </div>
+      </div>
+
+      <div class="ons-skeleton-card p-4 space-y-3">
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <div class="ons-skeleton h-10 w-full sm:w-72 rounded-xl"></div>
+          <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+            <div class="ons-skeleton h-8 w-20 rounded-full"></div>
+            <div class="ons-skeleton h-8 w-24 rounded-full"></div>
+            <div class="ons-skeleton h-8 w-24 rounded-full"></div>
+            <div class="ons-skeleton h-8 w-28 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ons-skeleton-card p-0 overflow-hidden">
+        <div class="p-3.5 bg-slate-100/70 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div class="ons-skeleton h-3.5 w-24"></div>
+          <div class="ons-skeleton h-3.5 w-32"></div>
+          <div class="ons-skeleton h-3.5 w-20 hidden md:block"></div>
+          <div class="ons-skeleton h-3.5 w-28 hidden sm:block"></div>
+          <div class="ons-skeleton h-3.5 w-16"></div>
+        </div>
+        <div class="divide-y divide-slate-100 dark:divide-slate-800 p-2 space-y-1">
+          ${[1, 2, 3, 4, 5, 6].map((_, i) => `
+            <div class="p-3 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="ons-skeleton w-3 h-3 rounded"></div>
+                <div class="space-y-1.5 flex-1 min-w-0">
+                  <div class="ons-skeleton h-4 w-${i % 2 === 0 ? '48' : '56'} max-w-full"></div>
+                  <div class="ons-skeleton h-3 w-32"></div>
+                </div>
+              </div>
+              <div class="ons-skeleton h-5 w-20 rounded-full hidden sm:block"></div>
+              <div class="space-y-1 hidden md:block min-w-[100px]">
+                <div class="ons-skeleton h-3.5 w-20"></div>
+                <div class="ons-skeleton h-2 w-full rounded-full"></div>
+              </div>
+              <div class="ons-skeleton h-4 w-20 hidden sm:block"></div>
+              <div class="flex items-center gap-1.5">
+                <div class="ons-skeleton h-7 w-12 rounded-lg"></div>
+                <div class="ons-skeleton h-7 w-7 rounded-lg"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+  global.renderSkeleton = renderSkeleton;
+
+  /**
    * Harga Jual Satuan Dasar & Konversi Kemasan (Umum / Bebas Tiering Pelanggan)
    */
   function getEffectiveObatPrice(obat, qtyBase = 1, tierMode = 'UMUM') {
@@ -2474,6 +2736,7 @@
     maskNumberInput,
     renderStatusBadge,
     statusBadge: renderStatusBadge,
+    renderSkeleton,
     esc,
     formatTgl,
     daysUntil,

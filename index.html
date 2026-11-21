@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.43.0"/>
+  <meta name="application-version" content="v18.44.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.43.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.44.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.43.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.44.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.43.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.43.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.43.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.44.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.44.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.44.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.43.0"></script>
-  <script src="./js/struk-engine.js?v=18.43.0"></script>
-  <script src="./js/demo-engine.js?v=18.43.0"></script>
-  <script src="./js/api-turbo.js?v=18.43.0"></script>
-  <script src="./js/store.js?v=18.43.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.43.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.43.0"></script>
+  <script src="./js/config.js?v=18.44.0"></script>
+  <script src="./js/struk-engine.js?v=18.44.0"></script>
+  <script src="./js/demo-engine.js?v=18.44.0"></script>
+  <script src="./js/api-turbo.js?v=18.44.0"></script>
+  <script src="./js/store.js?v=18.44.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.44.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.44.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.43.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.43.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.43.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.43.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.43.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.43.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.44.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.44.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.44.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.44.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.44.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.44.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1007,6 +1007,10 @@
           if (cachedEntry && cachedEntry.ageMs < 20000) {
             return;
           }
+        } else if (!st.booted || forceRefresh) {
+          if (typeof window.showViewSkeleton === 'function') {
+            window.showViewSkeleton(st.activeView || 'dashboard');
+          }
         }
 
         try {
@@ -1389,6 +1393,15 @@
         });
       }
 
+      window.showViewSkeleton = function (viewType) {
+        const slot = document.getElementById('mainViewSlot');
+        if (!slot) return;
+        const vt = viewType || (ONSStore.AppState && ONSStore.AppState.activeView) || 'dashboard';
+        if (typeof ONSStore.renderSkeleton === 'function') {
+          slot.innerHTML = ONSStore.renderSkeleton(vt);
+        }
+      };
+
       window.renderActiveView = function () {
         window.closeOnsFloatMenu();
         const slot = document.getElementById('mainViewSlot');
@@ -1424,6 +1437,9 @@
           case 'mobile-preview': slot.innerHTML = v3.renderMobilePreviewView(); break;
           default: slot.innerHTML = v1.renderDashboardView();
         }
+        slot.classList.remove('ons-view-enter');
+        void slot.offsetWidth;
+        slot.classList.add('ons-view-enter');
         _enhanceSubTabBarsToDropdowns(slot);
       };
 
@@ -1983,7 +1999,7 @@
                       ${alertsCount ? `<span class="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[10px] font-bold absolute -top-1 -right-1 shadow-sm">${alertsCount}</span>` : ''}
                     </button>
                   </div>
-                  <button type="button" onclick="window.renderApp();window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-topbar-icon-btn hidden sm:flex w-9 h-9 rounded-xl text-white hover:bg-white/20 items-center justify-center shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Segarkan Data">
+                  <button type="button" onclick="if(typeof window.showViewSkeleton==='function') window.showViewSkeleton(); setTimeout(() => { window.bootLoadState ? window.bootLoadState(true) : window.renderApp(); window.toast && window.toast('Data berhasil disegarkan','ok'); }, 80);" class="ons-topbar-icon-btn hidden sm:flex w-9 h-9 rounded-xl text-white hover:bg-white/20 items-center justify-center shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Segarkan Data dari Cloud">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   </button>
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden font-bold">Install</button>

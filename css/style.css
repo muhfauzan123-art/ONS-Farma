@@ -4343,28 +4343,40 @@ html.dark .ons-mobile-nav-btn.is-active .ons-mobile-nav-icon {
    5. Toast & Utility
    ============================================================ */
 
-/* ---- 1. SKELETON LOADING ---- */
-.ons-skeleton {
-  background: linear-gradient(90deg, #e8edf2 25%, #f4f6f9 50%, #e8edf2 75%);
-  background-size: 200% 100%;
-  animation: ons-skeleton-shimmer 1.5s infinite;
-  border-radius: 0.5rem;
-  display: block;
+/* ---- 1. SKELETON LOADING (v18.44.0 SHIMMER WIREFRAME SUITE) ---- */
+:root {
+  --ons-skeleton-base: rgba(226, 232, 240, 0.75);
+  --ons-skeleton-shine: rgba(248, 250, 252, 0.98);
 }
-@keyframes ons-skeleton-shimmer {
+.dark, html.dark {
+  --ons-skeleton-base: rgba(30, 41, 59, 0.7);
+  --ons-skeleton-shine: rgba(51, 65, 85, 0.9);
+}
+
+@keyframes onsSkeletonShimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-.ons-skeleton-text   { height: 1em;    margin-bottom: 0.5rem; }
-.ons-skeleton-title  { height: 1.5em;  margin-bottom: 0.75rem; width: 60%; }
-.ons-skeleton-card   { height: 110px;  border-radius: 1rem; }
-.ons-skeleton-row    { height: 44px;   margin-bottom: 0.5rem; border-radius: 0.4rem; }
-.ons-skeleton-circle { border-radius: 50% !important; width: 48px; height: 48px; }
-.ons-skeleton-btn    { height: 38px; width: 120px; border-radius: 0.6rem; }
 
-html.dark .ons-skeleton {
-  background: linear-gradient(90deg, #1a2744 25%, #243044 50%, #1a2744 75%);
+.ons-skeleton {
+  background: linear-gradient(90deg, var(--ons-skeleton-base) 20%, var(--ons-skeleton-shine) 50%, var(--ons-skeleton-base) 80%);
   background-size: 200% 100%;
+  animation: onsSkeletonShimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 0.5rem;
+  display: block;
+}
+
+.ons-skeleton-text   { height: 0.85rem; margin-bottom: 0.4rem; border-radius: 0.35rem; }
+.ons-skeleton-title  { height: 1.35rem; margin-bottom: 0.65rem; width: 50%; border-radius: 0.45rem; }
+.ons-skeleton-card   { border-radius: 1rem; border: 1px solid var(--ons-border); background: var(--ons-bg-card); padding: 1.25rem; }
+.ons-skeleton-row    { height: 2.75rem; margin-bottom: 0.45rem; border-radius: 0.5rem; }
+.ons-skeleton-circle,
+.ons-skeleton-avatar { border-radius: 50% !important; width: 44px; height: 44px; flex-shrink: 0; }
+.ons-skeleton-btn    { height: 2.25rem; width: 6.5rem; border-radius: 0.6rem; }
+.ons-skeleton-pill   { height: 1.65rem; width: 5rem; border-radius: 9999px; }
+
+.ons-skeleton-container {
+  animation: onsViewSlideUpFade 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Skeleton KPI Grid */

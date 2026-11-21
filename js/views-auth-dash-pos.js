@@ -246,14 +246,14 @@
         return true;
       }
 
-      // Render skeleton card while querying public.struk API
+      // Render skeleton wireframe while querying public.struk API
       root.innerHTML = `<div class="min-h-screen py-8 px-4 flex items-center justify-center" style="background: radial-gradient(circle at 50% 10%, #0d2331 0%, #061117 100%);">
-        <div id="pubNotaContainer" class="ons-card max-w-xl w-full p-6 space-y-4 rounded-2xl border border-emerald-500/30 bg-slate-900/90 text-slate-100">
-          <div class="text-center py-6 space-y-3">
-            <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <div class="font-bold text-emerald-400 text-sm">Memuat Rincian Struk Digital Resmi...</div>
-            <div class="text-xs text-slate-400 font-mono-num">Nota: ${S().esc(notaNo)}</div>
+        <div id="pubNotaContainer" class="w-full max-w-md space-y-3">
+          <div class="text-center mb-1">
+            <span class="text-xs text-emerald-400 font-bold font-mono-num uppercase tracking-wider">Memuat Rincian Struk Resmi Digital...</span>
+            <div class="text-[11px] text-slate-400 font-mono-num">Nota: ${S().esc(notaNo)}</div>
           </div>
+          ${S().renderSkeleton ? S().renderSkeleton('struk') : ''}
         </div>
       </div>`;
 
