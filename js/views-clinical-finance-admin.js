@@ -16898,15 +16898,7 @@ S. prn 3 dd 1 tab</textarea>
     const cfg = S().getStoreSettings ? S().getStoreSettings() : {};
 
     return `<div class="space-y-4 ons-view-enter text-xs">
-      <div class="ons-card p-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-transparent border-l-4 border-l-blue-600">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="font-extrabold text-sm text-blue-700 dark:text-blue-300">Pusat Konfigurasi Operasional &amp; Kebijakan Toko (Standar Apotek Digital)</h3>
-            <p class="text-[11px]" style="color:var(--ons-text-soft)">Kendalikan aturan stok minus, pembulatan kasir, proteksi blind count shift, expired date guard, dan tata kelola pembukuan.</p>
-          </div>
-          <button type="button" onclick="window.saveStoreSettings()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2 shadow-sm">💾 Simpan Konfigurasi</button>
-        </div>
-      </div>
+      
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- 1. Kebijakan Stok & Anti-Rugi -->

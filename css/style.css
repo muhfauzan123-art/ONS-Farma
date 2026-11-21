@@ -1750,6 +1750,40 @@ html.dark .ons-nav-badge.info {
 .ons-cockpit-card.is-red::before { background: linear-gradient(90deg, #DC2626, #F87171); }
 .ons-cockpit-card.is-purple::before { background: linear-gradient(90deg, #7C3AED, #A78BFA); }
 
+.ons-cockpit-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ons-text-soft, #64748B);
+  margin-bottom: 0.35rem;
+}
+.ons-cockpit-val {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--ons-text-main, #0F172A);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Hide redundant small extra words, subtitles, descriptions & tab badges across UI */
+.ons-cockpit-desc,
+.ons-cockpit-sub,
+.ons-dash-tab-badge,
+.ons-subhero-desc,
+.ons-subhero-pill,
+.ons-subhero-header,
+.ons-subhero-banner p,
+.ons-subhero-content p {
+  display: none !important;
+}
+
+
 .ons-stock-meter {
   width: 100%;
   height: 5px;
@@ -5168,7 +5202,7 @@ html.dark .ons-glance-tile {
 /* 4. Sub-Hero Banners (Penjualan, Pembelian, Persediaan) */
 .ons-subhero-banner {
   border-radius: 1.25rem;
-  padding: 1.25rem 1.45rem;
+  padding: 0.85rem 1.25rem;
   background: var(--ons-bg-card, #FFFFFF);
   border: 1px solid var(--ons-border, rgba(226, 232, 240, 0.85));
   box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.04), 0 8px 20px -4px rgba(15, 23, 42, 0.04);

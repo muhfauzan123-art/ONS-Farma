@@ -2329,9 +2329,7 @@
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">${pageBadge}</span>
-              </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
+                </div>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">

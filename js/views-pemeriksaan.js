@@ -2669,6 +2669,6 @@
     getPatientHistory,
     getPreviousCheckup,
     computeAllDeltas,
-    printSuratRujukanDokter
+    printSuratRujukanDokter: (idPeriksa) => (typeof global.printSuratRujukanDokter === 'function' ? global.printSuratRujukanDokter(idPeriksa) : null)
   };
 })(window);
