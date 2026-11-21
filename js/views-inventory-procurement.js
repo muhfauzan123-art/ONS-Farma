@@ -14315,9 +14315,7 @@
     gudangFilter: ''
   };
 
-  global.openObatKartuStok = (idObat) => {
-    global.openObatKartuStokModal(idObat);
-  };
+  // Modal Kartu Stok helper (openObatKartuStok didefinisikan untuk navigasi kartu-stok)
 
   global.openObatKartuStokModal = (idObat) => {
     const st = S().AppState;

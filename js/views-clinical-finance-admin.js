@@ -8069,7 +8069,7 @@ S. prn 3 dd 1 tab</textarea>
             </div>
             <button type="button" onclick="window.syncParetoToDefecta()" class="ons-btn ons-btn-emerald text-xs font-bold py-1.5 px-3">🛒 Sinkronkan Produk Kelas A Kritis ke Rencana Pembelian</button>
           </div>
-          ${_renderAnlParetoSubTab()}
+          ${_renderAnlParetoSubTab(true, true)}
         </div>
       `;
     } else if (sipnapTab === 'deadstock') {
@@ -8535,7 +8535,7 @@ S. prn 3 dd 1 tab</textarea>
    * W-12B: MODUL ANALISIS APOTEK DIGITAL (PARETO, PEMBELIAN, HARGA)
    * =========================================================================
    */
-  function _renderAnlParetoSubTab() {
+  function _renderAnlParetoSubTab(hideBanner = false, hideCockpit = false) {
     const st = S().AppState;
     const today = new Date().toISOString().slice(0, 10);
     const mStart = today.slice(0, 8) + '01';
@@ -8678,6 +8678,7 @@ S. prn 3 dd 1 tab</textarea>
     ]);
 
     return `
+      ${hideBanner ? '' : `
       <!-- SUBHERO BANNER: ANALISIS PARETO ABC (Unified Standard) -->
       <div class="ons-subhero-banner is-analisis mb-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -8704,7 +8705,9 @@ S. prn 3 dd 1 tab</textarea>
           </div>
         </div>
       </div>
+      `}
 
+      ${hideCockpit ? '' : `
       <!-- COCKPIT STRIP: 4 KPI CARDS -->
       <div class="ons-cockpit-strip mb-4">
         <div class="ons-cockpit-card">
@@ -8713,7 +8716,6 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${countA} Produk</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">${S().rp(sumA)}</div>
-          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -8721,7 +8723,6 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${countB} Produk</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${S().rp(sumB)}</div>
-          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -8729,7 +8730,6 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-amber-600 bg-amber-500/10 font-mono-num">${countC} Produk</span>
           </div>
           <div class="ons-cockpit-val text-amber-600">${S().rp(sumC)}</div>
-          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -8737,9 +8737,9 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-purple-600 bg-purple-500/10 font-mono-num">${rows.length} SKU</span>
           </div>
           <div class="ons-cockpit-val text-purple-600">${S().rp(totalMetric)}</div>
-          
         </div>
       </div>
+      `}
 
       <!-- WORKSTATION CARD: ANALISIS PARETO -->
       <div class="ons-card p-4 space-y-4">
