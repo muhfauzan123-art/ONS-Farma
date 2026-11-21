@@ -1663,7 +1663,7 @@
         ${cfg.unitHint ? `<span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${S().esc(cfg.unitHint)}</span>` : ''}
       </div>
       <div class="ons-dash-chart-scroll">
-        <svg viewBox="0 0 ${svgW} ${svgH}" class="w-full min-w-[340px] h-44 overflow-visible" role="img" aria-label="${S().esc(cfg.ariaLabel || 'Grafik Dashboard')}">
+        <svg viewBox="0 0 ${svgW} ${svgH}" class="w-full min-w-[280px] sm:min-w-[340px] h-44 overflow-visible" role="img" aria-label="${S().esc(cfg.ariaLabel || 'Grafik Dashboard')}">
           ${gridSteps.map((ratio) => {
             const y = padT + plotH * (1 - ratio);
             const lbl = cfg.isCurrency ? _compactNumLabel(maxPrim * ratio) : Math.round(maxPrim * ratio * 10) / 10;
@@ -5459,6 +5459,21 @@
           <span class="px-3 py-1 rounded-xl font-bold text-xs border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-main)">${S().esc(branchLabel)}</span>
         </div>
       </div>
+      <!-- Mobile Floating Quick-Checkout Dock (Sticky di atas Mobile Bottom Nav saat Keranjang Terisi) -->
+      ${cart.items.length ? `
+      <aside aria-label="Ringkasan Cepat Kasir Mobile" class="ons-pos-mobile-checkout-dock lg:hidden fixed z-30 bottom-[4.2rem] inset-x-2 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-2xl backdrop-blur-xl border border-blue-500/30" style="background:rgba(15, 23, 42, 0.92); color:#FFFFFF;">
+        <div class="min-w-0 flex-1 pl-1">
+          <div class="text-[9.5px] uppercase tracking-wider font-extrabold text-blue-300 truncate">${cart.items.length} ITEM &bull; ${totals.pembulatan !== 0 ? 'PEMBULATAN AKTIF' : 'FEFO'}</div>
+          <div class="text-base font-black text-white font-mono-num leading-tight truncate">${S().rp(grandTotal)}</div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" onclick="window.openHoldCartModal()" class="ons-btn px-2.5 py-1.5 text-xs font-bold rounded-xl border border-white/20 text-white bg-white/10 hover:bg-white/20" title="Tunda Transaksi (F4)">Tunda</button>
+          <button type="button" onclick="window.posQuickCheckoutShortcut('TUNAI')" class="ons-btn px-3.5 py-1.5 text-xs font-black rounded-xl text-white shadow-lg flex items-center gap-1" style="background:linear-gradient(135deg, #0066FE, #0052CC);">
+            <span>Bayar</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </aside>` : ''}
     </div>`;
   }
   global.toggleDashAuditCheck = async (itemId, isChecked) => {

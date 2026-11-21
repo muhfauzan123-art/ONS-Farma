@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.39.0"/>
+  <meta name="application-version" content="v18.40.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.37.16"/>
+  <link rel="manifest" href="./manifest.json?v=18.40.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.39.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.40.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.39.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.30.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.30.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.40.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.40.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.40.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.30.0"></script>
-  <script src="./js/struk-engine.js?v=18.30.0"></script>
-  <script src="./js/demo-engine.js?v=18.30.0"></script>
-  <script src="./js/api-turbo.js?v=18.30.0"></script>
-  <script src="./js/store.js?v=18.30.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.30.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.30.0"></script>
+  <script src="./js/config.js?v=18.40.0"></script>
+  <script src="./js/struk-engine.js?v=18.40.0"></script>
+  <script src="./js/demo-engine.js?v=18.40.0"></script>
+  <script src="./js/api-turbo.js?v=18.40.0"></script>
+  <script src="./js/store.js?v=18.40.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.40.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.40.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.30.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.30.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.30.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.30.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.30.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.30.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.40.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.40.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.40.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.40.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.40.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.40.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -495,9 +495,9 @@
           ? `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <span>${ONSStore.esc(item.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeTab.label)}</strong>`
           : `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(item.label)}</strong>`;
 
-        return `<div class="flex flex-wrap items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
-          <div class="flex items-center flex-wrap gap-1">${trail}</div>
-          <div class="hidden sm:flex items-center gap-2 text-[11px]">
+        return `<div class="flex items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
+          <div class="flex items-center flex-nowrap overflow-x-auto gap-1 text-[11px] sm:text-xs" style="scrollbar-width:none;-webkit-overflow-scrolling:touch;">${trail}</div>
+          <div class="hidden sm:flex items-center gap-2 text-[11px] shrink-0">
             <span>Pintasan: <kbd class="px-1 py-0.5 rounded border font-mono-num">F2</kbd> Kasir &bull; <kbd class="px-1 py-0.5 rounded border font-mono-num">Ctrl+K</kbd> Cari Cepat</span>
           </div>
         </div>`;
@@ -1988,7 +1988,7 @@
                   </button>
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden font-bold">Install</button>
                   <button onclick="window.lockScreenNow()" aria-label="Kunci Layar Segera" title="Kunci Layar Segera" class="ons-topbar-icon-btn hidden sm:flex h-9 px-2 sm:px-2.5 rounded-xl text-white hover:bg-white/20 items-center justify-center gap-1 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline text-white font-medium">Kunci</span></button>
-                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-topbar-icon-btn hidden sm:flex w-9 h-9 rounded-xl text-white hover:bg-white/20 items-center justify-center shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
+                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-topbar-icon-btn flex w-9 h-9 rounded-xl text-white hover:bg-white/20 items-center justify-center shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
                   <button type="button" onclick="navigateView('settings','profil')" class="w-8 h-8 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 shadow-sm" title="Profil Pengguna">
                     ${(fotoPem && ONSStore.getRole() === 'Pemilik')
                       ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-full h-full rounded-full object-cover"/>`

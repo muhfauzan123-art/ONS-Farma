@@ -294,8 +294,16 @@
     AppState.darkMode = force !== undefined ? !!force : !AppState.darkMode;
     localStorage.setItem(DARK_KEY, AppState.darkMode ? '1' : '0');
     document.documentElement.classList.toggle('dark', AppState.darkMode);
+    try {
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', AppState.darkMode ? '#0A1528' : '#0050CA');
+    } catch (_) {}
   }
   document.documentElement.classList.toggle('dark', AppState.darkMode);
+  try {
+    const _initMetaTheme = document.querySelector('meta[name="theme-color"]');
+    if (_initMetaTheme) _initMetaTheme.setAttribute('content', AppState.darkMode ? '#0A1528' : '#0050CA');
+  } catch (_) {}
 
   /**
    * Helper Universal Format Titik Pemisah Ribuan (Indonesian Currency / Number Formatting)
