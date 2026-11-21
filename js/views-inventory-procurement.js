@@ -15782,7 +15782,6 @@
   };
 
   global.ONSViewsInventoryProcurement = { renderMasterObatView, renderKontakView, renderGudangView, renderDefectaView, renderFakturView, renderKonsinyasiView };
-})(window);
 
   global.runUnitConvertCalc = () => {
     const boxQty = Number((document.getElementById('calcBoxQty') || {}).value || 1);
@@ -16024,4 +16023,4 @@ ${el.outerHTML}
     var tanggal = new Date().toISOString().slice(0, 10);
     global.onsExportCSV(data, 'master-obat-ons-farma-' + tanggal, headers);
   };
-
+})(typeof window !== "undefined" ? window : this);

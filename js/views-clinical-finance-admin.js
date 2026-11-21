@@ -16857,7 +16857,6 @@ S. prn 3 dd 1 tab</textarea>
     global.toast('Titik koordinat (' + (lat || '-') + ', ' + (lng || '-') + ') & lokasi ' + (kota ? kota + ' ' : '') + 'berhasil diterapkan dan disimpan!', 'ok');
   };
 
-})(window);
   // Helper sync preview di tab Pajak & Slip Gaji
   global.syncPajakStaffSelection = (idUser, periode) => {
     const per = periode || (document.getElementById('sgPer') ? document.getElementById('sgPer').value : new Date().toISOString().slice(0, 7));
@@ -17182,3 +17181,4 @@ S. prn 3 dd 1 tab</textarea>
       global.toast(e.message || 'Gagal menyimpan konfigurasi.', 'err');
     }
   };
+})(typeof window !== "undefined" ? window : this);
