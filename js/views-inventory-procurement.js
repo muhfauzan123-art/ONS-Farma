@@ -243,10 +243,10 @@
     const harga = Number(o.harga_umum || 0);
     const marginPct = (hpp > 0 && harga > 0) ? Math.round(((harga - hpp) / hpp) * 100) : null;
     const stokTone = isZero
-      ? { label: 'Habis', color: '#DC2626', bar: '#EF4444', badge: 'bpom-keras' }
+      ? { label: 'Habis', color: '#DC2626', bar: '#EF4444', badge: 'bpom-keras', fillCls: 'is-danger' }
       : (isLow
-        ? { label: 'Menipis', color: '#D97706', bar: '#F59E0B', badge: 'bpom-prekursor' }
-        : { label: 'Aman', color: '#059669', bar: '#10B981', badge: 'bpom-bebas' });
+        ? { label: 'Menipis', color: '#D97706', bar: '#F59E0B', badge: 'bpom-prekursor', fillCls: 'is-warn' }
+        : { label: 'Aman', color: '#059669', bar: '#10B981', badge: 'bpom-bebas', fillCls: 'is-safe' });
     const stockMultiDesc = _formatStockMultiSatuan(stok, o);
     return { o, stok, totalFisik, min, max, pct, isZero, isLow, isCritical, nearBatch, edDays, isNearEd, isCold, hpp, harga, marginPct, stokTone, stockMultiDesc };
   }
@@ -322,7 +322,7 @@
         <span class="font-bold" style="color:${m.stokTone.color}">${m.stok} ${S().esc(m.o.satuan_dasar)}</span>
         <span class="text-[10px] font-bold uppercase" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
       </div>
-      <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${m.pct}%;background:${m.stokTone.bar}"></div></div>
+      <div class="ons-stock-track mt-1"><div class="ons-stock-fill ${m.stokTone.fillCls || ''}" style="width:${Math.max(m.isZero ? 0 : 4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
       ${edHtml}
     </div>`;
   }
@@ -446,7 +446,7 @@
                 </div>
                 <span class="text-[10.5px] font-bold uppercase" style="color:${m.stokTone.color}">${m.stokTone.label}</span>
               </div>
-              <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
+              <div class="ons-stock-track"><div class="ons-stock-fill ${m.stokTone.fillCls || ''}" style="width:${Math.max(m.isZero ? 0 : 4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
               <div class="flex items-center justify-between text-[10px] font-mono-num text-slate-400">
                 <span>Min: ${m.min !== null ? m.min : '-'} &bull; Max: ${m.max !== null ? m.max : '-'}</span>
                 ${m.nearBatch ? `<span class="${m.isNearEd ? 'text-red-600 font-bold' : ''}">ED: ${S().esc(S().formatEd(m.nearBatch.tgl_kadaluarsa))} (${m.edDays <= 0 ? 'EXPIRED' : m.edDays + 'h'})</span>` : '<span>Belum ada batch</span>'}
@@ -565,7 +565,7 @@
                   ${m.stok > 0 && (valid2 || valid3) ? `
                   <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title="${sBreakdown}">&approx; ${sBreakdown}</div>
                   ` : ''}
-                  <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
+                  <div class="ons-stock-track mt-1"><div class="ons-stock-fill ${m.stokTone.fillCls || ''}" style="width:${Math.max(m.isZero ? 0 : 4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
                   <div class="flex items-center justify-between text-[10px] font-mono-num text-slate-400 mt-0.5">
                     <span>Min: ${m.min !== null ? m.min : '-'}</span>
                     <span>Max: ${m.max !== null ? m.max : '-'}</span>
@@ -4928,7 +4928,7 @@
             <span>Buffer Stok &amp; Ambang Restok</span>
             <span class="font-mono-num font-bold" style="color:${m.stokTone.color}">${m.stok} / Min: ${m.min} (Max: ${m.max})</span>
           </div>
-          <div class="ons-stock-track"><div class="ons-stock-fill" style="width:${Math.max(4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
+          <div class="ons-stock-track"><div class="ons-stock-fill ${m.stokTone.fillCls || ''}" style="width:${Math.max(m.isZero ? 0 : 4, Math.min(100, m.pct))}%;background:${m.stokTone.bar}"></div></div>
           <div class="flex justify-between text-[10.5px] text-slate-400 font-mono-num">
             <span>Status: <b style="color:${m.stokTone.color}">${m.stokTone.label}</b></span>
             <span>${m.isCritical ? '⚠️ Perlu pemesanan ke distributor PBF' : '✓ Stok memenuhi cadangan aman'}</span>
@@ -4956,7 +4956,12 @@
                         ${isExp ? 'EXPIRED' : (days + 'h lagi')}
                       </span>
                     </td>
-                    <td class="font-mono-num font-bold text-xs">${Number(b.qty_sisa || 0)} ${S().esc(o.satuan_dasar || 'Unit')}</td>
+                    <td class="font-mono-num text-xs min-w-[95px]">
+                      <div class="flex items-center justify-between gap-1 font-bold ${Number(b.qty_sisa || 0) <= 0 ? 'text-red-600' : ''}">
+                        <span>${Number(b.qty_sisa || 0)} <span class="text-[10px] font-normal text-slate-400">${S().esc(o.satuan_dasar || 'Unit')}</span></span>
+                      </div>
+                      <div class="ons-stock-track mt-1"><div class="ons-stock-fill ${Number(b.qty_sisa || 0) <= 0 ? 'is-danger' : (Number(b.qty_sisa || 0) <= 5 ? 'is-warn' : 'is-safe')}" style="width:${Math.min(100, Math.max(Number(b.qty_sisa || 0) <= 0 ? 0 : 4, Math.round((Number(b.qty_sisa || 0) / Math.max(Number(b.qty_masuk || b.qty_awal || b.qty_sisa || 1), 1)) * 100)))}%;"></div></div>
+                    </td>
                     <td class="font-mono-num text-xs">${S().esc(b.rak_penyimpanan || o.rak_lokasi || '-')}</td>
                     <td class="font-mono-num text-xs text-slate-400">${S().esc(b.no_faktur_pbf || '-')}</td>
                   </tr>`;
@@ -7138,9 +7143,25 @@
                   <td><span class="badge-bpom ${edBadge} font-mono-num">${isEd ? 'ED / BLOKIR POS ' : ''}${S().esc(S().formatEd(b.tgl_kadaluarsa))} (${d}h)</span></td>
                   <td class="font-mono-num text-xs ${returLewat ? 'text-red-600 font-bold' : ''}">${S().esc(batasRetur !== '-' ? S().formatEd(batasRetur) : '-')}</td>
                   ${seeCost ? `<td class="font-mono-num text-xs">${S().rp(b.hpp_beli || (o && o.hpp_avg) || 0)}</td>` : ''}
-                  <td class="font-mono-num text-xs">
-                    <span class="font-bold">${b.qty_sisa}</span>
-                    ${Number(b.qty_karantina || 0) > 0 ? `<div class="text-[10px] text-red-600">Karantina: ${b.qty_karantina}</div>` : ''}
+                  <td class="font-mono-num text-xs min-w-[115px]">
+                    ${(() => {
+                      const bQtyAwal = Number(b.qty_masuk || b.qty_awal || b.qty_masuk_awal || b.qty_sisa || 0);
+                      const bQtySisa = Number(b.qty_sisa || 0);
+                      const bMaxRef = Math.max(bQtyAwal, bQtySisa, 1);
+                      const bStockPct = Math.min(100, Math.max(bQtySisa <= 0 ? 0 : 4, Math.round((bQtySisa / bMaxRef) * 100)));
+                      const bStockCls = bQtySisa <= 0 ? 'is-danger' : (bStockPct <= 25 ? 'is-warn' : 'is-safe');
+                      return `<div class="flex items-center justify-between gap-1">
+                        <span class="font-bold ${bQtySisa <= 0 ? 'text-red-600 font-extrabold' : (bStockPct <= 25 ? 'text-amber-600' : 'text-slate-800 dark:text-slate-200')}">
+                          ${bQtySisa} <span class="text-[10px] font-normal text-slate-400">${S().esc(o ? o.satuan_dasar : 'unit')}</span>
+                        </span>
+                        <span class="text-[9.5px] font-semibold text-slate-400 font-mono-num">${bStockPct}%</span>
+                      </div>
+                      <div class="ons-stock-track mt-1"><div class="ons-stock-fill ${bStockCls}" style="width:${bStockPct}%;"></div></div>
+                      <div class="flex items-center justify-between text-[9px] text-slate-400 mt-0.5 font-mono-num">
+                        <span>Awal: ${bQtyAwal}</span>
+                        ${Number(b.qty_karantina || 0) > 0 ? `<span class="text-red-600 font-bold">Karantina: ${b.qty_karantina}</span>` : ''}
+                      </div>`;
+                    })()}
                   </td>
                   ${seeCost ? `<td><button onclick="window.triggerRecallBatch('${b.id_batch}','${S().esc(b.no_batch)}')" ${b.status_batch !== 'AKTIF' ? 'disabled' : ''} class="ons-btn ons-btn-danger text-[11px] py-1 px-2">Recall BPOM</button></td>` : ''}
                 </tr>`;
@@ -9907,12 +9928,16 @@
                   <td class="text-center">
                     <span class="badge-bpom ${jenisSp === 'REGULER' ? 'bpom-bebas' : 'bpom-prekursor'} text-[10px] font-bold">${jenisSp}</span>
                   </td>
-                  <td class="min-w-[120px]">
+                  <td class="min-w-[125px]">
                     <div class="flex items-center justify-between text-xs font-mono-num">
                       <span class="${isKosong ? 'text-red-600 font-extrabold' : 'text-amber-600 font-bold'}">${s} ${S().esc(o.satuan_dasar)}</span>
                       <span class="text-[10px] font-bold ${isKosong ? 'text-red-600' : 'text-amber-600'}">${isKosong ? 'KOSONG' : 'MENIPIS'}</span>
                     </div>
-                    <div class="ons-stock-track mt-1"><div class="ons-stock-fill" style="width:${Math.max(4, sPct)}%;background:${isKosong ? '#EF4444' : '#F59E0B'}"></div></div>
+                    <div class="ons-stock-track mt-1"><div class="ons-stock-fill ${isKosong ? 'is-danger' : 'is-warn'}" style="width:${Math.max(isKosong ? 0 : 4, sPct)}%;"></div></div>
+                    <div class="flex items-center justify-between text-[9.5px] text-slate-400 font-mono-num mt-0.5">
+                      <span>Buffer: ${sMin}</span>
+                      <span>${sPct}%</span>
+                    </div>
                     ${edBlocked > 0 ? `<div class="text-[10px] text-amber-600 font-mono-num mt-0.5">(${edBlocked} unit expired dikarantina)</div>` : ''}
                   </td>
                   <td class="font-mono-num text-xs whitespace-nowrap">

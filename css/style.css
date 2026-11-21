@@ -2291,16 +2291,36 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .ons-stock-track {
   width: 100%;
-  height: 6px;
+  height: 5px;
   border-radius: 9999px;
-  background: var(--ons-bg-subtle);
-  border: 1px solid var(--ons-border);
+  background: rgba(148, 163, 184, 0.22);
   overflow: hidden;
+  position: relative;
+}
+.dark .ons-stock-track {
+  background: rgba(51, 65, 85, 0.45);
 }
 .ons-stock-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.25s ease;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ons-stock-fill.is-safe {
+  background: linear-gradient(90deg, #10B981 0%, #059669 100%) !important;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.35);
+}
+.ons-stock-fill.is-warn {
+  background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%) !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.35);
+}
+.ons-stock-fill.is-danger {
+  background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%) !important;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.45);
+  animation: onsStatusPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.ons-stock-fill.is-blue {
+  background: linear-gradient(90deg, #0066FE 0%, #0050CA 100%) !important;
+  box-shadow: 0 0 6px rgba(0, 102, 254, 0.3);
 }
 .ons-product-card {
   background: var(--ons-bg-card);

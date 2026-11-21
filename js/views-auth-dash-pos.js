@@ -4169,6 +4169,7 @@
             <div class="text-right">
               <div class="text-xs font-extrabold font-mono-num text-blue-600">${S().rp(h1)}<span class="text-[10px] font-normal">/${S().esc(sat1)}</span></div>
               <div class="text-[10px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok: ${sellStok} ${S().esc(sat1)}</div>
+              <div class="ons-stock-track mt-1 w-16 ml-auto"><div class="ons-stock-fill ${isEmpty ? 'is-danger' : (isLow ? 'is-warn' : 'is-safe')}" style="width:${Math.min(100, Math.max(isEmpty ? 0 : 6, Math.round((sellStok / Math.max(sellStok, (o.stok_min ? o.stok_min * 2 : 10), 1)) * 100)))}%;"></div></div>
             </div>
             ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[10px] px-2 py-1 min-h-0 h-7">Cabang</button>` : ''}
             ${isEmpty ? `
@@ -4207,6 +4208,7 @@
           <div class="min-w-0">
             <div class="text-sm font-extrabold font-mono-num text-blue-600">${S().rp(h1)} <span class="text-[10px] font-normal" style="color:var(--ons-text-soft)">/${S().esc(sat1)}</span></div>
             <div class="text-[11px] font-mono-num ${isLow || isEmpty ? 'text-red-600 font-bold' : 'text-emerald-600'}">Stok Jual: ${sellStok} ${S().esc(sat1)}${expiredQty > 0 ? ` <span class="text-amber-600">(+${expiredQty} ED)</span>` : ''}</div>
+            <div class="ons-stock-track mt-1.5 w-full max-w-[130px]"><div class="ons-stock-fill ${isEmpty ? 'is-danger' : (isLow ? 'is-warn' : 'is-safe')}" style="width:${Math.min(100, Math.max(isEmpty ? 0 : 6, Math.round((sellStok / Math.max(sellStok, (o.stok_min ? o.stok_min * 2 : 10), 1)) * 100)))}%;"></div></div>
           </div>
           <div class="flex gap-1 shrink-0">
             ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? `<button type="button" onclick="event.stopPropagation();window.openBranchCompareDrawer('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-ghost text-[11px] px-2 py-1 min-h-0 h-8" title="Cek Stok Antar-Cabang">Cabang</button>` : ''}
