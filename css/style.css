@@ -5974,10 +5974,9 @@ html.dark .ons-ws-modal {
    ELITE MOBILE ERGONOMICS & NATIVE TOUCH POLISH (v18.40.0)
    ========================================================================== */
 
-/* 1. Global Touch Feel & Pull-to-refresh Shield */
+/* 1. Global Touch Feel */
 html, body {
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: contain;
 }
 
 /* 2. Mobile Floating Quick-Checkout Dock for POS */
@@ -6579,7 +6578,6 @@ body.ons-has-pos-cart .ons-scanner-fab-host {
   box-shadow: 0 8px 24px -4px rgba(0, 102, 254, 0.45), 0 4px 12px rgba(5, 150, 105, 0.35);
   cursor: pointer;
   outline: none;
-  touch-action: manipulation;
   transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
   user-select: none;
 }
@@ -6652,68 +6650,7 @@ body.ons-has-pos-cart .ons-scanner-fab-host {
   50% { r: 4.6; opacity: 0.7; }
 }
 
-/* ==========================================================================
-   Batch 2 - Item 3: Pull-to-Refresh Gesture Halus di Mobile PWA (v18.51.0)
-   ========================================================================== */
-.ons-ptr-indicator {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -120%);
-  z-index: 9999;
-  pointer-events: none;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-  opacity: 0;
-}
-.ons-ptr-indicator.is-pulling {
-  transition: none !important;
-  opacity: 1;
-}
-.ons-ptr-indicator.is-refreshing {
-  transform: translate(-50%, 64px) !important;
-  opacity: 1;
-  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-}
-.ons-ptr-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 1rem;
-  border-radius: 9999px;
-  background: rgba(15, 23, 42, 0.92);
-  color: #FFFFFF;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 102, 254, 0.25);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  user-select: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-html.dark .ons-ptr-pill {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-.ons-ptr-indicator.is-ready .ons-ptr-pill {
-  border-color: #34D399;
-  background: rgba(6, 78, 59, 0.92);
-}
-.ons-ptr-icon {
-  display: inline-block;
-  font-size: 0.95rem;
-  line-height: 1;
-  transition: transform 0.08s linear;
-}
-.ons-ptr-indicator.is-refreshing .ons-ptr-icon {
-  animation: onsPtrSpin 0.75s linear infinite !important;
-}
-@keyframes onsPtrSpin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
+/* Batch 2 - Item 3 (Pull to refresh removed for 100% native smooth scrolling) */
 
 /* ==========================================================================
    Batch 2 - Item 4: Quick Filter Pills Horizontal Ribbon (v18.52.0)
@@ -6727,6 +6664,7 @@ html.dark .ons-ptr-pill {
   scrollbar-width: none;
   padding: 0.25rem 0.15rem 0.35rem;
   margin: 0 -0.15rem;
+  touch-action: pan-x pan-y;
 }
 .ons-quick-pills-ribbon::-webkit-scrollbar {
   display: none;
@@ -6747,7 +6685,6 @@ html.dark .ons-ptr-pill {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
-  touch-action: manipulation;
 }
 html.dark .ons-quick-pill {
   background: rgba(30, 41, 59, 0.8);
