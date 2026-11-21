@@ -5331,3 +5331,381 @@ html.dark .ons-chart-box {
   background: #0E182A;
   border-color: rgba(255, 255, 255, 0.07);
 }
+
+
+/* ==========================================================================
+   ONS FARMA DIGITAL - ULTRA LUXURY BEAUTY & POLISHING SUITE (v18.38.0)
+   Standardized High-End Medical SaaS & Apotek Digital Aesthetics
+   ========================================================================== */
+
+/* 1. Global View Entrance & Smooth Physics */
+.ons-view-enter {
+  animation: onsViewSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes onsViewSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes onsModalZoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 2. Elevated Cards with Ambient Multi-Stop Shadow */
+.ons-card {
+  border-radius: 1.25rem !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 6px 20px -3px rgba(15, 23, 42, 0.05) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease !important;
+}
+
+html.dark .ons-card {
+  background: linear-gradient(180deg, #152033 0%, #101928 100%) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45) !important;
+}
+
+.ons-card[onclick]:hover,
+.ons-kpi-card:hover,
+.ons-glance-tile:hover {
+  transform: translateY(-2.5px) !important;
+  box-shadow: 0 12px 30px -4px rgba(0, 102, 254, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04) !important;
+  border-color: rgba(0, 102, 254, 0.35) !important;
+}
+
+html.dark .ons-card[onclick]:hover,
+html.dark .ons-kpi-card:hover,
+html.dark .ons-glance-tile:hover {
+  box-shadow: 0 12px 32px -4px rgba(0, 102, 254, 0.25), 0 0 0 1px rgba(96, 165, 250, 0.3) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+/* 3. High-End Sub-Hero Banners */
+.ons-subhero-banner,
+.ons-view-enter > .ons-card:first-child,
+.ons-view-enter > .space-y-4 > .ons-card:first-child {
+  border-radius: 1.25rem !important;
+  background: linear-gradient(135deg, rgba(0, 102, 254, 0.04) 0%, rgba(16, 185, 129, 0.03) 50%, rgba(255, 255, 255, 0.95) 100%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  box-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.04), 0 8px 24px -4px rgba(15, 23, 42, 0.04) !important;
+}
+
+html.dark .ons-subhero-banner,
+html.dark .ons-view-enter > .ons-card:first-child,
+html.dark .ons-view-enter > .space-y-4 > .ons-card:first-child {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.22) 0%, rgba(6, 78, 59, 0.14) 50%, rgba(17, 26, 42, 0.95) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Modern 48x48 Icon Box Polish */
+.w-12.h-12.rounded-2xl {
+  box-shadow: 0 4px 14px -2px rgba(0, 102, 254, 0.16) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+}
+html.dark .w-12.h-12.rounded-2xl {
+  box-shadow: 0 4px 16px -2px rgba(0, 102, 254, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 4. Luxury Floating Pill Tab-Navigation */
+.ons-tab-bar,
+.ons-dash-tab-btn-group,
+.inline-flex.rounded-2xl.border.p-1,
+.inline-flex.rounded-xl.border.p-1 {
+  background: var(--ons-bg-card, #FFFFFF) !important;
+  border: 1px solid var(--ons-border, rgba(226, 232, 240, 0.9)) !important;
+  border-radius: 1rem !important;
+  padding: 0.32rem !important;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html.dark .ons-tab-bar,
+html.dark .ons-dash-tab-btn-group,
+html.dark .inline-flex.rounded-2xl.border.p-1,
+html.dark .inline-flex.rounded-xl.border.p-1 {
+  background: #111B2C !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+.ons-dash-tab-btn {
+  border-radius: 0.75rem !important;
+  padding: 0.48rem 0.95rem !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.ons-dash-tab-btn:hover:not(.active) {
+  background: var(--ons-bg-subtle, rgba(241, 245, 249, 0.8)) !important;
+  color: var(--ons-text-main, #0F172A) !important;
+}
+
+.ons-dash-tab-btn.active {
+  background: linear-gradient(180deg, #0066FE 0%, #0050CA 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 12px -1px rgba(0, 80, 202, 0.35) !important;
+  font-weight: 700 !important;
+}
+
+.ons-dash-tab-btn.active span[class*="rounded-full"] {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #FFFFFF !important;
+}
+
+/* 5. Precision Buttons with Tactile Micro-Interactions */
+.ons-btn {
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  min-height: 38px !important;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.ons-btn:active {
+  transform: scale(0.975) !important;
+}
+
+.ons-btn-primary {
+  background: linear-gradient(180deg, #0066FE 0%, #0052CC 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(0, 82, 204, 0.8) !important;
+  box-shadow: 0 2px 8px -1px rgba(0, 102, 254, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+.ons-btn-primary:hover {
+  background: linear-gradient(180deg, #1A75FF 0%, #005CE6 100%) !important;
+  box-shadow: 0 4px 14px -2px rgba(0, 102, 254, 0.45) !important;
+}
+
+.ons-btn-emerald {
+  background: linear-gradient(180deg, #10B981 0%, #059669 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(5, 150, 105, 0.8) !important;
+  box-shadow: 0 2px 8px -1px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+.ons-btn-emerald:hover {
+  background: linear-gradient(180deg, #34D399 0%, #059669 100%) !important;
+  box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.45) !important;
+}
+
+.ons-btn-amber {
+  background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(217, 119, 6, 0.8) !important;
+  box-shadow: 0 2px 8px -1px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+.ons-btn-amber:hover {
+  background: linear-gradient(180deg, #FBBF24 0%, #D97706 100%) !important;
+  box-shadow: 0 4px 14px -2px rgba(245, 158, 11, 0.45) !important;
+}
+
+.ons-btn-ghost {
+  background: var(--ons-bg-card, #FFFFFF) !important;
+  color: var(--ons-text-main, #0F172A) !important;
+  border: 1px solid var(--ons-border, #E2E8F0) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+.ons-btn-ghost:hover {
+  background: var(--ons-bg-subtle, #F1F5F9) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+}
+html.dark .ons-btn-ghost {
+  background: #152033 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #F8FAFC !important;
+}
+html.dark .ons-btn-ghost:hover {
+  background: #1E293B !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* 6. Precision Medical SaaS Tables */
+.ons-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+}
+
+.ons-table th {
+  background: rgba(248, 250, 252, 0.85) !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  color: var(--ons-text-soft, #64748B) !important;
+  padding: 0.75rem 0.95rem !important;
+  border-bottom: 1.5px solid var(--ons-border, #E2E8F0) !important;
+}
+
+html.dark .ons-table th {
+  background: rgba(21, 31, 50, 0.85) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ons-table td {
+  padding: 0.75rem 0.95rem !important;
+  border-bottom: 1px solid var(--ons-border-soft, rgba(226, 232, 240, 0.65)) !important;
+  vertical-align: middle !important;
+}
+
+html.dark .ons-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.ons-table tbody tr {
+  transition: background-color 0.12s ease !important;
+}
+
+.ons-table tbody tr:hover {
+  background-color: rgba(0, 102, 254, 0.035) !important;
+}
+
+html.dark .ons-table tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.075) !important;
+}
+
+.ons-table.is-compact td {
+  padding: 0.55rem 0.85rem !important;
+}
+
+/* 7. Input & Select Controls Focus Luxury */
+.ons-input,
+.ons-select {
+  border-radius: 0.75rem !important;
+  border: 1.5px solid var(--ons-border, #E2E8F0) !important;
+  background: var(--ons-bg-card, #FFFFFF) !important;
+  color: var(--ons-text-main, #0F172A) !important;
+  font-size: 0.84rem !important;
+  min-height: 40px !important;
+  padding: 0.5rem 0.85rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+html.dark .ons-input,
+html.dark .ons-select {
+  background: #111B2C !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #F8FAFC !important;
+}
+
+.ons-input:focus,
+.ons-select:focus {
+  border-color: #0066FE !important;
+  box-shadow: 0 0 0 3.5px rgba(0, 102, 254, 0.14) !important;
+  outline: none !important;
+}
+
+/* 8. Badge BPOM Polish */
+.badge-bpom {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.22rem 0.65rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.025em !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  line-height: 1.2 !important;
+}
+
+.bpom-bebas {
+  background: #ECFDF5 !important;
+  color: #047857 !important;
+  border-color: #A7F3D0 !important;
+}
+.bpom-terbatas {
+  background: #EFF6FF !important;
+  color: #1D4ED8 !important;
+  border-color: #BFDBFE !important;
+}
+.bpom-keras {
+  background: #FEF2F2 !important;
+  color: #B91C1C !important;
+  border-color: #FECACA !important;
+}
+.bpom-prekursor {
+  background: #FFFBEB !important;
+  color: #B45309 !important;
+  border-color: #FDE68A !important;
+}
+.bpom-oot {
+  background: #F5F3FF !important;
+  color: #6D28D9 !important;
+  border-color: #DDD6FE !important;
+}
+
+html.dark .bpom-bebas {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #6EE7B7 !important;
+  border-color: rgba(110, 231, 183, 0.3) !important;
+}
+html.dark .bpom-terbatas {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #93C5FD !important;
+  border-color: rgba(147, 197, 253, 0.3) !important;
+}
+html.dark .bpom-keras {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(252, 165, 165, 0.3) !important;
+}
+html.dark .bpom-prekursor {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #FCD34D !important;
+  border-color: rgba(252, 211, 77, 0.3) !important;
+}
+html.dark .bpom-oot {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #C4B5FD !important;
+  border-color: rgba(196, 181, 253, 0.3) !important;
+}
+
+/* 9. Elite Modal Presentation & Backdrop */
+.modal-backdrop,
+.ons-ws-modal-backdrop {
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  background: rgba(10, 17, 32, 0.62) !important;
+  transition: opacity 0.15s ease !important;
+}
+
+.ons-modal-box,
+.ons-ws-modal {
+  border-radius: 1.35rem !important;
+  box-shadow: 0 25px 60px -12px rgba(10, 20, 40, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+  animation: onsModalZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  border: 1px solid var(--ons-border, #E2E8F0) !important;
+}
+
+html.dark .ons-modal-box,
+html.dark .ons-ws-modal {
+  background: #111A29 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 25px 65px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 10. Floating Glass Toast */
+.ons-toast-item {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: 9999px !important;
+  padding: 0.65rem 1.25rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.18), 0 2px 6px -1px rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
