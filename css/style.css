@@ -5709,3 +5709,231 @@ html.dark .ons-ws-modal {
   box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.18), 0 2px 6px -1px rgba(15, 23, 42, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
+
+
+/* ==========================================================================
+   ONS FARMA DIGITAL - ELITE MOBILE (HP) PERFECTION SUITE (v18.39.0)
+   Touch ergonomics, swipe-ribbon sub-tabs, high-contrast bottom nav & mobile sheets
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* 1. Prevent Horizontal Page Jiggle & iOS Zoom */
+  html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    -webkit-text-size-adjust: 100% !important;
+  }
+
+  /* 2. Form Inputs 16px to prevent iOS Safari auto-zoom */
+  .ons-input,
+  .ons-select,
+  select,
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="search"] {
+    font-size: 16px !important;
+    min-height: 44px !important;
+    border-radius: 0.85rem !important;
+  }
+
+  /* 3. High-Contrast, Glassmorphic Mobile Bottom Navigation */
+  .ons-mobile-bottom {
+    background: rgba(255, 255, 255, 0.94) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 0 -4px 20px -2px rgba(15, 23, 42, 0.08) !important;
+    height: calc(4rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  html.dark .ons-mobile-bottom {
+    background: rgba(13, 22, 38, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  .ons-mobile-nav-btn {
+    color: #64748B !important;
+    min-height: 48px !important;
+    padding: 0.25rem 0.15rem !important;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  html.dark .ons-mobile-nav-btn {
+    color: #94A3B8 !important;
+  }
+
+  .ons-mobile-nav-btn:active {
+    transform: scale(0.92) !important;
+  }
+
+  .ons-mobile-nav-btn.is-active {
+    color: #0066FE !important;
+    font-weight: 700 !important;
+  }
+
+  html.dark .ons-mobile-nav-btn.is-active {
+    color: #38BDF8 !important;
+  }
+
+  .ons-mobile-nav-btn.is-active .ons-mobile-nav-icon svg {
+    filter: drop-shadow(0 2px 6px rgba(0, 102, 254, 0.4)) !important;
+    transform: translateY(-1px) scale(1.08);
+  }
+
+  html.dark .ons-mobile-nav-btn.is-active .ons-mobile-nav-icon svg {
+    filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.5)) !important;
+  }
+
+  .ons-mobile-nav-btn.is-active::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    border-radius: 9999px;
+    background: #0066FE !important;
+    box-shadow: 0 0 8px rgba(0, 102, 254, 0.6) !important;
+  }
+
+  html.dark .ons-mobile-nav-btn.is-active::before {
+    background: #38BDF8 !important;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.8) !important;
+  }
+
+  /* 4. Touch-Smooth Swipe Ribbon for Sub-Tabs */
+  .ons-tab-bar,
+  .ons-dash-tab-btn-group,
+  .inline-flex.rounded-2xl.border.p-1,
+  .inline-flex.rounded-xl.border.p-1 {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 0.4rem !important;
+    padding: 0.35rem 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .ons-tab-bar::-webkit-scrollbar,
+  .ons-dash-tab-btn-group::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .ons-dash-tab-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-height: 38px !important;
+    padding: 0.45rem 0.85rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* 5. Mobile Sub-Hero Header Compact Polish */
+  .ons-subhero-banner,
+  .ons-view-enter > .ons-card:first-child,
+  .ons-view-enter > .space-y-4 > .ons-card:first-child {
+    padding: 0.85rem 1rem !important;
+    border-radius: 1.15rem !important;
+  }
+
+  .ons-subhero-banner h2,
+  .ons-view-enter h2 {
+    font-size: 1.05rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* 6. Mobile 2-Column Balanced KPI Tiles */
+  .grid.grid-cols-1.sm\:grid-cols-2.xl\:grid-cols-4,
+  .grid.grid-cols-2.sm\:grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+  }
+
+  .ons-kpi-card,
+  .ons-glance-tile {
+    padding: 0.75rem 0.85rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .ons-kpi-card .text-xl,
+  .ons-kpi-card .text-2xl,
+  .ons-glance-tile .text-base,
+  .ons-glance-tile .text-lg {
+    font-size: 1.08rem !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  /* 7. Tables on Mobile with Momentum Scroll */
+  .ons-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 0.85rem !important;
+    box-shadow: inset -8px 0 8px -8px rgba(15, 23, 42, 0.15) !important;
+  }
+
+  .ons-table td,
+  .ons-table th {
+    white-space: nowrap !important;
+    padding: 0.6rem 0.75rem !important;
+  }
+
+  /* 8. Mobile Bottom-Sheet Modal */
+  .modal-backdrop,
+  .ons-ws-modal-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .ons-modal-box,
+  .ons-ws-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 88vh !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-top-left-radius: 1.5rem !important;
+    border-top-right-radius: 1.5rem !important;
+    margin: 0 !important;
+    animation: onsBottomSheetSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  /* 9. Mobile Safe Bottom Scroll Space */
+  #mainViewSlot,
+  .ons-main-scroll {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 16px)) !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* 10. Touch Targets for All Action Buttons */
+  .ons-btn {
+    min-height: 42px !important;
+    padding: 0.5rem 0.85rem !important;
+  }
+
+  .ons-btn-xs,
+  .ons-btn-sm {
+    min-height: 36px !important;
+    padding: 0.35rem 0.65rem !important;
+  }
+}
+
+@keyframes onsBottomSheetSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
