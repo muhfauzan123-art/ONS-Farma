@@ -16,6 +16,28 @@
   let masterFilterPabrikan = 'SEMUA';
   let masterFilterPbf = 'SEMUA';
   let masterFilterSuhu = 'SEMUA'; // SEMUA | CHILLER | RUANG
+
+  global.setMasterQuickPill = (type, val) => {
+    if (type === 'SEMUA') {
+      masterFilterGol = '';
+      masterFilterStok = 'SEMUA';
+      masterFilterSuhu = 'SEMUA';
+    } else if (type === 'STOK') {
+      masterFilterGol = '';
+      masterFilterStok = val || 'SEMUA';
+      masterFilterSuhu = 'SEMUA';
+    } else if (type === 'GOL') {
+      masterFilterGol = val || '';
+      masterFilterStok = 'SEMUA';
+      masterFilterSuhu = 'SEMUA';
+    } else if (type === 'SUHU') {
+      masterFilterGol = '';
+      masterFilterStok = 'SEMUA';
+      masterFilterSuhu = val || 'SEMUA';
+    }
+    if (global.playFeedback) global.playFeedback('key');
+    global.renderActiveView();
+  };
   let masterSortBy = 'NAMA'; // NAMA | NAMA_DESC | STOK_ASC | STOK_DESC | ED_ASC | HARGA_DESC | HARGA_ASC | MARGIN_DESC | VALUASI_DESC
   let masterViewMode = 'TABLE'; // TABLE | CARD
   let masterShowAdvFilters = false;
@@ -727,7 +749,48 @@
           masterFilterStatusJual !== 'SEMUA',
           masterSortBy !== 'NAMA'
         ].filter(Boolean).length;
+        const kritisCount = allMeta.filter((m) => S().isCriticalStock ? S().isCriticalStock(m.o, m.stok) : m.stok <= 0).length;
+        const nearEdCount = allMeta.filter((m) => m.nearEd && m.nearEd.hasNearEd).length;
+        const habisCount = allMeta.filter((m) => m.stok <= 0).length;
+        const chillerCount = allMeta.filter((m) => String(m.o.suhu_simpan || '').toUpperCase().includes('CHILLER') || String(m.o.suhu_simpan || '').includes('2-8')).length;
+
         return `<div class="ons-card p-3 space-y-2.5">
+        <!-- Quick Filter Pills Ribbon (v18.52.0) -->
+        <div class="ons-quick-pills-ribbon" role="toolbar" aria-label="Filter Cepat Katalog Obat">
+          <button type="button" onclick="window.setMasterQuickPill('SEMUA')" class="ons-quick-pill ${(!masterFilterGol && masterFilterStok === 'SEMUA' && masterFilterSuhu === 'SEMUA') ? 'is-active' : ''}">
+            <span>Semua Produk</span>
+            <span class="ons-quick-pill-badge">${totalCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterQuickPill('STOK', 'KRITIS')" class="ons-quick-pill tone-warn ${(masterFilterStok === 'KRITIS') ? 'is-active' : ''}">
+            <span>⚠️ Stok Menipis</span>
+            <span class="ons-quick-pill-badge">${kritisCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterQuickPill('STOK', 'NEAR_ED')" class="ons-quick-pill tone-danger ${(masterFilterStok === 'NEAR_ED') ? 'is-active' : ''}">
+            <span>⏳ Near-ED &le;90h</span>
+            <span class="ons-quick-pill-badge">${nearEdCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterQuickPill('GOL', 'KERAS')" class="ons-quick-pill tone-danger ${(masterFilterGol === 'KERAS') ? 'is-active' : ''}">
+            <span>🔴 Obat Keras</span>
+            <span class="ons-quick-pill-badge">${golCounts['KERAS'] || 0}</span>
+          </button>
+          <button type="button" onclick="window.setMasterQuickPill('GOL', 'TERBATAS')" class="ons-quick-pill ${(masterFilterGol === 'TERBATAS') ? 'is-active' : ''}">
+            <span>🔵 Bebas Terbatas</span>
+            <span class="ons-quick-pill-badge">${golCounts['TERBATAS'] || 0}</span>
+          </button>
+          <button type="button" onclick="window.setMasterQuickPill('GOL', 'BEBAS')" class="ons-quick-pill tone-emerald ${(masterFilterGol === 'BEBAS') ? 'is-active' : ''}">
+            <span>🟢 Obat Bebas</span>
+            <span class="ons-quick-pill-badge">${golCounts['BEBAS'] || 0}</span>
+          </button>
+          <button type="button" onclick="window.setMasterQuickPill('STOK', 'HABIS')" class="ons-quick-pill tone-danger ${(masterFilterStok === 'HABIS') ? 'is-active' : ''}">
+            <span>❌ Stok 0</span>
+            <span class="ons-quick-pill-badge">${habisCount}</span>
+          </button>
+          <button type="button" onclick="window.setMasterQuickPill('SUHU', 'CHILLER')" class="ons-quick-pill ${(masterFilterSuhu === 'CHILLER') ? 'is-active' : ''}">
+            <span>❄️ Chiller</span>
+            <span class="ons-quick-pill-badge">${chillerCount}</span>
+          </button>
+        </div>
+
         <div class="flex flex-wrap items-center gap-2">
           <div class="flex-1 min-w-[210px]">
             ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, Golongan, KFA, NIE, Rak, PBF...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
@@ -7124,8 +7187,27 @@
               <span>-</span>
               <input type="date" value="${S().esc(edDateTo)}" onchange="window.setEdDateRange('${S().esc(edDateFrom)}', this.value)" class="ons-input text-xs py-1 w-32 font-mono-num"/>
             </div>
-            <div class="ons-tab-bar">
-              ${['SEMUA', 'KADALUARSA', 'KRITIS', 'KARANTINA', 'AMAN'].map((f) => `<button onclick="window.setGudangBatchFilter('${f}')" class="ons-tab-btn ${gudangBatchFilter === f ? 'active' : ''}">${f}</button>`).join('')}
+            <div class="ons-quick-pills-ribbon" role="toolbar" aria-label="Filter Cepat Batch FEFO">
+              <button type="button" onclick="window.setGudangBatchFilter('SEMUA')" class="ons-quick-pill ${gudangBatchFilter === 'SEMUA' ? 'is-active' : ''}">
+                <span>Semua Batch</span>
+                <span class="ons-quick-pill-badge">${sorted.length}</span>
+              </button>
+              <button type="button" onclick="window.setGudangBatchFilter('KADALUARSA')" class="ons-quick-pill tone-danger ${gudangBatchFilter === 'KADALUARSA' ? 'is-active' : ''}">
+                <span>🔴 Kadaluarsa (ED)</span>
+                <span class="ons-quick-pill-badge">${expiredCount}</span>
+              </button>
+              <button type="button" onclick="window.setGudangBatchFilter('KRITIS')" class="ons-quick-pill tone-warn ${gudangBatchFilter === 'KRITIS' ? 'is-active' : ''}">
+                <span>⚠️ Kritis &le;90h</span>
+                <span class="ons-quick-pill-badge">${kritisCount}</span>
+              </button>
+              <button type="button" onclick="window.setGudangBatchFilter('KARANTINA')" class="ons-quick-pill tone-warn ${gudangBatchFilter === 'KARANTINA' ? 'is-active' : ''}">
+                <span>🟠 Karantina</span>
+                <span class="ons-quick-pill-badge">${sorted.filter(b => String(b.status_batch || '').includes('KARANTINA') || Number(b.qty_karantina || 0) > 0).length}</span>
+              </button>
+              <button type="button" onclick="window.setGudangBatchFilter('AMAN')" class="ons-quick-pill tone-emerald ${gudangBatchFilter === 'AMAN' ? 'is-active' : ''}">
+                <span>🟢 Stok Aman &gt;90h</span>
+                <span class="ons-quick-pill-badge">${sorted.filter(b => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) > 90).length}</span>
+              </button>
             </div>
           </div>
           <div class="flex flex-wrap gap-1.5">

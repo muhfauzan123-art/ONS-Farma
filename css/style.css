@@ -6714,3 +6714,86 @@ html.dark .ons-ptr-pill {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* ==========================================================================
+   Batch 2 - Item 4: Quick Filter Pills Horizontal Ribbon (v18.52.0)
+   ========================================================================== */
+.ons-quick-pills-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.25rem 0.15rem 0.35rem;
+  margin: 0 -0.15rem;
+}
+.ons-quick-pills-ribbon::-webkit-scrollbar {
+  display: none;
+}
+.ons-quick-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--ons-bg-card, #ffffff);
+  color: var(--ons-text-soft, #64748b);
+  border: 1px solid var(--ons-border, #e2e8f0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  touch-action: manipulation;
+}
+html.dark .ons-quick-pill {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(71, 85, 105, 0.6);
+  color: #94a3b8;
+}
+.ons-quick-pill:hover {
+  border-color: var(--ons-primary-bright, #3b82f6);
+  color: var(--ons-primary-bright, #3b82f6);
+  transform: translateY(-1px);
+}
+.ons-quick-pill:active {
+  transform: scale(0.96);
+}
+.ons-quick-pill.is-active {
+  background: linear-gradient(135deg, #0066fe 0%, #0052cc 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(0, 102, 254, 0.32);
+}
+.ons-quick-pill.is-active .ons-quick-pill-badge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+.ons-quick-pill-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--ons-text-main, #0f172a);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+html.dark .ons-quick-pill-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.ons-quick-pill.tone-warn.is-active {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+.ons-quick-pill.tone-danger.is-active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
+}
+.ons-quick-pill.tone-emerald.is-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
