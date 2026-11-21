@@ -238,7 +238,7 @@
       <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Pesanan Masuk Online &amp; WhatsApp (Ambil di Apotek)</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Terintegrasi real-time dengan Etalase Publik E-Apotek (?katalog=1), WhatsApp Order, &amp; Kasir POS FEFO (Pick Up langsung di apotek).</p>
+          
         </div>
         <div class="flex flex-wrap gap-2">
           <a href="./index.html?katalog=1" target="_blank" class="ons-btn ons-btn-ghost text-xs">&#128722; Etalase Publik (?katalog=1)</a>
@@ -404,14 +404,9 @@
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
-                <span>Normalisasi 62/08 &amp; Proteksi Privasi</span>
-              </div>
+              
               <h2 class="ons-subhero-title">Manajemen Kontak Pasien CRM &amp; Privasi WhatsApp</h2>
-              <p class="ons-subhero-desc">
-                Database nomor WhatsApp pelanggan apotek tersentralisasi, normalisasi otomatis format 08/62, segmentasi klinis (Terapi Rutin, Online, Umum), dan kepatuhan regulasi Opt-Out pasien.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -443,7 +438,7 @@
             <span class="ons-cockpit-badge font-mono-num">${contacts.length}</span>
           </div>
           <div class="ons-cockpit-val">${contacts.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Kontak</span></div>
-          <div class="ons-cockpit-sub">Database pelanggan &amp; member apotek</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -451,7 +446,7 @@
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${activeOptIn.length}</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${activeOptIn.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
-          <div class="ons-cockpit-sub">Persetujuan WhatsApp resmi aktif</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -459,7 +454,7 @@
             <span class="ons-cockpit-badge text-rose-600 bg-rose-500/10 font-mono-num">${optOutCount}</span>
           </div>
           <div class="ons-cockpit-val ${optOutCount > 0 ? 'text-rose-600' : ''}">${optOutCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
-          <div class="ons-cockpit-sub">Privasi pasien dijaga (dikecualikan siaran)</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -467,7 +462,7 @@
             <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10 font-mono-num">${terapiRutinCount}</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">${terapiRutinCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
-          <div class="ons-cockpit-sub">Hipertensi, Diabetes &amp; Penyakit Kronis</div>
+          
         </div>
       </div>
 
@@ -598,14 +593,9 @@
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
-                <span>Fonnte Cloud API Terintegrasi</span>
-              </div>
+              
               <h2 class="ons-subhero-title">Pusat Siaran WhatsApp Edukasi &amp; Pengingat Terapi</h2>
-              <p class="ons-subhero-desc">
-                Kirim siaran edukasi kesehatan, reminder tebus obat, dan informasi apotek ke ratusan pasien tertarget secara personal dengan variabel <code>{nama}</code> dan antrean non-blocking.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -636,7 +626,7 @@
             <span class="ons-cockpit-badge bg-emerald-500/10 text-emerald-600 font-mono-num">${filteredTargets.length}</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${filteredTargets.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
-          <div class="ons-cockpit-sub">Penerima aktif (bebas Opt-Out)</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -644,7 +634,7 @@
             <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10">${crmFilterSeg}</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">${crmFilterSeg}</div>
-          <div class="ons-cockpit-sub">Target kelompok penerima</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -652,7 +642,7 @@
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">Fonnte API</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">Siap Kirim</div>
-          <div class="ons-cockpit-sub">Normalisasi format 62/08 otomatis</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -660,7 +650,7 @@
             <span class="ons-cockpit-badge text-purple-600 bg-purple-500/10">Aktif</span>
           </div>
           <div class="ons-cockpit-val text-purple-600 font-mono text-base">{nama}</div>
-          <div class="ons-cockpit-sub">Otomatis diganti nama pasien</div>
+          
         </div>
       </div>
 
@@ -780,14 +770,9 @@
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
-                <span>Arsitektur Asynchronous Non-Blocking</span>
-              </div>
+              
               <h2 class="ons-subhero-title">Monitor Antrean Notifikasi &amp; Riwayat Pengiriman WA</h2>
-              <p class="ons-subhero-desc">
-                Log pengiriman pesan berjalan di latar belakang tanpa mengunci kasir atau POS. Dilengkapi status real-time, pencatatan kegagalan pengiriman, dan fallback direct WhatsApp.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -818,7 +803,7 @@
             <span class="ons-cockpit-badge ${pendingQ.length > 0 ? 'bg-amber-500/10 text-amber-600 font-bold' : ''} font-mono-num">${pendingQ.length}</span>
           </div>
           <div class="ons-cockpit-val ${pendingQ.length > 0 ? 'text-amber-600' : ''}">${pendingQ.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pesan</span></div>
-          <div class="ons-cockpit-sub">Pesan dalam antrean non-blocking</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -826,7 +811,7 @@
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${sentQ.length}</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${sentQ.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pesan</span></div>
-          <div class="ons-cockpit-sub">Terkirim ke WhatsApp pasien</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -834,7 +819,7 @@
             <span class="ons-cockpit-badge ${failedQ.length > 0 ? 'bg-rose-500/10 text-rose-600' : ''} font-mono-num">${failedQ.length}</span>
           </div>
           <div class="ons-cockpit-val ${failedQ.length > 0 ? 'text-rose-600' : ''}">${failedQ.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pesan</span></div>
-          <div class="ons-cockpit-sub">Nomor tidak aktif / offline</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -842,7 +827,7 @@
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${queue.length}</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">${queue.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Log</span></div>
-          <div class="ons-cockpit-sub">Audit trail pengiriman notifikasi</div>
+          
         </div>
       </div>
 
@@ -1019,14 +1004,9 @@
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
-                <span>Standar Care Kefarmasian PMK 73/2016</span>
-              </div>
+              
               <h2 class="ons-subhero-title">Radar Tele-Refill Pasien Kronis &amp; Pengingat Obat Rutin (H-3)</h2>
-              <p class="ons-subhero-desc">
-                Pemantauan kepatuhan terapi pasien hipertensi, diabetes, jantung, dan PRB BPJS. Deteksi otomatis perkiraan obat habis H-3 s.d H-0 guna mencegah putus obat dan komplikasi klinis.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -1057,7 +1037,7 @@
             <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10 font-mono-num">${totalCount}</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">${totalCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
-          <div class="ons-cockpit-sub">Hipertensi, DM, Jantung &amp; PRB</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -1065,7 +1045,7 @@
             <span class="ons-cockpit-badge ${urgentCount > 0 ? 'bg-amber-500/10 text-amber-600 font-bold animate-pulse' : ''} font-mono-num">${urgentCount}</span>
           </div>
           <div class="ons-cockpit-val ${urgentCount > 0 ? 'text-amber-600' : ''}">${urgentCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
-          <div class="ons-cockpit-sub">Obat hampir atau habis hari ini</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -1073,7 +1053,7 @@
             <span class="ons-cockpit-badge ${overdueCount > 0 ? 'bg-rose-500/10 text-rose-600 font-bold' : ''} font-mono-num">${overdueCount}</span>
           </div>
           <div class="ons-cockpit-val ${overdueCount > 0 ? 'text-rose-600' : ''}">${overdueCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Pasien</span></div>
-          <div class="ons-cockpit-sub">Potensi putus terapi &amp; relaps</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -1081,7 +1061,7 @@
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${compliancePct}%</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${compliancePct}%</div>
-          <div class="ons-cockpit-sub">Target kepatuhan terapi &gt;90%</div>
+          
         </div>
       </div>
 

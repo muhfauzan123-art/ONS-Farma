@@ -3087,7 +3087,7 @@
               </span>
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Analisis Performa Penjualan &amp; Margin Apotek</h2>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Evaluasi pertumbuhan omzet, margin keuntungan kotor, rata-rata belanja kasir, dan ranking loyalitas pelanggan.</p>
+            
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canPos ? `<button type="button" onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>Kasir POS (F2)</span></button>` : ''}
@@ -3449,7 +3449,7 @@
               </span>
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Pusat Kendali Pengadaan Obat &amp; Hutang PBF</h2>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Kelola siklus pengadaan apotek dari rencana stok defecta, pesanan Surat Pesanan (SP) aktif, hingga jatuh tempo faktur PBF tempo.</p>
+            
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>+ Rencana Order (Defecta)</span></button>` : ''}
@@ -3685,7 +3685,7 @@
               </span>
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Valuasi Persediaan, Arus Mutasi &amp; Kontrol FEFO</h2>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Arus pergerakan barang real-time dari saldo awal, penerimaan faktur, penjualan POS kasir, opname, hingga saldo akhir aset.</p>
+            
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canGudang ? `<button type="button" onclick="navigateView('gudang','opname')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Stok Opname</span></button>` : ''}
@@ -4526,11 +4526,9 @@
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Daftar Penjualan &amp; Riwayat Struk</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">Audit Transaksi</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Arsip struk kasir, faktur tempo, cetak ulang struk thermal Bluetooth, manajemen antrean draft, dan verifikasi nota retur.</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -4754,11 +4752,9 @@
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Retur Penjualan &amp; Otorisasi Void</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/20">PIN APJ Required</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Daftar retur penuh / sebagian yang diotorisasi PIN APJ/Pemilik, pengembalian kas pelanggan, dan pemulihan stok batch FEFO otomatis.</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -4878,11 +4874,9 @@
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg>
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Penjualan Tertolak (Lost Sales)</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">Radar Pengadaan</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">Pencatatan permintaan obat/alkes yang gagal dilayani karena stok habis atau belum ada di katalog untuk dihubungkan langsung ke Buku Defecta.</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">

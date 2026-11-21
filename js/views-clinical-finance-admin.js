@@ -1493,7 +1493,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               <h2 class="text-base font-extrabold" style="color:var(--ons-primary)">Kalkulator Dosis Obat &amp; Rekomendasi Klinis Apoteker</h2>
               <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">41 Sediaan Populer</span>
             </div>
-            <p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Perhitungan presisi pediatrik, takaran sendok sirup/drop, rumus usia, BSA Mosteller, laju tetesan infus &amp; ginjal terstandar ISO Farmasi &amp; PMK 73.</p>
+            
           </div>
           <!-- Live Quick Search Bar -->
           <div class="relative min-w-[260px] max-w-sm">
@@ -1918,7 +1918,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>`))))}
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
                   klinisTab === 'soap' ? 'Kajian Resep &amp; Catatan Medis SOAP' :
                   (klinisTab === 'erx' ? 'Antrean E-Resep &amp; Resep Dokter Masuk' :
@@ -1927,23 +1927,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                   (klinisTab === 'pio' ? 'Pelayanan Informasi Obat (PIO) &amp; Konseling' :
                   'Monitoring Efek Samping Obat (MESO BPOM)'))))
                 }</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">${
-                  klinisTab === 'soap' ? 'PMK No. 73/2016' :
-                  (klinisTab === 'erx' ? 'Portal E-Resep' :
-                  (klinisTab === 'racikan' ? 'Formula Farmasi' :
-                  (klinisTab === 'kalkulator' ? '41 Formula Siaga' :
-                  (klinisTab === 'pio' ? 'KIE &amp; Edukasi' :
-                  'Farmakovigilans'))))
-                }</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${
-                klinisTab === 'soap' ? 'Pengkajian kelayakan administratif, farmasetik, dan klinis resep dokter dengan dokumentasi catatan SOAP serta integrasi SATUSEHAT.' :
-                (klinisTab === 'erx' ? 'Monitoring antrean resep elektronik dari klinik, puskesmas, dan dokter praktik mitra yang siap diproses dan diracik apotek.' :
-                (klinisTab === 'racikan' ? 'Manajemen peracikan sediaan obat (kapsul, pulveres, sirup, salep), kalkulasi masa simpan BUD, dan cetak etiket aturan pakai.' :
-                (klinisTab === 'kalkulator' ? 'Perhitungan akurat dosis pediatrik (Clark, Young, Dilling), dosis geriatrik, klirens kreatinin (Cockcroft-Gault), dan penyesuaian dosis obat.' :
-                (klinisTab === 'pio' ? 'Kartu informasi obat untuk pasien, jadwal minum obat rutin, edukasi efek samping, instruksi penyimpanan khusus, dan panduan KIE digital.' :
-                'Pelaporan resmi Kejadian Tidak Diinginkan (KTD) dan reaksi alergi obat sesuai format Badan POM RI untuk keamanan farmakoterapi pasien.'))))
-              }</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -2706,7 +2690,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Pasien &amp; Terapi Rutin, Refill Kronis (PRB) &amp; Antrean E-Resep</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Manajemen data pasien apotek, pemantauan kepatuhan terapi rutin kronis, pengingat refill obat via WhatsApp, &amp; validasi resep dokter.</p>
+          
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="ons-tab-bar">
@@ -4279,11 +4263,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               ${dynamicIcon}
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">${pageBadge}</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -5332,7 +5314,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Tagihan Home Care / Pelanggan, GrupBayar &amp; Kwitansi QR HMAC</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">1 bukti transfer banyak tagihan, verifikasi 1 klik, nomor kwitansi KW-YYYY-XXXXXX &amp; WA Reminder H-3/H-0.</p>
+          
         </div>
         <div class="flex flex-wrap gap-2">
           ${seeCost ? `<button onclick="window.openGenTagihanModal()" class="ons-btn ons-btn-primary text-xs">+ Terbit Tagihan Massal</button>` : ''}
@@ -5571,7 +5553,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Mesin Dokumen &amp; Arsip Resmi Apotek (Doc Engine)</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Templat {{...}} Docs/Sheets/Slides, persetujuan PIN APJ/Pemilik, pembekuan TERBIT, Arsip SP &amp; Verifikasi Publik 20-Karakter.</p>
+          
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="window.refreshDocEngineIfNeeded(true)" class="ons-btn ons-btn-ghost text-xs">Sinkron Server</button>
@@ -8029,11 +8011,9 @@ S. prn 3 dd 1 tab</textarea>
               ${dynamicIcon}
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">${pageBadge}</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -8712,14 +8692,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Prinsip Pareto 80/20 &amp; Tata Kelola Modal</span>
               </div>
               <h2 class="ons-subhero-title">Analisis Pareto ABC &amp; Kontribusi Omzet Apotek</h2>
-              <p class="ons-subhero-desc">
-                Klasifikasi inventaris farmasi berbasis kontribusi: Kelas A (Fast Moving 70-80% omzet), Kelas B (Medium Moving 15-20%), dan Kelas C (Slow Moving 5-10%) guna memprioritaskan alokasi dana dan mencegah kekosongan stok.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -8750,7 +8727,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${countA} Produk</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">${S().rp(sumA)}</div>
-          <div class="ons-cockpit-sub">Kontributor 70-80% omzet &bull; Pastikan buffer aman</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -8758,7 +8735,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${countB} Produk</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${S().rp(sumB)}</div>
-          <div class="ons-cockpit-sub">Rotasi stabil &bull; 15-20% kontribusi pendapatan</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -8766,7 +8743,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-amber-600 bg-amber-500/10 font-mono-num">${countC} Produk</span>
           </div>
           <div class="ons-cockpit-val text-amber-600">${S().rp(sumC)}</div>
-          <div class="ons-cockpit-sub">Efisiensi modal &bull; Batasi order &amp; monitor ED</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -8774,7 +8751,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-purple-600 bg-purple-500/10 font-mono-num">${rows.length} SKU</span>
           </div>
           <div class="ons-cockpit-val text-purple-600">${S().rp(totalMetric)}</div>
-          <div class="ons-cockpit-sub">Basis kalkulasi: [${anlParetoMode.toUpperCase()}]</div>
+          
         </div>
       </div>
 
@@ -8996,14 +8973,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Smart Buffer Stock &amp; Lead Time CDOB</span>
               </div>
               <h2 class="ons-subhero-title">Analisis Pembelian Cerdas &amp; Estimasi Kebutuhan Pengadaan</h2>
-              <p class="ons-subhero-desc">
-                Perhitungan otomatis ambang batas buffer stock, lead time kiriman PBF, konsumsi rata-rata harian, serta estimasi kuantitas pemenuhan stok guna mencegah loss sales dan overstock.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -9037,7 +9011,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge ${countLoss > 0 ? 'bg-rose-500/10 text-rose-600 font-bold' : ''} font-mono-num">${countLoss} SKU</span>
           </div>
           <div class="ons-cockpit-val ${countLoss > 0 ? 'text-rose-600' : ''}">${countLoss} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Stok habis &bull; Potensi kehilangan pembeli</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -9045,7 +9019,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge ${countUnder > 0 ? 'bg-amber-500/10 text-amber-600 font-bold' : ''} font-mono-num">${countUnder} SKU</span>
           </div>
           <div class="ons-cockpit-val ${countUnder > 0 ? 'text-amber-600' : ''}">${countUnder} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Stok di bawah ambang batas buffer safety</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -9053,7 +9027,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${countOver} SKU</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">${countOver} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Stok melebihi target stok maksimum</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -9061,7 +9035,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-slate-600 bg-slate-500/10 font-mono-num">${countDead} SKU</span>
           </div>
           <div class="ons-cockpit-val text-slate-600 dark:text-slate-300">${countDead} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Stok mengendap &bull; Opsi retur PBF / bundling</div>
+          
         </div>
       </div>
 
@@ -9229,14 +9203,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Proteksi Margin &amp; Deteksi Kenaikan HPP</span>
               </div>
               <h2 class="ons-subhero-title">Analisis Kenaikan Harga Faktur PBF &amp; Target Margin Jual</h2>
-              <p class="ons-subhero-desc">
-                Deteksi dini perubahan harga beli faktur distributor PBF, audit margin laba kotor, dan rekomendasi pembaruan harga jual otomatis per produk atau massal (bulk update).
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -9267,7 +9238,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge ${countNaik > 0 ? 'bg-rose-500/10 text-rose-600 font-bold' : ''} font-mono-num">${countNaik} SKU</span>
           </div>
           <div class="ons-cockpit-val ${countNaik > 0 ? 'text-rose-600' : ''}">${countNaik} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Harga beli faktur terbaru naik dibanding rata-rata</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -9275,7 +9246,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge ${countPerlu > 0 ? 'bg-amber-500/10 text-amber-600 font-bold' : ''} font-mono-num">${countPerlu} SKU</span>
           </div>
           <div class="ons-cockpit-val ${countPerlu > 0 ? 'text-amber-600' : ''}">${countPerlu} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Harga jual di bawah target margin ${anlHargaTargetMarkup}%</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -9283,7 +9254,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${countTurun} SKU</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${countTurun} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Harga beli lebih murah &bull; Potensi margin meningkat</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -9291,7 +9262,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10 font-mono-num">${countAman} SKU</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">${countAman} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Produk</span></div>
-          <div class="ons-cockpit-sub">Margin laba kotor apotek terlindungi optimal</div>
+          
         </div>
       </div>
 
@@ -9958,14 +9929,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Otentikasi &amp; Direktori Karyawan</span>
               </div>
               <h2 class="ons-subhero-title">Direktori Pengguna &amp; Manajemen Akun Staf</h2>
-              <p class="ons-subhero-desc">
-                Manajemen kredensial login staf apotek, status akun aktif/nonaktif, hak akses multi-cabang, dan verifikasi PIN otorisasi transaksi kasir.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -9999,7 +9967,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge font-mono-num">${staffList.length}</span>
           </div>
           <div class="ons-cockpit-val">${staffList.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Akun</span></div>
-          <div class="ons-cockpit-sub">Seluruh pengguna apotek terdata</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10007,7 +9975,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${activeStaff.length}</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${activeStaff.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Akun</span></div>
-          <div class="ons-cockpit-sub">Kredensial aktif dapat login sistem</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10015,7 +9983,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10 font-mono-num">${uniqueRoles.length}</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">${uniqueRoles.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Peran</span></div>
-          <div class="ons-cockpit-sub">Pemilik, APJ, Kasir, Asisten Apoteker</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10023,7 +9991,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">HTTPS Live</span>
           </div>
           <div class="ons-cockpit-val text-blue-600 text-sm truncate font-mono">${loginHost}/login</div>
-          <div class="ons-cockpit-sub">Klik tombol "Salin Link Login" di atas</div>
+          
         </div>
       </div>
 
@@ -10129,14 +10097,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Role-Based Access Control (RBAC)</span>
               </div>
               <h2 class="ons-subhero-title">Konfigurasi Peran &amp; Matriks Hak Akses Staf</h2>
-              <p class="ons-subhero-desc">
-                Hierarki kewenangan jabatan apotek: Pemilik, Apoteker Penanggung Jawab (APJ), Kasir POS, dan peran kustom sesuai standar operasional apotek.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -10163,7 +10128,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge font-mono-num">${allRoles.length}</span>
           </div>
           <div class="ons-cockpit-val">${allRoles.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Peran</span></div>
-          <div class="ons-cockpit-sub">Struktur organisasi staf apotek</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10171,7 +10136,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">3 Inti</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">3 Default</div>
-          <div class="ons-cockpit-sub">Admin/Pemilik, APJ, Kasir POS</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10179,7 +10144,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10 font-mono-num">${customRoles.length}</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">${customRoles.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Role</span></div>
-          <div class="ons-cockpit-sub">Disesuaikan operasional apotek</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10187,7 +10152,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10">Proteksi Penuh</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">Enforced</div>
-          <div class="ons-cockpit-sub">Validasi level menu &amp; API server</div>
+          
         </div>
       </div>
 
@@ -10628,14 +10593,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Model Roster 2 Shift Apotek Digital</span>
               </div>
               <h2 class="ons-subhero-title">Penjadwalan Shift Operasional Staf Apotek</h2>
-              <p class="ons-subhero-desc">
-                Alokasi giliran jaga staf apotek: Shift Pagi (08:00 - 15:00) &amp; Shift Sore (15:00 - 22:00). Rotasi berkala, salin jadwal mingguan, dan rekap jam kerja.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -10671,7 +10633,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge font-mono-num">${jadwalList.length}</span>
           </div>
           <div class="ons-cockpit-val">${jadwalList.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Karyawan</span></div>
-          <div class="ons-cockpit-sub">Roster aktif pekan berjalan</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10679,7 +10641,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10">08:00 - 15:00</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">7 Jam Kerja</div>
-          <div class="ons-cockpit-sub">Pelayanan pagi &amp; penerimaan PBF</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10687,7 +10649,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">15:00 - 22:00</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">7 Jam Kerja</div>
-          <div class="ons-cockpit-sub">Pelayanan sore &amp; resep dokter malam</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10695,7 +10657,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-purple-600 bg-purple-500/10 font-mono-num">~42 Jam</span>
           </div>
           <div class="ons-cockpit-val text-purple-600">~42 Jam/Pekan</div>
-          <div class="ons-cockpit-sub">Standar 6 hari kerja / 1 hari libur</div>
+          
         </div>
       </div>
 
@@ -10802,14 +10764,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Audit Kehadiran &amp; Kalkulasi Jam Kerja</span>
               </div>
               <h2 class="ons-subhero-title">Riwayat Presensi &amp; Akumulasi Jam Kerja Masuk</h2>
-              <p class="ons-subhero-desc">
-                Pencatatan jam kedatangan &amp; kepulangan staf apotek, verifikasi ketepatan waktu, deteksi keterlambatan/lembur, dan dasar penghitungan payroll.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -10842,7 +10801,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge font-mono-num">${totalHari}</span>
           </div>
           <div class="ons-cockpit-val">${totalHari} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Log Masuk</span></div>
-          <div class="ons-cockpit-sub">Tercatat di sistem apotek digital</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10850,7 +10809,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10 font-mono-num">${tepatWaktuCount}</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">${tepatWaktuCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Log</span></div>
-          <div class="ons-cockpit-sub">${totalHari > 0 ? Math.round((tepatWaktuCount / totalHari) * 100) : 100}% kepatuhan jam shift jaga</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10858,7 +10817,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge ${terlambatCount > 0 ? 'bg-amber-500/10 text-amber-600 font-bold' : ''} font-mono-num">${terlambatCount}</span>
           </div>
           <div class="ons-cockpit-val ${terlambatCount > 0 ? 'text-amber-600' : ''}">${terlambatCount} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Kejadian</span></div>
-          <div class="ons-cockpit-sub">Dikenakan potongan disiplin kehadiran</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -10866,7 +10825,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-sky-600 bg-sky-500/10 font-mono-num">${totalJamMasuk} Jam</span>
           </div>
           <div class="ons-cockpit-val text-sky-600">${totalJamMasuk} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Jam</span></div>
-          <div class="ons-cockpit-sub">Dasar perhitungan upah jam masuk riil</div>
+          
         </div>
       </div>
 
@@ -11020,14 +10979,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Integritas Kas Kasir &amp; Serah Terima Sesi</span>
               </div>
               <h2 class="ons-subhero-title">Riwayat Sesi Shift &amp; Rekonsiliasi Kasir POS</h2>
-              <p class="ons-subhero-desc">
-                Monitoring buka-tutup shift kasir, saldo awal modal (float), rekonsiliasi kas fisik vs sistem, deteksi selisih (variance), dan audit serah terima pergantian kasir.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -11054,7 +11010,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge ${currentShift.status === 'Open' ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}">${currentShift.status}</span>
           </div>
           <div class="ons-cockpit-val ${currentShift.status === 'Open' ? 'text-emerald-600' : ''}">${currentShift.status === 'Open' ? '🟢 Aktif (Open)' : 'Tutup'}</div>
-          <div class="ons-cockpit-sub">Kasir: ${currentShift.buka_oleh || '-'}</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -11062,7 +11018,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge font-mono-num">${allSessions.length}</span>
           </div>
           <div class="ons-cockpit-val">${allSessions.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Sesi</span></div>
-          <div class="ons-cockpit-sub">Histori buka-tutup shift kasir</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -11070,7 +11026,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10">Seimbang</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">Terkontrol</div>
-          <div class="ons-cockpit-sub">Verifikasi fisik vs kalkulasi sistem</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -11078,7 +11034,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">Multi-Shift POS</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">Float Ready</div>
-          <div class="ons-cockpit-sub">Blind close &amp; serah terima modal kas</div>
+          
         </div>
       </div>
 
@@ -11161,14 +11117,11 @@ S. prn 3 dd 1 tab</textarea>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             </div>
             <div>
-              <div class="ons-subhero-badge">
-                <span class="ons-badge-dot"></span>
+              
                 <span>Sistem Audit Trail &amp; Keamanan Apotek</span>
               </div>
               <h2 class="ons-subhero-title">Log Aktivitas Pengguna &amp; Audit Operasional Staf</h2>
-              <p class="ons-subhero-desc">
-                Pencatatan komprehensif riwayat otentikasi login, transaksi kasir, penerimaan faktur PBF, penyesuaian stok, dan perubahan konfigurasi apotek.
-              </p>
+              
             </div>
           </div>
           <div class="ons-subhero-actions">
@@ -11192,7 +11145,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge font-mono-num">${auditLogs.length}</span>
           </div>
           <div class="ons-cockpit-val">${auditLogs.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Catatan</span></div>
-          <div class="ons-cockpit-sub">Aktivitas operasional apotek terekam</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -11200,7 +11153,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-emerald-600 bg-emerald-500/10">100% Utuh</span>
           </div>
           <div class="ons-cockpit-val text-emerald-600">Anti-Tamper</div>
-          <div class="ons-cockpit-sub">Sesuai standar verifikasi ISO &amp; BPOM</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -11208,7 +11161,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10">Full Modules</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">Terdistribusi</div>
-          <div class="ons-cockpit-sub">POS, Faktur, Resep, Inventori, Keuangan</div>
+          
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
@@ -11216,7 +11169,7 @@ S. prn 3 dd 1 tab</textarea>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">ISO 8601</span>
           </div>
           <div class="ons-cockpit-val text-blue-600">Timestamped</div>
-          <div class="ons-cockpit-sub">Presisi tinggi zona waktu lokal</div>
+          
         </div>
       </div>
 
@@ -13887,11 +13840,11 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-subhero-banner is-settings">
             <div class="ons-subhero-content">
               <div class="ons-subhero-header">
-                <span class="ons-subhero-badge">IDENTITAS RESMI &amp; LEGALITAS APOTEK</span>
+                
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-400/30">PMK No. 73/2016</span>
               </div>
               <h2 class="ons-subhero-title">Profil Bisnis, Sarana Apotek &amp; Legalitas SIA/SIPA</h2>
-              <p class="ons-subhero-desc">Data resmi pemilik sarana, apoteker penanggung jawab (APJ), nomor izin operasional DPMPTSP &amp; Kemenkes, foto tempat usaha, logo nota, serta zona waktu WITA.</p>
+              
             </div>
             <div class="ons-subhero-actions">
               <button onclick="window.openChangeCredModal()" class="ons-btn ons-btn-ghost text-xs">Ganti Sandi / PIN</button>
@@ -13903,11 +13856,11 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-subhero-banner is-settings">
             <div class="ons-subhero-content">
               <div class="ons-subhero-header">
-                <span class="ons-subhero-badge">TATA KELOLA &amp; OPERASIONAL TOKO</span>
+                
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-400/30">Kebijakan Toko Aktif</span>
               </div>
               <h2 class="ons-subhero-title">Konfigurasi Operasional, Kebijakan Stok &amp; Kasir</h2>
-              <p class="ons-subhero-desc">Kendalikan aturan anti-stok minus, proteksi jual rugi (HPP Guard), blind count tutup shift kasir, expired date guard, dan pembulatan kasir POS.</p>
+              
             </div>
             <div class="ons-subhero-actions">
               <button type="button" onclick="window.saveStoreSettings()" class="ons-btn ons-btn-emerald text-xs font-bold px-4 py-2 shadow-sm">💾 Simpan Konfigurasi</button>
@@ -13918,11 +13871,11 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-subhero-banner is-settings">
             <div class="ons-subhero-content">
               <div class="ons-subhero-header">
-                <span class="ons-subhero-badge">PAYMENT GATEWAYS &amp; EDC</span>
+                
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-400/30">Multi-Channel</span>
               </div>
               <h2 class="ons-subhero-title">Saluran Pembayaran Kasir &amp; Rekening Apotek</h2>
-              <p class="ons-subhero-desc">Kelola saluran pembayaran uang tunai kasir, QRIS Standar BI, EDC kartu debit/kredit, rekening transfer bank apotek, dan penjaminan asuransi rekanan.</p>
+              
             </div>
             <div class="ons-subhero-actions">
               ${canEditProfile ? `<button type="button" onclick="window.openAddPaymentChannelModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Metode Baru</button>` : ''}
@@ -13933,11 +13886,11 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-subhero-banner is-settings">
             <div class="ons-subhero-content">
               <div class="ons-subhero-header">
-                <span class="ons-subhero-badge">SECURITY &amp; ACCESS CONTROL</span>
+                
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-400/30">Zero-Trust RBAC</span>
               </div>
               <h2 class="ons-subhero-title">Manajemen Akun Staf, Matriks Hak Akses &amp; PIN Otorisasi</h2>
-              <p class="ons-subhero-desc">Kelola kredensial login pemilik sarana, apoteker penanggung jawab (APJ), kasir operasional, matriks izin per-modul, serta proteksi keamanan sesi.</p>
+              
             </div>
             <div class="ons-subhero-actions">
               <button onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs font-bold">+ Tambah Akun Staf</button>
@@ -13949,11 +13902,11 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-subhero-banner is-settings">
             <div class="ons-subhero-content">
               <div class="ons-subhero-header">
-                <span class="ons-subhero-badge">ESC/POS THERMAL PRINTER</span>
+                
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-400/30">58mm &amp; 80mm</span>
               </div>
               <h2 class="ons-subhero-title">Konfigurasi &amp; Pratinjau Desain Struk Kasir Thermal</h2>
-              <p class="ons-subhero-desc">Kustomisasi format cetak thermal 58mm / 80mm, nota apotek resmi, QR code verifikasi transaksi, barcode, direktif cetak ESC/POS, dan printer Bluetooth.</p>
+              
             </div>
             <div class="ons-subhero-actions">
               <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs">🖨️ Hubungkan BT</button>
@@ -13966,11 +13919,11 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-subhero-banner is-settings">
             <div class="ons-subhero-content">
               <div class="ons-subhero-header">
-                <span class="ons-subhero-badge">DISASTER RECOVERY &amp; SCRIPT PROPERTIES</span>
+                
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-400/30">Cloud &amp; Local</span>
               </div>
               <h2 class="ons-subhero-title">Brankas Rahasia, Backup JSON &amp; Pemeliharaan Database</h2>
-              <p class="ons-subhero-desc">Cadangkan database penuh 1-klik (.JSON), audit kesehatan tabel Google Sheets, sensor kunci API/token rahasia, dan pemulihan sistem darurat.</p>
+              
             </div>
             <div class="ons-subhero-actions">
               <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup JSON</button>
@@ -13982,11 +13935,11 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-subhero-banner is-settings">
             <div class="ons-subhero-content">
               <div class="ons-subhero-header">
-                <span class="ons-subhero-badge">COMPLIANCE &amp; IMMUTABLE AUDIT TRAIL</span>
+                
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-400/30">CDOB Kemenkes</span>
               </div>
               <h2 class="ons-subhero-title">Pemeriksaan Kepatuhan CDOB BPOM &amp; Jejak Audit Sistem</h2>
-              <p class="ons-subhero-desc">Verifikasi butir kepatuhan farmasi resmi oleh APJ, audit peran staf, serta jejak audit perubahan data sensitif dengan enkripsi dan redaksi rahasia.</p>
+              
             </div>
             <div class="ons-subhero-actions">
               ${canEditProfile ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
@@ -14003,22 +13956,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Kelengkapan Profil</span>
               <span class="ons-cockpit-val text-sky-600">${comp.percent || 100}%</span>
-              <span class="ons-cockpit-desc">${comp.missing && comp.missing.length ? comp.missing.length + ' Item Belum Diisi' : 'Data Usaha &amp; Pemilik Lengkap'}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Legalitas SIA / SIPA</span>
               <span class="ons-cockpit-val text-emerald-600">Terverifikasi</span>
-              <span class="ons-cockpit-desc">DPMPTSP &amp; Standar Kemenkes</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Zona Waktu Apotek</span>
               <span class="ons-cockpit-val text-blue-600 truncate text-base">${S().esc(merged.zona_waktu || 'Asia/Makassar (WITA)')}</span>
-              <span class="ons-cockpit-desc">Sinkronisasi Jam Transaksi POS</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Status Pajak Toko</span>
               <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(merged.status_pkp || 'PKP (PPN 11%)')}</span>
-              <span class="ons-cockpit-desc">Faktur &amp; Struk Terkonfigurasi</span>
+              
             </div>
           </div>`;
         } else if (settingsTab === 'konfigurasi') {
@@ -14026,22 +13979,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Proteksi Stok Minus</span>
               <span class="ons-cockpit-val ${cfg.allow_negative_stock ? 'text-amber-600' : 'text-emerald-600'}">${cfg.allow_negative_stock ? 'Diizinkan (Awas)' : 'Terkunci Aman'}</span>
-              <span class="ons-cockpit-desc">${cfg.allow_negative_stock ? 'Kasir boleh jual stok 0' : 'Blokir checkout jika stok 0'}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Cegah Jual Rugi</span>
               <span class="ons-cockpit-val ${cfg.cegah_penjualan_rugi !== false ? 'text-emerald-600' : 'text-slate-500'}">${cfg.cegah_penjualan_rugi !== false ? 'HPP Guard Aktif' : 'Nonaktif'}</span>
-              <span class="ons-cockpit-desc">Blokir jual di bawah HPP produk</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Blind Count Shift</span>
               <span class="ons-cockpit-val ${cfg.blind_count_tutup_shift !== false ? 'text-blue-600' : 'text-slate-500'}">${cfg.blind_count_tutup_shift !== false ? 'Wajib Blind Count' : 'Tutup Bebas'}</span>
-              <span class="ons-cockpit-desc">Cegah manipulasi selisih kas kasir</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Pembulatan Kasir</span>
               <span class="ons-cockpit-val text-teal-600">Rp ${cfg.pembulatan_kasir || 100}</span>
-              <span class="ons-cockpit-desc">Arah: ${cfg.arah_pembulatan || 'TERDEKAT'}</span>
+              
             </div>
           </div>`;
         } else if (settingsTab === 'metode-bayar') {
@@ -14050,22 +14003,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Total Metode Bayar</span>
               <span class="ons-cockpit-val text-teal-600">${channelsList.length} Saluran</span>
-              <span class="ons-cockpit-desc">${actCount} Saluran Status Aktif</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">QRIS Standar BI</span>
               <span class="ons-cockpit-val text-emerald-600">Terverifikasi</span>
-              <span class="ons-cockpit-desc">MDR 0% / 0.3% Mikro Nasional</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Mesin EDC / Debit</span>
               <span class="ons-cockpit-val text-blue-600">EDC Multi-Bank</span>
-              <span class="ons-cockpit-desc">BCA, Mandiri, BRI, BNI</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Transfer &amp; Rekening</span>
               <span class="ons-cockpit-val text-purple-600">Auto-Buku Kas</span>
-              <span class="ons-cockpit-desc">Masuk Jurnal Keuangan Kasir</span>
+              
             </div>
           </div>`;
         } else if (settingsTab === 'akun') {
@@ -14074,22 +14027,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Total Akun Staf</span>
               <span class="ons-cockpit-val text-blue-600">${staffList.length} Akun</span>
-              <span class="ons-cockpit-desc">${actStaff} Akun Berstatus Aktif</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">APJ Penanggung Jawab</span>
               <span class="ons-cockpit-val text-sky-600 truncate text-base">${S().esc(apjAcc.nama_lengkap)}</span>
-              <span class="ons-cockpit-desc">SIPA: ${S().esc(apjAcc.no_sipa || '-')}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Kasir Pelaksana</span>
               <span class="ons-cockpit-val text-emerald-600 truncate text-base">${S().esc(kasirAcc.nama_lengkap)}</span>
-              <span class="ons-cockpit-desc">Operator POS &amp; Tutup Shift</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Enkripsi Kredensial</span>
               <span class="ons-cockpit-val text-purple-600">250x SHA-256</span>
-              <span class="ons-cockpit-desc">Salt + Pepper + Lockout Guard</span>
+              
             </div>
           </div>`;
         } else if (settingsTab === 'struk') {
@@ -14097,22 +14050,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Template Struk Aktif</span>
               <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(curTpl.nama || 'Standar 58mm')}</span>
-              <span class="ons-cockpit-desc">Kode: ${S().esc(curTpl.kode || 'STRUK_POS_58MM')}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Lebar Kertas Thermal</span>
               <span class="ons-cockpit-val text-blue-600">${widthNum} mm</span>
-              <span class="ons-cockpit-desc">${widthNum === 80 ? '46 Kolom Karakter' : '32 Kolom Karakter'}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Koneksi Printer</span>
               <span class="ons-cockpit-val text-teal-600">Bluetooth / Print</span>
-              <span class="ons-cockpit-desc">Web Bluetooth ESC/POS &amp; Dialog</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Validasi Anti-Palsu</span>
               <span class="ons-cockpit-val text-emerald-600">QR Code HMAC</span>
-              <span class="ons-cockpit-desc">Verifikasi Transaksi Resmi</span>
+              
             </div>
           </div>`;
         } else if (settingsTab === 'vault') {
@@ -14120,22 +14073,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Status Backup Terakhir</span>
               <span class="ons-cockpit-val ${bk.isOverdue ? 'text-amber-600' : 'text-emerald-600'} truncate text-base">${S().esc(bk.label)}</span>
-              <span class="ons-cockpit-desc">${bk.isOverdue ? 'Disarankan Unduh Backup Baru' : 'Cadangan Aman Terkini'}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Mode Penyimpanan</span>
               <span class="ons-cockpit-val text-blue-600">${isDemo ? 'Local Browser PWA' : 'Cloud Sheets DB'}</span>
-              <span class="ons-cockpit-desc">${isDemo ? 'Penyimpanan Offline Mandiri' : 'Tersinkron Database Pusat'}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Brankas Rahasia</span>
               <span class="ons-cockpit-val text-purple-600">${Object.keys(secrets).length} Parameter</span>
-              <span class="ons-cockpit-desc">Script Properties Terenkripsi</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Integritas Tabel DB</span>
               <span class="ons-cockpit-val text-teal-600">Skema v13 Aktif</span>
-              <span class="ons-cockpit-desc">Siap Audit &amp; Sinkronisasi</span>
+              
             </div>
           </div>`;
         } else {
@@ -14143,22 +14096,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Total Log Aktivitas</span>
               <span class="ons-cockpit-val text-blue-600">${filteredAuditLogs.length} Event</span>
-              <span class="ons-cockpit-desc">${audit.length} Total Riwayat Tersimpan</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Poin Kepatuhan CDOB</span>
               <span class="ons-cockpit-val text-emerald-600">${auditItems.length} Poin</span>
-              <span class="ons-cockpit-desc">${auditItems.filter((x) => x.checked).length} Poin Terverifikasi</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Apoteker PJ (APJ)</span>
               <span class="ons-cockpit-val text-sky-600 truncate text-base">${S().esc(auditDraft.apj_nama || prof.nama_apj || 'apt. Dewi Kartika')}</span>
-              <span class="ons-cockpit-desc">SIPA: ${S().esc(auditDraft.apj_sipa || prof.sipa_apj || '-')}</span>
+              
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Integritas Log Audit</span>
               <span class="ons-cockpit-val text-purple-600">Immutable</span>
-              <span class="ons-cockpit-desc">Redaksi Kredensial Otomatis</span>
+              
             </div>
           </div>`;
         }
@@ -15708,7 +15661,7 @@ S. prn 3 dd 1 tab</textarea>
       <div class="ons-page-header">
         <div>
           <h1 class="text-xl font-extrabold">Simulator Breakpoint PWA Mobile, Tablet &amp; Desktop (W-14)</h1>
-          <p class="text-xs" style="color:var(--ons-text-soft)">Uji tata letak antarmuka kasir di berbagai ukuran layar secara langsung &amp; instal ke Layar Utama HP.</p>
+          
         </div>
         <div class="flex gap-1.5 flex-wrap">
           ${[

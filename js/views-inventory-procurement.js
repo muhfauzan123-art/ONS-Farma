@@ -2156,11 +2156,9 @@
               ${dynamicIcon}
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${S().esc(pageTitle)}</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">${pageBadge}</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${S().esc(pageDesc)}</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -10972,29 +10970,12 @@
       <div class="ons-subhero-banner is-pembelian mb-4">
         <div class="ons-subhero-inner">
           <div class="ons-subhero-main">
-            <div class="ons-subhero-pill">
-              <span class="ons-subhero-dot bg-sky-500"></span>
-              <span class="ons-subhero-pill-text font-bold uppercase tracking-wider">PENGADAAN &amp; FAKTUR PBF</span>
-              <span class="ons-subhero-pill-badge bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/20">${
-                fakturTab === 'rencana' ? 'Buffer Stock &amp; ROP' :
-                (fakturTab === 'sp' ? 'BPOM &amp; CDOB Terintegrasi' :
-                (fakturTab === 'input' ? 'Good Receiving Note (GRN)' :
-                (fakturTab === 'retur' ? 'BAR-PBF Kemenkes' : 'Akuntansi Pembelian')))
-              }</span>
-            </div>
             <h2 class="ons-subhero-title">${
               fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta Kritis' :
               (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM &amp; Monitoring Distribusi' :
               (fakturTab === 'input' ? 'Penerimaan Fisik Faktur PBF (GRN) &amp; Smart Scanner' :
               (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF) &amp; Penyesuaian Hutang' : 'Faktur Pembelian &amp; Penerimaan PBF Resmi')))
             }</h2>
-            <p class="ons-subhero-desc">${
-              fakturTab === 'rencana' ? 'Perencanaan kebutuhan stok obat apotek, analisa ambang ROP buffer stock, defecta cerdas, dan kalkulasi penawaran sales distributor.' :
-              (fakturTab === 'sp' ? 'Pengelolaan pesanan resmi regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak form A4, dan pelacakan status kiriman PBF.' :
-              (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), dan pembentukan hutang dagang.' :
-              (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, kartu stok, dan nota kredit otomatis disesuaikan.' :
-              'Monitoring faktur resmi PBF, verifikasi DPP/PPN, histori penerimaan batch, serta pelacakan sisa hutang dagang dan termin jatuh tempo.')))
-            }</p>
           </div>
           <div class="ons-subhero-actions">
             ${fakturTab === 'rencana' ? `
@@ -11035,22 +11016,22 @@
             <div class="ons-cockpit-card is-blue">
               <span class="ons-cockpit-label">Total Usulan Rencana</span>
               <span class="ons-cockpit-val font-mono-num">${allPlans.length} <span class="text-xs font-normal text-slate-500">Item</span></span>
-              <span class="ons-cockpit-desc">Kebutuhan restok apotek</span>
+              
             </div>
             <div class="ons-cockpit-card is-emerald">
               <span class="ons-cockpit-label">Estimasi Nilai Pengadaan</span>
               <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalPlansRp)}</span>
-              <span class="ons-cockpit-desc">Estimasi total pengadaan</span>
+              
             </div>
             <div class="ons-cockpit-card ${selectedPlans.length > 0 ? 'is-blue ring-2 ring-blue-500 shadow-sm' : ''}">
               <span class="ons-cockpit-label">Produk Siap Jadi SP</span>
               <span class="ons-cockpit-val font-mono-num ${selectedPlans.length > 0 ? 'text-blue-600 dark:text-blue-400' : ''}">${selectedPlans.length} <span class="text-xs font-normal text-slate-500">Item</span></span>
-              <span class="ons-cockpit-desc">Siap generate ke SP resmi BPOM</span>
+              
             </div>
             <div class="ons-cockpit-card is-amber">
               <span class="ons-cockpit-label">Nilai SP Terpilih</span>
               <span class="ons-cockpit-val font-mono-num text-amber-600 dark:text-amber-400">${S().rp(selectedPlansRp)}</span>
-              <span class="ons-cockpit-desc">Total pesanan yang akan dibuat</span>
+              
             </div>
           </div>
           ${!planBannerDismissed ? `
@@ -11465,22 +11446,22 @@
             <div onclick="window.setReturFilterMode('ALL')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01]">
               <span class="ons-cockpit-label">Total Batch Terpantau</span>
               <span class="ons-cockpit-val font-mono-num">${allActiveBatches.length} <span class="text-xs font-normal text-slate-500">Batch</span></span>
-              <span class="ons-cockpit-desc">Dapat diproses retur bila rusak/recall</span>
+              
             </div>
             <div onclick="window.setReturFilterMode('NEAR_ED')" class="ons-cockpit-card ${nearEdBatches.length > 0 ? 'is-amber ring-2 ring-amber-500 shadow-sm' : 'is-emerald'} cursor-pointer transition-all hover:scale-[1.01]">
               <span class="ons-cockpit-label text-amber-600 dark:text-amber-400">Kritis Near-ED (&le;180 Hari)</span>
               <span class="ons-cockpit-val font-mono-num text-amber-600">${nearEdBatches.length} <span class="text-xs font-normal text-amber-500">Batch</span></span>
-              <span class="ons-cockpit-desc">Prioritas retur sebelum kadaluarsa</span>
+              
             </div>
             <div class="ons-cockpit-card is-purple">
               <span class="ons-cockpit-label">Total Riwayat Retur (BAR)</span>
               <span class="ons-cockpit-val font-mono-num">${filteredReturHistory.length} <span class="text-xs font-normal text-slate-500">Transaksi</span></span>
-              <span class="ons-cockpit-desc">Pengembalian resmi ke supplier</span>
+              
             </div>
             <div class="ons-cockpit-card is-emerald">
               <span class="ons-cockpit-label">Nilai Retur Disetujui</span>
               <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(filteredReturHistory.reduce((s, r) => s + r.total_retur, 0))}</span>
-              <span class="ons-cockpit-desc">Pengurangan saldo hutang dagang</span>
+              
             </div>
           </div>
 
@@ -11565,22 +11546,22 @@
             <div onclick="window.setFakturListFilter('SEMUA')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01]">
               <span class="ons-cockpit-label">Total Pembelian Faktur</span>
               <span class="ons-cockpit-val font-mono-num">${S().rp(totalPembelianNetto)}</span>
-              <span class="ons-cockpit-desc">${allFaktur.length} Faktur resmi tercatat</span>
+              
             </div>
             <div onclick="window.setFakturListFilter('BELUM_LUNAS')" class="ons-cockpit-card ${totalSisaHutang > 0 ? 'is-red ring-2 ring-rose-500 shadow-sm' : 'is-emerald'} cursor-pointer transition-all hover:scale-[1.01]">
               <span class="ons-cockpit-label ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : ''}">Sisa Hutang Dagang PBF</span>
               <span class="ons-cockpit-val font-mono-num ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(totalSisaHutang)}</span>
-              <span class="ons-cockpit-desc">${totalSisaHutang > 0 ? 'Kewajiban bayar distributor' : 'Lunas 100%'}</span>
+              
             </div>
             <div onclick="window.setFakturListFilter('JATUH_TEMPO')" class="ons-cockpit-card ${dueSoonCount > 0 ? 'is-amber ring-2 ring-amber-500 shadow-sm' : 'is-emerald'} cursor-pointer transition-all hover:scale-[1.01]">
               <span class="ons-cockpit-label ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">Jatuh Tempo &le; 7 Hari</span>
               <span class="ons-cockpit-val font-mono-num ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${dueSoonCount} <span class="text-xs font-normal">Faktur</span></span>
-              <span class="ons-cockpit-desc">Nominal: <b class="font-mono-num">${S().rp(dueSoonNominal)}</b></span>
+              
             </div>
             <div onclick="window.setFakturTab('konsinyasi')" class="ons-cockpit-card is-purple cursor-pointer transition-all hover:scale-[1.01]">
               <span class="ons-cockpit-label">Konsinyasi Belum Settle</span>
               <span class="ons-cockpit-val font-mono-num text-indigo-600 dark:text-indigo-400">${S().rp(konsPendingNominal)}</span>
-              <span class="ons-cockpit-desc">Titip jual distributor rekanan</span>
+              
             </div>
           </div>
 
@@ -13621,7 +13602,7 @@
       <div class="ons-ws-header">
         <div>
           <h2 class="text-base sm:text-lg font-extrabold tracking-tight">Retur Pembelian (BAR-PBF)</h2>
-          <p class="text-[11px]" style="color:var(--ons-text-soft)">Status PKP: <b>${S().esc(prof.status_pkp || 'NON_PKP')}</b> &bull; Otomatis potong stok batch FEFO, catat Kartu Stok &amp; sesuaikan Hutang PBF.</p>
+          
         </div>
         <div class="flex items-center gap-2">
           <button type="button" onclick="window.saveReturDraftToLocal()" class="ons-btn ons-btn-ghost text-xs">Simpan Draft</button>
@@ -15115,29 +15096,12 @@
       <div class="ons-subhero-banner is-konsinyasi mb-4">
         <div class="ons-subhero-inner">
           <div class="ons-subhero-main">
-            <div class="ons-subhero-pill">
-              <span class="ons-subhero-dot bg-indigo-500"></span>
-              <span class="ons-subhero-pill-text font-bold uppercase tracking-wider">KONSINYASI TITIP JUAL</span>
-              <span class="ons-subhero-pill-badge bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">${
-                konsSubTab === 'masuk' ? 'Titipan Rekanan Baru' :
-                (konsSubTab === 'status' ? 'Prinsip Laku Baru Bayar' :
-                (konsSubTab === 'retur' ? 'Bebas Risiko Hutang' :
-                'Stok Fisik Etalase Aktif'))
-              }</span>
-            </div>
             <h2 class="ons-subhero-title">${
               konsSubTab === 'masuk' ? 'Konsinyasi Masuk (Penerimaan Titipan Rekanan)' :
               (konsSubTab === 'status' ? 'Status Konsinyasi &amp; Rekonsiliasi Laku-Bayar' :
               (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang Titip)' :
               (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi &amp; Audit Etalase' : 'Penerimaan Barang Konsinyasi Baru')))
             }</h2>
-            <p class="ons-subhero-desc">${
-              konsSubTab === 'masuk' ? 'Pencatatan nota titip barang distributor rekanan. Stok fisik bertambah di kasir tanpa membentuk utang dagang di awal.' :
-              (konsSubTab === 'status' ? 'Prinsip Laku-Baru-Bayar: Tagihan supplier terbentuk secara otomatis HANYA ketika obat titipan berhasil laku terjual di Kasir POS.' :
-              (konsSubTab === 'retur' ? 'Pengembalian fisik sediaan titip jual yang tak laku atau menjelang expired date kepada pihak penitip tanpa risiko penalti.' :
-              (konsSubTab === 'stok' ? 'Audit ketersediaan fisik barang konsinyasi, lokasi rak penyimpanan apotek, dan pemantauan masa kadaluarsa (ED) batch titipan.' :
-              'Form pencatatan penerimaan fisik barang konsinyasi baru ke persediaan apotek.')))
-            }</p>
           </div>
           <div class="ons-subhero-actions">
             ${konsSubTab === 'masuk' ? `
@@ -15167,85 +15131,85 @@
           <div class="ons-cockpit-card is-blue">
             <span class="ons-cockpit-label">Total Faktur Titip</span>
             <span class="ons-cockpit-val font-mono-num">${filteredMasukRows.length} <span class="text-xs font-normal text-slate-500">Faktur</span></span>
-            <span class="ons-cockpit-desc">Surat jalan titip barang rekanan</span>
+            
           </div>
           <div class="ons-cockpit-card is-purple">
             <span class="ons-cockpit-label">Total Batch Titipan</span>
             <span class="ons-cockpit-val font-mono-num">${allItems.length} <span class="text-xs font-normal text-slate-500">Batch</span></span>
-            <span class="ons-cockpit-desc">Dapat langsung dijual di Kasir POS</span>
+            
           </div>
           <div class="ons-cockpit-card is-emerald">
             <span class="ons-cockpit-label">Akumulasi Nilai Titipan</span>
             <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalMasukRp)}</span>
-            <span class="ons-cockpit-desc">Bebas beban modal awal apotek</span>
+            
           </div>
           <div class="ons-cockpit-card ${filteredTagihan > 0 ? 'is-amber ring-2 ring-amber-500' : 'is-emerald'}">
             <span class="ons-cockpit-label ${filteredTagihan > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">Tagihan Belum Settle</span>
             <span class="ons-cockpit-val font-mono-num ${filteredTagihan > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(filteredTagihan)}</span>
-            <span class="ons-cockpit-desc">${filteredTagihan > 0 ? 'Wajib disetor bila sudah laku' : 'Bebas tunggakan'}</span>
+            
           </div>
         ` : konsSubTab === 'retur' ? `
           <div class="ons-cockpit-card is-blue">
             <span class="ons-cockpit-label">Total Transaksi Retur</span>
             <span class="ons-cockpit-val font-mono-num">${filteredReturs.length} <span class="text-xs font-normal text-slate-500">Transaksi</span></span>
-            <span class="ons-cockpit-desc">Pengembalian resmi ke mitra penitip</span>
+            
           </div>
           <div class="ons-cockpit-card is-red">
             <span class="ons-cockpit-label text-rose-600">Total Unit Diretur</span>
             <span class="ons-cockpit-val font-mono-num text-rose-600">${totalUnitRetur} <span class="text-xs font-normal text-rose-500">Unit</span></span>
-            <span class="ons-cockpit-desc">Barang ditarik tanpa beban kerugian</span>
+            
           </div>
           <div class="ons-cockpit-card is-amber">
             <span class="ons-cockpit-label text-amber-600">Total Nilai Retur</span>
             <span class="ons-cockpit-val font-mono-num text-amber-600 dark:text-amber-400">${S().rp(totalNilaiRetur)}</span>
-            <span class="ons-cockpit-desc">Valuasi stok yang dikembalikan</span>
+            
           </div>
           <div class="ons-cockpit-card is-purple">
             <span class="ons-cockpit-label">Penitip Penerima Retur</span>
             <span class="ons-cockpit-val font-mono-num">${penitipReturCount} <span class="text-xs font-normal text-slate-500">Supplier</span></span>
-            <span class="ons-cockpit-desc">Distributor penitip penerima BAR</span>
+            
           </div>
         ` : konsSubTab === 'stok' ? `
           <div class="ons-cockpit-card is-blue">
             <span class="ons-cockpit-label">Total Batch Sisa</span>
             <span class="ons-cockpit-val font-mono-num">${stokRowsFiltered.length} <span class="text-xs font-normal text-slate-500">Batch</span></span>
-            <span class="ons-cockpit-desc">Sediaan obat titipan siap jual</span>
+            
           </div>
           <div class="ons-cockpit-card is-purple">
             <span class="ons-cockpit-label">Total Unit Fisik Sisa</span>
             <span class="ons-cockpit-val font-mono-num text-indigo-600 dark:text-indigo-400">${totalQtyStok} <span class="text-xs font-normal text-slate-500">Unit</span></span>
-            <span class="ons-cockpit-desc">Jumlah unit fisik di apotek</span>
+            
           </div>
           <div class="ons-cockpit-card is-emerald">
             <span class="ons-cockpit-label">Valuasi Stok Titipan</span>
             <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalValStok)}</span>
-            <span class="ons-cockpit-desc">Total estimasi nilai sisa barang</span>
+            
           </div>
           <div class="ons-cockpit-card ${nearEdCount > 0 ? 'is-amber ring-2 ring-amber-500' : 'is-emerald'}">
             <span class="ons-cockpit-label ${nearEdCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">Mendekati ED (&le;180 Hari)</span>
             <span class="ons-cockpit-val font-mono-num ${nearEdCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${nearEdCount} <span class="text-xs font-normal text-slate-500">Batch</span></span>
-            <span class="ons-cockpit-desc">${nearEdCount > 0 ? 'Prioritas retur sebelum kadaluarsa' : 'Seluruh sediaan aman'}</span>
+            
           </div>
         ` : `
           <div class="ons-cockpit-card is-blue">
             <span class="ons-cockpit-label">Unit Laku Terjual</span>
             <span class="ons-cockpit-val font-mono-num text-blue-600">${filteredTerjual} <span class="text-xs font-normal text-slate-500">Unit</span></span>
-            <span class="ons-cockpit-desc">Obat titipan terjual di kasir POS</span>
+            
           </div>
           <div class="ons-cockpit-card is-purple">
             <span class="ons-cockpit-label">Unit Sisa Titipan</span>
             <span class="ons-cockpit-val font-mono-num">${filteredSisa} <span class="text-xs font-normal text-slate-500">Unit</span></span>
-            <span class="ons-cockpit-desc">Sediaan fisik masih ada di apotek</span>
+            
           </div>
           <div class="ons-cockpit-card ${filteredTagihan > 0 ? 'is-red ring-2 ring-rose-500' : 'is-emerald'}">
             <span class="ons-cockpit-label ${filteredTagihan > 0 ? 'text-rose-600 dark:text-rose-400' : ''}">Tagihan Belum Disettle</span>
             <span class="ons-cockpit-val font-mono-num ${filteredTagihan > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(filteredTagihan)}</span>
-            <span class="ons-cockpit-desc">${filteredTagihan > 0 ? 'Kewajiban bayar atas barang laku' : 'Lunas 100%'}</span>
+            
           </div>
           <div class="ons-cockpit-card is-emerald">
             <span class="ons-cockpit-label">Sudah Dibayar (Settle)</span>
             <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(filteredDibayar)}</span>
-            <span class="ons-cockpit-desc">Total settlement selesai disetor</span>
+            
           </div>
         `}
       </div>

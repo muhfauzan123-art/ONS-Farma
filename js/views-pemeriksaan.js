@@ -962,7 +962,7 @@
                 `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`)))}
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div>
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
                   subTab === 'tensi' ? 'Pemeriksaan Tekanan Darah (Tensi &amp; MAP)' :
                   (subTab === 'gula' ? 'Pemeriksaan Glukosa Darah (POCT)' :
@@ -970,21 +970,7 @@
                   (subTab === 'asam_urat' ? 'Pemeriksaan Asam Urat (Uric Acid)' :
                   'Pelayanan Klinik &amp; Pemeriksaan Pasien (POCT)')))
                 }</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">${
-                  subTab === 'tensi' ? 'Kardiovaskular' :
-                  (subTab === 'gula' ? 'Metabolik' :
-                  (subTab === 'kolesterol' ? 'Profil Lipid' :
-                  (subTab === 'asam_urat' ? 'Arthritis Gout' :
-                  'PMK No. 73/2016')))
-                }</span>
               </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${
-                subTab === 'tensi' ? 'Skrining hipertensi &amp; hipotensi, pemantauan Mean Arterial Pressure (MAP), histori tekanan darah sistol/diastol, dan edukasi gaya hidup sehat.' :
-                (subTab === 'gula' ? 'Pemeriksaan kadar gula darah sewaktu (GDS), puasa (GDP), dan 2 jam PP (GD2PP) dengan pemantauan batas normal dan konseling diabetes melitus.' :
-                (subTab === 'kolesterol' ? 'Skrining risiko dislipidemia dan penyakit jantung kardiovaskular dengan batas ambang batas &lt; 200 mg/dL serta rujukan konsultasi lanjutan.' :
-                (subTab === 'asam_urat' ? 'Deteksi dini hiperurisemia untuk pencegahan radang sendi gout dengan interpretasi ambang batas normal pria vs wanita.' :
-                'Standar Skrining &amp; Edukasi Kefarmasian: Tensi &amp; MAP, Gula Darah (GDS/GDP), Kolesterol Total, Asam Urat, Antropometri IMT, Triase Red-Flag Rujukan Dokter, Catatan SOAP Klinis, &amp; KIE WhatsApp Pasien.')))
-              }</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
