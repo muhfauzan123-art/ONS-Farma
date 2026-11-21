@@ -619,41 +619,29 @@
     const allVisibleSelected = rows.length > 0 && rows.every((sp) => spSelectedIds.has(sp.id_sp));
 
     return `<div class="space-y-4">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div onclick="window.setSpFilterStatus('SEMUA')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">TOTAL PESANAN (SP)</span>
-            <span class="ons-glance-tile-badge badge-blue">Regulasi BPOM</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num mt-1 text-slate-900 dark:text-white">${allSp.length} <span class="text-xs font-normal text-slate-500">SP</span></div>
-          <div class="ons-glance-tile-hint">Semua golongan BPOM CDOB</div>
+      <div class="ons-cockpit-strip mb-4">
+        <div onclick="window.setSpFilterStatus('SEMUA')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : ''}">
+          <span class="ons-cockpit-label">Total Pesanan (SP)</span>
+          <span class="ons-cockpit-val font-mono-num text-slate-900 dark:text-white">${allSp.length} <span class="text-xs font-normal text-slate-500">SP</span></span>
+          <span class="ons-cockpit-desc">Semua golongan BPOM CDOB</span>
         </div>
 
-        <div onclick="window.setSpFilterStatus('MENUNGGU')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-amber-500 shadow-sm' : 'hover:border-amber-400'}">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label text-amber-600 dark:text-amber-400">MENUNGGU PENGIRIMAN</span>
-            <span class="ons-glance-tile-badge badge-amber">Dalam Proses</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num mt-1 text-amber-600">${waitingCnt} <span class="text-xs font-normal text-amber-500">SP</span></div>
-          <div class="ons-glance-tile-hint">Siap cetak A4 / kirim WA PBF</div>
+        <div onclick="window.setSpFilterStatus('MENUNGGU')" class="ons-cockpit-card is-amber cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-amber-500 shadow-sm' : ''}">
+          <span class="ons-cockpit-label text-amber-600 dark:text-amber-400">Menunggu Pengiriman</span>
+          <span class="ons-cockpit-val font-mono-num text-amber-600">${waitingCnt} <span class="text-xs font-normal text-amber-500">SP</span></span>
+          <span class="ons-cockpit-desc">Siap cetak A4 / kirim WA PBF</span>
         </div>
 
-        <div onclick="window.setSpFilterStatus('SEBAGIAN')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-blue-500 shadow-sm' : 'hover:border-blue-400'}">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label text-blue-600 dark:text-blue-400">DITERIMA SEBAGIAN</span>
-            <span class="ons-glance-tile-badge badge-blue">Kiriman Susulan</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num mt-1 text-blue-600">${partialCnt} <span class="text-xs font-normal text-blue-500">SP</span></div>
-          <div class="ons-glance-tile-hint">Menunggu sisa barang PBF</div>
+        <div onclick="window.setSpFilterStatus('SEBAGIAN')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-blue-500 shadow-sm' : ''}">
+          <span class="ons-cockpit-label text-blue-600 dark:text-blue-400">Diterima Sebagian</span>
+          <span class="ons-cockpit-val font-mono-num text-blue-600">${partialCnt} <span class="text-xs font-normal text-blue-500">SP</span></span>
+          <span class="ons-cockpit-desc">Menunggu sisa barang PBF</span>
         </div>
 
-        <div onclick="window.setSpFilterStatus('SELESAI')" class="ons-glance-tile cursor-pointer transition-all ${spFilterStatus === 'SELESAI' ? 'ring-2 ring-emerald-500 shadow-sm' : 'hover:border-emerald-400'}">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label text-emerald-600 dark:text-emerald-400">SELESAI DITERIMA</span>
-            <span class="ons-glance-tile-badge badge-emerald">Lengkap</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num mt-1 text-emerald-600">${doneCnt} <span class="text-xs font-normal text-emerald-500">SP</span></div>
-          <div class="ons-glance-tile-hint">Faktur &amp; kartu stok sinkron</div>
+        <div onclick="window.setSpFilterStatus('SELESAI')" class="ons-cockpit-card is-emerald cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SELESAI' ? 'ring-2 ring-emerald-500 shadow-sm' : ''}">
+          <span class="ons-cockpit-label text-emerald-600 dark:text-emerald-400">Selesai Diterima</span>
+          <span class="ons-cockpit-val font-mono-num text-emerald-600">${doneCnt} <span class="text-xs font-normal text-emerald-500">SP</span></span>
+          <span class="ons-cockpit-desc">Faktur &amp; kartu stok sinkron</span>
         </div>
       </div>
 

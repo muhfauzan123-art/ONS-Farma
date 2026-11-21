@@ -10944,59 +10944,61 @@
           <button type="button" onclick="window.setFakturTab('rencana')" class="ons-dash-tab-btn ${fakturTab === 'rencana' || fakturTab === 'defecta' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             <span>Rencana Pembelian</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'rencana' || fakturTab === 'defecta' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${allPlans.length}</span>
-            ${lowStockDefecta.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white animate-pulse font-mono-num">${lowStockDefecta.length} Defecta</span>` : ''}
+            <span class="ons-dash-tab-badge font-mono-num">${allPlans.length}</span>
+            ${lowStockDefecta.length > 0 ? `<span class="ons-dash-tab-badge font-mono-num bg-amber-500 text-white animate-pulse">${lowStockDefecta.length} Defecta</span>` : ''}
           </button>
           <button type="button" onclick="window.setFakturTab('sp')" class="ons-dash-tab-btn ${fakturTab === 'sp' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h6"/></svg>
             <span>Pesanan Pembelian (SP)</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'sp' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${(st.suratPesanan || []).length}</span>
-            ${(st.suratPesanan || []).filter(s => !s.status_sp || s.status_sp === 'MENUNGGU_BARANG' || s.status_sp === 'TERBIT').length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white animate-pulse font-mono-num">${(st.suratPesanan || []).filter(s => !s.status_sp || s.status_sp === 'MENUNGGU_BARANG' || s.status_sp === 'TERBIT').length} Menunggu</span>` : ''}
+            <span class="ons-dash-tab-badge font-mono-num">${(st.suratPesanan || []).length}</span>
+            ${(st.suratPesanan || []).filter(s => !s.status_sp || s.status_sp === 'MENUNGGU_BARANG' || s.status_sp === 'TERBIT').length > 0 ? `<span class="ons-dash-tab-badge font-mono-num bg-amber-500 text-white animate-pulse">${(st.suratPesanan || []).filter(s => !s.status_sp || s.status_sp === 'MENUNGGU_BARANG' || s.status_sp === 'TERBIT').length} Menunggu</span>` : ''}
           </button>
           <button type="button" onclick="window.setFakturTab('faktur')" class="ons-dash-tab-btn ${fakturTab === 'faktur' || fakturTab === 'input' || fakturTab === 'daftar' || fakturTab === 'harga' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
             <span>Faktur Pembelian</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'faktur' || fakturTab === 'input' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${allFaktur.length}</span>
-            ${dueSoonCount > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-500 text-white animate-pulse font-mono-num">${dueSoonCount} Tempo &le;7h</span>` : ''}
+            <span class="ons-dash-tab-badge font-mono-num">${allFaktur.length}</span>
+            ${dueSoonCount > 0 ? `<span class="ons-dash-tab-badge font-mono-num bg-rose-500 text-white animate-pulse">${dueSoonCount} Tempo &le;7h</span>` : ''}
           </button>
           <button type="button" onclick="window.setFakturTab('retur')" class="ons-dash-tab-btn ${fakturTab === 'retur' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
             <span>Retur Pembelian (BAR)</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${fakturTab === 'retur' ? 'bg-white/25 text-white' : 'bg-blue-600/15 text-blue-600'} font-mono-num">${returHistory.length}</span>
-            ${nearEdBatches.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white animate-pulse font-mono-num">${nearEdBatches.length} Near-ED</span>` : ''}
+            <span class="ons-dash-tab-badge font-mono-num">${returHistory.length}</span>
+            ${nearEdBatches.length > 0 ? `<span class="ons-dash-tab-badge font-mono-num bg-amber-500 text-white animate-pulse">${nearEdBatches.length} Near-ED</span>` : ''}
           </button>
         </div>
       </div>
     `;
 
-    // 2. Executive Sub-Hero Banner Cockpit
+    // 2. Executive Sub-Hero Banner Cockpit (Standard Layout)
     const subHeroBanner = `
-      <div class="ons-subhero-banner is-pembelian">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 border border-sky-500/20 flex items-center justify-center shrink-0 shadow-sm">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <div class="ons-subhero-banner is-pembelian mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-pill">
+              <span class="ons-subhero-dot bg-sky-500"></span>
+              <span class="ons-subhero-pill-text font-bold uppercase tracking-wider">PENGADAAN &amp; FAKTUR PBF</span>
+              <span class="ons-subhero-pill-badge bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/20">${
+                fakturTab === 'rencana' ? 'Buffer Stock &amp; ROP' :
+                (fakturTab === 'sp' ? 'BPOM &amp; CDOB Terintegrasi' :
+                (fakturTab === 'input' ? 'Good Receiving Note (GRN)' :
+                (fakturTab === 'retur' ? 'BAR-PBF Kemenkes' : 'Akuntansi Pembelian')))
+              }</span>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
-                  fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta' :
-                  (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM' :
-                  (fakturTab === 'input' ? 'Penerimaan Faktur PBF (GRN)' :
-                  (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF)' : 'Faktur Pembelian &amp; Penerimaan PBF')))
-                }</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">BPOM Terintegrasi</span>
-              </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${
-                fakturTab === 'rencana' ? 'Perencanaan kebutuhan stok obat apotek, analisa ambang ROP buffer stock, defecta cerdas, dan kalkulasi penawaran sales distributor.' :
-                (fakturTab === 'sp' ? 'Pengelolaan pesanan resmi regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak form A4, dan pelacakan status kiriman PBF.' :
-                (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), dan pembentukan hutang dagang.' :
-                (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, kartu stok, dan nota kredit otomatis disesuaikan.' :
-                'Monitoring faktur resmi PBF, verifikasi DPP/PPN, histori penerimaan batch, serta pelacakan sisa hutang dagang dan termin jatuh tempo.')))
-              }</p>
-            </div>
+            <h2 class="ons-subhero-title">${
+              fakturTab === 'rencana' ? 'Rencana Pengadaan &amp; Defecta Kritis' :
+              (fakturTab === 'sp' ? 'Surat Pesanan Resmi (SP) BPOM &amp; Monitoring Distribusi' :
+              (fakturTab === 'input' ? 'Penerimaan Fisik Faktur PBF (GRN) &amp; Smart Scanner' :
+              (fakturTab === 'retur' ? 'Retur Pembelian (BAR-PBF) &amp; Penyesuaian Hutang' : 'Faktur Pembelian &amp; Penerimaan PBF Resmi')))
+            }</h2>
+            <p class="ons-subhero-desc">${
+              fakturTab === 'rencana' ? 'Perencanaan kebutuhan stok obat apotek, analisa ambang ROP buffer stock, defecta cerdas, dan kalkulasi penawaran sales distributor.' :
+              (fakturTab === 'sp' ? 'Pengelolaan pesanan resmi regulasi BPOM (Reguler, Prekursor, Psikotropika, Narkotika, OOT), tanda tangan APJ, cetak form A4, dan pelacakan status kiriman PBF.' :
+              (fakturTab === 'input' ? 'Penerimaan fisik barang PBF dengan Smart Invoice Scanner (OCR &amp; PDF), validasi nomor batch, tanggal kadaluarsa (FEFO), dan pembentukan hutang dagang.' :
+              (fakturTab === 'retur' ? 'Pengembalian barang ke PBF karena near-ED, kemasan rusak, salah kirim, atau recall BPOM. Stok FEFO, kartu stok, dan nota kredit otomatis disesuaikan.' :
+              'Monitoring faktur resmi PBF, verifikasi DPP/PPN, histori penerimaan batch, serta pelacakan sisa hutang dagang dan termin jatuh tempo.')))
+            }</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="ons-subhero-actions">
             ${fakturTab === 'rencana' ? `
               <div class="inline-flex rounded-xl p-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'RENCANA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">📋 Usulan (${allPlans.length})</button>
@@ -11031,39 +11033,26 @@
 
       ${(fakturTab === 'rencana' || fakturTab === 'defecta' || fakturTab === 'order') ? (rencanaSubMode === 'DEFECTA' ? _renderDefectaTabContent(st) : `
         <div class="space-y-4">
-          <!-- 4 Executive Glance Tiles Rencana Pembelian -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="ons-glance-tile">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">TOTAL USULAN RENCANA</span>
-                <span class="ons-glance-tile-badge badge-blue">Defecta &amp; Staf</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num">${allPlans.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Item</span></div>
-              <div class="ons-glance-tile-hint">Kebutuhan restok apotek</div>
+          <div class="ons-cockpit-strip mb-4">
+            <div class="ons-cockpit-card is-blue">
+              <span class="ons-cockpit-label">Total Usulan Rencana</span>
+              <span class="ons-cockpit-val font-mono-num">${allPlans.length} <span class="text-xs font-normal text-slate-500">Item</span></span>
+              <span class="ons-cockpit-desc">Kebutuhan restok apotek</span>
             </div>
-            <div class="ons-glance-tile">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">ESTIMASI NILAI PENGADAAN</span>
-                <span class="ons-glance-tile-badge badge-emerald">Modal Pembelian</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalPlansRp)}</div>
-              <div class="ons-glance-tile-hint">Estimasi total pengadaan</div>
+            <div class="ons-cockpit-card is-emerald">
+              <span class="ons-cockpit-label">Estimasi Nilai Pengadaan</span>
+              <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalPlansRp)}</span>
+              <span class="ons-cockpit-desc">Estimasi total pengadaan</span>
             </div>
-            <div class="ons-glance-tile ${selectedPlans.length > 0 ? 'ring-2 ring-blue-500 shadow-sm' : ''}">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">PRODUK SIAP JADI SP</span>
-                <span class="ons-glance-tile-badge ${selectedPlans.length > 0 ? 'badge-blue' : 'badge-neutral'}">${selectedPlans.length > 0 ? 'Dicentang' : 'Pilih Produk'}</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num ${selectedPlans.length > 0 ? 'text-blue-600 dark:text-blue-400' : ''}">${selectedPlans.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Item</span></div>
-              <div class="ons-glance-tile-hint">Siap generate ke SP resmi BPOM</div>
+            <div class="ons-cockpit-card ${selectedPlans.length > 0 ? 'is-blue ring-2 ring-blue-500 shadow-sm' : ''}">
+              <span class="ons-cockpit-label">Produk Siap Jadi SP</span>
+              <span class="ons-cockpit-val font-mono-num ${selectedPlans.length > 0 ? 'text-blue-600 dark:text-blue-400' : ''}">${selectedPlans.length} <span class="text-xs font-normal text-slate-500">Item</span></span>
+              <span class="ons-cockpit-desc">Siap generate ke SP resmi BPOM</span>
             </div>
-            <div class="ons-glance-tile">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">NILAI SP TERPILIH</span>
-                <span class="ons-glance-tile-badge badge-amber">PO Siap Kirim</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num text-amber-600 dark:text-amber-400">${S().rp(selectedPlansRp)}</div>
-              <div class="ons-glance-tile-hint">Total pesanan yang akan dibuat</div>
+            <div class="ons-cockpit-card is-amber">
+              <span class="ons-cockpit-label">Nilai SP Terpilih</span>
+              <span class="ons-cockpit-val font-mono-num text-amber-600 dark:text-amber-400">${S().rp(selectedPlansRp)}</span>
+              <span class="ons-cockpit-desc">Total pesanan yang akan dibuat</span>
             </div>
           </div>
           ${!planBannerDismissed ? `
@@ -11474,39 +11463,26 @@
         </div>
       ` : fakturTab === 'harga' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : fakturTab === 'retur' ? `
         <div class="space-y-4">
-          <!-- 4 Executive Glance Tiles Retur Pembelian -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="ons-glance-tile cursor-pointer" onclick="window.setReturFilterMode('ALL')">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">TOTAL BATCH TERPANTAU</span>
-                <span class="ons-glance-tile-badge badge-blue">Batch Aktif</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num">${allActiveBatches.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Batch</span></div>
-              <div class="ons-glance-tile-hint">Dapat diproses retur bila rusak/recall</div>
+          <div class="ons-cockpit-strip mb-4">
+            <div onclick="window.setReturFilterMode('ALL')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01]">
+              <span class="ons-cockpit-label">Total Batch Terpantau</span>
+              <span class="ons-cockpit-val font-mono-num">${allActiveBatches.length} <span class="text-xs font-normal text-slate-500">Batch</span></span>
+              <span class="ons-cockpit-desc">Dapat diproses retur bila rusak/recall</span>
             </div>
-            <div class="ons-glance-tile cursor-pointer ${nearEdBatches.length > 0 ? 'ring-2 ring-amber-500 shadow-sm' : ''}" onclick="window.setReturFilterMode('NEAR_ED')">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label text-amber-600 dark:text-amber-400">KRITIS NEAR-ED (&le;180 HARI)</span>
-                <span class="ons-glance-tile-badge badge-amber">Tukar Guling PBF</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num text-amber-600">${nearEdBatches.length} <span class="text-xs font-normal text-amber-500">Batch</span></div>
-              <div class="ons-glance-tile-hint">Prioritas retur sebelum kadaluarsa</div>
+            <div onclick="window.setReturFilterMode('NEAR_ED')" class="ons-cockpit-card ${nearEdBatches.length > 0 ? 'is-amber ring-2 ring-amber-500 shadow-sm' : 'is-emerald'} cursor-pointer transition-all hover:scale-[1.01]">
+              <span class="ons-cockpit-label text-amber-600 dark:text-amber-400">Kritis Near-ED (&le;180 Hari)</span>
+              <span class="ons-cockpit-val font-mono-num text-amber-600">${nearEdBatches.length} <span class="text-xs font-normal text-amber-500">Batch</span></span>
+              <span class="ons-cockpit-desc">Prioritas retur sebelum kadaluarsa</span>
             </div>
-            <div class="ons-glance-tile">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">TOTAL RIWAYAT RETUR (BAR)</span>
-                <span class="ons-glance-tile-badge badge-rose">BAR Terbit</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num">${filteredReturHistory.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Transaksi</span></div>
-              <div class="ons-glance-tile-hint">Pengembalian resmi ke supplier</div>
+            <div class="ons-cockpit-card is-purple">
+              <span class="ons-cockpit-label">Total Riwayat Retur (BAR)</span>
+              <span class="ons-cockpit-val font-mono-num">${filteredReturHistory.length} <span class="text-xs font-normal text-slate-500">Transaksi</span></span>
+              <span class="ons-cockpit-desc">Pengembalian resmi ke supplier</span>
             </div>
-            <div class="ons-glance-tile">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">NILAI RETUR DISETUJUI</span>
-                <span class="ons-glance-tile-badge badge-emerald">Potong Hutang PBF</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(filteredReturHistory.reduce((s, r) => s + r.total_retur, 0))}</div>
-              <div class="ons-glance-tile-hint">Pengurangan saldo hutang dagang</div>
+            <div class="ons-cockpit-card is-emerald">
+              <span class="ons-cockpit-label">Nilai Retur Disetujui</span>
+              <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(filteredReturHistory.reduce((s, r) => s + r.total_retur, 0))}</span>
+              <span class="ons-cockpit-desc">Pengurangan saldo hutang dagang</span>
             </div>
           </div>
 
@@ -11587,38 +11563,26 @@
         </div>
       ` : fakturTab === 'konsinyasi' ? renderKonsinyasiTabHtml(st) : fakturTab === 'hutang' ? _renderPembayaranUtangTab(st) : fakturPilihanData === 'MARGIN' ? (global.ONSProcurementPro ? global.ONSProcurementPro.renderAnalisaHargaTab() : '') : `
         <div class="space-y-4">
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturListFilter('SEMUA')">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">TOTAL PEMBELIAN FAKTUR</span>
-                <span class="ons-glance-tile-badge badge-blue">Semua Faktur</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num">${S().rp(totalPembelianNetto)}</div>
-              <div class="ons-glance-tile-hint">${allFaktur.length} Faktur resmi tercatat</div>
+          <div class="ons-cockpit-strip mb-4">
+            <div onclick="window.setFakturListFilter('SEMUA')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01]">
+              <span class="ons-cockpit-label">Total Pembelian Faktur</span>
+              <span class="ons-cockpit-val font-mono-num">${S().rp(totalPembelianNetto)}</span>
+              <span class="ons-cockpit-desc">${allFaktur.length} Faktur resmi tercatat</span>
             </div>
-            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all ${totalSisaHutang > 0 ? 'ring-2 ring-rose-500 shadow-sm' : ''}" onclick="window.setFakturListFilter('BELUM_LUNAS')">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : ''}">SISA HUTANG DAGANG PBF</span>
-                <span class="ons-glance-tile-badge ${totalSisaHutang > 0 ? 'badge-rose' : 'badge-emerald'}">${totalSisaHutang > 0 ? 'Belum Lunas' : 'Lunas 100%'}</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(totalSisaHutang)}</div>
-              <div class="ons-glance-tile-hint">Kewajiban bayar distributor</div>
+            <div onclick="window.setFakturListFilter('BELUM_LUNAS')" class="ons-cockpit-card ${totalSisaHutang > 0 ? 'is-red ring-2 ring-rose-500 shadow-sm' : 'is-emerald'} cursor-pointer transition-all hover:scale-[1.01]">
+              <span class="ons-cockpit-label ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : ''}">Sisa Hutang Dagang PBF</span>
+              <span class="ons-cockpit-val font-mono-num ${totalSisaHutang > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(totalSisaHutang)}</span>
+              <span class="ons-cockpit-desc">${totalSisaHutang > 0 ? 'Kewajiban bayar distributor' : 'Lunas 100%'}</span>
             </div>
-            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all ${dueSoonCount > 0 ? 'ring-2 ring-amber-500 shadow-sm' : ''}" onclick="window.setFakturListFilter('JATUH_TEMPO')">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">JATUH TEMPO &le; 7 HARI</span>
-                <span class="ons-glance-tile-badge ${dueSoonCount > 0 ? 'badge-amber' : 'badge-emerald'}">${dueSoonCount > 0 ? 'Mendesak' : 'Aman'}</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${dueSoonCount} <span class="text-xs font-normal">Faktur</span></div>
-              <div class="ons-glance-tile-hint">Nominal: <b class="font-mono-num">${S().rp(dueSoonNominal)}</b></div>
+            <div onclick="window.setFakturListFilter('JATUH_TEMPO')" class="ons-cockpit-card ${dueSoonCount > 0 ? 'is-amber ring-2 ring-amber-500 shadow-sm' : 'is-emerald'} cursor-pointer transition-all hover:scale-[1.01]">
+              <span class="ons-cockpit-label ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">Jatuh Tempo &le; 7 Hari</span>
+              <span class="ons-cockpit-val font-mono-num ${dueSoonCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${dueSoonCount} <span class="text-xs font-normal">Faktur</span></span>
+              <span class="ons-cockpit-desc">Nominal: <b class="font-mono-num">${S().rp(dueSoonNominal)}</b></span>
             </div>
-            <div class="ons-glance-tile cursor-pointer hover:shadow-md transition-all" onclick="window.setFakturTab('konsinyasi')">
-              <div class="ons-glance-tile-header">
-                <span class="ons-glance-tile-label">KONSINYASI BELUM SETTLE</span>
-                <span class="ons-glance-tile-badge badge-indigo">Titip Jual</span>
-              </div>
-              <div class="ons-glance-tile-value font-mono-num text-indigo-600 dark:text-indigo-400">${S().rp(konsPendingNominal)}</div>
-              <div class="ons-glance-tile-hint">Titip jual distributor rekanan</div>
+            <div onclick="window.setFakturTab('konsinyasi')" class="ons-cockpit-card is-purple cursor-pointer transition-all hover:scale-[1.01]">
+              <span class="ons-cockpit-label">Konsinyasi Belum Settle</span>
+              <span class="ons-cockpit-val font-mono-num text-indigo-600 dark:text-indigo-400">${S().rp(konsPendingNominal)}</span>
+              <span class="ons-cockpit-desc">Titip jual distributor rekanan</span>
             </div>
           </div>
 
@@ -13078,20 +13042,7 @@
     const totalNilaiBarang = filteredItems.reduce((s, it) => s + ((Number(it.qty_sisa || 0) + Number(it.qty_belum_bayar || 0)) * Number(it.hpp_beli || 0)), 0);
 
     // Sub-tab switcher header
-    const subNavHtml = `<div class="ons-card p-3 flex flex-wrap items-center justify-between gap-2">
-      <div class="flex flex-wrap gap-1.5">
-        ${[
-          { id: 'status', label: 'Status Konsinyasi' },
-          { id: 'masuk', label: 'Konsinyasi Masuk' },
-          { id: 'retur', label: 'Retur Konsinyasi' },
-          { id: 'stok', label: 'Stok Konsinyasi' }
-        ].map((t) => `<button type="button" onclick="window.setKonsSubTab('${t.id}')" class="ons-tab-btn ${konsSubTab === t.id ? 'active' : ''}">${t.label}</button>`).join('')}
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${knsDrafts.length})</button>
-        <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold">+ Input Konsinyasi</button>
-      </div>
-    </div>`;
+    const subNavHtml = '';
 
     let bodyHtml = '';
 
@@ -13113,42 +13064,6 @@
       const jumlahTx = konsEntryMode === 'produk' ? masukProdRows.length : masukRows.length;
 
       bodyHtml = `
-      <!-- 4 Executive Glance Tiles Konsinyasi Masuk -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">TOTAL FAKTUR TITIP</span>
-            <span class="ons-glance-tile-badge badge-blue">Titip Jual</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num">${masukRows.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Faktur</span></div>
-          <div class="ons-glance-tile-hint">Surat jalan titip barang rekanan</div>
-        </div>
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">TOTAL BATCH TITIPAN</span>
-            <span class="ons-glance-tile-badge badge-indigo">Katalog POS</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num">${allItems.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Batch</span></div>
-          <div class="ons-glance-tile-hint">Dapat langsung dijual di Kasir POS</div>
-        </div>
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">AKUMULASI NILAI TITIPAN</span>
-            <span class="ons-glance-tile-badge badge-emerald">Bebas Hutang Awal</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalKeseluruhan)}</div>
-          <div class="ons-glance-tile-hint">Bebas beban modal awal apotek</div>
-        </div>
-        <div class="ons-glance-tile ${filteredTagihan > 0 ? 'ring-2 ring-amber-500 shadow-sm' : ''}">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label ${filteredTagihan > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">TAGIHAN BELUM SETTLE</span>
-            <span class="ons-glance-tile-badge ${filteredTagihan > 0 ? 'badge-amber' : 'badge-emerald'}">${filteredTagihan > 0 ? 'Terjual' : 'Selesai'}</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num ${filteredTagihan > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(filteredTagihan)}</div>
-          <div class="ons-glance-tile-hint">Wajib disetor bila sudah laku</div>
-        </div>
-      </div>
-
       <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="font-bold text-sm">Daftar Konsinyasi Masuk</h3>
@@ -13219,42 +13134,6 @@
       const totalNilaiRetur = returRows.reduce((s, r) => s + Number(r.total_retur || 0), 0);
 
       bodyHtml = `<div class="space-y-4">
-        <!-- 4 Executive Glance Tiles Retur Konsinyasi -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="ons-glance-tile">
-            <div class="ons-glance-tile-header">
-              <span class="ons-glance-tile-label">TOTAL TRANSAKSI RETUR</span>
-              <span class="ons-glance-tile-badge badge-blue">Retur Fisik</span>
-            </div>
-            <div class="ons-glance-tile-value font-mono-num">${returRows.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Transaksi</span></div>
-            <div class="ons-glance-tile-hint">Pengembalian resmi ke mitra penitip</div>
-          </div>
-          <div class="ons-glance-tile">
-            <div class="ons-glance-tile-header">
-              <span class="ons-glance-tile-label">TOTAL UNIT DIRETUR</span>
-              <span class="ons-glance-tile-badge badge-rose">Tak Laku / ED</span>
-            </div>
-            <div class="ons-glance-tile-value font-mono-num text-rose-600">${returRows.reduce((s, r) => s + Number(r.qty_retur || 0), 0)} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Unit</span></div>
-            <div class="ons-glance-tile-hint">Barang ditarik tanpa beban kerugian</div>
-          </div>
-          <div class="ons-glance-tile">
-            <div class="ons-glance-tile-header">
-              <span class="ons-glance-tile-label">TOTAL NILAI RETUR</span>
-              <span class="ons-glance-tile-badge badge-amber">Bebas Penalti</span>
-            </div>
-            <div class="ons-glance-tile-value font-mono-num text-amber-600 dark:text-amber-400">${S().rp(totalNilaiRetur)}</div>
-            <div class="ons-glance-tile-hint">Valuasi stok yang dikembalikan</div>
-          </div>
-          <div class="ons-glance-tile">
-            <div class="ons-glance-tile-header">
-              <span class="ons-glance-tile-label">PENITIP PENERIMA RETUR</span>
-              <span class="ons-glance-tile-badge badge-indigo">Mitra Rekanan</span>
-            </div>
-            <div class="ons-glance-tile-value font-mono-num">${Array.from(new Set(returRows.map(r => r.id_pbf))).length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Supplier</span></div>
-            <div class="ons-glance-tile-hint">Distributor penitip penerima BAR</div>
-          </div>
-        </div>
-
         ${!konsReturBannerDismissed ? `<div class="p-3.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div class="flex flex-wrap items-center gap-2">
             <span class="font-bold text-emerald-700 dark:text-emerald-300">&#10003; Lakukan Retur Produk Konsinyasi di halaman Status Konsinyasi</span>
@@ -13308,42 +13187,6 @@
       const nearEdCount = stokRows.filter(it => S().daysUntil(it.tgl_kadaluarsa) <= 180).length;
 
       bodyHtml = `
-      <!-- 4 Executive Glance Tiles Stok Konsinyasi -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">TOTAL BATCH SISA</span>
-            <span class="ons-glance-tile-badge badge-blue">Aktif di POS</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num">${stokRows.length} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Batch</span></div>
-          <div class="ons-glance-tile-hint">Sediaan obat titipan siap jual</div>
-        </div>
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">TOTAL UNIT FISIK SISA</span>
-            <span class="ons-glance-tile-badge badge-indigo">Rak / Etalase</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num text-indigo-600 dark:text-indigo-400">${totalQtyStok} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Unit</span></div>
-          <div class="ons-glance-tile-hint">Jumlah unit fisik di apotek</div>
-        </div>
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">VALUASI STOK TITIPAN</span>
-            <span class="ons-glance-tile-badge badge-emerald">Aset Mitra</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalValStok)}</div>
-          <div class="ons-glance-tile-hint">Total estimasi nilai sisa barang</div>
-        </div>
-        <div class="ons-glance-tile ${nearEdCount > 0 ? 'ring-2 ring-amber-500 shadow-sm' : ''}">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label ${nearEdCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">MENDEKATI ED (&le;180 HARI)</span>
-            <span class="ons-glance-tile-badge ${nearEdCount > 0 ? 'badge-amber' : 'badge-emerald'}">${nearEdCount > 0 ? 'Perlu Cek' : 'Aman'}</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num ${nearEdCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${nearEdCount} <span class="text-xs font-normal">Batch</span></div>
-          <div class="ons-glance-tile-hint">Prioritas retur sebelum kadaluarsa</div>
-        </div>
-      </div>
-
       <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="font-bold text-sm">Stok Konsinyasi</h3>
@@ -13394,45 +13237,7 @@
       });
       const penitipRows = Array.from(penitipMap.values());
 
-      bodyHtml = `<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">UNIT LAKU TERJUAL</span>
-            <span class="ons-glance-tile-badge badge-blue">Kasir POS</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num text-blue-600">${filteredTerjual} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Unit</span></div>
-          <div class="ons-glance-tile-hint">Obat titipan terjual di kasir</div>
-        </div>
-
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">UNIT SISA TITIPAN</span>
-            <span class="ons-glance-tile-badge badge-indigo">Gudang / Rak</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num">${filteredSisa} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">Unit</span></div>
-          <div class="ons-glance-tile-hint">Sediaan fisik masih ada di apotek</div>
-        </div>
-
-        <div class="ons-glance-tile ${filteredTagihan > 0 ? 'ring-2 ring-rose-500 shadow-sm' : ''}">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label ${filteredTagihan > 0 ? 'text-rose-600 dark:text-rose-400' : ''}">TAGIHAN BELUM DISETTLE</span>
-            <span class="ons-glance-tile-badge ${filteredTagihan > 0 ? 'badge-rose' : 'badge-emerald'}">${filteredTagihan > 0 ? 'Wajib Setor' : 'Lunas 100%'}</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num ${filteredTagihan > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(filteredTagihan)}</div>
-          <div class="ons-glance-tile-hint">Kewajiban bayar atas barang laku</div>
-        </div>
-
-        <div class="ons-glance-tile">
-          <div class="ons-glance-tile-header">
-            <span class="ons-glance-tile-label">SUDAH DIBAYAR (SETTLE)</span>
-            <span class="ons-glance-tile-badge badge-emerald">Disetor ke Mitra</span>
-          </div>
-          <div class="ons-glance-tile-value font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(filteredDibayar)}</div>
-          <div class="ons-glance-tile-hint">Total settlement selesai disetor</div>
-        </div>
-      </div>
-
-      <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
+      bodyHtml = `<div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm border" style="border-color:var(--ons-border)">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
             <input class="ons-input text-xs w-48" placeholder="Cari data..." value="${S().esc(konsSearchQ)}" oninput="window.setKonsSearchQ(this.value)"/>
@@ -15226,6 +15031,57 @@
     const stokRows = allItems.filter((it) => Number(it.qty_sisa || 0) > 0);
     const pendingTagihan = Number((sum.totals && sum.totals.tagihan_belum_bayar) || 0);
 
+    const qLower = String(konsSearchQ || '').trim().toLowerCase();
+    const filteredItems = allItems.filter((it) => {
+      if (fakturKonsinyasiPbfFilter && String(it.id_pbf || '') !== fakturKonsinyasiPbfFilter) return false;
+      if (qLower) {
+        const hay = `${it.nama_dagang || ''} ${it.no_batch || ''} ${it.id_pbf || ''} ${it.no_faktur_pbf || ''}`.toLowerCase();
+        if (!hay.includes(qLower)) return false;
+      }
+      return true;
+    });
+    const filteredTagihan = filteredItems.reduce((s, it) => s + Number(it.tagihan_belum_bayar || 0), 0);
+    const filteredTerjual = filteredItems.reduce((s, it) => s + Number(it.qty_terjual || 0), 0);
+    const filteredSisa = filteredItems.reduce((s, it) => s + Number(it.qty_sisa || 0), 0);
+    const filteredDibayar = filteredItems.reduce((s, it) => s + Number(it.nilai_sudah_dibayar || 0), 0);
+
+    const rawMasuk = _getKonsinyasiMasukRows(st, allItems);
+    const filteredMasukRows = rawMasuk.filter((r) => {
+      if (!_konsMatchDate(r.tanggal)) return false;
+      if (fakturKonsinyasiPbfFilter && r.id_pbf !== fakturKonsinyasiPbfFilter) return false;
+      if (qLower) {
+        const hay = `${r.no_faktur_pbf} ${r.id_pbf} ${r.produk_label}`.toLowerCase();
+        if (!hay.includes(qLower)) return false;
+      }
+      return true;
+    });
+    const masukProdRows = filteredItems.filter((it) => _konsMatchDate(it.tgl_terima || it.tgl_faktur || new Date().toISOString().slice(0, 10)));
+    const totalMasukRp = konsEntryMode === 'produk'
+      ? masukProdRows.reduce((s, it) => s + (Number(it.qty_awal || 0) * Number(it.hpp_beli || 0)), 0)
+      : filteredMasukRows.reduce((s, r) => s + Number(r.total_masuk || 0), 0);
+
+    const rawReturs = _getKonsinyasiReturRows(st, allItems);
+    const filteredReturs = rawReturs.filter((r) => {
+      if (!_konsMatchDate(r.tanggal)) return false;
+      if (qLower) {
+        const hay = `${r.no_faktur_pbf} ${r.id_pbf} ${r.nama_dagang} ${r.no_batch}`.toLowerCase();
+        if (!hay.includes(qLower)) return false;
+      }
+      return true;
+    });
+    const totalNilaiRetur = filteredReturs.reduce((s, r) => s + Number(r.total_retur || 0), 0);
+    const totalUnitRetur = filteredReturs.reduce((s, r) => s + Number(r.qty_retur || 0), 0);
+    const penitipReturCount = Array.from(new Set(filteredReturs.map(r => r.id_pbf))).length;
+
+    const stokRowsFiltered = filteredItems.filter((it) => {
+      if (Number(it.qty_sisa || 0) <= 0) return false;
+      if (!_konsMatchDate(it.tgl_kadaluarsa || it.tgl_terima || new Date().toISOString().slice(0, 10))) return false;
+      return true;
+    });
+    const totalQtyStok = stokRowsFiltered.reduce((s, it) => s + Number(it.qty_sisa || 0), 0);
+    const totalValStok = stokRowsFiltered.reduce((s, it) => s + (Number(it.qty_sisa || 0) * Number(it.hpp_beli || 0)), 0);
+    const nearEdCount = stokRowsFiltered.filter(it => S().daysUntil(it.tgl_kadaluarsa) <= 180).length;
+
     // 1. Executive Sub-Menu Header Navigation (Cockpit Bar)
     const subTabHeader = `
       <div class="ons-dash-tab-nav ons-view-enter" role="tablist" aria-label="Sub-Menu Konsinyasi Apotek">
@@ -15233,65 +15089,59 @@
           <button type="button" onclick="window.setKonsSubTab('masuk')" class="ons-dash-tab-btn ${konsSubTab === 'masuk' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="12 18 12 12 16 14"/><path d="M12 18l-4-2"/></svg>
             <span>Konsinyasi Masuk</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${konsSubTab === 'masuk' ? 'bg-white/25 text-white' : 'bg-indigo-600/15 text-indigo-600'} font-mono-num">${masukRows.length}</span>
+            <span class="ons-dash-tab-badge font-mono-num">${masukRows.length}</span>
           </button>
           <button type="button" onclick="window.setKonsSubTab('status')" class="ons-dash-tab-btn ${konsSubTab === 'status' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="m3 9 9-4 9 4"/><path d="m3 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L9 9"/><path d="m15 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L21 9"/></svg>
             <span>Status &amp; Settlement</span>
             ${pendingTagihan > 0
-              ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-500 text-white animate-pulse font-mono-num">${S().rp(pendingTagihan)} Settle</span>`
-              : `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-600">Lunas</span>`}
+              ? `<span class="ons-dash-tab-badge font-mono-num bg-rose-500 text-white animate-pulse">${S().rp(pendingTagihan)} Settle</span>`
+              : `<span class="ons-dash-tab-badge font-mono-num text-emerald-600 bg-emerald-500/15">Lunas</span>`}
           </button>
           <button type="button" onclick="window.setKonsSubTab('retur')" class="ons-dash-tab-btn ${konsSubTab === 'retur' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
             <span>Retur Konsinyasi</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${konsSubTab === 'retur' ? 'bg-white/25 text-white' : 'bg-indigo-600/15 text-indigo-600'} font-mono-num">${returRows.length}</span>
+            <span class="ons-dash-tab-badge font-mono-num">${returRows.length}</span>
           </button>
           <button type="button" onclick="window.setKonsSubTab('stok')" class="ons-dash-tab-btn ${konsSubTab === 'stok' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             <span>Stok Konsinyasi</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${konsSubTab === 'stok' ? 'bg-white/25 text-white' : 'bg-indigo-600/15 text-indigo-600'} font-mono-num">${stokRows.length}</span>
+            <span class="ons-dash-tab-badge font-mono-num">${stokRows.length}</span>
           </button>
         </div>
       </div>
     `;
 
-    // 2. Executive Sub-Hero Banner Cockpit (Contextual per Sub-Menu)
+    // 2. Executive Sub-Hero Banner Cockpit (Standard Layout)
     const subHeroBanner = `
-      <div class="ons-subhero-banner is-konsinyasi">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-sm">
-              ${konsSubTab === 'masuk' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="12 18 12 12 16 14"/><path d="M12 18l-4-2"/></svg>` :
-                (konsSubTab === 'status' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="m3 9 9-4 9 4"/><path d="m3 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L9 9"/><path d="m15 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L21 9"/></svg>` :
-                (konsSubTab === 'retur' ? `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>` :
-                `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`))} 
+      <div class="ons-subhero-banner is-konsinyasi mb-4">
+        <div class="ons-subhero-inner">
+          <div class="ons-subhero-main">
+            <div class="ons-subhero-pill">
+              <span class="ons-subhero-dot bg-indigo-500"></span>
+              <span class="ons-subhero-pill-text font-bold uppercase tracking-wider">KONSINYASI TITIP JUAL</span>
+              <span class="ons-subhero-pill-badge bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">${
+                konsSubTab === 'masuk' ? 'Titipan Rekanan Baru' :
+                (konsSubTab === 'status' ? 'Prinsip Laku Baru Bayar' :
+                (konsSubTab === 'retur' ? 'Bebas Risiko Hutang' :
+                'Stok Fisik Etalase Aktif'))
+              }</span>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${
-                  konsSubTab === 'masuk' ? 'Konsinyasi Masuk (Penerimaan Titipan)' :
-                  (konsSubTab === 'status' ? 'Status Konsinyasi &amp; Rekonsiliasi Laku-Bayar' :
-                  (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang Titip)' :
-                  (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi &amp; Audit Etalase' : 'Penerimaan Barang Konsinyasi Baru')))
-                }</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">${
-                  konsSubTab === 'masuk' ? 'Titipan Baru' :
-                  (konsSubTab === 'status' ? 'Laku Baru Bayar' :
-                  (konsSubTab === 'retur' ? 'Bebas Risiko Utang' :
-                  'Stok Titip Aktif'))
-                }</span>
-              </div>
-              <p class="text-xs" style="color:var(--ons-text-soft)">${
-                konsSubTab === 'masuk' ? 'Pencatatan nota titip barang distributor rekanan. Stok fisik bertambah di kasir tanpa membentuk utang dagang di awal.' :
-                (konsSubTab === 'status' ? 'Prinsip Laku-Baru-Bayar: Tagihan supplier terbentuk secara otomatis HANYA ketika obat titipan berhasil laku terjual di Kasir POS.' :
-                (konsSubTab === 'retur' ? 'Pengembalian fisik sediaan titip jual yang tak laku atau menjelang expired date kepada pihak penitip tanpa risiko penalti.' :
-                (konsSubTab === 'stok' ? 'Audit ketersediaan fisik barang konsinyasi, lokasi rak penyimpanan apotek, dan pemantauan masa kadaluarsa (ED) batch titipan.' :
-                'Form pencatatan penerimaan fisik barang konsinyasi baru ke persediaan apotek.')))
-              }</p>
-            </div>
+            <h2 class="ons-subhero-title">${
+              konsSubTab === 'masuk' ? 'Konsinyasi Masuk (Penerimaan Titipan Rekanan)' :
+              (konsSubTab === 'status' ? 'Status Konsinyasi &amp; Rekonsiliasi Laku-Bayar' :
+              (konsSubTab === 'retur' ? 'Retur Konsinyasi (Penarikan Barang Titip)' :
+              (konsSubTab === 'stok' ? 'Stok Fisik Konsinyasi &amp; Audit Etalase' : 'Penerimaan Barang Konsinyasi Baru')))
+            }</h2>
+            <p class="ons-subhero-desc">${
+              konsSubTab === 'masuk' ? 'Pencatatan nota titip barang distributor rekanan. Stok fisik bertambah di kasir tanpa membentuk utang dagang di awal.' :
+              (konsSubTab === 'status' ? 'Prinsip Laku-Baru-Bayar: Tagihan supplier terbentuk secara otomatis HANYA ketika obat titipan berhasil laku terjual di Kasir POS.' :
+              (konsSubTab === 'retur' ? 'Pengembalian fisik sediaan titip jual yang tak laku atau menjelang expired date kepada pihak penitip tanpa risiko penalti.' :
+              (konsSubTab === 'stok' ? 'Audit ketersediaan fisik barang konsinyasi, lokasi rak penyimpanan apotek, dan pemantauan masa kadaluarsa (ED) batch titipan.' :
+              'Form pencatatan penerimaan fisik barang konsinyasi baru ke persediaan apotek.')))
+            }</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="ons-subhero-actions">
             ${konsSubTab === 'masuk' ? `
               <button type="button" onclick="window.openInputKonsinyasi()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input Konsinyasi</button>
               <button type="button" onclick="window.openKonsinyasiDraftModal()" class="ons-btn ons-btn-ghost text-xs">Draft (${knsDrafts.length})</button>
@@ -15312,6 +15162,97 @@
       </div>
     `;
 
+    // 3. Dedicated 4 KPI Cockpit Strip Cards
+    const cockpitStrip = konsSubTab === 'input' ? '' : `
+      <div class="ons-cockpit-strip mb-4">
+        ${konsSubTab === 'masuk' ? `
+          <div class="ons-cockpit-card is-blue">
+            <span class="ons-cockpit-label">Total Faktur Titip</span>
+            <span class="ons-cockpit-val font-mono-num">${filteredMasukRows.length} <span class="text-xs font-normal text-slate-500">Faktur</span></span>
+            <span class="ons-cockpit-desc">Surat jalan titip barang rekanan</span>
+          </div>
+          <div class="ons-cockpit-card is-purple">
+            <span class="ons-cockpit-label">Total Batch Titipan</span>
+            <span class="ons-cockpit-val font-mono-num">${allItems.length} <span class="text-xs font-normal text-slate-500">Batch</span></span>
+            <span class="ons-cockpit-desc">Dapat langsung dijual di Kasir POS</span>
+          </div>
+          <div class="ons-cockpit-card is-emerald">
+            <span class="ons-cockpit-label">Akumulasi Nilai Titipan</span>
+            <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalMasukRp)}</span>
+            <span class="ons-cockpit-desc">Bebas beban modal awal apotek</span>
+          </div>
+          <div class="ons-cockpit-card ${filteredTagihan > 0 ? 'is-amber ring-2 ring-amber-500' : 'is-emerald'}">
+            <span class="ons-cockpit-label ${filteredTagihan > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">Tagihan Belum Settle</span>
+            <span class="ons-cockpit-val font-mono-num ${filteredTagihan > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(filteredTagihan)}</span>
+            <span class="ons-cockpit-desc">${filteredTagihan > 0 ? 'Wajib disetor bila sudah laku' : 'Bebas tunggakan'}</span>
+          </div>
+        ` : konsSubTab === 'retur' ? `
+          <div class="ons-cockpit-card is-blue">
+            <span class="ons-cockpit-label">Total Transaksi Retur</span>
+            <span class="ons-cockpit-val font-mono-num">${filteredReturs.length} <span class="text-xs font-normal text-slate-500">Transaksi</span></span>
+            <span class="ons-cockpit-desc">Pengembalian resmi ke mitra penitip</span>
+          </div>
+          <div class="ons-cockpit-card is-red">
+            <span class="ons-cockpit-label text-rose-600">Total Unit Diretur</span>
+            <span class="ons-cockpit-val font-mono-num text-rose-600">${totalUnitRetur} <span class="text-xs font-normal text-rose-500">Unit</span></span>
+            <span class="ons-cockpit-desc">Barang ditarik tanpa beban kerugian</span>
+          </div>
+          <div class="ons-cockpit-card is-amber">
+            <span class="ons-cockpit-label text-amber-600">Total Nilai Retur</span>
+            <span class="ons-cockpit-val font-mono-num text-amber-600 dark:text-amber-400">${S().rp(totalNilaiRetur)}</span>
+            <span class="ons-cockpit-desc">Valuasi stok yang dikembalikan</span>
+          </div>
+          <div class="ons-cockpit-card is-purple">
+            <span class="ons-cockpit-label">Penitip Penerima Retur</span>
+            <span class="ons-cockpit-val font-mono-num">${penitipReturCount} <span class="text-xs font-normal text-slate-500">Supplier</span></span>
+            <span class="ons-cockpit-desc">Distributor penitip penerima BAR</span>
+          </div>
+        ` : konsSubTab === 'stok' ? `
+          <div class="ons-cockpit-card is-blue">
+            <span class="ons-cockpit-label">Total Batch Sisa</span>
+            <span class="ons-cockpit-val font-mono-num">${stokRowsFiltered.length} <span class="text-xs font-normal text-slate-500">Batch</span></span>
+            <span class="ons-cockpit-desc">Sediaan obat titipan siap jual</span>
+          </div>
+          <div class="ons-cockpit-card is-purple">
+            <span class="ons-cockpit-label">Total Unit Fisik Sisa</span>
+            <span class="ons-cockpit-val font-mono-num text-indigo-600 dark:text-indigo-400">${totalQtyStok} <span class="text-xs font-normal text-slate-500">Unit</span></span>
+            <span class="ons-cockpit-desc">Jumlah unit fisik di apotek</span>
+          </div>
+          <div class="ons-cockpit-card is-emerald">
+            <span class="ons-cockpit-label">Valuasi Stok Titipan</span>
+            <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(totalValStok)}</span>
+            <span class="ons-cockpit-desc">Total estimasi nilai sisa barang</span>
+          </div>
+          <div class="ons-cockpit-card ${nearEdCount > 0 ? 'is-amber ring-2 ring-amber-500' : 'is-emerald'}">
+            <span class="ons-cockpit-label ${nearEdCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''}">Mendekati ED (&le;180 Hari)</span>
+            <span class="ons-cockpit-val font-mono-num ${nearEdCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${nearEdCount} <span class="text-xs font-normal text-slate-500">Batch</span></span>
+            <span class="ons-cockpit-desc">${nearEdCount > 0 ? 'Prioritas retur sebelum kadaluarsa' : 'Seluruh sediaan aman'}</span>
+          </div>
+        ` : `
+          <div class="ons-cockpit-card is-blue">
+            <span class="ons-cockpit-label">Unit Laku Terjual</span>
+            <span class="ons-cockpit-val font-mono-num text-blue-600">${filteredTerjual} <span class="text-xs font-normal text-slate-500">Unit</span></span>
+            <span class="ons-cockpit-desc">Obat titipan terjual di kasir POS</span>
+          </div>
+          <div class="ons-cockpit-card is-purple">
+            <span class="ons-cockpit-label">Unit Sisa Titipan</span>
+            <span class="ons-cockpit-val font-mono-num">${filteredSisa} <span class="text-xs font-normal text-slate-500">Unit</span></span>
+            <span class="ons-cockpit-desc">Sediaan fisik masih ada di apotek</span>
+          </div>
+          <div class="ons-cockpit-card ${filteredTagihan > 0 ? 'is-red ring-2 ring-rose-500' : 'is-emerald'}">
+            <span class="ons-cockpit-label ${filteredTagihan > 0 ? 'text-rose-600 dark:text-rose-400' : ''}">Tagihan Belum Disettle</span>
+            <span class="ons-cockpit-val font-mono-num ${filteredTagihan > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${S().rp(filteredTagihan)}</span>
+            <span class="ons-cockpit-desc">${filteredTagihan > 0 ? 'Kewajiban bayar atas barang laku' : 'Lunas 100%'}</span>
+          </div>
+          <div class="ons-cockpit-card is-emerald">
+            <span class="ons-cockpit-label">Sudah Dibayar (Settle)</span>
+            <span class="ons-cockpit-val font-mono-num text-emerald-600 dark:text-emerald-400">${S().rp(filteredDibayar)}</span>
+            <span class="ons-cockpit-desc">Total settlement selesai disetor</span>
+          </div>
+        `}
+      </div>
+    `;
+
     let bodyHtml = '';
     if (konsSubTab === 'input') {
       bodyHtml = _renderDedicatedInputKonsinyasiHtml(st);
@@ -15323,6 +15264,7 @@
       <div class="space-y-4 ons-view-enter">
         ${subTabHeader}
         ${subHeroBanner}
+        ${cockpitStrip}
         ${bodyHtml}
       </div>
     `;
