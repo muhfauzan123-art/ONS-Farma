@@ -172,8 +172,11 @@
         branch: cabang
       } : null;
       const demoRes = await global.ONSDemoEngine.handleAction(action, data || {}, payloadUser);
-      if (o.isWrite && global.ONSStore && typeof global.ONSStore.invalidateStockIndex === 'function') {
-        global.ONSStore.invalidateStockIndex();
+      if (o.isWrite) {
+        bumpClientEpoch();
+        if (global.ONSStore && typeof global.ONSStore.invalidateStockIndex === 'function') {
+          global.ONSStore.invalidateStockIndex();
+        }
       }
       return demoRes;
     }

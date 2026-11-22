@@ -60,20 +60,8 @@
 
   function _isLegacySensitive(val) {
     if (!val) return false;
-    const s = String(val).toLowerCase();
-    const triggers = [
-      'hendra wijaya',
-      _safeB64('YW5pc3Nh'),
-      _safeB64('ZmFyYWRpZmE='),
-      _safeB64('cnVtaQ=='),
-      _safeB64('aWNhZmFyYWRpdmE='),
-      _safeB64('NjI4MjEzNjk3Mzk5MA=='),
-      _safeB64('MTk5MjA0MTI='),
-      _safeB64('MTk5NTA4MTI='),
-      _safeB64('NDQ5L1NJQQ==').toLowerCase(),
-      _safeB64('OTEyMDIwODE0MjkxNQ=='),
-      _safeB64('MDkuMjU0LjI5NA==')
-    ].filter(Boolean);
+    const s = String(val).toLowerCase().trim();
+    const triggers = ['hendra wijaya', 'anissa faradifa', 'ica faradiva'];
     return triggers.some((t) => s.includes(t));
   }
 
@@ -168,9 +156,9 @@
       file_sipa_pendamping_2_url: '',
       file_sipa_pendamping_2_name: '',
       apoteker_pendamping: [],
-      bank_nama: 'Bank Mandiri',
-      bank_cabang: 'KCP Panakkukang',
-      bank_akun_nama: 'Apotek ONS Farma',
+      bank_nama: '',
+      bank_cabang: '',
+      bank_akun_nama: '',
       bank_nomor_rekening: '',
       file_buku_rekening_url: '',
       file_buku_rekening_name: '',
@@ -191,19 +179,11 @@
   }
 
   function _normalizeProfileObject(prof) {
-    const merged = Object.assign({}, defaultStoreProfile(), prof || {});
-    merged.nama_pemilik = sanitizeLegacyOwnerName(merged.nama_pemilik, 'Apoteker Penanggung Jawab');
-    merged.dikonfirmasi_oleh = sanitizeLegacyOwnerName(merged.dikonfirmasi_oleh, merged.nama_pemilik);
+    const p = (prof && typeof prof === 'object') ? prof : {};
+    const merged = Object.assign({}, defaultStoreProfile(), p);
     if (_isLegacySensitive(merged.nama_pemilik)) merged.nama_pemilik = 'Apoteker Penanggung Jawab';
-    if (_isLegacySensitive(merged.dikonfirmasi_oleh)) merged.dikonfirmasi_oleh = 'Apoteker Penanggung Jawab';
+    if (_isLegacySensitive(merged.dikonfirmasi_oleh)) merged.dikonfirmasi_oleh = merged.nama_pemilik;
     if (_isLegacySensitive(merged.email_pemilik)) merged.email_pemilik = 'admin@onsfarma.id';
-    if (_isLegacySensitive(merged.wa_pemilik)) merged.wa_pemilik = '';
-    if (_isLegacySensitive(merged.sipa_pemilik)) merged.sipa_pemilik = '';
-    if (_isLegacySensitive(merged.stra_pemilik)) merged.stra_pemilik = '';
-    if (_isLegacySensitive(merged.no_sia)) merged.no_sia = '';
-    if (_isLegacySensitive(merged.nib_oss)) merged.nib_oss = '';
-    if (_isLegacySensitive(merged.npwp_pemilik)) merged.npwp_pemilik = '';
-    if (_isLegacySensitive(merged.ktp_pemilik)) merged.ktp_pemilik = '';
     return merged;
   }
 
@@ -2558,7 +2538,8 @@
   }
 
   function setStoreProfile(prof) {
-    const merged = _normalizeProfileObject(prof);
+    const cur = (AppState.storeProfile && typeof AppState.storeProfile === 'object') ? AppState.storeProfile : {};
+    const merged = _normalizeProfileObject(Object.assign({}, cur, prof || {}));
     AppState.storeProfile = merged;
     try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(merged)); } catch (e) {}
     return merged;

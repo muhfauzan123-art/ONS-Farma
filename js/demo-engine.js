@@ -136,20 +136,8 @@
 
   function _isLegacySensitive(val) {
     if (!val) return false;
-    const s = String(val).toLowerCase();
-    const triggers = [
-      'hendra wijaya',
-      _safeB64('YW5pc3Nh'),
-      _safeB64('ZmFyYWRpZmE='),
-      _safeB64('cnVtaQ=='),
-      _safeB64('aWNhZmFyYWRpdmE='),
-      _safeB64('NjI4MjEzNjk3Mzk5MA=='),
-      _safeB64('MTk5MjA0MTI='),
-      _safeB64('MTk5NTA4MTI='),
-      _safeB64('NDQ5L1NJQQ==').toLowerCase(),
-      _safeB64('OTEyMDIwODE0MjkxNQ=='),
-      _safeB64('MDkuMjU0LjI5NA==')
-    ].filter(Boolean);
+    const s = String(val).toLowerCase().trim();
+    const triggers = ['hendra wijaya', 'anissa faradifa', 'ica faradiva'];
     return triggers.some((t) => s.includes(t));
   }
 
@@ -180,14 +168,7 @@
       changed = true;
     } else {
       if (_isLegacySensitive(db.profil_usaha.nama_pemilik)) { db.profil_usaha.nama_pemilik = 'Apoteker Penanggung Jawab'; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.dikonfirmasi_oleh)) { db.profil_usaha.dikonfirmasi_oleh = 'Apoteker Penanggung Jawab'; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.email_pemilik)) { db.profil_usaha.email_pemilik = 'admin@onsfarma.id'; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.wa_pemilik)) { db.profil_usaha.wa_pemilik = ''; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.sipa_pemilik)) { db.profil_usaha.sipa_pemilik = ''; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.stra_pemilik)) { db.profil_usaha.stra_pemilik = ''; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.no_sia)) { db.profil_usaha.no_sia = ''; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.nib_oss)) { db.profil_usaha.nib_oss = ''; changed = true; }
-      if (_isLegacySensitive(db.profil_usaha.npwp_pemilik)) { db.profil_usaha.npwp_pemilik = ''; changed = true; }
+      if (_isLegacySensitive(db.profil_usaha.dikonfirmasi_oleh)) { db.profil_usaha.dikonfirmasi_oleh = db.profil_usaha.nama_pemilik; changed = true; }
     }
     if (Array.isArray(db.users)) {
       db.users.forEach((u) => {

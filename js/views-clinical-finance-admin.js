@@ -12593,9 +12593,6 @@ S. prn 3 dd 1 tab</textarea>
       <input type="hidden" id="profJabatanPemilik" value="${S().esc(merged.jabatan_pemilik || 'Pemilik Sarana Apotek & Apoteker')}"/>
       <input type="hidden" id="profStatusPkp" value="${S().esc(merged.status_pkp || 'PKP (PPN 11%)')}"/>
       <input type="hidden" id="profZonaWaktu" value="${S().esc(merged.zona_waktu || 'Asia/Makassar (WITA)')}"/>
-      <input type="hidden" id="profTelpUsaha" value="${S().esc(merged.telepon_usaha || '0411-458-990')}"/>
-      <input type="hidden" id="profWaUsaha" value="${S().esc(merged.wa_usaha || '628110000990')}"/>
-      <input type="hidden" id="profEmailUsaha" value="${S().esc(merged.email_usaha || 'halo@onsfarma.id')}"/>
 
       <!-- Hidden Compatibility Elements for Test Runner & Sync -->
       <div class="hidden">
@@ -12807,32 +12804,48 @@ S. prn 3 dd 1 tab</textarea>
 
               <div>
                 <label class="ons-form-label">Alamat Lengkap Gerai (Jalan, No, RT/RW) <span class="text-rose-500">*</span></label>
-                <input id="profAlamatUsaha" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.alamat_usaha || 'Jl. Kesehatan Raya No. 88, Kec. Panakkukang')}" placeholder="Alamat lengkap apotek" oninput="window.refreshProfileKopPreview()"/>
+                <input id="profAlamatUsaha" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.alamat_usaha || '')}" placeholder="Alamat lengkap apotek" oninput="window.refreshProfileKopPreview()"/>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label class="ons-form-label">Provinsi <span class="text-rose-500">*</span></label>
-                  <input id="profProvinsi" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.provinsi || 'Sulawesi Selatan')}" placeholder="Provinsi" oninput="window.refreshProfileKopPreview()"/>
+                  <input id="profProvinsi" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.provinsi || '')}" placeholder="Provinsi" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
                   <label class="ons-form-label">Kabupaten / Kota <span class="text-rose-500">*</span></label>
-                  <input id="profKota" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.kota || 'Makassar')}" placeholder="Kabupaten / Kota" oninput="window.refreshProfileKopPreview()"/>
+                  <input id="profKota" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.kota || '')}" placeholder="Kabupaten / Kota" oninput="window.refreshProfileKopPreview()"/>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
                   <label class="ons-form-label">Kecamatan <span class="text-rose-500">*</span></label>
-                  <input id="profKecamatan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kecamatan || 'Panakkukang')}" placeholder="Kecamatan" oninput="window.refreshProfileKopPreview()"/>
+                  <input id="profKecamatan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kecamatan || '')}" placeholder="Kecamatan" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
                   <label class="ons-form-label">Kelurahan <span class="text-rose-500">*</span></label>
-                  <input id="profKelurahan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kelurahan || 'Masale')}" placeholder="Kelurahan" oninput="window.refreshProfileKopPreview()"/>
+                  <input id="profKelurahan" ${ro} class="ons-input text-xs w-full" value="${S().esc(merged.kelurahan || '')}" placeholder="Kelurahan" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
                   <label class="ons-form-label">Kode Pos <span class="text-rose-500">*</span></label>
-                  <input id="profKodePos" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.kode_pos || '90231')}" placeholder="90231" oninput="window.refreshProfileKopPreview()"/>
+                  <input id="profKodePos" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.kode_pos || '')}" placeholder="90231" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+              </div>
+
+              <!-- Kontak Komunikasi Resmi Gerai -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label class="ons-form-label">Telepon Usaha / Outlet</label>
+                  <input id="profTelpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.telepon_usaha || '')}" placeholder="Contoh: 0411-458-990" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+                <div>
+                  <label class="ons-form-label">WhatsApp Resmi Usaha</label>
+                  <input id="profWaUsaha" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.wa_usaha || '')}" placeholder="Contoh: 62811444555" oninput="window.refreshProfileKopPreview()"/>
+                </div>
+                <div>
+                  <label class="ons-form-label">Email Resmi Usaha</label>
+                  <input id="profEmailUsaha" ${ro} type="email" class="ons-input text-xs w-full" value="${S().esc(merged.email_usaha || '')}" placeholder="Contoh: apotek@onsfarma.id" oninput="window.refreshProfileKopPreview()"/>
                 </div>
               </div>
 
@@ -12850,11 +12863,11 @@ S. prn 3 dd 1 tab</textarea>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="ons-form-label text-[11px]">Latitude (Garis Lintang)</label>
-                    <input id="profLat" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.latitude || '-5.147665')}" placeholder="-5.147665" oninput="window.updateGmapsLinkFromInputs()"/>
+                    <input id="profLat" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.latitude || '')}" placeholder="-5.147665" oninput="window.updateGmapsLinkFromInputs()"/>
                   </div>
                   <div>
                     <label class="ons-form-label text-[11px]">Longitude (Garis Bujur)</label>
-                    <input id="profLng" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.longitude || '119.432732')}" placeholder="119.432732" oninput="window.updateGmapsLinkFromInputs()"/>
+                    <input id="profLng" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.longitude || '')}" placeholder="119.432732" oninput="window.updateGmapsLinkFromInputs()"/>
                   </div>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 pt-1">
@@ -12874,7 +12887,7 @@ S. prn 3 dd 1 tab</textarea>
                   <label class="ons-form-label mb-0">Jadwal &amp; Jam Operasional Pelayanan Kasir</label>
                   <span class="text-[10px] text-blue-600 dark:text-sky-400 font-medium">⚡ Klik preset di bawah untuk isi cepat</span>
                 </div>
-                <input id="profJamOps" ${ro} class="ons-input text-xs w-full font-semibold text-slate-900 dark:text-white" value="${S().esc(merged.jam_operasional || 'Setiap Hari 07:30 - 22:00 WITA')}" placeholder="Contoh: Setiap Hari 07:30 - 22:00 WITA"/>
+                <input id="profJamOps" ${ro} class="ons-input text-xs w-full font-semibold text-slate-900 dark:text-white" value="${S().esc(merged.jam_operasional || '')}" placeholder="Contoh: Setiap Hari 07:30 - 22:00 WITA"/>
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
                   <button type="button" onclick="window.setProfileJamOpsPreset('Setiap Hari 07:30 - 22:00 WITA')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700 transition-all">🕒 Setiap Hari 07:30 - 22:00</button>
                   <button type="button" onclick="window.setProfileJamOpsPreset('24 Jam Non-Stop (Pelayanan Siaga)')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-sky-300 border border-slate-200 dark:border-slate-700 transition-all">🕒 24 Jam Non-Stop</button>
@@ -12904,11 +12917,11 @@ S. prn 3 dd 1 tab</textarea>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label class="ons-form-label">No. Surat Izin Apotek (SIA) <span class="text-rose-500">*</span></label>
-                  <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full font-bold text-slate-900 dark:text-white" value="${S().esc(merged.no_sia || '503/001/SIA/DPMPTSP/2021')}" placeholder="Contoh: 503/001/SIA/DPMPTSP/2021" oninput="window.refreshProfileKopPreview()"/>
+                  <input id="profNoSia" ${ro} class="ons-input font-mono-num text-xs w-full font-bold text-slate-900 dark:text-white" value="${S().esc(merged.no_sia || '')}" placeholder="Contoh: 503/001/SIA/DPMPTSP/2021" oninput="window.refreshProfileKopPreview()"/>
                 </div>
                 <div>
                   <label class="ons-form-label">Tgl. Akhir Masa Berlaku SIA <span class="text-rose-500">*</span></label>
-                  <input id="profTglSia" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.tgl_berlaku_sia || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
+                  <input id="profTglSia" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.tgl_berlaku_sia || '')}" placeholder="DD/MM/YYYY"/>
                 </div>
               </div>
               ${renderDocUploadRow('sia', 'Berkas Surat Izin Apotek (SIA PDF) :', '.pdf,image/*', merged.file_sia_url || '', merged.file_sia_name || (merged.no_sia ? 'SIA_DPMPTSP.pdf' : ''))}
@@ -12916,7 +12929,7 @@ S. prn 3 dd 1 tab</textarea>
               <!-- NIB OSS -->
               <div>
                 <label class="ons-form-label">Nomor Induk Berusaha (NIB OSS 13 Digit) <span class="text-rose-500">*</span></label>
-                <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.nib_oss || '1234567890123')}" placeholder="13 Digit Nomor Induk Berusaha (NIB)"/>
+                <input id="profNibOss" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.nib_oss || '')}" placeholder="13 Digit Nomor Induk Berusaha (NIB)"/>
               </div>
               ${renderDocUploadRow('nib', 'Berkas NIB OSS (PDF) :', '.pdf,image/*', merged.file_nib_url || '', merged.file_nib_name || (merged.nib_oss ? 'NIB_OSS_Apotek.pdf' : ''))}
 
@@ -12924,12 +12937,12 @@ S. prn 3 dd 1 tab</textarea>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label class="ons-form-label">NITKU Usaha (16 Digit)</label>
-                  <input id="profNitku" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.nitku || '8511240918050000')}" placeholder="Nomor Identitas Tempat Kegiatan Usaha"/>
+                  <input id="profNitku" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.nitku || '')}" placeholder="Nomor Identitas Tempat Kegiatan Usaha"/>
                   <span class="ons-form-sublabel block">Standar integrasi NPWP/NIK 16 digit Ditjen Pajak RI terbaru.</span>
                 </div>
                 <div>
                   <label class="ons-form-label">No. NPWP Badan / Perusahaan</label>
-                  <input id="profNpwpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.npwp_usaha || '85.112.409.1-805.000')}" placeholder="85.112.409.1-805.000"/>
+                  <input id="profNpwpUsaha" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.npwp_usaha || '')}" placeholder="85.112.409.1-805.000"/>
                   <span class="ons-form-sublabel block">NPWP resmi untuk penerbitan faktur pajak elektronik.</span>
                 </div>
               </div>
@@ -12986,7 +12999,7 @@ S. prn 3 dd 1 tab</textarea>
                   </div>
                   <div class="sm:col-span-1">
                     <label class="ons-form-label text-[11px]">No. KTP Pemilik (NIK)</label>
-                    <input id="profKtpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.ktp_pemilik || '7371105408920001')}" placeholder="NIK KTP"/>
+                    <input id="profKtpPemilik" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.ktp_pemilik || '')}" placeholder="NIK KTP"/>
                   </div>
                   <div class="sm:col-span-1">
                     <label class="ons-form-label text-[11px]">No. NPWP Pemilik</label>
@@ -13020,7 +13033,7 @@ S. prn 3 dd 1 tab</textarea>
                 </div>
                 <div>
                   <label class="ons-form-label text-[11px]">Masa Berlaku SIPA APJ <span class="text-rose-500">*</span></label>
-                  <input id="profMasaSipa" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.tgl_berlaku_sipa || '13/11/2026')}" placeholder="DD/MM/YYYY"/>
+                  <input id="profMasaSipa" ${ro} class="ons-input font-mono-num text-xs w-full font-semibold" value="${S().esc(merged.tgl_berlaku_sipa || '')}" placeholder="DD/MM/YYYY"/>
                 </div>
                 ${renderDocUploadRow('sipa_pemilik', 'Berkas SIPA APJ (PDF/Foto) :', '.pdf,image/*', merged.file_sipa_url || '', merged.file_sipa_name || (merged.sipa_pemilik ? 'SIPA_APJ.pdf' : ''))}
               </div>
@@ -13093,15 +13106,15 @@ S. prn 3 dd 1 tab</textarea>
                   <span class="text-white/60 text-xs font-mono">)))</span>
                 </div>
                 <div class="text-right">
-                  <div id="profBankCardDispName" class="font-black text-sm uppercase tracking-wider text-sky-200">${S().esc(merged.bank_nama || 'Bank Mandiri')}</div>
-                  <div id="profBankCardDispCabang" class="text-[10px] text-sky-100/90 font-medium">${S().esc(merged.bank_cabang || 'KCP Panakkukang')}</div>
+                  <div id="profBankCardDispName" class="font-black text-sm uppercase tracking-wider text-sky-200">${S().esc(merged.bank_nama || '-')}</div>
+                  <div id="profBankCardDispCabang" class="text-[10px] text-sky-100/90 font-medium">${S().esc(merged.bank_cabang || '-')}</div>
                 </div>
               </div>
               <div class="pt-2">
                 <div class="text-[9px] uppercase tracking-widest text-sky-200/80 font-bold">Nomor Rekening Operasional</div>
                 <div class="flex items-center justify-between gap-2">
                   <div id="profBankCardDispNo" class="ons-card-embossed text-base sm:text-lg text-white">
-                    ${S().esc(merged.bank_nomor_rekening || '152001928374')}
+                    ${S().esc(merged.bank_nomor_rekening || '-')}
                   </div>
                   <button type="button" onclick="window.copyProfileText(document.getElementById('profBankNo')?.value, 'Nomor Rekening')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-all flex items-center gap-1 shadow-sm active:scale-95">
                     <span>📋 Salin No Rekening</span>
@@ -13111,7 +13124,7 @@ S. prn 3 dd 1 tab</textarea>
               <div class="flex items-center justify-between pt-1 border-t border-white/20 text-[11px]">
                 <div>
                   <div class="text-[9px] uppercase tracking-wider text-sky-200/80 font-medium">Atas Nama Rekening</div>
-                  <div id="profBankCardDispAkun" class="font-bold text-white uppercase tracking-wide">${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}</div>
+                  <div id="profBankCardDispAkun" class="font-bold text-white uppercase tracking-wide">${S().esc(merged.bank_akun_nama || '-')}</div>
                 </div>
                 <div class="text-right">
                   <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-400/25 text-sky-100 border border-sky-400/35">REKENING RESMI VERIFIED</span>
@@ -13123,22 +13136,22 @@ S. prn 3 dd 1 tab</textarea>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
               <div>
                 <label class="ons-form-label">Nama Bank Rekening <span class="text-rose-500">*</span></label>
-                <input id="profBankNama" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_nama || 'Bank Mandiri')}" placeholder="Nama Bank" oninput="window.refreshBankCardMockup()"/>
+                <input id="profBankNama" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_nama || '')}" placeholder="Nama Bank" oninput="window.refreshBankCardMockup()"/>
               </div>
               <div>
                 <label class="ons-form-label">Kantor Cabang Bank</label>
-                <input id="profBankCabang" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.bank_cabang || 'KCP Panakkukang')}" placeholder="Kantor Cabang" oninput="window.refreshBankCardMockup()"/>
+                <input id="profBankCabang" ${ro} class="ons-input text-xs w-full font-medium" value="${S().esc(merged.bank_cabang || '')}" placeholder="Kantor Cabang" oninput="window.refreshBankCardMockup()"/>
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
                 <label class="ons-form-label">Nama Pemilik Akun Rekening <span class="text-rose-500">*</span></label>
-                <input id="profBankAkun" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_akun_nama || 'Apotek ONS Farma')}" placeholder="Nama Akun" oninput="window.refreshBankCardMockup()"/>
+                <input id="profBankAkun" ${ro} class="ons-input text-xs w-full font-bold" value="${S().esc(merged.bank_akun_nama || '')}" placeholder="Nama Akun" oninput="window.refreshBankCardMockup()"/>
               </div>
               <div>
                 <label class="ons-form-label">Nomor Rekening Bank <span class="text-rose-500">*</span></label>
-                <input id="profBankNo" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.bank_nomor_rekening || '152001928374')}" placeholder="Nomor Rekening" oninput="window.refreshBankCardMockup()"/>
+                <input id="profBankNo" ${ro} class="ons-input font-mono-num text-xs w-full font-bold" value="${S().esc(merged.bank_nomor_rekening || '')}" placeholder="Nomor Rekening" oninput="window.refreshBankCardMockup()"/>
               </div>
             </div>
 
@@ -14721,10 +14734,12 @@ S. prn 3 dd 1 tab</textarea>
       return;
     }
     const cur = S().getStoreProfile();
-    const v = (id) => {
+    const getFieldVal = (id, fallback) => {
       const el = document.getElementById(id);
-      return el ? String(el.value || '').trim() : '';
+      if (el) return String(el.value || '').trim();
+      return fallback !== undefined ? fallback : '';
     };
+    const v = (id) => getFieldVal(id, '');
 
     const docFotoOutlet = v('profDocUrl_foto_outlet') || (profileDocsDraft.foto_outlet && profileDocsDraft.foto_outlet.dataUrl) || cur.foto_outlet_url || '';
     const docFotoOutletName = v('profDocName_foto_outlet') || (profileDocsDraft.foto_outlet && profileDocsDraft.foto_outlet.name) || cur.file_foto_outlet_name || '';
@@ -14760,43 +14775,43 @@ S. prn 3 dd 1 tab</textarea>
     const pubAccVal = pubAccEl ? (pubAccEl.type === 'checkbox' ? pubAccEl.checked : (pubAccEl.value === 'true' || pubAccEl.value === '1')) : true;
 
     const payload = {
-      nama_pemilik: v('profNamaPemilik') || cur.nama_pemilik,
-      jabatan_pemilik: v('profJabatanPemilik') || cur.jabatan_pemilik,
-      sipa_pemilik: v('profSipaPemilik') || cur.sipa_pemilik,
-      stra_pemilik: v('profStraPemilik') || cur.stra_pemilik,
-      wa_pemilik: v('profWaPemilik') || cur.wa_pemilik,
-      email_pemilik: v('profEmailPemilik') || cur.email_pemilik,
-      npwp_pemilik: v('profNpwpPemilik') || cur.npwp_pemilik,
-      foto_pemilik_url: v('profFotoUrl') || cur.foto_pemilik_url,
-      nama_usaha: v('profNamaUsaha') || cur.nama_usaha,
-      no_sia: v('profNoSia') || cur.no_sia,
-      nib_oss: v('profNibOss') || cur.nib_oss,
-      npwp_usaha: v('profNpwpUsaha') || cur.npwp_usaha,
-      status_pkp: v('profStatusPkp') || cur.status_pkp,
-      alamat_usaha: v('profAlamatUsaha') || cur.alamat_usaha,
-      kota: v('profKota') || cur.kota,
-      kode_pos: v('profKodePos') || cur.kode_pos,
-      telepon_usaha: v('profTelpUsaha') || cur.telepon_usaha,
-      wa_usaha: v('profWaUsaha') || v('profWaPemilik') || cur.wa_usaha,
-      email_usaha: v('profEmailUsaha') || v('profEmailPemilik') || cur.email_usaha,
-      jam_operasional: v('profJamOps') || cur.jam_operasional,
-      zona_waktu: v('profZonaWaktu') || cur.zona_waktu,
-      logo_usaha_url: v('profLogoUrl') || cur.logo_usaha_url,
-      slogan: v('profSlogan') || cur.slogan || '',
-      provinsi: v('profProvinsi') || cur.provinsi || 'Sulawesi Selatan',
-      kecamatan: v('profKecamatan') || cur.kecamatan || 'Panakkukang',
-      kelurahan: v('profKelurahan') || cur.kelurahan || 'Masale',
-      latitude: v('profLat') || cur.latitude || '-5.147665',
-      longitude: v('profLng') || cur.longitude || '119.432732',
-      nitku: v('profNitku') || cur.nitku || '8511240918050000',
-      jenis_badan_usaha: v('profJenisBadanUsaha') || cur.jenis_badan_usaha || 'Perorangan',
-      tgl_berlaku_sia: v('profTglSia') || cur.tgl_berlaku_sia || '13/11/2026',
-      ktp_pemilik: v('profKtpPemilik') || cur.ktp_pemilik || '7371105408920001',
-      tgl_berlaku_sipa: v('profMasaSipa') || cur.tgl_berlaku_sipa || '13/11/2026',
-      bank_nama: v('profBankNama') || cur.bank_nama || 'Bank Mandiri',
-      bank_cabang: v('profBankCabang') || cur.bank_cabang || 'KCP Panakkukang',
-      bank_akun_nama: v('profBankAkun') || cur.bank_akun_nama || 'Apotek ONS Farma',
-      bank_nomor_rekening: v('profBankNo') || cur.bank_nomor_rekening || '152001928374',
+      nama_pemilik: getFieldVal('profNamaPemilik', cur.nama_pemilik),
+      jabatan_pemilik: getFieldVal('profJabatanPemilik', cur.jabatan_pemilik || 'Pemilik Sarana Apotek & Apoteker'),
+      sipa_pemilik: getFieldVal('profSipaPemilik', cur.sipa_pemilik),
+      stra_pemilik: getFieldVal('profStraPemilik', cur.stra_pemilik),
+      wa_pemilik: getFieldVal('profWaPemilik', cur.wa_pemilik),
+      email_pemilik: getFieldVal('profEmailPemilik', cur.email_pemilik),
+      npwp_pemilik: getFieldVal('profNpwpPemilik', cur.npwp_pemilik),
+      foto_pemilik_url: getFieldVal('profFotoUrl', cur.foto_pemilik_url),
+      nama_usaha: getFieldVal('profNamaUsaha', cur.nama_usaha),
+      no_sia: getFieldVal('profNoSia', cur.no_sia),
+      nib_oss: getFieldVal('profNibOss', cur.nib_oss),
+      npwp_usaha: getFieldVal('profNpwpUsaha', cur.npwp_usaha),
+      status_pkp: getFieldVal('profStatusPkp', cur.status_pkp || 'NON_PKP'),
+      alamat_usaha: getFieldVal('profAlamatUsaha', cur.alamat_usaha),
+      provinsi: getFieldVal('profProvinsi', cur.provinsi),
+      kota: getFieldVal('profKota', cur.kota),
+      kecamatan: getFieldVal('profKecamatan', cur.kecamatan),
+      kelurahan: getFieldVal('profKelurahan', cur.kelurahan),
+      kode_pos: getFieldVal('profKodePos', cur.kode_pos),
+      telepon_usaha: getFieldVal('profTelpUsaha', cur.telepon_usaha),
+      wa_usaha: getFieldVal('profWaUsaha', cur.wa_usaha),
+      email_usaha: getFieldVal('profEmailUsaha', cur.email_usaha),
+      jam_operasional: getFieldVal('profJamOps', cur.jam_operasional),
+      zona_waktu: getFieldVal('profZonaWaktu', cur.zona_waktu || 'Asia/Makassar (WITA)'),
+      logo_usaha_url: getFieldVal('profLogoUrl', cur.logo_usaha_url),
+      slogan: getFieldVal('profSlogan', cur.slogan),
+      latitude: getFieldVal('profLat', cur.latitude),
+      longitude: getFieldVal('profLng', cur.longitude),
+      nitku: getFieldVal('profNitku', cur.nitku),
+      jenis_badan_usaha: getFieldVal('profJenisBadanUsaha', cur.jenis_badan_usaha || 'Perorangan'),
+      tgl_berlaku_sia: getFieldVal('profTglSia', cur.tgl_berlaku_sia),
+      ktp_pemilik: getFieldVal('profKtpPemilik', cur.ktp_pemilik),
+      tgl_berlaku_sipa: getFieldVal('profMasaSipa', cur.tgl_berlaku_sipa),
+      bank_nama: getFieldVal('profBankNama', cur.bank_nama),
+      bank_cabang: getFieldVal('profBankCabang', cur.bank_cabang),
+      bank_akun_nama: getFieldVal('profBankAkun', cur.bank_akun_nama),
+      bank_nomor_rekening: getFieldVal('profBankNo', cur.bank_nomor_rekening),
       public_access: pubAccVal,
       foto_outlet_url: docFotoOutlet,
       file_foto_outlet_name: docFotoOutletName,
@@ -14833,7 +14848,7 @@ S. prn 3 dd 1 tab</textarea>
     try {
       const res = await API().callApi('profil.save', payload, { isWrite: true });
       const rawProf = (res && (res.profile || res.item)) || (res && res.nama_usaha ? res : null);
-      const saved = S().setStoreProfile(rawProf || payload);
+      const saved = S().setStoreProfile(Object.assign({}, cur, payload, rawProf || {}));
       if (S().AppState.user && S().AppState.user.role === 'Pemilik') {
         S().AppState.user.nama_lengkap = saved.nama_pemilik;
         S().AppState.user.no_sipa = saved.sipa_pemilik;
@@ -14895,7 +14910,18 @@ S. prn 3 dd 1 tab</textarea>
           API().callApi('audit.getChecklist', {}).catch(() => null)
         ]);
         const rawProf = profRes && ((profRes.profile || profRes.item) || (profRes.nama_usaha ? profRes : null));
-        if (rawProf && S().setStoreProfile) S().setStoreProfile(rawProf);
+        if (rawProf && S().setStoreProfile) {
+          const curProf = S().getStoreProfile();
+          S().setStoreProfile(Object.assign({}, curProf, rawProf));
+          if (rawProf.config_json) {
+            try {
+              const cfg = typeof rawProf.config_json === 'string' ? JSON.parse(rawProf.config_json) : rawProf.config_json;
+              if (cfg && typeof cfg === 'object' && S().setStoreSettings) {
+                S().setStoreSettings(cfg);
+              }
+            } catch (e) {}
+          }
+        }
         if (usr && usr.rbac_permissions) S().AppState.rbacPermissions = usr.rbac_permissions;
         if (chkRes && chkRes.items && S().setAuditSystem) {
           S().setAuditSystem(chkRes);
@@ -17085,6 +17111,9 @@ S. prn 3 dd 1 tab</textarea>
       };
 
       if (S().setStoreSettings) S().setStoreSettings(updated);
+      try {
+        API().callApi('profil.save', { config_json: JSON.stringify(updated) }, { isWrite: true }).catch(() => {});
+      } catch (e) {}
       global.toast('Konfigurasi operasional toko berhasil disimpan & disinkronkan!', 'ok');
       global.renderActiveView();
     } catch (e) {
