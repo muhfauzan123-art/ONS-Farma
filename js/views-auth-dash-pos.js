@@ -4190,6 +4190,7 @@
     const fGol = st.posFilterGol || '';
     const batchMatchIds = findBatchMatchObatIds(q);
 
+    const sellStokMap = new Map();
     const list = (st.masterObat || []).filter((o) => {
       if (fGol) {
         const oG = String(o.golongan_bpom || 'BEBAS').toUpperCase().trim();
@@ -4203,6 +4204,7 @@
         if (!hay.includes(q) && !batchMatchIds[o.id_obat]) return false;
       }
       const sellStok = S().getSellableStok(o.id_obat);
+      sellStokMap.set(o.id_obat, sellStok);
       if (posStockFilter === 'READY' && sellStok <= 0) return false;
       if (posStockFilter === 'LOW' && !(S().isLowStock ? S().isLowStock(o, sellStok) : false)) return false;
       if (posStockFilter === 'NEAR_ED') {
@@ -4213,12 +4215,22 @@
     });
 
     return list.sort((a, b) => {
-      const sa = S().getSellableStok(a.id_obat) > 0 ? 1 : 0;
-      const sb = S().getSellableStok(b.id_obat) > 0 ? 1 : 0;
+      const sa = (sellStokMap.get(a.id_obat) || 0) > 0 ? 1 : 0;
+      const sb = (sellStokMap.get(b.id_obat) || 0) > 0 ? 1 : 0;
       if (sa !== sb) return sb - sa;
       return String(a.nama_dagang || '').localeCompare(String(b.nama_dagang || ''));
     });
   }
+
+  let posCatalogLimit = 36;
+  global.posLoadMoreCatalog = (n) => {
+    if (n === 'ALL') {
+      posCatalogLimit = 99999;
+    } else {
+      posCatalogLimit += (parseInt(n, 10) || 36);
+    }
+    syncPosCatalogDomOnly();
+  };
 
   function renderPosCatalogCardsHtml(catalog, cart) {
     if (!catalog.length) {
@@ -4228,11 +4240,16 @@
         <button type="button" onclick="window.resetPosCatalogFilters()" class="ons-btn ons-btn-primary text-xs py-1.5 px-4">Reset Semua Filter Katalog</button>
       </div>`;
     }
+    const hasSearch = Boolean(String(S().AppState.posSearchQ || '').trim());
+    const effectiveLimit = hasSearch ? 48 : posCatalogLimit;
+    const isClamped = catalog.length > effectiveLimit;
+    const visibleItems = isClamped ? catalog.slice(0, effectiveLimit) : catalog;
+
     const tierMode = (cart && cart.tier_harga) || ((cart && cart.id_member !== 'UMUM') ? 'MEMBER' : 'UMUM');
     const inCartMap = getCartItemCountsMap(cart);
     const isList = posCatalogView === 'LIST';
 
-    return catalog.map((o) => {
+    const cardsHtml = visibleItems.map((o) => {
       const sellStok = S().getSellableStok(o.id_obat);
       const totalFisik = S().getTotalStok(o.id_obat);
       const expiredQty = Math.max(0, totalFisik - sellStok);
@@ -4329,6 +4346,15 @@
         </div>
       </div>`;
     }).join('');
+
+    const moreBtnHtml = isClamped ? `
+      <div class="col-span-full p-3 text-center rounded-xl border border-dashed flex flex-wrap items-center justify-center gap-2 mt-2" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+        <span class="text-xs text-slate-500 font-medium">Menampilkan <b>${effectiveLimit}</b> dari <b>${catalog.length}</b> obat.</span>
+        <button type="button" onclick="window.posLoadMoreCatalog(36)" class="ons-btn ons-btn-primary text-xs py-1 px-3 shadow-sm font-semibold">+ Muat 36 Obat Lainnya</button>
+        <button type="button" onclick="window.posLoadMoreCatalog('ALL')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 font-semibold">Tampilkan Semua (${catalog.length})</button>
+      </div>` : '';
+
+    return cardsHtml + moreBtnHtml;
   }
 
   function syncPosCatalogDomOnly() {
@@ -6082,6 +6108,7 @@
   };
 
   global.resetPosCatalogFilters = () => {
+    posCatalogLimit = 36;
     S().AppState.posSearchQ = '';
     S().AppState.posFilterGol = '';
     posStockFilter = 'ALL';
@@ -6305,13 +6332,21 @@
     if (typeof global.syncNavHighlight === 'function') global.syncNavHighlight();
   };
 
+  let _posSearchDebounceTimer = null;
   global.onPosSearch = (v) => {
     S().AppState.posSearchQ = v;
-    syncPosCatalogDomOnly();
+    const clrBtn = document.getElementById('posSearchClearBtn');
+    if (clrBtn) clrBtn.classList.toggle('hidden', !String(v || '').trim());
+    if (_posSearchDebounceTimer) clearTimeout(_posSearchDebounceTimer);
+    _posSearchDebounceTimer = setTimeout(() => {
+      syncPosCatalogDomOnly();
+    }, 120);
   };
 
   global.clearPosSearchInput = () => {
+    if (_posSearchDebounceTimer) clearTimeout(_posSearchDebounceTimer);
     S().AppState.posSearchQ = '';
+    posCatalogLimit = 36;
     const inp = document.getElementById('posSearchInput');
     if (inp) { inp.value = ''; inp.focus(); }
     syncPosCatalogDomOnly();

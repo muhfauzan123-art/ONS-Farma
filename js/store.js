@@ -736,7 +736,7 @@
       _batchIdx.mLen === mList.length &&
       _batchIdx.br === br &&
       _batchIdx.day === nc.iso &&
-      (Date.now() - _batchIdx.ts) <= 60
+      (Date.now() - _batchIdx.ts) <= 60000
     ) {
       return _batchIdx.byId;
     }
@@ -852,6 +852,26 @@
   function getNearestSellableBatch(idObat) {
     const ent = _getBatchIndex().get(idObat);
     return ent ? ent.nearestSellable : null;
+  }
+
+  let _obatMapCache = { arr: null, len: -1, map: new Map() };
+  function getMasterObatMap() {
+    const list = AppState.masterObat || [];
+    if (_obatMapCache.arr === list && _obatMapCache.len === list.length) {
+      return _obatMapCache.map;
+    }
+    const map = new Map();
+    for (let i = 0; i < list.length; i++) {
+      const o = list[i];
+      if (o && o.id_obat) map.set(o.id_obat, o);
+    }
+    _obatMapCache = { arr: list, len: list.length, map };
+    return map;
+  }
+
+  function getObatById(idObat) {
+    if (!idObat) return null;
+    return getMasterObatMap().get(idObat) || null;
   }
 
   /**
@@ -3316,6 +3336,8 @@
     normalizeDateIso,
     formatEd,
     invalidateStockIndex,
+    getMasterObatMap,
+    getObatById,
     getTotalStok,
     getSellableStok,
     getNearestEdBatch,

@@ -6,6 +6,10 @@
   'use strict';
   const S = () => global.ONSStore;
   const API = () => global.ONSApi;
+  const _getOb = (id) => {
+    if (!id) return null;
+    return (S().getObatById ? S().getObatById(id) : null) || (S().AppState.masterObat || []).find((m) => m.id_obat === id) || null;
+  };
 
   let masterTab = 'obat'; // obat | supplier | pelanggan | dokter | sales
   let masterFilterGol = '';
@@ -42,6 +46,10 @@
   let masterViewMode = 'TABLE'; // TABLE | CARD
   let masterShowAdvFilters = false;
   let masterSearchQ = '';
+  let masterPage = 1;
+  let masterPageSize = (typeof localStorage !== 'undefined' && localStorage.getItem('ons_master_page_size'))
+    ? (localStorage.getItem('ons_master_page_size') === 'ALL' ? 'ALL' : (parseInt(localStorage.getItem('ons_master_page_size'), 10) || 25))
+    : 25;
   let supplierSearchQ = '';
   let supplierStatusFilter = 'SEMUA'; // SEMUA | AKTIF | NONAKTIF
   let pelangganSearchQ = '';
@@ -281,9 +289,40 @@
     return s || 'BEBAS';
   }
 
+  let _cachedMasterMeta = {
+    masterRef: null,
+    stokBatchRef: null,
+    masterLen: -1,
+    batchLen: -1,
+    data: []
+  };
+
+  function _getCachedMasterMeta(st) {
+    const mList = st.masterObat || [];
+    const bList = st.stokBatch || [];
+    if (
+      _cachedMasterMeta.masterRef === mList &&
+      _cachedMasterMeta.stokBatchRef === bList &&
+      _cachedMasterMeta.masterLen === mList.length &&
+      _cachedMasterMeta.batchLen === bList.length &&
+      _cachedMasterMeta.data.length === mList.length
+    ) {
+      return _cachedMasterMeta.data;
+    }
+    const data = mList.map(buildObatMeta);
+    _cachedMasterMeta = {
+      masterRef: mList,
+      stokBatchRef: bList,
+      masterLen: mList.length,
+      batchLen: bList.length,
+      data
+    };
+    return data;
+  }
+
   function _getFilteredMasterObatMeta() {
     const st = S().AppState;
-    const allMeta = (st.masterObat || []).map(buildObatMeta);
+    const allMeta = _getCachedMasterMeta(st);
     const filtered = allMeta.filter((m) => {
       const o = m.o;
       if (masterFilterGol && _normGol(o.golongan_bpom) !== _normGol(masterFilterGol)) return false;
@@ -384,6 +423,47 @@
     const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (Math.max(0, m.stok) * m.hpp), 0) : 0;
     const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA' || masterFilterPabrikan !== 'SEMUA' || masterFilterPbf !== 'SEMUA' || masterFilterSuhu !== 'SEMUA');
 
+    const totalFiltered = filtered.length;
+    const effectivePageSize = masterPageSize === 'ALL' ? Math.max(1, totalFiltered) : (Number(masterPageSize) || 25);
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / effectivePageSize));
+    if (masterPage > totalPages) masterPage = totalPages;
+    if (masterPage < 1) masterPage = 1;
+    const startIdx = masterPageSize === 'ALL' ? 0 : (masterPage - 1) * effectivePageSize;
+    const endIdx = masterPageSize === 'ALL' ? totalFiltered : Math.min(startIdx + effectivePageSize, totalFiltered);
+    const paged = filtered.slice(startIdx, endIdx);
+
+    const _renderPaginationBar = () => {
+      if (totalFiltered <= 0) return '';
+      const hasPrev = masterPage > 1;
+      const hasNext = masterPage < totalPages;
+      return `<div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border mt-3 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+        <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
+          <span>Menampilkan <b class="font-mono-num text-slate-900 dark:text-slate-100">${totalFiltered === 0 ? 0 : (startIdx + 1)}–${endIdx}</b> dari <b class="font-mono-num text-slate-900 dark:text-slate-100">${totalFiltered}</b> obat${hasFilter ? ' (terfilter)' : ''}</span>
+          <span class="text-slate-300 dark:text-slate-600">|</span>
+          <label class="flex items-center gap-1.5 text-slate-500">
+            <span>Per Hal:</span>
+            <select onchange="window.setMasterPageSize(this.value)" class="ons-select py-1 px-2 text-xs font-mono-num rounded-lg border cursor-pointer" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+              <option value="25" ${masterPageSize === 25 ? 'selected' : ''}>25</option>
+              <option value="50" ${masterPageSize === 50 ? 'selected' : ''}>50</option>
+              <option value="100" ${masterPageSize === 100 ? 'selected' : ''}>100</option>
+              <option value="ALL" ${masterPageSize === 'ALL' ? 'selected' : ''}>Semua (${totalFiltered})</option>
+            </select>
+          </label>
+        </div>
+        <div class="flex items-center gap-1">
+          <button type="button" onclick="window.setMasterPage(1)" ${!hasPrev ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasPrev ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Pertama">&laquo; Pertama</button>
+          <button type="button" onclick="window.setMasterPage(${masterPage - 1})" ${!hasPrev ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasPrev ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Sebelumnya">&lsaquo; Prev</button>
+          
+          <div class="px-2.5 py-1 rounded-lg font-mono-num font-bold text-xs bg-blue-500/10 text-blue-600 border border-blue-500/20">
+            Hal. ${masterPage} / ${totalPages}
+          </div>
+
+          <button type="button" onclick="window.setMasterPage(${masterPage + 1})" ${!hasNext ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasNext ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Berikutnya">Next &rsaquo;</button>
+          <button type="button" onclick="window.setMasterPage(${totalPages})" ${!hasNext ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasNext ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Terakhir">Terakhir &raquo;</button>
+        </div>
+      </div>`;
+    };
+
     const actionButtons = (o) => `<div class="flex items-center gap-1 justify-end">
       <button type="button" onclick="window.openObatDetailModal('${S().esc(o.id_obat)}')" class="ons-btn ons-btn-primary ons-btn-xs" title="Detail Monograf Klinis &amp; Batch FEFO">👁️ Detail</button>
       <div class="ons-dd-wrap inline-block">
@@ -423,7 +503,7 @@
       `}
     </div>` : (masterViewMode === 'CARD' ? `
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-      ${filtered.map((m) => {
+      ${paged.map((m) => {
         const o = m.o;
         const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
         const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
@@ -513,10 +593,11 @@
         actionLabel: hasFilter ? 'Reset Filter' : '+ Tambah Obat Baru',
         actionOnClick: hasFilter ? 'window.resetMasterFilter()' : 'window.openObatModal()'
       })}
-    </div>` : `
+    </div>
+    ${_renderPaginationBar()}` : `
     <div class="ons-card p-3">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11.5px]" style="color:var(--ons-text-soft)">
-        <span>Menampilkan <b>${filtered.length}</b> dari ${totalCount} produk obat${hasFilter ? ' (terfilter)' : ''}</span>
+        <span>Menampilkan <b>${totalFiltered === 0 ? 0 : (startIdx + 1)}–${endIdx}</b> dari ${totalCount} produk obat (Hal. ${masterPage}/${totalPages})${hasFilter ? ' (terfilter)' : ''}</span>
         ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="text-blue-600 font-semibold hover:underline">Reset Filter</button>` : '<span>Klik <b>Detail</b> untuk batch FEFO, suhu simpan &amp; substitusi generik</span>'}
       </div>
       <div class="ons-table-wrap">
@@ -537,7 +618,7 @@
             </tr>
           </thead>
           <tbody>
-            ${filtered.map((m, idx) => {
+            ${paged.map((m, idx) => {
               const o = m.o;
               const isAktifJual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
               const rugiWarn = seeCost && m.hpp > 0 && m.harga <= m.hpp;
@@ -553,7 +634,7 @@
               const h3 = valid3 ? Number(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || (h1 * r3))) : 0;
                         const sBreakdown = _formatStockMultiSatuan(m.stok, o);
               return `<tr class="${!isAktifJual ? 'opacity-70 bg-slate-500/5' : ''}">
-                <td class="font-mono-num text-xs text-center">${idx + 1}.</td>
+                <td class="font-mono-num text-xs text-center">${startIdx + idx + 1}.</td>
                 <td>
                   <div class="flex items-start gap-1.5">
                     <span class="inline-block w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style="background:${m.stokTone.color}" title="Status Stok: ${m.stokTone.label}"></span>
@@ -653,6 +734,7 @@
           </tbody>
         </table>
       </div>
+      ${_renderPaginationBar()}
     </div>`);
 
     const kondisiFooter = _renderInvRekapFooter('daftar-produk', 'Kondisi Produk', [
@@ -3528,31 +3610,64 @@
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
+  let _masterSearchTimer = null;
   global.setMasterSearch = (v) => {
     masterSearchQ = v || '';
+    masterPage = 1;
+    const clearEl = typeof document !== 'undefined' ? document.getElementById('mdObatClearBtn') : null;
+    if (clearEl && clearEl.classList) clearEl.classList.toggle('hidden', !String(masterSearchQ).trim());
+    if (_masterSearchTimer) clearTimeout(_masterSearchTimer);
+    _masterSearchTimer = setTimeout(() => {
+      _patchMasterResults(() => {
+        const { allMeta, filtered } = _getFilteredMasterObatMeta();
+        return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+      }, masterSearchQ, 'mdObatClearBtn');
+    }, 180);
+  };
+  global.clearMasterObatSearch = () => {
+    if (_masterSearchTimer) clearTimeout(_masterSearchTimer);
+    masterSearchQ = '';
+    masterPage = 1;
+    const inp = typeof document !== 'undefined' ? document.getElementById('mdObatSearchInp') : null;
+    if (inp) { inp.value = ''; inp.focus(); }
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, '', 'mdObatClearBtn');
+  };
+  global.setMasterPage = (p) => {
+    masterPage = Math.max(1, parseInt(p, 10) || 1);
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+    const slot = typeof document !== 'undefined' ? document.getElementById('mdResultsSlot') : null;
+    if (slot && typeof slot.scrollIntoView === 'function') {
+      slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+  global.setMasterPageSize = (sz) => {
+    masterPageSize = (sz === 'ALL' || sz === 'Semua') ? 'ALL' : Math.max(10, parseInt(sz, 10) || 25);
+    if (typeof localStorage !== 'undefined') localStorage.setItem('ons_master_page_size', String(masterPageSize));
+    masterPage = 1;
     _patchMasterResults(() => {
       const { allMeta, filtered } = _getFilteredMasterObatMeta();
       return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
     }, masterSearchQ, 'mdObatClearBtn');
   };
-  global.clearMasterObatSearch = () => {
-    masterSearchQ = '';
-    const inp = typeof document !== 'undefined' ? document.getElementById('mdObatSearchInp') : null;
-    if (inp) { inp.value = ''; inp.focus(); }
-    global.setMasterSearch('');
-  };
-  global.setMasterGol = (g) => { masterFilterGol = g; global.renderActiveView(); };
-  global.setMasterKategori = (kat) => { masterFilterKategori = kat || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterStokFilter = (f) => { masterFilterStok = f || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterSediaan = (s) => { masterFilterSediaan = s || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterPabrikan = (p) => { masterFilterPabrikan = p || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterPbf = (p) => { masterFilterPbf = p || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterSuhu = (sh) => { masterFilterSuhu = sh || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterStatusJual = (st) => { masterFilterStatusJual = st || 'SEMUA'; global.renderActiveView(); };
-  global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; global.renderActiveView(); };
+  global.setMasterGol = (g) => { masterFilterGol = g; masterPage = 1; global.renderActiveView(); };
+  global.setMasterKategori = (kat) => { masterFilterKategori = kat || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterStokFilter = (f) => { masterFilterStok = f || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterSediaan = (s) => { masterFilterSediaan = s || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterPabrikan = (p) => { masterFilterPabrikan = p || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterPbf = (p) => { masterFilterPbf = p || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterSuhu = (sh) => { masterFilterSuhu = sh || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterStatusJual = (st) => { masterFilterStatusJual = st || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; masterPage = 1; global.renderActiveView(); };
   global.setMasterViewMode = (m) => { masterViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
   global.toggleMasterAdvFilters = () => { masterShowAdvFilters = !masterShowAdvFilters; global.renderActiveView(); };
   global.resetMasterFilter = () => {
+    if (_masterSearchTimer) clearTimeout(_masterSearchTimer);
     masterFilterGol = '';
     masterFilterKategori = 'SEMUA';
     masterFilterStok = 'SEMUA';
@@ -3563,6 +3678,7 @@
     masterFilterSuhu = 'SEMUA';
     masterSearchQ = '';
     masterSortBy = 'NAMA';
+    masterPage = 1;
     global.renderActiveView();
   };
 
@@ -7284,7 +7400,7 @@
     const pemilikLabel = prof.nama_usaha || 'Apotek ONS Farma';
     const gq = gudangBatchQ.trim().toLowerCase();
     const filteredBatches = sorted.filter((b) => {
-      const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+      const o = _getOb(b.id_obat);
       const d = S().daysUntil(b.tgl_kadaluarsa);
       const activeQty = String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0;
       if (gudangBatchFilter === 'KADALUARSA' && !(activeQty && d < 0)) return false;
@@ -7417,8 +7533,8 @@
               </tr>
             </thead>
             <tbody>
-              ${filteredBatches.map((b, idx) => {
-                const o = st.masterObat.find((m) => m.id_obat === b.id_obat);
+              ${filteredBatches.slice(0, 100).map((b, idx) => {
+                const o = _getOb(b.id_obat);
                 const d = S().daysUntil(b.tgl_kadaluarsa);
                 const isEd = d < 0 && Number(b.qty_sisa || 0) > 0;
                 const edBadge = d < 0 ? 'bpom-keras' : (d <= 90 ? 'bpom-keras' : (d <= 180 ? 'bpom-prekursor' : 'bpom-bebas'));
@@ -7477,6 +7593,7 @@
             </tbody>
           </table>
         </div>
+        ${filteredBatches.length > 100 ? `<div class="p-2.5 text-center text-xs text-slate-500 border-t" style="border-color:var(--ons-border)">Menampilkan 100 dari <b>${filteredBatches.length}</b> batch. Ketik di kotak cari untuk mempersempit.</div>` : ''}
       </div>
     </div>`;
   }
@@ -8012,7 +8129,7 @@
     const rakList = Array.from(rakSet).sort();
     const activeForOpname = sorted.filter((b) => {
       if (String(b.status_batch || 'AKTIF') !== 'AKTIF') return false;
-      const ob = st.masterObat.find((m) => m.id_obat === b.id_obat) || {};
+      const ob = _getOb(b.id_obat) || {};
       if (opnameRakFilter && String(ob.rak_lokasi || '').trim() !== opnameRakFilter) return false;
       if (gq) {
         const hay = `${b.no_batch} ${ob.nama_dagang || b.id_obat} ${ob.kode_kfa || ''} ${ob.rak_lokasi || ''}`.toLowerCase();
@@ -8219,7 +8336,7 @@
               <tbody>
                 ${mutasiRows.length === 0 ? `<tr><td colspan="11" class="text-center py-6 text-xs" style="color:var(--ons-text-soft)">Belum ada histori mutasi pada filter ini.</td></tr>` : mutasiRows.slice(0, 150).map((m, idx) => {
                   const q = Number(m.qty_ubah || 0);
-                  const ob = st.masterObat.find((o) => o.id_obat === m.id_obat);
+                  const ob = _getOb(m.id_obat);
                   const hppVal = Number(m.hpp_beli || (ob && ob.hpp_avg) || 0);
                   return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td class="text-xs font-mono-num text-slate-400">${idx + 1}</td>
