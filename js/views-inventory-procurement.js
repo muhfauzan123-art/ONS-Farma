@@ -11158,8 +11158,19 @@
             <div class="w-12 h-12 rounded-2xl bg-sky-600/10 text-sky-600 border border-sky-600/20 flex items-center justify-center shrink-0 shadow-sm">
               ${dynamicFakturIcon}
             </div>
-            <div>
-              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${pageFakturTitle}</h2>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${pageFakturTitle}</h2>
+                ${fakturTab === 'sp' ? `
+                  <span class="badge-bpom bpom-bebas text-[10.5px] font-bold">✓ Standar CDOB 5 Golongan</span>
+                  <span class="badge-bpom bpom-terbatas text-[10.5px] font-bold hidden sm:inline-flex">📄 Cetak A4 Resmi ber-QR</span>
+                ` : ''}
+              </div>
+              ${fakturTab === 'sp' ? `
+                <div class="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                  Penerbitan surat pesanan resmi apotek (Reguler, Prekursor, OOT, Psikotropika, Narkotika) ke distributor PBF dengan nomor otomatis &amp; terintegrasi faktur.
+                </div>
+              ` : ''}
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -11172,8 +11183,9 @@
               <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs">+ Usulan Baru</button>
               <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">⚡ Buat SP Otomatis</button>
             ` : fakturTab === 'sp' ? `
-              <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Surat Pesanan (SP)</button>
-              <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Export Excel</button>
+              <button type="button" onclick="window.setFakturTab('rencana');window.setRencanaSubMode('DEFECTA');" class="ons-btn ons-btn-ghost text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800" title="Impor otomatis dari usulan Defecta Kritis">⚡ Defecta &rarr; SP</button>
+              <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs font-semibold">📥 Export Excel</button>
+              <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"><svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg><span>+ Surat Pesanan (SP)</span></button>
             ` : fakturTab === 'input' ? `
               <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs font-bold">&larr; Daftar Faktur</button>
               <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">Upload &amp; Scan Faktur</button>

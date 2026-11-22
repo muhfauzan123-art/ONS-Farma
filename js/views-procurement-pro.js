@@ -18,8 +18,51 @@
   const API = () => global.ONSApi;
 
   // ==========================
-  // STATE INTERNAL MODUL
+  // STATE INTERNAL MODUL & QUICK PILL HELPERS
   // ==========================
+  global.setSpQuickPill = (type, val) => {
+    if (type === 'STATUS') {
+      spFilterStatus = val || 'SEMUA';
+      if (val !== 'SEMUA') spFilterGol = 'SEMUA';
+    } else if (type === 'GOL') {
+      spFilterGol = val || 'SEMUA';
+      spFilterStatus = 'SEMUA';
+    } else if (type === 'DRAFT') {
+      if (typeof global.openSpDraftModal === 'function') global.openSpDraftModal();
+      return;
+    }
+    if (typeof global.playFeedback === 'function') global.playFeedback('key');
+    if (typeof global.renderActiveView === 'function') global.renderActiveView();
+  };
+
+  global.setSpQuickDate = (preset) => {
+    const today = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const isoToday = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+    if (preset === 'ALL') {
+      spDateFrom = '';
+      spDateTo = '';
+    } else if (preset === 'TODAY') {
+      spDateFrom = isoToday;
+      spDateTo = isoToday;
+    } else if (preset === '7D') {
+      const d7 = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      spDateFrom = `${d7.getFullYear()}-${pad(d7.getMonth() + 1)}-${pad(d7.getDate())}`;
+      spDateTo = isoToday;
+    } else if (preset === 'MONTH') {
+      spDateFrom = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-01`;
+      spDateTo = isoToday;
+    }
+    if (typeof global.playFeedback === 'function') global.playFeedback('key');
+    if (typeof global.renderActiveView === 'function') global.renderActiveView();
+  };
+
+  global.openSpModal = () => {
+    if (typeof global.openCreateSpModal === 'function') {
+      global.openCreateSpModal();
+    }
+  };
   const SP_DRAFTS_KEY = 'ONS_SP_DRAFTS_V1';
   let spFilterStatus = 'SEMUA';
   let spFilterPbf = '';
@@ -101,10 +144,19 @@
 
   function spStatusBadge(status) {
     const s = String(status || 'MENUNGGU_BARANG').toUpperCase();
-    if (s === 'SELESAI_DITERIMA') return '<span class="badge-bpom bpom-bebas">SELESAI DITERIMA</span>';
-    if (s === 'DITERIMA_SEBAGIAN') return '<span class="badge-bpom bpom-keras">DITERIMA SEBAGIAN</span>';
-    if (s === 'DIBATALKAN') return '<span class="badge-bpom" style="background:#fee2e2;color:#991b1b;border-color:#f87171">DIBATALKAN</span>';
-    return '<span class="badge-bpom bpom-prekursor">MENUNGGU BARANG</span>';
+    if (s === 'SELESAI_DITERIMA') return '<span class="badge-bpom bpom-bebas inline-flex items-center gap-1.5 font-bold"><span class="ons-status-pulse bg-emerald-500"></span><span>SELESAI DITERIMA</span></span>';
+    if (s === 'DITERIMA_SEBAGIAN') return '<span class="badge-bpom bpom-terbatas inline-flex items-center gap-1.5 font-bold"><span class="ons-status-pulse bg-sky-500"></span><span>DITERIMA SEBAGIAN</span></span>';
+    if (s === 'DIBATALKAN') return '<span class="badge-bpom inline-flex items-center gap-1.5 font-bold" style="background:#fee2e2;color:#991b1b;border-color:#f87171"><span class="ons-status-pulse bg-red-500"></span><span>DIBATALKAN</span></span>';
+    return '<span class="badge-bpom bpom-prekursor inline-flex items-center gap-1.5 font-bold"><span class="ons-status-pulse bg-amber-500"></span><span>MENUNGGU BARANG</span></span>';
+  }
+
+  function spGolBadge(gol) {
+    const g = String(gol || 'REGULER').toUpperCase();
+    if (g === 'NARKOTIKA') return '<span class="badge-bpom bpom-keras font-extrabold inline-flex items-center gap-1 shadow-xs">🔴 NARKOTIKA</span>';
+    if (g === 'PSIKOTROPIKA') return '<span class="badge-bpom font-extrabold inline-flex items-center gap-1 shadow-xs" style="background:rgba(147,51,234,0.12);color:#9333ea;border-color:rgba(147,51,234,0.35)">🟣 PSIKOTROPIKA</span>';
+    if (g === 'PREKURSOR') return '<span class="badge-bpom bpom-prekursor font-extrabold inline-flex items-center gap-1 shadow-xs">🟡 PREKURSOR</span>';
+    if (g === 'OOT') return '<span class="badge-bpom font-extrabold inline-flex items-center gap-1 shadow-xs" style="background:rgba(234,88,12,0.12);color:#ea580c;border-color:rgba(234,88,12,0.35)">🟠 OOT</span>';
+    return '<span class="badge-bpom bpom-bebas font-extrabold inline-flex items-center gap-1 shadow-xs">🟢 REGULER</span>';
   }
 
   function spGolTitle(gol) {
@@ -587,6 +639,7 @@
 
   function renderSuratPesananTab() {
     const st = S().AppState;
+    const prof = (S().getStoreProfile && S().getStoreProfile()) || {};
     const allSp = st.suratPesanan || [];
     const q = spSearchQ.trim().toLowerCase();
     const drafts = loadSpLocalDrafts();
@@ -594,6 +647,16 @@
     const waitingCnt = allSp.filter((s) => !s.status_sp || s.status_sp === 'MENUNGGU_BARANG' || s.status_sp === 'TERBIT').length;
     const partialCnt = allSp.filter((s) => s.status_sp === 'DITERIMA_SEBAGIAN').length;
     const doneCnt = allSp.filter((s) => s.status_sp === 'SELESAI_DITERIMA').length;
+    const batalCnt = allSp.filter((s) => s.status_sp === 'DIBATALKAN').length;
+
+    // Counts by Golongan BPOM
+    const regulerCnt = allSp.filter((s) => String(s.golongan_sp || 'REGULER').toUpperCase() === 'REGULER').length;
+    const prekursorCnt = allSp.filter((s) => String(s.golongan_sp || '').toUpperCase() === 'PREKURSOR').length;
+    const ootCnt = allSp.filter((s) => String(s.golongan_sp || '').toUpperCase() === 'OOT').length;
+    const psikotropikaCnt = allSp.filter((s) => String(s.golongan_sp || '').toUpperCase() === 'PSIKOTROPIKA').length;
+    const narkotikaCnt = allSp.filter((s) => String(s.golongan_sp || '').toUpperCase() === 'NARKOTIKA').length;
+
+    const totalNilaiAllSp = allSp.reduce((sum, sp) => sum + Number(sp.estimasi_total || 0), 0);
 
     const rows = allSp.filter((sp) => {
       const s = String(sp.status_sp || 'MENUNGGU_BARANG').toUpperCase();
@@ -618,117 +681,262 @@
     const totalNilaiPesanan = rows.reduce((sum, sp) => sum + Number(sp.estimasi_total || 0), 0);
     const allVisibleSelected = rows.length > 0 && rows.every((sp) => spSelectedIds.has(sp.id_sp));
 
+    // Compute flat items count and suppliers count for badges
+    const flatItems = [];
+    rows.forEach((sp) => {
+      parseSpItems(sp).forEach((it) => {
+        flatItems.push({ sp, it });
+      });
+    });
+    const pbfMap = {};
+    rows.forEach((sp) => {
+      const pId = sp.id_pbf || sp.nama_pbf || 'LAIN';
+      if (!pbfMap[pId]) pbfMap[pId] = true;
+    });
+    const uniquePbfCount = Object.keys(pbfMap).length;
+
     return `<div class="space-y-4">
+      <!-- 4 LUXURY KPI STAT CARDS (v18.54.0) -->
       <div class="ons-cockpit-strip mb-4">
-        <div onclick="window.setSpFilterStatus('SEMUA')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SEMUA' ? 'ring-2 ring-blue-500 shadow-sm' : ''}">
-          <span class="ons-cockpit-label">Total Pesanan (SP)</span>
-          <span class="ons-cockpit-val font-mono-num text-slate-900 dark:text-white">${allSp.length} <span class="text-xs font-normal text-slate-500">SP</span></span>
-          <span class="ons-cockpit-desc">Semua golongan BPOM CDOB</span>
+        <!-- Card 1: Total Pesanan -->
+        <div onclick="window.setSpQuickPill('STATUS','SEMUA')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01] ${(spFilterStatus === 'SEMUA' && spFilterGol === 'SEMUA') ? 'ring-2 ring-blue-500 shadow-md' : ''}">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-extrabold text-xs uppercase tracking-wider text-blue-700 dark:text-blue-400">Total Pesanan (SP)</span>
+            <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-sm">📋</div>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="ons-cockpit-val font-mono-num text-slate-900 dark:text-white">${allSp.length}</span>
+            <span class="text-xs font-bold text-slate-400">Dokumen SP</span>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Estimasi Nilai</span>
+            <span class="font-mono-num font-bold text-blue-600 dark:text-blue-400">${S().rp(totalNilaiAllSp)}</span>
+          </div>
         </div>
 
-        <div onclick="window.setSpFilterStatus('MENUNGGU')" class="ons-cockpit-card is-amber cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-amber-500 shadow-sm' : ''}">
-          <span class="ons-cockpit-label text-amber-600 dark:text-amber-400">Menunggu Pengiriman</span>
-          <span class="ons-cockpit-val font-mono-num text-amber-600">${waitingCnt} <span class="text-xs font-normal text-amber-500">SP</span></span>
-          <span class="ons-cockpit-desc">Siap cetak A4 / kirim WA PBF</span>
+        <!-- Card 2: Menunggu Pengiriman -->
+        <div onclick="window.setSpQuickPill('STATUS','MENUNGGU')" class="ons-cockpit-card is-amber cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'MENUNGGU' ? 'ring-2 ring-amber-500 shadow-md' : ''}">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-extrabold text-xs uppercase tracking-wider text-amber-700 dark:text-amber-400">Menunggu Pengiriman</span>
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-sm">⏳</div>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="ons-cockpit-val font-mono-num text-amber-600">${waitingCnt}</span>
+            <span class="text-xs font-bold text-amber-500">SP Terbit</span>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Status Proses</span>
+            <span class="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>Siap Kirim PBF</span>
+          </div>
         </div>
 
-        <div onclick="window.setSpFilterStatus('SEBAGIAN')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-blue-500 shadow-sm' : ''}">
-          <span class="ons-cockpit-label text-blue-600 dark:text-blue-400">Diterima Sebagian</span>
-          <span class="ons-cockpit-val font-mono-num text-blue-600">${partialCnt} <span class="text-xs font-normal text-blue-500">SP</span></span>
-          <span class="ons-cockpit-desc">Menunggu sisa barang PBF</span>
+        <!-- Card 3: Diterima Sebagian -->
+        <div onclick="window.setSpQuickPill('STATUS','SEBAGIAN')" class="ons-cockpit-card is-blue cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SEBAGIAN' ? 'ring-2 ring-sky-500 shadow-md' : ''}">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-extrabold text-xs uppercase tracking-wider text-sky-700 dark:text-sky-400">Diterima Sebagian</span>
+            <div class="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold text-sm">📦</div>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="ons-cockpit-val font-mono-num text-sky-600">${partialCnt}</span>
+            <span class="text-xs font-bold text-sky-500">SP Parsial</span>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Barang PBF</span>
+            <span class="font-semibold text-sky-600 dark:text-sky-400">Menunggu Kiriman Sisa</span>
+          </div>
         </div>
 
-        <div onclick="window.setSpFilterStatus('SELESAI')" class="ons-cockpit-card is-emerald cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SELESAI' ? 'ring-2 ring-emerald-500 shadow-sm' : ''}">
-          <span class="ons-cockpit-label text-emerald-600 dark:text-emerald-400">Selesai Diterima</span>
-          <span class="ons-cockpit-val font-mono-num text-emerald-600">${doneCnt} <span class="text-xs font-normal text-emerald-500">SP</span></span>
-          <span class="ons-cockpit-desc">Faktur &amp; kartu stok sinkron</span>
+        <!-- Card 4: Selesai Diterima -->
+        <div onclick="window.setSpQuickPill('STATUS','SELESAI')" class="ons-cockpit-card is-emerald cursor-pointer transition-all hover:scale-[1.01] ${spFilterStatus === 'SELESAI' ? 'ring-2 ring-emerald-500 shadow-md' : ''}">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-extrabold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Selesai Diterima</span>
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-sm">✅</div>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="ons-cockpit-val font-mono-num text-emerald-600">${doneCnt}</span>
+            <span class="text-xs font-bold text-emerald-500">SP Tuntas</span>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Sinkronisasi</span>
+            <span class="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Faktur &amp; Stok Sinkron</span>
+          </div>
         </div>
       </div>
 
-      <div class="ons-card p-4 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2" style="border-color:var(--ons-border)">
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs font-bold text-slate-500 uppercase mr-1">Tampilan Data:</span>
-            <button type="button" onclick="window.setSpViewMode('PESANAN')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'PESANAN' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#128221; Daftar Pesanan (SP)</button>
-            <button type="button" onclick="window.setSpViewMode('PRODUK')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'PRODUK' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#128230; Rincian Produk Dipesan</button>
-            <button type="button" onclick="window.setSpViewMode('SUPPLIER')" class="ons-btn text-xs py-1 px-3 ${spViewMode === 'SUPPLIER' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">&#127970; Rekap per Supplier PBF</button>
+      <!-- MAIN CONTROL CONTAINER -->
+      <div class="ons-card p-3 sm:p-4 space-y-3.5">
+        <!-- 1. SEGMENTED VIEW SWITCHER & BULK ACTIONS -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3" style="border-color:var(--ons-border)">
+          <div class="inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-inner">
+            <button type="button" onclick="window.setSpViewMode('PESANAN')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'PESANAN' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
+              <span>📋 Daftar Pesanan (SP)</span>
+              <span class="text-[10px] py-0.2 px-1.5 rounded-full font-mono-num ${spViewMode === 'PESANAN' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}">${rows.length}</span>
+            </button>
+            <button type="button" onclick="window.setSpViewMode('PRODUK')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'PRODUK' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
+              <span>💊 Rincian Produk</span>
+              <span class="text-[10px] py-0.2 px-1.5 rounded-full font-mono-num ${spViewMode === 'PRODUK' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}">${flatItems.length}</span>
+            </button>
+            <button type="button" onclick="window.setSpViewMode('SUPPLIER')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'SUPPLIER' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
+              <span>🏢 Rekap Supplier</span>
+              <span class="text-[10px] py-0.2 px-1.5 rounded-full font-mono-num ${spViewMode === 'SUPPLIER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}">${uniquePbfCount}</span>
+            </button>
           </div>
+
           <div class="flex items-center gap-2">
-            ${spSelectedIds.size ? `<button type="button" onclick="window.deleteBulkSelectedSp()" class="ons-btn text-xs py-1 px-2.5 text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700 font-bold" title="Hapus seluruh SP yang dicentang">🗑 Hapus ${spSelectedIds.size} SP Terpilih</button>` : ''}
-            <div class="text-xs font-semibold text-slate-500">
-              Terpilih: <b>${spSelectedIds.size}</b> SP &bull; Total Nilai: <b class="text-blue-600">${S().rp(totalNilaiPesanan)}</b>
+            ${spSelectedIds.size ? `<button type="button" onclick="window.deleteBulkSelectedSp()" class="ons-btn text-xs py-1.5 px-3 text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700 font-bold rounded-xl shadow-sm hover:bg-rose-100 transition" title="Hapus seluruh SP yang dicentang">🗑 Hapus ${spSelectedIds.size} SP Terpilih</button>` : ''}
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 text-xs shadow-xs">
+              <span class="text-slate-400">Terpilih:</span>
+              <b class="font-mono-num text-slate-800 dark:text-slate-200">${spSelectedIds.size} SP</b>
+              <span class="text-slate-300 dark:text-slate-600">•</span>
+              <span class="text-slate-400">Total Nilai:</span>
+              <b class="font-mono-num text-blue-600 dark:text-blue-400 font-extrabold">${S().rp(totalNilaiPesanan)}</b>
             </div>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2 flex-1">
-            <select aria-label="Pilihan Data Pesanan" class="ons-select text-xs w-36" onchange="window.setSpFilterStatus(this.value)">
-              <option value="SEMUA" ${spFilterStatus === 'SEMUA' ? 'selected' : ''}>Semua Status</option>
-              <option value="MENUNGGU" ${spFilterStatus === 'MENUNGGU' ? 'selected' : ''}>Menunggu Pengiriman</option>
-              <option value="SEBAGIAN" ${spFilterStatus === 'SEBAGIAN' ? 'selected' : ''}>Diterima Sebagian</option>
-              <option value="SELESAI" ${spFilterStatus === 'SELESAI' ? 'selected' : ''}>Selesai Diterima</option>
-              <option value="BATAL" ${spFilterStatus === 'BATAL' ? 'selected' : ''}>Dibatalkan</option>
-            </select>
-            <select aria-label="Filter Supplier PBF" class="ons-select text-xs w-36" onchange="window.setSpFilterPbf(this.value)">
-              <option value="">Semua PBF</option>
+        <!-- 2. QUICK FILTER PILLS HORIZONTAL RIBBON (v18.54.0) -->
+        <div class="ons-quick-pills-ribbon" role="toolbar" aria-label="Filter Cepat Status dan Golongan SP">
+          <button type="button" onclick="window.setSpQuickPill('STATUS', 'SEMUA')" class="ons-quick-pill ${(spFilterStatus === 'SEMUA' && spFilterGol === 'SEMUA') ? 'is-active' : ''}">
+            <span>Semua Pesanan</span>
+            <span class="ons-quick-pill-badge">${allSp.length}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('STATUS', 'MENUNGGU')" class="ons-quick-pill tone-warn ${spFilterStatus === 'MENUNGGU' ? 'is-active' : ''}">
+            <span>⏳ Menunggu PBF</span>
+            <span class="ons-quick-pill-badge">${waitingCnt}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('STATUS', 'SEBAGIAN')" class="ons-quick-pill ${spFilterStatus === 'SEBAGIAN' ? 'is-active' : ''}">
+            <span>📦 Diterima Sebagian</span>
+            <span class="ons-quick-pill-badge">${partialCnt}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('STATUS', 'SELESAI')" class="ons-quick-pill tone-emerald ${spFilterStatus === 'SELESAI' ? 'is-active' : ''}">
+            <span>✅ Selesai Diterima</span>
+            <span class="ons-quick-pill-badge">${doneCnt}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('GOL', 'REGULER')" class="ons-quick-pill tone-emerald ${spFilterGol === 'REGULER' ? 'is-active' : ''}">
+            <span>🟢 Reguler Bebas</span>
+            <span class="ons-quick-pill-badge">${regulerCnt}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('GOL', 'PREKURSOR')" class="ons-quick-pill tone-warn ${spFilterGol === 'PREKURSOR' ? 'is-active' : ''}">
+            <span>🟡 Prekursor</span>
+            <span class="ons-quick-pill-badge">${prekursorCnt}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('GOL', 'OOT')" class="ons-quick-pill tone-warn ${spFilterGol === 'OOT' ? 'is-active' : ''}">
+            <span>🟠 OOT</span>
+            <span class="ons-quick-pill-badge">${ootCnt}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('GOL', 'PSIKOTROPIKA')" class="ons-quick-pill tone-danger ${spFilterGol === 'PSIKOTROPIKA' ? 'is-active' : ''}">
+            <span>🟣 Psikotropika</span>
+            <span class="ons-quick-pill-badge">${psikotropikaCnt}</span>
+          </button>
+          <button type="button" onclick="window.setSpQuickPill('GOL', 'NARKOTIKA')" class="ons-quick-pill tone-danger ${spFilterGol === 'NARKOTIKA' ? 'is-active' : ''}">
+            <span>🔴 Narkotika</span>
+            <span class="ons-quick-pill-badge">${narkotikaCnt}</span>
+          </button>
+          <button type="button" onclick="window.openSpDraftModal()" class="ons-quick-pill">
+            <span>📝 Draft Tersimpan</span>
+            <span class="ons-quick-pill-badge">${drafts.length}</span>
+          </button>
+        </div>
+
+        <!-- 3. SEARCH & FILTER CONTROLS TOOLBAR -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+            <!-- Search Input with icon -->
+            <div class="relative flex-1 min-w-[200px]">
+              <input class="ons-input text-xs pl-8 pr-7 py-2 w-full rounded-xl" placeholder="Cari No. SP, nama PBF, nama produk..." value="${S().esc(spSearchQ)}" oninput="window.setSpSearchQ(this.value)"/>
+              <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              ${spSearchQ ? `<button type="button" onclick="window.setSpSearchQ('');" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600 p-0.5" title="Bersihkan pencarian">&times;</button>` : ''}
+            </div>
+
+            <!-- PBF Supplier Filter -->
+            <select aria-label="Filter Supplier PBF" class="ons-select text-xs py-2 rounded-xl w-44" onchange="window.setSpFilterPbf(this.value)">
+              <option value="">Semua PBF (${(st.supplierPbf || []).length})</option>
               ${(st.supplierPbf || []).map((p) => `<option value="${S().esc(p.id_pbf)}" ${spFilterPbf === p.id_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)}</option>`).join('')}
             </select>
-            <select aria-label="Filter Golongan SP" class="ons-select text-xs w-32" onchange="window.setSpFilterGol(this.value)">
-              <option value="SEMUA" ${spFilterGol === 'SEMUA' ? 'selected' : ''}>Semua Golongan</option>
-              <option value="REGULER" ${spFilterGol === 'REGULER' ? 'selected' : ''}>Reguler</option>
-              <option value="PREKURSOR" ${spFilterGol === 'PREKURSOR' ? 'selected' : ''}>Prekursor</option>
-              <option value="PSIKOTROPIKA" ${spFilterGol === 'PSIKOTROPIKA' ? 'selected' : ''}>Psikotropika</option>
-              <option value="NARKOTIKA" ${spFilterGol === 'NARKOTIKA' ? 'selected' : ''}>Narkotika</option>
-              <option value="OOT" ${spFilterGol === 'OOT' ? 'selected' : ''}>OOT</option>
-            </select>
-            <input class="ons-input text-xs w-56" placeholder="Cari data (No. SP, PBF, produk)..." value="${S().esc(spSearchQ)}" oninput="window.setSpSearchQ(this.value)"/>
-            <div class="flex items-center gap-1 text-xs">
-              <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Tgl:</span>
-              <input type="date" aria-label="Filter Tanggal SP Dari" class="ons-input text-xs py-1 min-h-0 w-32" value="${S().esc(spDateFrom)}" onchange="window.setSpDateRange('from', this.value)"/>
-              <span>&ndash;</span>
-              <input type="date" aria-label="Filter Tanggal SP Sampai" class="ons-input text-xs py-1 min-h-0 w-32" value="${S().esc(spDateTo)}" onchange="window.setSpDateRange('to', this.value)"/>
-              ${(spDateFrom || spDateTo) ? `<button type="button" onclick="window.setSpDateRange('clear','')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Reset</button>` : ''}
+
+            <!-- Date Range Picker with Quick Presets -->
+            <div class="inline-flex items-center gap-1 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs shadow-xs">
+              <span class="text-[11px] pl-1 text-slate-400">📅</span>
+              <input type="date" aria-label="Filter Tanggal SP Dari" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-28 text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateFrom)}" onchange="window.setSpDateRange('from', this.value)"/>
+              <span class="text-slate-300 dark:text-slate-600">&ndash;</span>
+              <input type="date" aria-label="Filter Tanggal SP Sampai" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-28 text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateTo)}" onchange="window.setSpDateRange('to', this.value)"/>
+              ${(spDateFrom || spDateTo) ? `<button type="button" onclick="window.setSpQuickDate('ALL')" class="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 font-bold" title="Reset Rentang Tanggal">&times;</button>` : ''}
+            </div>
+
+            <!-- Quick Date Chips -->
+            <div class="hidden xl:inline-flex items-center gap-1 text-[11px]">
+              <button type="button" onclick="window.setSpQuickDate('MONTH')" class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">Bulan Ini</button>
+              <button type="button" onclick="window.setSpQuickDate('7D')" class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">7 Hari</button>
             </div>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="window.openSpDraftModal()" class="ons-btn ons-btn-emerald text-xs font-bold">Draft (${drafts.length})</button>
-            <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
-            <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Pesanan Baru (A4)</button>
+
+          <!-- Action Buttons Cluster -->
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button type="button" onclick="window.openSpDraftModal()" class="ons-btn text-xs py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 transition flex items-center gap-1.5 shadow-xs">
+              <span>📝 Draft</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px] font-mono-num">${drafts.length}</span>
+            </button>
+            <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs py-2 px-3 rounded-xl flex items-center gap-1.5">
+              <span>📥 Excel</span>
+            </button>
+            <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs py-2 px-4 rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              <span>+ Pesanan Baru (A4)</span>
+            </button>
           </div>
         </div>
 
+        <!-- 4. DATA TABLES -->
         <div class="ons-table-wrap">
           ${spViewMode === 'PRODUK' ? `
             <table class="ons-table">
-              <thead><tr><th>No.</th><th>Nama Produk / Obat</th><th>No. SP</th><th>Tanggal</th><th>Supplier PBF</th><th class="text-right">Qty Pesan</th><th>Satuan</th><th class="text-right">Est. HPP Unit</th><th class="text-right">Subtotal</th><th>Status</th><th>Aksi</th></tr></thead>
+              <thead>
+                <tr>
+                  <th class="w-10">No.</th>
+                  <th>Nama Produk / Obat</th>
+                  <th>No. SP</th>
+                  <th>Tanggal</th>
+                  <th>Supplier PBF</th>
+                  <th class="text-right">Qty Pesan</th>
+                  <th>Satuan</th>
+                  <th class="text-right">Est. HPP Unit</th>
+                  <th class="text-right">Subtotal</th>
+                  <th>Status</th>
+                  <th class="text-right">Aksi</th>
+                </tr>
+              </thead>
               <tbody>
                 ${(() => {
-                  const flatItems = [];
-                  rows.forEach((sp) => {
-                    parseSpItems(sp).forEach((it) => {
-                      flatItems.push({ sp, it });
-                    });
+                  if (!flatItems.length) return S().renderEmptyState({
+                    icon: 'receipt',
+                    tone: 'blue',
+                    title: 'Belum Ada Rincian Produk',
+                    desc: 'Tidak ada produk pesanan yang cocok dengan filter saat ini.',
+                    actionLabel: '+ Buat Pesanan Baru',
+                    actionOnClick: 'window.openCreateSpModal()',
+                    colspan: 11
                   });
-                  if (!flatItems.length) return '<tr><td colspan="11" class="text-center py-8 text-xs">Belum ada rincian produk pada pesanan yang difilter.</td></tr>';
                   return flatItems.map((row, idx) => {
                     const it = row.it;
                     const sp = row.sp;
                     const qty = Number(it.qty || it.qty_pesan || 0);
                     const hpp = Number(it.hpp_terakhir !== undefined ? it.hpp_terakhir : (it.hpp_unit || 0));
                     return `<tr class="cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition-colors" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')">
-                      <td class="font-mono-num text-xs">${idx + 1}.</td>
-                      <td class="font-bold text-xs">${S().esc(it.nama_dagang || it.id_obat)}</td>
-                      <td class="font-mono-num text-xs font-bold text-blue-600">${S().esc(sp.no_sp)}</td>
-                      <td class="text-xs font-mono-num">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
-                      <td class="text-xs">${S().esc(sp.nama_pbf || '-')}</td>
-                      <td class="font-mono-num text-xs font-bold text-right">${qty}</td>
-                      <td class="text-xs">${S().esc(it.satuan_dasar || it.satuan || 'Unit')}</td>
-                      <td class="font-mono-num text-xs text-right">${S().rp(hpp)}</td>
-                      <td class="font-mono-num text-xs font-bold text-right text-blue-600">${S().rp(qty * hpp)}</td>
+                      <td class="font-mono-num text-xs text-slate-400">${idx + 1}.</td>
+                      <td class="text-xs">
+                        <div class="font-bold text-slate-900 dark:text-white">${S().esc(it.nama_dagang || it.id_obat)}</div>
+                        ${it.zat_aktif ? `<div class="text-[10.5px] text-slate-400">${S().esc(it.zat_aktif)}</div>` : ''}
+                      </td>
+                      <td class="font-mono-num text-xs font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">${S().esc(sp.no_sp)}</td>
+                      <td class="text-xs font-mono-num whitespace-nowrap">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
+                      <td class="text-xs font-medium text-slate-700 dark:text-slate-300">${S().esc(sp.nama_pbf || '-')}</td>
+                      <td class="font-mono-num text-xs font-extrabold text-right text-slate-900 dark:text-white">${qty}</td>
+                      <td class="text-xs text-slate-500">${S().esc(it.satuan_dasar || it.satuan || 'Unit')}</td>
+                      <td class="font-mono-num text-xs text-right text-slate-600 dark:text-slate-400">${S().rp(hpp)}</td>
+                      <td class="font-mono-num text-xs font-extrabold text-right text-blue-600 dark:text-blue-400">${S().rp(qty * hpp)}</td>
                       <td>${spStatusBadge(sp.status_sp)}</td>
-                      <td onclick="event.stopPropagation()">
-                        <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">Detail SP</button>
+                      <td onclick="event.stopPropagation()" class="text-right">
+                        <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 rounded-lg font-semibold">Detail SP</button>
                       </td>
                     </tr>`;
                   }).join('');
@@ -737,31 +945,59 @@
             </table>
           ` : spViewMode === 'SUPPLIER' ? `
             <table class="ons-table">
-              <thead><tr><th>No.</th><th>Supplier / Distributor PBF</th><th class="text-right">Jumlah SP</th><th class="text-right">Total Item Obat</th><th class="text-right">Total Nilai Pesanan</th><th>Kontak Sales</th><th>Aksi Cepat</th></tr></thead>
+              <thead>
+                <tr>
+                  <th class="w-10">No.</th>
+                  <th>Supplier / Distributor PBF</th>
+                  <th class="text-right">Jumlah SP</th>
+                  <th class="text-right">Total Item Produk</th>
+                  <th class="text-right">Total Nilai Pesanan</th>
+                  <th>Kontak Sales</th>
+                  <th class="text-right">Aksi Cepat</th>
+                </tr>
+              </thead>
               <tbody>
                 ${(() => {
-                  const pbfMap = {};
+                  const pbfAgg = {};
                   rows.forEach((sp) => {
                     const pId = sp.id_pbf || sp.nama_pbf || 'LAIN';
-                    if (!pbfMap[pId]) pbfMap[pId] = { id: pId, nama: sp.nama_pbf || 'PBF', spList: [], totalItem: 0, totalRp: 0 };
-                    pbfMap[pId].spList.push(sp);
+                    if (!pbfAgg[pId]) pbfAgg[pId] = { id: pId, nama: sp.nama_pbf || 'PBF', spList: [], totalItem: 0, totalRp: 0 };
+                    pbfAgg[pId].spList.push(sp);
                     const items = parseSpItems(sp);
-                    pbfMap[pId].totalItem += items.length;
-                    pbfMap[pId].totalRp += Number(sp.estimasi_total || 0);
+                    pbfAgg[pId].totalItem += items.length;
+                    pbfAgg[pId].totalRp += Number(sp.estimasi_total || 0);
                   });
-                  const pbfRows = Object.values(pbfMap);
-                  if (!pbfRows.length) return '<tr><td colspan="7" class="text-center py-8 text-xs">Belum ada rekap supplier pada pesanan yang difilter.</td></tr>';
+                  const pbfRows = Object.values(pbfAgg);
+                  if (!pbfRows.length) return S().renderEmptyState({
+                    icon: 'users',
+                    tone: 'blue',
+                    title: 'Belum Ada Rekap Supplier',
+                    desc: 'Tidak ada supplier yang memiliki pesanan pada filter saat ini.',
+                    actionLabel: '+ Buat Pesanan Baru',
+                    actionOnClick: 'window.openCreateSpModal()',
+                    colspan: 7
+                  });
                   return pbfRows.map((p, idx) => {
                     const pRef = (st.supplierPbf || []).find((x) => x.id_pbf === p.id || x.nama_pbf === p.nama) || {};
+                    const waDigits = String(pRef.kontak_wa || '').replace(/\D/g, '').replace(/^0/, '62');
                     return `<tr class="cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition-colors" onclick="window.setSpFilterPbf('${S().esc(p.id)}');window.setSpViewMode('PESANAN');">
-                      <td class="font-mono-num text-xs">${idx + 1}.</td>
-                      <td class="font-bold text-xs text-blue-700 dark:text-blue-300">${S().esc(p.nama)}</td>
+                      <td class="font-mono-num text-xs text-slate-400">${idx + 1}.</td>
+                      <td class="text-xs">
+                        <div class="font-bold text-blue-700 dark:text-blue-300">${S().esc(p.nama)}</div>
+                        ${pRef.kode_cdob ? `<div class="text-[10px] text-slate-400 font-mono-num">CDOB: ${S().esc(pRef.kode_cdob)}</div>` : ''}
+                      </td>
                       <td class="font-mono-num text-xs font-bold text-right">${p.spList.length} SP</td>
-                      <td class="font-mono-num text-xs text-right">${p.totalItem} Produk</td>
-                      <td class="font-mono-num text-xs font-bold text-right text-emerald-600">${S().rp(p.totalRp)}</td>
-                      <td class="text-xs">${S().esc(pRef.kontak_wa || '-')}</td>
-                      <td onclick="event.stopPropagation()">
-                        <button type="button" onclick="window.setSpFilterPbf('${S().esc(p.id)}');window.setSpViewMode('PESANAN');" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5">Lihat SP PBF Ini &rarr;</button>
+                      <td class="font-mono-num text-xs text-right text-slate-700 dark:text-slate-300">${p.totalItem} Produk</td>
+                      <td class="font-mono-num text-xs font-extrabold text-right text-emerald-600 dark:text-emerald-400">${S().rp(p.totalRp)}</td>
+                      <td class="text-xs">
+                        ${waDigits ? `
+                          <a href="https://wa.me/${waDigits}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                            <span>💬</span><span>${S().esc(pRef.kontak_wa)}</span>
+                          </a>
+                        ` : `<span class="text-slate-400">-</span>`}
+                      </td>
+                      <td onclick="event.stopPropagation()" class="text-right">
+                        <button type="button" onclick="window.setSpFilterPbf('${S().esc(p.id)}');window.setSpViewMode('PESANAN');" class="ons-btn ons-btn-ghost text-[11px] py-1 px-3 rounded-lg font-bold text-blue-600 dark:text-blue-400">Lihat SP PBF Ini &rarr;</button>
                       </td>
                     </tr>`;
                   }).join('');
@@ -773,15 +1009,15 @@
               <thead>
                 <tr>
                   <th class="w-8"><input type="checkbox" aria-label="Pilih semua pesanan" ${allVisibleSelected ? 'checked' : ''} onchange="window.toggleSelectAllSp(this.checked)"/></th>
-                  <th>No.</th>
+                  <th class="w-10">No.</th>
                   <th>Tanggal</th>
                   <th>No. SP</th>
-                  <th>Supplier</th>
-                  <th>Produk</th>
-                  <th>Status Penerimaan</th>
-                  <th>Status &amp; Golongan</th>
-                  <th class="text-right">Total</th>
-                  <th>Actions</th>
+                  <th>Distributor PBF</th>
+                  <th>Produk Dipesan</th>
+                  <th>Status Kiriman</th>
+                  <th>Golongan &amp; Metode</th>
+                  <th class="text-right">Total Estimasi</th>
+                  <th class="text-right">Aksi Cepat</th>
                 </tr>
               </thead>
               <tbody>
@@ -791,42 +1027,66 @@
                   const isBatal = String(sp.status_sp || '').toUpperCase() === 'DIBATALKAN';
                   const itemPreview = items.slice(0, 2).map((x) => `${x.nama_dagang || x.id_obat} (${x.qty || x.qty_pesan} ${x.satuan_dasar || x.satuan || ''})`).join(', ');
                   const checked = spSelectedIds.has(sp.id_sp);
+                  const pRef = (st.supplierPbf || []).find((x) => x.id_pbf === sp.id_pbf || x.nama_pbf === sp.nama_pbf) || {};
+                  const pbfWa = pRef.kontak_wa || sp.kontak_wa || '';
+                  const pbfWaDigits = String(pbfWa).replace(/\D/g, '').replace(/^0/, '62');
+                  const waMsg = `Halo ${sp.nama_pbf || 'PBF'}, kami dari ${prof.nama_usaha || 'Apotek ONS Farma'} ingin konfirmasi Surat Pesanan ${sp.no_sp} (${items.length} item, total ${S().rp(sp.estimasi_total || 0)}). Mohon info ketersediaan stok & perkiraan pengiriman. Terima kasih.`;
+
                   return `<tr class="cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition-colors" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')">
                     <td onclick="event.stopPropagation()"><input type="checkbox" aria-label="Pilih ${S().esc(sp.no_sp)}" ${checked ? 'checked' : ''} onchange="window.toggleSelectSpRow('${S().esc(sp.id_sp)}', this.checked)"/></td>
-                    <td class="font-mono-num text-xs">${idx + 1}.</td>
+                    <td class="font-mono-num text-xs text-slate-400">${idx + 1}.</td>
                     <td class="text-xs font-mono-num whitespace-nowrap">${S().formatTgl(sp.tanggal || sp.tgl_sp || '')}</td>
                     <td class="text-xs font-mono-num font-bold whitespace-nowrap">
-                      <button type="button" onclick="event.stopPropagation();window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="text-blue-600 dark:text-blue-400 hover:underline font-bold text-left font-mono-num" title="Klik untuk Pratinjau &amp; Cetak A4">${S().esc(sp.no_sp)}</button>
+                      <button type="button" onclick="event.stopPropagation();window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:underline font-extrabold text-left font-mono-num" title="Klik untuk Pratinjau &amp; Cetak A4 Resmi">
+                        <span>📄</span>
+                        <span>${S().esc(sp.no_sp)}</span>
+                      </button>
                     </td>
-                    <td class="text-xs font-bold text-slate-800 dark:text-slate-100">${S().esc(sp.nama_pbf || '-')}</td>
                     <td class="text-xs">
-                      <div><b>${items.length} item</b></div>
-                      <div class="text-[11px] truncate max-w-[240px]" style="color:var(--ons-text-soft)">${S().esc(itemPreview)}${items.length > 2 ? ', +' + (items.length - 2) + ' lagi' : ''}</div>
+                      <div class="font-bold text-slate-800 dark:text-slate-100">${S().esc(sp.nama_pbf || '-')}</div>
+                      <div class="flex items-center gap-1.5 mt-0.5">
+                        ${pbfWaDigits ? `
+                          <a href="https://wa.me/${pbfWaDigits}?text=${encodeURIComponent(waMsg)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition shadow-xs" title="Chat Sales PBF via WhatsApp">
+                            <span>💬</span><span>WA Sales</span>
+                          </a>
+                        ` : ''}
+                        ${pRef.kode_cdob ? `<span class="text-[10px] font-mono-num text-slate-400">CDOB: ${S().esc(pRef.kode_cdob)}</span>` : ''}
+                      </div>
+                    </td>
+                    <td class="text-xs">
+                      <div><b class="text-slate-900 dark:text-white">${items.length} item</b></div>
+                      <div class="text-[11px] truncate max-w-[220px]" style="color:var(--ons-text-soft)">${S().esc(itemPreview)}${items.length > 2 ? ', +' + (items.length - 2) + ' lagi' : ''}</div>
                     </td>
                     <td class="text-xs">
                       ${spStatusBadge(sp.status_sp)}
-                      ${sp.no_faktur_pbf ? `<div class="text-[11px] font-mono-num mt-1" style="color:var(--ons-text-soft)">Faktur: ${S().esc(sp.no_faktur_pbf)}</div>` : ''}
+                      ${sp.no_faktur_pbf ? `<div class="text-[10.5px] font-mono-num mt-1 text-slate-400">Faktur: ${S().esc(sp.no_faktur_pbf)}</div>` : ''}
                     </td>
                     <td>
-                      <div class="flex flex-col gap-0.5 items-start">
-                        <span class="badge-bpom bpom-keras">${S().esc(sp.golongan_sp || 'REGULER')}</span>
-                        <span class="text-[10px] font-mono-num" style="color:var(--ons-text-soft)">${S().esc(sp.metode_pembayaran || 'KREDIT')}</span>
+                      <div class="flex flex-col gap-1 items-start">
+                        ${spGolBadge(sp.golongan_sp)}
+                        <span class="text-[10px] font-mono-num font-semibold text-slate-400">${S().esc(sp.metode_pembayaran || 'KREDIT')}</span>
                       </div>
                     </td>
-                    <td class="text-right font-mono-num text-xs font-bold whitespace-nowrap">${S().rp(sp.estimasi_total || 0)}</td>
-                    <td onclick="event.stopPropagation()">
-                      <div class="flex flex-wrap gap-1.5">
-                        <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-bold">Detail</button>
-                        <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5">Preview &amp; Cetak A4</button>
-                        ${!done && !isBatal ? `<button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 font-semibold" title="Edit isi atau supplier SP">✏️ Edit SP</button>` : ''}
-                        <button type="button" onclick="window.duplicateSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2" title="Duplikat SP">&#128203; Duplikat</button>
-                        <button type="button" onclick="window.sendSpViaWa('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2">WA PBF</button>
+                    <td class="text-right font-mono-num text-xs font-extrabold text-blue-600 dark:text-blue-400 whitespace-nowrap">${S().rp(sp.estimasi_total || 0)}</td>
+                    <td onclick="event.stopPropagation()" class="text-right">
+                      <div class="flex flex-wrap items-center justify-end gap-1.5">
+                        <button type="button" onclick="window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-primary text-[11px] py-1 px-2.5 rounded-lg shadow-sm font-bold flex items-center gap-1" title="Cetak / Pratinjau Dokumen Format A4 Resmi BPOM">
+                          <span>🖨️</span><span>Cetak A4</span>
+                        </button>
+                        <button type="button" onclick="window.openSpDetailModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 rounded-lg font-semibold" title="Lihat detail pesanan">Detail</button>
                         ${!done && !isBatal ? `
-                          <button type="button" onclick="window.markSpClosed('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-emerald-600 font-semibold" title="Tandai Selesai">&#10003; Selesai</button>
-                          <button type="button" onclick="window.confirmCancelSp('${S().esc(sp.id_sp)}')" class="ons-btn text-[11px] py-1 px-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 font-semibold">Batal</button>
-                          <button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5">Barang Tiba &rarr; Faktur</button>
+                          <button type="button" onclick="window.loadSpIntoGrn('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-emerald text-[11px] py-1 px-2.5 rounded-lg font-bold flex items-center gap-1 shadow-xs" title="Barang Tiba &rarr; Input Faktur Pembelian (GRN)">
+                            <span>📥 &rarr; Faktur</span>
+                          </button>
+                          <button type="button" onclick="window.openEditSpModal('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 rounded-lg font-semibold" title="Edit isi atau supplier SP">✏️</button>
                         ` : ''}
-                        ${!done ? `<button type="button" onclick="window.deleteSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 font-bold border border-rose-300 dark:border-rose-800" title="Hapus SP jika salah buat">🗑 Hapus</button>` : ''}
+                        <button type="button" onclick="window.sendSpViaWa('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 rounded-lg text-emerald-600 hover:bg-emerald-50 font-semibold" title="Kirim Surat Pesanan via WhatsApp PBF">💬</button>
+                        <button type="button" onclick="window.duplicateSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 rounded-lg" title="Duplikat SP">&#128203;</button>
+                        ${!done && !isBatal ? `
+                          <button type="button" onclick="window.markSpClosed('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 rounded-lg text-emerald-600 font-semibold" title="Tandai Selesai">&#10003;</button>
+                          <button type="button" onclick="window.confirmCancelSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2 rounded-lg text-amber-600 hover:bg-amber-50" title="Batalkan SP">&times;</button>
+                        ` : ''}
+                        ${!done ? `<button type="button" onclick="window.deleteSp('${S().esc(sp.id_sp)}')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-300 dark:border-rose-800 font-bold" title="Hapus SP">🗑</button>` : ''}
                       </div>
                     </td>
                   </tr>`;
@@ -834,9 +1094,11 @@
                     icon: 'receipt',
                     tone: 'blue',
                     title: 'Belum Ada Surat Pesanan (SP)',
-                    desc: 'Tidak ada surat pesanan yang cocok dengan filter atau tanggal saat ini.',
-                    actionLabel: '+ Buat SP Baru',
-                    actionOnClick: 'window.openSpModal()',
+                    desc: 'Mulai pengadaan apotek dengan menerbitkan Surat Pesanan resmi 5 Golongan BPOM ke distributor PBF, atau konversi otomatis dari usulan Defecta Kritis.',
+                    actionLabel: '+ Terbitkan SP Baru (A4)',
+                    actionOnClick: 'window.openCreateSpModal()',
+                    secondaryActionLabel: '⚡ Buat dari Defecta Kritis',
+                    secondaryActionOnClick: "window.setFakturTab('rencana');window.setRencanaSubMode('DEFECTA');",
                     colspan: 10
                   })}
               </tbody>
@@ -845,16 +1107,28 @@
         </div>
       </div>
 
+      <!-- 5. SUMMARY STATS COCKPIT FOOTER -->
       <div class="ons-card p-4">
-        <div class="text-xs font-extrabold text-blue-600 mb-2">Rekap Pesanan Pembelian${(spDateFrom || spDateTo) ? ` (${S().esc(spDateFrom || '...')} s.d. ${S().esc(spDateTo || '...')})` : ''}</div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <span style="color:var(--ons-text-soft)">Total Nilai Pesanan</span>
-            <b class="font-mono-num text-sm text-blue-600">${S().rp(totalNilaiPesanan)}</b>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Rekapitulasi Surat Pesanan${(spDateFrom || spDateTo) ? ` (${S().esc(spDateFrom || '...')} s.d. ${S().esc(spDateTo || '...')})` : ''}</span>
+          <span class="text-[11px] text-slate-400">Terfilter: ${rows.length} dari ${allSp.length} SP</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/40">
+            <span class="text-slate-400 block text-[11px]">Total Nilai Pesanan</span>
+            <b class="font-mono-num text-sm text-blue-600 dark:text-blue-400 mt-0.5 block">${S().rp(totalNilaiPesanan)}</b>
           </div>
-          <div class="flex items-center justify-between p-2.5 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <span style="color:var(--ons-text-soft)">Jumlah Pesanan</span>
-            <b class="font-mono-num text-sm">${rows.length} &times;${spSelectedIds.size ? ` (${spSelectedIds.size} dipilih)` : ''}</b>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/40">
+            <span class="text-slate-400 block text-[11px]">Jumlah Dokumen SP</span>
+            <b class="font-mono-num text-sm text-slate-800 dark:text-slate-100 mt-0.5 block">${rows.length} Dokumen ${spSelectedIds.size ? `(${spSelectedIds.size} dipilih)` : ''}</b>
+          </div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/40">
+            <span class="text-slate-400 block text-[11px]">Total Item Produk Dipesan</span>
+            <b class="font-mono-num text-sm text-emerald-600 dark:text-emerald-400 mt-0.5 block">${flatItems.length} Produk Obat</b>
+          </div>
+          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/40">
+            <span class="text-slate-400 block text-[11px]">Distributor PBF Terlibat</span>
+            <b class="font-mono-num text-sm text-indigo-600 dark:text-indigo-400 mt-0.5 block">${uniquePbfCount} Perusahaan PBF</b>
           </div>
         </div>
       </div>
