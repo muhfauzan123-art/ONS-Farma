@@ -1044,7 +1044,9 @@
       qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v3h-3"/><path d="M14 20h7"/><path d="M20 17v3"/>',
       store: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/>',
       rx: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15h6"/>',
-      warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'
+      warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      sparkles: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>',
+      key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>'
     };
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="${cls || 'w-4 h-4 shrink-0'}">${p[name] || p.shield}</svg>`;
   }
@@ -1071,85 +1073,131 @@
     const lockMinLogin = Number(cfgLogin.idle_lock_minutes !== undefined ? cfgLogin.idle_lock_minutes : 15);
     const jamOps = prof.jam_operasional || 'Buka Setiap Hari • 08:00 - 22:00';
     const zonaWkt = cfgLogin.zona_waktu || 'WITA';
-    const appVer = (global.ONS_CONFIG && global.ONS_CONFIG.APP_VERSION) || '18.28.0';
+    const appVer = (global.ONS_CONFIG && global.ONS_CONFIG.APP_VERSION) || '18.55.0';
     const multiBranch = !!(S().isMultiBranchEnabled && S().isMultiBranchEnabled());
     const branches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
 
     root.innerHTML = `<div class="ons-login-stage">
       <div class="ons-login-shell grid grid-cols-1 lg:grid-cols-12">
-        <!-- Panel Kiri: Identitas Apotek Modern, Jam Live & Status Cloud (Ringkas di HP agar form langsung terlihat!) -->
-        <div class="ons-login-hero lg:col-span-5 p-4 sm:p-6 lg:p-8 flex flex-col justify-between gap-3.5 lg:gap-6">
-          <div class="space-y-3 lg:space-y-6 relative z-10">
+        <!-- Panel Kiri: Identitas Apotek Modern, Jam Live & Status Cloud -->
+        <div class="ons-login-hero lg:col-span-5 p-5 sm:p-7 lg:p-8 flex flex-col justify-between gap-5 relative overflow-hidden">
+          <div class="ons-login-hero-glow-1"></div>
+          <div class="ons-login-hero-glow-2"></div>
+
+          <div class="space-y-4 lg:space-y-5 relative z-10">
+            <!-- Header Brand Identitas Apotek -->
             <div class="flex items-center justify-between gap-3 min-w-0">
-              <div class="flex items-center gap-3 min-w-0">
+              <div class="flex items-center gap-3.5 min-w-0">
                 <div class="ons-login-logo-ring shrink-0">
-                  <img src="${S().esc(usahaLogo)}" alt="Logo ${S().esc(usahaNama)}" class="w-11 h-11 lg:w-14 lg:h-14 rounded-[0.85rem] lg:rounded-[0.95rem] object-cover bg-white"/>
-                  <span class="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 rounded-full bg-emerald-500 border-2 border-[#061A33] flex items-center justify-center text-white shadow">${_loginIco('check', 'w-2.5 h-2.5 lg:w-3 lg:h-3')}</span>
+                  <img src="${S().esc(usahaLogo)}" alt="Logo ${S().esc(usahaNama)}" class="w-12 h-12 lg:w-14 lg:h-14 rounded-[0.95rem] object-cover bg-white"/>
+                  <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#04142B] flex items-center justify-center text-white shadow-md">${_loginIco('check', 'w-3 h-3')}</span>
                 </div>
                 <div class="min-w-0">
-                  <span class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-400/15 border border-emerald-300/30 text-[10px] font-bold tracking-wider uppercase text-emerald-200 mb-1">Portal Resmi Apotek</span>
-                  <div class="font-extrabold text-base sm:text-lg lg:text-xl tracking-tight text-white leading-tight truncate">${S().esc(usahaNama)}</div>
-                  <div class="text-[11px] lg:text-xs text-sky-200/90 font-medium truncate mt-0.5">${S().esc(pemilikNama)}</div>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-400/20 border border-emerald-300/35 text-[10px] font-extrabold tracking-wider uppercase text-emerald-200 mb-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Portal Resmi Apotek
+                  </span>
+                  <div class="font-black text-lg sm:text-xl lg:text-2xl tracking-tight text-white leading-tight truncate">${S().esc(usahaNama)}</div>
+                  <div class="text-[11px] lg:text-xs text-sky-200/90 font-medium truncate mt-0.5 flex items-center gap-1">
+                    <span>${S().esc(pemilikNama)}</span>
+                    <span class="text-sky-300/60">•</span>
+                    <span class="text-emerald-300 font-semibold">Standar BPOM</span>
+                  </div>
                 </div>
               </div>
-              <span class="lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 ${demoMode ? 'bg-amber-400/20 text-amber-200 border border-amber-300/35' : 'bg-emerald-400/20 text-emerald-200 border border-emerald-300/35'}">
-                <span class="w-1.5 h-1.5 rounded-full ${demoMode ? 'bg-amber-300' : 'bg-emerald-300 animate-pulse'}"></span>
+              <span class="lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold shrink-0 ${demoMode ? 'bg-amber-400/20 text-amber-200 border border-amber-300/35' : 'bg-emerald-400/20 text-emerald-200 border border-emerald-300/35'}">
+                <span class="w-2 h-2 rounded-full ${demoMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
                 <span>${demoMode ? 'Lokal' : 'Cloud'}</span>
               </span>
             </div>
 
-            <!-- Kartu Jam Operasional Live (Desktop penuh, Mobile ringkas) -->
-            <div class="ons-login-clock-card hidden lg:flex items-center justify-between gap-3">
+            <!-- Kartu Jam Operasional Live Desktop -->
+            <div class="ons-login-clock-card hidden lg:flex items-center justify-between gap-3 shadow-lg">
               <div class="min-w-0">
-                <div class="text-[10.5px] font-semibold uppercase tracking-wider text-sky-200/80">${S().esc(dateStr)}</div>
-                <div class="text-2xl font-extrabold font-mono-num tracking-tight text-white mt-0.5 flex items-baseline gap-1.5">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-sky-200/80 flex items-center gap-1.5">
+                  <span>📅</span><span>${S().esc(dateStr)}</span>
+                </div>
+                <div class="text-2xl sm:text-3xl font-extrabold font-mono-num tracking-tight text-white mt-1 flex items-baseline gap-2">
                   <span id="loginLiveClock">${S().esc(timeStr)}</span>
-                  <span class="text-xs font-bold text-emerald-300">${S().esc(zonaWkt)}</span>
+                  <span class="text-xs font-black px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-300 border border-emerald-300/30">${S().esc(zonaWkt)}</span>
                 </div>
               </div>
               <div class="text-right shrink-0">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold ${autoShift === 'PAGI' ? 'bg-amber-400/20 text-amber-200 border border-amber-300/30' : 'bg-indigo-400/20 text-indigo-200 border border-indigo-300/30'}">${autoShift === 'PAGI' ? '☀️ Shift Pagi' : '🌙 Shift Sore'}</span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${autoShift === 'PAGI' ? 'bg-amber-400/25 text-amber-100 border border-amber-300/40' : 'bg-indigo-400/25 text-indigo-100 border border-indigo-300/40'}">
+                  <span>${autoShift === 'PAGI' ? '☀️' : '🌙'}</span>
+                  <span>${autoShift === 'PAGI' ? 'Shift Pagi (08–15)' : 'Shift Sore (15–22)'}</span>
+                </span>
               </div>
             </div>
 
-            <div class="hidden lg:block space-y-2">
-              <h2 class="text-lg sm:text-[19px] font-extrabold leading-snug tracking-tight text-white">Kelola Kasir, Stok FEFO &amp; Laba Apotek dalam Satu Layar.</h2>
-              <p class="text-xs text-sky-100/75 leading-relaxed">Cepat dipakai di meja kasir, aman untuk stok kadaluarsa, dan transparan bagi pemilik.</p>
+            <!-- Feature Value Bullets Desktop -->
+            <div class="hidden lg:block space-y-2.5 py-1">
+              <div class="text-[11px] font-extrabold tracking-wider uppercase text-sky-300/90 flex items-center gap-1.5">
+                ${_loginIco('sparkles', 'w-3.5 h-3.5 text-amber-300')}
+                <span>Fitur Unggulan Sistem Farmasi</span>
+              </div>
+              <div class="space-y-2">
+                <div class="ons-login-feature-pill">
+                  <span class="ons-login-feat-icon text-amber-300 bg-amber-400/15 border border-amber-300/30">⚡</span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-white text-[12px]">Kasir POS Cepat &amp; Struk Thermal</div>
+                    <div class="text-[10.5px] text-sky-100/75 leading-tight">Transaksi hitungan detik, cetak Bluetooth/USB 58 &amp; 80mm.</div>
+                  </div>
+                </div>
+                <div class="ons-login-feature-pill">
+                  <span class="ons-login-feat-icon text-emerald-300 bg-emerald-400/15 border border-emerald-300/30">🛡️</span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-white text-[12px]">Kontrol Stok FEFO &amp; ED CDOB BPOM</div>
+                    <div class="text-[10.5px] text-sky-100/75 leading-tight">Deteksi dini obat kadaluarsa, batch lot, &amp; kartu stok otomatis.</div>
+                  </div>
+                </div>
+                <div class="ons-login-feature-pill">
+                  <span class="ons-login-feat-icon text-sky-300 bg-sky-400/15 border border-sky-300/30">📊</span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-white text-[12px]">Laba Bersih &amp; Cloud Google Drive</div>
+                    <div class="text-[10.5px] text-sky-100/75 leading-tight">Laporan keuangan transparan real-time &amp; cadangan otomatis.</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
+            <!-- Kepatuhan Hukum & Jam Ops Tanpa Truncation -->
             <div class="hidden lg:block space-y-2">
               <div class="ons-login-meta-chip">
                 <span class="text-emerald-300 shrink-0">${_loginIco('shield', 'w-4 h-4')}</span>
-                <div class="min-w-0">
-                  <div class="font-bold text-white truncate">SIA: ${S().esc(prof.no_sia || '-')}</div>
-                  <div class="text-[10.5px] text-sky-200/75 truncate">${S().esc(prof.kota || 'Indonesia')} &bull; SIPA: ${S().esc(prof.sipa_pemilik || prof.no_sipa || 'Aktif')}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="font-bold text-white text-[11.5px] truncate">SIA: ${S().esc(prof.no_sia || '-')}</div>
+                  <div class="text-[10.5px] text-sky-200/80 truncate">${S().esc(prof.kota || 'Indonesia')} &bull; SIPA APJ: ${S().esc(prof.sipa_pemilik || prof.no_sipa || 'Aktif')}</div>
                 </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shrink-0">Aktif</span>
               </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div class="ons-login-meta-chip">
-                  <span class="shrink-0">🕒</span>
-                  <span class="truncate font-medium">${S().esc(jamOps)}</span>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <div class="ons-login-meta-chip flex-1 min-w-0">
+                  <span class="shrink-0 text-amber-300 text-sm">🕒</span>
+                  <span class="font-semibold text-[11px] truncate text-slate-100">${S().esc(jamOps)}</span>
                 </div>
-                <div class="ons-login-meta-chip">
-                  <span class="text-emerald-300 shrink-0">${_loginIco('lock', 'w-3.5 h-3.5')}</span>
-                  <span class="truncate font-medium">${lockMinLogin > 0 ? `Auto-Lock ${lockMinLogin}m` : 'Kunci PIN Siap'}</span>
+                <div class="ons-login-meta-chip shrink-0">
+                  <span class="text-sky-300 shrink-0">${_loginIco('lock', 'w-3.5 h-3.5')}</span>
+                  <span class="font-semibold text-[11px] text-slate-100">${lockMinLogin > 0 ? `Auto-Lock ${lockMinLogin}m` : 'PIN Siap'}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Status Koneksi Cloud Ringkas (Desktop di kiri; di HP cukup pil status di atas) -->
-          <div class="hidden lg:block space-y-2.5 relative z-10">
-            <div class="p-3.5 rounded-2xl bg-black/25 border border-white/12 space-y-2 backdrop-blur-sm">
+          <!-- Status Koneksi Cloud Ringkas di Kiri -->
+          <div class="hidden lg:block space-y-2.5 relative z-10 pt-2 border-t border-white/10">
+            <div class="p-3.5 rounded-2xl bg-black/30 border border-white/15 space-y-2 backdrop-blur-md shadow-inner">
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-2.5 h-2.5 rounded-full shrink-0 ${demoMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
-                  <span class="text-[11px] font-bold uppercase tracking-wider ${demoMode ? 'text-amber-300' : 'text-emerald-300'}">${demoMode ? 'Mode Lokal / Uji Coba' : 'Cloud Google Sheets Aktif'}</span>
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0 ${demoMode ? 'bg-amber-400 ring-4 ring-amber-400/20' : 'bg-emerald-400 animate-pulse ring-4 ring-emerald-400/20'}"></span>
+                  <span class="text-[11px] font-black uppercase tracking-wider ${demoMode ? 'text-amber-300' : 'text-emerald-300'}">${demoMode ? 'Mode Lokal / Uji Coba' : 'Cloud Google Sheets Aktif'}</span>
                 </div>
-                <button type="button" onclick="window.pingBackendHealth()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10.5px] font-semibold text-white transition-colors shrink-0">Tes Koneksi</button>
+                <button type="button" onclick="window.pingBackendHealth()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-[10.5px] font-bold text-white transition-all shrink-0 flex items-center gap-1">
+                  <span>⚡</span><span>Tes Koneksi</span>
+                </button>
               </div>
               <div id="loginConnDesc" class="text-[11px] text-slate-200/90 leading-snug">${demoMode ? 'Data tersimpan di perangkat ini (mode uji coba lokal).' : (gasConfigured ? 'Sinkronisasi real-time ke Google Sheets & Drive Apotek.' : 'URL Google Apps Script belum terpasang di config.js.')}</div>
-              <div id="loginPingResult" class="text-[10.5px] font-mono-num text-emerald-300 hidden"></div>
+              <div id="loginPingResult" class="text-[10.5px] font-mono-num text-emerald-300 font-bold hidden"></div>
             </div>
 
             ${demoMode ? `<div class="grid grid-cols-2 gap-2" role="group" aria-label="Pilih Mode Backend">
@@ -1163,49 +1211,61 @@
               </button>
             </div>` : `<div class="flex items-center justify-between text-[10.5px] text-sky-200/75 px-1">
               <span>ONS Farma Digital v${S().esc(appVer)}</span>
-              <button type="button" onclick="window.switchBackendMode('DEMO')" class="text-sky-300 hover:text-white hover:underline font-medium">Mode Uji Coba Lokal &rarr;</button>
+              <button type="button" onclick="window.switchBackendMode('DEMO')" class="text-sky-300 hover:text-white hover:underline font-semibold flex items-center gap-1">
+                <span>Mode Uji Coba Lokal</span><span>&rarr;</span>
+              </button>
             </div>`}
           </div>
         </div>
 
         <!-- Panel Kanan: Form Masuk Bersih & Elegan -->
-        <div class="lg:col-span-7 p-6 sm:p-9 lg:p-10 flex flex-col justify-center">
+        <div class="lg:col-span-7 p-6 sm:p-9 lg:p-11 flex flex-col justify-center bg-white dark:bg-[#0A1120] transition-colors">
           <div class="space-y-6 max-w-md mx-auto w-full">
+            <!-- Header Kartu Kanan -->
             <div class="flex items-start justify-between gap-3">
               <div>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mb-2" style="background:var(--ons-primary-tint);color:var(--ons-primary)">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-2 shadow-sm" style="background:var(--ons-primary-tint, #EFF6FF);color:var(--ons-primary, #0066FE);border:1px solid rgba(0, 102, 254, 0.18)">
                   <span>${greetIcon}</span><span>${S().esc(greetWord)}</span>
                 </span>
-                <h1 class="text-2xl font-extrabold tracking-tight leading-tight">Masuk ke Ruang Kerja</h1>
-                <p class="text-xs mt-1" style="color:var(--ons-text-soft)">Silakan verifikasi akun staf Anda untuk memulai operasional apotek.</p>
+                <h1 class="text-2xl sm:text-[28px] font-black tracking-tight text-slate-900 dark:text-white leading-tight">Masuk ke Ruang Kerja</h1>
+                <p class="text-xs sm:text-[13px] mt-1 text-slate-500 dark:text-slate-400 font-medium">Silakan verifikasi akun staf Anda untuk memulai shift &amp; transaksi apotek.</p>
               </div>
-              <button type="button" onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-3 min-h-[38px] rounded-xl shrink-0" title="Ganti Tema">
+              <button type="button" onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-btn ons-btn-ghost text-xs px-3.5 min-h-[40px] rounded-xl shrink-0 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow" title="Ganti Tema">
                 ${_loginIco(isDark ? 'sun' : 'moon', 'w-4 h-4')}
-                <span class="hidden sm:inline">${isDark ? 'Terang' : 'Malam'}</span>
+                <span class="hidden sm:inline font-bold">${isDark ? 'Mode Terang' : 'Mode Gelap'}</span>
               </button>
             </div>
 
             <!-- Pilihan Outlet (jika multi-cabang) & Toggle Shift Segmented Modern -->
             <div class="space-y-3">
               ${multiBranch && branches.length > 1 ? `<div>
-                <label for="loginBranch" class="text-xs font-bold block mb-1.5" style="color:var(--ons-text-muted)">Cabang Apotek</label>
-                <select id="loginBranch" class="ons-select text-[13px] font-semibold">
-                  ${branches.map((bid) => `<option value="${S().esc(bid)}">${S().esc(bid)} &bull; ${S().esc(S().getBranchLabel ? S().getBranchLabel(bid) : bid)}</option>`).join('')}
-                </select>
+                <label for="loginBranch" class="text-xs font-bold block mb-1.5 text-slate-700 dark:text-slate-300">Cabang Apotek</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">${_loginIco('building', 'w-4 h-4')}</span>
+                  <select id="loginBranch" class="ons-select pl-10 text-[13px] font-semibold w-full">
+                    ${branches.map((bid) => `<option value="${S().esc(bid)}">${S().esc(bid)} &bull; ${S().esc(S().getBranchLabel ? S().getBranchLabel(bid) : bid)}</option>`).join('')}
+                  </select>
+                </div>
               </div>` : `<input type="hidden" id="loginBranch" value="ONS-01"/>`}
 
               <div>
                 <div class="flex items-center justify-between mb-1.5">
-                  <label class="text-xs font-bold" style="color:var(--ons-text-muted)">Shift Operasional</label>
-                  <span class="text-[10.5px] font-medium" style="color:var(--ons-text-soft)">${S().esc((prof && prof.nama_usaha) || 'Outlet Utama')}</span>
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <span>Shift Operasional Kasir</span>
+                  </label>
+                  <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">${S().esc((prof && prof.nama_usaha) || 'Outlet Utama')}</span>
                 </div>
                 <input type="hidden" id="loginShift" value="${autoShift}"/>
                 <div class="ons-shift-seg" role="group" aria-label="Pilih Shift Operasional">
                   <button type="button" data-login-shift="PAGI" onclick="window.selectLoginShift('PAGI')" class="ons-shift-seg-btn ${autoShift === 'PAGI' ? 'is-active' : ''}">
-                    <span>☀️</span><span>Shift Pagi</span><span class="text-[10px] opacity-75 font-mono-num hidden sm:inline">08–15</span>
+                    <span class="text-sm">☀️</span>
+                    <span class="font-extrabold">Shift Pagi</span>
+                    <span class="text-[10.5px] opacity-80 font-mono-num">(08:00 – 15:00)</span>
                   </button>
                   <button type="button" data-login-shift="SORE" onclick="window.selectLoginShift('SORE')" class="ons-shift-seg-btn ${autoShift === 'SORE' ? 'is-active' : ''}">
-                    <span>🌙</span><span>Shift Sore</span><span class="text-[10px] opacity-75 font-mono-num hidden sm:inline">15–22</span>
+                    <span class="text-sm">🌙</span>
+                    <span class="font-extrabold">Shift Sore</span>
+                    <span class="text-[10.5px] opacity-80 font-mono-num">(15:00 – 22:00)</span>
                   </button>
                 </div>
               </div>
@@ -1213,26 +1273,57 @@
 
             <form onsubmit="event.preventDefault();window.handleLoginSubmit();" class="space-y-4" autocomplete="on">
               <div>
-                <label for="loginUser" class="text-xs font-bold block mb-1.5" style="color:var(--ons-text-muted)">Username Staf</label>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="loginUser" class="text-xs font-bold text-slate-700 dark:text-slate-300">Username Staf</label>
+                  <span class="text-[10.5px] text-slate-400">Kasir / APJ / Pemilik</span>
+                </div>
                 <div class="ons-login-field-wrap">
                   <span class="ons-login-field-icon">${_loginIco('user', 'w-4 h-4')}</span>
-                  <input id="loginUser" name="username" autocomplete="username" oninput="window.clearLoginInlineError()" class="ons-input" placeholder="${demoMode ? 'pemilik / apj / kasir' : 'Masukkan username akun Anda'}" value="${demoMode ? 'pemilik' : ''}" required/>
+                  <input id="loginUser" name="username" autocomplete="username" oninput="window.clearLoginInlineError()" class="ons-input" placeholder="${demoMode ? 'pemilik / apj / kasir' : 'Masukkan username staf'}" value="${demoMode ? 'pemilik' : ''}" required/>
                 </div>
               </div>
 
               <div>
-                <label for="loginPass" class="text-xs font-bold block mb-1.5" style="color:var(--ons-text-muted)">Kata Sandi</label>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="loginPass" class="text-xs font-bold text-slate-700 dark:text-slate-300">Kata Sandi</label>
+                  ${demoMode ? `<span class="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">Bebas di Mode Demo</span>` : `<span class="text-[10.5px] text-slate-400">Verifikasi Resmi</span>`}
+                </div>
                 <div class="ons-login-field-wrap">
                   <span class="ons-login-field-icon">${_loginIco('lock', 'w-4 h-4')}</span>
-                  <input id="loginPass" name="password" type="password" autocomplete="current-password" oninput="window.clearLoginInlineError()" onkeyup="window.handleLoginCapsCheck(event)" onkeydown="window.handleLoginCapsCheck(event)" class="ons-input pr-24" placeholder="${demoMode ? 'Kosongkan atau isi bebas di Mode Lokal' : 'Masukkan kata sandi Anda'}" value="" ${demoMode ? '' : 'required'}/>
-                  <button type="button" onclick="window.togglePasswordFieldVis('loginPass', this)" aria-label="Tampilkan atau sembunyikan kata sandi" class="absolute right-2 inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[34px] rounded-lg text-[11px] font-semibold hover:bg-slate-500/10 transition-colors" style="color:var(--ons-text-soft)">
+                  <input id="loginPass" name="password" type="password" autocomplete="current-password" oninput="window.clearLoginInlineError()" onkeyup="window.handleLoginCapsCheck(event)" onkeydown="window.handleLoginCapsCheck(event)" class="ons-input" placeholder="${demoMode ? 'Bebas atau kosongkan di Mode Lokal' : 'Masukkan kata sandi akun'}" value="" ${demoMode ? '' : 'required'}/>
+                  <button type="button" onclick="window.togglePasswordFieldVis('loginPass', this)" aria-label="Tampilkan atau sembunyikan kata sandi" class="ons-login-eye-btn">
                     ${_loginIco('eye', 'w-3.5 h-3.5')}
                     <span>Lihat</span>
                   </button>
                 </div>
-                <div id="loginCapsWarn" class="hidden mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                  ${_loginIco('warn', 'w-3.5 h-3.5')}
+                <div id="loginCapsWarn" class="hidden mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/25">
+                  ${_loginIco('warn', 'w-3.5 h-3.5 shrink-0')}
                   <span>Caps Lock aktif &mdash; perhatikan huruf besar &amp; kecil.</span>
+                </div>
+              </div>
+
+              <!-- Pintasan Akun / Quick Role Selector -->
+              <div class="pt-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    ${_loginIco('key', 'w-3.5 h-3.5 text-blue-500')}
+                    <span>${demoMode ? 'Pintasan Masuk Cepat Akun Demo:' : 'Pintasan Username Akun:'}</span>
+                  </span>
+                  ${demoMode ? `<button type="button" onclick="window.switchBackendMode('LIVE')" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Buka Cloud Live &rarr;</button>` : ''}
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <button type="button" onclick="${demoMode ? `window.quickRoleLogin('pemilik')` : `window.quickFillUsername('pemilik')`}" class="ons-login-quick-card group">
+                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25 group-hover:bg-blue-500 group-hover:text-white transition-colors">👑 Pemilik</span>
+                    <span class="font-extrabold text-[11px] text-slate-800 dark:text-slate-200 mt-1">Akses Penuh</span>
+                  </button>
+                  <button type="button" onclick="${demoMode ? `window.quickRoleLogin('apj')` : `window.quickFillUsername('apj')`}" class="ons-login-quick-card group">
+                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 group-hover:bg-emerald-500 group-hover:text-white transition-colors">💊 APJ</span>
+                    <span class="font-extrabold text-[11px] text-slate-800 dark:text-slate-200 mt-1">Klinis &amp; Stok</span>
+                  </button>
+                  <button type="button" onclick="${demoMode ? `window.quickRoleLogin('kasir')` : `window.quickFillUsername('kasir')`}" class="ons-login-quick-card group">
+                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 group-hover:bg-amber-500 group-hover:text-white transition-colors">🛒 Kasir</span>
+                    <span class="font-extrabold text-[11px] text-slate-800 dark:text-slate-200 mt-1">Kasir POS</span>
+                  </button>
                 </div>
               </div>
 
@@ -1241,39 +1332,30 @@
                 <span id="loginInlineErrorText"></span>
               </div>
 
-              <button id="loginSubmitBtn" type="submit" class="ons-login-submit-btn">
-                <span>Masuk ke Ruang Kerja</span>
-                ${_loginIco('arrowRight', 'w-4 h-4')}
+              <button id="loginSubmitBtn" type="submit" class="ons-login-submit-btn group">
+                <span class="font-black text-sm tracking-wide">Masuk ke Ruang Kerja</span>
+                <span class="transition-transform group-hover:translate-x-1">${_loginIco('arrowRight', 'w-4 h-4')}</span>
               </button>
             </form>
 
-            ${demoMode ? `<div class="pt-4 border-t space-y-2.5" style="border-color:var(--ons-border)">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="text-[11px] font-bold flex items-center gap-1.5" style="color:var(--ons-text-muted)">
-                  ${_loginIco('bolt', 'w-3.5 h-3.5 text-amber-500')}
-                  <span>Masuk Cepat Mode Uji Coba</span>
-                </div>
-                <button type="button" onclick="window.switchBackendMode('LIVE')" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Buka Cloud Live &rarr;</button>
+            <!-- Footer Keamanan & Kepercayaan Enterprise -->
+            <div class="pt-4 border-t flex flex-wrap items-center justify-between gap-2.5 text-[11px] text-slate-500 dark:text-slate-400" style="border-color:var(--ons-border, #E2E8F0)">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                  ${_loginIco('shield', 'w-3.5 h-3.5')}
+                  <span>TLS 256-bit</span>
+                </span>
+                <span class="inline-flex items-center gap-1 font-semibold text-slate-500 dark:text-slate-400">
+                  ${_loginIco('lock', 'w-3.5 h-3.5 text-blue-500')}
+                  <span>Auto-Lock PIN</span>
+                </span>
+                <span class="hidden sm:inline-flex items-center gap-1 font-semibold text-slate-500 dark:text-slate-400">
+                  ${_loginIco('cloud', 'w-3.5 h-3.5 text-teal-500')}
+                  <span>Google Drive</span>
+                </span>
               </div>
-              <div class="grid grid-cols-3 gap-2">
-                <button type="button" onclick="window.quickRoleLogin('pemilik')" class="ons-login-quick-card">
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400">Pemilik</span>
-                  <span class="font-bold text-[11px] mt-0.5">Akses Penuh</span>
-                </button>
-                <button type="button" onclick="window.quickRoleLogin('apj')" class="ons-login-quick-card">
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">APJ</span>
-                  <span class="font-bold text-[11px] mt-0.5">Klinis &amp; Stok</span>
-                </button>
-                <button type="button" onclick="window.quickRoleLogin('kasir')" class="ons-login-quick-card">
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">Kasir</span>
-                  <span class="font-bold text-[11px] mt-0.5">Kasir POS</span>
-                </button>
-              </div>
-            </div>` : `<div class="pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-              <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">${_loginIco('shield', 'w-3.5 h-3.5')}<span>Koneksi Cloud Terenkripsi</span></span>
-              <span class="hidden lg:inline">Sesi dilindungi Auto-Lock PIN</span>
-              <button type="button" onclick="window.switchBackendMode('DEMO')" class="lg:hidden text-blue-600 dark:text-sky-400 font-semibold hover:underline">Mode Lokal &rarr;</button>
-            </div>`}
+              ${!demoMode ? `<button type="button" onclick="window.switchBackendMode('DEMO')" class="text-blue-600 dark:text-sky-400 font-bold hover:underline">Mode Lokal &rarr;</button>` : `<span class="font-bold text-amber-600 dark:text-amber-400">Mode Sandbox</span>`}
+            </div>
           </div>
         </div>
       </div>
@@ -1298,6 +1380,21 @@
       API().warmUpBackend();
     }
   }
+
+  global.quickFillUsername = (username) => {
+    const u = document.getElementById('loginUser');
+    if (u) {
+      u.value = username;
+      global.clearLoginInlineError();
+    }
+    const p = document.getElementById('loginPass');
+    if (p) {
+      p.focus();
+    }
+    if (typeof global.toast === 'function') {
+      global.toast('Username staf dipilih: ' + username + '. Masukkan kata sandi.', 'info');
+    }
+  };
 
   global.selectLoginShift = (val) => {
     const shift = val === 'SORE' ? 'SORE' : 'PAGI';
@@ -1352,11 +1449,7 @@
     const isPw = inp.type === 'password';
     inp.type = isPw ? 'text' : 'password';
     if (btnEl) {
-      if (btnEl.innerHTML && btnEl.innerHTML.indexOf('<svg') !== -1) {
-        btnEl.innerHTML = `${_loginIco(isPw ? 'eyeOff' : 'eye', 'w-3.5 h-3.5')}<span>${isPw ? 'Tutup' : 'Lihat'}</span>`;
-      } else {
-        btnEl.textContent = isPw ? 'Tutup' : 'Lihat';
-      }
+      btnEl.innerHTML = `${_loginIco(isPw ? 'eyeOff' : 'eye', 'w-3.5 h-3.5')}<span>${isPw ? 'Tutup' : 'Lihat'}</span>`;
     }
   };
 
