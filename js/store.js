@@ -723,12 +723,14 @@
     const map = new Map();
     for (let i = 0; i < arr.length; i++) {
       const b = arr[i];
-      if (!b || !b.id_obat || String(b.status_batch || 'AKTIF') !== 'AKTIF') continue;
+      if (!b || b.id_obat == null || String(b.status_batch || 'AKTIF') !== 'AKTIF') continue;
       if (b.cabang_id && b.cabang_id !== br) continue;
-      let ent = map.get(b.id_obat);
+      const bId = String(b.id_obat).trim();
+      b.id_obat = bId;
+      let ent = map.get(bId);
       if (!ent) {
         ent = { totalStok: 0, sellableStok: 0, nearestEd: null, nearestSellable: null, sellableBatches: [] };
-        map.set(b.id_obat, ent);
+        map.set(bId, ent);
       }
       const qty = Number(b.qty_sisa || 0);
       ent.totalStok += qty;
@@ -754,16 +756,18 @@
     const defaultFutureEd = new Date(Date.now() + 730 * 86400000).toISOString().slice(0, 10);
     for (let i = 0; i < mList.length; i++) {
       const o = mList[i];
-      if (!o || !o.id_obat) continue;
+      if (!o || o.id_obat == null) continue;
+      const oId = String(o.id_obat).trim();
+      o.id_obat = oId;
       const mStok = Number(o.stok !== undefined ? o.stok : (o.stok_akhir !== undefined ? o.stok_akhir : (o.stok_total || 0)));
       if (mStok <= 0) continue;
-      let ent = map.get(o.id_obat);
+      let ent = map.get(oId);
       const oEdIso = normalizeDateIso(o.tgl_kadaluarsa);
       const safeEd = (oEdIso && oEdIso >= nc.iso) ? oEdIso : defaultFutureEd;
       if (!ent) {
         const synthBatch = {
-          id_batch: 'BT-INIT-' + o.id_obat,
-          id_obat: o.id_obat,
+          id_batch: 'BT-INIT-' + oId,
+          id_obat: oId,
           cabang_id: br,
           no_batch: o.no_batch || 'BATCH-AWAL',
           tgl_kadaluarsa: safeEd,
@@ -771,7 +775,7 @@
           status_batch: 'AKTIF',
           hpp_beli: Number(o.hpp_avg || o.hpp_terakhir || 0)
         };
-        map.set(o.id_obat, {
+        map.set(oId, {
           totalStok: mStok,
           sellableStok: mStok,
           nearestEd: synthBatch,
@@ -815,22 +819,26 @@
   }
 
   function getTotalStok(idObat) {
-    const ent = _getBatchIndex().get(idObat);
+    if (idObat == null || idObat === '') return 0;
+    const ent = _getBatchIndex().get(String(idObat).trim());
     return ent ? ent.totalStok : 0;
   }
 
   function getSellableStok(idObat) {
-    const ent = _getBatchIndex().get(idObat);
+    if (idObat == null || idObat === '') return 0;
+    const ent = _getBatchIndex().get(String(idObat).trim());
     return ent ? ent.sellableStok : 0;
   }
 
   function getNearestEdBatch(idObat) {
-    const ent = _getBatchIndex().get(idObat);
+    if (idObat == null || idObat === '') return null;
+    const ent = _getBatchIndex().get(String(idObat).trim());
     return ent ? ent.nearestEd : null;
   }
 
   function getNearestSellableBatch(idObat) {
-    const ent = _getBatchIndex().get(idObat);
+    if (idObat == null || idObat === '') return null;
+    const ent = _getBatchIndex().get(String(idObat).trim());
     return ent ? ent.nearestSellable : null;
   }
 
@@ -843,15 +851,19 @@
     const map = new Map();
     for (let i = 0; i < list.length; i++) {
       const o = list[i];
-      if (o && o.id_obat) map.set(o.id_obat, o);
+      if (o && o.id_obat != null) {
+        const sId = String(o.id_obat).trim();
+        o.id_obat = sId;
+        map.set(sId, o);
+      }
     }
     _obatMapCache = { arr: list, len: list.length, map };
     return map;
   }
 
   function getObatById(idObat) {
-    if (!idObat) return null;
-    return getMasterObatMap().get(idObat) || null;
+    if (idObat == null || idObat === '') return null;
+    return getMasterObatMap().get(String(idObat).trim()) || null;
   }
 
   /**
@@ -1942,7 +1954,8 @@
   }
 
   function getNearEdBatchInfo(idObat, thresholdDays = 90) {
-    const ent = _getBatchIndex().get(idObat);
+    if (idObat == null || idObat === '') return { hasNearEd: false, minDays: null, nearQty: 0, suggestedDiscPct: 0, noBatch: '' };
+    const ent = _getBatchIndex().get(String(idObat).trim());
     if (!ent || !ent.sellableBatches.length) {
       return { hasNearEd: false, minDays: null, nearQty: 0, suggestedDiscPct: 0, noBatch: '' };
     }

@@ -4018,7 +4018,8 @@
   };
 
   global.openProductBarcodeModal = (idObat) => {
-    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
+    const sId = String(idObat != null ? idObat : '').trim();
+    const o = (S().AppState.masterObat || []).find((x) => String(x.id_obat).trim() === sId);
     if (!o) return;
     const codeVal = o.kode_kfa || o.id_obat || 'OBAT-001';
     const hetVal = Math.round(Number(o.harga_umum || 0) * 1.15);
@@ -4060,7 +4061,8 @@
   };
 
   global.openShelfLabelModal = (idObat) => {
-    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
+    const sId = String(idObat != null ? idObat : '').trim();
+    const o = (S().AppState.masterObat || []).find((x) => String(x.id_obat).trim() === sId);
     if (!o) return;
     const s1 = String(o.satuan_1 || o.satuan_dasar || 'Unit').trim();
     const s2 = String(o.satuan_2 || o.satuan_sedang || '').trim();
@@ -4428,7 +4430,8 @@
 
   const _getObatPurchaseHistory = (idObat) => {
     const st = S().AppState || {};
-    const o = (st.masterObat || []).find((x) => x.id_obat === idObat);
+    const sId = String(idObat != null ? idObat : '').trim();
+    const o = (st.masterObat || []).find((x) => String(x.id_obat).trim() === sId);
     if (!o) return null;
 
     const pbfMap = {};
@@ -4459,7 +4462,7 @@
     };
 
     const purchases = [];
-    const batches = (st.stokBatch || []).filter((b) => b.id_obat === idObat);
+    const batches = (st.stokBatch || []).filter((b) => String(b.id_obat).trim() === sId);
     batches.forEach((b) => {
       const fak = fakturMap[b.no_faktur_pbf] || {};
       const tgl = b.tgl_terima || fak.tgl_faktur || (fak.created_at ? fak.created_at.slice(0, 10) : '2026-10-01');
@@ -4480,7 +4483,7 @@
     });
 
     (st.mutasiStok || []).forEach((m) => {
-      if (m.id_obat === idObat && (m.jenis_mutasi === 'PEMBELIAN_PBF' || m.jenis_mutasi === 'KONSINYASI_MASUK')) {
+      if (String(m.id_obat).trim() === sId && (m.jenis_mutasi === 'PEMBELIAN_PBF' || m.jenis_mutasi === 'KONSINYASI_MASUK')) {
         const exists = purchases.find((p) => p.no_faktur === m.referensi_id && p.hpp_unit === Number(m.hpp_unit || 0));
         if (!exists) {
           purchases.push({
@@ -5058,8 +5061,12 @@
   };
 
   global.openObatDetailModal = (idObat, initialTab = 'monograf') => {
-    const o = (S().AppState.masterObat || []).find((x) => x.id_obat === idObat);
-    if (!o) return;
+    const sId = String(idObat != null ? idObat : '').trim();
+    const o = (S().AppState.masterObat || []).find((x) => String(x.id_obat).trim() === sId);
+    if (!o) {
+      if (typeof global.toast === 'function') global.toast('Data obat tidak ditemukan: ' + idObat, 'warn');
+      return;
+    }
     const st = S().AppState;
     const m = buildObatMeta(o);
     const seeCost = S().canSeeFinancialCost();
@@ -5079,17 +5086,17 @@
     const isHarga = initialTab === 'multi-satuan';
     const isMono = !isRiw && !isBatch && !isHarga;
     const batches = (st.stokBatch || [])
-      .filter((b) => b.id_obat === idObat && String(b.status_batch || 'AKTIF') === 'AKTIF')
+      .filter((b) => String(b.id_obat).trim() === sId && String(b.status_batch || 'AKTIF') === 'AKTIF')
       .sort((a, b) => String(a.tgl_kadaluarsa).localeCompare(String(b.tgl_kadaluarsa)));
-    const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(idObat, 90) : { hasNearEd: false };
+    const nearEd = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(sId, 90) : { hasNearEd: false };
     const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
-    const cmpItem = ((st.branchStockCompare && st.branchStockCompare.items) || []).find((x) => x.id_obat === idObat);
+    const cmpItem = ((st.branchStockCompare && st.branchStockCompare.items) || []).find((x) => String(x.id_obat).trim() === sId);
     const branches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
     const perCb = (cmpItem && cmpItem.stok_per_cabang) || {};
 
     const subIds = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
     const subNames = subIds.map((sid) => {
-      const match = (st.masterObat || []).find((x) => x.id_obat === sid);
+      const match = (st.masterObat || []).find((x) => String(x.id_obat).trim() === String(sid).trim());
       return match ? match.nama_dagang : sid;
     });
 
@@ -5567,7 +5574,8 @@
     const st = S().AppState;
     if (stepOverride) wizardStep = Math.max(1, Math.min(5, stepOverride));
     else wizardStep = 1;
-    const baseDefault = (st.masterObat || []).find((x) => x.id_obat === editId) || {
+    const sEditId = editId != null ? String(editId).trim() : '';
+    const baseDefault = (sEditId && (st.masterObat || []).find((x) => String(x.id_obat).trim() === sEditId)) || {
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1',
       satuan_1: 'Tablet', satuan_2: '', rasio_2: 1, satuan_3: '', rasio_3: 1,
@@ -12552,12 +12560,13 @@
 
   global.addObatToPurchasePlan = (idObat, qtyCustom, keterangan, goToPlan) => {
     const st = S().AppState;
-    const o = (st.masterObat || []).find((m) => m.id_obat === idObat);
+    const sId = String(idObat != null ? idObat : '').trim();
+    const o = (st.masterObat || []).find((m) => String(m.id_obat).trim() === sId);
     if (!o) return global.toast('Produk tidak ditemukan di katalog.', 'warn');
     const plans = _readLocalList(PLANS_KEY);
     const s = S().getSellableStok(o.id_obat);
     const defaultQty = qtyCustom !== undefined ? Math.max(1, Number(qtyCustom)) : (S().calcSuggestedOrderQty ? S().calcSuggestedOrderQty(o, s) : 1);
-    const exist = plans.find((p) => p.id_obat === o.id_obat);
+    const exist = plans.find((p) => String(p.id_obat).trim() === sId);
     if (exist) {
       exist.kuantitas = Number(exist.kuantitas || 0) + defaultQty;
       exist.selected = true;
@@ -14946,7 +14955,8 @@
 
   global.openObatKartuStokModal = (idObat) => {
     const st = S().AppState;
-    const ob = (st.masterObat || []).find((o) => o.id_obat === idObat) || st.masterObat[0];
+    const sId = String(idObat != null ? idObat : '').trim();
+    const ob = (st.masterObat || []).find((o) => String(o.id_obat).trim() === sId) || st.masterObat[0];
     if (!ob) {
       global.toast('Data obat tidak ditemukan.', 'warn');
       return;
@@ -14965,16 +14975,17 @@
 
   function renderObatKartuStokModalDialog() {
     const st = S().AppState;
-    const ob = (st.masterObat || []).find((o) => o.id_obat === modalKartuStokState.idObat);
+    const sId = String(modalKartuStokState.idObat != null ? modalKartuStokState.idObat : '').trim();
+    const ob = (st.masterObat || []).find((o) => String(o.id_obat).trim() === sId);
     if (!ob) return;
 
     const s = modalKartuStokState;
-    const allMutasi = (st.mutasiStok || []).filter((m) => m.id_obat === ob.id_obat);
+    const allMutasi = (st.mutasiStok || []).filter((m) => String(m.id_obat).trim() === sId);
 
     // Kumpulkan seluruh batch yang ada untuk obat ini
     const availableBatches = Array.from(new Set(
       allMutasi.map((m) => m.no_batch || m.id_batch).concat(
-        (st.stokBatch || []).filter((b) => b.id_obat === ob.id_obat).map((b) => b.no_batch)
+        (st.stokBatch || []).filter((b) => String(b.id_obat).trim() === sId).map((b) => b.no_batch)
       ).filter(Boolean)
     ));
 

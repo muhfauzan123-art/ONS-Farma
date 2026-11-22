@@ -6508,14 +6508,15 @@
 
   global.openBranchCompareDrawer = (idObat) => {
     const st = S().AppState;
-    const obat = st.masterObat.find((o) => o.id_obat === idObat);
+    const sId = String(idObat != null ? idObat : '').trim();
+    const obat = (st.masterObat || []).find((o) => String(o.id_obat).trim() === sId);
     if (!obat) return;
     const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
     const cmp = (st.branchStockCompare && st.branchStockCompare.items) || [];
-    const entry = cmp.find((x) => x.id_obat === idObat);
+    const entry = cmp.find((x) => String(x.id_obat).trim() === sId);
     const branches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
     const perCb = (entry && entry.stok_per_cabang) || {};
-    if (!entry) perCb[st.cabangId || 'ONS-01'] = S().getSellableStok(idObat);
+    if (!entry) perCb[st.cabangId || 'ONS-01'] = S().getSellableStok(sId);
     S().openDrawer(`<div class="p-5 space-y-4 text-xs">
       <div class="flex items-start justify-between gap-2 border-b pb-3" style="border-color:var(--ons-border)">
         <div>
@@ -6827,16 +6828,17 @@
 
   global.openSubstitusiModal = (idObat) => {
     const st = S().AppState;
-    const o = (st.masterObat || []).find((x) => x.id_obat === idObat);
+    const sId = String(idObat != null ? idObat : '').trim();
+    const o = (st.masterObat || []).find((x) => String(x.id_obat).trim() === sId);
     if (!o) return global.toast('Data obat tidak ditemukan.', 'warn');
 
     const subIds = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
-    const explicitSubs = (st.masterObat || []).filter((x) => subIds.includes(x.id_obat));
+    const explicitSubs = (st.masterObat || []).filter((x) => subIds.some((sid) => String(sid).trim() === String(x.id_obat).trim()));
 
     // Dynamic search: Active ingredient (zat_aktif)
     const zatClean = String(o.zat_aktif || '').trim().toLowerCase();
     const dynamicZat = zatClean ? (st.masterObat || []).filter((x) => {
-      if (x.id_obat === idObat || subIds.includes(x.id_obat)) return false;
+      if (String(x.id_obat).trim() === sId || subIds.some((sid) => String(sid).trim() === String(x.id_obat).trim())) return false;
       const xz = String(x.zat_aktif || '').trim().toLowerCase();
       return xz && (xz.includes(zatClean) || zatClean.includes(xz));
     }) : [];
