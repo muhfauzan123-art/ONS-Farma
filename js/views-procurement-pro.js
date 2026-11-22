@@ -2083,7 +2083,11 @@
     try {
       await API().callApi('sp.delete', { id_sp: idSp }, { isWrite: true });
       spSelectedIds.delete(idSp);
-      global.toast(`Surat Pesanan ${sp.no_sp || idSp} berhasil dihapus.`, 'ok');
+      if (window.onsPurgeEntityHistory) {
+        window.onsPurgeEntityHistory('SURAT_PESANAN', idSp);
+        if (sp.no_sp) window.onsPurgeEntityHistory('SURAT_PESANAN', sp.no_sp);
+      }
+      global.toast(`Surat Pesanan ${sp.no_sp || idSp} dan seluruh riwayatnya berhasil dihapus permanen.`, 'ok');
       await global.bootLoadState(true);
       if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
       else global.renderActiveView();
@@ -2116,6 +2120,10 @@
       try {
         await API().callApi('sp.delete', { id_sp: sp.id_sp }, { isWrite: true });
         spSelectedIds.delete(sp.id_sp);
+        if (window.onsPurgeEntityHistory) {
+          window.onsPurgeEntityHistory('SURAT_PESANAN', sp.id_sp);
+          if (sp.no_sp) window.onsPurgeEntityHistory('SURAT_PESANAN', sp.no_sp);
+        }
         successCount++;
       } catch (err) {
         console.error('Failed to delete SP:', sp.id_sp, err);

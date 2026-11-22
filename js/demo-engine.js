@@ -962,6 +962,37 @@
       return { item: maskRow(item, role) };
     }
 
+    if (action === 'obat.delete') {
+      if (role !== 'Pemilik' && role !== 'APJ') throw new Error('AKSES DITOLAK: Hanya Pemilik / APJ yang berhak menghapus produk obat.');
+      const idObat = String(d.id_obat || '').trim();
+      if (!idObat) throw new Error('ID Obat wajib diisi.');
+      const idx = (db.master_obat || []).findIndex((o) => o.id_obat === idObat);
+      if (idx < 0) throw new Error('Produk obat tidak ditemukan.');
+
+      // Cek apakah masih ada stok aktif
+      const activeBatches = (db.stok_batch || []).filter((b) => b.id_obat === idObat && Number(b.qty_sisa || 0) > 0 && String(b.status_batch || '').toUpperCase() === 'AKTIF');
+      if (activeBatches.length > 0) {
+        const totalActive = activeBatches.reduce((s, b) => s + Number(b.qty_sisa || 0), 0);
+        throw new Error('Produk obat masih memiliki stok aktif (' + totalActive + '). Kosongkan stok batch terlebih dahulu!');
+      }
+
+      // Hapus produk dari master_obat
+      const removed = db.master_obat.splice(idx, 1)[0];
+
+      // Hapus seluruh batch obat ini
+      db.stok_batch = (db.stok_batch || []).filter((b) => b.id_obat !== idObat);
+
+      // Hapus seluruh riwayat kartu stok terkait obat ini
+      db.kartu_stok = (db.kartu_stok || []).filter((k) => k.id_obat !== idObat);
+
+      // Hapus seluruh riwayat audit log terkait obat ini (sesuai instruksi: "RIWAYATNYA PUN DIHAPUS")
+      db.audit_log = (db.audit_log || []).filter((a) => a.entitas_id !== idObat && !(a.entitas === 'MASTER_OBAT' && a.entitas_id === idObat));
+
+      db.epoch++;
+      saveDb(db);
+      return { ok: true, id_obat: idObat, nama_dagang: removed.nama_dagang };
+    }
+
     if (action === 'obat.updatePrices') {
       if (role !== 'Pemilik' && role !== 'APJ') throw new Error('AKSES DITOLAK: Hanya Pemilik / APJ yang berhak mengubah harga.');
       const list = Array.isArray(d.items) ? d.items : (d.id_obat ? [d] : []);
@@ -1590,17 +1621,8 @@
         throw new Error('Surat Pesanan yang sudah selesai diterima dan masuk faktur tidak dapat dihapus.');
       }
       db.surat_pesanan.splice(idx, 1);
-      db.audit_log.unshift({
-        id_audit: 'AUD-' + Date.now(),
-        timestamp: nowIso,
-        user_id: userId,
-        role,
-        cabang_id: 'ONS-01',
-        aksi: 'SURAT_PESANAN_HAPUS',
-        entitas: 'SURAT_PESANAN',
-        entitas_id: idSp,
-        diff_sebelum_json: JSON.stringify({ no_sp: existing.no_sp, pbf: existing.nama_pbf })
-      });
+      // Bersihkan riwayat di audit_log agar penyimpanan tidak terbebani
+      db.audit_log = (db.audit_log || []).filter((a) => a.entitas_id !== idSp && a.entitas_id !== existing.no_sp);
       db.epoch++;
       saveDb(db);
       return { success: true, id_sp: idSp };

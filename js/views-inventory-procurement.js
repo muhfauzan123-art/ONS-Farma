@@ -3092,8 +3092,9 @@
   global.confirmDeleteMasterSupplier = async (idPbf) => {
     try {
       await API().callApi('pbf.delete', { id_pbf: idPbf }, { isWrite: true });
+      if (window.onsPurgeEntityHistory) window.onsPurgeEntityHistory('SUPPLIER_PBF', idPbf);
       S().closeModal();
-      global.toast('Supplier PBF dihapus dari Master Data.', 'ok');
+      global.toast('Supplier PBF dan riwayatnya berhasil dihapus permanen.', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
@@ -3330,8 +3331,9 @@
   global.confirmDeleteMasterPelanggan = async (idMember) => {
     try {
       await API().callApi('member.delete', { id_member: idMember }, { isWrite: true });
+      if (window.onsPurgeEntityHistory) window.onsPurgeEntityHistory('MEMBER_PRB_KRONIS', idMember);
       S().closeModal();
-      global.toast('Pelanggan dihapus dari Master Data.', 'ok');
+      global.toast('Pelanggan dan riwayatnya berhasil dihapus permanen.', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
@@ -3412,8 +3414,9 @@
   global.confirmDeleteMasterDokter = async (idDokter) => {
     try {
       await API().callApi('dokter.delete', { id_dokter: idDokter }, { isWrite: true });
+      if (window.onsPurgeEntityHistory) window.onsPurgeEntityHistory('MASTER_DOKTER', idDokter);
       S().closeModal();
-      global.toast('Dokter dihapus dari Master Data.', 'ok');
+      global.toast('Dokter dan riwayatnya berhasil dihapus permanen.', 'ok');
       await global.bootLoadState(true);
     } catch (e) { global.toast(e.message, 'err'); }
   };
@@ -3808,17 +3811,42 @@
     });
   };
 
-  global.deleteMasterObat = (idObat) => {
+  global.deleteMasterObat = async (idObat) => {
     const st = S().AppState;
     const idx = (st.masterObat || []).findIndex((x) => x.id_obat === idObat);
     if (idx !== -1) {
       const removed = st.masterObat.splice(idx, 1)[0];
+
+      // 1. Hapus batch terkait obat ini dari AppState
+      if (Array.isArray(st.stokBatch)) {
+        st.stokBatch = st.stokBatch.filter((b) => b.id_obat !== idObat);
+      }
+
+      // 2. Hapus kartu stok & riwayat terkait obat ini
+      if (Array.isArray(st.kartuStok)) {
+        st.kartuStok = st.kartuStok.filter((k) => k.id_obat !== idObat);
+      }
+      if (Array.isArray(st.riwayatStok)) {
+        st.riwayatStok = st.riwayatStok.filter((r) => r.id_obat !== idObat);
+      }
+
+      // 3. Bersihkan riwayat auditLog agar tidak membebani penyimpanan (sesuai instruksi)
+      if (window.onsPurgeEntityHistory) {
+        window.onsPurgeEntityHistory('MASTER_OBAT', idObat);
+      } else if (Array.isArray(st.auditLog)) {
+        st.auditLog = st.auditLog.filter((a) => a.entitas_id !== idObat && !(a.entitas === 'MASTER_OBAT' && a.entitas_id === idObat));
+      }
+
+      // 4. Invalidate O(1) hashmap cache
+      if (typeof S().invalidateObatIndex === 'function') S().invalidateObatIndex();
+
       if (typeof S().saveState === 'function') S().saveState();
       if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
-        try { API().callApi('obat.delete', { id_obat: idObat }, { isWrite: true }); } catch (e) {}
+        try { await API().callApi('obat.delete', { id_obat: idObat }, { isWrite: true }); } catch (e) {
+          console.warn('API obat.delete:', e);
+        }
       }
-      if (typeof S().logAuditEvent === 'function') S().logAuditEvent('HAPUS_OBAT', `Hapus produk ${removed.nama_dagang} (${removed.id_obat})`);
-      if (global.toast) global.toast(`Produk ${removed.nama_dagang} berhasil dihapus dari katalog.`, 'ok');
+      if (global.toast) global.toast(`Produk ${removed.nama_dagang} dan seluruh riwayatnya berhasil dihapus permanen.`, 'ok');
     }
     if (typeof S().closeModal === 'function') S().closeModal();
     global.renderActiveView();
