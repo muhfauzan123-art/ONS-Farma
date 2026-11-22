@@ -3485,45 +3485,6 @@ window.onsConfirmDelete = function(itemNameOrOpts, onConfirm, onCancel, extraOpt
 
 window.onsConfirm = window.onsConfirmDelete;
 
-/**
- * Pembersih Riwayat & Jejak Data Lokal (Frontend Memory & LocalStorage)
- * Memastikan data yang dihapus benar-benar hilang dari cache, riwayat, dan kartu stok
- * sehingga tidak membebani kapasitas penyimpanan memori browser maupun Google Sheets.
- */
-window.onsPurgeEntityHistory = function(entityType, entityId) {
-  if (!entityId) return;
-  const id = String(entityId).trim();
-  const S = window.ONSStore;
-  const st = S && S.AppState ? S.AppState : (window.AppState || {});
-
-  // 1. Bersihkan riwayat auditLog lokal
-  if (Array.isArray(st.auditLog)) {
-    st.auditLog = st.auditLog.filter((a) => {
-      const matchId = String(a.entitas_id || '') === id;
-      const matchEnt = !entityType || String(a.entitas || '').toUpperCase() === String(entityType).toUpperCase();
-      return !(matchId && matchEnt);
-    });
-  }
-
-  // 2. Bersihkan kartu stok / riwayat stok jika entitas obat
-  if (entityType === 'MASTER_OBAT' || !entityType) {
-    if (Array.isArray(st.kartuStok)) {
-      st.kartuStok = st.kartuStok.filter((k) => String(k.id_obat || '') !== id);
-    }
-    if (Array.isArray(st.riwayatStok)) {
-      st.riwayatStok = st.riwayatStok.filter((r) => String(r.id_obat || '') !== id);
-    }
-    if (Array.isArray(st.stokBatch)) {
-      st.stokBatch = st.stokBatch.filter((b) => String(b.id_obat || '') !== id);
-    }
-  }
-
-  // 3. Simpan state
-  if (S && typeof S.saveState === 'function') {
-    S.saveState();
-  }
-};
-
 // ===== ITEM #5: TOAST NOTIFICATION SYSTEM (Unified with showToast) =====
 window.onsShowToast = function(msg, type, duration, undoOpts) { return showToast(msg, type, duration, undoOpts); };
 window.onsShowSuccess = function(msg, dur, undoOpts) { return showToast(msg, 'success', dur, undoOpts); };
