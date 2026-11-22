@@ -4176,11 +4176,17 @@
   function findBatchMatchObatIds(qLower) {
     const ids = {};
     if (!qLower || qLower.length < 2) return ids;
-    (S().AppState.stokBatch || []).forEach((b) => {
-      if (String(b.no_batch || '').toLowerCase().includes(qLower) || String(b.id_batch || '').toLowerCase().includes(qLower)) {
+    const batches = S().AppState.stokBatch || [];
+    for (let i = 0; i < batches.length; i++) {
+      const b = batches[i];
+      if (!b || !b.id_obat) continue;
+      if (!b._batchHay) {
+        b._batchHay = `${b.no_batch || ''} ${b.id_batch || ''}`.toLowerCase();
+      }
+      if (b._batchHay.includes(qLower)) {
         ids[b.id_obat] = true;
       }
-    });
+    }
     return ids;
   }
 
@@ -4200,8 +4206,10 @@
         if (normO !== normT) return false;
       }
       if (q) {
-        const hay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.id_obat || ''} ${o.rak_lokasi || ''}`.toLowerCase();
-        if (!hay.includes(q) && !batchMatchIds[o.id_obat]) return false;
+        if (!o._posHay) {
+          o._posHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.id_obat || ''} ${o.rak_lokasi || ''}`.toLowerCase();
+        }
+        if (!o._posHay.includes(q) && !batchMatchIds[o.id_obat]) return false;
       }
       const sellStok = S().getSellableStok(o.id_obat);
       sellStokMap.set(o.id_obat, sellStok);
@@ -6340,7 +6348,7 @@
     if (_posSearchDebounceTimer) clearTimeout(_posSearchDebounceTimer);
     _posSearchDebounceTimer = setTimeout(() => {
       syncPosCatalogDomOnly();
-    }, 120);
+    }, 70);
   };
 
   global.clearPosSearchInput = () => {

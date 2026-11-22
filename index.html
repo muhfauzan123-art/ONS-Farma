@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.62.0"/>
+  <meta name="application-version" content="v18.63.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.62.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.63.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.62.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.63.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.62.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.62.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.62.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.63.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.63.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.63.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.62.0"></script>
-  <script src="./js/struk-engine.js?v=18.62.0"></script>
-  <script src="./js/demo-engine.js?v=18.62.0"></script>
-  <script src="./js/api-turbo.js?v=18.62.0"></script>
-  <script src="./js/store.js?v=18.62.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.62.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.62.0"></script>
+  <script src="./js/config.js?v=18.63.0"></script>
+  <script src="./js/struk-engine.js?v=18.63.0"></script>
+  <script src="./js/demo-engine.js?v=18.63.0"></script>
+  <script src="./js/api-turbo.js?v=18.63.0"></script>
+  <script src="./js/store.js?v=18.63.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.63.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.63.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.62.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.62.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.62.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.62.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.62.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.62.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.63.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.63.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.63.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.63.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.63.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.63.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1094,6 +1094,11 @@
             const normO = ONSStore.normalizeDateIso(o.tgl_kadaluarsa);
             if (normO) o.tgl_kadaluarsa = normO;
           }
+          // Scale Turbo: Pre-index search haystacks for O(1) instant lookup
+          o._searchHay = `${o.id_obat} ${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.nie_bpom || ''} ${o.rak_lokasi || ''} ${o.pbf_utama || ''} ${o.pabrikan || ''} ${o.bentuk_sediaan || ''} ${o.kekuatan || ''}`.toLowerCase();
+          o._posHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.id_obat || ''} ${o.rak_lokasi || ''}`.toLowerCase();
+          o._cmdkHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.kode_kfa || ''} ${o.nie_bpom || ''} ${o.rak_lokasi || ''}`.toLowerCase();
+          o._defectaHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase();
           return o;
         });
         st.masterKategori = data.master_kategori || (ONSStore.DEFAULT_MASTER_KATEGORI ? ONSStore.DEFAULT_MASTER_KATEGORI.slice() : []);
@@ -1413,7 +1418,7 @@
         }
       };
 
-      // Floating Mobile Barcode Scanner FAB Suite (v18.62.0)
+      // Floating Mobile Barcode Scanner FAB Suite (v18.63.0)
       window.updateScannerFabContext = function () {
         const host = document.getElementById('onsMobileScannerFabHost');
         const lbl = document.getElementById('onsScannerFabLabel');
@@ -1754,7 +1759,17 @@
           }
         };
 
+        let _cmdkDebounceTimer = null;
         window.filterCmdk = function (rawQ) {
+          const clearBtn = document.getElementById('cmdkClearBtn');
+          if (clearBtn) clearBtn.classList.toggle('hidden', !String(rawQ || '').trim());
+          if (_cmdkDebounceTimer) clearTimeout(_cmdkDebounceTimer);
+          _cmdkDebounceTimer = setTimeout(() => {
+            _execFilterCmdk(rawQ);
+          }, 60);
+        };
+
+        function _execFilterCmdk(rawQ) {
           const q = String(rawQ || '').trim().toLowerCase();
           const box = document.getElementById('cmdkResultsBox');
           if (!box) return;
@@ -1775,7 +1790,13 @@
             });
           }
           const canSeeObat = ONSStore.canAccessView('pos') || ONSStore.canAccessView('obat');
-          const obatMatches = canSeeObat ? (st.masterObat || []).filter((o) => !q || `${o.nama_dagang} ${o.zat_aktif} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi}`.toLowerCase().includes(q)).slice(0, q ? 10 : 6) : [];
+          const obatMatches = canSeeObat ? (st.masterObat || []).filter((o) => {
+            if (!q) return true;
+            if (!o._cmdkHay) {
+              o._cmdkHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.kode_kfa || ''} ${o.nie_bpom || ''} ${o.rak_lokasi || ''}`.toLowerCase();
+            }
+            return o._cmdkHay.includes(q);
+          }).slice(0, q ? 10 : 6) : [];
           const canSeePasien = ONSStore.canAccessView('obat') || ONSStore.canAccessView('pemeriksaan') || ONSStore.canAccessView('crm-wa') || ONSStore.canAccessView('klinis');
           const pasienMatches = (canSeePasien && q) ? (st.members || []).filter((m) => `${m.nama_pasien} ${m.no_hp} ${m.penyakit_kronis} ${m.program_prb}`.toLowerCase().includes(q)).slice(0, 6) : [];
           const canSeeMaster = ONSStore.canAccessView('obat');
@@ -2117,7 +2138,7 @@
               <main id="mainViewSlot" class="flex-1 p-3 sm:p-4 md:p-6 ons-main-scroll"></main>
             </div>
 
-            <!-- Floating Mobile Barcode Scanner FAB (v18.62.0) -->
+            <!-- Floating Mobile Barcode Scanner FAB (v18.63.0) -->
             <div id="onsMobileScannerFabHost" class="ons-scanner-fab-host md:hidden">
               <button
                 id="onsMobileScannerFab"
@@ -2157,7 +2178,7 @@
         window.renderActiveView();
       };
 
-      // Hotkey POS, Global Navigation & Shortcut Cheat Sheet (v18.62.0)
+      // Hotkey POS, Global Navigation & Shortcut Cheat Sheet (v18.63.0)
       window.addEventListener('keydown', (e) => {
         if (!ONSApi.getSession()) return;
         if (e.key === 'Escape') {
@@ -2275,6 +2296,17 @@
       ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach((ev) => {
         window.addEventListener(ev, bumpActivity, { passive: true });
       });
+
+      // Adaptive Visibility Guard (Scale Turbo Rule 4.3)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          bumpActivity();
+          const now = Date.now();
+          if (now - lastUserActivityMs > 90000 && window.ONSApi && window.ONSApi.getSession()) {
+            if (typeof window.bootLoadState === 'function') window.bootLoadState(false);
+          }
+        }
+      }, { passive: true });
       if (typeof setInterval === 'function') {
         setInterval(() => {
           const cfg = ONSStore.getStoreSettings ? ONSStore.getStoreSettings() : {};

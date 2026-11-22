@@ -286,7 +286,9 @@
         ? { label: 'Menipis', color: '#D97706', bar: '#F59E0B', badge: 'bpom-prekursor', fillCls: 'is-warn' }
         : { label: 'Aman', color: '#059669', bar: '#10B981', badge: 'bpom-bebas', fillCls: 'is-safe' });
     const stockMultiDesc = _formatStockMultiSatuan(stok, o);
-    return { o, stok, totalFisik, min, max, pct, isZero, isLow, isCritical, nearBatch, edDays, isNearEd, isCold, hpp, harga, marginPct, stokTone, stockMultiDesc };
+    const isDijual = String(o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF';
+    const searchHay = (o._searchHay = o._searchHay || `${o.id_obat} ${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.nie_bpom || ''} ${o.rak_lokasi || ''} ${o.pbf_utama || ''} ${o.pabrikan || ''} ${o.bentuk_sediaan || ''} ${o.kekuatan || ''}`.toLowerCase());
+    return { o, stok, totalFisik, min, max, pct, isZero, isLow, isCritical, nearBatch, edDays, isNearEd, isCold, hpp, harga, marginPct, stokTone, stockMultiDesc, isDijual, searchHay };
   }
 
   function _normGol(g) {
@@ -362,8 +364,7 @@
       if (masterFilterSuhu === 'RUANG' && m.isCold) return false;
       if (masterSearchQ) {
         const q = masterSearchQ.toLowerCase();
-        const hay = `${o.id_obat} ${o.nama_dagang} ${o.zat_aktif} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa} ${o.nie_bpom} ${o.rak_lokasi} ${o.pbf_utama} ${o.pabrikan} ${o.bentuk_sediaan} ${o.kekuatan}`.toLowerCase();
-        if (!hay.includes(q)) return false;
+        if (!m.searchHay.includes(q)) return false;
       }
       return true;
     }).sort((a, b) => {
@@ -420,15 +421,32 @@
 
   function _renderMasterObatResultsHtml(seeCost, allMeta, filtered) {
     const totalCount = allMeta.length;
-    const safeCount = allMeta.filter((m) => !m.isCritical).length;
-    const critCount = allMeta.filter((m) => m.isCritical && !m.isZero).length;
-    const habisCount = allMeta.filter((m) => m.isZero).length;
-    const nearEdCount = allMeta.filter((m) => m.isNearEd).length;
-    const dijualCount = allMeta.filter((m) => String(m.o.status_aktif || 'AKTIF').toUpperCase() !== 'NONAKTIF').length;
+    let safeCount = 0;
+    let critCount = 0;
+    let habisCount = 0;
+    let nearEdCount = 0;
+    let dijualCount = 0;
+    let potensiRugiCount = 0;
+    let totalItemFisik = 0;
+    let totalValuasiHpp = 0;
+
+    for (let i = 0; i < totalCount; i++) {
+      const m = allMeta[i];
+      if (m.isZero) {
+        habisCount++;
+      } else if (m.isCritical) {
+        critCount++;
+      } else {
+        safeCount++;
+      }
+      if (m.isNearEd) nearEdCount++;
+      if (m.isDijual) dijualCount++;
+      if (seeCost && m.hpp > 0 && m.harga <= m.hpp) potensiRugiCount++;
+      const s = m.stok > 0 ? m.stok : 0;
+      totalItemFisik += s;
+      if (seeCost && s > 0) totalValuasiHpp += s * m.hpp;
+    }
     const tidakDijualCount = Math.max(0, totalCount - dijualCount);
-    const potensiRugiCount = seeCost ? allMeta.filter((m) => Number(m.hpp || 0) > 0 && Number(m.harga || 0) <= Number(m.hpp || 0)).length : 0;
-    const totalItemFisik = allMeta.reduce((sum, m) => sum + Math.max(0, m.stok), 0);
-    const totalValuasiHpp = seeCost ? allMeta.reduce((sum, m) => sum + (Math.max(0, m.stok) * m.hpp), 0) : 0;
     const hasFilter = Boolean(masterSearchQ || masterFilterGol || masterFilterStok !== 'SEMUA' || masterFilterSediaan !== 'SEMUA' || masterFilterStatusJual !== 'SEMUA' || masterFilterPabrikan !== 'SEMUA' || masterFilterPbf !== 'SEMUA' || masterFilterSuhu !== 'SEMUA');
 
     const totalFiltered = filtered.length;
@@ -3683,15 +3701,78 @@
       return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
     }, masterSearchQ, 'mdObatClearBtn');
   };
-  global.setMasterGol = (g) => { masterFilterGol = g; masterPage = 1; global.renderActiveView(); };
-  global.setMasterKategori = (kat) => { masterFilterKategori = kat || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
-  global.setMasterStokFilter = (f) => { masterFilterStok = f || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
-  global.setMasterSediaan = (s) => { masterFilterSediaan = s || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
-  global.setMasterPabrikan = (p) => { masterFilterPabrikan = p || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
-  global.setMasterPbf = (p) => { masterFilterPbf = p || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
-  global.setMasterSuhu = (sh) => { masterFilterSuhu = sh || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
-  global.setMasterStatusJual = (st) => { masterFilterStatusJual = st || 'SEMUA'; masterPage = 1; global.renderActiveView(); };
-  global.setMasterSort = (s) => { masterSortBy = s || 'NAMA'; masterPage = 1; global.renderActiveView(); };
+  global.setMasterGol = (g) => {
+    masterFilterGol = g;
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterKategori = (kat) => {
+    masterFilterKategori = kat || 'SEMUA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterStokFilter = (f) => {
+    masterFilterStok = f || 'SEMUA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterSediaan = (s) => {
+    masterFilterSediaan = s || 'SEMUA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterPabrikan = (p) => {
+    masterFilterPabrikan = p || 'SEMUA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterPbf = (p) => {
+    masterFilterPbf = p || 'SEMUA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterSuhu = (sh) => {
+    masterFilterSuhu = sh || 'SEMUA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterStatusJual = (st) => {
+    masterFilterStatusJual = st || 'SEMUA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
+  global.setMasterSort = (s) => {
+    masterSortBy = s || 'NAMA';
+    masterPage = 1;
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, masterSearchQ, 'mdObatClearBtn');
+  };
   global.setMasterViewMode = (m) => { masterViewMode = m === 'CARD' ? 'CARD' : 'TABLE'; global.renderActiveView(); };
   global.toggleMasterAdvFilters = () => { masterShowAdvFilters = !masterShowAdvFilters; global.renderActiveView(); };
   global.resetMasterFilter = () => {
@@ -3707,7 +3788,12 @@
     masterSearchQ = '';
     masterSortBy = 'NAMA';
     masterPage = 1;
-    global.renderActiveView();
+    const inp = typeof document !== 'undefined' ? document.getElementById('mdObatSearchInp') : null;
+    if (inp) inp.value = '';
+    _patchMasterResults(() => {
+      const { allMeta, filtered } = _getFilteredMasterObatMeta();
+      return _renderMasterObatResultsHtml(S().canSeeFinancialCost(), allMeta, filtered);
+    }, '', 'mdObatClearBtn');
   };
 
   global.syncAutoDetectGolonganBpom = async () => {
@@ -10134,16 +10220,29 @@
     });
 
     const dq = defectaSearchQ.trim().toLowerCase();
-    const belowMinCount = st.masterObat.filter((o) => S().isLowStock ? S().isLowStock(o) : false).length;
-    const emptyCount = st.masterObat.filter((o) => S().getSellableStok(o.id_obat) <= 0).length;
-    const lowStock = st.masterObat.filter((o) => {
-      if (!forecastMap[o.id_obat] || !forecastMap[o.id_obat].perlu_order) return false;
+    let belowMinCount = 0;
+    let emptyCount = 0;
+    const lowStock = [];
+
+    for (let i = 0; i < st.masterObat.length; i++) {
+      const o = st.masterObat[i];
       const s = S().getSellableStok(o.id_obat);
-      if (defectaStatusFilter === 'KOSONG' && s > 0) return false;
-      if (defectaStatusFilter === 'DIBAWAH_MIN' && !(S().isLowStock ? S().isLowStock(o, s) : false)) return false;
-      if (dq && !`${o.nama_dagang} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase().includes(dq)) return false;
-      return true;
-    });
+      const isLow = S().isLowStock ? S().isLowStock(o, s) : false;
+      if (isLow) belowMinCount++;
+      if (s <= 0) emptyCount++;
+
+      const fc = forecastMap[o.id_obat];
+      if (!fc || !fc.perlu_order) continue;
+      if (defectaStatusFilter === 'KOSONG' && s > 0) continue;
+      if (defectaStatusFilter === 'DIBAWAH_MIN' && !isLow) continue;
+      if (dq) {
+        if (!o._defectaHay) {
+          o._defectaHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase();
+        }
+        if (!o._defectaHay.includes(dq)) continue;
+      }
+      lowStock.push(o);
+    }
     const groupedPbf = {};
     lowStock.forEach((o) => {
       const pbf = o.pbf_utama || 'PBF Reguler Lainnya';
