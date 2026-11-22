@@ -12169,13 +12169,19 @@ S. prn 3 dd 1 tab</textarea>
       global.toast('Peran utama admin tidak dapat diubah atau dihapus!', 'warn');
       return;
     }
-    if (confirm(`Hapus peran "${targetRoleId}"? Staf dengan peran ini akan dikembalikan ke peran default.`)) {
+    window.onsConfirmDelete({
+      title: 'Hapus Peran Akses',
+      itemName: `Peran "${targetRoleId}"`,
+      message: `Apakah Anda yakin ingin menghapus peran <b>"${S().esc(targetRoleId)}"</b>?<br>Staf dengan peran ini akan dikembalikan ke peran default.`,
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Tidak'
+    }, () => {
       const custom = getCustomRoles().filter((r) => r.id !== targetRoleId && r.name !== targetRoleId);
       customRolesList = custom;
       try { localStorage.setItem('ons_custom_roles', JSON.stringify(custom)); } catch (e) {}
       global.toast(`Peran "${targetRoleId}" dihapus!`, 'ok');
       global.renderActiveView();
-    }
+    });
   };
 
   // Modal Tambah & Edit Data User (Images 4 & 5)

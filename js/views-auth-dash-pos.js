@@ -6778,7 +6778,20 @@
     const st = S().AppState;
     if (st.carts.length <= 1) return;
     const c = st.carts[idx];
-    if (c && c.items && c.items.length && !confirm('Hapus tab antrean "' + c.label + '" beserta ' + c.items.length + ' item di dalamnya?')) return;
+    if (c && c.items && c.items.length) {
+      window.onsConfirmDelete({
+        title: 'Tutup Tab Antrean Kasir',
+        itemName: c.label,
+        message: `Hapus tab antrean <b>"${S().esc(c.label)}"</b> beserta <b>${c.items.length} item</b> di dalamnya?`,
+        confirmText: 'Ya, Tutup Tab',
+        cancelText: 'Tidak'
+      }, () => {
+        st.carts.splice(idx, 1);
+        if (st.activeCartIdx >= st.carts.length) st.activeCartIdx = Math.max(0, st.carts.length - 1);
+        global.renderActiveView();
+      });
+      return;
+    }
     st.carts.splice(idx, 1);
     if (st.activeCartIdx >= st.carts.length) st.activeCartIdx = Math.max(0, st.carts.length - 1);
     global.renderActiveView();

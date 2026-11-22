@@ -3383,41 +3383,107 @@
    - Item #8: Keyboard Shortcuts
    ============================================================ */
 
-// ===== ITEM #4: KONFIRMASI HAPUS GLOBAL =====
-window.onsConfirmDelete = function(itemName, onConfirm, onCancel) {
-  const overlay = document.createElement('div');
-  overlay.className = 'ons-confirm-overlay';
-  overlay.innerHTML = `
-    <div class="ons-confirm-box">
-      <div style="text-align:center;margin-bottom:1.5rem">
-        <div style="width:60px;height:60px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;flex-shrink:0">
-          <svg width="30" height="30" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>
+// ===== ITEM #4: KONFIRMASI HAPUS GLOBAL ELEGAN & PROMISE-BASED (YA & TIDAK) =====
+window.onsConfirmDialog = function(opts, onConfirm, onCancel) {
+  return new Promise((resolve) => {
+    const config = typeof opts === 'string' ? { itemName: opts } : (opts || {});
+    const title = config.title || 'Konfirmasi Hapus';
+    const itemName = config.itemName || config.name || '';
+    const message = config.message || (itemName ? `Apakah Anda yakin ingin menghapus <strong class="text-rose-600 font-bold" style="color:#ef4444">${(window.ONSStore && window.ONSStore.esc) ? window.ONSStore.esc(itemName) : itemName}</strong>?` : 'Apakah Anda yakin ingin melanjutkan tindakan ini?');
+    const subtext = config.subtext !== undefined ? config.subtext : 'Data yang dihapus tidak dapat dikembalikan.';
+    const cancelText = config.cancelText || 'Tidak';
+    const confirmText = config.confirmText || 'Ya, Hapus';
+    const isDanger = config.tone !== 'info' && config.tone !== 'warning';
+
+    // Bersihkan dialog lama jika ada yang masih menggantung
+    document.querySelectorAll('.ons-confirm-overlay').forEach((el) => {
+      try { el.remove(); } catch (_) {}
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'ons-confirm-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    overlay.innerHTML = `
+      <div class="ons-confirm-box shadow-2xl">
+        <div style="text-align:center;margin-bottom:1.35rem">
+          <div style="width:60px;height:60px;background:${isDanger ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)'};border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;flex-shrink:0;border:1.5px solid ${isDanger ? 'rgba(239,68,68,0.32)' : 'rgba(245,158,11,0.32)'}">
+            <svg width="28" height="28" fill="none" stroke="${isDanger ? '#ef4444' : '#f59e0b'}" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>
+          </div>
+          <h3 style="font-size:1.15rem;font-weight:800;margin:0 0 0.5rem;color:var(--ons-text-main,#0f172a)">${(window.ONSStore && window.ONSStore.esc) ? window.ONSStore.esc(title) : title}</h3>
+          <div style="color:var(--ons-text-soft,#475569);font-size:0.875rem;margin:0;line-height:1.6">
+            ${message}
+            ${subtext ? `<div style="font-size:0.78rem;opacity:0.85;margin-top:0.45rem;color:var(--ons-text-muted,#64748b)">${(window.ONSStore && window.ONSStore.esc) ? window.ONSStore.esc(subtext) : subtext}</div>` : ''}
+          </div>
         </div>
-        <h3 style="font-size:1.1rem;font-weight:700;margin:0 0 0.5rem;color:var(--ons-text,#1e293b)">Konfirmasi Hapus</h3>
-        <p style="color:var(--ons-text-muted,#64748b);font-size:0.875rem;margin:0;line-height:1.6">
-          Apakah Anda yakin ingin menghapus<br>
-          <strong style="color:#ef4444">${itemName || 'data ini'}</strong>?<br>
-          <span style="font-size:0.8rem;opacity:0.8">Data yang dihapus tidak dapat dikembalikan.</span>
-        </p>
-      </div>
-      <div style="display:flex;gap:0.75rem">
-        <button id="ons-confirm-cancel" style="flex:1;padding:0.65rem;border-radius:0.65rem;border:1px solid var(--ons-border,#e2e8f0);background:transparent;cursor:pointer;font-weight:600;font-size:0.875rem;color:var(--ons-text-muted,#64748b);transition:all 0.15s">Batal</button>
-        <button id="ons-confirm-ok" style="flex:1;padding:0.65rem;border-radius:0.65rem;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;cursor:pointer;font-weight:700;font-size:0.875rem;transition:all 0.15s;box-shadow:0 4px 12px rgba(239,68,68,0.35)">🗑️ Hapus</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  const cancel = () => { overlay.remove(); onCancel && onCancel(); };
-  const confirm = () => { overlay.remove(); onConfirm && onConfirm(); };
-  overlay.querySelector('#ons-confirm-cancel').onclick = cancel;
-  overlay.querySelector('#ons-confirm-ok').onclick = confirm;
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) cancel(); });
-  document.addEventListener('keydown', function escHandler(e) {
-    if (e.key === 'Escape') { cancel(); document.removeEventListener('keydown', escHandler); }
+        <div style="display:flex;gap:0.75rem;align-items:center">
+          <button type="button" id="ons-confirm-cancel" class="ons-confirm-btn-no">
+            ${(window.ONSStore && window.ONSStore.esc) ? window.ONSStore.esc(cancelText) : cancelText}
+          </button>
+          <button type="button" id="ons-confirm-ok" class="ons-confirm-btn-yes">
+            <span>🗑️</span>
+            <span>${(window.ONSStore && window.ONSStore.esc) ? window.ONSStore.esc(confirmText) : confirmText}</span>
+          </button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    let finished = false;
+    const finish = (result) => {
+      if (finished) return;
+      finished = true;
+      document.removeEventListener('keydown', escHandler);
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.14s ease';
+      setTimeout(() => {
+        try { overlay.remove(); } catch (_) {}
+      }, 140);
+
+      if (result) {
+        if (typeof onConfirm === 'function') onConfirm();
+        if (typeof config.onConfirm === 'function') config.onConfirm();
+      } else {
+        if (typeof onCancel === 'function') onCancel();
+        if (typeof config.onCancel === 'function') config.onCancel();
+      }
+      resolve(result);
+    };
+
+    const btnCancel = overlay.querySelector('#ons-confirm-cancel');
+    const btnOk = overlay.querySelector('#ons-confirm-ok');
+    if (btnCancel) btnCancel.onclick = () => finish(false);
+    if (btnOk) btnOk.onclick = () => finish(true);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
+
+    function escHandler(e) {
+      if (e.key === 'Escape') finish(false);
+      else if (e.key === 'Enter' && document.activeElement !== btnCancel) finish(true);
+    }
+    document.addEventListener('keydown', escHandler);
+
+    if (btnCancel) setTimeout(() => btnCancel.focus(), 50);
   });
 };
 
-// Shortcut: ganti semua confirm('Hapus?') yang masih ada dengan onsConfirmDelete
-window.onsConfirm = window.onsConfirmDelete; // alias
+window.onsConfirmDelete = function(itemNameOrOpts, onConfirm, onCancel, extraOpts) {
+  if (typeof itemNameOrOpts === 'object' && itemNameOrOpts !== null) {
+    return window.onsConfirmDialog(Object.assign({
+      title: 'Konfirmasi Hapus',
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Tidak'
+    }, itemNameOrOpts), onConfirm, onCancel);
+  }
+  return window.onsConfirmDialog(Object.assign({
+    itemName: itemNameOrOpts,
+    title: 'Konfirmasi Hapus',
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Tidak'
+  }, extraOpts || {}), onConfirm, onCancel);
+};
+
+window.onsConfirm = window.onsConfirmDelete;
 
 // ===== ITEM #5: TOAST NOTIFICATION SYSTEM (Unified with showToast) =====
 window.onsShowToast = function(msg, type, duration, undoOpts) { return showToast(msg, type, duration, undoOpts); };

@@ -169,17 +169,25 @@
   }
 
   function _openDeleteConfirmModal(opts) {
-    S().openModal(`<div class="p-6 space-y-3 text-xs">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-red-600">${S().esc(opts.title)}</h3>
-        <button type="button" onclick="ONSStore.closeModal()" class="text-xl">&times;</button>
-      </div>
-      <p>Anda akan menghapus <b>${S().esc(opts.name)}</b> (<span class="font-mono-num">${S().esc(opts.id)}</span>) dari ${S().esc(opts.entityLabel)}.</p>
-      <div class="flex gap-2 justify-end pt-2">
-        <button type="button" onclick="ONSStore.closeModal()" class="ons-btn ons-btn-ghost text-xs">Batal</button>
-        <button type="button" onclick="${opts.confirmFnName}('${S().esc(opts.id)}')" class="ons-btn ons-btn-danger text-xs">Ya, Hapus</button>
-      </div>
-    </div>`, '420px');
+    window.onsConfirmDelete({
+      title: opts.title || 'Konfirmasi Hapus',
+      itemName: opts.name,
+      message: `Apakah Anda yakin ingin menghapus <b>${S().esc(opts.name)}</b> (<span class="font-mono-num">${S().esc(opts.id)}</span>) dari ${S().esc(opts.entityLabel)}?`,
+      subtext: 'Data yang dihapus tidak dapat dikembalikan.',
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Tidak'
+    }, () => {
+      if (typeof opts.confirmFnName === 'string') {
+        const fnName = opts.confirmFnName.replace(/^window\./, '');
+        if (typeof window[fnName] === 'function') {
+          window[fnName](opts.id);
+        } else if (typeof global[fnName] === 'function') {
+          global[fnName](opts.id);
+        }
+      } else if (typeof opts.confirmFn === 'function') {
+        opts.confirmFn(opts.id);
+      }
+    });
   }
 
   function formatKonversiRasio(sat1, sat2, ras2, sat3, ras3) {
@@ -12589,10 +12597,17 @@
       if (typeof global.toast === 'function') global.toast('Daftar Rencana Pembelian sudah kosong.', 'info');
       return;
     }
-    if (!confirm('Kosongkan seluruh daftar Rencana Pembelian (' + list.length + ' item)? Semua draf usulan pengadaan akan dibersihkan.')) return;
-    _writeLocalList(PLANS_KEY, []);
-    if (typeof global.toast === 'function') global.toast('Daftar Rencana Pembelian berhasil dikosongkan.', 'ok');
-    global.renderActiveView();
+    window.onsConfirmDelete({
+      title: 'Kosongkan Rencana Pengadaan',
+      itemName: `${list.length} item usulan`,
+      message: `Apakah Anda yakin ingin mengosongkan seluruh daftar Rencana Pembelian (<b>${list.length} item</b>)? Semua draf usulan pengadaan akan dibersihkan.`,
+      confirmText: 'Ya, Kosongkan',
+      cancelText: 'Tidak'
+    }, () => {
+      _writeLocalList(PLANS_KEY, []);
+      if (typeof global.toast === 'function') global.toast('Daftar Rencana Pembelian berhasil dikosongkan.', 'ok');
+      global.renderActiveView();
+    });
   };
 
   global.openPenawaranSalesModal = () => {

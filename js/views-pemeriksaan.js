@@ -2633,7 +2633,14 @@
   };
 
   global.deletePemeriksaanRecord = async (idPeriksa) => {
-    if (!confirm('Hapus data pemeriksaan ' + idPeriksa + ' dari riwayat?')) return;
+    const ok = await window.onsConfirmDelete({
+      title: 'Hapus Rekam Pemeriksaan',
+      itemName: idPeriksa,
+      message: `Apakah Anda yakin ingin menghapus data pemeriksaan <b>${S().esc(idPeriksa)}</b> dari riwayat?`,
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Tidak'
+    });
+    if (!ok) return;
     try {
       await API().callApi('pemeriksaan.delete', { id_periksa: idPeriksa }, { isWrite: true });
       S().AppState.pemeriksaanPasien = (S().AppState.pemeriksaanPasien || []).filter((x) => x.id_periksa !== idPeriksa);

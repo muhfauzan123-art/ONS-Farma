@@ -1504,10 +1504,17 @@
   };
 
   global.deleteSpDraftFromLocal = (draftId) => {
-    if (typeof global.confirm === 'function' && !global.confirm('Hapus draf Surat Pesanan ini?')) return;
-    const next = loadSpLocalDrafts().filter((x) => x.id_draft !== draftId);
-    saveSpLocalDrafts(next);
-    global.openSpDraftModal();
+    window.onsConfirmDelete({
+      title: 'Hapus Draf SP',
+      itemName: 'Draf Surat Pesanan',
+      message: 'Apakah Anda yakin ingin menghapus draf Surat Pesanan ini?',
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Tidak'
+    }, () => {
+      const next = loadSpLocalDrafts().filter((x) => x.id_draft !== draftId);
+      saveSpLocalDrafts(next);
+      global.openSpDraftModal();
+    });
   };
 
   global.addSpBulkLowStockItems = () => {
@@ -2063,8 +2070,15 @@
     if (String(sp.status_sp || '').toUpperCase() === 'SELESAI_DITERIMA') {
       return global.toast('Surat Pesanan yang sudah selesai diterima / berfaktur tidak dapat dihapus.', 'warn');
     }
-    const confirmMsg = `Konfirmasi Penghapusan SP:\nApakah Anda yakin ingin MENGHAPUS PERMANEN Surat Pesanan:\n• No. SP: ${sp.no_sp || idSp}\n• Supplier: ${sp.nama_pbf || '-'}\n• Golongan: ${sp.golongan_sp || 'REGULER'}\n\nData yang dihapus tidak dapat dikembalikan.`;
-    if (typeof global.confirm === 'function' && !global.confirm(confirmMsg)) return;
+    const confirmed = await window.onsConfirmDelete({
+      title: 'Konfirmasi Hapus Surat Pesanan',
+      itemName: sp.no_sp || idSp,
+      message: `Apakah Anda yakin ingin menghapus Surat Pesanan:<br><b class="text-blue-600 font-bold">${S().esc(sp.no_sp || idSp)}</b> &bull; Supplier: <b>${S().esc(sp.nama_pbf || '-')}</b> (${S().esc(sp.golongan_sp || 'REGULER')})?`,
+      subtext: 'Data yang dihapus tidak dapat dikembalikan.',
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Tidak'
+    });
+    if (!confirmed) return;
 
     try {
       await API().callApi('sp.delete', { id_sp: idSp }, { isWrite: true });
@@ -2087,8 +2101,15 @@
     if (nonDeletable.length > 0) {
       return global.toast(`${nonDeletable.length} SP yang sudah SELESAI/berfaktur tidak dapat dihapus. Hapus centang pada SP tersebut.`, 'warn');
     }
-    const confirmMsg = `Konfirmasi Hapus Massal:\nApakah Anda yakin ingin MENGHAPUS ${selectedList.length} Surat Pesanan yang dipilih sekaligus?\n\nTindakan ini tidak dapat dibatalkan.`;
-    if (typeof global.confirm === 'function' && !global.confirm(confirmMsg)) return;
+    const confirmed = await window.onsConfirmDelete({
+      title: 'Konfirmasi Hapus Massal',
+      itemName: `${selectedList.length} Surat Pesanan Terpilih`,
+      message: `Apakah Anda yakin ingin menghapus <b>${selectedList.length} Surat Pesanan</b> yang dicentang sekaligus?`,
+      subtext: 'Seluruh data SP terpilih akan dihapus permanen.',
+      confirmText: 'Ya, Hapus Semua',
+      cancelText: 'Tidak'
+    });
+    if (!confirmed) return;
 
     let successCount = 0;
     for (const sp of selectedList) {
