@@ -2534,11 +2534,14 @@
   }
 
   function getStoreProfile() {
+    if (!AppState.storeProfile) {
+      AppState.storeProfile = loadCachedProfile();
+    }
     return _normalizeProfileObject(AppState.storeProfile);
   }
 
   function setStoreProfile(prof) {
-    const cur = (AppState.storeProfile && typeof AppState.storeProfile === 'object') ? AppState.storeProfile : {};
+    const cur = (AppState.storeProfile && typeof AppState.storeProfile === 'object') ? AppState.storeProfile : loadCachedProfile();
     const merged = _normalizeProfileObject(Object.assign({}, cur, prof || {}));
     AppState.storeProfile = merged;
     try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(merged)); } catch (e) {}
@@ -3260,6 +3263,7 @@
     resolveObatJenisSp,
     AppState,
     defaultStoreProfile,
+    loadCachedProfile,
     DEFAULT_MASTER_KATEGORI,
     DEFAULT_MASTER_SATUAN,
     DEFAULT_MASTER_RAK,
