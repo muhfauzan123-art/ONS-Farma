@@ -432,10 +432,11 @@
     const endIdx = masterPageSize === 'ALL' ? totalFiltered : Math.min(startIdx + effectivePageSize, totalFiltered);
     const paged = filtered.slice(startIdx, endIdx);
 
+    const hasPrev = masterPage > 1;
+    const hasNext = masterPage < totalPages;
+
     const _renderPaginationBar = () => {
       if (totalFiltered <= 0) return '';
-      const hasPrev = masterPage > 1;
-      const hasNext = masterPage < totalPages;
       return `<div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border mt-3 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
         <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
           <span>Menampilkan <b class="font-mono-num text-slate-900 dark:text-slate-100">${totalFiltered === 0 ? 0 : (startIdx + 1)}–${endIdx}</b> dari <b class="font-mono-num text-slate-900 dark:text-slate-100">${totalFiltered}</b> obat${hasFilter ? ' (terfilter)' : ''}</span>
@@ -454,9 +455,13 @@
           <button type="button" onclick="window.setMasterPage(1)" ${!hasPrev ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasPrev ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Pertama">&laquo; Pertama</button>
           <button type="button" onclick="window.setMasterPage(${masterPage - 1})" ${!hasPrev ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasPrev ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Sebelumnya">&lsaquo; Prev</button>
           
-          <div class="px-2.5 py-1 rounded-lg font-mono-num font-bold text-xs bg-blue-500/10 text-blue-600 border border-blue-500/20">
-            Hal. ${masterPage} / ${totalPages}
-          </div>
+          <label class="flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-lg cursor-pointer" title="Pilih langsung nomor halaman">
+            <span class="text-[11px]">Hal.</span>
+            <select onchange="window.setMasterPage(this.value)" class="bg-transparent border-0 font-mono-num font-bold text-xs text-blue-600 dark:text-blue-400 cursor-pointer focus:outline-none pr-1">
+              ${Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => `<option value="${p}" ${p === masterPage ? 'selected' : ''} class="text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800">${p}</option>`).join('')}
+            </select>
+            <span class="text-[11px] text-slate-500 font-normal">/ ${totalPages}</span>
+          </label>
 
           <button type="button" onclick="window.setMasterPage(${masterPage + 1})" ${!hasNext ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasNext ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Berikutnya">Next &rsaquo;</button>
           <button type="button" onclick="window.setMasterPage(${totalPages})" ${!hasNext ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs py-1 px-2 rounded-lg border ${!hasNext ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Terakhir">Terakhir &raquo;</button>
@@ -502,6 +507,13 @@
         <button onclick="window.resetMasterFilter()" class="ons-btn ons-btn-ghost text-xs">Reset Filter</button>
       `}
     </div>` : (masterViewMode === 'CARD' ? `
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11.5px]" style="color:var(--ons-text-soft)">
+      <div class="flex items-center gap-2">
+        <span>Menampilkan <b>${totalFiltered === 0 ? 0 : (startIdx + 1)}–${endIdx}</b> dari ${totalCount} produk obat${hasFilter ? ' (terfilter)' : ''}</span>
+        ${hasFilter ? '<button type="button" onclick="window.resetMasterFilter()" class="text-blue-600 font-semibold hover:underline text-xs">&times; Reset Filter</button>' : ''}
+      </div>
+      ${totalPages > 1 ? '<div class="flex items-center gap-1.5"><button type="button" onclick="window.setMasterPage(' + (masterPage - 1) + ')" ' + (!hasPrev ? 'disabled' : '') + ' class="ons-btn ons-btn-ghost text-[11px] py-0.5 px-2 rounded border ' + (!hasPrev ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800') + '" title="Halaman Sebelumnya">&lsaquo; Prev</button><span class="font-mono-num font-bold text-xs text-blue-600 px-1">Hal. ' + masterPage + '/' + totalPages + '</span><button type="button" onclick="window.setMasterPage(' + (masterPage + 1) + ')" ' + (!hasNext ? 'disabled' : '') + ' class="ons-btn ons-btn-ghost text-[11px] py-0.5 px-2 rounded border ' + (!hasNext ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800') + '" title="Halaman Berikutnya">Next &rsaquo;</button></div>' : ''}
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
       ${paged.map((m) => {
         const o = m.o;
@@ -597,8 +609,16 @@
     ${_renderPaginationBar()}` : `
     <div class="ons-card p-3">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11.5px]" style="color:var(--ons-text-soft)">
-        <span>Menampilkan <b>${totalFiltered === 0 ? 0 : (startIdx + 1)}–${endIdx}</b> dari ${totalCount} produk obat (Hal. ${masterPage}/${totalPages})${hasFilter ? ' (terfilter)' : ''}</span>
-        ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="text-blue-600 font-semibold hover:underline">Reset Filter</button>` : '<span>Klik <b>Detail</b> untuk batch FEFO, suhu simpan &amp; substitusi generik</span>'}
+        <div class="flex items-center gap-2">
+          <span>Menampilkan <b>${totalFiltered === 0 ? 0 : (startIdx + 1)}–${endIdx}</b> dari ${totalCount} produk obat${hasFilter ? ' (terfilter)' : ''}</span>
+          ${hasFilter ? `<button type="button" onclick="window.resetMasterFilter()" class="text-blue-600 font-semibold hover:underline text-xs">&times; Reset Filter</button>` : ''}
+        </div>
+        ${totalPages > 1 ? `
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="window.setMasterPage(${masterPage - 1})" ${!hasPrev ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-[11px] py-0.5 px-2 rounded border ${!hasPrev ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Sebelumnya">&lsaquo; Prev</button>
+          <span class="font-mono-num font-bold text-xs text-blue-600 px-1">Hal. ${masterPage}/${totalPages}</span>
+          <button type="button" onclick="window.setMasterPage(${masterPage + 1})" ${!hasNext ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-[11px] py-0.5 px-2 rounded border ${!hasNext ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Halaman Berikutnya">Next &rsaquo;</button>
+        </div>` : '<span>Klik <b>Detail</b> untuk batch FEFO, suhu simpan &amp; substitusi generik</span>'}
       </div>
       <div class="ons-table-wrap">
         <table class="ons-table is-compact">
