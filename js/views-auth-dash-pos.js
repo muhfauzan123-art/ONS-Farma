@@ -1073,7 +1073,7 @@
     const lockMinLogin = Number(cfgLogin.idle_lock_minutes !== undefined ? cfgLogin.idle_lock_minutes : 15);
     const jamOps = prof.jam_operasional || 'Buka Setiap Hari • 08:00 - 22:00';
     const zonaWkt = cfgLogin.zona_waktu || 'WITA';
-    const appVer = (global.ONS_CONFIG && global.ONS_CONFIG.APP_VERSION) || '18.55.0';
+    const appVer = (global.ONS_CONFIG && global.ONS_CONFIG.APP_VERSION) || '18.56.0';
     const multiBranch = !!(S().isMultiBranchEnabled && S().isMultiBranchEnabled());
     const branches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
 

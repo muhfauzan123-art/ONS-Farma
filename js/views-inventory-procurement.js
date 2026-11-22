@@ -6620,9 +6620,9 @@
         <div>
           <h3 class="font-bold text-base flex items-center gap-2">
             <span>&#128229; Import Massal Data Obat (.xlsx / .csv)</span>
-            <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800">Smart Auto-Mapping</span>
+            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300/30">⚡ Turbo Chunking (Anti-Timeout)</span>
           </h3>
-          <p class="mt-0.5" style="color:var(--ons-text-soft)">Unggah file template resmi ONS Farma atau file Excel/CSV dari apotek lain, PBF, atau catatan Anda. Sistem otomatis mengenali variasi nama kolom secara cerdas.</p>
+          <p class="mt-0.5" style="color:var(--ons-text-soft)">Unggah file template resmi ONS Farma atau file Excel/CSV apotek Anda. Dilengkapi sistem batching otomatis (25 item/batch) dengan live progress bar &amp; auto-retry anti-server-sibuk.</p>
         </div>
         <button onclick="ONSStore.closeModal()" class="text-xl leading-none">&times;</button>
       </div>
@@ -6978,18 +6978,189 @@
     }
   };
 
-  global.submitImportObatBulk = async () => {
-    if (!importObatBuffer.length) return global.toast('Pilih file berisi data produk yang valid terlebih dahulu.', 'warn');
+    global.submitImportObatBulk = async () => {
+    if (!importObatBuffer.length) {
+      return global.toast('Pilih file berisi data produk yang valid terlebih dahulu.', 'warn');
+    }
     const chkStok = document.getElementById('chkCreateStokAwal');
     const createStok = chkStok ? chkStok.checked : true;
+    const btnSubmit = document.getElementById('btnSubmitImportObat');
+    const previewBox = document.getElementById('impObatPreview');
+    const fileInput = document.getElementById('impObatFile');
+
+    const totalItems = importObatBuffer.length;
+    // Chunking 25 item per batch: ukuran optimal untuk Google Apps Script (1-2s per call, bebas lock timeout 15s dan execution timeout 30s)
+    const CHUNK_SIZE = 25;
+    const totalChunks = Math.ceil(totalItems / CHUNK_SIZE);
+
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = `<span class="inline-flex items-center gap-2">
+        <svg class="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+        <span>Sedang Mengimport Data (${totalItems} Produk)...</span>
+      </span>`;
+    }
+    if (fileInput) fileInput.disabled = true;
+    if (chkStok) chkStok.disabled = true;
+
+    // Tampilkan Kontainer Progres Live
+    if (previewBox) {
+      previewBox.innerHTML = `
+        <div class="space-y-3 p-1">
+          <div class="flex items-center justify-between">
+            <div class="font-extrabold text-sm flex items-center gap-2 text-slate-800 dark:text-white">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span id="impProgTitle">Sedang Mengimport Data Produk...</span>
+            </div>
+            <span id="impProgPercent" class="font-mono-num font-black text-sm text-emerald-600 dark:text-emerald-400">0%</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden shadow-inner">
+            <div id="impProgressBar" class="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 transition-all duration-300 rounded-full" style="width: 0%"></div>
+          </div>
+
+          <!-- Mini Stats Cockpit -->
+          <div class="grid grid-cols-3 gap-2 text-center text-[11px] pt-1">
+            <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <div class="text-slate-500 dark:text-slate-400 font-medium">Item Selesai</div>
+              <div id="impStatProcessed" class="font-black text-sm text-emerald-600 dark:text-emerald-400">0 / ${totalItems}</div>
+            </div>
+            <div class="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+              <div class="text-slate-500 dark:text-slate-400 font-medium">Batch Berjalan</div>
+              <div id="impStatBatch" class="font-black text-sm text-blue-600 dark:text-blue-400">1 / ${totalChunks}</div>
+            </div>
+            <div class="p-2 rounded-xl bg-teal-500/10 border border-teal-500/20">
+              <div class="text-slate-500 dark:text-slate-400 font-medium">Stok Masuk</div>
+              <div id="impStatStock" class="font-black text-sm text-teal-600 dark:text-teal-400">0 Batch</div>
+            </div>
+          </div>
+
+          <!-- Live Activity Log -->
+          <div id="impProgLog" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 font-mono text-[10.5px] text-slate-600 dark:text-slate-300 max-h-28 overflow-y-auto space-y-1">
+            <div>🚀 Menggunakan sistem batch turbo (${CHUNK_SIZE} item/batch) anti-timeout &amp; anti-server-sibuk.</div>
+          </div>
+        </div>
+      `;
+    }
+
+    const logEl = document.getElementById('impProgLog');
+    const pBar = document.getElementById('impProgressBar');
+    const pPct = document.getElementById('impProgPercent');
+    const sProc = document.getElementById('impStatProcessed');
+    const sBat = document.getElementById('impStatBatch');
+    const sStk = document.getElementById('impStatStock');
+    const pTitle = document.getElementById('impProgTitle');
+
+    const addLog = (msg) => {
+      if (logEl) {
+        const div = document.createElement('div');
+        div.innerHTML = msg;
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    };
+
+    let totalInserted = 0;
+    let totalUpdated = 0;
+    let totalStockBatches = 0;
+    let totalProcessed = 0;
+
+    for (let c = 0; c < totalChunks; c++) {
+      const startIdx = c * CHUNK_SIZE;
+      const endIdx = Math.min(startIdx + CHUNK_SIZE, totalItems);
+      const chunkItems = importObatBuffer.slice(startIdx, endIdx);
+      const chunkNumber = c + 1;
+
+      if (sBat) sBat.textContent = `${chunkNumber} / ${totalChunks}`;
+      if (pTitle) pTitle.textContent = `Memproses Batch ${chunkNumber} dari ${totalChunks} (${chunkItems.length} produk)...`;
+      addLog(`⏳ Mengirim Batch ${chunkNumber}/${totalChunks} (Item ${startIdx + 1}–${endIdx})...`);
+
+      let chunkSuccess = false;
+      let lastErr = null;
+
+      // Smart Retry: otomatis coba ulang hingga 3x jika server sedang sibuk (503 / lock timeout)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await API().callApi('obat.bulkImport', { items: chunkItems, create_stok_awal: createStok }, { isWrite: true });
+          const ins = res.inserted !== undefined ? res.inserted : 0;
+          const upd = res.updated !== undefined ? res.updated : 0;
+          const stk = res.stock_batches_created !== undefined ? res.stock_batches_created : 0;
+
+          totalInserted += ins;
+          totalUpdated += upd;
+          totalStockBatches += stk;
+          totalProcessed += chunkItems.length;
+
+          const pct = Math.round((totalProcessed / totalItems) * 100);
+          if (pBar) pBar.style.width = `${pct}%`;
+          if (pPct) pPct.textContent = `${pct}%`;
+          if (sProc) sProc.textContent = `${totalProcessed} / ${totalItems}`;
+          if (sStk) sStk.textContent = `${totalStockBatches} Batch`;
+
+          addLog(`✅ Batch ${chunkNumber} selesai! (${ins} baru, ${upd} update, ${stk} batch stok)`);
+          chunkSuccess = true;
+          break;
+        } catch (e) {
+          lastErr = e;
+          const isBusy = (e.message && /sibuk|busy|lock|timeout|melebihi/i.test(e.message)) || e.code === 503 || e.code === 504;
+          if (isBusy && attempt < 3) {
+            addLog(`⚠️ <span class="text-amber-500 font-bold">Server sedang padat. Menunggu 2 detik lalu mencoba ulang batch ${chunkNumber} (Percobaan ${attempt + 1}/3)...</span>`);
+            await new Promise((res) => setTimeout(res, 2000));
+          } else {
+            break;
+          }
+        }
+      }
+
+      if (!chunkSuccess) {
+        addLog(`❌ <span class="text-red-500 font-bold">Batch ${chunkNumber} gagal: ${lastErr ? lastErr.message : 'Kesalahan jaringan'}</span>`);
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Coba Lanjutkan Import';
+        }
+        if (fileInput) fileInput.disabled = false;
+        if (chkStok) chkStok.disabled = false;
+        global.toast(`Import terhenti di batch ${chunkNumber}: ${lastErr ? lastErr.message : 'Gagal'}. Sebagian data (${totalProcessed} item) sudah berhasil masuk.`, 'err');
+        await global.bootLoadState(true);
+        return;
+      }
+
+      // Jeda 150ms antar-batch agar server Apps Script stabil
+      if (c < totalChunks - 1) {
+        await new Promise((res) => setTimeout(res, 150));
+      }
+    }
+
+    // Selesai 100%!
+    if (pBar) pBar.style.width = '100%';
+    if (pPct) pPct.textContent = '100%';
+    if (pTitle) pTitle.innerHTML = '🎉 <span class="text-emerald-600 dark:text-emerald-400 font-black">Import Selesai 100%!</span>';
+    addLog(`🎉 <b>Semua ${totalItems} produk berhasil diproses! Memperbarui data lokal...</b>`);
+
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.className = 'ons-btn ons-btn-emerald w-full min-h-[42px] font-bold text-sm shadow';
+      btnSubmit.innerHTML = `✓ Selesai (${totalProcessed} Produk Berhasil Diimport) - Tutup`;
+      btnSubmit.onclick = () => {
+        S().closeModal();
+      };
+    }
+
+    const stockMsg = totalStockBatches > 0 ? ` & ${totalStockBatches} batch stok awal masuk gudang` : '';
+    global.toast(`Import sukses! ${totalProcessed} produk berhasil diimport (${totalInserted} baru, ${totalUpdated} diperbarui)${stockMsg}.`, 'ok');
+
     try {
-      const res = await API().callApi('obat.bulkImport', { items: importObatBuffer, create_stok_awal: createStok }, { isWrite: true });
-      S().closeModal();
-      const cnt = res.imported !== undefined ? res.imported : ((res.inserted || 0) + (res.updated || 0) || importObatBuffer.length);
-      const stockMsg = res.stock_batches_created ? ` & ${res.stock_batches_created} batch stok awal masuk gudang` : '';
-      global.toast(`Import berhasil! ${cnt} produk diperbarui${stockMsg}.`, 'ok');
       await global.bootLoadState(true);
-    } catch (e) { global.toast(e.message, 'err'); }
+      if (typeof window.renderMasterDataResults === 'function') {
+        window.renderMasterDataResults();
+      }
+    } catch (_) {}
+
+    // Auto-close modal setelah 2.2 detik agar pengguna melihat konfirmasi visual
+    setTimeout(() => {
+      try { S().closeModal(); } catch (_) {}
+    }, 2200);
   };
   global._getImportObatBuffer = () => importObatBuffer;
 
