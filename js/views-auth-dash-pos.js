@@ -1512,29 +1512,59 @@
     const prevHtml = btn ? btn.innerHTML : '';
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = `${_loginIco('clock', 'w-4 h-4')}<span>Memverifikasi Sesi &amp; Memuat Data...</span>`;
+      btn.innerHTML = `<span class="ons-spinner-sm inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span><span>Memverifikasi akun...</span>`;
     }
     try {
-      const res = await API().callApi('auth.login', { username, password: password || (API().isDemoMode() ? 'demo-sandbox' : ''), cabang_id: branch, include_boot: true }, { isWrite: true, token: '' });
+      // 1. Decoupled Fast Auth: include_boot: false ensures instantaneous (~1s) response from GAS
+      const res = await API().callApi('auth.login', {
+        username,
+        password: password || (API().isDemoMode() ? 'demo-sandbox' : ''),
+        cabang_id: branch,
+        include_boot: false
+      }, { isWrite: true, token: '' });
+
       const passEl = document.getElementById('loginPass');
       if (passEl) passEl.value = '';
+
+      // 2. Set Session & Active User State immediately
       API().setSession({ token: res.token, user: res.user, cabang_id: branch, shift });
       S().AppState.user = res.user;
       S().AppState.cabangId = branch;
       S().AppState.needsPasswordUpgrade = !!(res.security_notice && res.security_notice.needs_password_upgrade);
       if (shift === 'MALAM') S().toggleDarkMode(true);
       S().AppState.activeView = 'dashboard';
-      if (res.boot && typeof global.applyBootPayload === 'function') {
-        if (API() && typeof API().setCachedRead === 'function') {
-          API().setCachedRead('boot.getState', { cabang_id: branch }, res.boot);
-        }
-        global.applyBootPayload(res.boot);
+
+      // 3. SWR Decoupled Dashboard Entry:
+      // Check if boot data is already cached in localStorage for this branch
+      const cachedBoot = (API() && typeof API().getCachedRead === 'function')
+        ? API().getCachedRead('boot.getState', { cabang_id: branch })
+        : null;
+
+      if (cachedBoot && typeof global.applyBootPayload === 'function') {
+        // Instant Render in 0ms: User immediately enters the dashboard without waiting!
+        global.applyBootPayload(cachedBoot);
         S().AppState.booted = true;
         global.renderApp();
+        global.toast('Selamat datang, ' + res.user.nama_lengkap, 'ok');
+
+        // Silent SWR background refresh: fetches live delta without blocking UI
+        if (typeof global.bootLoadState === 'function') {
+          global.bootLoadState(false).catch(() => {});
+        }
       } else {
+        // Cold start (first time on this device / cache empty):
+        // Transition to app layout immediately so user is never stuck on login card
+        global.renderApp();
+        if (typeof global.showViewSkeleton === 'function') {
+          global.showViewSkeleton('dashboard');
+        }
+        global.toast('Menyambungkan katalog apotek...', 'info');
+
+        // Fetch live state
         await global.bootLoadState(true);
+        global.toast('Selamat datang, ' + res.user.nama_lengkap, 'ok');
       }
-      global.toast('Selamat datang, ' + res.user.nama_lengkap, 'ok');
+
       if (S().AppState.needsPasswordUpgrade && !API().isDemoMode()) {
         setTimeout(() => global.toast('Peringatan Keamanan: Segera ganti sandi & PIN awal Anda di Pengaturan -> Akun.', 'warn'), 1200);
       }
