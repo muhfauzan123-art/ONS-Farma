@@ -5933,11 +5933,20 @@
                         </div>
                       </div>
                       <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">Total butir dalam 1 box (cth: 5 Strip × 10 = 50).</div>
+                      <!-- Peringatan Rasio & Tombol Koreksi Otomatis -->
+                      <div id="satuanRatioWarning" class="pt-1"></div>
                     </div>
                   </div>
 
                   <!-- Kotak Penjelasan Aktif Saat Kolom Diklik -->
                   <div id="satuanHelpCard" class="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20 transition-all">
+                    <!-- Tab Pemilih Petunjuk Interaktif -->
+                    <div class="flex items-center gap-1.5 mb-2.5 pb-2 border-b border-blue-200/60 dark:border-blue-800/60 flex-wrap">
+                      <span class="text-[10px] font-bold text-slate-500 uppercase mr-1">Petunjuk Aktif:</span>
+                      <button type="button" onclick="window.setSatuanActiveHelp(1)" id="tabHelpSat1" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-blue-600 text-white shadow-2xs">1️⃣ Satuan 1 (Eceran)</button>
+                      <button type="button" onclick="window.setSatuanActiveHelp(2)" id="tabHelpSat2" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50">2️⃣ Satuan 2 (Sedang)</button>
+                      <button type="button" onclick="window.setSatuanActiveHelp(3)" id="tabHelpSat3" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-purple-50">3️⃣ Satuan 3 (Besar / Box)</button>
+                    </div>
                     <div class="flex items-start gap-2.5">
                       <span class="text-xl shrink-0 mt-0.5">💡</span>
                       <div class="space-y-1">
@@ -5951,6 +5960,9 @@
                       </div>
                     </div>
                   </div>
+
+                  <!-- Diagram Alur Kemasan (Visual Box Hierarchy) -->
+                  <div id="satuanDiagramCard" class="transition-all"></div>
 
                   <!-- Live Human Simulation Banner (Diperbarui Real-time) -->
                   <div id="satuanLiveSimulator" class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
@@ -5992,7 +6004,7 @@
                     <!-- Harga Jual 1 -->
                     <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                       <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
-                        <span>Harga Jual 1 (Satuan 1 - Terendah)</span>
+                        <span id="wizLblHrgUmum">Harga Jual 1 (Satuan 1 - Terendah)</span>
                         <span class="text-red-500 font-bold">*</span>
                       </label>
                       <input id="wHrgUmum" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-blue-600 dark:text-blue-400" value="${S().formatDots(o.harga_jual_1 !== undefined && o.harga_jual_1 !== '' ? o.harga_jual_1 : o.harga_umum)}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="0"/>
@@ -6000,21 +6012,31 @@
                     </div>
                     <!-- Harga Jual 2 -->
                     <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
-                        <span>Harga Jual 2 (Satuan 2)</span>
-                        <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
-                      </label>
+                      <div class="flex items-center justify-between mb-1">
+                        <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                          <span id="wizLblHrgSed">Harga Jual 2 (Satuan 2)</span>
+                        </label>
+                        <div class="flex items-center gap-1" id="wizHrgSedQuickBar">
+                          <button type="button" onclick="window.setObatHargaKemasan(2, 'normal')" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-600 dark:text-slate-300" title="Samakan total dengan beli eceran">⚡ = Eceran</button>
+                          <button type="button" onclick="window.setObatHargaKemasan(2, 'diskon5')" class="text-[10px] py-0.5 px-2 rounded-md border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold" title="Beri diskon grosir 5%">⚡ Diskon 5%</button>
+                        </div>
+                      </div>
                       <input id="wHrgSed" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-emerald-600 dark:text-emerald-400" value="${S().formatDots(o.harga_jual_2 !== undefined && o.harga_jual_2 !== '' ? o.harga_jual_2 : (o.harga_sedang || o.harga_strip || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga 1 × Rasio 2)"/>
-                      <div class="text-[11px] text-slate-400 mt-1">Kosongkan jika otomatis = Harga 1 &times; Rasio 2.</div>
+                      <div id="wizSubHrgSed" class="text-[11px] text-slate-400 mt-1">Kosongkan jika otomatis = Harga 1 &times; Rasio 2.</div>
                     </div>
                     <!-- Harga Jual 3 -->
                     <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                      <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
-                        <span>Harga Jual 3 (Satuan 3)</span>
-                        <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
-                      </label>
+                      <div class="flex items-center justify-between mb-1">
+                        <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                          <span id="wizLblHrgBes">Harga Jual 3 (Satuan 3)</span>
+                        </label>
+                        <div class="flex items-center gap-1" id="wizHrgBesQuickBar">
+                          <button type="button" onclick="window.setObatHargaKemasan(3, 'normal')" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-600 dark:text-slate-300" title="Samakan total dengan beli eceran">⚡ = Eceran</button>
+                          <button type="button" onclick="window.setObatHargaKemasan(3, 'diskon5')" class="text-[10px] py-0.5 px-2 rounded-md border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 font-semibold" title="Beri diskon dus 5%">⚡ Diskon 5%</button>
+                        </div>
+                      </div>
                       <input id="wHrgBes" type="text" inputmode="numeric" class="${inpCls} ons-currency-input font-mono-num font-bold text-purple-600 dark:text-purple-400" value="${S().formatDots(o.harga_jual_3 !== undefined && o.harga_jual_3 !== '' ? o.harga_jual_3 : (o.harga_besar || o.harga_box || ''))}" oninput="window.maskNumberInput(this); window.updateObatWizardPreview();" placeholder="Otomatis (Harga 1 × Rasio 3)"/>
-                      <div class="text-[11px] text-slate-400 mt-1">Kosongkan jika otomatis = Harga 1 &times; Rasio 3.</div>
+                      <div id="wizSubHrgBes" class="text-[11px] text-slate-400 mt-1">Kosongkan jika otomatis = Harga 1 &times; Rasio 3.</div>
                     </div>
                   </div>
                   <div id="wizStep4MarginHint" class="hidden p-3 rounded-xl border border-red-400 bg-red-500/10 text-red-600 font-semibold text-xs"></div>
@@ -6069,6 +6091,7 @@
                       <div class="font-extrabold text-xs uppercase tracking-wide text-emerald-600 flex items-center gap-1.5">
                         <span>💰</span><span>Satuan &amp; Harga Jual</span>
                       </div>
+                      <div id="wSumHierarchyBadge"></div>
                       <div class="space-y-1.5">
                         <div class="flex justify-between items-center"><span class="text-slate-500">Satuan 1 (Eceran):</span><b id="wSumSatD">-</b></div>
                         <div class="flex justify-between items-center"><span class="text-slate-500">Konversi Kemasan:</span><span id="wSumRasio" class="font-mono-num font-bold text-blue-600">-</span></div>
@@ -6261,6 +6284,80 @@
     setTxt('wizPrevUmum', `${S().rp(umum)} / ${satD || 'Unit'}`);
     setTxt('wizPrevHpp', `HPP: ${S().rp(hpp)}`);
 
+    // Dynamic Step 4 Labels & Wholesale Discount Calculations
+    const lblHrg1 = document.getElementById('wizLblHrgUmum');
+    if (lblHrg1) lblHrg1.textContent = `Harga Jual 1 (Eceran per ${satD || 'Satuan 1'})`;
+
+    const lblHrg2 = document.getElementById('wizLblHrgSed');
+    if (lblHrg2) lblHrg2.textContent = `Harga Jual 2 (${valid2 ? 'Kemasan ' + satS : (satS ? 'Kemasan ' + satS : 'Satuan 2 - Opsional')})`;
+
+    const subHrg2 = document.getElementById('wizSubHrgSed');
+    if (subHrg2) {
+      if (!valid2) {
+        subHrg2.innerHTML = `<span class="text-slate-400 italic">Satuan 2 tidak aktif. Pasien beli eceran per ${S().esc(satD || 'Unit')}.</span>`;
+      } else {
+        const normalSed = umum * rasS;
+        if (hSed > 0 && hSed < normalSed) {
+          const hemat = normalSed - hSed;
+          const pct = Math.round((hemat / normalSed) * 100);
+          subHrg2.innerHTML = `<span class="text-emerald-600 font-bold">🎉 Diskon Grosir: Hemat ${S().rp(hemat)} (-${pct}%) dibanding eceran.</span>`;
+        } else if (hSed > 0 && hSed > normalSed) {
+          subHrg2.innerHTML = `<span class="text-red-500 font-semibold">⚠️ Harga ${S().rp(hSed)} lebih mahal dari eceran (${S().rp(normalSed)}).</span>`;
+        } else {
+          subHrg2.innerHTML = `<span class="text-slate-500">Otomatis setara eceran: ${S().rp(umum)} &times; ${rasS} = <b>${S().rp(normalSed)}</b></span>`;
+        }
+      }
+    }
+
+    const lblHrg3 = document.getElementById('wizLblHrgBes');
+    if (lblHrg3) lblHrg3.textContent = `Harga Jual 3 (${valid3 ? 'Kemasan ' + satB : (satB ? 'Kemasan ' + satB : 'Satuan 3 - Opsional')})`;
+
+    const subHrg3 = document.getElementById('wizSubHrgBes');
+    if (subHrg3) {
+      if (!valid3) {
+        subHrg3.innerHTML = `<span class="text-slate-400 italic">Satuan 3 tidak aktif.</span>`;
+      } else {
+        const normalBes = umum * rasB;
+        if (hBes > 0 && hBes < normalBes) {
+          const hemat = normalBes - hBes;
+          const pct = Math.round((hemat / normalBes) * 100);
+          subHrg3.innerHTML = `<span class="text-purple-600 font-bold">🎉 Diskon Box/Dus: Hemat ${S().rp(hemat)} (-${pct}%) dibanding eceran.</span>`;
+        } else if (hBes > 0 && hBes > normalBes) {
+          subHrg3.innerHTML = `<span class="text-red-500 font-semibold">⚠️ Harga ${S().rp(hBes)} lebih mahal dari eceran (${S().rp(normalBes)}).</span>`;
+        } else {
+          subHrg3.innerHTML = `<span class="text-slate-500">Otomatis setara eceran: ${S().rp(umum)} &times; ${rasB} = <b>${S().rp(normalBes)}</b></span>`;
+        }
+      }
+    }
+
+    // Dynamic Step 5 Visual Hierarchy Badge
+    const sumHBadge = document.getElementById('wSumHierarchyBadge');
+    if (sumHBadge) {
+      if (valid2 && valid3) {
+        const stripInBox = (rasS > 1 && rasB >= rasS && rasB % rasS === 0) ? (rasB / rasS) : null;
+        sumHBadge.innerHTML = `
+          <div class="p-2 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 text-[11px] font-semibold text-blue-900 dark:text-blue-200 flex items-center justify-between flex-wrap gap-1">
+            <span>📦 1 ${S().esc(satB)} = ${rasB} ${S().esc(satD || 'Unit')} ${stripInBox ? `(${stripInBox} ${S().esc(satS)})` : ''}</span>
+            <span>➔</span>
+            <span>🏷️ 1 ${S().esc(satS)} = ${rasS} ${S().esc(satD || 'Unit')}</span>
+            <span>➔</span>
+            <span>💊 1 ${S().esc(satD || 'Unit')}</span>
+          </div>`;
+      } else if (valid2) {
+        sumHBadge.innerHTML = `
+          <div class="p-2 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 text-[11px] font-semibold text-emerald-900 dark:text-emerald-200 flex items-center justify-between flex-wrap gap-1">
+            <span>🏷️ 1 ${S().esc(satS)} = ${rasS} ${S().esc(satD || 'Unit')}</span>
+            <span>➔</span>
+            <span>💊 1 ${S().esc(satD || 'Unit')}</span>
+          </div>`;
+      } else {
+        sumHBadge.innerHTML = `
+          <div class="p-2 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 text-[11px] font-semibold text-blue-900 dark:text-blue-200">
+            <span>🧴 Satuan Tunggal: 1 ${S().esc(satD || 'Unit')}</span>
+          </div>`;
+      }
+    }
+
     // Review Summary in Step 5
     setTxt('wSumNama', nama || '- (Belum diisi)');
     setTxt('wSumZat', zat || '-');
@@ -6273,8 +6370,22 @@
     setTxt('wSumRasio', rasioTxt);
     setTxt('wSumHpp', S().rp(hpp));
     setTxt('wSumHrgUmum', `${S().rp(umum)} / ${satD || 'Unit'}`);
-    setTxt('wSumHrgSed', valid2 ? `${S().rp(hSed)} / ${satS} (${rasS} ${satD || 'Unit'})` : '- (Tidak diisi)');
-    setTxt('wSumHrgBes', valid3 ? `${S().rp(hBes)} / ${satB} (${rasB} ${satD || 'Unit'})` : '- (Tidak diisi)');
+    
+    let hrgSedSummary = '- (Tidak diisi)';
+    if (valid2) {
+      const normalSed = umum * rasS;
+      const hematSed = (hSed > 0 && hSed < normalSed) ? ` (Hemat ${S().rp(normalSed - hSed)})` : '';
+      hrgSedSummary = `${S().rp(hSed)} / ${satS} (${rasS} ${satD || 'Unit'})${hematSed}`;
+    }
+    setTxt('wSumHrgSed', hrgSedSummary);
+
+    let hrgBesSummary = '- (Tidak diisi)';
+    if (valid3) {
+      const normalBes = umum * rasB;
+      const hematBes = (hBes > 0 && hBes < normalBes) ? ` (Hemat ${S().rp(normalBes - hBes)})` : '';
+      hrgBesSummary = `${S().rp(hBes)} / ${satB} (${rasB} ${satD || 'Unit'})${hematBes}`;
+    }
+    setTxt('wSumHrgBes', hrgBesSummary);
     setTxt('wSumDefecta', stokMin > 0 ? `Min: ${stokMin}, Max: ${stokMax}` : '- (Tidak diisi)');
 
     const badge = document.getElementById('wizPrevBpom');
@@ -6325,6 +6436,157 @@
         ${valid2 ? `<div><div class="text-[10px] text-slate-400">Harga 2</div><div class="font-bold text-emerald-600">${S().rp(hSed)}</div><div class="text-[9px] text-slate-400">/${satS}</div></div>` : ''}
         ${valid3 ? `<div><div class="text-[10px] text-slate-400">Harga 3</div><div class="font-bold text-purple-600">${S().rp(hBes)}</div><div class="text-[9px] text-slate-400">/${satB}</div></div>` : ''}
         ${!valid2 && !valid3 ? `<div><div class="text-[10px] text-slate-400">Kemasan</div><div class="font-semibold text-slate-400 text-[10px]">Tunggal</div></div>` : ''}`;
+    }
+
+    // 1. Peringatan Cerdas Rasio & Tombol Perbaikan 1-Klik
+    const ratioWarnBox = document.getElementById('satuanRatioWarning');
+    if (ratioWarnBox) {
+      let warnHtml = '';
+      if (satD && satS && satD.toLowerCase() === satS.toLowerCase()) {
+        warnHtml = `<div class="p-2.5 rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200 text-xs font-semibold flex items-center gap-2"><span>⚠️</span><span>Nama Satuan 1 ("${S().esc(satD)}") dan Satuan 2 ("${S().esc(satS)}") tidak boleh sama.</span></div>`;
+      } else if (satD && satB && satD.toLowerCase() === satB.toLowerCase()) {
+        warnHtml = `<div class="p-2.5 rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200 text-xs font-semibold flex items-center gap-2"><span>⚠️</span><span>Nama Satuan 1 ("${S().esc(satD)}") dan Satuan 3 ("${S().esc(satB)}") tidak boleh sama.</span></div>`;
+      } else if (satS && satB && satS.toLowerCase() === satB.toLowerCase()) {
+        warnHtml = `<div class="p-2.5 rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200 text-xs font-semibold flex items-center gap-2"><span>⚠️</span><span>Nama Satuan 2 ("${S().esc(satS)}") dan Satuan 3 ("${S().esc(satB)}") tidak boleh sama.</span></div>`;
+      } else if (satS && satB && rasS > 1 && rasB > 1 && rasB < rasS) {
+        const suggestedTotal = rasB * rasS;
+        warnHtml = `
+          <div class="p-3 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-start gap-2">
+              <span class="text-base shrink-0">⚠️</span>
+              <div>
+                <div class="font-bold">Tips Koreksi Rasio Box (Satuan 3):</div>
+                <div>Rasio ${S().esc(satB)} (${rasB}) lebih kecil dari ${S().esc(satS)} (${rasS}). Biasanya 1 ${S().esc(satB)} berisi ${rasB} ${S().esc(satS)} &times; ${rasS} = <b>${suggestedTotal} ${S().esc(satD || 'Tablet')}</b>.</div>
+              </div>
+            </div>
+            <button type="button" onclick="window.fixSatuanRasioBox(${suggestedTotal})" class="ons-btn ons-btn-warning ons-btn-xs shrink-0 font-bold py-1.5 px-3">
+              ⚡ Ubah jadi ${suggestedTotal} ${S().esc(satD || 'Tablet')}
+            </button>
+          </div>`;
+      }
+      ratioWarnBox.innerHTML = warnHtml;
+    }
+
+    // 2. Diagram Alur Kemasan (Visual Box Hierarchy)
+    const diagBox = document.getElementById('satuanDiagramCard');
+    if (diagBox) {
+      const s1 = satD || 'Unit';
+      let diagHtml = '';
+      if (!valid2 && !valid3) {
+        diagHtml = `
+          <div class="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/20 text-center space-y-1">
+            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">📊 Diagram Alur Kemasan (Satuan Tunggal):</div>
+            <div class="inline-flex items-center gap-2 p-2 px-4 rounded-xl bg-blue-500/10 border border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-extrabold text-xs">
+              <span>🧴 1 ${S().esc(s1)}</span>
+              <span class="text-[10px] font-normal text-blue-600 dark:text-blue-400">• Unit Tunggal (Tanpa Pecahan Eceran)</span>
+            </div>
+          </div>`;
+      } else if (valid2 && !valid3) {
+        diagHtml = `
+          <div class="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <span>📊</span><span>Bagan Alur Kemasan (2 Tingkat):</span>
+              </span>
+              <span class="text-[11px] font-mono-num font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                1 ${S().esc(satS)} = ${rasS} ${S().esc(s1)}
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-2 text-center max-w-lg mx-auto">
+              <div class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-0.5">
+                <div class="text-[10px] font-bold text-emerald-600 uppercase">🏷️ Kemasan Sedang</div>
+                <div class="font-extrabold text-xs text-emerald-900 dark:text-emerald-200">1 ${S().esc(satS)}</div>
+                <div class="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono-num font-semibold">Isi ${rasS} ${S().esc(s1)}</div>
+              </div>
+              <div class="flex flex-col items-center justify-center text-slate-400 py-1 sm:py-0">
+                <span class="text-[10px] font-bold text-emerald-600 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/40">isi ${rasS} ${S().esc(s1)}</span>
+                <span class="text-base leading-none text-emerald-500">➔</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-0.5">
+                <div class="text-[10px] font-bold text-blue-600 uppercase">💊 Eceran Terkecil</div>
+                <div class="font-extrabold text-xs text-blue-900 dark:text-blue-200">1 ${S().esc(s1)}</div>
+                <div class="text-[10px] text-blue-700 dark:text-blue-400 font-semibold">Unit Dasar Kasir</div>
+              </div>
+            </div>
+          </div>`;
+      } else if (!valid2 && valid3) {
+        diagHtml = `
+          <div class="p-3.5 rounded-xl border border-purple-200 dark:border-purple-900/50 bg-purple-50/20 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <span>📊</span><span>Bagan Alur Kemasan (2 Tingkat):</span>
+              </span>
+              <span class="text-[11px] font-mono-num font-bold text-purple-600 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
+                1 ${S().esc(satB)} = ${rasB} ${S().esc(s1)}
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-2 text-center max-w-lg mx-auto">
+              <div class="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 space-y-0.5">
+                <div class="text-[10px] font-bold text-purple-600 uppercase">📦 Kemasan Besar</div>
+                <div class="font-extrabold text-xs text-purple-900 dark:text-purple-200">1 ${S().esc(satB)}</div>
+                <div class="text-[10px] text-purple-700 dark:text-purple-400 font-mono-num font-semibold">Isi ${rasB} ${S().esc(s1)}</div>
+              </div>
+              <div class="flex flex-col items-center justify-center text-slate-400 py-1 sm:py-0">
+                <span class="text-[10px] font-bold text-purple-600 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-purple-100 dark:border-purple-900/40">isi ${rasB} ${S().esc(s1)}</span>
+                <span class="text-base leading-none text-purple-500">➔</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-0.5">
+                <div class="text-[10px] font-bold text-blue-600 uppercase">💊 Eceran Terkecil</div>
+                <div class="font-extrabold text-xs text-blue-900 dark:text-blue-200">1 ${S().esc(s1)}</div>
+                <div class="text-[10px] text-blue-700 dark:text-blue-400 font-semibold">Unit Dasar Kasir</div>
+              </div>
+            </div>
+          </div>`;
+      } else {
+        const stripInBox = (rasS > 1 && rasB >= rasS && rasB % rasS === 0) ? (rasB / rasS) : null;
+        const stripLabel = stripInBox ? `isi ${stripInBox} ${S().esc(satS)}` : `isi ${rasB} ${S().esc(s1)}`;
+        const headerFormula = stripInBox
+          ? `1 ${S().esc(satB)} = ${stripInBox} ${S().esc(satS)} = ${rasB} ${S().esc(s1)}`
+          : `1 ${S().esc(satB)} = ${rasB} ${S().esc(s1)} | 1 ${S().esc(satS)} = ${rasS} ${S().esc(s1)}`;
+
+        diagHtml = `
+          <div class="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-gradient-to-r from-purple-500/5 via-emerald-500/5 to-blue-500/5 space-y-2">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <span>📊</span><span>Bagan Alur Kemasan (3 Tingkat Bertingkat):</span>
+              </span>
+              <span class="text-[11px] font-mono-num font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                ${headerFormula}
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-5 items-center gap-2 text-center">
+              <!-- Kemasan 3 -->
+              <div class="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 space-y-0.5">
+                <div class="text-[10px] font-bold text-purple-600 uppercase">📦 Kemasan Besar</div>
+                <div class="font-extrabold text-xs text-purple-900 dark:text-purple-200">1 ${S().esc(satB)}</div>
+                <div class="text-[10px] text-purple-700 dark:text-purple-400 font-mono-num font-semibold">${rasB} ${S().esc(s1)} ${stripInBox ? `(${stripInBox} ${S().esc(satS)})` : ''}</div>
+              </div>
+              <!-- Arrow 3 to 2 -->
+              <div class="flex flex-col items-center justify-center text-slate-400 py-1 sm:py-0">
+                <span class="text-[10px] font-bold text-emerald-600 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/40 shadow-2xs">${stripLabel}</span>
+                <span class="text-base leading-none text-emerald-500">➔</span>
+              </div>
+              <!-- Kemasan 2 -->
+              <div class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-0.5">
+                <div class="text-[10px] font-bold text-emerald-600 uppercase">🏷️ Kemasan Sedang</div>
+                <div class="font-extrabold text-xs text-emerald-900 dark:text-emerald-200">1 ${S().esc(satS)}</div>
+                <div class="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono-num font-semibold">Isi ${rasS} ${S().esc(s1)}</div>
+              </div>
+              <!-- Arrow 2 to 1 -->
+              <div class="flex flex-col items-center justify-center text-slate-400 py-1 sm:py-0">
+                <span class="text-[10px] font-bold text-blue-600 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-900/40 shadow-2xs">isi ${rasS} ${S().esc(s1)}</span>
+                <span class="text-base leading-none text-blue-500">➔</span>
+              </div>
+              <!-- Kemasan 1 -->
+              <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-0.5">
+                <div class="text-[10px] font-bold text-blue-600 uppercase">💊 Eceran Terkecil</div>
+                <div class="font-extrabold text-xs text-blue-900 dark:text-blue-200">1 ${S().esc(s1)}</div>
+                <div class="text-[10px] text-blue-700 dark:text-blue-400 font-semibold">Unit Dasar Kasir</div>
+              </div>
+            </div>
+          </div>`;
+      }
+      diagBox.innerHTML = diagHtml;
     }
 
     const simBox = document.getElementById('satuanLiveSimulator');
@@ -6588,22 +6850,99 @@
     global.updateObatWizardPreview();
   };
 
+  global.fixSatuanRasioBox = (newVal) => {
+    const el = document.getElementById('wRasioBes');
+    if (el) {
+      el.value = newVal;
+      global.updateObatWizardPreview();
+      if (typeof global.toast === 'function') {
+        global.toast(`Rasio Box berhasil diperbaiki menjadi ${newVal}!`, 'ok');
+      }
+    }
+  };
+
+  global.setObatHargaKemasan = (level, mode) => {
+    const parseNum = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return 0;
+      if (typeof window.parseNumber === 'function') return window.parseNumber(el.value || 0);
+      const cleaned = String(el.value || 0).replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.-]/g, '');
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? 0 : n;
+    };
+    const umum = parseNum('wHrgUmum');
+    if (umum <= 0) {
+      if (typeof global.toast === 'function') global.toast('Isi Harga Jual 1 terlebih dahulu.', 'warn');
+      return;
+    }
+    const ras = level === 2 ? Math.max(1, parseNum('wRasioSed') || 1) : Math.max(1, parseNum('wRasioBes') || 1);
+    const baseTotal = umum * ras;
+    let targetPrice = baseTotal;
+    if (mode === 'diskon5') {
+      targetPrice = Math.max(100, Math.round((baseTotal * 0.95) / 500) * 500);
+    } else if (mode === 'diskon10') {
+      targetPrice = Math.max(100, Math.round((baseTotal * 0.90) / 500) * 500);
+    }
+    const targetId = level === 2 ? 'wHrgSed' : 'wHrgBes';
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.value = S().formatDots(targetPrice);
+      global.updateObatWizardPreview();
+      if (typeof global.toast === 'function') {
+        global.toast(`Harga Jual ${level} diatur ke ${S().rp(targetPrice)}!`, 'ok');
+      }
+    }
+  };
+
   global.setSatuanActiveHelp = (level) => {
     const title = document.getElementById('satuanHelpTitle');
     const desc = document.getElementById('satuanHelpDesc');
     const cth = document.getElementById('satuanHelpExample');
+    const helpCard = document.getElementById('satuanHelpCard');
     if (!title || !desc) return;
 
-    ['satuanCard1', 'satuanCard2', 'satuanCard3'].forEach((id, idx) => {
-      const el = document.getElementById(id);
+    // Card highlight colors
+    const cards = [
+      { id: 'satuanCard1', ring: 'ring-blue-500', border: 'border-blue-500' },
+      { id: 'satuanCard2', ring: 'ring-emerald-500', border: 'border-emerald-500' },
+      { id: 'satuanCard3', ring: 'ring-purple-500', border: 'border-purple-500' }
+    ];
+
+    cards.forEach((c, idx) => {
+      const el = document.getElementById(c.id);
       if (el) {
         if (idx + 1 === level) {
-          el.classList.add('ring-2', 'ring-blue-500', 'border-blue-500', 'shadow-xs');
+          el.classList.add('ring-2', c.ring, c.border, 'shadow-md');
         } else {
-          el.classList.remove('ring-2', 'ring-blue-500', 'border-blue-500', 'shadow-xs');
+          el.classList.remove('ring-2', 'ring-blue-500', 'border-blue-500', 'ring-emerald-500', 'border-emerald-500', 'ring-purple-500', 'border-purple-500', 'shadow-md', 'shadow-xs');
         }
       }
     });
+
+    // Update active tab buttons
+    const tabs = [
+      { id: 'tabHelpSat1', activeCls: 'bg-blue-600 text-white shadow-2xs' },
+      { id: 'tabHelpSat2', activeCls: 'bg-emerald-600 text-white shadow-2xs' },
+      { id: 'tabHelpSat3', activeCls: 'bg-purple-600 text-white shadow-2xs' }
+    ];
+    tabs.forEach((t, idx) => {
+      const btn = document.getElementById(t.id);
+      if (btn) {
+        if (idx + 1 === level) {
+          btn.className = `text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all ${t.activeCls}`;
+        } else {
+          btn.className = 'text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100';
+        }
+      }
+    });
+
+    if (helpCard) {
+      helpCard.className = 'p-3.5 rounded-xl border transition-all ' + (
+        level === 1 ? 'border-blue-200 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20' :
+        level === 2 ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20' :
+        'border-purple-200 dark:border-purple-900/50 bg-purple-50/70 dark:bg-purple-950/20'
+      );
+    }
 
     if (level === 1) {
       title.innerHTML = '1️⃣ Petunjuk Satuan 1: Eceran Terkecil (*Wajib Diisi)';
