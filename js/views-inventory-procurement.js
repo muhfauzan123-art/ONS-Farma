@@ -5608,13 +5608,16 @@
     const suhuPresets = ['Suhu Ruang (15-25°C)', 'Sejuk (8-15°C)', 'Cold Chain (2-8°C)'];
     const rakPresets = ['RAK-A1', 'RAK-B2', 'RAK-OTC', 'LEMARI-OKT', 'CHILLER-01'];
     const unitPresets = [
-      { label: '💊 Tablet ➔ Strip (10) ➔ Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
-      { label: '💊 Tablet ➔ Strip (10) ➔ Box (50)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 50 },
       { label: '🧴 Sirup Botol (Tunggal)', d: 'Botol', s: '', rs: 1, b: '', rb: 1 },
       { label: '🧪 Salep / Gel (Tube)', d: 'Tube', s: '', rs: 1, b: '', rb: 1 },
-      { label: '💊 Kapsul ➔ Blister (10) ➔ Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
+      { label: '🌿 Sachet ➔ Box (12)', d: 'Sachet', s: 'Box', rs: 12, b: '', rb: 1 },
       { label: '🩹 Hanya Jual Strip (Tanpa Ecer)', d: 'Strip', s: '', rs: 1, b: '', rb: 1 },
-      { label: '📦 Strip ➔ Box (10)', d: 'Strip', s: 'Box', rs: 10, b: '', rb: 1 }
+      { label: '📦 Strip ➔ Box (10)', d: 'Strip', s: 'Box', rs: 10, b: '', rb: 1 },
+      { label: '💊 Tablet ➔ Strip (10) ➔ Box (100)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 100 },
+      { label: '💊 Tablet ➔ Strip (10) ➔ Box (50)', d: 'Tablet', s: 'Strip', rs: 10, b: 'Box', rb: 50 },
+      { label: '💊 Kapsul ➔ Blister (10) ➔ Box (30)', d: 'Kapsul', s: 'Blister', rs: 10, b: 'Box', rb: 30 },
+      { label: '🩺 Alkes Satuan Pcs (Tunggal)', d: 'Pcs', s: '', rs: 1, b: '', rb: 1 },
+      { label: '💉 Ampul ➔ Box (5)', d: 'Ampul', s: 'Box', rs: 5, b: '', rb: 1 }
     ];
     const otherMeds = (S().AppState.masterObat || []).filter((m) => m.id_obat !== o.id_obat).slice(0, 10);
     const curSubs = String(o.substitusi_ids || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -5814,8 +5817,8 @@
                     <div class="flex items-center gap-2.5">
                       <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">3</span>
                       <div>
-                        <h3 class="font-extrabold text-sm md:text-base">Konversi Satuan Kemasan (Eceran, Sedang, Besar)</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Atur satuan eceran butir, strip, atau box. Cukup isi Satuan 1 jika obat hanya dijual satuan tunggal (sirup/salep).</p>
+                        <h3 class="font-extrabold text-sm md:text-base">Konversi Satuan Kemasan Produk (Satuan 1, 2, dan 3)</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Satuan 1 adalah satuan dasar/terkecil yang Anda jual (Botol, Tube, Sachet, Pcs, Strip, Tablet, dll.). Satuan 2 &amp; 3 adalah kemasan bertingkat di atasnya.</p>
                       </div>
                     </div>
                     <button type="button" onclick="window.openSatuanGuidanceModal()" class="ons-btn ons-btn-ghost text-xs text-blue-600 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 py-1 px-2.5 rounded-lg flex items-center gap-1.5 shadow-xs" title="Buka Contoh Nyata Pengisian Obat">
@@ -5841,50 +5844,50 @@
 
                   <!-- Grid 3 Kartu Satuan -->
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- Satuan 1: Eceran Terkecil -->
+                    <!-- Satuan 1: Satuan Dasar Penjualan Terkecil -->
                     <div id="satuanCard1" onclick="window.setSatuanActiveHelp(1)" class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5 transition-all cursor-pointer hover:border-blue-300">
                       <div class="flex items-center justify-between">
                         <div class="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 flex items-center gap-1">
-                          <span>1️⃣ Satuan 1 (Eceran)</span>
+                          <span>1️⃣ Satuan 1 (Dasar Terkecil)</span>
                         </div>
                         <span class="text-red-500 font-bold text-[10px] bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800">* Wajib</span>
                       </div>
                       <div>
-                        <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama Satuan Terkecil</label>
-                        <p class="text-[10.5px] text-slate-400">Satuan paling kecil saat pasien beli eceran.</p>
+                        <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama Satuan Dasar Terkecil</label>
+                        <p class="text-[10.5px] text-slate-400">Satuan fisik yang Anda jual (Botol, Tube, Sachet, Pcs, Strip, Tablet, dll.).</p>
                       </div>
-                      <input id="wSatDasar" class="${inpCls} font-semibold" value="${S().esc(o.satuan_1 || o.satuan_dasar || 'Tablet')}" placeholder="Tablet / Botol / Tube" onfocus="window.setSatuanActiveHelp(1)" onclick="event.stopPropagation();window.setSatuanActiveHelp(1);" oninput="window.updateObatWizardPreview();"/>
+                      <input id="wSatDasar" class="${inpCls} font-semibold" value="${S().esc(o.satuan_1 || o.satuan_dasar || '')}" placeholder="Botol / Tube / Sachet / Pcs / Strip / Tablet" onfocus="window.setSatuanActiveHelp(1)" onclick="event.stopPropagation();window.setSatuanActiveHelp(1);" oninput="window.updateObatWizardPreview();"/>
                       
-                      <!-- Pilihan Cepat Satuan 1 -->
+                      <!-- Pilihan Cepat Satuan 1 Sesuai Bentuk Barang -->
                       <div>
-                        <span class="text-[10px] text-slate-400 block mb-1">Pilihan Cepat:</span>
+                        <span class="text-[10px] text-slate-400 block mb-1">Pilihan Cepat Sesuai Barang:</span>
                         <div class="flex flex-wrap gap-1">
-                          ${['Tablet', 'Kaplet', 'Kapsul', 'Botol', 'Tube', 'Sachet', 'Pcs'].map((u) => `
+                          ${['Botol', 'Tube', 'Sachet', 'Pcs', 'Strip', 'Tablet', 'Kaplet', 'Kapsul', 'Ampul', 'Vial', 'Supp', 'Box'].map((u) => `
                             <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatDasar','${u}')" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium text-slate-600 dark:text-slate-300">${u}</button>
                           `).join('')}
                         </div>
                       </div>
-                      <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">Acuan stok dasar kasir &amp; HPP modal.</div>
+                      <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">Acuan stok dasar kasir &amp; HPP modal beli.</div>
                     </div>
 
-                    <!-- Satuan 2: Kemasan Sedang -->
+                    <!-- Satuan 2: Kemasan Bertingkat / Sedang -->
                     <div id="satuanCard2" onclick="window.setSatuanActiveHelp(2)" class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5 transition-all cursor-pointer hover:border-emerald-300">
                       <div class="flex items-center justify-between">
                         <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600 flex items-center gap-1">
-                          <span>2️⃣ Satuan 2 (Sedang)</span>
+                          <span>2️⃣ Satuan 2 (Kemasan Bertingkat)</span>
                         </div>
                         <span class="text-emerald-700 dark:text-emerald-400 font-semibold text-[10px] bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">Opsional</span>
                       </div>
                       <div>
-                        <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama Kemasan &amp; Rasio Isi</label>
-                        <p class="text-[10.5px] text-slate-400">Tulis kemasan sedang &amp; isi berapa Satuan 1.</p>
+                        <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama Kemasan &amp; Rasio Isi Satuan 1</label>
+                        <p class="text-[10.5px] text-slate-400">Kemasan di atas Satuan 1. Kosongkan jika produk tunggal.</p>
                       </div>
                       <div class="grid grid-cols-2 gap-2">
                         <div>
-                          <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_2 || o.satuan_sedang || '')}" placeholder="Strip (opsional)" onfocus="window.setSatuanActiveHelp(2)" onclick="event.stopPropagation();window.setSatuanActiveHelp(2);" oninput="window.updateObatWizardPreview();" title="Nama kemasan sedang (cth: Strip)"/>
+                          <input id="wSatSed" class="${inpCls}" value="${S().esc(o.satuan_2 || o.satuan_sedang || '')}" placeholder="Strip / Box / Pack (opsional)" onfocus="window.setSatuanActiveHelp(2)" onclick="event.stopPropagation();window.setSatuanActiveHelp(2);" oninput="window.updateObatWizardPreview();" title="Nama kemasan bertingkat (cth: Strip, Box, Pack)"/>
                         </div>
                         <div>
-                          <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_2 || o.rasio_sedang || 1}" placeholder="10" onfocus="window.setSatuanActiveHelp(2)" onclick="event.stopPropagation();window.setSatuanActiveHelp(2);" oninput="window.updateObatWizardPreview();" title="Isi berapa butir Satuan 1"/>
+                          <input id="wRasioSed" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_2 || o.rasio_sedang || 1}" placeholder="10" onfocus="window.setSatuanActiveHelp(2)" onclick="event.stopPropagation();window.setSatuanActiveHelp(2);" oninput="window.updateObatWizardPreview();" title="Isi berapa unit Satuan 1"/>
                         </div>
                       </div>
 
@@ -5893,32 +5896,34 @@
                         <span class="text-[10px] text-slate-400 block mb-1">Pilihan Cepat:</span>
                         <div class="flex flex-wrap gap-1">
                           <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','Strip','wRasioSed',10)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium text-slate-600 dark:text-slate-300">Strip (10)</button>
-                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','Strip','wRasioSed',4)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium text-slate-600 dark:text-slate-300">Strip (4)</button>
+                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','Box','wRasioSed',12)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium text-slate-600 dark:text-slate-300">Box (12)</button>
+                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','Box','wRasioSed',10)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium text-slate-600 dark:text-slate-300">Box (10)</button>
+                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','Pack','wRasioSed',10)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium text-slate-600 dark:text-slate-300">Pack (10)</button>
                           <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','Blister','wRasioSed',10)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium text-slate-600 dark:text-slate-300">Blister (10)</button>
-                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','','wRasioSed',1)" class="text-[10px] py-0.5 px-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 font-semibold" title="Kosongkan jika tunggal">✕ Kosong</button>
+                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatSed','','wRasioSed',1)" class="text-[10px] py-0.5 px-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 font-semibold" title="Kosongkan jika produk tunggal">✕ Kosongkan</button>
                         </div>
                       </div>
-                      <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">Contoh: 1 Strip = 10 Tablet. Kosongkan jika sirup.</div>
+                      <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">Isi berapa Satuan 1 (cth: 1 Strip = 10 Tablet, 1 Box = 12 Sachet).</div>
                     </div>
 
-                    <!-- Satuan 3: Kemasan Besar / Box -->
+                    <!-- Satuan 3: Kemasan Terbesar / Dus Pabrik -->
                     <div id="satuanCard3" onclick="window.setSatuanActiveHelp(3)" class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5 transition-all cursor-pointer hover:border-purple-300">
                       <div class="flex items-center justify-between">
                         <div class="text-[11px] font-extrabold uppercase tracking-wider text-purple-600 flex items-center gap-1">
-                          <span>3️⃣ Satuan 3 (Besar / Box)</span>
+                          <span>3️⃣ Satuan 3 (Kemasan Terbesar / Dus)</span>
                         </div>
                         <span class="text-purple-700 dark:text-purple-400 font-semibold text-[10px] bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800">Opsional</span>
                       </div>
                       <div>
-                        <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama Kemasan &amp; TOTAL Isi</label>
-                        <p class="text-[10.5px] text-slate-400">Total Satuan 1 dalam 1 Box utuh.</p>
+                        <label class="font-semibold block text-slate-700 dark:text-slate-300">Nama Kemasan &amp; TOTAL Isi Satuan 1</label>
+                        <p class="text-[10.5px] text-slate-400">Total fisik Satuan 1 dalam 1 kemasan dus terbesar.</p>
                       </div>
                       <div class="grid grid-cols-2 gap-2">
                         <div>
-                          <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_3 || o.satuan_besar || '')}" placeholder="Box (opsional)" onfocus="window.setSatuanActiveHelp(3)" onclick="event.stopPropagation();window.setSatuanActiveHelp(3);" oninput="window.updateObatWizardPreview();" title="Nama kemasan besar (cth: Box)"/>
+                          <input id="wSatBes" class="${inpCls}" value="${S().esc(o.satuan_3 || o.satuan_besar || '')}" placeholder="Box / Dus / Karton (opsional)" onfocus="window.setSatuanActiveHelp(3)" onclick="event.stopPropagation();window.setSatuanActiveHelp(3);" oninput="window.updateObatWizardPreview();" title="Nama kemasan besar (cth: Box, Karton)"/>
                         </div>
                         <div>
-                          <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_3 || o.rasio_besar || 1}" placeholder="100" onfocus="window.setSatuanActiveHelp(3)" onclick="event.stopPropagation();window.setSatuanActiveHelp(3);" oninput="window.updateObatWizardPreview();" title="Total butir Satuan 1 dalam 1 Box"/>
+                          <input id="wRasioBes" type="number" min="1" class="${inpCls} font-mono-num" value="${o.rasio_3 || o.rasio_besar || 1}" placeholder="100" onfocus="window.setSatuanActiveHelp(3)" onclick="event.stopPropagation();window.setSatuanActiveHelp(3);" oninput="window.updateObatWizardPreview();" title="Total fisik Satuan 1 dalam 1 Box/Karton"/>
                         </div>
                       </div>
 
@@ -5928,11 +5933,12 @@
                         <div class="flex flex-wrap gap-1">
                           <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatBes','Box','wRasioBes',100)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-medium text-slate-600 dark:text-slate-300">Box (100)</button>
                           <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatBes','Box','wRasioBes',50)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-medium text-slate-600 dark:text-slate-300">Box (50)</button>
-                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatBes','Box','wRasioBes',30)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-medium text-slate-600 dark:text-slate-300">Box (30)</button>
-                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatBes','','wRasioBes',1)" class="text-[10px] py-0.5 px-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 font-semibold" title="Kosongkan jika tidak ada">✕ Kosong</button>
+                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatBes','Karton','wRasioBes',24)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-medium text-slate-600 dark:text-slate-300">Karton (24)</button>
+                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatBes','Dus','wRasioBes',50)" class="text-[10px] py-0.5 px-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-medium text-slate-600 dark:text-slate-300">Dus (50)</button>
+                          <button type="button" onclick="event.stopPropagation();window.pickSatuanChip('wSatBes','','wRasioBes',1)" class="text-[10px] py-0.5 px-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 font-semibold" title="Kosongkan jika tidak ada">✕ Kosongkan</button>
                         </div>
                       </div>
-                      <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">Total butir dalam 1 box (cth: 5 Strip × 10 = 50).</div>
+                      <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">Total Satuan 1 dalam kemasan ini (cth: 5 Strip × 10 = 50 Tablet).</div>
                       <!-- Peringatan Rasio & Tombol Koreksi Otomatis -->
                       <div id="satuanRatioWarning" class="pt-1"></div>
                     </div>
@@ -5943,9 +5949,9 @@
                     <!-- Tab Pemilih Petunjuk Interaktif -->
                     <div class="flex items-center gap-1.5 mb-2.5 pb-2 border-b border-blue-200/60 dark:border-blue-800/60 flex-wrap">
                       <span class="text-[10px] font-bold text-slate-500 uppercase mr-1">Petunjuk Aktif:</span>
-                      <button type="button" onclick="window.setSatuanActiveHelp(1)" id="tabHelpSat1" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-blue-600 text-white shadow-2xs">1️⃣ Satuan 1 (Eceran)</button>
-                      <button type="button" onclick="window.setSatuanActiveHelp(2)" id="tabHelpSat2" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50">2️⃣ Satuan 2 (Sedang)</button>
-                      <button type="button" onclick="window.setSatuanActiveHelp(3)" id="tabHelpSat3" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-purple-50">3️⃣ Satuan 3 (Besar / Box)</button>
+                      <button type="button" onclick="window.setSatuanActiveHelp(1)" id="tabHelpSat1" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-blue-600 text-white shadow-2xs">1️⃣ Satuan 1 (Dasar Terkecil)</button>
+                      <button type="button" onclick="window.setSatuanActiveHelp(2)" id="tabHelpSat2" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50">2️⃣ Satuan 2 (Kemasan Bertingkat)</button>
+                      <button type="button" onclick="window.setSatuanActiveHelp(3)" id="tabHelpSat3" class="text-[11px] font-bold py-1 px-2.5 rounded-lg transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-purple-50">3️⃣ Satuan 3 (Kemasan Terbesar / Dus)</button>
                     </div>
                     <div class="flex items-start gap-2.5">
                       <span class="text-xl shrink-0 mt-0.5">💡</span>
@@ -6648,7 +6654,7 @@
               </div>
               <p class="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-semibold mt-1.5 flex items-center gap-1">
                 <span>✓</span>
-                <span>Pasien bebas beli per Butir, per Strip, maupun per Box. Sisa stok di apotek dan HPP modal terjamin 100% akurat otomatis!</span>
+                <span>Pasien bebas beli per ${S().esc(s1)}, per ${S().esc(satS)}, maupun per ${S().esc(satB)}. Sisa stok di apotek dan HPP modal terjamin 100% akurat otomatis!</span>
               </p>
             </div>
           </div>
@@ -6945,17 +6951,37 @@
     }
 
     if (level === 1) {
-      title.innerHTML = '1️⃣ Petunjuk Satuan 1: Eceran Terkecil (*Wajib Diisi)';
-      desc.innerHTML = 'Ini adalah satuan <b>paling kecil</b> saat pasien membeli obat per butir atau per unit di apotek.<br>• <b>Contoh:</b> <code>Tablet</code>, <code>Kaplet</code>, <code>Kapsul</code>, <code>Botol</code>, <code>Tube</code>, <code>Sachet</code>, <code>Pcs</code>.<br>• <b>Kenapa wajib?</b> Seluruh kartu stok, ambang restok defecta, dan modal HPP dasar dihitung mengacu pada satuan terkecil ini.';
-      if (cth) cth.innerHTML = '💡 <b>Aturan Praktis:</b> Jika obat sirup/salep/tetes, isi <code>Botol</code> atau <code>Tube</code>. Jika tablet/kapsul, isi <code>Tablet</code>.';
+      title.innerHTML = '1️⃣ Petunjuk Satuan 1: Satuan Dasar Penjualan Terkecil (*Wajib Diisi)';
+      desc.innerHTML = '<b class="text-blue-700 dark:text-blue-300">🌟 PENTING: Satuan 1 TIDAK SELALU TABLET!</b> Satuan 1 adalah unit fisik terkecil yang <b>Anda jual</b> di kasir apotek untuk produk ini (menyesuaikan jenis barangnya):<br>' +
+        '• <b>Sirup / Tetes:</b> <code>Botol</code> (cth: Panadol Sirup, Sanmol Sirup, Insto)<br>' +
+        '• <b>Salep / Krim / Gel:</b> <code>Tube</code> (cth: Bioplacenton, Salep 2-4)<br>' +
+        '• <b>Serbuk / Jamu / Sachet:</b> <code>Sachet</code> (cth: Tolak Angin, Adem Sari, Diapet)<br>' +
+        '• <b>Alat Kesehatan / Masker / Spuit:</b> <code>Pcs</code> atau <code>Set</code> (cth: Spuit 3cc, Masker Bedah)<br>' +
+        '• <b>Hanya Jual Strip:</b> <code>Strip</code> (jika apotek Anda tidak melayani ecer butiran per biji)<br>' +
+        '• <b>Injeksi / Infus:</b> <code>Ampul</code>, <code>Vial</code>, atau <code>Kolf</code><br>' +
+        '• <b>Tablet / Kapsul Ecer:</b> <code>Tablet</code>, <code>Kaplet</code>, atau <code>Kapsul</code> (jika memang Anda jual per butir).<br>' +
+        '<i>Seluruh kartu stok kasir, ambang restok, dan HPP modal dasar dihitung mengacu pada Satuan 1 ini.</i>';
+      if (cth) cth.innerHTML = '💡 <b>Prinsip Praktis:</b> Apa kemasan terkecil saat pasien membeli barang ini dari apotek Anda? Tulis nama kemasan tersebut di sini!';
     } else if (level === 2) {
-      title.innerHTML = '2️⃣ Petunjuk Satuan 2: Kemasan Sedang / Strip (Opsional)';
-      desc.innerHTML = 'Kemasan tingkat menengah antara eceran butir dan dus besar (contoh: <code>Strip</code>, <code>Blister</code>, <code>Papan</code>).<br>• <b>Kolom Kiri (Nama):</b> Tulis jenis kemasannya, misal <code>Strip</code>.<br>• <b>Kolom Kanan (Angka):</b> Isi ada berapa butir Satuan 1 di dalam 1 kemasan tersebut. Misal 1 Strip berisi 10 Tablet, isi angka <code>10</code>.<br>• <b>Kapan dikosongkan?</b> Jika obat adalah sirup botol, salep tube, atau tidak dijual per strip, <b>kosongkan saja</b>.';
-      if (cth) cth.innerHTML = '💡 <b>Aturan Praktis:</b> Cukup ketik <code>Strip</code> dan angka <code>10</code>, atau klik tombol chip <b>[Strip (10)]</b> di atas.';
+      title.innerHTML = '2️⃣ Petunjuk Satuan 2: Kemasan Bertingkat / Sedang (Opsional)';
+      desc.innerHTML = 'Gunakan jika produk memiliki kemasan bertingkat yang membungkus kumpulan Satuan 1.<br>' +
+        '• <b>Kolom Kiri (Nama Kemasan):</b> Tulis jenis kemasannya (cth: <code>Strip</code>, <code>Box</code>, <code>Pack</code>, <code>Blister</code>).<br>' +
+        '• <b>Kolom Kanan (Angka Rasio):</b> Isi ada berapa unit Satuan 1 di dalam 1 kemasan tersebut.<br>' +
+        '  &bull; <i>Jika Satuan 1 = Tablet:</i> <code>Strip</code> isi <code>10</code> (1 Strip = 10 Tablet).<br>' +
+        '  &bull; <i>Jika Satuan 1 = Sachet:</i> <code>Box</code> isi <code>12</code> (1 Box = 12 Sachet).<br>' +
+        '  &bull; <i>Jika Satuan 1 = Strip:</i> <code>Box</code> isi <code>10</code> (1 Box = 10 Strip).<br>' +
+        '• <b>Kapan dikosongkan?</b> Jika produk hanya dijual 1 satuan utuh (seperti Sirup Botol atau Salep Tube), <b>kosongkan saja</b>.';
+      if (cth) cth.innerHTML = '💡 <b>Prinsip Praktis:</b> Cukup kosongkan jika produk tidak memiliki kemasan bertingkat.';
     } else if (level === 3) {
-      title.innerHTML = '3️⃣ Petunjuk Satuan 3: Kemasan Besar / Box Pabrik (Opsional)';
-      desc.innerHTML = 'Kemasan dus terluar dari pabrik farmasi atau distributor PBF (contoh: <code>Box</code>, <code>Dus</code>, <code>Kaleng</code>, <code>Karton</code>).<br>• <b>Kolom Kiri (Nama):</b> Tulis <code>Box</code> atau <code>Dus</code>.<br>• <b>Kolom Kanan (Angka PENTING):</b> Isi <b>TOTAL BUTIR SATUAN 1</b> di dalam 1 Box (bukan jumlah strip!).<br>• <i>Contoh:</i> Jika 1 Box berisi 5 Strip dan tiap strip ada 10 tablet, maka total isinya adalah <b>50</b> Tablet (isi angka <code>50</code>, jangan 5). Jika 1 Box isi 10 strip × 10 tablet, isi angka <code>100</code>.<br>• <b>Kapan dikosongkan?</b> Jika tidak melayani penjualan per dus/box, kosongkan saja.';
-      if (cth) cth.innerHTML = '💡 <b>Aturan Praktis:</b> Untuk Cataflam (5 strip × 10 tablet), isi <code>Box</code> dan angka <code>50</code>.';
+      title.innerHTML = '3️⃣ Petunjuk Satuan 3: Kemasan Terbesar / Dus Pabrik (Opsional)';
+      desc.innerHTML = 'Kemasan dus terluar/terbesar dari pabrik farmasi atau distributor PBF (cth: <code>Box</code>, <code>Dus</code>, <code>Karton</code>).<br>' +
+        '• <b>Kolom Kiri (Nama):</b> Tulis <code>Box</code>, <code>Dus</code>, atau <code>Karton</code>.<br>' +
+        '• <b>Kolom Kanan (Angka TOTAL):</b> Isi <b>TOTAL UNIT FISIK SATUAN 1</b> di dalam 1 kemasan terbesar ini.<br>' +
+        '  &bull; <i>Cth Tablet (3 tingkat):</i> Jika 1 Box berisi 5 Strip × 10 Tablet, isi totalnya <b>50</b> Satuan 1.<br>' +
+        '  &bull; <i>Cth Sirup (2/3 tingkat):</i> Jika 1 Karton berisi 24 Botol, isi totalnya <b>24</b>.<br>' +
+        '  &bull; <i>Cth Sachet:</i> Jika 1 Dus besar berisi 50 Sachet, isi totalnya <b>50</b>.<br>' +
+        '• <b>Kapan dikosongkan?</b> Jika Anda tidak melayani penjualan grosir/karton, kosongkan saja.';
+      if (cth) cth.innerHTML = '💡 <b>Prinsip Praktis:</b> Selalu isi total unit Satuan 1 di dalam 1 kemasan terbesar ini.';
     }
   };
 
@@ -6966,16 +6992,27 @@
           <div>
             <h3 class="font-extrabold text-base flex items-center gap-2">
               <span>💡</span>
-              <span>Panduan Mudah Pengisian Satuan Obat (Untuk Karyawan)</span>
+              <span>Panduan Fleksibel Pengisian Satuan Obat (Menyesuaikan Produk)</span>
             </h3>
             <p style="color:var(--ons-text-soft)" class="mt-0.5">
-              Pilih pola yang sesuai dengan jenis obat di bawah ini, atau klik tombol <b>"Gunakan Pola Ini"</b> untuk mengisi otomatis.
+              Satuan 1 menyesuaikan apa yang Anda jual di kasir. Pilih pola di bawah atau klik <b>"Gunakan Pola Ini"</b>.
             </p>
           </div>
           <button type="button" onclick="ONSStore.closeModal()" class="text-2xl px-1 leading-none">&times;</button>
         </div>
 
-        <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+        <!-- Banner Prinsip Utama Satuan 1 -->
+        <div class="p-3.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 shadow-2xs">
+          <span class="text-2xl shrink-0 mt-0.5">🌟</span>
+          <div class="space-y-1">
+            <div class="font-extrabold text-sm">Prinsip Emas: Satuan 1 Menyesuaikan Bentuk Produk yang Dijual!</div>
+            <div class="text-[11.5px] leading-relaxed">
+              <b>Satuan 1 TIDAK selalu Tablet.</b> Satuan 1 adalah satuan fisik paling kecil saat pasien bertransaksi di kasir. Jika apotek menjual Sirup, maka Satuan 1 adalah <b>Botol</b>. Jika menjual Salep, Satuan 1 adalah <b>Tube</b>. Jika menjual jamu serbuk, Satuan 1 adalah <b>Sachet</b>. Jika apotek hanya menjual per strip utuh dan tidak mengecer butiran, maka Satuan 1 adalah <b>Strip</b>!
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
           <!-- Kasus 1: Sirup / Salep / Tetes (Tunggal) -->
           <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
             <div class="flex items-center justify-between">
