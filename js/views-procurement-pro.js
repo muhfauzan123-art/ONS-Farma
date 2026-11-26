@@ -1786,7 +1786,7 @@
       spEditingId = '';
       S().closeModal();
       global.toast('Surat Pesanan ' + (res && res.item ? res.item.no_sp : '') + (wasEdit ? ' berhasil diperbarui!' : ' berhasil dibuat!'), 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
       if (res && res.item && res.item.id_sp) {
         global.openSpA4PreviewModal(res.item.id_sp);
@@ -1862,7 +1862,7 @@
     try {
       await API().callApi('sp.cancel', { id_sp: idSp, alasan: (alasan || '').trim() || 'Dibatalkan oleh staf apotek' }, { isWrite: true });
       global.toast('Surat Pesanan ' + (sp.no_sp || idSp) + ' berhasil dibatalkan.', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
       else global.renderActiveView();
     } catch (e) {
@@ -1929,7 +1929,7 @@
     try {
       await API().callApi('sp.save', { id_sp: idSp, status_sp: 'SELESAI_DITERIMA', catatan: (sp.catatan ? sp.catatan + ' | ' : '') + 'Ditutup selesai manual' }, { isWrite: true });
       global.toast('Surat Pesanan ' + (sp.no_sp || idSp) + ' ditandai selesai (CLOSED).', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
       else global.renderActiveView();
     } catch (e) {
@@ -2077,7 +2077,7 @@
       await API().callApi('sp.delete', { id_sp: idSp }, { isWrite: true });
       spSelectedIds.delete(idSp);
       global.toast(`Surat Pesanan ${sp.no_sp || idSp} berhasil dihapus.`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
       else global.renderActiveView();
       if (S().isModalOpen()) S().closeModal();
@@ -2115,7 +2115,7 @@
       }
     }
     global.toast(`${successCount} dari ${selectedList.length} Surat Pesanan berhasil dihapus.`, 'ok');
-    await global.bootLoadState(true);
+    await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
     else global.renderActiveView();
   };
@@ -2243,7 +2243,7 @@
       await API().callApi('obat.updatePrices', { items: [payload], catatan: 'Analisa Harga & Margin Satuan' }, { isWrite: true });
       delete priceDraftEdits[idObat];
       global.toast(`Harga jual ${o.nama_dagang} (Harga 1 / ${calc.sat1}) berhasil diperbarui ke ${S().rp(h1)}!`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) {
       global.toast(e.message, 'err');
     }
@@ -2271,7 +2271,7 @@
       priceDraftEdits = {};
       st._lastHppAlerts = [];
       global.toast(items.length + ' produk berhasil diperbarui harga jualnya sesuai target margin ' + priceTargetMargin + '%!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) {
       global.toast(e.message, 'err');
     }

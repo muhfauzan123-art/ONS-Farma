@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.72.0"/>
+  <meta name="application-version" content="v18.73.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.72.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.73.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.72.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.73.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.72.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.72.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.72.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.73.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.73.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.73.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.72.0"></script>
-  <script src="./js/struk-engine.js?v=18.72.0"></script>
-  <script src="./js/demo-engine.js?v=18.72.0"></script>
-  <script src="./js/api-turbo.js?v=18.72.0"></script>
-  <script src="./js/store.js?v=18.72.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.72.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.72.0"></script>
+  <script src="./js/config.js?v=18.73.0"></script>
+  <script src="./js/struk-engine.js?v=18.73.0"></script>
+  <script src="./js/demo-engine.js?v=18.73.0"></script>
+  <script src="./js/api-turbo.js?v=18.73.0"></script>
+  <script src="./js/store.js?v=18.73.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.73.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.73.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.72.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.72.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.72.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.72.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.72.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.72.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.73.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.73.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.73.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.73.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.73.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.73.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -964,13 +964,20 @@
         if (!data || typeof data !== 'object') return '';
         const prof = data.store_profile || {};
         const act = data.active_shift || {};
+        const totalStokSum = Array.isArray(data.stok_batch)
+          ? data.stok_batch.reduce((s, b) => s + Number((b && b.qty_sisa) || 0), 0)
+          : 0;
+        const lastInv = (Array.isArray(data.penjualan) && data.penjualan[0]) ? (data.penjualan[0].id_transaksi || data.penjualan[0].no_invoice || '') : '';
         return [
+          data.epoch || '',
           (data.master_obat || []).length,
           (data.stok_batch || []).length,
+          totalStokSum,
           (data.members || []).length,
           (data.supplier_pbf || []).length,
           (data.master_dokter || []).length,
           (data.penjualan || []).length,
+          lastInv,
           (data.faktur_pbf || []).length,
           (data.jurnal_keuangan || []).length,
           (data.rekam_klinis || []).length,
@@ -983,41 +990,298 @@
           prof.nama_usaha || '',
           prof.terkonfirmasi || '',
           prof.multi_cabang_aktif || '',
+          prof.updated_at || '',
           (data.staff_directory || []).length
         ].join('|');
       }
 
-      window.bootLoadState = async function (forceRefresh) {
+      function _setTopbarSyncBusy(busy) {
+        try {
+          const pill = document.getElementById('topbarConnPill');
+          if (!pill) return;
+          if (busy) {
+            pill.className = 'ons-conn-pill is-syncing';
+            pill.innerHTML = '<span>🔄</span><span class="hidden sm:inline">Sinkronisasi...</span>';
+          } else if (typeof window.syncConnStatusPill === 'function') {
+            window.syncConnStatusPill();
+          }
+        } catch (_) {}
+      }
+
+      function _indexObatItem(o) {
+        if (!o || typeof o !== 'object') return o;
+        if (o.id_obat !== undefined && o.id_obat !== null) o.id_obat = String(o.id_obat).trim();
+        o._searchHay = `${o.id_obat || ''} ${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.nie_bpom || ''} ${o.rak_lokasi || ''} ${o.pbf_utama || ''} ${o.pabrikan || ''} ${o.bentuk_sediaan || ''} ${o.kekuatan || ''}`.toLowerCase();
+        o._posHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.golongan_bpom || ''} ${o.kategori || ''} ${o.kode_kfa || ''} ${o.id_obat || ''} ${o.rak_lokasi || ''}`.toLowerCase();
+        o._cmdkHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.kode_kfa || ''} ${o.nie_bpom || ''} ${o.rak_lokasi || ''}`.toLowerCase();
+        o._defectaHay = `${o.nama_dagang || ''} ${o.zat_aktif || ''} ${o.pbf_utama || ''} ${o.golongan_bpom || ''}`.toLowerCase();
+        return o;
+      }
+
+      function _upsertByKey(arr, keyName, row, prepend) {
+        if (!Array.isArray(arr) || !row) return;
+        const val = String(row[keyName] || '').trim();
+        if (!val) {
+          if (prepend) arr.unshift(row); else arr.push(row);
+          return;
+        }
+        const idx = arr.findIndex((x) => x && String(x[keyName] || '').trim() === val);
+        if (idx >= 0) arr[idx] = Object.assign({}, arr[idx], row);
+        else if (prepend) arr.unshift(row);
+        else arr.push(row);
+      }
+
+      function _buildLiveBootSnapshot() {
+        const st = ONSStore.AppState;
+        return {
+          user: st.user,
+          cabang_id: st.cabangId,
+          store_profile: ONSStore.getStoreProfile ? ONSStore.getStoreProfile() : undefined,
+          rbac_permissions: st.rbacPermissions,
+          staff_directory: st.staffDirectory,
+          audit_system: ONSStore.getAuditSystem ? ONSStore.getAuditSystem() : undefined,
+          master_obat: st.masterObat,
+          master_kategori: st.masterKategori,
+          master_satuan: st.masterSatuan,
+          master_rak: st.masterRak,
+          master_gudang: st.masterGudang,
+          master_kategori_pelanggan: st.masterKategoriPelanggan,
+          master_pajak: st.masterPajak,
+          stok_batch: st.stokBatch,
+          members: st.members,
+          supplier_pbf: st.supplierPbf,
+          master_dokter: st.masterDokter,
+          cold_chain: st.coldChain,
+          rekam_klinis: st.rekamKlinis,
+          penjualan: st.penjualan,
+          detail_penjualan: st.detailPenjualan,
+          mutasi_stok: st.mutasiStok,
+          omnichannel_orders: st.omnichannelOrders,
+          struk_templates: st.strukTemplates,
+          faktur_pbf: st.fakturPbf,
+          konsinyasi_summary: st.konsinyasiSummary,
+          jurnal_keuangan: st.jurnalKeuangan,
+          surat_pesanan: st.suratPesanan,
+          de_dokumen: st.deDokumen,
+          shift_history: st.shiftHistory,
+          active_shift: st.activeShift,
+          piutang_pelanggan: st.piutangPelanggan,
+          copy_resep: st.copyResep,
+          pemeriksaan_pasien: st.pemeriksaanPasien,
+          mutasi_cabang: st.mutasiCabang,
+          branch_stock_compare: st.branchStockCompare
+        };
+      }
+
+      // Update optimistik ke AppState begitu write GAS sukses (tanpa menunggu boot.getState penuh)
+      window._onApiWriteSuccess = function (action, reqData, resData) {
+        const st = ONSStore.AppState;
+        if (!st || !st.booted || !resData) return;
+        const d = reqData || {};
+        let touched = true;
+
+        switch (action) {
+          case 'pos.checkout':
+            if (resData.penjualan) _upsertByKey(st.penjualan, 'id_transaksi', resData.penjualan, true);
+            if (Array.isArray(resData.detail)) {
+              resData.detail.forEach((dt) => {
+                _upsertByKey(st.detailPenjualan, 'id_detail', dt, false);
+                const bt = (st.stokBatch || []).find((b) => dt.id_batch && String(b.id_batch) === String(dt.id_batch));
+                if (bt) {
+                  bt.qty_sisa = Math.max(0, Number(bt.qty_sisa || 0) - Number(dt.qty || 0));
+                  if (bt.qty_sisa === 0 && String(bt.status_batch || 'AKTIF') === 'AKTIF') bt.status_batch = 'HABIS';
+                }
+              });
+              if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            }
+            break;
+          case 'pos.voidReturn':
+            if (Array.isArray(st.penjualan) && !resData.is_partial) {
+              const trx = st.penjualan.find((p) => String(p.id_transaksi) === String(d.id_transaksi) || String(p.no_invoice) === String(resData.no_invoice || ''));
+              if (trx) trx.status_trx = 'VOID_RETUR';
+            }
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          case 'shift.open':
+          case 'shift.close':
+            if (resData.shift) {
+              _upsertByKey(st.shiftHistory, 'id_shift', resData.shift, true);
+              st.activeShift = String(resData.shift.status_shift || '').toUpperCase() === 'TERBUKA' ? resData.shift : null;
+            }
+            break;
+          case 'obat.save':
+            if (resData.item || resData.obat) _upsertByKey(st.masterObat, 'id_obat', _indexObatItem(resData.item || resData.obat), true);
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          case 'obat.delete': {
+            const target = (st.masterObat || []).find((o) => String(o.id_obat) === String(d.id_obat || resData.id_obat || ''));
+            if (target) target.status_aktif = 'NONAKTIF';
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          }
+          case 'obat.updatePrices':
+            if (Array.isArray(resData.items)) {
+              resData.items.forEach((it) => _upsertByKey(st.masterObat, 'id_obat', _indexObatItem(it), false));
+            }
+            break;
+          case 'stok.addBatch':
+            if (resData.batch || resData.item) {
+              _upsertByKey(st.stokBatch, 'id_batch', resData.batch || resData.item, true);
+            } else if (d.id_obat) {
+              _upsertByKey(st.stokBatch, 'id_batch', Object.assign({ id_batch: 'BT-TMP-' + Date.now(), status_batch: 'AKTIF', cabang_id: st.cabangId }, d), true);
+            }
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          case 'stok.opnameSave':
+            (d.entries || []).forEach((ent) => {
+              const bt = (st.stokBatch || []).find((b) => String(b.id_batch) === String(ent.id_batch));
+              if (bt) bt.qty_sisa = Number(ent.qty_fisik || 0);
+            });
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          case 'stok.recallBatch': {
+            const bt = (st.stokBatch || []).find((b) => String(b.id_batch) === String(d.id_batch));
+            if (bt) {
+              bt.status_batch = 'KARANTINA';
+              bt.qty_karantina = Number(bt.qty_sisa || 0);
+              bt.qty_sisa = 0;
+            }
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          }
+          case 'pbf.save':
+            if (resData.item) _upsertByKey(st.supplierPbf, 'id_pbf', resData.item, true);
+            break;
+          case 'pbf.delete':
+            st.supplierPbf = (st.supplierPbf || []).filter((x) => String(x.id_pbf) !== String(d.id_pbf));
+            break;
+          case 'dokter.save':
+            if (resData.item) _upsertByKey(st.masterDokter, 'id_dokter', resData.item, true);
+            break;
+          case 'dokter.delete':
+            st.masterDokter = (st.masterDokter || []).filter((x) => String(x.id_dokter) !== String(d.id_dokter));
+            break;
+          case 'member.save':
+            if (resData.item || resData.member) _upsertByKey(st.members, 'id_member', resData.item || resData.member, true);
+            break;
+          case 'member.delete':
+            st.members = (st.members || []).filter((x) => String(x.id_member) !== String(d.id_member));
+            break;
+          case 'sp.save':
+            if (resData.item) _upsertByKey(st.suratPesanan, 'id_sp', resData.item, true);
+            break;
+          case 'sp.cancel': {
+            const sp = (st.suratPesanan || []).find((x) => String(x.id_sp) === String(d.id_sp || resData.id_sp || ''));
+            if (sp) sp.status_sp = 'DIBATALKAN';
+            break;
+          }
+          case 'sp.delete':
+            st.suratPesanan = (st.suratPesanan || []).filter((x) => String(x.id_sp) !== String(d.id_sp));
+            break;
+          case 'pengadaan.fakturSave':
+            if (resData.item) _upsertByKey(st.fakturPbf, 'id_faktur', resData.item, true);
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          case 'klinis.save':
+          case 'klinis.erxApprove':
+            if (resData.item) _upsertByKey(st.rekamKlinis, 'id_klinis', resData.item, true);
+            break;
+          case 'resep.copySave':
+            if (resData.item) _upsertByKey(st.copyResep, 'id_copy', resData.item, true);
+            break;
+          case 'pemeriksaan.save':
+            if (resData.item) _upsertByKey(st.pemeriksaanPasien, 'id_periksa', resData.item, true);
+            break;
+          case 'pemeriksaan.delete':
+            st.pemeriksaanPasien = (st.pemeriksaanPasien || []).filter((x) => String(x.id_periksa) !== String(d.id_periksa));
+            break;
+          case 'finance.saveJurnal':
+            if (resData.item) _upsertByKey(st.jurnalKeuangan, 'id_jurnal', resData.item, true);
+            break;
+          case 'finance.payHutangPbf':
+            if (resData.faktur) _upsertByKey(st.fakturPbf, 'id_faktur', resData.faktur, false);
+            break;
+          case 'piutang.pay':
+            if (resData.item) _upsertByKey(st.piutangPelanggan, 'id_piutang', resData.item, false);
+            break;
+          case 'coldchain.log':
+            _upsertByKey(st.coldChain, 'id_log', resData.item || Object.assign({ id_log: 'CC-' + Date.now(), timestamp: new Date().toISOString() }, d), true);
+            break;
+          case 'profil.save':
+            if (resData.profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(resData.profile);
+            break;
+          case 'audit.saveChecklist':
+            if (resData.audit_system && ONSStore.setAuditSystem) ONSStore.setAuditSystem(resData.audit_system);
+            if (resData.staff_directory) st.staffDirectory = resData.staff_directory;
+            break;
+          default:
+            touched = false;
+        }
+
+        if (touched && ONSApi && typeof ONSApi.setCachedRead === 'function') {
+          try { ONSApi.setCachedRead('boot.getState', { cabang_id: st.cabangId || 'ONS-01' }, _buildLiveBootSnapshot()); } catch (_) {}
+        }
+      };
+
+      let _bgSyncTimer = null;
+      window.syncAfterWrite = async function () {
+        if (ONSApi && typeof ONSApi.isDemoMode === 'function' && ONSApi.isDemoMode()) {
+          return window.bootLoadState(true);
+        }
+        const st = ONSStore.AppState;
+        if (st && st.booted) {
+          if (typeof window.renderActiveView === 'function') window.renderActiveView();
+          if (typeof window.syncNavHighlight === 'function') window.syncNavHighlight(true);
+          if (_bgSyncTimer) clearTimeout(_bgSyncTimer);
+          _bgSyncTimer = setTimeout(() => {
+            _bgSyncTimer = null;
+            window.bootLoadState({ force: true, background: true }).catch(() => {});
+          }, 280);
+          return Promise.resolve();
+        }
+        return window.bootLoadState(true);
+      };
+
+      window.bootLoadState = async function (forceOrOpts) {
+        const opts = (typeof forceOrOpts === 'object' && forceOrOpts) ? forceOrOpts : { force: !!forceOrOpts };
+        const forceRefresh = !!opts.force;
         const st = ONSStore.AppState;
         const ses = ONSApi.getSession();
         if (!ses || !ses.token) return;
         st.user = ses.user;
         st.cabangId = ses.cabang_id || (ses.user && ses.user.cabang_id) || 'ONS-01';
 
-        // SWR Instant Cache Render + Smart Freshness Guard
-        const cachedEntry = (!forceRefresh && ONSApi.getCachedReadEntry)
-          ? ONSApi.getCachedReadEntry('boot.getState', { cabang_id: st.cabangId })
-          : null;
-        const cached = cachedEntry ? cachedEntry.data : (!forceRefresh ? ONSApi.getCachedRead('boot.getState', { cabang_id: st.cabangId }) : null);
-        let renderedDigest = '';
+        // SWR Instant Cache Render (cek localStorage lalu IndexedDB) + Smart Freshness TTL (90 detik)
+        let cachedEntry = null;
+        if (!forceRefresh) {
+          if (ONSApi.getCachedReadEntry) {
+            cachedEntry = ONSApi.getCachedReadEntry('boot.getState', { cabang_id: st.cabangId });
+          }
+          if (!cachedEntry && ONSApi.getCachedReadEntryAsync) {
+            cachedEntry = await ONSApi.getCachedReadEntryAsync('boot.getState', { cabang_id: st.cabangId });
+          }
+        }
+        const cached = cachedEntry ? cachedEntry.data : (!forceRefresh && ONSApi.getCachedRead ? ONSApi.getCachedRead('boot.getState', { cabang_id: st.cabangId }) : null);
+        let renderedDigest = st.booted ? _computeBootDigest(_buildLiveBootSnapshot()) : '';
         if (cached && !forceRefresh) {
           renderedDigest = _computeBootDigest(cached);
           applyBootPayload(cached);
           st.booted = true;
           window.renderApp();
-          if (cachedEntry && cachedEntry.ageMs < 20000) {
+          if (cachedEntry && cachedEntry.ageMs < 90000) {
             return;
           }
-        } else if (!st.booted || forceRefresh) {
+        } else if (!st.booted) {
           if (typeof window.showViewSkeleton === 'function') {
             window.showViewSkeleton(st.activeView || 'dashboard');
           }
         }
 
+        _setTopbarSyncBusy(true);
         try {
           const live = await ONSApi.callApi('boot.getState', { cabang_id: st.cabangId });
           const liveDigest = _computeBootDigest(live);
-          const unchanged = !forceRefresh && st.booted && renderedDigest && liveDigest === renderedDigest;
+          const unchanged = st.booted && renderedDigest && liveDigest === renderedDigest;
           applyBootPayload(live);
           st.booted = true;
           if (!unchanged) {
@@ -1026,7 +1290,9 @@
             window.syncNavHighlight(true);
           }
         } catch (err) {
-          if (!cached) toast('Gagal memuat state: ' + err.message, 'err');
+          if (!cached && !st.booted) toast('Gagal memuat state: ' + err.message, 'err');
+        } finally {
+          _setTopbarSyncBusy(false);
         }
       };
 
@@ -2341,13 +2607,16 @@
         window.addEventListener(ev, bumpActivity, { passive: true });
       });
 
-      // Adaptive Visibility Guard (Scale Turbo Rule 4.3)
+      // Adaptive Visibility Guard & Light Keep-Warm Mode Live (v18.73.0)
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
           bumpActivity();
           const now = Date.now();
-          if (now - lastUserActivityMs > 90000 && window.ONSApi && window.ONSApi.getSession()) {
-            if (typeof window.bootLoadState === 'function') window.bootLoadState(false);
+          if (window.ONSApi && !window.ONSApi.isDemoMode() && window.ONSApi.getSession()) {
+            if (typeof window.ONSApi.warmUpBackend === 'function') window.ONSApi.warmUpBackend(false);
+            if (now - lastUserActivityMs > 180000 && typeof window.bootLoadState === 'function') {
+              window.bootLoadState({ force: false, background: true });
+            }
           }
         }
       }, { passive: true });
@@ -2358,6 +2627,11 @@
           if (limitMin > 0 && !window._isScreenLocked && ONSApi.getSession() && ONSStore.AppState.user && (Date.now() - lastUserActivityMs > limitMin * 60 * 1000)) {
             lastUserActivityMs = Date.now();
             window.lockScreenNow(`Layar dikunci otomatis karena tidak ada aktivitas selama ${limitMin} menit.`);
+          }
+          if (!window._isScreenLocked && typeof document !== 'undefined' && document.visibilityState === 'visible' && navigator.onLine && ONSApi && !ONSApi.isDemoMode() && ONSApi.getSession() && typeof ONSApi.warmUpBackend === 'function') {
+            if (Date.now() - lastUserActivityMs < 15 * 60 * 1000) {
+              ONSApi.warmUpBackend(false);
+            }
           }
         }, 30 * 1000);
       }
@@ -2385,8 +2659,8 @@
         }
       } catch (e) {}
 
-      // ── Patch harga rusak di localStorage demo (bug Number("5.000")) ──────
-      try {
+      // ── Patch harga rusak di localStorage demo (hanya saat Mode Demo aktif) ──────
+      if (window.ONSApi && typeof window.ONSApi.isDemoMode === 'function' && window.ONSApi.isDemoMode()) try {
         const _DEMO_KEY = 'ons_farma_v10_demo_db';
         const _raw = localStorage.getItem(_DEMO_KEY);
         if (_raw) {

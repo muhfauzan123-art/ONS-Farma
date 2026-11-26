@@ -55,6 +55,77 @@
   }
 
   let _lastWarmupTs = 0;
+  const IDB_NAME = 'ons_farma_swr_idb_v1';
+  const IDB_STORE = 'swr';
+  let _idbDbPromise = null;
+
+  function _openSwrIdb() {
+    if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+    if (_idbDbPromise) return _idbDbPromise;
+    _idbDbPromise = new Promise((resolve) => {
+      try {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = (ev) => {
+          try {
+            const db = ev.target.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+              db.createObjectStore(IDB_STORE);
+            }
+          } catch (_) {}
+        };
+        req.onsuccess = (ev) => resolve(ev.target.result || null);
+        req.onerror = () => resolve(null);
+        req.onblocked = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+    return _idbDbPromise;
+  }
+
+  function _idbGet(key) {
+    return _openSwrIdb().then((db) => {
+      if (!db) return null;
+      return new Promise((resolve) => {
+        try {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const req = tx.objectStore(IDB_STORE).get(key);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        } catch (e) { resolve(null); }
+      });
+    });
+  }
+
+  function _idbPut(key, valObj) {
+    return _openSwrIdb().then((db) => {
+      if (!db) return false;
+      return new Promise((resolve) => {
+        try {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          const req = tx.objectStore(IDB_STORE).put(valObj, key);
+          req.onsuccess = () => resolve(true);
+          req.onerror = () => resolve(false);
+        } catch (e) { resolve(false); }
+      });
+    });
+  }
+
+  function _idbPrune(keepToken) {
+    return _openSwrIdb().then((db) => {
+      if (!db) return;
+      try {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        const curReq = store.openCursor();
+        curReq.onsuccess = (ev) => {
+          const cur = ev.target.result;
+          if (!cur) return;
+          const k = String(cur.key || '');
+          if (!keepToken || k.indexOf(keepToken) === -1) cur.delete();
+          cur.continue();
+        };
+      } catch (e) {}
+    });
+  }
 
   function _hashStr(str) {
     let hash = 5381;
@@ -70,15 +141,28 @@
     return 'ons_swr_' + action + '_e' + _writeEpoch + '_' + _hashStr(raw);
   }
 
+  function _wrapEntry(parsed) {
+    if (!parsed) return null;
+    if (typeof parsed === 'object' && !Array.isArray(parsed) && typeof parsed.ts === 'number' && Object.prototype.hasOwnProperty.call(parsed, 'data')) {
+      return { data: parsed.data, ts: parsed.ts, ageMs: Math.max(0, Date.now() - parsed.ts) };
+    }
+    return { data: parsed, ts: 0, ageMs: Infinity };
+  }
+
   function getCachedReadEntry(action, data) {
     try {
       const raw = localStorage.getItem(_cacheKey(action, data));
       if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && typeof parsed.ts === 'number' && Object.prototype.hasOwnProperty.call(parsed, 'data')) {
-        return { data: parsed.data, ts: parsed.ts, ageMs: Math.max(0, Date.now() - parsed.ts) };
-      }
-      return { data: parsed, ts: 0, ageMs: Infinity };
+      return _wrapEntry(JSON.parse(raw));
+    } catch (e) { return null; }
+  }
+
+  async function getCachedReadEntryAsync(action, data) {
+    const syncHit = getCachedReadEntry(action, data);
+    if (syncHit) return syncHit;
+    try {
+      const idbHit = await _idbGet(_cacheKey(action, data));
+      return _wrapEntry(idbHit);
     } catch (e) { return null; }
   }
 
@@ -88,9 +172,22 @@
   }
 
   function setCachedRead(action, data, val) {
+    const key = _cacheKey(action, data);
+    const entry = { ts: Date.now(), data: val };
+    if (action === 'boot.getState') {
+      _idbPut(key, entry);
+    }
     try {
-      localStorage.setItem(_cacheKey(action, data), JSON.stringify({ ts: Date.now(), data: val }));
-    } catch (e) {}
+      const str = JSON.stringify(entry);
+      if (str.length <= 280000) {
+        localStorage.setItem(key, str);
+      } else {
+        try { localStorage.removeItem(key); } catch (_) {}
+        if (action !== 'boot.getState') _idbPut(key, entry);
+      }
+    } catch (e) {
+      _idbPut(key, entry);
+    }
   }
 
   function warmUpBackend(force) {
@@ -137,6 +234,7 @@
     _writeEpoch++;
     try { localStorage.setItem('ons_v10_epoch', String(_writeEpoch)); } catch (e) {}
     _pruneOldEpochCache();
+    _idbPrune('_e' + _writeEpoch + '_');
     if (global.ONSStore && typeof global.ONSStore.invalidateStockIndex === 'function') {
       global.ONSStore.invalidateStockIndex();
     }
@@ -232,6 +330,9 @@
 
           if (o.isWrite) {
             bumpClientEpoch();
+            if (typeof global._onApiWriteSuccess === 'function') {
+              try { global._onApiWriteSuccess(action, data || {}, json.data); } catch (_) {}
+            }
           } else {
             setCachedRead(action, data, json.data);
           }
@@ -332,7 +433,7 @@
     flushOfflineQueue().then((res) => {
       if (res.synced > 0 && typeof global.toast === 'function') {
         global.toast(res.synced + ' transaksi antrean offline berhasil disinkronkan ke Google Sheets.', 'ok');
-        if (typeof global.bootLoadState === 'function') global.bootLoadState(true);
+        if (typeof global.bootLoadState === 'function') global.bootLoadState({ force: true, background: true });
       }
     });
   });
@@ -348,6 +449,7 @@
       }
       toRemove.forEach((k) => localStorage.removeItem(k));
     } catch (e) {}
+    _idbPrune(null);
   }
 
   function logoutSession(notifyServer) {
@@ -370,6 +472,7 @@
     callBatched,
     getCachedRead,
     getCachedReadEntry,
+    getCachedReadEntryAsync,
     setCachedRead,
     warmUpBackend,
     bumpClientEpoch,

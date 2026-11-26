@@ -3112,7 +3112,7 @@
       await API().callApi('pbf.delete', { id_pbf: idPbf }, { isWrite: true });
       S().closeModal();
       global.toast('Supplier PBF dihapus dari Master Data.', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -3329,7 +3329,7 @@
       }, { isWrite: true });
       S().closeModal();
       global.toast('Data pelanggan berhasil disimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -3350,7 +3350,7 @@
       await API().callApi('member.delete', { id_member: idMember }, { isWrite: true });
       S().closeModal();
       global.toast('Pelanggan dihapus dari Master Data.', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -3411,7 +3411,7 @@
       }, { isWrite: true });
       S().closeModal();
       global.toast('Data Dokter Mitra berhasil disimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -3432,7 +3432,7 @@
       await API().callApi('dokter.delete', { id_dokter: idDokter }, { isWrite: true });
       S().closeModal();
       global.toast('Dokter dihapus dari Master Data.', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -3652,7 +3652,7 @@
       }
       S().closeModal();
       global.toast(`Berhasil mengimport ${okCount} data ${k}!`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -3846,12 +3846,12 @@
       }, { isWrite: true });
 
       global.toast(`Sukses memperbarui ${changes.length} golongan obat (Keras, OOT, Prekursor, dll.)!`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       global.renderActiveView();
     } catch (e) {
       console.warn('API obat.updateBatch fallback applied:', e);
       global.toast(`Berhasil memperbarui ${changes.length} golongan obat (Keras, OOT, Prekursor, dll.)!`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       global.renderActiveView();
     }
   };
@@ -7372,7 +7372,7 @@
 
       S().closeModal();
       global.toast('✓ Produk ' + nama + ' (Harga ' + S().rp(hUmum) + ') berhasil disimpan ke Master Obat!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) {
       global.toast(e.message, 'err');
     }
@@ -8055,7 +8055,7 @@
         if (fileInput) fileInput.disabled = false;
         if (chkStok) chkStok.disabled = false;
         global.toast(`Import terhenti di batch ${chunkNumber}: ${lastErr ? lastErr.message : 'Gagal'}. Sebagian data (${totalProcessed} item) sudah berhasil masuk.`, 'err');
-        await global.bootLoadState(true);
+        await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
         return;
       }
 
@@ -8084,7 +8084,7 @@
     global.toast(`Import sukses! ${totalProcessed} produk berhasil diimport (${totalInserted} baru, ${totalUpdated} diperbarui)${stockMsg}.`, 'ok');
 
     try {
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (typeof window.renderMasterDataResults === 'function') {
         window.renderMasterDataResults();
       }
@@ -9790,7 +9790,7 @@
           : `Log suhu ${unit} (${suhu.toFixed(1)}°C, RH ${hum}%) berhasil dicatat.`,
         isAlarm ? 'warn' : 'ok'
       );
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) {
       global.toast(e.message, 'err');
     }
@@ -10063,7 +10063,7 @@
       const catatan = (document.getElementById('trfNoteInp') || {}).value || '';
       const res = await API().callApi('cabang.transferSend', { cabang_asal: asal, cabang_tujuan: tujuan, items: [{ id_obat: idObat, qty }], catatan }, { isWrite: true });
       global.toast('Surat Jalan ' + (res.item ? res.item.no_surat_jalan : 'Mutasi') + ' terkirim (' + asal + ' -> ' + tujuan + ')!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -10071,7 +10071,7 @@
     try {
       const res = await API().callApi('cabang.transferReceive', { id_transfer: idTransfer }, { isWrite: true });
       global.toast('Barang mutasi ' + (res.item ? res.item.no_surat_jalan : '') + ' resmi diterima & masuk Batch FEFO tujuan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -10139,7 +10139,7 @@
       }
       edSelectedIds.clear();
       global.toast(`${okCount} batch terpilih masuk Karantina BPOM!`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.exportStokKadaluarsa = (fmt) => {
@@ -10381,7 +10381,7 @@
       _writeJsonLs('ONS_ADJ_META_V1', metaMap);
       S().closeModal();
       global.toast('Penyesuaian stok berhasil disimpan (' + (res.adjusted || 1) + ' batch)!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.exportPenyesuaianStok = (fmt) => {
@@ -10519,7 +10519,7 @@
         const res = await API().callApi('cabang.transferSend', { cabang_asal: asal, cabang_tujuan: tujuan, items: [{ id_obat: idObat, qty }], catatan }, { isWrite: true });
         S().closeModal();
         global.toast('Surat Jalan ' + (res.item ? res.item.no_surat_jalan : 'Mutasi') + ' terkirim!', 'ok');
-        await global.bootLoadState(true);
+        await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
         return;
       }
 
@@ -10703,7 +10703,7 @@
       await API().callApi('stok.addBatch', payload, { isWrite: true });
       S().closeModal();
       global.toast('Batch baru berhasil ditambahkan & tercatat di Kartu Stok!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.setOpnameDraftQty = (idBatch, v) => { opnameDraftQty[idBatch] = v; global.renderActiveView(); };
@@ -10731,7 +10731,7 @@
       opnameDraftQty = {};
       opnameSessionActive = false;
       global.toast('Stock Opname berhasil disimpan (' + (res.adjusted || entries.length) + ' batch diperbarui ke Kartu Stok).', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.setMutasiFilterObat = (v) => { mutasiFilterObat = v; global.renderActiveView(); };
@@ -10866,7 +10866,7 @@
       const res = await API().callApi('stok.opnameSave', { entries }, { isWrite: true });
       S().closeModal();
       global.toast('Stock Opname tersimpan untuk ' + res.adjusted + ' batch.', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -11393,7 +11393,7 @@
       }, { isWrite: true });
       S().closeModal();
       global.toast('Data Supplier PBF CDOB berhasil disimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -11466,7 +11466,7 @@
     }
 
     global.toast('Berhasil menerbitkan ' + createdCount + ' Surat Pesanan (SP) terpisah resmi sesuai regulasi BPOM!', 'ok');
-    await global.bootLoadState(true);
+    await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
     else if (typeof global.setDefectaTab === 'function') global.setDefectaTab('sp');
 
@@ -13559,7 +13559,7 @@
 
     _writeLocalList(PLANS_KEY, plans.filter((p) => !p.selected));
     global.toast(`Berhasil menerbitkan ${createdCount} Surat Pesanan resmi terpisah sesuai regulasi BPOM!`, 'ok');
-    await global.bootLoadState(true);
+    await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     if (typeof global.setFakturTab === 'function') global.setFakturTab('sp');
   };
 
@@ -14770,7 +14770,7 @@
         global.toast('Faktur Multi-Item & semua batch FEFO berhasil masuk ke gudang!', 'ok');
         window.setFakturTab('daftar');
       }
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -14915,7 +14915,7 @@
         alasan: alasan || 'Retur Batch ED Dekat'
       }, { isWrite: true });
       global.toast('Retur BAR-PBF dicatat (' + res.qty_retur + ' unit). Potongan hutang: ' + S().rp(res.nilai_potong_hutang), 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -15214,7 +15214,7 @@
       }
       S().closeModal();
       global.toast(`Retur BAR-PBF ${noBar} tercatat! Penyesuaian nilai: ${S().rp(totalCut)}`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -15375,7 +15375,7 @@
       }, { isWrite: true });
       S().closeModal();
       global.toast(`Settlement ${(res.settlement && res.settlement.no_settlement) || 'konsinyasi'} berhasil (${res.total_qty} unit).`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.openReturnKonsinyasiModal = (idBatch, namaObat, maxQty) => {
@@ -15402,7 +15402,7 @@
       }, { isWrite: true });
       S().closeModal();
       global.toast(`Berhasil tarik ${res.qty_retur} unit konsinyasi dari gudang.`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 

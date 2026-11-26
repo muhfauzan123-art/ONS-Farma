@@ -2426,7 +2426,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         soap_notes: `Obat Dicurigai: ${mesoState.obat}. Gejala ROTD: ${mesoState.gejala}. Kausalitas Naranjo: ${score} - ${kategori}.`
       }, { isWrite: true });
       global.toast(`Laporan MESO Skor ${score} (${kategori}) tersimpan!`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -2460,7 +2460,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         soap_notes: 'Obat: ' + itemsList + ' | Catatan PIO: ' + (pioState.catatan || '-')
       }, { isWrite: true });
       global.toast('Kartu PIO & Edukasi Pasien berhasil tersimpan ke arsip SOAP!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.printPioCard = () => {
@@ -2622,7 +2622,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       }, { isWrite: true });
       S().closeModal();
       global.toast('Catatan klinis & SOAP berhasil disimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -2939,7 +2939,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       }), { isWrite: true });
       S().closeModal();
       global.toast('Hasil skrining & tren GDS tersimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -2971,7 +2971,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       }, { isWrite: true });
       S().closeModal();
       global.toast('Data pasien baru tersimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -4540,7 +4540,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       await API().callApi('finance.saveJurnal', { jenis_trx: 'MASUK_TRANSFER_KAS', kategori: `Transfer dari ${akFrom.nama}${note ? ' (' + note + ')' : ''}`, nominal: amt, metode: akTo.nama, referensi_id: `${refCode} [AKUN:${toId}]`, periode_bulan: per }, { isWrite: true });
       S().closeModal();
       global.toast(`Transfer ${S().rp(amt)} dari ${akFrom.nama} ke ${akTo.nama} tercatat.`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.exportAkunKasExcel = () => {
@@ -4656,7 +4656,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       }, { isWrite: true });
       S().closeModal();
       global.toast('Transaksi Buku Kas berhasil disimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.openKasTrxDetailModal = (idJurnal) => {
@@ -4799,7 +4799,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       target.status_bayar = 'LUNAS';
       _writeFinLocalList(MANUAL_UTANG_KEY, list);
       global.toast('Pelunasan Utang Usaha dicatat ke Buku Kas!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
   global.openImportUtangInfoModal = () => {
@@ -5012,7 +5012,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         periode_bulan: new Date().toISOString().slice(0, 7)
       }, { isWrite: true });
       global.toast('Jurnal kas tersimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -5204,7 +5204,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       S().closeModal();
       global.toast('Pembayaran hutang PBF sebesar ' + S().rp(amt) + ' berhasil dibukukan!', 'ok');
       setTimeout(() => { if (typeof global.printKuitansiPembayaranUtangA4 === 'function') global.printKuitansiPembayaranUtangA4(idBeli); }, 400);
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -5213,7 +5213,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     try {
       await API().callApi('finance.payHutangPbf', { id_beli: idBeli, nominal_bayar: nominal, metode: 'TRANSFER_BANK' }, { isWrite: true });
       global.toast('Pelunasan hutang PBF dicatat ke Jurnal Kas!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -5280,7 +5280,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       }, { isWrite: true });
       S().closeModal();
       global.toast('Jurnal keuangan tersimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -5289,7 +5289,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     try {
       const res = await API().callApi('finance.lockPeriod', { periode: per }, { isWrite: true });
       global.toast('Periode ' + per + ' resmi dikunci (' + res.locked_rows + ' baris)!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -5702,7 +5702,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       S().closeModal();
       global.toast('Draf surat dibuat! Silakan tanda tangani dengan PIN Pejabat.', 'ok');
       await global.refreshDocEngineIfNeeded(true);
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -5721,7 +5721,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       S().closeModal();
       global.toast('Surat TERBIT! Kode Verifikasi: ' + res.kode_verifikasi, 'ok');
       await global.refreshDocEngineIfNeeded(true);
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -6620,7 +6620,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       lastClosedZReport = res && res.shift ? res.shift : null;
 
       global.toast('Shift berhasil ditutup! Selisih kas: ' + S().rp(res.shift.selisih_kas), 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (res && res.shift) {
         global.openZReportModal(res.shift);
       }
@@ -6681,13 +6681,13 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
         _writeFinLocalList(MANUAL_PIUTANG_KEY, list);
         S().closeModal();
         global.toast('Pembayaran piutang dicatat! Status: ' + target.status_piutang, 'ok');
-        await global.bootLoadState(true);
+        await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
         return;
       }
       const res = await API().callApi('piutang.pay', { id_piutang: idPiutang, nominal_bayar: nom, metode: met, catatan: cat }, { isWrite: true });
       S().closeModal();
       global.toast('Pembayaran piutang dicatat! Status: ' + res.item.status_piutang, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -9464,7 +9464,7 @@ S. prn 3 dd 1 tab</textarea>
         catatan: 'Penyesuaian Harga dari Analisis Harga Produk'
       }, { isWrite: true });
       global.toast('Harga jual ' + o.nama_dagang + ' diperbarui ke ' + S().rp(newPrice) + '!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) {
       global.toast(e.message || 'Gagal memperbarui harga.', 'err');
     }
@@ -9518,7 +9518,7 @@ S. prn 3 dd 1 tab</textarea>
       await API().callApi('obat.updatePrices', { items, catatan: 'Update Sekaligus Target Margin ' + anlHargaTargetMarkup + '%' }, { isWrite: true });
       anlHargaSelected.clear();
       global.toast(items.length + ' produk berhasil diperbarui harga jualnya!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) {
       global.toast(e.message || 'Gagal update harga massal.', 'err');
     }
@@ -14944,7 +14944,7 @@ S. prn 3 dd 1 tab</textarea>
     try {
       const res = await API().callApi('system.seedStarterCatalog', {}, { isWrite: true });
       global.toast(res.message || 'Katalog awal berhasil diisi!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -15308,7 +15308,7 @@ S. prn 3 dd 1 tab</textarea>
         if (inputEl) inputEl.value = '';
         global.toast(`Data berhasil dipulihkan (${res.keysRestored} bagian data)! Memuat ulang sistem...`, 'ok');
         if (typeof global.bootLoadState === 'function') {
-          await global.bootLoadState(true);
+          await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
         } else {
           global.renderActiveView();
         }
@@ -15377,7 +15377,7 @@ S. prn 3 dd 1 tab</textarea>
             : '<div class="text-[11px] text-emerald-700 font-semibold">&#10003; Seluruh skema, sheet &amp; transaksi sudah 100% bersih dan sinkron!</div>');
       }
       global.toast(res.pesan || 'Audit & Sinkronisasi DB selesai!', 'ok');
-      if (!dryRun) await global.bootLoadState(true);
+      if (!dryRun) await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message || 'Gagal audit database.', 'err'); }
   };
 
@@ -15523,7 +15523,7 @@ S. prn 3 dd 1 tab</textarea>
 
       S().closeModal();
       global.toast((res && res.pesan) || 'Reset Data Pabrik selesai! Sistem bersih siap produksi.', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (typeof global.loadSettingsBundle === 'function') await global.loadSettingsBundle(true);
       if (typeof global.renderActiveView === 'function') global.renderActiveView();
       if (typeof window.renderApp === 'function') window.renderApp();
@@ -15537,7 +15537,7 @@ S. prn 3 dd 1 tab</textarea>
       const res = await API().callApi('system.factoryReset', { demo_mode: 'restore_demo' }, { isWrite: true });
       S().closeModal();
       global.toast((res && res.pesan) || 'Data contoh Demo berhasil dipulihkan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       if (typeof global.loadSettingsBundle === 'function') await global.loadSettingsBundle(true);
     } catch (e) {
       global.toast(e.message || 'Gagal memulihkan data contoh Demo.', 'err');

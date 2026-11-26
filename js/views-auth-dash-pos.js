@@ -1534,11 +1534,14 @@
       if (shift === 'MALAM') S().toggleDarkMode(true);
       S().AppState.activeView = 'dashboard';
 
-      // 3. SWR Decoupled Dashboard Entry:
-      // Check if boot data is already cached in localStorage for this branch
-      const cachedBoot = (API() && typeof API().getCachedRead === 'function')
+      // 3. SWR Decoupled Dashboard Entry (cek localStorage lalu IndexedDB untuk katalog besar):
+      let cachedBoot = (API() && typeof API().getCachedRead === 'function')
         ? API().getCachedRead('boot.getState', { cabang_id: branch })
         : null;
+      if (!cachedBoot && API() && typeof API().getCachedReadEntryAsync === 'function') {
+        const idbEntry = await API().getCachedReadEntryAsync('boot.getState', { cabang_id: branch });
+        cachedBoot = idbEntry ? idbEntry.data : null;
+      }
 
       if (cachedBoot && typeof global.applyBootPayload === 'function') {
         // Instant Render in 0ms: User immediately enters the dashboard without waiting!
@@ -6031,7 +6034,7 @@
       }, { isWrite: true });
       const newId = (res && res.member && res.member.id_member) || (res && res.id_member) || '';
       S().closeModal();
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       const cart = getPosActiveCart();
       if (cart) {
         if (newId) cart.id_member = newId;
@@ -7656,7 +7659,7 @@
       S().closeModal();
       const labelMode = res.is_partial ? 'Retur Sebagian' : 'Retur Penuh / Void';
       global.toast(`${labelMode} ${res.no_invoice} disahkan (${res.restored_qty || res.restored_items} unit stok kembali).`, 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -8219,7 +8222,7 @@
       cart.no_wa = '';
       cart.held_note = '';
       cart.held_at = '';
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) {
       playPosBeep('err');
       global.toast(e.message, 'err');
@@ -8229,7 +8232,7 @@
   global.syncPosOfflineNow = async () => {
     const res = await API().flushOfflineQueue();
     global.toast(res.synced ? (res.synced + ' transaksi tersinkronkan!') : 'Tidak ada antrean / masih offline.', 'info');
-    await global.bootLoadState(true);
+    await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
   };
 
   /**
@@ -8264,7 +8267,7 @@
       const res = await API().callApi('shift.open', { modal_awal: modalAwal, catatan }, { isWrite: true });
       S().closeModal();
       global.toast(res.already_open ? ('Shift aktif ditemukan: ' + res.shift.id_shift) : ('Shift dibuka: ' + res.shift.id_shift), 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -8367,7 +8370,7 @@
 
       S().closeModal();
       global.toast('Salinan Resep (p.c.c) ' + res.item.no_salinan + ' tersimpan!', 'ok');
-      await global.bootLoadState(true);
+      await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
       global.printCopyResepDocument(res.item);
     } catch (e) { global.toast(e.message, 'err'); }
   };

@@ -7118,6 +7118,13 @@ html.dark .ons-cockpit-badge {
   }
 }
 
+/* 14. Pill sinkronisasi latar belakang Mode Live di topbar */
+.ons-conn-pill.is-syncing {
+  background: rgba(14, 165, 233, 0.22) !important;
+  color: #E0F2FE !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
 /* 13. Input tanggal cukup lebar agar tahun 4 digit & ikon kalender selalu terbaca */
 #mainViewSlot input[type="date"].ons-input,
 #mainViewSlot input[type="date"].w-28,
