@@ -5503,7 +5503,7 @@
 
           <!-- Tabel Item Keranjang -->
           <div class="ons-card p-3.5 sm:p-4 space-y-2.5 rounded-2xl shadow-sm">
-            <div class="ons-table-wrap min-h-[210px]">
+            ${cart.items.length ? `<div class="ons-table-wrap min-h-[210px]">
               <table class="ons-table">
                 <thead>
                   <tr>
@@ -5517,7 +5517,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${cart.items.length ? cart.items.map((it, idx) => {
+                  ${cart.items.map((it, idx) => {
                     const ob = st.masterObat.find((o) => o.id_obat === it.id_obat);
                     const nearIt = S().getNearEdBatchInfo ? S().getNearEdBatchInfo(it.id_obat, 90) : { hasNearEd: false };
                     const grossLine = Number(it.harga_jual || 0) * Number(it.qty || 1);
@@ -5560,22 +5560,20 @@
                         <button type="button" onclick="window.posRemoveItem(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1 min-h-0 h-7 rounded-lg" title="Hapus item">&times;</button>
                       </td>
                     </tr>`;
-                  }).join('') : `<tr>
-                    <td colspan="7" class="text-center py-12 text-sm" style="color:var(--ons-text-soft)">
-                      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-600 mb-3 shadow-sm">
-                        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                      </div>
-                      <div class="font-extrabold text-base mb-1" style="color:var(--ons-text-main)">Keranjang Masih Kosong</div>
-                      <div class="text-xs max-w-md mx-auto mb-3.5">Ketik nama obat atau barcode di kolom pencarian (<span class="ons-shortcut-kbd">F2</span>), scan barcode kamera, atau klik produk pada katalog cepat di bawah.</div>
-                      <div class="flex flex-wrap items-center justify-center gap-2">
-                        <button type="button" onclick="document.getElementById('posSearchInput')?.focus()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 rounded-xl shadow-sm">Cari Produk (F2)</button>
-                        <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3.5 rounded-xl border" style="border-color:var(--ons-border-strong)">Scan Barcode</button>
-                      </div>
-                    </td>
-                  </tr>`}
+                  }).join('')}
                 </tbody>
               </table>
-            </div>
+            </div>` : `<div class="rounded-xl border border-dashed py-10 px-4 text-center text-sm" style="border-color:var(--ons-border-strong);background:var(--ons-bg-subtle);color:var(--ons-text-soft)">
+              <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-600 mb-3 shadow-sm">
+                <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              </div>
+              <div class="font-extrabold text-base mb-1" style="color:var(--ons-text-main)">Keranjang Masih Kosong</div>
+              <div class="text-xs max-w-md mx-auto mb-4">Ketik nama obat atau barcode di kolom pencarian (<span class="ons-shortcut-kbd">F2</span>), scan barcode kamera, atau klik produk pada katalog cepat di bawah.</div>
+              <div class="flex flex-wrap items-center justify-center gap-2">
+                <button type="button" onclick="document.getElementById('posSearchInput')?.focus()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3.5 rounded-xl shadow-sm">Cari Produk (F2)</button>
+                <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3.5 rounded-xl border" style="border-color:var(--ons-border-strong)">Scan Barcode</button>
+              </div>
+            </div>`}
 
             ${crossSell ? `<div class="p-3 rounded-2xl border text-[11px] flex items-center justify-between gap-2 shadow-sm" style="border-color:var(--ons-border);background:rgba(16,185,129,0.06)">
               <div class="min-w-0">

@@ -855,11 +855,11 @@
             </select>
 
             <!-- Date Range Picker with Quick Presets -->
-            <div class="inline-flex items-center gap-1 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs shadow-xs">
+            <div class="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs shadow-xs">
               <span class="text-[11px] pl-1 text-slate-400">📅</span>
-              <input type="date" aria-label="Filter Tanggal SP Dari" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-28 text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateFrom)}" onchange="window.setSpDateRange('from', this.value)"/>
+              <input type="date" aria-label="Filter Tanggal SP Dari" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-[142px] text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateFrom)}" onchange="window.setSpDateRange('from', this.value)"/>
               <span class="text-slate-300 dark:text-slate-600">&ndash;</span>
-              <input type="date" aria-label="Filter Tanggal SP Sampai" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-28 text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateTo)}" onchange="window.setSpDateRange('to', this.value)"/>
+              <input type="date" aria-label="Filter Tanggal SP Sampai" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-[142px] text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateTo)}" onchange="window.setSpDateRange('to', this.value)"/>
               ${(spDateFrom || spDateTo) ? `<button type="button" onclick="window.setSpQuickDate('ALL')" class="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 font-bold" title="Reset Rentang Tanggal">&times;</button>` : ''}
             </div>
 
@@ -870,18 +870,11 @@
             </div>
           </div>
 
-          <!-- Action Buttons Cluster -->
+          <!-- Draft Shortcut (Aksi Excel & Buat SP sudah ada di banner atas) -->
           <div class="flex flex-wrap items-center gap-2 shrink-0">
             <button type="button" onclick="window.openSpDraftModal()" class="ons-btn text-xs py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 transition flex items-center gap-1.5 shadow-xs">
               <span>📝 Draft</span>
               <span class="px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px] font-mono-num">${drafts.length}</span>
-            </button>
-            <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs py-2 px-3 rounded-xl flex items-center gap-1.5">
-              <span>📥 Excel</span>
-            </button>
-            <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs py-2 px-4 rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
-              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-              <span>+ Pesanan Baru (A4)</span>
             </button>
           </div>
         </div>

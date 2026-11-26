@@ -3180,14 +3180,10 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
     </div>`;
 
     const workstationCard = `<div class="ons-card p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Daftar Akun Kas &amp; Bank</h3>
           <p class="text-xs text-slate-400">Pencatatan kas fisik laci kasir, rekening giro bank rekanan, dan saldo e-wallet QRIS.</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" onclick="window.exportAkunKasExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Excel</button>
-          <button type="button" onclick="window.openAddAkunKasModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">+ Akun Kas Baru</button>
         </div>
       </div>
 
@@ -8596,7 +8592,8 @@ S. prn 3 dd 1 tab</textarea>
       rows.sort((a, b) => b.omzet - a.omzet || b.nilaiStok - a.nilaiStok);
     }
 
-    const totalMetric = Math.max(1, rows.reduce((acc, r) => acc + (anlParetoMode === 'keuntungan' ? Math.max(0, r.keuntungan) : (anlParetoMode === 'kuantitas' ? r.terjual : r.omzet)), 0));
+    const totalMetricRaw = rows.reduce((acc, r) => acc + (anlParetoMode === 'keuntungan' ? Math.max(0, r.keuntungan) : (anlParetoMode === 'kuantitas' ? r.terjual : r.omzet)), 0);
+    const totalMetricDenom = Math.max(1, totalMetricRaw);
     let cum = 0;
     let countA = 0, sumA = 0;
     let countB = 0, sumB = 0;
@@ -8604,7 +8601,7 @@ S. prn 3 dd 1 tab</textarea>
 
     rows.forEach((r, idx) => {
       const m = anlParetoMode === 'keuntungan' ? Math.max(0, r.keuntungan) : (anlParetoMode === 'kuantitas' ? r.terjual : r.omzet);
-      const pct = (m / totalMetric) * 100;
+      const pct = (m / totalMetricDenom) * 100;
       cum += pct;
       r.pct = Math.round(pct * 10) / 10;
       r.cumPct = Math.min(100, Math.round(cum * 10) / 10);
@@ -8737,10 +8734,10 @@ S. prn 3 dd 1 tab</textarea>
         </div>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
-            <span>Total Valuasi Omzet Teranalisis</span>
+            <span>${anlParetoMode === 'keuntungan' ? 'Total Margin Teranalisis' : (anlParetoMode === 'kuantitas' ? 'Total Kuantitas Terjual' : 'Total Valuasi Omzet Teranalisis')}</span>
             <span class="ons-cockpit-badge text-purple-600 bg-purple-500/10 font-mono-num">${rows.length} SKU</span>
           </div>
-          <div class="ons-cockpit-val text-purple-600">${S().rp(totalMetric)}</div>
+          <div class="ons-cockpit-val text-purple-600">${anlParetoMode === 'kuantitas' ? (Number(totalMetricRaw || 0).toLocaleString('id-ID') + ' Unit') : S().rp(totalMetricRaw)}</div>
         </div>
       </div>
       `}
@@ -8765,10 +8762,10 @@ S. prn 3 dd 1 tab</textarea>
           <div class="flex flex-wrap items-center gap-2">
             <div>
               <span class="block text-[10.5px] font-semibold mb-0.5" style="color:var(--ons-text-soft)">Rentang Tanggal Trx:</span>
-              <div class="flex items-center gap-1">
-                <input id="anlParetoDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateFrom)}" onchange="window.setAnlParetoDateRange(this.value, document.getElementById('anlParetoDateTo').value)"/>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <input id="anlParetoDateFrom" type="date" class="ons-input text-xs h-8 py-1 w-[150px] font-mono-num" value="${S().esc(anlParetoDateFrom)}" onchange="window.setAnlParetoDateRange(this.value, document.getElementById('anlParetoDateTo').value)"/>
                 <span class="text-xs text-slate-400">&ndash;</span>
-                <input id="anlParetoDateTo" type="date" class="ons-input text-xs h-8 py-1 w-32 font-mono-num" value="${S().esc(anlParetoDateTo)}" onchange="window.setAnlParetoDateRange(document.getElementById('anlParetoDateFrom').value, this.value)"/>
+                <input id="anlParetoDateTo" type="date" class="ons-input text-xs h-8 py-1 w-[150px] font-mono-num" value="${S().esc(anlParetoDateTo)}" onchange="window.setAnlParetoDateRange(document.getElementById('anlParetoDateFrom').value, this.value)"/>
               </div>
             </div>
             <div class="self-end">
@@ -12651,12 +12648,12 @@ S. prn 3 dd 1 tab</textarea>
             <!-- Theme Switcher Pills & Top Actions -->
             <div class="flex flex-wrap items-center gap-2">
               <!-- Live Color Palette Switcher -->
-              <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 shadow-inner">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-sky-200 mr-1">🎨 Tema:</span>
-                <button type="button" onclick="window.setProfileTheme('royal-blue')" data-theme="royal-blue" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'royal-blue' ? 'bg-blue-600 text-white shadow ring-2 ring-sky-300' : 'text-white/75 hover:text-white'}" title="Medical Royal Blue & Cyan">🔵 Biru</button>
-                <button type="button" onclick="window.setProfileTheme('clean-light')" data-theme="clean-light" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'clean-light' ? 'bg-white text-slate-900 shadow ring-2 ring-white' : 'text-white/75 hover:text-white'}" title="Clean Light White">⚪ Terang</button>
-                <button type="button" onclick="window.setProfileTheme('fresh-emerald')" data-theme="fresh-emerald" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'fresh-emerald' ? 'bg-emerald-600 text-white shadow ring-2 ring-emerald-300' : 'text-white/75 hover:text-white'}" title="Fresh Emerald Farmasi">🟢 Hijau</button>
-                <button type="button" onclick="window.setProfileTheme('midnight-navy')" data-theme="midnight-navy" class="prof-theme-btn px-2 py-0.5 rounded text-[10px] font-bold transition-all ${curTheme === 'midnight-navy' ? 'bg-slate-800 text-white shadow ring-2 ring-slate-400' : 'text-white/75 hover:text-white'}" title="Deep Midnight Navy">⚫ Gelap</button>
+              <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/45 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/25 shadow-inner">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-sky-200 mr-0.5">🎨 Tema:</span>
+                <button type="button" onclick="window.setProfileTheme('royal-blue')" data-theme="royal-blue" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'royal-blue' ? 'bg-gradient-to-r from-[#0066FE] to-[#0284C7] text-white shadow-md ring-1 ring-white/70' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Medical Royal Blue & Cyan">🔵 Biru</button>
+                <button type="button" onclick="window.setProfileTheme('clean-light')" data-theme="clean-light" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'clean-light' ? 'bg-white text-slate-900 shadow-md ring-1 ring-white' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Clean Light White">⚪ Terang</button>
+                <button type="button" onclick="window.setProfileTheme('fresh-emerald')" data-theme="fresh-emerald" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'fresh-emerald' ? 'bg-emerald-500 text-white shadow-md ring-1 ring-emerald-200' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Fresh Emerald Farmasi">🟢 Hijau</button>
+                <button type="button" onclick="window.setProfileTheme('midnight-navy')" data-theme="midnight-navy" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'midnight-navy' ? 'bg-slate-700 text-white shadow-md ring-1 ring-sky-300/70' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Deep Midnight Navy">⚫ Gelap</button>
               </div>
 
               <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn text-white text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 backdrop-blur-md bg-white/15 hover:bg-white/25 border border-white/25 transition-all shadow-sm" title="Buka Titik Koordinat GPS di Google Maps">
@@ -12744,16 +12741,16 @@ S. prn 3 dd 1 tab</textarea>
           </div>
 
           <!-- Indikator Kelengkapan Profil Usaha -->
-          <div class="pt-3 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5 flex-1 min-w-[220px]">
-              <span class="text-[11px] font-semibold text-sky-100">Status Kelengkapan Dokumen &amp; Legalitas:</span>
-              <div class="flex-1 max-w-xs h-2.5 rounded-full bg-white/20 overflow-hidden shadow-inner">
-                <div class="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-emerald-400" style="width:${Math.max(20, comp.pct || 95)}%"></div>
+          <div class="pt-3.5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[240px]">
+              <span class="text-[11px] font-semibold text-sky-100 shrink-0">Kelengkapan Legalitas:</span>
+              <div class="flex-1 min-w-[120px] max-w-[240px] h-2.5 rounded-full bg-white/20 overflow-hidden shadow-inner">
+                <div class="h-full rounded-full bg-gradient-to-r from-sky-300 via-cyan-300 to-emerald-400" style="width:${Math.max(20, comp.pct || 95)}%"></div>
               </div>
-              <span class="text-[11px] font-bold text-sky-300 font-mono-num">${comp.pct || 95}% Lengkap</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white bg-white/15 border border-white/25 font-mono-num shrink-0">${comp.pct || 95}% Lengkap</span>
             </div>
-            <div class="text-[11px] text-sky-100 font-medium">
-              ✅ Data terintegrasi ke Surat Pesanan (SP), Kwitansi, Etiket &amp; Faktur Pembelian
+            <div class="text-[11px] text-sky-100/95 font-medium">
+              ✅ Tersinkron ke Surat Pesanan (SP), Kwitansi &amp; Faktur
             </div>
           </div>
         </div>
@@ -15573,26 +15570,40 @@ S. prn 3 dd 1 tab</textarea>
       </div>
 
       <div class="ons-card p-4 overflow-auto">
-        <div class="mx-auto transition-all duration-300 border-2 rounded-2xl overflow-hidden shadow-lg" style="max-width:${mobilePreviewBp};border-color:var(--ons-border);background:var(--ons-bg)">
-          <div class="px-4 py-2.5 flex items-center justify-between text-white text-xs font-bold" style="background:#09202A">
-            <span>ONS Farma PWA (${mobilePreviewBp})</span>
-            <span class="px-2 py-0.5 rounded bg-emerald-600 text-[10px]">ONLINE</span>
+        <div class="mx-auto transition-all duration-300 border-2 rounded-3xl overflow-hidden shadow-xl" style="max-width:${mobilePreviewBp};border-color:var(--ons-border-strong);background:var(--ons-bg)">
+          <div class="px-4 py-2.5 flex items-center justify-between text-white text-xs font-bold" style="background:linear-gradient(90deg,#0A192F 0%,#103766 100%)">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>${S().esc((S().getStoreProfile && S().getStoreProfile().nama_usaha) || 'Apotek ONS Farma')} (${mobilePreviewBp})</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px]">ONLINE</span>
           </div>
-          <div class="p-3 space-y-2 text-xs">
+          <div class="p-3.5 space-y-3 text-xs">
+            <div class="p-3.5 rounded-2xl text-white space-y-2 shadow-sm" style="background:linear-gradient(135deg,#0A192F 0%,#0066FE 70%,#0284C7 100%)">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2 py-0.5 rounded-full bg-white/15 text-[10px] font-bold">Ringkasan Operasional</span>
+                <span class="text-[10px] text-sky-100 font-mono-num">v${(window.ONS_CONFIG && window.ONS_CONFIG.APP_VERSION) || '18.72.0'}</span>
+              </div>
+              <div class="font-extrabold text-sm">Siap Layani Transaksi Kasir &amp; Klinis</div>
+              <div class="flex flex-wrap gap-1.5 pt-0.5">
+                <button type="button" onclick="navigateView('pos','kasir')" class="px-2.5 py-1 rounded-lg bg-white text-blue-700 font-bold text-[11px]">Buka Kasir POS</button>
+                <button type="button" onclick="navigateView('gudang','batch')" class="px-2.5 py-1 rounded-lg bg-white/15 text-white font-semibold text-[11px] border border-white/25">Cek Stok FEFO</button>
+              </div>
+            </div>
             <div class="grid ${mobilePreviewBp === '390px' ? 'grid-cols-2' : 'grid-cols-4'} gap-2">
-              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Produk</div><b class="font-mono-num">${S().AppState.masterObat.length}</b></div>
-              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Batch FEFO</div><b class="font-mono-num">${S().AppState.stokBatch.length}</b></div>
-              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Penjualan</div><b class="font-mono-num">${S().AppState.penjualan.length}</b></div>
-              <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Touch Target</div><b class="text-emerald-600">44px+ OK</b></div>
+              <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)"><div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Katalog Obat</div><b class="text-sm font-extrabold font-mono-num text-blue-600">${S().AppState.masterObat.length}</b></div>
+              <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)"><div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Batch FEFO</div><b class="text-sm font-extrabold font-mono-num text-emerald-600">${S().AppState.stokBatch.length}</b></div>
+              <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)"><div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Nota Terjual</div><b class="text-sm font-extrabold font-mono-num">${S().AppState.penjualan.length}</b></div>
+              <div class="p-2.5 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)"><div class="text-[10px] font-semibold" style="color:var(--ons-text-soft)">Touch Target</div><b class="text-sm font-extrabold text-emerald-600">44px+ OK</b></div>
             </div>
             <button type="button" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary w-full py-2.5">📲 Install PWA ke Perangkat Ini</button>
           </div>
-          ${mobilePreviewBp === '390px' ? `<div class="grid grid-cols-5 text-center text-[10px] py-2 border-t" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-            <button type="button" onclick="navigateView('dashboard')" class="font-bold text-blue-600">🏠 Beranda</button>
-            <button type="button" onclick="navigateView('pos')">🛒 Kasir</button>
-            <button type="button" onclick="navigateView('gudang')">📦 Stok</button>
-            <button type="button" onclick="navigateView('klinis')">🩺 Klinik</button>
-            <button type="button" onclick="window.openMobileDrawer && window.openMobileDrawer()">☰ Menu</button>
+          ${mobilePreviewBp === '390px' ? `<div class="grid grid-cols-5 text-center text-[10px] py-2 border-t" style="border-color:var(--ons-border);background:var(--ons-bg-card)">
+            <button type="button" onclick="navigateView('dashboard')" class="font-bold text-blue-600 py-1">Beranda</button>
+            <button type="button" onclick="navigateView('pos')" class="py-1" style="color:var(--ons-text-soft)">Kasir</button>
+            <button type="button" onclick="navigateView('obat')" class="py-1" style="color:var(--ons-text-soft)">Stok</button>
+            <button type="button" onclick="navigateView('pemeriksaan')" class="py-1" style="color:var(--ons-text-soft)">Klinik</button>
+            <button type="button" onclick="window.openMobileDrawer && window.openMobileDrawer()" class="py-1" style="color:var(--ons-text-soft)">Menu</button>
           </div>` : ''}
         </div>
       </div>

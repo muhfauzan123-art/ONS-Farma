@@ -7017,9 +7017,8 @@ html.dark .ons-quick-pill-badge {
 /* 6. Tombol Scan (FAB) di HP dibuat ringkas (ikon saja) agar tidak menutupi isi,
       dan konten utama diberi ruang bawah supaya baris terakhir bisa digulir di atasnya */
 @media (max-width: 767px) {
-  .ons-scanner-fab-pill { display: none; }
-  .ons-scanner-fab-btn { padding: 0.32rem; }
-  .ons-main-scroll { padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px)) !important; }
+  .ons-scanner-fab-host { display: none !important; }
+  .ons-main-scroll { padding-bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px)) !important; }
 }
 
 /* 7. Notifikasi di HP tampil di bagian atas (di bawah header) agar tidak menutupi keranjang & menu bawah */
@@ -7090,8 +7089,38 @@ html.dark .ons-quick-pill-badge {
   }
 }
 
-/* 11. Jaga badge kecil di kartu kokpit agar tidak terlipat ke 2 baris */
+/* 11. Kapsul badge kartu kokpit proporsional (tidak gepeng pada angka 1 digit) */
 .ons-cockpit-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  min-height: 20px;
+  padding: 0.14rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--ons-text-soft, #475569);
   white-space: nowrap;
   flex-shrink: 0;
+}
+html.dark .ons-cockpit-badge {
+  color: #CBD5E1;
+}
+
+/* 12. Pita filter cepat di desktop tampil utuh tanpa terpotong di tepi kanan */
+@media (min-width: 1024px) {
+  .ons-quick-pills-ribbon {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
+/* 13. Input tanggal cukup lebar agar tahun 4 digit & ikon kalender selalu terbaca */
+#mainViewSlot input[type="date"].ons-input,
+#mainViewSlot input[type="date"].w-28,
+#mainViewSlot input[type="date"].w-32 {
+  min-width: 146px;
 }

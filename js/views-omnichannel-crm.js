@@ -408,8 +408,7 @@
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            Database CRM Tersinkronisasi
-            </span>
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">Database CRM Tersinkronisasi</span>
             <button type="button" onclick="ONSViewsOmniCrm.syncCrmNow()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5" title="Tarik member &amp; pembeli online">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
               <span>Sinkronkan Member &amp; Online</span>

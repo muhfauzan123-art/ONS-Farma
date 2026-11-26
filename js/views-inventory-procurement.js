@@ -8285,11 +8285,11 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap gap-2 items-center">
             <input class="ons-input text-xs w-56" placeholder="Cari data (produk, rak, supplier, batch)..." value="${S().esc(gudangBatchQ)}" oninput="window.setGudangBatchQ(this.value)"/>
-            <div class="flex items-center gap-1 text-xs">
+            <div class="flex flex-wrap items-center gap-1.5 text-xs">
               <span class="text-[11px]" style="color:var(--ons-text-soft)">Filter Tgl ED:</span>
-              <input type="date" value="${S().esc(edDateFrom)}" onchange="window.setEdDateRange(this.value, '${S().esc(edDateTo)}')" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+              <input type="date" value="${S().esc(edDateFrom)}" onchange="window.setEdDateRange(this.value, '${S().esc(edDateTo)}')" class="ons-input text-xs py-1 w-[150px] font-mono-num"/>
               <span>-</span>
-              <input type="date" value="${S().esc(edDateTo)}" onchange="window.setEdDateRange('${S().esc(edDateFrom)}', this.value)" class="ons-input text-xs py-1 w-32 font-mono-num"/>
+              <input type="date" value="${S().esc(edDateTo)}" onchange="window.setEdDateRange('${S().esc(edDateFrom)}', this.value)" class="ons-input text-xs py-1 w-[150px] font-mono-num"/>
             </div>
             <div class="ons-quick-pills-ribbon" role="toolbar" aria-label="Filter Cepat Batch FEFO">
               <button type="button" onclick="window.setGudangBatchFilter('SEMUA')" class="ons-quick-pill ${gudangBatchFilter === 'SEMUA' ? 'is-active' : ''}">

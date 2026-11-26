@@ -1856,7 +1856,7 @@
    */
   function renderSparklineSvg(series, opts = {}) {
     const vals = Array.isArray(series) ? series.map((v) => Number(v || 0)) : [];
-    if (vals.length < 2) return '';
+    if (vals.length < 2 || !vals.some((v) => v !== 0)) return '';
     const w = Number(opts.width || 88);
     const h = Number(opts.height || 26);
     const padX = 4;
