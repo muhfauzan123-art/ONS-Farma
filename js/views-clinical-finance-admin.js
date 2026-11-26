@@ -5403,16 +5403,20 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   }
 
   let _billingLoading = false;
+  let _billingLastTs = 0;
   global.refreshBillingDataIfNeeded = async (force) => {
-    if (_billingLoading || (!force && billingCache.tagihan.length)) return;
+    if (_billingLoading) return;
+    if (!force && (billingCache.tagihan.length || (_billingLastTs && (Date.now() - _billingLastTs) < 60000))) return;
     _billingLoading = true;
+    const call = (API() && (API().callBatched || API().callApi)).bind(API());
     try {
       const [l, p, h, d] = await Promise.all([
-        API().callApi('billing.list', {}),
-        API().callApi('billing.pending', {}),
-        API().callApi('billing.history', {}),
-        API().callApi('discount.list', {})
+        call('billing.list', {}),
+        call('billing.pending', {}),
+        call('billing.history', {}),
+        call('discount.list', {})
       ]);
+      _billingLastTs = Date.now();
       billingCache = { tagihan: l.items || [], pending: p.items || [], history: h.items || [], potongan: d.items || [] };
       if (S().AppState.activeView === 'billing') global.renderActiveView();
     } catch (e) {} finally { _billingLoading = false; }
@@ -5614,15 +5618,19 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
   }
 
   let _docLoading = false;
+  let _docLastTs = 0;
   global.refreshDocEngineIfNeeded = async (force) => {
-    if (_docLoading || (!force && docCache.docs.length)) return;
+    if (_docLoading) return;
+    if (!force && (docCache.docs.length || (_docLastTs && (Date.now() - _docLastTs) < 60000))) return;
     _docLoading = true;
+    const call = (API() && (API().callBatched || API().callApi)).bind(API());
     try {
       const [t, d, p] = await Promise.all([
-        API().callApi('doc.templates', {}),
-        API().callApi('doc.list', {}),
-        API().callApi('doc.pejabatList', {})
+        call('doc.templates', {}),
+        call('doc.list', {}),
+        call('doc.pejabatList', {})
       ]);
+      _docLastTs = Date.now();
       docCache = { templates: t.items || [], docs: d.items || [], pejabat: p.items || [] };
       if (S().AppState.activeView === 'doc-engine') global.renderActiveView();
     } catch (e) {} finally { _docLoading = false; }
@@ -14890,22 +14898,25 @@ S. prn 3 dd 1 tab</textarea>
 
   let _setLoading = false;
   let _setLoadPromise = null;
+  let _setLastLoadedTs = 0;
   global.loadSettingsBundle = async (force) => {
     if (_setLoading) {
       if (!force) return _setLoadPromise;
       try { await _setLoadPromise; } catch (e) {}
     }
-    if (!force && (settingsCache.audit.length || Object.keys(settingsCache.secrets).length)) return;
+    if (!force && (settingsCache.audit.length || Object.keys(settingsCache.secrets).length || (_setLastLoadedTs && (Date.now() - _setLastLoadedTs) < 60000))) return;
     _setLoading = true;
+    const call = (API() && (API().callBatched || API().callApi)).bind(API());
     _setLoadPromise = (async () => {
       try {
         const [sec, aud, usr, profRes, chkRes] = await Promise.all([
-          API().callApi('settings.getSecretsMasked', {}).catch(() => ({ secrets: {} })),
-          API().callApi('audit.list', {}).catch(() => ({ items: [] })),
-          S().getRole() === 'Pemilik' ? API().callApi('users.list', {}).catch(() => ({ items: [] })) : Promise.resolve({ items: [] }),
-          API().callApi('profil.get', {}).catch(() => null),
-          API().callApi('audit.getChecklist', {}).catch(() => null)
+          call('settings.getSecretsMasked', {}).catch(() => ({ secrets: {} })),
+          call('audit.list', {}).catch(() => ({ items: [] })),
+          S().getRole() === 'Pemilik' ? call('users.list', {}).catch(() => ({ items: [] })) : Promise.resolve({ items: [] }),
+          call('profil.get', {}).catch(() => null),
+          call('audit.getChecklist', {}).catch(() => null)
         ]);
+        _setLastLoadedTs = Date.now();
         const rawProf = profRes && ((profRes.profile || profRes.item) || (profRes.nama_usaha ? profRes : null));
         if (rawProf && S().setStoreProfile) {
           const curProf = S().getStoreProfile();
@@ -14931,7 +14942,9 @@ S. prn 3 dd 1 tab</textarea>
         if (settingsCache.users.length) {
           S().AppState.staffDirectory = settingsCache.users.map((u) => Object.assign({}, u));
         }
-        if (S().AppState.activeView === 'settings') global.renderActiveView();
+        const ae = typeof document !== 'undefined' ? document.activeElement : null;
+        const isTypingInForm = ae && ae.closest && ae.closest('#mainViewSlot input, #mainViewSlot textarea, #mainViewSlot select');
+        if (S().AppState.activeView === 'settings' && !isTypingInForm) global.renderActiveView();
       } catch (e) {} finally {
         _setLoading = false;
         _setLoadPromise = null;

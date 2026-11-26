@@ -307,12 +307,16 @@
     </div>`;
   }
 
-  async function loadCrmAndQueue() {
+  let _crmLastLoadedTs = 0;
+  async function loadCrmAndQueue(force) {
+    if (!force && _crmLastLoadedTs && (Date.now() - _crmLastLoadedTs) < 45000) return;
+    const call = (API() && (API().callBatched || API().callApi)).bind(API());
     try {
       const [cRes, qRes] = await Promise.all([
-        API().callApi('crm.list', {}),
-        API().callApi('notif.list', {})
+        call('crm.list', {}),
+        call('notif.list', {})
       ]);
+      _crmLastLoadedTs = Date.now();
       S().AppState.crmKontak = cRes.items || [];
       S().AppState.antrianNotif = qRes.items || [];
       if (S().AppState.activeView === 'crm-wa' && typeof global.renderActiveView === 'function') global.renderActiveView();
@@ -322,7 +326,7 @@
   async function syncCrmNow() {
     try {
       const res = await API().callApi('crm.sync', {}, { isWrite: true });
-      await loadCrmAndQueue();
+      await loadCrmAndQueue(true);
       global.toast(`Sinkronisasi selesai: ${res.synced || 0} kontak baru (total ${res.total || 0}).`, 'ok');
     } catch (e) { global.toast(e.message, 'err'); }
   }

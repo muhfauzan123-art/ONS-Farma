@@ -379,8 +379,12 @@
             const list = (batchRes && batchRes.calls) || [];
             jobs.forEach((j, idx) => {
               const r = list[idx];
-              if (r && r.ok) j.resolve(r.data);
-              else j.reject(new Error((r && r.error) || 'Batch call failed'));
+              if (r && r.ok) {
+                try { setCachedRead(j.action, j.data, r.data); } catch (_) {}
+                j.resolve(r.data);
+              } else {
+                j.reject(new Error((r && r.error) || 'Batch call failed'));
+              }
             });
           } catch (err) {
             jobs.forEach((j) => j.reject(err));
