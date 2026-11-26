@@ -5642,12 +5642,12 @@
               <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
               <span class="text-xs font-semibold">Kembali</span>
             </button>
-            <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <div class="w-9 h-9 rounded-xl text-white flex items-center justify-center shrink-0 shadow-sm" style="background:linear-gradient(135deg,#0066FE,#0284C7)">
               <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
             </div>
             <div class="min-w-0">
-              <h2 class="font-extrabold text-base md:text-lg tracking-tight truncate">${o.id_obat ? 'Edit Produk Obat: ' + S().esc(o.nama_dagang) : 'Tambah Produk Obat Baru'}</h2>
-              <div class="text-xs text-slate-500 dark:text-slate-400 truncate">Formulir entri katalog obat, standar BPOM, multi-satuan, dan penetapan harga.</div>
+              <h2 class="font-extrabold text-base md:text-lg tracking-tight truncate">${o.id_obat ? 'Edit Produk: ' + S().esc(o.nama_dagang) : 'Tambah Produk Obat Baru'}</h2>
+              <div class="text-xs text-slate-500 dark:text-slate-400 truncate">Cukup isi kolom utama &mdash; pratinjau kartu kasir otomatis terupdate.</div>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -5684,64 +5684,74 @@
             <!-- Panel Kiri: Form Pengisian Rapi & Bersih -->
             <div class="lg:col-span-8 space-y-5">
 
-              <!-- TAHAP 1: IDENTITAS PRODUK -->
+              <!-- TAHAP 1: NAMA & BENTUK PRODUK (RINGKAS & MUDAH DIPAHAMI) -->
               <section id="wizSec1" class="${secCls(1)}">
                 <div class="ons-wiz-card-head">
                   <div class="flex items-center gap-2.5">
-                    <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">1</span>
+                    <span class="w-6 h-6 rounded-lg text-white font-extrabold text-xs flex items-center justify-center shadow-xs" style="background:linear-gradient(135deg,#0066FE,#0284C7)">1</span>
                     <div>
-                      <h3 class="font-extrabold text-sm md:text-base">Identitas &amp; Regulasi KFA / NIE BPOM</h3>
-                      <p class="text-xs text-slate-500 dark:text-slate-400">Nama dagang resmi, kandungan zat aktif, serta kode referensi Kemenkes/BPOM.</p>
+                      <h3 class="font-extrabold text-sm md:text-base">Nama &amp; Bentuk Produk</h3>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">Isi nama obat dan pilih bentuk jualnya terlebih dahulu.</p>
                     </div>
                   </div>
                   <button type="button" onclick="window.setObatWizardStep(3, true)" id="wizStep1SatuanPill" class="text-[11px] font-semibold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 transition-colors shrink-0">Satuan 1: ${S().esc(o.satuan_1 || o.satuan_dasar || 'Belum dipilih')} &rarr;</button>
                 </div>
-                ${!o.id_obat ? `<div class="px-4 sm:px-5 pt-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/70 bg-slate-50/50 dark:bg-slate-900/30">
-                  <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
-                    <span class="text-[11.5px] font-bold text-slate-700 dark:text-slate-200">Pilih Cepat Bentuk Sediaan <span class="font-normal text-slate-500 dark:text-slate-400">(opsional — otomatis isi satuan)</span></span>
+                ${!o.id_obat ? `<div class="px-4 sm:px-5 pt-3 pb-2.5 border-b border-slate-100 dark:border-slate-800/70 bg-slate-50/50 dark:bg-slate-900/30">
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200">1. Ini produk berbentuk apa? <span class="font-normal text-slate-500 dark:text-slate-400">(opsional — otomatis siapkan satuan jual)</span></span>
                   </div>
-                  <div class="flex flex-wrap gap-1.5 items-center" id="wizQuickShapeStrip">
-                    <button type="button" data-shape="tablet" onclick="window.applyObatQuickShape('tablet', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">💊 Tablet / Kapsul</button>
-                    <button type="button" data-shape="sirup" onclick="window.applyObatQuickShape('sirup', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">🧴 Sirup (Botol)</button>
-                    <button type="button" data-shape="salep" onclick="window.applyObatQuickShape('salep', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">🧪 Salep / Krim (Tube)</button>
-                    <button type="button" data-shape="sachet" onclick="window.applyObatQuickShape('sachet', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">✉️ Sachet / Serbuk</button>
-                    <button type="button" data-shape="alkes" onclick="window.applyObatQuickShape('alkes', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">🩹 Alkes (Pcs)</button>
-                    <button type="button" data-shape="chiller" onclick="window.applyObatQuickShape('chiller', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">❄️ Chiller 2–8°C</button>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5" id="wizQuickShapeStrip">
+                    <button type="button" data-shape="tablet" onclick="window.applyObatQuickShape('tablet', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">💊 Tablet / Kapsul</button>
+                    <button type="button" data-shape="sirup" onclick="window.applyObatQuickShape('sirup', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">🧴 Sirup (Botol)</button>
+                    <button type="button" data-shape="salep" onclick="window.applyObatQuickShape('salep', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">🧪 Salep (Tube)</button>
+                    <button type="button" data-shape="sachet" onclick="window.applyObatQuickShape('sachet', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">✉️ Sachet / Puyer</button>
+                    <button type="button" data-shape="alkes" onclick="window.applyObatQuickShape('alkes', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">🩹 Alkes (Pcs)</button>
+                    <button type="button" data-shape="chiller" onclick="window.applyObatQuickShape('chiller', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">❄️ Chiller 2–8°C</button>
                   </div>
                 </div>` : ''}
-                <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div class="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
                   <div class="md:col-span-2">
-                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
-                      <span>Nama Dagang Produk</span>
+                    <label class="font-bold text-xs text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                      <span>2. Nama Produk / Merek Dagang</span>
                       <span class="text-red-500 font-bold">*</span>
                     </label>
-                    <input id="wNamaDagang" class="${inpCls} font-semibold" value="${S().esc(o.nama_dagang)}" placeholder="Cth: Paracetamol 500mg Kaplet / Emturnas 500mg" required/>
+                    <input id="wNamaDagang" class="${inpCls} font-semibold text-sm" value="${S().esc(o.nama_dagang)}" placeholder="Cth: Paracetamol 500mg Kaplet atau Sanmol Sirup 60ml" required/>
                   </div>
                   <div class="md:col-span-2">
-                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">
-                      Zat Aktif &amp; Kekuatan
+                    <label class="font-bold text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+                      <span>Kandungan / Zat Aktif</span>
+                      <span class="text-[11px] text-slate-400 font-normal">Opsional &bull; untuk cek interaksi obat</span>
                     </label>
-                    <input id="wZatAktif" class="${inpCls}" value="${S().esc(o.zat_aktif)}" placeholder="Cth: Paracetamol 500 mg (Dipakai deteksi interaksi obat)"/>
+                    <input id="wZatAktif" class="${inpCls}" value="${S().esc(o.zat_aktif)}" placeholder="Cth: Paracetamol 500 mg (boleh dikosongkan untuk alkes/suplemen)"/>
                   </div>
-                  <div>
-                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1.5">
-                      <span>Kode KFA SATUSEHAT</span>
-                      <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
-                    </label>
-                    <input id="wKfa" class="${inpCls} font-mono-num" value="${S().esc(o.kode_kfa)}" placeholder="Cth: 93001024"/>
-                  </div>
-                  <div>
-                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1.5">
-                      <span>Nomor Izin Edar (NIE BPOM)</span>
-                      <span class="text-[10px] text-slate-400 font-normal">Disarankan</span>
-                    </label>
-                    <input id="wNie" class="${inpCls} font-mono-num" value="${S().esc(o.nie_bpom)}" placeholder="Cth: DBL8512304504A1"/>
-                  </div>
-                  <div>
-                    <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 block mb-1.5">
-                      Pabrikan / Industri Farmasi
-                    </label>
-                    <input id="wPabrikan" list="pabrikanListDatalist" class="${inpCls}" value="${S().esc(o.pabrikan || '')}" placeholder="Cth: Kalbe Farma / Sanbe / Kimia Farma"/>
+                  <details id="wizSec1OptionalAcc" class="md:col-span-2 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/30 px-3.5 py-2.5" ${(o.kode_kfa || o.nie_bpom || o.pabrikan || o.pbf_utama || o.supplier_utama) ? 'open' : ''}>
+                    <summary class="cursor-pointer select-none flex items-center justify-between gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 list-none">
+                      <span class="flex items-center gap-2">
+                        <span>📋</span>
+                        <span>Info Tambahan (Nomor BPOM, Kode KFA, Pabrikan &amp; Supplier)</span>
+                      </span>
+                      <span class="text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Opsional &bull; Klik buka</span>
+                    </summary>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-800">
+                      <div>
+                        <label class="font-bold text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+                          <span>Nomor Izin Edar (NIE BPOM)</span>
+                          <span class="text-[10px] text-slate-400 font-normal">Disarankan</span>
+                        </label>
+                        <input id="wNie" class="${inpCls} font-mono-num" value="${S().esc(o.nie_bpom)}" placeholder="Cth: DBL8512304504A1"/>
+                      </div>
+                      <div>
+                        <label class="font-bold text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+                          <span>Kode KFA SATUSEHAT</span>
+                          <span class="text-[10px] text-slate-400 font-normal">Opsional</span>
+                        </label>
+                        <input id="wKfa" class="${inpCls} font-mono-num" value="${S().esc(o.kode_kfa)}" placeholder="Cth: 93001024"/>
+                      </div>
+                      <div>
+                        <label class="font-bold text-xs text-slate-700 dark:text-slate-300 block mb-1">
+                          Pabrikan / Industri Farmasi
+                        </label>
+                        <input id="wPabrikan" list="pabrikanListDatalist" class="${inpCls}" value="${S().esc(o.pabrikan || '')}" placeholder="Cth: Kalbe Farma / Sanbe / Kimia Farma"/>
                     <datalist id="pabrikanListDatalist">
                       <option value="Kalbe Farma"></option>
                       <option value="Sanbe Farma"></option>
@@ -5775,7 +5785,9 @@
                       <option value="PT Mensa Binasukses (MBS)"></option>
                       <option value="PT Parit Padang Global (PPG)"></option>
                     </datalist>
-                  </div>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               </section>
 
@@ -5785,8 +5797,8 @@
                   <div class="flex items-center gap-2.5">
                     <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">2</span>
                     <div>
-                      <h3 class="font-extrabold text-sm md:text-base">Golongan BPOM &amp; Penyimpanan CDOB</h3>
-                      <p class="text-xs text-slate-500 dark:text-slate-400">Aturan regulasi obat, verifikasi resep APJ, serta zonasi rak apotek.</p>
+                      <h3 class="font-extrabold text-sm md:text-base">Aturan Jual &amp; Lokasi Rak</h3>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">Pilih golongan obat, suhu simpan, dan lokasi rak apotek.</p>
                     </div>
                   </div>
                 </div>
@@ -5833,8 +5845,8 @@
                     <div class="flex items-center gap-2.5">
                       <span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center">3</span>
                       <div>
-                        <h3 class="font-extrabold text-sm md:text-base">Konversi Satuan Kemasan Produk (Satuan 1, 2, dan 3)</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Satuan 1 adalah satuan dasar/terkecil yang Anda jual (Botol, Tube, Sachet, Pcs, Strip, Tablet, dll.). Satuan 2 &amp; 3 adalah kemasan bertingkat di atasnya.</p>
+                        <h3 class="font-extrabold text-sm md:text-base">Satuan &amp; Isi Kemasan Produk</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Pilih satuan terkecil yang dijual ke pasien (Botol, Tablet, Strip, Sachet, atau Pcs).</p>
                       </div>
                     </div>
                     <button type="button" onclick="window.openSatuanGuidanceModal()" class="ons-btn ons-btn-ghost text-xs text-blue-600 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 py-1 px-2.5 rounded-lg flex items-center gap-1.5 shadow-xs" title="Buka Contoh Nyata Pengisian Obat">
@@ -6156,26 +6168,25 @@
 
             </div>
 
-            <!-- Panel Kanan: KARTU TUNGGAL BERSIH & PROFESIONAL (Live POS & Monitor Ringkas) -->
-            <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-4" id="wizMonitorBox">
+            <!-- Panel Kanan: 1 KARTU PRATINJAU KASIR RINGKAS & MODERN -->
+            <aside class="lg:col-span-4 lg:sticky lg:top-4" id="wizMonitorBox">
               <div class="ons-wiz-card border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                 <!-- Header Pratinjau -->
-                <div class="px-4 py-3 border-b flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+                <div class="px-4 py-2.5 border-b flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                   <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                    <span class="font-extrabold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200">Pratinjau Produk (Live POS)</span>
+                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                    <span class="font-bold text-xs text-slate-700 dark:text-slate-200">Tampilan di Kasir POS</span>
                   </div>
-                  <span id="wizMonitorBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600">0/5 Terisi</span>
+                  <span id="wizMonitorBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">0/5 Wajib</span>
                 </div>
-                <!-- Sleek Linear Progress Line -->
                 <div class="w-full h-1 bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div id="wizCompBar" class="h-full bg-blue-600 transition-all duration-300" style="width:0%"></div>
                 </div>
                 <span id="wizCompPctSide" class="hidden">0%</span>
 
-                <div class="p-4 space-y-3.5 text-xs">
-                  <!-- Medicine Card Mockup -->
-                  <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-2">
+                <div class="p-3.5 space-y-3 text-xs">
+                  <!-- Satu Kartu Gabungan: Identitas + Kemasan + Harga -->
+                  <div class="p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-2.5">
                     <div class="flex items-start justify-between gap-2">
                       <div class="min-w-0">
                         <div id="wizPrevNama" class="font-extrabold text-sm leading-snug break-words text-slate-900 dark:text-white">-</div>
@@ -6183,52 +6194,35 @@
                       </div>
                       <span id="wizPrevBpom" class="badge-bpom bpom-bebas shrink-0">BEBAS</span>
                     </div>
-                    <div id="wizPrevKode" class="text-[11px] font-mono-num text-slate-500 dark:text-slate-400">KFA: - &bull; NIE: -</div>
-                    <div id="wizPrevLokasi" class="text-[11px] text-slate-500 dark:text-slate-400">Rak: - &bull; Suhu: -</div>
-                  </div>
 
-                  <!-- Satuan & Rasio -->
-                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-1">
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Konversi Kemasan</div>
-                    <div id="wizPrevRasio" class="font-mono-num font-bold text-xs text-blue-600 dark:text-blue-400">-</div>
-                  </div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+                      <div id="wizPrevLokasi">Rak: - &bull; Suhu: -</div>
+                      <div id="wizPrevKode" class="text-[10.5px] font-mono-num text-slate-400 hidden">KFA: - &bull; NIE: -</div>
+                    </div>
 
-                  <!-- Harga & Estimasi Profit -->
-                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Harga Jual &amp; Margin</span>
-                      <span id="wizPrevMargin" class="font-mono-num text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600">Margin 0%</span>
-                    </div>
-                    <div class="flex items-baseline justify-between">
-                      <span id="wizPrevUmum" class="font-mono-num text-base font-extrabold text-blue-600 dark:text-blue-400">Rp 0 / Unit</span>
-                      <span id="wizPrevHpp" class="font-mono-num text-[11px] text-slate-500">HPP: Rp 0</span>
-                    </div>
-                    <div id="wizPrevTierGrid" class="pt-2 border-t border-slate-200 dark:border-slate-700 grid grid-cols-3 gap-1.5 text-[11px] text-center font-mono-num">
+                    <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                      <div class="flex items-baseline justify-between gap-2">
+                        <span id="wizPrevUmum" class="font-mono-num text-base font-extrabold text-blue-600 dark:text-blue-400">Rp 0 / satuan?</span>
+                        <span id="wizPrevMargin" class="font-mono-num text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Belum dihitung</span>
+                      </div>
+                      <div class="flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                        <span id="wizPrevRasio" class="font-medium text-slate-600 dark:text-slate-300 truncate">-</span>
+                        <span id="wizPrevHpp" class="font-mono-num shrink-0">HPP: Rp 0</span>
+                      </div>
+                      <div id="wizPrevTierGrid" class="hidden"></div>
                     </div>
                   </div>
 
-                  <!-- Status Kelengkapan & Checklist Lembut (Tenang & Tidak Mengganggu) -->
-                  <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
-                    <div id="wizMonitorAlertBox" class="p-2.5 rounded-lg border text-xs font-medium leading-relaxed"></div>
-
-                    <div class="space-y-1">
-                      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Checklist Kelengkapan:</div>
-                      <div id="wizWajibChecklist" class="space-y-1"></div>
-                    </div>
-
-                    <div class="pt-1">
-                      <div class="text-[10px] font-medium text-slate-400 mb-1">Standar Regulasi:</div>
-                      <div id="wizOpsionalChecklist" class="space-y-0.5 text-[11px]"></div>
-                    </div>
-
-                    <div class="pt-1">
-                      <button type="button" onclick="window.jumpToFirstIncompleteWizardField()" class="ons-btn ons-btn-ghost w-full text-xs min-h-[34px] flex items-center justify-center gap-1.5 font-medium">
-                        <span>Lengkapi Kolom Kosong</span>
-                        <span aria-hidden="true">&rarr;</span>
-                      </button>
-                    </div>
+                  <!-- Status & Checklist Wajib Ringkas -->
+                  <div class="space-y-2">
+                    <div id="wizMonitorAlertBox"></div>
+                    <div id="wizWajibChecklist"></div>
+                    <div id="wizOpsionalChecklist" class="text-[10.5px] text-slate-400 dark:text-slate-500 text-center"></div>
+                    <button type="button" onclick="window.jumpToFirstIncompleteWizardField()" class="ons-btn ons-btn-ghost w-full text-xs min-h-[34px] flex items-center justify-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400">
+                      <span>Isi Kolom Berikutnya</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </button>
                   </div>
-
                 </div>
               </div>
             </aside>
@@ -6451,24 +6445,27 @@
       }
     }
 
+    const kodeEl = document.getElementById('wizPrevKode');
+    if (kodeEl) {
+      kodeEl.classList.toggle('hidden', !kfa && !nie);
+    }
+
     if (!satD) {
-      setTxt('wizPrevRasio', 'Belum dipilih (atur di Langkah 3)');
+      setTxt('wizPrevRasio', 'Satuan jual belum dipilih');
       setTxt('wizPrevUmum', S().rp(umum) + ' / satuan?');
     }
 
     const tierGrid = document.getElementById('wizPrevTierGrid');
     if (tierGrid) {
-      if (!satD) {
-        tierGrid.className = 'pt-1.5 mt-1 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 text-[11px]';
-        tierGrid.innerHTML = `<span class="text-slate-400 dark:text-slate-500">Satuan eceran belum dipilih</span>
-          <button type="button" onclick="window.setObatWizardStep(3, true)" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">Pilih &rarr;</button>`;
+      if (!satD || (!valid2 && !valid3)) {
+        tierGrid.className = 'hidden';
+        tierGrid.innerHTML = '';
       } else {
-        tierGrid.className = 'pt-2 mt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-1.5 text-[11px]';
+        tierGrid.className = 'pt-1.5 mt-1 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-1.5 text-[11px]';
         tierGrid.innerHTML = `
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold font-mono-num">${S().rp(umum)} <span class="font-normal opacity-80">/${S().esc(satD)}</span></span>
           ${valid2 ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold font-mono-num">${S().rp(hSed)} <span class="font-normal opacity-80">/${S().esc(satS)}</span></span>` : ''}
-          ${valid3 ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-bold font-mono-num">${S().rp(hBes)} <span class="font-normal opacity-80">/${S().esc(satB)}</span></span>` : ''}
-          ${!valid2 && !valid3 ? `<span class="text-[10.5px] font-medium text-slate-400 dark:text-slate-500 px-1">&bull; Kemasan Tunggal</span>` : ''}`;
+          ${valid3 ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-bold font-mono-num">${S().rp(hBes)} <span class="font-normal opacity-80">/${S().esc(satB)}</span></span>` : ''}`;
       }
     }
 
@@ -6732,7 +6729,7 @@
     const filledWajibCount = wajibList.filter((x) => x.ok).length;
     const wajibPct = Math.round((filledWajibCount / wajibList.length) * 100);
 
-    setTxt('wizCompBadge', `Kolom Wajib: ${filledWajibCount}/5 (${wajibPct}%)`);
+    setTxt('wizCompBadge', `Data Wajib: ${filledWajibCount}/5`);
     setTxt('wizCompPctSide', `${wajibPct}%`);
     const bar = document.getElementById('wizCompBar');
     if (bar) {
@@ -6742,23 +6739,22 @@
 
     const monBadge = document.getElementById('wizMonitorBadge');
     if (monBadge) {
-      monBadge.textContent = filledWajibCount === 5 ? '✓ Lengkap 5/5' : `${filledWajibCount}/5 Terisi`;
-      monBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full ' + (filledWajibCount === 5 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-blue-500/10 text-blue-600');
+      monBadge.textContent = filledWajibCount === 5 ? '✓ Siap Simpan' : `${filledWajibCount}/5 Wajib`;
+      monBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full ' + (filledWajibCount === 5 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-blue-500/10 text-blue-600');
     }
 
-    // Monitor Alert Box (Ringkas 1-Baris Agar Kartu Kanan Muat Penuh Tanpa Terpotong)
+    // Monitor Alert Box: tampil jelas hanya jika ada peringatan margin atau sudah 5/5 siap simpan
     const alertBox = document.getElementById('wizMonitorAlertBox');
     if (alertBox) {
       if (isUnderHpp) {
         alertBox.className = 'px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50/80 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-[11px] flex items-center justify-between gap-2';
-        alertBox.innerHTML = `<span class="font-bold">⚠️ Harga Jual &lt; HPP (${S().rp(hpp)})</span><span class="text-[10px] opacity-85">Cek margin</span>`;
+        alertBox.innerHTML = `<span class="font-bold">⚠️ Harga Jual di bawah HPP (${S().rp(hpp)})</span>`;
       } else if (filledWajibCount === 5) {
         alertBox.className = 'px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 text-[11px] flex items-center justify-between gap-2';
-        alertBox.innerHTML = `<span class="font-bold">✓ Data Wajib Lengkap</span><span class="text-[10px] opacity-85">Siap diterbitkan</span>`;
+        alertBox.innerHTML = `<span class="font-bold">✓ Semua data wajib lengkap &bull; Siap disimpan</span>`;
       } else {
-        const missingItem = wajibList.find((x) => !x.ok);
-        alertBox.className = 'px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-50/90 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 text-[11px] flex items-center justify-between gap-2';
-        alertBox.innerHTML = `<span class="font-semibold text-slate-700 dark:text-slate-200">ℹ️ Sisa ${5 - filledWajibCount} kolom wajib</span><span class="text-[10.5px] text-slate-500 dark:text-slate-400 truncate max-w-[145px]">Berikut: ${missingItem ? missingItem.label : '-'}</span>`;
+        alertBox.className = 'flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-0.5';
+        alertBox.innerHTML = `<span class="font-semibold text-slate-600 dark:text-slate-300">Kelengkapan Data Wajib</span><span>Sisa ${5 - filledWajibCount} kolom</span>`;
       }
     }
 
@@ -6790,20 +6786,12 @@
       }).join('');
     }
 
-    // Render Checklist Standar BPOM / Disarankan (Compact 3-Col Pill Strip agar bebas terpotong)
+    // Opsional checklist ringkas 1 baris tipis (tanpa menumpuk kotak)
     const oListEl = document.getElementById('wizOpsionalChecklist');
     if (oListEl) {
-      const ops = [
-        { label: 'Zat Aktif', ok: Boolean(zat), title: zat || 'Belum diisi' },
-        { label: 'NIE / KFA', ok: Boolean(nie || kfa), title: (nie || kfa) || 'Belum diisi' },
-        { label: satD ? (satB && satS ? '3 Satuan' : (satS || satB ? '2 Satuan' : satD)) : 'Satuan?', ok: Boolean(satD), title: satB ? `1 ${satB} = ${rasB} ${satD}` : (satD || 'Belum dipilih') }
-      ];
-      oListEl.className = 'grid grid-cols-3 gap-1.5 text-[10.5px]';
-      oListEl.innerHTML = ops.map((op) => `
-        <div title="${S().esc(op.title)}" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-md border text-center truncate ${op.ok ? 'border-emerald-200/80 bg-emerald-50/70 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-300 font-semibold' : 'border-slate-200/80 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400'}">
-          <span>${op.ok ? '✓' : '•'}</span>
-          <span class="truncate">${S().esc(op.label)}</span>
-        </div>`).join('');
+      const opsFilled = [Boolean(zat), Boolean(nie || kfa), Boolean(val('wPabrikan') || val('wPbfUtama'))].filter(Boolean).length;
+      oListEl.className = 'text-[10.5px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-0.5';
+      oListEl.innerHTML = `<span>Info tambahan opsional</span><span class="font-mono-num">${opsFilled}/3 terisi</span>`;
     }
 
     // Step 5 Review Status Banner
