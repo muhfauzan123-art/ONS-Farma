@@ -1149,7 +1149,7 @@
           <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
             <button type="button" onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Import Kontak PBF"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
-            <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Supplier Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Supplier</span></button>
+            <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Supplier Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Supplier</span></button>
           </div>
         </div>
       </div>
@@ -1325,7 +1325,7 @@
           <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
             <button type="button" onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Import Kontak Pelanggan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
-            <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Pelanggan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Pelanggan</span></button>
+            <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Pelanggan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Pelanggan</span></button>
           </div>
         </div>
       </div>
@@ -1482,7 +1482,7 @@
           <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
             <button type="button" onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Import Kontak Dokter"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
-            <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Dokter Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Dokter</span></button>
+            <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Dokter Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Dokter</span></button>
           </div>
         </div>
       </div>
@@ -1604,7 +1604,7 @@
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
-            <button type="button" onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Sales / Pelayan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Sales/Pelayan</span></button>
+            <button type="button" onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Sales / Pelayan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Sales/Pelayan</span></button>
           </div>
         </div>
       </div>
@@ -1835,7 +1835,7 @@
               <th style="width:50px">No.</th>
               <th>Nama Kategori</th>
               <th style="width:120px">Status</th>
-              <th style="width:120px;text-align:center">Actions</th>
+              <th style="width:120px;text-align:center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -1909,7 +1909,7 @@
               <th style="width:50px">No.</th>
               <th>Nama Satuan</th>
               <th style="width:120px">Status</th>
-              <th style="width:120px;text-align:center">Actions</th>
+              <th style="width:120px;text-align:center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -2122,7 +2122,7 @@
               <th>Nama Kategori</th>
               <th style="width:120px">Kode</th>
               <th style="width:120px">Status</th>
-              <th style="width:120px;text-align:center">Actions</th>
+              <th style="width:120px;text-align:center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -2192,7 +2192,7 @@
               <th style="width:50px">No.</th>
               <th>Nama Pajak</th>
               <th class="text-right" style="width:140px">Nilai Pajak</th>
-              <th style="width:120px;text-align:center">Actions</th>
+              <th style="width:120px;text-align:center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -2309,7 +2309,7 @@
       pageDesc = 'Katalog induk sediaan obat, zat aktif, kode KFA SATUSEHAT, nomor izin edar BPOM, multi-satuan, dan harga jual.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Obat Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Obat</span></button>
+        <button type="button" onclick="window.openObatWizardModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Obat Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Tambah Obat</span></button>
         <div class="ons-dd-wrap inline-block">
           <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">⚙️ Alat &amp; Massal &#9662;</button>
           <div class="ons-dd-items hidden">
@@ -2335,7 +2335,7 @@
       pageDesc = 'Pengelompokan sediaan farmasi (Obat Bebas, Keras, Herbal, Kosmetika, Alkes) untuk mempermudah klasifikasi etalase dan POS.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddKategoriModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Kategori Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Kategori</span></button>
+        <button type="button" onclick="window.openAddKategoriModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Kategori Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Tambah Kategori</span></button>
         ${syncBtn}
       `;
     } else if (masterTab === 'satuan') {
@@ -2344,7 +2344,7 @@
       pageDesc = 'Standardisasi satuan kemasan dasar dan tingkat lanjut (Box, Strip, Botol, Vial, Tablet) untuk konversi POS dan pengadaan.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddSatuanModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Satuan Kemasan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Satuan Kemasan</span></button>
+        <button type="button" onclick="window.openAddSatuanModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Satuan Kemasan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Tambah Satuan Kemasan</span></button>
         ${syncBtn}
       `;
     } else if (masterTab === 'rak') {
@@ -2353,7 +2353,7 @@
       pageDesc = 'Pemetaan lokasi rak penyimpanan fisik obat di ruang peracikan, etalase depan, atau chiller agar pengambilan obat cepat dan akurat.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddRakModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Rak Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Rak</span></button>
+        <button type="button" onclick="window.openAddRakModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Rak Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Tambah Rak</span></button>
         ${syncBtn}
       `;
     } else if (masterTab === 'gudang') {
@@ -2362,7 +2362,7 @@
       pageDesc = 'Pengelolaan instalasi farmasi, gudang utama, gudang karantina, dan ruang penyimpanan khusus untuk pengendalian persediaan.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddGudangModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Gudang Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Gudang</span></button>
+        <button type="button" onclick="window.openAddGudangModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Gudang Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Tambah Gudang</span></button>
         ${syncBtn}
       `;
     } else if (masterTab === 'kategori-pelanggan') {
@@ -2371,7 +2371,7 @@
       pageDesc = 'Klasifikasi kelompok pelanggan (Umum, Terapi Rutin, Pasien Mitra, Karyawan, VIP) dengan kebijakan diskon dan margin harga khusus.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddKatPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Kategori Pelanggan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Kategori</span></button>
+        <button type="button" onclick="window.openAddKatPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Kategori Pelanggan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Tambah Kategori</span></button>
         ${syncBtn}
       `;
     } else if (masterTab === 'pajak') {
@@ -2380,7 +2380,7 @@
       pageDesc = 'Konfigurasi tarif PPN transaksi penjualan dan faktur pembelian, pembebasan pajak untuk sediaan tertentu, dan kepatuhan faktur pajak.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openAddPajakModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Tarif Pajak"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Tambah Pajak</span></button>
+        <button type="button" onclick="window.openAddPajakModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Tarif Pajak"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Tambah Pajak</span></button>
         ${syncBtn}
       `;
     }
@@ -2510,7 +2510,7 @@
       pageDesc = 'Direktori rekanan PBF resmi, izin CDOB, nomor faktur/tagihan, lead-time pengiriman, dan kontak WhatsApp sales.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Supplier Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Supplier Baru</span></button>
+        <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Supplier Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Supplier Baru</span></button>
         <button type="button" onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
         <button type="button" onclick="window.navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📋 Buat SP</button>
         ${exportBtns('exportMasterSupplier')}
@@ -2522,7 +2522,7 @@
       pageDesc = 'Database pasien dan pelanggan apotek, riwayat terapi rutin, nomor WhatsApp KIE, dan kartu loyalitas keanggotaan.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Pelanggan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Pelanggan Baru</span></button>
+        <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Pelanggan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Pelanggan Baru</span></button>
         <button type="button" onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
         <button type="button" onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">🩺 Pantau Terapi</button>
         ${exportBtns('exportMasterPelanggan')}
@@ -2534,7 +2534,7 @@
       pageDesc = 'Direktori dokter penulis resep, nomor Surat Izin Praktik (SIP), faskes/klinik mitra, dan integrasi SATUSEHAT ID.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 2a2 2 0 0 0-2 2v2H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2V4a2 2 0 0 0-2-2h-2Z"/><path d="M10 12h4"/><path d="M12 10v4"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Dokter Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Dokter Baru</span></button>
+        <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Dokter Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Dokter Baru</span></button>
         <button type="button" onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
         <button type="button" onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">🧾 Antrean E-Resep</button>
         ${exportBtns('exportMasterDokter')}
@@ -2546,7 +2546,7 @@
       pageDesc = 'Pencatatan tenaga pelayan kasir, asisten apoteker (TTK), perhitungan poin omzet transaksi, dan performa kasir.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m19 8 2 2-4 4"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Sales/Pelayan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ Sales/Pelayan Baru</span></button>
+        <button type="button" onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Sales/Pelayan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Sales/Pelayan Baru</span></button>
         ${exportBtns('exportMasterSales')}
         ${syncBtn}
       `;
@@ -8346,7 +8346,7 @@
                 <th>Batas Retur</th>
                 ${seeCost ? '<th>Harga Pokok</th>' : ''}
                 <th>Kuantitas</th>
-                ${seeCost ? '<th>Actions</th>' : ''}
+                ${seeCost ? '<th>Aksi</th>' : ''}
               </tr>
             </thead>
             <tbody>
@@ -8721,7 +8721,7 @@
                 ${seeCost ? '<th>Nilai Penyesuaian</th>' : ''}
                 <th>Penyebab Selisih</th>
                 <th>Catatan</th>
-                <th>Actions</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -8850,7 +8850,7 @@
                 <th>No. Transaksi</th>
                 <th>Produk &amp; Tujuan</th>
                 ${seeCost ? '<th>Total Nilai Stok</th>' : ''}
-                <th>Actions</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -10242,7 +10242,7 @@
       </div>
       <div class="ons-table-wrap max-h-72 overflow-y-auto">
         <table class="ons-table is-compact">
-          <thead><tr><th>No.</th><th>Info Opname</th><th>Actions</th></tr></thead>
+          <thead><tr><th>No.</th><th>Info Opname</th><th>Aksi</th></tr></thead>
           <tbody id="roTableBody">${renderRows(merged)}</tbody>
         </table>
       </div>
@@ -10554,7 +10554,7 @@
       </div>
       <div class="ons-table-wrap max-h-72 overflow-y-auto">
         <table class="ons-table is-compact">
-          <thead><tr><th>No.</th><th>Produk</th><th>Asal &rarr; Tujuan</th><th>Qty</th><th>Actions</th></tr></thead>
+          <thead><tr><th>No.</th><th>Produk</th><th>Asal &rarr; Tujuan</th><th>Qty</th><th>Aksi</th></tr></thead>
           <tbody>
             ${drafts.length ? drafts.map((d, i) => `<tr>
               <td class="font-mono-num">${i + 1}.</td>
@@ -12829,7 +12829,7 @@
             <h3 class="font-bold text-sm">Riwayat Retur Pembelian (${filteredReturHistory.length})</h3>
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur (BAR)</th><th>No. Faktur Asal</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Retur</th><th>Actions</th></tr></thead>
+                <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur (BAR)</th><th>No. Faktur Asal</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Retur</th><th>Aksi</th></tr></thead>
                 <tbody>
                   ${filteredReturHistory.length ? filteredReturHistory.map((r, i) => `<tr>
                     <td class="font-mono-num text-xs">${i + 1}.</td>
@@ -12881,7 +12881,7 @@
 
           <div class="ons-card p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style="border-color:var(--ons-border)">
-              <div class="flex items-center gap-1.5">
+              <div class="flex flex-wrap items-center gap-1.5 min-w-0">
                 <span class="text-xs font-bold text-slate-500 uppercase mr-1">Pilihan Data:</span>
                 <button type="button" onclick="window.setFakturPilihanData('FAKTUR')" class="ons-btn text-xs py-1 px-2.5 ${fakturPilihanData === 'FAKTUR' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📄 Faktur (${allFaktur.length})</button>
                 <button type="button" onclick="window.setFakturPilihanData('PRODUK')" class="ons-btn text-xs py-1 px-2.5 ${fakturPilihanData === 'PRODUK' ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'}">📦 Produk</button>
@@ -13015,7 +13015,7 @@
             ` : `
             <div class="ons-table-wrap">
               <table class="ons-table">
-                <thead><tr><th>No.</th><th>Tanggal Terima</th><th>Petugas</th><th>No. Faktur &amp; SP</th><th>Supplier</th><th>Produk</th><th>Jatuh Tempo</th><th class="text-right">Total / Sisa Hutang</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>No.</th><th>Tanggal Terima</th><th>Petugas</th><th>No. Faktur &amp; SP</th><th>Supplier</th><th>Produk</th><th>Jatuh Tempo</th><th class="text-right">Total / Sisa Hutang</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody>
                   ${filteredFaktur.length ? filteredFaktur.map((f, idx) => {
                     const isKons = isKonsFaktur(f);
@@ -14395,8 +14395,8 @@
               <option value="produk" ${konsEntryMode === 'produk' ? 'selected' : ''}>Pilihan: Produk</option>
             </select>
             <input class="ons-input text-xs w-48" placeholder="Cari data (faktur/supplier/obat)..." value="${S().esc(konsSearchQ)}" oninput="window.setKonsSearchQ(this.value)"/>
-            <input type="date" class="ons-input text-xs w-36" title="Dari tanggal" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/>
-            <input type="date" class="ons-input text-xs w-36" title="Sampai tanggal" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/>
+            <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap" style="color:var(--ons-text-soft)"><span>Dari</span><input type="date" aria-label="Dari tanggal" class="ons-input text-xs w-36" title="Dari tanggal" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/></label>
+            <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap" style="color:var(--ons-text-soft)"><span>s.d.</span><input type="date" aria-label="Sampai tanggal" class="ons-input text-xs w-36" title="Sampai tanggal" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/></label>
             ${(konsDateFrom || konsDateTo || konsSearchQ) ? `<button type="button" onclick="window.setKonsSearchQ('');window.setKonsDateRange('','')" class="ons-btn ons-btn-ghost text-xs">Reset</button>` : ''}
             <button type="button" onclick="window.exportKonsinyasiData('masuk')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
           </div>
@@ -14416,7 +14416,7 @@
               </tr>`).join('') : '<tr><td colspan="7" class="text-center py-6 text-xs">Data tidak ditemukan.</td></tr>'}
             </tbody>
           </table>` : `<table class="ons-table">
-            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Konsinyasi Masuk</th><th>Actions</th></tr></thead>
+            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Konsinyasi Masuk</th><th>Aksi</th></tr></thead>
             <tbody>
               ${masukRows.length ? masukRows.map((r, idx) => `<tr>
                 <td class="font-mono-num text-xs">${idx + 1}</td>
@@ -14468,14 +14468,14 @@
             <h3 class="font-bold text-sm">Retur Konsinyasi</h3>
             <div class="flex flex-wrap items-center gap-2">
               <input class="ons-input text-xs w-48" placeholder="Cari data retur..." value="${S().esc(konsSearchQ)}" oninput="window.setKonsSearchQ(this.value)"/>
-              <input type="date" class="ons-input text-xs w-36" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/>
-              <input type="date" class="ons-input text-xs w-36" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/>
+              <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap" style="color:var(--ons-text-soft)"><span>Dari</span><input type="date" aria-label="Dari tanggal" class="ons-input text-xs w-36" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/></label>
+              <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap" style="color:var(--ons-text-soft)"><span>s.d.</span><input type="date" aria-label="Sampai tanggal" class="ons-input text-xs w-36" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/></label>
               <button type="button" onclick="window.exportKonsinyasiData('retur')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
             </div>
           </div>
           <div class="ons-table-wrap">
             <table class="ons-table">
-              <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Retur</th><th>Actions</th></tr></thead>
+              <thead><tr><th>No.</th><th>Tanggal</th><th>No. Faktur</th><th>Supplier</th><th>Produk</th><th class="text-right">Total Retur</th><th>Aksi</th></tr></thead>
               <tbody>
                 ${returRows.length ? returRows.map((r, idx) => `<tr>
                   <td class="font-mono-num text-xs">${idx + 1}</td>
@@ -14518,8 +14518,8 @@
               <option value="">Semua Supplier (${suppliers.length})</option>
               ${suppliers.map((sup) => `<option value="${S().esc(sup)}" ${fakturKonsinyasiPbfFilter === sup ? 'selected' : ''}>${S().esc(sup)}</option>`).join('')}
             </select>
-            <input type="date" class="ons-input text-xs w-36" title="ED dari" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/>
-            <input type="date" class="ons-input text-xs w-36" title="ED sampai" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/>
+            <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap" style="color:var(--ons-text-soft)"><span>Dari</span><input type="date" aria-label="Dari tanggal" class="ons-input text-xs w-36" title="ED dari" value="${S().esc(konsDateFrom)}" onchange="window.setKonsDateRange(this.value, '${S().esc(konsDateTo)}')"/></label>
+            <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap" style="color:var(--ons-text-soft)"><span>s.d.</span><input type="date" aria-label="Sampai tanggal" class="ons-input text-xs w-36" title="ED sampai" value="${S().esc(konsDateTo)}" onchange="window.setKonsDateRange('${S().esc(konsDateFrom)}', this.value)"/></label>
             <button type="button" onclick="window.exportKonsinyasiData('stok')" class="ons-btn ons-btn-ghost text-xs">Excel</button>
           </div>
         </div>
@@ -14573,7 +14573,7 @@
         </div>
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>No.</th><th>Penitip</th><th class="text-right">Sisa Produk</th><th class="text-right">Terjual</th><th class="text-right">Belum Disetor</th><th>Actions</th></tr></thead>
+            <thead><tr><th>No.</th><th>Penitip</th><th class="text-right">Sisa Produk</th><th class="text-right">Terjual</th><th class="text-right">Belum Disetor</th><th>Aksi</th></tr></thead>
             <tbody>
               ${penitipRows.length ? penitipRows.map((p, idx) => `<tr>
                 <td class="font-mono-num text-xs">${idx + 1}</td>
@@ -16415,7 +16415,7 @@
           </button>
           <button type="button" onclick="window.setKonsSubTab('status')" class="ons-dash-tab-btn ${konsSubTab === 'status' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="m3 9 9-4 9 4"/><path d="m3 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L9 9"/><path d="m15 9 3 6c0 1.66 1.34 3 3 3s3-1.34 3-3L21 9"/></svg>
-            <span>Status &amp; Settlement</span>
+            <span>Status Konsinyasi</span>
             ${pendingTagihan > 0
               ? `<span class="ons-dash-tab-badge font-mono-num bg-rose-500 text-white animate-pulse">${S().rp(pendingTagihan)} Settle</span>`
               : `<span class="ons-dash-tab-badge font-mono-num text-emerald-600 bg-emerald-500/15">Lunas</span>`}

@@ -1098,10 +1098,10 @@
                     Portal Resmi Apotek
                   </span>
                   <div class="font-black text-lg sm:text-xl lg:text-2xl tracking-tight text-white leading-tight truncate">${S().esc(usahaNama)}</div>
-                  <div class="text-[11px] lg:text-xs text-sky-200/90 font-medium truncate mt-0.5 flex items-center gap-1">
-                    <span>${S().esc(pemilikNama)}</span>
+                  <div class="text-[11px] lg:text-xs text-sky-200/90 font-medium mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0 min-w-0">
+                    <span class="truncate max-w-full">${S().esc(pemilikNama)}</span>
                     <span class="text-sky-300/60">•</span>
-                    <span class="text-emerald-300 font-semibold">Standar BPOM</span>
+                    <span class="text-emerald-300 font-semibold whitespace-nowrap">Standar BPOM</span>
                   </div>
                 </div>
               </div>
@@ -1131,7 +1131,7 @@
             </div>
 
             <!-- Feature Value Bullets Desktop -->
-            <div class="hidden lg:block space-y-2.5 py-1">
+            <div class="hidden lg:block space-y-2.5 py-1 ons-login-features">
               <div class="text-[11px] font-extrabold tracking-wider uppercase text-sky-300/90 flex items-center gap-1.5">
                 ${_loginIco('sparkles', 'w-3.5 h-3.5 text-amber-300')}
                 <span>Fitur Unggulan Sistem Farmasi</span>
@@ -1166,7 +1166,7 @@
               <div class="ons-login-meta-chip">
                 <span class="text-emerald-300 shrink-0">${_loginIco('shield', 'w-4 h-4')}</span>
                 <div class="min-w-0 flex-1">
-                  <div class="font-bold text-white text-[11.5px] truncate">SIA: ${S().esc(prof.no_sia || '-')}</div>
+                  <div class="font-bold text-white text-[11.5px] truncate">${prof.no_sia ? `SIA: ${S().esc(prof.no_sia)}` : 'Izin SIA belum diisi'}</div>
                   <div class="text-[10.5px] text-sky-200/80 truncate">${S().esc(prof.kota || 'Indonesia')} &bull; SIPA APJ: ${S().esc(prof.sipa_pemilik || prof.no_sipa || 'Aktif')}</div>
                 </div>
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shrink-0">Aktif</span>
@@ -1290,7 +1290,7 @@
                 </div>
                 <div class="ons-login-field-wrap">
                   <span class="ons-login-field-icon">${_loginIco('lock', 'w-4 h-4')}</span>
-                  <input id="loginPass" name="password" type="password" autocomplete="current-password" oninput="window.clearLoginInlineError()" onkeyup="window.handleLoginCapsCheck(event)" onkeydown="window.handleLoginCapsCheck(event)" class="ons-input" placeholder="${demoMode ? 'Bebas atau kosongkan di Mode Lokal' : 'Masukkan kata sandi akun'}" value="" ${demoMode ? '' : 'required'}/>
+                  <input id="loginPass" name="password" type="password" autocomplete="current-password" oninput="window.clearLoginInlineError()" onkeyup="window.handleLoginCapsCheck(event)" onkeydown="window.handleLoginCapsCheck(event)" class="ons-input" placeholder="${demoMode ? 'Boleh dikosongkan' : 'Masukkan kata sandi akun'}" value="" ${demoMode ? '' : 'required'}/>
                   <button type="button" onclick="window.togglePasswordFieldVis('loginPass', this)" aria-label="Tampilkan atau sembunyikan kata sandi" class="ons-login-eye-btn">
                     ${_loginIco('eye', 'w-3.5 h-3.5')}
                     <span>Lihat</span>
@@ -1313,15 +1313,15 @@
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                   <button type="button" onclick="${demoMode ? `window.quickRoleLogin('pemilik')` : `window.quickFillUsername('pemilik')`}" class="ons-login-quick-card group">
-                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25 group-hover:bg-blue-500 group-hover:text-white transition-colors">👑 Pemilik</span>
+                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25 group-hover:bg-blue-500 group-hover:text-white transition-colors"><span class="ons-qc-emoji">👑 </span>Pemilik</span>
                     <span class="font-extrabold text-[11px] text-slate-800 dark:text-slate-200 mt-1">Akses Penuh</span>
                   </button>
                   <button type="button" onclick="${demoMode ? `window.quickRoleLogin('apj')` : `window.quickFillUsername('apj')`}" class="ons-login-quick-card group">
-                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 group-hover:bg-emerald-500 group-hover:text-white transition-colors">💊 APJ</span>
+                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 group-hover:bg-emerald-500 group-hover:text-white transition-colors"><span class="ons-qc-emoji">💊 </span>APJ</span>
                     <span class="font-extrabold text-[11px] text-slate-800 dark:text-slate-200 mt-1">Klinis &amp; Stok</span>
                   </button>
                   <button type="button" onclick="${demoMode ? `window.quickRoleLogin('kasir')` : `window.quickFillUsername('kasir')`}" class="ons-login-quick-card group">
-                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 group-hover:bg-amber-500 group-hover:text-white transition-colors">🛒 Kasir</span>
+                    <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 group-hover:bg-amber-500 group-hover:text-white transition-colors"><span class="ons-qc-emoji">🛒 </span>Kasir</span>
                     <span class="font-extrabold text-[11px] text-slate-800 dark:text-slate-200 mt-1">Kasir POS</span>
                   </button>
                 </div>
@@ -1558,10 +1558,12 @@
         if (typeof global.showViewSkeleton === 'function') {
           global.showViewSkeleton('dashboard');
         }
-        global.toast('Menyambungkan katalog apotek...', 'info');
+        // Mode Demo memuat data lokal secara instan, jadi notifikasi "menyambungkan" hanya untuk mode Live
+        const connectToast = !API().isDemoMode() ? global.toast('Menyambungkan katalog apotek...', 'info') : null;
 
         // Fetch live state
         await global.bootLoadState(true);
+        if (connectToast && connectToast.parentNode) connectToast.remove();
         global.toast('Selamat datang, ' + res.user.nama_lengkap, 'ok');
       }
 
@@ -1771,7 +1773,17 @@
     const padB = 34;
     const plotW = svgW - padL - padR;
     const plotH = svgH - padT - padB;
-    const maxPrim = Math.max(1, ...items.map((it) => Math.max(...seriesDefs.map((sd) => Number(it[sd.key] || 0)))));
+    const rawMaxPrim = Math.max(0, ...items.map((it) => Math.max(...seriesDefs.map((sd) => Number(it[sd.key] || 0)))));
+    // Skala sumbu Y "rapi": 4 langkah dengan nilai bulat agar label tidak dobel (mis. 1, 1, 1, 0, 0)
+    const maxPrim = (() => {
+      if (!(rawMaxPrim > 0)) return 4;
+      const rough = rawMaxPrim / 4;
+      const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+      const steps = cfg.isCurrency ? [1, 2, 2.5, 5, 10] : [1, 2, 5, 10];
+      let step = steps.map((m) => m * pow).find((s) => s >= rough) || 10 * pow;
+      if (step < 1) step = 1;
+      return step * 4;
+    })();
     const gridSteps = [0, 0.25, 0.5, 0.75, 1];
     const slotW = items.length ? (plotW / items.length) : plotW;
     const barCount = seriesDefs.length || 1;
@@ -1789,7 +1801,7 @@
         <svg viewBox="0 0 ${svgW} ${svgH}" class="w-full min-w-[280px] sm:min-w-[340px] h-44 overflow-visible" role="img" aria-label="${S().esc(cfg.ariaLabel || 'Grafik Dashboard')}">
           ${gridSteps.map((ratio) => {
             const y = padT + plotH * (1 - ratio);
-            const lbl = cfg.isCurrency ? _compactNumLabel(maxPrim * ratio) : Math.round(maxPrim * ratio * 10) / 10;
+            const lbl = !hasAnyVal ? (ratio === 0 ? '0' : '') : (cfg.isCurrency ? _compactNumLabel(maxPrim * ratio) : Math.round(maxPrim * ratio * 10) / 10);
             return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${svgW - padR}" y2="${y.toFixed(1)}" stroke="var(--ons-border)" stroke-width="1" ${ratio > 0 ? 'stroke-dasharray="3 3"' : ''}/>
               <text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#64748B">${lbl}</text>`;
           }).join('')}
@@ -4844,7 +4856,7 @@
 
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Struk</th><th>Pelanggan</th><th>Produk</th><th>Total Penjualan</th>${seeCost ? '<th>Laba</th>' : ''}<th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>No.</th><th>Tanggal</th><th>No. Struk</th><th>Pelanggan</th><th>Produk</th><th>Total Penjualan</th>${seeCost ? '<th>Laba</th>' : ''}<th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="posHistoryTableBody">${rowsHtml}</tbody>
           </table>
         </div>
@@ -4980,7 +4992,7 @@
 
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th>No.</th><th>Tanggal Retur</th><th>No. Retur</th><th>No. Faktur Asal</th><th>Pelanggan</th><th>Produk</th><th>Nilai Retur</th><th>Actions</th></tr></thead>
+            <thead><tr><th>No.</th><th>Tanggal Retur</th><th>No. Retur</th><th>No. Faktur Asal</th><th>Pelanggan</th><th>Produk</th><th>Nilai Retur</th><th>Aksi</th></tr></thead>
             <tbody>
               ${filtered.length ? filtered.map((p, idx) => {
                 const ret = _extractPosReturInfo(p, st.mutasiStok);
@@ -5347,7 +5359,7 @@
           ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `
           <button type="button" onclick="window.setPosSubTab('tutup-shift')" class="ons-dash-tab-btn ${posSubTab === 'tutup-shift' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span>Tutup Shift &amp; Kas</span>
+            <span>Tutup Shift Kasir</span>
             ${st.activeShift ? `<span class="ml-1 inline-block w-2 h-2 rounded-full ${posSubTab === 'tutup-shift' ? 'bg-emerald-300' : 'bg-emerald-500'} animate-pulse"></span>` : ''}
           </button>` : ''}
         </div>
@@ -5451,7 +5463,7 @@
         <div class="ons-pos-dropdown flex-1 min-w-[260px]">
           <div class="ons-pos-search-pill rounded-xl">
             <span class="text-slate-400 text-base" aria-hidden="true">&#128269;</span>
-            <input id="posSearchInput" placeholder="[F2] Cari nama obat, kode, zat aktif, atau scan barcode..." value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
+            <input id="posSearchInput" placeholder="${(global.innerWidth || 1024) < 640 ? 'Cari obat…' : '[F2] Cari nama obat, kode, zat aktif, atau scan barcode...'}" value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
             <button id="posSearchClearBtn" type="button" onclick="window.clearPosSearchInput()" class="${String(st.posSearchQ || '').trim() ? '' : 'hidden'} px-2 py-0.5 rounded text-sm font-bold text-red-500 hover:bg-red-500/10" title="Bersihkan pencarian">&times;</button>
             <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-xs py-1 px-3 min-h-0 h-8 rounded-lg font-bold shadow-sm" title="Scan Barcode Kamera">Scan Barcode</button>
           </div>

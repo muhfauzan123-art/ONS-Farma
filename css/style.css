@@ -6905,3 +6905,129 @@ html.dark .ons-quick-pill-badge {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
 }
+
+/* ==========================================================================
+   v18.69.0 — UI POLISH PACK (Kerapian Tampilan Laptop & HP)
+   ========================================================================== */
+
+/* 1. Jaga ruang ikon di dalam input.
+      Aturan global .ons-input memakai padding !important sehingga utilitas pl-/pr-
+      Tailwind kalah dan ikon kaca pembesar menimpa teks placeholder. */
+.ons-input.pl-8, .ons-select.pl-8 { padding-left: 2rem !important; }
+.ons-input.pl-9, .ons-select.pl-9 { padding-left: 2.25rem !important; }
+.ons-input.pl-10, .ons-select.pl-10 { padding-left: 2.5rem !important; }
+.ons-input.pr-7, .ons-select.pr-7 { padding-right: 1.75rem !important; }
+.ons-input.pr-8, .ons-select.pr-8 { padding-right: 2rem !important; }
+.ons-input.pr-16, .ons-select.pr-16 { padding-right: 4rem !important; }
+
+/* 2. Kolom "Cari fitur" di sidebar laptop & drawer HP — gaya kaca di atas latar navy */
+#desktopSidebar .ons-sb-search-pill.ons-input,
+#mobileNavDrawer .ons-sb-search-pill.ons-input {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #FFFFFF !important;
+  border-radius: 9999px !important;
+  min-height: 38px !important;
+  font-size: 0.8rem !important;
+  padding-top: 0.45rem !important;
+  padding-bottom: 0.45rem !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+#desktopSidebar .ons-sb-search-pill.ons-input:focus,
+#mobileNavDrawer .ons-sb-search-pill.ons-input:focus {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: #38BDF8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.28) !important;
+}
+#desktopSidebar .ons-sb-search-pill.ons-input::placeholder,
+#mobileNavDrawer .ons-sb-search-pill.ons-input::placeholder {
+  color: rgba(255, 255, 255, 0.72) !important;
+  opacity: 1;
+}
+.ons-sb-search-ico { color: rgba(255, 255, 255, 0.72); }
+@media (max-width: 768px) {
+  #mobileNavDrawer .ons-sb-search-pill.ons-input { font-size: 16px !important; min-height: 44px !important; }
+}
+
+/* 3. Tombol utilitas di drawer HP (Mode Malam, Segarkan) selaras dengan latar navy */
+#mobileNavDrawer .ons-btn.ons-btn-ghost {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #E2E8F0 !important;
+  box-shadow: none !important;
+}
+#mobileNavDrawer .ons-btn.ons-btn-ghost:hover,
+#mobileNavDrawer .ons-btn.ons-btn-ghost:active {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+}
+/* Pintasan keyboard tidak relevan di layar sentuh kecil */
+@media (max-width: 640px) {
+  #mobileNavDrawer .ons-drawer-kbd-btn { display: none !important; }
+}
+
+/* 4. Tabel lebar: wadah geser horizontal otomatis (dipasang oleh onsEnsureTableScroll) */
+.ons-auto-scroll-x {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.ons-auto-scroll-x > table { min-width: 100%; }
+.ons-table-wrap { max-width: 100%; }
+/* Item grid tidak boleh melebar melebihi kolomnya (penyebab tabel/form keluar dari kartu) */
+#mainViewSlot .grid > * { min-width: 0; }
+
+/* 5. Halaman Login — muat dalam satu layar laptop & rapi di HP */
+@media (min-width: 1024px) and (max-height: 860px) {
+  .ons-login-features { display: none !important; }
+}
+@media (min-width: 1024px) and (max-height: 700px) {
+  .ons-login-clock-card { display: none !important; }
+}
+@media (max-width: 480px) {
+  .ons-shift-seg-btn { flex-wrap: wrap; row-gap: 0; line-height: 1.25; padding: 0.4rem 0.5rem; }
+  .ons-shift-seg-btn > .font-mono-num { flex-basis: 100%; text-align: center; font-size: 10px !important; }
+  .ons-login-quick-card { padding: 0.6rem 0.55rem; }
+  .ons-login-quick-card > span:first-child { white-space: nowrap; letter-spacing: 0.02em; padding-left: 0.4rem; padding-right: 0.4rem; }
+}
+@media (max-width: 400px) {
+  .ons-qc-emoji { display: none; }
+}
+
+/* 6. Tombol Scan (FAB) di HP dibuat ringkas (ikon saja) agar tidak menutupi isi,
+      dan konten utama diberi ruang bawah supaya baris terakhir bisa digulir di atasnya */
+@media (max-width: 767px) {
+  .ons-scanner-fab-pill { display: none; }
+  .ons-scanner-fab-btn { padding: 0.32rem; }
+  .ons-main-scroll { padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px)) !important; }
+}
+
+/* 7. Notifikasi di HP tampil di bagian atas (di bawah header) agar tidak menutupi keranjang & menu bawah */
+@media (max-width: 640px) {
+  #onsToastPortal {
+    top: calc(3.9rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+  }
+}
+
+/* 8. Wizard Tambah/Edit Obat: panel pratinjau kanan bisa digulir sendiri
+      sehingga "Checklist Kelengkapan" tidak tertutup footer langkah */
+@media (min-width: 1024px) {
+  #wizMonitorBox {
+    max-height: calc(100vh - 12rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+  }
+}
+
+/* 9. Baris filter/toolbar di HP & tablet: elemen tidak boleh lebih lebar dari kartunya.
+      Pita filter cepat (ons-quick-pills-ribbon) tetap bisa digeser ke samping. */
+@media (max-width: 1023px) {
+  #mainViewSlot .flex-wrap > * { max-width: 100%; }
+  #mainViewSlot .flex-wrap > .flex,
+  #mainViewSlot .flex-wrap > .ons-quick-pills-ribbon { min-width: 0; }
+}

@@ -1894,11 +1894,11 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </button>
           <button type="button" onclick="window.setKlinisTab('pio')" class="ons-dash-tab-btn ${klinisTab === 'pio' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span>Kartu PIO &amp; Jadwal</span>
+            <span>Informasi Obat (PIO)</span>
           </button>
           <button type="button" onclick="window.setKlinisTab('meso')" class="ons-dash-tab-btn ${klinisTab === 'meso' ? 'is-active' : ''}">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
-            <span>MESO (BPOM)</span>
+            <span>MESO BPOM</span>
             ${mesoList.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${klinisTab === 'meso' ? 'bg-white/25 text-white' : 'bg-purple-500/15 text-purple-700 dark:text-purple-300'} font-mono-num">${mesoList.length}</span>` : ''}
           </button>
         </div>
@@ -1998,9 +1998,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Antrean E-Resep Dokter Masuk</h3>
                 <div class="text-xs" style="color:var(--ons-text-soft)">Verifikasi legalitas PIN APJ sebelum dikirim ke Kasir POS</div>
               </div>
-              <div class="flex items-center gap-2">
-                <input class="ons-input text-xs w-60 rounded-xl" placeholder="Cari dokter, pasien, resep..." value="${S().esc(erxSearchQ)}" oninput="window.setErxSearchQ(this.value)"/>
-                <span class="badge-bpom bpom-prekursor font-bold px-2.5 py-1">${antreCount} Menunggu PIN</span>
+              <div class="flex flex-wrap items-center gap-2 min-w-0">
+                <input class="ons-input text-xs w-60 max-w-full rounded-xl" placeholder="Cari dokter, pasien, resep..." value="${S().esc(erxSearchQ)}" oninput="window.setErxSearchQ(this.value)"/>
+                <span class="badge-bpom bpom-prekursor font-bold px-2.5 py-1 whitespace-nowrap">${antreCount} Menunggu PIN</span>
               </div>
             </div>
             <div class="space-y-2.5">
@@ -3321,7 +3321,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <input type="date" class="ons-input text-xs w-36" value="${S().esc(financeDateFrom)}" onchange="window.setFinanceDateRange(this.value, '${S().esc(financeDateTo)}')"/>
           <input type="date" class="ons-input text-xs w-36" value="${S().esc(financeDateTo)}" onchange="window.setFinanceDateRange('${S().esc(financeDateFrom)}', this.value)"/>
           <div class="inline-flex rounded-lg border p-0.5 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            ${['SEMUA', 'MASUK', 'KELUAR'].map((f) => `<button type="button" onclick="window.setJurnalFilter('${f}')" class="px-2.5 py-1 rounded font-semibold transition ${jurnalFilter === f ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800'}>${f}</button>`).join('')}
+            ${['SEMUA', 'MASUK', 'KELUAR'].map((f) => `<button type="button" onclick="window.setJurnalFilter('${f}')" class="px-2.5 py-1 rounded font-semibold transition ${jurnalFilter === f ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800'}">${f}</button>`).join('')}
           </div>
         </div>
         <button type="button" onclick="window.exportBukuKasExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Export Excel</button>
@@ -3909,6 +3909,12 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       </div>
     </div>`;
 
+    // Pratinjau slip gaji awal mengikuti staf pertama di dropdown (bukan teks contoh statis)
+    const _sgStaffList = _getStaffList();
+    const _sgPeriode = new Date().toISOString().slice(0, 7);
+    let _sgPreview = null;
+    try { _sgPreview = _sgStaffList.length ? _calculateStaffPayroll(_sgStaffList[0].id_user, _sgPeriode) : null; } catch (e) { _sgPreview = null; }
+
     const workstationLayout = `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
       <div class="ons-card p-5 lg:col-span-5 space-y-4">
         <div>
@@ -3941,34 +3947,31 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </h3>
             <p class="text-xs text-slate-400">Kalkulasi take home pay (THP) otomatis berbasis jam kerja riil staf apotek.</p>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button type="button" onclick="window.openPengaturanGajiModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">⚙️ Atur Tarif</button>
-            <button type="button" onclick="window.openPayrollCalculatorModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 font-bold">📊 Rekap Payroll</button>
-          </div>
         </div>
 
         <div class="p-3.5 rounded-xl border bg-slate-50/60 dark:bg-slate-900/40 text-xs space-y-3" style="border-color:var(--ons-border)">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div class="min-w-0">
               <label class="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Pilih Staf Apotek</label>
               <select id="sgStaffSelect" class="ons-select text-xs w-full" onchange="window.syncPajakStaffSelection(this.value)">
-                ${_getStaffList().map((u) => `<option value="${u.id_user}">${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
+                ${_sgStaffList.map((u) => `<option value="${u.id_user}">${S().esc(u.nama_lengkap)} (${S().esc(u.role)})</option>`).join('')}
               </select>
             </div>
-            <div>
+            <div class="min-w-0">
               <label class="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Periode Bulan</label>
-              <input id="sgPer" type="month" class="ons-input font-mono-num text-xs w-full" value="${new Date().toISOString().slice(0, 7)}" onchange="window.syncPajakStaffSelection(document.getElementById('sgStaffSelect').value, this.value)"/>
+              <input id="sgPer" type="month" class="ons-input font-mono-num text-xs w-full" value="${_sgPeriode}" onchange="window.syncPajakStaffSelection(document.getElementById('sgStaffSelect').value, this.value)"/>
             </div>
           </div>
           
           <div id="sgStaffPreviewBox" class="p-3 rounded-lg border bg-white dark:bg-slate-800 text-[11px] space-y-1.5" style="border-color:var(--ons-border)">
-            <div class="flex justify-between items-center font-bold text-slate-800 dark:text-slate-100">
-              <span>Kasir Operasional &bull; Kasir</span>
-              <span class="text-emerald-600 font-mono-num text-sm font-extrabold">Rp 3.488.500 (THP)</span>
+            ${_sgPreview ? `
+            <div class="flex flex-wrap justify-between items-center gap-x-2 gap-y-1 font-bold text-slate-800 dark:text-slate-100">
+              <span class="min-w-0">${S().esc(_sgPreview.nama)} &bull; ${S().esc(_sgPreview.role || '-')}</span>
+              <span class="text-emerald-600 font-mono-num text-sm font-extrabold whitespace-nowrap">${S().rp(_sgPreview.take_home_pay)} (THP)</span>
             </div>
             <div class="text-slate-500 text-[10.5px]">
-              Jam Kerja Masuk: <b>168.25 Jam</b> (@ Rp 18.000/jam) &bull; Hadir: <b>24 Hari</b> &bull; Lembur: <b>4.5 Jam</b> &bull; Terlambat: <b>25 Mnt</b>
-            </div>
+              Jam Kerja Masuk: <b>${_sgPreview.total_jam_kerja} Jam</b> (${S().esc(_sgPreview.upah_dasar_desc)}) &bull; Hadir: <b>${_sgPreview.hari_hadir} Hari</b> &bull; Lembur: <b>${_sgPreview.total_jam_lembur} Jam</b> &bull; Terlambat: <b>${_sgPreview.total_menit_terlambat} Mnt</b>
+            </div>` : `<div class="text-slate-500">Belum ada data staf untuk dihitung.</div>`}
           </div>
         </div>
 
@@ -6026,7 +6029,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <div class="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
             <button type="button" onclick="window.openShiftTimelineModal()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5" title="Lihat Kronologi &amp; Riwayat Shift">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               <span>Riwayat Shift</span>
@@ -6075,8 +6078,9 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       </div>
 
       <!-- 3. Lima Kartu Rekapitulasi Multikanal (Tender KPI Cards) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 text-xs">
-        <div class="ons-kpi-card is-blue">
+      <!-- Tata letak responsif: 1 kolom (HP) → 2 kolom (tablet) → 3+2 (laptop) → 5 kolom (layar lebar) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 2xl:grid-cols-5 gap-3 text-xs ons-shift-kpi-grid">
+        <div class="ons-kpi-card is-blue lg:col-span-2 2xl:col-span-1">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Penjualan Tunai (${S().formatEd ? S().formatEd(todayIso) : todayIso})</div>
@@ -6090,7 +6094,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </div>
         </div>
 
-        <div class="ons-kpi-card is-emerald">
+        <div class="ons-kpi-card is-emerald lg:col-span-2 2xl:col-span-1">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Non-Tunai (QRIS &amp; EDC)</div>
@@ -6104,7 +6108,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           </div>
         </div>
 
-        <div class="ons-kpi-card is-amber">
+        <div class="ons-kpi-card is-amber lg:col-span-2 2xl:col-span-1">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Mutasi Kas Laci (Petty Cash)</div>
@@ -6115,16 +6119,16 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </div>
             <span class="ons-kpi-ico bg-amber-500/10 text-amber-600 font-extrabold text-[15px] tracking-tight" aria-hidden="true">Rp</span>
           </div>
-          <div class="mt-2.5 pt-2 border-t text-[11px] flex justify-between items-center" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-            <span>${todayDrawerTx.length} mutasi shift</span>
-            <div class="flex gap-1.5">
+          <div class="mt-2.5 pt-2 border-t text-[11px] flex flex-wrap justify-between items-center gap-x-2 gap-y-1" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            <span class="whitespace-nowrap">${todayDrawerTx.length} mutasi shift</span>
+            <div class="flex gap-2 whitespace-nowrap">
               <button type="button" onclick="window.openKasMasukModal()" class="text-[10.5px] text-emerald-600 font-bold hover:underline">+ Masuk</button>
               <button type="button" onclick="window.openKasKeluarModal()" class="text-[10.5px] text-rose-600 font-bold hover:underline">&minus; Keluar</button>
             </div>
           </div>
         </div>
 
-        <div class="ons-kpi-card is-blue">
+        <div class="ons-kpi-card is-blue lg:col-span-3 2xl:col-span-1">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Modal Awal Laci</div>
@@ -6135,7 +6139,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <div class="mt-2.5 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Uang kembalian awal kasir</div>
         </div>
 
-        <div class="ons-kpi-card ${canReveal && shiftBlindRevealed ? 'is-emerald' : 'is-amber'}">
+        <div class="ons-kpi-card ${canReveal && shiftBlindRevealed ? 'is-emerald' : 'is-amber'} sm:col-span-2 lg:col-span-3 2xl:col-span-1">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Target Kas Tunai Laci</div>
@@ -6145,8 +6149,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
             </div>
             <span class="ons-kpi-ico ${canReveal && shiftBlindRevealed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
           </div>
-          <div class="mt-2.5 pt-2 border-t text-[11px] truncate" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
-            ${(canReveal && shiftBlindRevealed) ? ('Modal + Tunai + Masuk &minus; Keluar') : 'Hitung fisik uang terlebih dahulu'}
+          <div class="mt-2.5 pt-2 border-t text-[11px]" style="border-color:var(--ons-border);color:var(--ons-text-soft)">
+            ${(canReveal && shiftBlindRevealed) ? ('Modal + Tunai + Masuk &minus; Keluar') : 'Hitung fisik uang laci terlebih dahulu'}
           </div>
         </div>
       </div>
@@ -9672,7 +9676,7 @@ S. prn 3 dd 1 tab</textarea>
             { key: 'pos:riwayat', label: 'Daftar Penjualan' },
             { key: 'pos:retur', label: 'Retur Penjualan' },
             { key: 'pos:tertolak', label: 'Penjualan Tertolak' },
-            { key: 'pos:tutup-shift', label: 'Tutup Shift & Kas' }
+            { key: 'pos:tutup-shift', label: 'Tutup Shift Kasir' }
           ]
         }
       ]
@@ -9905,7 +9909,7 @@ S. prn 3 dd 1 tab</textarea>
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openAddUserModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Tambah Pengguna Baru">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>+ Pengguna Baru</span>
+              <span>Pengguna Baru</span>
             </button>
             <button type="button" onclick="window.copyLoginUrl()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm" title="Salin Tautan Login Portal">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -10065,7 +10069,7 @@ S. prn 3 dd 1 tab</textarea>
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openAddRoleModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Buat Peran Baru">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>+ Peran Baru</span>
+              <span>Peran Baru</span>
             </button>
             <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs p-2" title="Segarkan">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -10710,7 +10714,7 @@ S. prn 3 dd 1 tab</textarea>
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="window.openInputPresensiModal()" class="ons-btn ons-btn-primary text-xs shadow-sm flex items-center gap-1.5 font-bold" title="Catat Presensi Baru">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>+ Catat Presensi</span>
+              <span>Catat Presensi</span>
             </button>
             <button type="button" onclick="window.openPayrollCalculatorModal()" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 shadow-sm">
               <span>💵 Hitung Payroll</span>
@@ -11092,7 +11096,6 @@ S. prn 3 dd 1 tab</textarea>
           <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">
             Audit trail aktivitas staf apotek secara berurutan.
           </div>
-          <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs">Segarkan</button>
         </div>
 
         <div class="ons-table-wrap">
@@ -11117,7 +11120,7 @@ S. prn 3 dd 1 tab</textarea>
                   <td><span class="font-mono-num text-xs text-slate-600 dark:text-slate-300">${S().esc(typeof formatRoleDisplay === 'function' ? formatRoleDisplay(l.role) : (l.role || '-'))}</span></td>
                   <td><span class="font-mono-num font-bold text-xs text-blue-600 dark:text-blue-400">${S().esc(l.aksi || '-')}</span></td>
                   <td><span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-500/10 text-slate-700 dark:text-slate-300">${S().esc(l.entitas || '-')}</span></td>
-                  <td><span class="badge-bpom bpom-bebas">🟢 SUCCESS</span></td>
+                  <td><span class="badge-bpom bpom-bebas whitespace-nowrap">Berhasil</span></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -13164,11 +13167,11 @@ S. prn 3 dd 1 tab</textarea>
               const multiOn = S().isMultiBranchEnabled ? S().isMultiBranchEnabled() : false;
               const activeBranches = (S().getActiveBranches && S().getActiveBranches()) || ['ONS-01'];
               return `<div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">🏪</span>
-                  <div>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold shrink-0">🏪</span>
+                  <div class="min-w-0">
                     <div class="ons-form-eyebrow text-blue-600 dark:text-sky-400">SEKSI 05 • SKALABILITAS OUTLET</div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                       <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Skala Operasional Gerai Apotek</h3>
                       <span class="badge-bpom ${multiOn ? 'bpom-terbatas' : 'bpom-bebas'}">${multiOn ? 'Multi-Cabang Aktif (' + activeBranches.length + ' Outlet)' : 'Mode 1 Apotek Tunggal (ONS-01)'}</span>
                     </div>
@@ -15554,7 +15557,7 @@ S. prn 3 dd 1 tab</textarea>
     return `<div class="space-y-4 ons-view-enter">
       <div class="ons-page-header">
         <div>
-          <h1 class="text-xl font-extrabold">Simulator Breakpoint PWA Mobile, Tablet &amp; Desktop (W-14)</h1>
+          <h1 class="text-xl font-extrabold">Simulator Tampilan HP, Tablet &amp; Desktop</h1>
           
         </div>
         <div class="flex gap-1.5 flex-wrap">
@@ -16808,9 +16811,9 @@ S. prn 3 dd 1 tab</textarea>
     const box = document.getElementById('sgStaffPreviewBox');
     if (!box) return;
     box.innerHTML = `
-      <div class="flex justify-between items-center font-bold text-slate-800 dark:text-slate-100">
-        <span>${S().esc(p.nama)} &bull; ${S().esc(formatRoleDisplay(p.role))}</span>
-        <span class="text-emerald-600 font-mono-num text-xs font-extrabold">${S().rp(p.take_home_pay)} (THP)</span>
+      <div class="flex flex-wrap justify-between items-center gap-x-2 gap-y-1 font-bold text-slate-800 dark:text-slate-100">
+        <span class="min-w-0">${S().esc(p.nama)} &bull; ${S().esc(p.role || '-')}</span>
+        <span class="text-emerald-600 font-mono-num text-sm font-extrabold whitespace-nowrap">${S().rp(p.take_home_pay)} (THP)</span>
       </div>
       <div class="text-slate-500 text-[10.5px]">
         Jam Kerja Masuk: <b>${p.total_jam_kerja} Jam</b> (${p.upah_dasar_desc}) &bull; Hadir: <b>${p.hari_hadir} Hari</b> &bull; Lembur: <b>${p.total_jam_lembur} Jam</b> &bull; Terlambat: <b>${p.total_menit_terlambat} Mnt</b>

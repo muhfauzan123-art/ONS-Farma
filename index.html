@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.68.0"/>
+  <meta name="application-version" content="v18.69.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.68.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.69.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.68.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.69.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.68.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.68.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.68.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.69.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.69.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.69.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.68.0"></script>
-  <script src="./js/struk-engine.js?v=18.68.0"></script>
-  <script src="./js/demo-engine.js?v=18.68.0"></script>
-  <script src="./js/api-turbo.js?v=18.68.0"></script>
-  <script src="./js/store.js?v=18.68.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.68.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.68.0"></script>
+  <script src="./js/config.js?v=18.69.0"></script>
+  <script src="./js/struk-engine.js?v=18.69.0"></script>
+  <script src="./js/demo-engine.js?v=18.69.0"></script>
+  <script src="./js/api-turbo.js?v=18.69.0"></script>
+  <script src="./js/store.js?v=18.69.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.69.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.69.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.68.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.68.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.68.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.68.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.68.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.68.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.69.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.69.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.69.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.69.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.69.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.69.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -148,10 +148,10 @@
               tabs: [
                 { subTab: 'soap', label: 'Kajian Resep & SOAP', kw: 'soap pio pto kajian skrining resep satusehat' },
                 { subTab: 'erx', label: 'Antrean E-Resep', kw: 'antrean e-resep dokter mitra pin apj validasi pos' },
-                { subTab: 'racikan', label: 'Racikan & Etiket BUD', kw: 'racikan puyer multi bahan etiket putih biru beyond use date bud' },
-                { subTab: 'kalkulator', label: 'Kalkulator Dosis (41 Preset)', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa infus gfr' },
-                { subTab: 'pio', label: 'Pel. Informasi Obat (PIO)', kw: 'pio kartu informasi obat jadwal minum pagi siang malam wa' },
-                { subTab: 'meso', label: 'MESO BPOM (Farmakovigilans)', kw: 'meso naranjo efek samping rotd bpom farmakovigilans' }
+                { subTab: 'racikan', label: 'Racikan & Etiket', kw: 'racikan puyer multi bahan etiket putih biru beyond use date bud' },
+                { subTab: 'kalkulator', label: 'Kalkulator Dosis', kw: 'kalkulator dosis obat anak dewasa lansia clark young dilling bsa infus gfr 41 preset' },
+                { subTab: 'pio', label: 'Informasi Obat (PIO)', kw: 'pio pelayanan kartu informasi obat jadwal minum pagi siang malam wa' },
+                { subTab: 'meso', label: 'MESO BPOM', kw: 'meso naranjo efek samping rotd bpom farmakovigilans' }
               ]
             },
             {
@@ -182,7 +182,7 @@
                 { subTab: 'penyesuaian', label: 'Penyesuaian Stok', kw: 'penyesuaian stok koreksi selisih rusak expired rekap nilai', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'transfer', label: 'Perpindahan Stok', kw: 'perpindahan stok mutasi rak gudang antar cabang draft import', roles: ['Pemilik', 'APJ'] },
                 { subTab: 'kartu-stok', label: 'Kartu Stok Digital', kw: 'alur obat masuk keluar kartu stok mutasi bpom cdob xlsx' },
-                { subTab: 'coldchain', label: 'Monitor Suhu (Ruang & Kulkas)', kw: 'monitor suhu ruangan kulkas chiller cold chain vaksin insulin kelembapan rh' }
+                { subTab: 'coldchain', label: 'Monitor Suhu', kw: 'monitor suhu ruangan ruang kulkas chiller cold chain vaksin insulin kelembapan rh' }
               ]
             },
             {
@@ -273,7 +273,7 @@
                 { subTab: 'kontak', label: 'Daftar Kontak Pasien', kw: 'kontak crm pasien wa 08 62 opt out riwayat' },
                 { subTab: 'blast', label: 'Broadcast WhatsApp', kw: 'broadcast blast wa reminder pengingat edukasi' },
                 { subTab: 'antrean', label: 'Antrean Notifikasi', kw: 'antrean log wa fonnte email status antrean' },
-                { subTab: 'tele-refill', label: 'Pantauan Obat Rutin (Tele-Refill)', kw: 'tele refill kronis prb obat rutin pengingat h-3 wa hipertensi diabetes' }
+                { subTab: 'tele-refill', label: 'Pantauan Obat Rutin', kw: 'tele refill kronis prb obat rutin pengingat h-3 wa hipertensi diabetes' }
               ]
             },
             {
@@ -863,8 +863,8 @@
           </div>
           <div class="px-1 py-1.5 mb-2">
             <div class="relative">
-              <input type="text" id="drawerSearchInp" oninput="window.filterSidebarMenu(this.value, 'drawerMenuMount')" onkeydown="window.handleSidebarSearchKey(event, this.value, 'drawerMenuMount')" placeholder="Cari fitur disini" autocomplete="off" class="ons-input text-xs pl-8 pr-7 py-2 rounded-full w-full bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500"/>
-              <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <input type="text" id="drawerSearchInp" oninput="window.filterSidebarMenu(this.value, 'drawerMenuMount')" onkeydown="window.handleSidebarSearchKey(event, this.value, 'drawerMenuMount')" placeholder="Cari fitur disini" autocomplete="off" aria-label="Cari fitur" class="ons-sb-search-pill ons-input text-xs pl-9 pr-7 py-2 rounded-full w-full focus:outline-none"/>
+              <svg class="w-4 h-4 ons-sb-search-ico absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
           </div>
           <div id="drawerMenuMount" class="flex-1 space-y-1 overflow-y-auto">${renderMenuTreeHtml()}</div>
@@ -874,7 +874,7 @@
               <button type="button" onclick="ONSStore.toggleDarkMode();window.closeMobileDrawer();renderApp();" class="ons-btn ons-btn-ghost text-xs py-2 justify-center">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}<span>${st.darkMode ? 'Mode Terang' : 'Mode Malam'}</span></button>
               <button type="button" onclick="window.closeMobileDrawer();bootLoadState(true);window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-btn ons-btn-ghost text-xs py-2 justify-center"><span>↻ Segarkan</span></button>
             </div>
-            <button type="button" onclick="window.closeMobileDrawer();window.showShortcutCheatSheet && window.showShortcutCheatSheet();" class="ons-btn ons-btn-ghost text-xs py-1.5 w-full justify-center text-slate-500 dark:text-slate-400"><span>⌨️ Pintasan Keyboard [?]</span></button>
+            <button type="button" onclick="window.closeMobileDrawer();window.showShortcutCheatSheet && window.showShortcutCheatSheet();" class="ons-btn ons-btn-ghost ons-drawer-kbd-btn text-xs py-1.5 w-full justify-center"><span>⌨️ Pintasan Keyboard [?]</span></button>
             <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn ons-nav-logout-btn">${svgIcon('logout')}<span>Keluar Sesi</span></button>
           </div>
         </div>`;
@@ -1434,7 +1434,7 @@
         }
       };
 
-      // Floating Mobile Barcode Scanner FAB Suite (v18.68.0)
+      // Floating Mobile Barcode Scanner FAB Suite (v18.69.0)
       window.updateScannerFabContext = function () {
         const host = document.getElementById('onsMobileScannerFabHost');
         const lbl = document.getElementById('onsScannerFabLabel');
@@ -1542,8 +1542,52 @@
         void slot.offsetWidth;
         slot.classList.add('ons-view-enter');
         _enhanceSubTabBarsToDropdowns(slot);
+        if (typeof window.onsEnsureTableScroll === 'function') window.onsEnsureTableScroll(slot);
+        if (typeof window._onsStartTableObs === 'function') window._onsStartTableObs();
         if (typeof window.updateScannerFabContext === 'function') window.updateScannerFabContext();
       };
+
+      /**
+       * Penjaga Tabel Lebar (v18.69.0)
+       * Tabel yang lebih lebar dari kartunya dibungkus wadah geser horizontal agar kolom
+       * tidak terpotong. Hanya memproses tabel tanpa wadah scroll; tidak mengubah isi tabel.
+       */
+      window.onsEnsureTableScroll = function (root) {
+        const host = root || document.getElementById('mainViewSlot');
+        if (!host) return;
+        const tables = host.querySelectorAll('table:not([data-ons-tw])');
+        for (let i = 0; i < tables.length; i++) {
+          const t = tables[i];
+          t.setAttribute('data-ons-tw', '1');
+          let p = t.parentElement;
+          let scrollable = false;
+          while (p && p !== host.parentElement) {
+            const ox = getComputedStyle(p).overflowX;
+            if (ox === 'auto' || ox === 'scroll') { scrollable = true; break; }
+            if (p === host) break;
+            p = p.parentElement;
+          }
+          if (scrollable) continue;
+          const wrap = document.createElement('div');
+          wrap.className = 'ons-auto-scroll-x';
+          t.parentNode.insertBefore(wrap, t);
+          wrap.appendChild(t);
+        }
+      };
+      (function () {
+        let _twQueued = false;
+        // Dipanggil dari renderActiveView: pasang pengamat sekali per elemen #mainViewSlot
+        window._onsStartTableObs = function () {
+          const slot = document.getElementById('mainViewSlot');
+          if (!slot || slot._onsTwObs || typeof MutationObserver === 'undefined') return;
+          slot._onsTwObs = new MutationObserver(() => {
+            if (_twQueued) return;
+            _twQueued = true;
+            requestAnimationFrame(() => { _twQueued = false; window.onsEnsureTableScroll(slot); });
+          });
+          slot._onsTwObs.observe(slot, { childList: true, subtree: true });
+        };
+      })();
 
       function buildOperationalAlerts() {
         const st = ONSStore.AppState;
@@ -2075,9 +2119,9 @@
                 </div>
                 <div class="px-1 py-1.5 ons-hide-collapsed">
                   <div class="relative">
-                    <input type="text" id="sidebarSearchInp" oninput="window.filterSidebarMenu(this.value)" onkeydown="window.handleSidebarSearchKey(event, this.value)" placeholder="Cari fitur disini" autocomplete="off" class="ons-sb-search-pill ons-input text-xs pl-8 pr-7 py-2 rounded-full w-full text-slate-900 focus:outline-none"/>
-                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <button type="button" id="sidebarSearchClearBtn" onclick="window.clearSidebarSearch()" aria-label="Bersihkan pencarian" class="hidden absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full" title="Bersihkan">
+                    <input type="text" id="sidebarSearchInp" oninput="window.filterSidebarMenu(this.value)" onkeydown="window.handleSidebarSearchKey(event, this.value)" placeholder="Cari fitur disini" autocomplete="off" aria-label="Cari fitur" class="ons-sb-search-pill ons-input text-xs pl-9 pr-7 py-2 rounded-full w-full focus:outline-none"/>
+                    <svg class="w-3.5 h-3.5 ons-sb-search-ico absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <button type="button" id="sidebarSearchClearBtn" onclick="window.clearSidebarSearch()" aria-label="Bersihkan pencarian" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-0.5 rounded-full" title="Bersihkan">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                     <div id="sidebarSearchResults" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200/90 dark:border-slate-700/90 z-50 overflow-hidden max-h-72 overflow-y-auto"></div>
@@ -2139,7 +2183,7 @@
                   </button>
                   <button id="pwaInstallBtn" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary text-xs hidden font-bold">Install</button>
                   <button onclick="window.lockScreenNow()" aria-label="Kunci Layar Segera" title="Kunci Layar Segera" class="ons-topbar-icon-btn hidden sm:flex h-9 px-2 sm:px-2.5 rounded-xl text-white hover:bg-white/20 items-center justify-center gap-1 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF">${svgIcon('shield', 'w-4 h-4')}<span class="hidden xl:inline text-white font-medium">Kunci</span></button>
-                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-topbar-icon-btn flex w-9 h-9 rounded-xl text-white hover:bg-white/20 items-center justify-center shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
+                  <button onclick="ONSStore.toggleDarkMode();renderApp();" aria-label="Ganti Tema Terang atau Malam" class="ons-topbar-icon-btn hidden sm:flex w-9 h-9 rounded-xl text-white hover:bg-white/20 items-center justify-center shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Tema">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}</button>
                   <button type="button" onclick="navigateView('settings','profil')" class="w-8 h-8 rounded-full bg-white text-blue-700 font-bold text-xs flex items-center justify-center border border-white/80 shrink-0 shadow-sm" title="Profil Pengguna">
                     ${(fotoPem && ONSStore.getRole() === 'Pemilik')
                       ? `<img src="${ONSStore.esc(fotoPem)}" alt="Foto" class="w-full h-full rounded-full object-cover"/>`
@@ -2154,7 +2198,7 @@
               <main id="mainViewSlot" class="flex-1 p-3 sm:p-4 md:p-6 ons-main-scroll"></main>
             </div>
 
-            <!-- Floating Mobile Barcode Scanner FAB (v18.68.0) -->
+            <!-- Floating Mobile Barcode Scanner FAB (v18.69.0) -->
             <div id="onsMobileScannerFabHost" class="ons-scanner-fab-host md:hidden">
               <button
                 id="onsMobileScannerFab"
@@ -2194,7 +2238,7 @@
         window.renderActiveView();
       };
 
-      // Hotkey POS, Global Navigation & Shortcut Cheat Sheet (v18.68.0)
+      // Hotkey POS, Global Navigation & Shortcut Cheat Sheet (v18.69.0)
       window.addEventListener('keydown', (e) => {
         if (!ONSApi.getSession()) return;
         if (e.key === 'Escape') {

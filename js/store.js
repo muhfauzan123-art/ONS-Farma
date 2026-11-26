@@ -1262,6 +1262,22 @@
       if (!dismissed) startTimer();
     });
 
+    // Hindari notifikasi kembar & tumpukan berlebih (maks. 3 tampil bersamaan)
+    try {
+      const sig = tNorm + '|' + String(msg);
+      if (typeof toast.setAttribute === 'function') toast.setAttribute('data-sig', sig);
+      const kids = (wrap && wrap.children) ? Array.from(wrap.children) : [];
+      kids.forEach((el) => {
+        if (el && typeof el.getAttribute === 'function' && el.getAttribute('data-sig') === sig && typeof el.remove === 'function') el.remove();
+      });
+      const liveToasts = ((wrap && wrap.children) ? Array.from(wrap.children) : [])
+        .filter((el) => !(el.classList && el.classList.contains && el.classList.contains('is-leaving')));
+      while (liveToasts.length >= 3) {
+        const oldest = liveToasts.shift();
+        if (oldest && oldest.parentNode && typeof oldest.remove === 'function') oldest.remove();
+      }
+    } catch (e) { /* abaikan: hanya optimasi tampilan */ }
+
     wrap.appendChild(toast);
     startTimer();
     return toast;
@@ -3484,11 +3500,21 @@ window.onsConfirmDelete = function(itemNameOrOpts, onConfirm, onCancel, extraOpt
 window.onsConfirm = window.onsConfirmDelete;
 
 // ===== ITEM #5: TOAST NOTIFICATION SYSTEM (Unified with showToast) =====
-window.onsShowToast = function(msg, type, duration, undoOpts) { return showToast(msg, type, duration, undoOpts); };
-window.onsShowSuccess = function(msg, dur, undoOpts) { return showToast(msg, 'success', dur, undoOpts); };
-window.onsShowError   = function(msg, dur, undoOpts) { return showToast(msg, 'error', dur, undoOpts); };
-window.onsShowWarning = function(msg, dur, undoOpts) { return showToast(msg, 'warning', dur, undoOpts); };
-window.onsShowInfo    = function(msg, dur, undoOpts) { return showToast(msg, 'info', dur, undoOpts); };
+// Catatan: fungsi showToast berada di dalam closure modul di atas dan sudah diekspor
+// sebagai window.toast. Alias di bawah memanggil window.toast agar tidak memicu
+// ReferenceError "showToast is not defined" saat dipanggil dari luar closure.
+(function () {
+  const _callToast = function (msg, type, duration, undoOpts) {
+    if (typeof window.toast === 'function') return window.toast(msg, type, duration, undoOpts);
+    if (typeof console !== 'undefined') console.log('[Toast]', type || 'info', msg);
+    return null;
+  };
+  window.onsShowToast   = function (msg, type, duration, undoOpts) { return _callToast(msg, type, duration, undoOpts); };
+  window.onsShowSuccess = function (msg, dur, undoOpts) { return _callToast(msg, 'success', dur, undoOpts); };
+  window.onsShowError   = function (msg, dur, undoOpts) { return _callToast(msg, 'error', dur, undoOpts); };
+  window.onsShowWarning = function (msg, dur, undoOpts) { return _callToast(msg, 'warning', dur, undoOpts); };
+  window.onsShowInfo    = function (msg, dur, undoOpts) { return _callToast(msg, 'info', dur, undoOpts); };
+})();
 
 // ===== ITEM #7: PAGE TRANSITION HELPER =====
 window.onsAnimateView = function(containerEl) {
