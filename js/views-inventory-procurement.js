@@ -5596,11 +5596,11 @@
     wizardDraftSnapshot = o;
 
     const steps = [
-      { n: 1, label: 'Identitas Produk' },
-      { n: 2, label: 'Golongan & Rak' },
-      { n: 3, label: 'Satuan Kemasan' },
-      { n: 4, label: 'Harga & HPP' },
-      { n: 5, label: 'Konfirmasi' }
+      { n: 1, label: 'Identitas' },
+      { n: 2, label: 'Rak & Aturan' },
+      { n: 3, label: 'Satuan' },
+      { n: 4, label: 'Harga' },
+      { n: 5, label: 'Simpan' }
     ];
     const golList = [
       { v: 'BEBAS', label: 'Obat Bebas', dot: 'bg-emerald-500' },
@@ -5635,19 +5635,15 @@
 
     const renderForm = () => `
       <div data-ws-custom="1" class="ons-wiz-shell">
-        <!-- Header Modal Bersih & Fokus -->
-        <header class="ons-wiz-header">
+        <!-- Header Popup Terpusat & Tenang -->
+        <header class="ons-wiz-header ons-wiz-popup-header">
           <div class="flex items-center gap-3 min-w-0">
-            <button type="button" onclick="ONSStore.closeModal()" class="ons-ws-back-btn" title="Kembali">
-              <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-              <span class="text-xs font-semibold">Kembali</span>
-            </button>
             <div class="w-9 h-9 rounded-xl text-white flex items-center justify-center shrink-0 shadow-sm" style="background:linear-gradient(135deg,#0066FE,#0284C7)">
               <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
             </div>
             <div class="min-w-0">
               <h2 class="font-extrabold text-base md:text-lg tracking-tight truncate">${o.id_obat ? 'Edit Produk: ' + S().esc(o.nama_dagang) : 'Tambah Produk Obat Baru'}</h2>
-              <div class="text-xs text-slate-500 dark:text-slate-400 truncate">Cukup isi kolom utama &mdash; pratinjau kartu kasir otomatis terupdate.</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 truncate">Lengkapi data produk langkah demi langkah secara cepat.</div>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -5659,30 +5655,28 @@
           </div>
         </header>
 
-        <!-- Stepper Ringkas & Linear (Tinggi ~42px, Rapi Tanpa Deskripsi Bertingkat) -->
-        ${!wizardFullScrollMode ? `<div class="ons-wiz-stepper-wrap py-2.5 px-4 md:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-          <div class="max-w-[1440px] mx-auto">
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2" id="wizStepNav">
-              ${steps.map((stItem) => {
-                const stCls = stItem.n === wizardStep ? 'is-active' : '';
-                return `<button type="button" onclick="window.setObatWizardStep(${stItem.n})" class="ons-wiz-step-btn ${stCls} py-1.5 px-3 min-h-[40px] rounded-xl flex items-center gap-2">
-                  <span id="wizStepBadge${stItem.n}" class="ons-wiz-step-num w-5 h-5 text-[11px] font-bold rounded-full flex items-center justify-center">${stItem.n}</span>
-                  <span class="font-bold text-xs truncate">${stItem.n}. ${stItem.label}</span>
-                </button>`;
-              }).join('')}
-            </div>
-            <div class="ons-wiz-progress-track mt-2 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div id="wizProgFill" class="ons-wiz-progress-fill h-full bg-blue-600 rounded-full transition-all duration-300" style="width:${(wizardStep / 5) * 100}%"></div>
-            </div>
+        <!-- Stepper Ringkas Dalam Popup 1 Kolom -->
+        ${!wizardFullScrollMode ? `<div class="ons-wiz-stepper-wrap py-2.5 px-4 sm:px-5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5" id="wizStepNav">
+            ${steps.map((stItem) => {
+              const stCls = stItem.n === wizardStep ? 'is-active' : '';
+              return `<button type="button" onclick="window.setObatWizardStep(${stItem.n})" class="ons-wiz-step-btn ${stCls} py-1.5 px-2.5 min-h-[36px] rounded-xl flex items-center justify-center sm:justify-start gap-1.5">
+                <span id="wizStepBadge${stItem.n}" class="ons-wiz-step-num w-5 h-5 text-[11px] font-bold rounded-full flex items-center justify-center shrink-0">${stItem.n}</span>
+                <span class="font-bold text-[11.5px] truncate">${stItem.label}</span>
+              </button>`;
+            }).join('')}
+          </div>
+          <div class="ons-wiz-progress-track mt-2 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div id="wizProgFill" class="ons-wiz-progress-fill h-full bg-blue-600 rounded-full transition-all duration-300" style="width:${(wizardStep / 5) * 100}%"></div>
           </div>
         </div>` : ''}
 
-        <div class="ons-wiz-body">
-          <form id="obatWizardForm" novalidate onsubmit="event.preventDefault();window.saveObatFromWizard();" oninput="window.updateObatWizardPreview()" onchange="window.updateObatWizardPreview()" class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="ons-wiz-body ons-wiz-popup-body">
+          <form id="obatWizardForm" novalidate onsubmit="event.preventDefault();window.saveObatFromWizard();" oninput="window.updateObatWizardPreview()" onchange="window.updateObatWizardPreview()" class="w-full space-y-4">
             <input type="hidden" id="wObatId" value="${S().esc(o.id_obat)}"/>
 
-            <!-- Panel Kiri: Form Pengisian Rapi & Bersih -->
-            <div class="lg:col-span-8 space-y-5">
+            <!-- Form 1 Kolom Bersih & Fokus -->
+            <div class="space-y-4">
 
               <!-- TAHAP 1: NAMA & BENTUK PRODUK (RINGKAS & MUDAH DIPAHAMI) -->
               <section id="wizSec1" class="${secCls(1)}">
@@ -5700,7 +5694,7 @@
                   <div class="flex items-center justify-between gap-2 mb-2">
                     <span class="text-xs font-bold text-slate-700 dark:text-slate-200">1. Ini produk berbentuk apa? <span class="font-normal text-slate-500 dark:text-slate-400">(opsional — otomatis siapkan satuan jual)</span></span>
                   </div>
-                  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5" id="wizQuickShapeStrip">
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="wizQuickShapeStrip">
                     <button type="button" data-shape="tablet" onclick="window.applyObatQuickShape('tablet', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">💊 Tablet / Kapsul</button>
                     <button type="button" data-shape="sirup" onclick="window.applyObatQuickShape('sirup', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">🧴 Sirup (Botol)</button>
                     <button type="button" data-shape="salep" onclick="window.applyObatQuickShape('salep', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11.5px] py-1.5 px-2.5 min-h-[34px] justify-center">🧪 Salep (Tube)</button>
@@ -6168,8 +6162,8 @@
 
             </div>
 
-            <!-- Panel Kanan: 1 KARTU PRATINJAU KASIR RINGKAS & MODERN -->
-            <aside class="lg:col-span-4 lg:sticky lg:top-4" id="wizMonitorBox">
+            <!-- Elemen monitor dipertahankan tersembunyi demi kompatibilitas penuh tanpa mengganggu tampilan 1 kolom -->
+            <aside class="hidden" aria-hidden="true" id="wizMonitorBox">
               <div class="ons-wiz-card border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                 <!-- Header Pratinjau -->
                 <div class="px-4 py-2.5 border-b flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
@@ -6245,7 +6239,7 @@
         </footer>
       </div>`;
     global._wizCurStep = wizardStep;
-    S().openModal(renderForm(), 'full');
+    S().openModal(renderForm(), { mode: 'spotlight', maxWidth: '760px' });
     global.updateObatWizardPreview();
   };
 
