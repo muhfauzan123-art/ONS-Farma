@@ -5575,11 +5575,19 @@
     if (stepOverride) wizardStep = Math.max(1, Math.min(5, stepOverride));
     else wizardStep = 1;
     const sEditId = editId != null ? String(editId).trim() : '';
+    if (!draftObj) {
+      global._wizVisitedSteps = new Set(sEditId ? [1, 2, 3, 4, 5] : [wizardStep || 1]);
+    } else if (!global._wizVisitedSteps) {
+      global._wizVisitedSteps = new Set([wizardStep || 1]);
+    } else {
+      global._wizVisitedSteps.add(wizardStep || 1);
+    }
+
     const baseDefault = (sEditId && (st.masterObat || []).find((x) => String(x.id_obat).trim() === sEditId)) || {
       id_obat: '', kode_kfa: '', nama_dagang: '', zat_aktif: '', kekuatan: '', golongan_bpom: 'BEBAS',
       nie_bpom: '', suhu_simpan: 'Suhu Ruang (15-25°C)', rak_lokasi: 'RAK-A1',
-      satuan_1: 'Tablet', satuan_2: '', rasio_2: 1, satuan_3: '', rasio_3: 1,
-      satuan_dasar: 'Tablet', satuan_sedang: '', rasio_sedang: 1, satuan_besar: '', rasio_besar: 1,
+      satuan_1: '', satuan_2: '', rasio_2: 1, satuan_3: '', rasio_3: 1,
+      satuan_dasar: '', satuan_sedang: '', rasio_sedang: 1, satuan_besar: '', rasio_besar: 1,
       stok_min: '', stok_max: '', pabrikan: '', pbf_utama: '',
       hpp_avg: 0, harga_jual_1: 0, harga_jual_2: 0, harga_jual_3: 0,
       harga_umum: 0, harga_sedang: 0, harga_besar: 0, substitusi_ids: ''
@@ -5656,9 +5664,9 @@
           <div class="max-w-[1440px] mx-auto">
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2" id="wizStepNav">
               ${steps.map((stItem) => {
-                const stCls = stItem.n === wizardStep ? 'is-active' : (stItem.n < wizardStep ? 'is-done' : '');
-                return `<button type="button" onclick="window.setObatWizardStep(${stItem.n})" class="ons-wiz-step-btn ${stCls} py-1.5 px-3 min-h-[38px] rounded-lg flex items-center gap-2">
-                  <span id="wizStepBadge${stItem.n}" class="ons-wiz-step-num w-5 h-5 text-[11px] font-bold rounded-full flex items-center justify-center">${stItem.n < wizardStep ? '&#10003;' : stItem.n}</span>
+                const stCls = stItem.n === wizardStep ? 'is-active' : '';
+                return `<button type="button" onclick="window.setObatWizardStep(${stItem.n})" class="ons-wiz-step-btn ${stCls} py-1.5 px-3 min-h-[40px] rounded-xl flex items-center gap-2">
+                  <span id="wizStepBadge${stItem.n}" class="ons-wiz-step-num w-5 h-5 text-[11px] font-bold rounded-full flex items-center justify-center">${stItem.n}</span>
                   <span class="font-bold text-xs truncate">${stItem.n}. ${stItem.label}</span>
                 </button>`;
               }).join('')}
@@ -5686,13 +5694,21 @@
                       <p class="text-xs text-slate-500 dark:text-slate-400">Nama dagang resmi, kandungan zat aktif, serta kode referensi Kemenkes/BPOM.</p>
                     </div>
                   </div>
-                  ${!o.id_obat ? `<div class="flex flex-wrap gap-1.5 items-center">
-                    <span class="text-[11px] font-semibold text-slate-400">Templat Cepat:</span>
-                    <button type="button" onclick="window.applyObatProductTemplate('tablet')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">Tablet Generik</button>
-                    <button type="button" onclick="window.applyObatProductTemplate('sirup')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">Sirup Botol</button>
-                    <button type="button" onclick="window.applyObatProductTemplate('chiller')" class="ons-wiz-chip text-[11px] py-1 px-2.5 min-h-[30px]">Insulin Chiller</button>
-                  </div>` : ''}
+                  <button type="button" onclick="window.setObatWizardStep(3, true)" id="wizStep1SatuanPill" class="text-[11px] font-semibold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 transition-colors shrink-0">Satuan 1: ${S().esc(o.satuan_1 || o.satuan_dasar || 'Belum dipilih')} &rarr;</button>
                 </div>
+                ${!o.id_obat ? `<div class="px-4 sm:px-5 pt-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/70 bg-slate-50/50 dark:bg-slate-900/30">
+                  <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+                    <span class="text-[11.5px] font-bold text-slate-700 dark:text-slate-200">Pilih Cepat Bentuk Sediaan <span class="font-normal text-slate-500 dark:text-slate-400">(opsional — otomatis isi satuan)</span></span>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5 items-center" id="wizQuickShapeStrip">
+                    <button type="button" data-shape="tablet" onclick="window.applyObatQuickShape('tablet', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">💊 Tablet / Kapsul</button>
+                    <button type="button" data-shape="sirup" onclick="window.applyObatQuickShape('sirup', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">🧴 Sirup (Botol)</button>
+                    <button type="button" data-shape="salep" onclick="window.applyObatQuickShape('salep', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">🧪 Salep / Krim (Tube)</button>
+                    <button type="button" data-shape="sachet" onclick="window.applyObatQuickShape('sachet', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">✉️ Sachet / Serbuk</button>
+                    <button type="button" data-shape="alkes" onclick="window.applyObatQuickShape('alkes', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">🩹 Alkes (Pcs)</button>
+                    <button type="button" data-shape="chiller" onclick="window.applyObatQuickShape('chiller', this)" class="ons-wiz-chip ons-wiz-shape-pill text-[11px] py-1 px-2.5 min-h-[30px]">❄️ Chiller 2–8°C</button>
+                  </div>
+                </div>` : ''}
                 <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div class="md:col-span-2">
                     <label class="font-bold text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
@@ -6435,13 +6451,25 @@
       }
     }
 
+    if (!satD) {
+      setTxt('wizPrevRasio', 'Belum dipilih (atur di Langkah 3)');
+      setTxt('wizPrevUmum', S().rp(umum) + ' / satuan?');
+    }
+
     const tierGrid = document.getElementById('wizPrevTierGrid');
     if (tierGrid) {
-      tierGrid.innerHTML = `
-        <div><div class="text-[10px] text-slate-400">Harga 1</div><div class="font-bold text-blue-600">${S().rp(umum)}</div><div class="text-[9px] text-slate-400">/${satD || 'Unit'}</div></div>
-        ${valid2 ? `<div><div class="text-[10px] text-slate-400">Harga 2</div><div class="font-bold text-emerald-600">${S().rp(hSed)}</div><div class="text-[9px] text-slate-400">/${satS}</div></div>` : ''}
-        ${valid3 ? `<div><div class="text-[10px] text-slate-400">Harga 3</div><div class="font-bold text-purple-600">${S().rp(hBes)}</div><div class="text-[9px] text-slate-400">/${satB}</div></div>` : ''}
-        ${!valid2 && !valid3 ? `<div><div class="text-[10px] text-slate-400">Kemasan</div><div class="font-semibold text-slate-400 text-[10px]">Tunggal</div></div>` : ''}`;
+      if (!satD) {
+        tierGrid.className = 'pt-1.5 mt-1 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 text-[11px]';
+        tierGrid.innerHTML = `<span class="text-slate-400 dark:text-slate-500">Satuan eceran belum dipilih</span>
+          <button type="button" onclick="window.setObatWizardStep(3, true)" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">Pilih &rarr;</button>`;
+      } else {
+        tierGrid.className = 'pt-2 mt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-1.5 text-[11px]';
+        tierGrid.innerHTML = `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold font-mono-num">${S().rp(umum)} <span class="font-normal opacity-80">/${S().esc(satD)}</span></span>
+          ${valid2 ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold font-mono-num">${S().rp(hSed)} <span class="font-normal opacity-80">/${S().esc(satS)}</span></span>` : ''}
+          ${valid3 ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-bold font-mono-num">${S().rp(hBes)} <span class="font-normal opacity-80">/${S().esc(satB)}</span></span>` : ''}
+          ${!valid2 && !valid3 ? `<span class="text-[10.5px] font-medium text-slate-400 dark:text-slate-500 px-1">&bull; Kemasan Tunggal</span>` : ''}`;
+      }
     }
 
     // 1. Peringatan Cerdas Rasio & Tombol Perbaikan 1-Klik
@@ -6595,11 +6623,34 @@
       diagBox.innerHTML = diagHtml;
     }
 
+    const s1PillEl = document.getElementById('wizStep1SatuanPill');
+    if (s1PillEl) {
+      if (satD) {
+        s1PillEl.innerHTML = `Satuan 1: <b>${S().esc(satD)}</b>${valid2 ? ' &bull; ' + S().esc(satS) : ''}${valid3 ? ' &bull; ' + S().esc(satB) : ''} &rarr;`;
+        s1PillEl.className = 'text-[11px] font-semibold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/70 hover:bg-blue-100 transition-colors shrink-0';
+      } else {
+        s1PillEl.innerHTML = 'Satuan 1: Belum dipilih &rarr;';
+        s1PillEl.className = 'text-[11px] font-semibold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 transition-colors shrink-0';
+      }
+    }
+
     const simBox = document.getElementById('satuanLiveSimulator');
     if (simBox) {
-      const s1 = satD || 'Unit Terkecil';
+      const s1 = satD || '';
       let simHtml = '';
-      if (!valid2 && !valid3) {
+      if (!s1) {
+        simHtml = `
+          <div class="flex items-start gap-2.5">
+            <span class="text-xl shrink-0 mt-0.5">💡</span>
+            <div>
+              <div class="font-extrabold text-xs text-slate-800 dark:text-slate-200">Satuan 1 (Eceran Terkecil) Belum Dipilih</div>
+              <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                Pilih satuan terkecil yang benar-benar dijual ke pasien di kasir: misalnya <b>Botol</b> (sirup), <b>Tube</b> (salep), <b>Sachet</b>, <b>Strip</b>, <b>Pcs</b> (alkes), atau <b>Tablet</b>.
+              </p>
+            </div>
+          </div>
+        `;
+      } else if (!valid2 && !valid3) {
         simHtml = `
           <div class="flex items-start gap-2.5">
             <span class="text-xl shrink-0 mt-0.5">📦</span>
@@ -6695,61 +6746,63 @@
       monBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full ' + (filledWajibCount === 5 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-blue-500/10 text-blue-600');
     }
 
-    // Monitor Alert Box (Tenang, Elegan, Informatif Tanpa Shouting Kuning Menyala)
+    // Monitor Alert Box (Ringkas 1-Baris Agar Kartu Kanan Muat Penuh Tanpa Terpotong)
     const alertBox = document.getElementById('wizMonitorAlertBox');
     if (alertBox) {
       if (isUnderHpp) {
-        alertBox.className = 'p-2.5 rounded-lg border border-red-200 bg-red-50/70 dark:bg-red-950/20 text-red-700 dark:text-red-300 text-xs';
-        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-bold"><span>⚠️</span><span>Peringatan Harga Jual Rugi</span></div><div class="text-[11px] mt-0.5">Harga Jual (${S().rp(umum)}) di bawah HPP modal (${S().rp(hpp)}).</div>`;
+        alertBox.className = 'px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50/80 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-[11px] flex items-center justify-between gap-2';
+        alertBox.innerHTML = `<span class="font-bold">⚠️ Harga Jual &lt; HPP (${S().rp(hpp)})</span><span class="text-[10px] opacity-85">Cek margin</span>`;
       } else if (filledWajibCount === 5) {
-        alertBox.className = 'p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200 text-xs';
-        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-bold"><span>✓</span><span>Data Wajib Lengkap</span></div><div class="text-[11px] mt-0.5">Produk siap disimpan &amp; diterbitkan ke katalog.</div>`;
+        alertBox.className = 'px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 text-[11px] flex items-center justify-between gap-2';
+        alertBox.innerHTML = `<span class="font-bold">✓ Data Wajib Lengkap</span><span class="text-[10px] opacity-85">Siap diterbitkan</span>`;
       } else {
         const missingItem = wajibList.find((x) => !x.ok);
-        alertBox.className = 'p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 text-xs';
-        alertBox.innerHTML = `<div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200"><span>ℹ️</span><span>Lengkapi Data Wajib</span></div><div class="text-[11px] mt-0.5 text-slate-500 dark:text-slate-400">Tersisa <b>${5 - filledWajibCount} kolom</b> (berikutnya: ${missingItem ? missingItem.label : 'kolom wajib'}).</div>`;
+        alertBox.className = 'px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-50/90 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 text-[11px] flex items-center justify-between gap-2';
+        alertBox.innerHTML = `<span class="font-semibold text-slate-700 dark:text-slate-200">ℹ️ Sisa ${5 - filledWajibCount} kolom wajib</span><span class="text-[10.5px] text-slate-500 dark:text-slate-400 truncate max-w-[145px]">Berikut: ${missingItem ? missingItem.label : '-'}</span>`;
       }
     }
 
-    // Render Checklist Wajib (Tenang & Rapi)
+    // Render Checklist Wajib dalam grid 2-kolom ringkas agar muat penuh tanpa terpotong di laptop
     const wListEl = document.getElementById('wizWajibChecklist');
     if (wListEl) {
-      wListEl.innerHTML = wajibList.map((item) => {
+      wListEl.className = 'grid grid-cols-2 gap-1.5';
+      const shortNames = { nama: 'Nama Produk', rak: 'Rak Gudang', satuan: 'Satuan 1', hpp: 'HPP Modal', umum: 'Harga Jual 1' };
+      wListEl.innerHTML = wajibList.map((item, idx) => {
+        const spanCls = idx === wajibList.length - 1 ? 'col-span-2' : '';
+        const lbl = shortNames[item.key] || item.label;
         if (item.ok) {
           const isWarn = item.key === 'umum' && isUnderHpp;
-          return `<div class="flex items-center justify-between py-1 px-2.5 rounded-md ${isWarn ? 'bg-red-500/10 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'}">
-            <span class="flex items-center gap-1.5 text-[11px] font-medium">
+          return `<div title="${S().esc(item.label + ': ' + item.detail)}" class="${spanCls} flex items-center justify-between gap-1 py-1 px-2 rounded-md ${isWarn ? 'bg-red-500/10 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'}">
+            <span class="flex items-center gap-1 text-[10.5px] font-semibold truncate">
               <span class="${isWarn ? 'text-red-600' : 'text-emerald-600'} font-bold">${isWarn ? '⚠️' : '✓'}</span>
-              <span>${item.label}</span>
+              <span class="truncate">${lbl}</span>
             </span>
-            <span class="font-bold truncate max-w-[120px] font-mono-num text-[10.5px]">${item.detail}</span>
+            <span class="font-bold truncate max-w-[78px] font-mono-num text-[10px]">${S().esc(item.detail)}</span>
           </div>`;
         }
-        return `<button type="button" onclick="window.setObatWizardStep(${item.step}, true);setTimeout(()=>{const e=document.getElementById('${item.fieldId}');if(e){e.focus();e.scrollIntoView({behavior:'smooth',block:'center'});}},100);" class="w-full flex items-center justify-between py-1 px-2.5 rounded-md bg-slate-100/80 hover:bg-blue-50 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors text-left">
-          <span class="flex items-center gap-1.5 text-[11px] font-medium">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            <span>${item.label}</span>
+        return `<button type="button" title="${S().esc(item.label)}" onclick="window.setObatWizardStep(${item.step}, true);setTimeout(()=>{const e=document.getElementById('${item.fieldId}');if(e){e.focus();e.scrollIntoView({behavior:'smooth',block:'center'});}},100);" class="${spanCls} w-full flex items-center justify-between gap-1 py-1 px-2 rounded-md bg-slate-100/90 hover:bg-blue-50 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors text-left">
+          <span class="flex items-center gap-1.5 text-[10.5px] font-medium truncate">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
+            <span class="truncate">${lbl}</span>
           </span>
-          <span class="text-[10.5px] text-blue-600 dark:text-blue-400 font-semibold">Isi &rarr;</span>
+          <span class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold shrink-0">Isi &rarr;</span>
         </button>`;
       }).join('');
     }
 
-    // Render Checklist Standar BPOM / Disarankan
+    // Render Checklist Standar BPOM / Disarankan (Compact 3-Col Pill Strip agar bebas terpotong)
     const oListEl = document.getElementById('wizOpsionalChecklist');
     if (oListEl) {
       const ops = [
-        { label: 'Zat Aktif', ok: Boolean(zat), text: zat ? zat : '-' },
-        { label: 'NIE / KFA', ok: Boolean(nie || kfa), text: (nie || kfa) ? (nie || kfa) : '-' },
-        { label: 'Multi-Satuan', ok: Boolean(satB && satS), text: satB ? `1 ${satB} = ${rasB} ${satD || 'Unit'}` : 'Tunggal' }
+        { label: 'Zat Aktif', ok: Boolean(zat), title: zat || 'Belum diisi' },
+        { label: 'NIE / KFA', ok: Boolean(nie || kfa), title: (nie || kfa) || 'Belum diisi' },
+        { label: satD ? (satB && satS ? '3 Satuan' : (satS || satB ? '2 Satuan' : satD)) : 'Satuan?', ok: Boolean(satD), title: satB ? `1 ${satB} = ${rasB} ${satD}` : (satD || 'Belum dipilih') }
       ];
+      oListEl.className = 'grid grid-cols-3 gap-1.5 text-[10.5px]';
       oListEl.innerHTML = ops.map((op) => `
-        <div class="flex items-center justify-between py-0.5 px-2 rounded ${op.ok ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}">
-          <span class="flex items-center gap-1.5">
-            <span>${op.ok ? '✓' : '•'}</span>
-            <span>${op.label}</span>
-          </span>
-          <span class="truncate max-w-[120px] text-[10px] font-mono-num">${op.text}</span>
+        <div title="${S().esc(op.title)}" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-md border text-center truncate ${op.ok ? 'border-emerald-200/80 bg-emerald-50/70 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-300 font-semibold' : 'border-slate-200/80 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400'}">
+          <span>${op.ok ? '✓' : '•'}</span>
+          <span class="truncate">${S().esc(op.label)}</span>
         </div>`).join('');
     }
 
@@ -6765,18 +6818,24 @@
       }
     }
 
-    // Update stepper check badges
+    // Update stepper check badges (Jujur: jangan beri centang palsu di langkah yang belum dikunjungi)
+    const isEditMode = Boolean((document.getElementById('wObatId') || {}).value);
+    const visitedSet = global._wizVisitedSteps || new Set([1]);
+    const navEl = document.getElementById('wizStepNav');
     for (let st = 1; st <= 5; st++) {
       const bEl = document.getElementById('wizStepBadge' + st);
       if (!bEl) continue;
       let ok = false;
       if (st === 1) ok = checkNama;
-      else if (st === 2) ok = checkRak;
+      else if (st === 2) ok = checkRak && (isEditMode || visitedSet.has(2));
       else if (st === 3) ok = checkSatD;
       else if (st === 4) ok = checkHpp && checkUmum;
-      else if (st === 5) ok = filledWajibCount === 5;
+      else if (st === 5) ok = filledWajibCount === 5 && (isEditMode || visitedSet.has(5));
       if (ok) bEl.innerHTML = '&#10003;';
       else bEl.innerHTML = String(st);
+      if (navEl && navEl.children && navEl.children[st - 1]) {
+        navEl.children[st - 1].classList.toggle('is-done', ok && st !== (global._wizCurStep || 1));
+      }
     }
   };
 
@@ -6841,6 +6900,56 @@
     else if (b) global.setSatuanActiveHelp(3);
     else global.setSatuanActiveHelp(2);
     global.updateObatWizardPreview();
+  };
+
+  global.applyObatQuickShape = (shape, btnEl) => {
+    const strip = document.getElementById('wizQuickShapeStrip');
+    if (strip) {
+      Array.from(strip.querySelectorAll('.ons-wiz-shape-pill')).forEach((el) => {
+        el.classList.toggle('is-selected', el === btnEl || el.getAttribute('data-shape') === shape);
+      });
+    }
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    if (shape === 'tablet' || shape === 'sirup' || shape === 'chiller') {
+      if (typeof global.applyObatProductTemplate === 'function') {
+        global.applyObatProductTemplate(shape);
+        return;
+      }
+    }
+    if (shape === 'salep') {
+      set('wSatDasar', 'Tube');
+      set('wSatSed', '');
+      set('wRasioSed', 1);
+      set('wSatBes', 'Box');
+      set('wRasioBes', 12);
+      set('wGol', 'BEBAS_TERBATAS');
+      set('wSuhu', 'Suhu Ruang (15-25°C)');
+      global.setSatuanActiveHelp(1);
+      global.updateObatWizardPreview();
+      if (typeof global.toast === 'function') global.toast('Bentuk Salep / Krim (Tube) diterapkan.', 'info');
+    } else if (shape === 'sachet') {
+      set('wSatDasar', 'Sachet');
+      set('wSatSed', 'Box');
+      set('wRasioSed', 12);
+      set('wSatBes', '');
+      set('wRasioBes', 1);
+      set('wGol', 'BEBAS');
+      set('wSuhu', 'Suhu Ruang (15-25°C)');
+      global.setSatuanActiveHelp(2);
+      global.updateObatWizardPreview();
+      if (typeof global.toast === 'function') global.toast('Bentuk Sachet / Serbuk (1 Box = 12 Sachet) diterapkan.', 'info');
+    } else if (shape === 'alkes') {
+      set('wSatDasar', 'Pcs');
+      set('wSatSed', 'Box');
+      set('wRasioSed', 10);
+      set('wSatBes', '');
+      set('wRasioBes', 1);
+      set('wGol', 'ALKES');
+      set('wSuhu', 'Suhu Ruang (15-25°C)');
+      global.setSatuanActiveHelp(1);
+      global.updateObatWizardPreview();
+      if (typeof global.toast === 'function') global.toast('Bentuk Alkes / Habis Pakai (Pcs) diterapkan.', 'info');
+    }
   };
 
   global.pickSatuanChip = (nameId, nameVal, rasioId, rasioVal) => {
@@ -7213,6 +7322,9 @@
 
     wizardStep = targetStep;
     global._wizCurStep = wizardStep;
+    if (!global._wizVisitedSteps) global._wizVisitedSteps = new Set([1]);
+    global._wizVisitedSteps.add(wizardStep);
+
     for (let i = 1; i <= 5; i++) {
       const sec = document.getElementById('wizSec' + i);
       if (sec) sec.className = (!wizardFullScrollMode && wizardStep !== i) ? 'hidden' : 'ons-wiz-card';
@@ -7222,7 +7334,6 @@
       Array.from(nav.children).forEach((btn, idx) => {
         const n = idx + 1;
         btn.classList.toggle('is-active', n === wizardStep);
-        btn.classList.toggle('is-done', n < wizardStep);
       });
     }
     const prog = document.getElementById('wizProgFill');

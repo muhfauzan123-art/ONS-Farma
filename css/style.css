@@ -7131,3 +7131,161 @@ html.dark .ons-cockpit-badge {
 #mainViewSlot input[type="date"].w-32 {
   min-width: 146px;
 }
+
+/* 15. Wizard Tambah / Edit Produk Obat v18.75.0: lebih nyaman, lega, dan bebas terpotong */
+.ons-wiz-header {
+  background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+  border-bottom: 1px solid #E2E8F0;
+}
+html.dark .ons-wiz-header {
+  background: linear-gradient(135deg, #0F172A 0%, #172554 100%);
+  border-bottom-color: #1E293B;
+}
+.ons-wiz-step-btn {
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #475569;
+  transition: all 0.16s ease;
+  position: relative;
+}
+.ons-wiz-step-btn:hover {
+  border-color: #93C5FD;
+  background: #F8FAFC;
+  color: #0F172A;
+}
+.ons-wiz-step-btn.is-active {
+  border-color: #0066FE;
+  background: linear-gradient(180deg, rgba(0, 102, 254, 0.09) 0%, rgba(2, 132, 199, 0.04) 100%);
+  color: #0052CC;
+  box-shadow: 0 4px 12px -4px rgba(0, 102, 254, 0.25), inset 0 -2.5px 0 0 #0066FE;
+}
+.ons-wiz-step-btn.is-active .ons-wiz-step-num {
+  background: linear-gradient(135deg, #0066FE, #0284C7);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 102, 254, 0.35);
+}
+.ons-wiz-step-btn.is-done {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.05);
+  color: #047857;
+}
+.ons-wiz-step-btn.is-done .ons-wiz-step-num {
+  background: #10B981;
+  color: #FFFFFF;
+}
+html.dark .ons-wiz-step-btn {
+  border-color: #1E293B;
+  background: #0F172A;
+  color: #94A3B8;
+}
+html.dark .ons-wiz-step-btn:hover {
+  border-color: #38BDF8;
+  color: #F8FAFC;
+}
+html.dark .ons-wiz-step-btn.is-active {
+  border-color: #38BDF8;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.16) 0%, rgba(0, 102, 254, 0.08) 100%);
+  color: #7DD3FC;
+  box-shadow: inset 0 -2.5px 0 0 #38BDF8;
+}
+html.dark .ons-wiz-step-btn.is-done {
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+  color: #6EE7B7;
+}
+.ons-wiz-shape-pill {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  font-weight: 600;
+  border-radius: 0.65rem;
+  transition: all 0.14s ease;
+}
+.ons-wiz-shape-pill:hover {
+  border-color: #3B82F6;
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+.ons-wiz-shape-pill.is-selected {
+  border-color: #0066FE;
+  background: linear-gradient(135deg, #0066FE, #0284C7);
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 8px -2px rgba(0, 102, 254, 0.35);
+}
+html.dark .ons-wiz-shape-pill {
+  background: #1E293B;
+  border-color: #334155;
+  color: #E2E8F0;
+}
+html.dark .ons-wiz-shape-pill:hover {
+  border-color: #38BDF8;
+  background: #0F172A;
+}
+#obatWizardForm .ons-wiz-card {
+  padding: 0;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px -12px rgba(15, 23, 42, 0.12);
+}
+#obatWizardForm .ons-wiz-card-head {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.85rem 1.15rem;
+}
+#obatWizardForm #wizSec1 > .grid {
+  padding: 0.9rem 1.15rem;
+  gap: 0.65rem 0.9rem;
+}
+#obatWizardForm .ons-wiz-card label {
+  text-transform: none !important;
+  font-size: 0.78rem;
+  letter-spacing: 0.005em;
+  color: #334155;
+  margin-bottom: 0.25rem;
+}
+html.dark #obatWizardForm .ons-wiz-card label {
+  color: #CBD5E1;
+}
+#obatWizardForm .ons-wiz-card .ons-input,
+#obatWizardForm .ons-wiz-card select {
+  min-height: 38px;
+}
+#wizMonitorBox {
+  padding: 0.65rem 0.75rem;
+  gap: 0.38rem;
+  max-height: calc(100vh - 8.2rem);
+  overflow-y: auto;
+  border-radius: 1rem;
+}
+#wizMonitorBox .ons-wiz-preview {
+  padding: 0.55rem 0.65rem;
+  gap: 0.32rem;
+  border-radius: 0.8rem;
+}
+#wizMonitorBox .ons-wiz-preview > div {
+  padding: 0.42rem 0.55rem;
+}
+#wizMonitorBox .space-y-3 > * + *,
+#wizMonitorBox .space-y-2 > * + *,
+#wizMonitorBox .space-y-1\.5 > * + * {
+  margin-top: 0.28rem;
+}
+#wizMonitorBox #wizPrevUmum {
+  font-size: 0.92rem;
+}
+@media (max-width: 1023px) {
+  #wizMonitorBox {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+@media (max-width: 639px) {
+  #wizFooterBar {
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+  }
+  #wizFooterBar button {
+    font-size: 0.8rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
