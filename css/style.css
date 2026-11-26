@@ -7031,3 +7031,49 @@ html.dark .ons-quick-pill-badge {
   #mainViewSlot .flex-wrap > .flex,
   #mainViewSlot .flex-wrap > .ons-quick-pills-ribbon { min-width: 0; }
 }
+
+/* ==========================================================================
+   v18.70.0 — PENYEMPURNAAN SUB-TAB, BADGE & KARTU KOKPIT
+   ========================================================================== */
+
+/* 10. Navigasi sub-tab selalu satu baris rapi dengan scroll horizontal halus
+       bila melebihi lebar layar, tanpa menjatuhkan 1-2 tab ke baris kedua */
+.ons-dash-tab-nav {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.ons-dash-tab-nav::-webkit-scrollbar {
+  display: none;
+}
+.ons-dash-tab-nav > div:first-child {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.ons-dash-tab-nav > div:first-child::-webkit-scrollbar {
+  display: none;
+}
+.ons-dash-tab-btn {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+@media (min-width: 768px) and (max-width: 1535px) {
+  .ons-dash-tab-btn {
+    padding: 0.38rem 0.65rem !important;
+    font-size: 0.74rem !important;
+    gap: 0.35rem !important;
+  }
+}
+
+/* 11. Jaga badge kecil di kartu kokpit agar tidak terlipat ke 2 baris */
+.ons-cockpit-badge {
+  white-space: nowrap;
+  flex-shrink: 0;
+}

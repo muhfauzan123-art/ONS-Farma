@@ -9573,43 +9573,43 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end pt-1">
-          <div class="lg:col-span-2">
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end pt-1">
+          <div class="sm:col-span-4 lg:col-span-2">
             <label for="suhuKategoriInp" class="font-semibold block mb-1">Kategori *</label>
-            <select id="suhuKategoriInp" class="ons-select font-bold" onchange="window.handleSuhuKategoriChange(this.value)">
+            <select id="suhuKategoriInp" class="ons-select font-bold w-full" onchange="window.handleSuhuKategoriChange(this.value)">
               <option value="KULKAS" ${suhuActiveKategori !== 'ruangan' ? 'selected' : ''}>🧊 Kulkas (2–8°C)</option>
               <option value="RUANGAN" ${suhuActiveKategori === 'ruangan' ? 'selected' : ''}>🌡️ Ruangan (15–25°C)</option>
             </select>
           </div>
 
-          <div class="lg:col-span-2">
+          <div class="sm:col-span-4 lg:col-span-3">
             <label for="suhuUnitInp" class="font-semibold block mb-1">Unit / Lokasi *</label>
-            <input id="suhuUnitInp" list="suhuUnitPresets" class="ons-input font-mono-num" value="${S().esc(suhuUnitFilter || (suhuActiveKategori === 'ruangan' ? 'RUANG-APOTEK-01' : 'CHILLER-VAKSIN-01'))}"/>
+            <input id="suhuUnitInp" list="suhuUnitPresets" class="ons-input font-mono-num w-full" value="${S().esc(suhuUnitFilter || (suhuActiveKategori === 'ruangan' ? 'RUANG-APOTEK-01' : 'CHILLER-VAKSIN-01'))}"/>
             <datalist id="suhuUnitPresets">${currentUnits.map((u) => `<option value="${S().esc(u)}"></option>`).join('')}</datalist>
           </div>
 
-          <div class="lg:col-span-2">
+          <div class="sm:col-span-4 lg:col-span-2">
             <label for="suhuShiftInp" class="font-semibold block mb-1">Shift / Waktu *</label>
-            <select id="suhuShiftInp" class="ons-select font-bold">
+            <select id="suhuShiftInp" class="ons-select font-bold w-full">
               <option value="PAGI" ${new Date().getHours() < 12 ? 'selected' : ''}>Pagi (08:00)</option>
               <option value="SIANG" ${new Date().getHours() >= 12 && new Date().getHours() < 16 ? 'selected' : ''}>Siang (14:00)</option>
               <option value="SORE" ${new Date().getHours() >= 16 ? 'selected' : ''}>Sore (16:30)</option>
             </select>
           </div>
 
-          <div class="lg:col-span-2">
+          <div class="sm:col-span-3 lg:col-span-1">
             <label for="suhuNilaiInp" class="font-semibold block mb-1">Suhu (&deg;C) *</label>
-            <input id="suhuNilaiInp" type="number" step="0.1" value="${suhuActiveKategori === 'ruangan' ? '22.4' : (latestKulkas ? Number(latestKulkas.suhu_celcius || 4.8).toFixed(1) : '4.8')}" class="ons-input font-mono-num font-bold text-sm"/>
+            <input id="suhuNilaiInp" type="number" step="0.1" value="${suhuActiveKategori === 'ruangan' ? '22.4' : (latestKulkas ? Number(latestKulkas.suhu_celcius || 4.8).toFixed(1) : '4.8')}" class="ons-input font-mono-num font-bold text-sm w-full"/>
           </div>
 
-          <div class="lg:col-span-1">
+          <div class="sm:col-span-3 lg:col-span-1">
             <label for="suhuHumInp" class="font-semibold block mb-1">RH %</label>
-            <input id="suhuHumInp" type="number" min="0" max="100" step="1" value="${suhuActiveKategori === 'ruangan' ? '60' : (latestKulkas ? Number(latestKulkas.kelembapan || 55) : '55')}" class="ons-input font-mono-num text-sm"/>
+            <input id="suhuHumInp" type="number" min="0" max="100" step="1" value="${suhuActiveKategori === 'ruangan' ? '60' : (latestKulkas ? Number(latestKulkas.kelembapan || 55) : '55')}" class="ons-input font-mono-num text-sm w-full"/>
           </div>
 
-          <div class="lg:col-span-3">
+          <div class="sm:col-span-6 lg:col-span-3">
             <label for="suhuKorektifInp" class="font-semibold block mb-1">Tindakan Korektif</label>
-            <input id="suhuKorektifInp" class="ons-input" placeholder="Opsional jika normal, wajib bila deviasi"/>
+            <input id="suhuKorektifInp" class="ons-input w-full" placeholder="Opsional (wajib bila deviasi)"/>
           </div>
         </div>
 

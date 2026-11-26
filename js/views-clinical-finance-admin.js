@@ -8115,9 +8115,9 @@ S. prn 3 dd 1 tab</textarea>
                 <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Radar Batch Mengendap (${deadBatches.length} Batch)</h3>
                 <p class="text-xs text-slate-400">Filter rentang hari tanpa transaksi penjualan:</p>
               </div>
-              <div class="flex items-center gap-1">
-                ${[30, 60, 90, 180].map(d => `<button type="button" onclick="window._deadStockThresholdDays=${d};window.renderActiveView();" class="ons-btn text-[11px] py-1 px-2.5 font-semibold ${deadThresholdDays === d ? 'ons-btn-primary font-bold' : 'ons-btn-ghost'}">${d} Hari</button>`).join('')}
-                <button type="button" onclick="navigateView('faktur','retur')" class="ons-btn ons-btn-ghost text-xs ml-2 font-semibold">Retur PBF &rarr;</button>
+              <div class="flex flex-wrap items-center gap-1">
+                ${[30, 60, 90, 180].map(d => `<button type="button" onclick="window._deadStockThresholdDays=${d};window.renderActiveView();" class="ons-btn text-[11px] py-1 px-2.5 font-semibold whitespace-nowrap ${deadThresholdDays === d ? 'ons-btn-primary font-bold' : 'ons-btn-ghost'}">${d} Hari</button>`).join('')}
+                <button type="button" onclick="navigateView('faktur','retur')" class="ons-btn ons-btn-ghost text-xs sm:ml-2 font-semibold whitespace-nowrap">Retur PBF &rarr;</button>
               </div>
             </div>
             <div class="ons-table-wrap">
@@ -8160,12 +8160,12 @@ S. prn 3 dd 1 tab</textarea>
           </div>
 
           <div class="ons-card p-4 lg:col-span-5 space-y-3 text-xs">
-            <div class="flex justify-between items-center">
-              <div>
+            <div class="flex justify-between items-start gap-2">
+              <div class="min-w-0">
                 <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Log Permintaan Tertolak (Lost Sales)</h3>
                 <p class="text-xs text-slate-400">Obat dicari pasien tapi stok kosong &bull; Terhubung ke Defecta</p>
               </div>
-              <button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-semibold">+ Katalog</button>
+              <button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-ghost text-[11px] py-1 px-2.5 font-semibold whitespace-nowrap shrink-0">+ Katalog</button>
             </div>
             <div class="flex gap-2">
               <input id="lsNama" class="ons-input flex-1 text-xs" placeholder="Nama obat dicari pasien..."/>
@@ -9790,10 +9790,10 @@ S. prn 3 dd 1 tab</textarea>
 
   function formatRoleDisplay(role) {
     const norm = String(role || '').toLowerCase().trim();
-    if (norm === 'admin' || norm === 'pemilik') return 'admin';
-    if (norm === 'apj' || norm.includes('apoteker')) return 'apoteker penanggung jawab';
-    if (norm === 'kasir' || norm === 'cashier') return 'cashier';
-    return role;
+    if (norm === 'admin' || norm === 'pemilik') return 'Pemilik';
+    if (norm === 'apj' || norm.includes('apoteker')) return 'Apoteker (APJ)';
+    if (norm === 'kasir' || norm === 'cashier') return 'Kasir';
+    return role || '-';
   }
 
   global.setUsersTab = (t) => {
@@ -11075,7 +11075,7 @@ S. prn 3 dd 1 tab</textarea>
         <div class="ons-cockpit-card">
           <div class="ons-cockpit-label">
             <span>Cakupan Modul Log</span>
-            <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10">Full Modules</span>
+            <span class="ons-cockpit-badge text-teal-600 bg-teal-500/10">Semua Modul</span>
           </div>
           <div class="ons-cockpit-val text-teal-600">Terdistribusi</div>
           
@@ -11085,7 +11085,7 @@ S. prn 3 dd 1 tab</textarea>
             <span>Format Waktu Audit</span>
             <span class="ons-cockpit-badge text-blue-600 bg-blue-500/10">ISO 8601</span>
           </div>
-          <div class="ons-cockpit-val text-blue-600">Timestamped</div>
+          <div class="ons-cockpit-val text-blue-600">Tercatat Otomatis</div>
           
         </div>
       </div>
@@ -12713,7 +12713,7 @@ S. prn 3 dd 1 tab</textarea>
                 </p>
                 <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-100">
                   <span id="profHeroSiaPill" class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-mono-num font-semibold">
-                    📜 SIA: ${S().esc(merged.no_sia || '-')}
+                    📜 ${merged.no_sia ? 'SIA: ' + S().esc(merged.no_sia) : 'Izin SIA belum diisi'}
                   </span>
                   <span class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-medium">
                     👨‍⚕️ APJ: <b>${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</b>
@@ -13812,7 +13812,6 @@ S. prn 3 dd 1 tab</textarea>
           <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">Pindai DB</button>
           <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs font-bold">Perbaiki DB</button>
         ` : `
-          ${canEditProfile ? `<button type="button" onclick="window.addAuditChecklistRow()" class="ons-btn ons-btn-ghost text-xs">+ Tambah Poin Audit</button>` : ''}
           <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Sistem Audit</button>
         `)))));
 
@@ -13836,15 +13835,17 @@ S. prn 3 dd 1 tab</textarea>
       <!-- 4 KPI Cockpit Strip Cards -->
       ${(() => {
         if (settingsTab === 'profil') {
+          const rawPkp = String(merged.status_pkp || 'PKP').toUpperCase();
+          const pkpLabel = rawPkp.includes('NON') ? 'Non-PKP (Bebas PPN)' : (rawPkp === 'PKP' ? 'PKP (PPN 11%)' : (merged.status_pkp || 'PKP (PPN 11%)'));
           return `<div class="ons-cockpit-strip">
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Kelengkapan Profil</span>
-              <span class="ons-cockpit-val text-sky-600">${comp.percent || 100}%</span>
+              <span class="ons-cockpit-val text-sky-600">${comp.pct || 95}%</span>
               
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Legalitas SIA / SIPA</span>
-              <span class="ons-cockpit-val text-emerald-600">Terverifikasi</span>
+              <span class="ons-cockpit-val ${merged.no_sia ? 'text-emerald-600' : 'text-amber-600'}">${merged.no_sia ? 'Terverifikasi' : 'Belum Diisi'}</span>
               
             </div>
             <div class="ons-cockpit-card">
@@ -13854,7 +13855,7 @@ S. prn 3 dd 1 tab</textarea>
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Status Pajak Toko</span>
-              <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(merged.status_pkp || 'PKP (PPN 11%)')}</span>
+              <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(pkpLabel)}</span>
               
             </div>
           </div>`;
@@ -14159,11 +14160,7 @@ S. prn 3 dd 1 tab</textarea>
               <option value="58" ${widthNum !== 80 ? 'selected' : ''}>58 mm (32 Kolom)</option>
               <option value="80" ${widthNum === 80 ? 'selected' : ''}>80 mm (46 Kolom)</option>
             </select>
-            <button type="button" onclick="ONSStore.ThermalPrinter.connect()" class="ons-btn ons-btn-ghost text-xs" title="Hubungkan Printer Thermal Bluetooth">🖨️ Hubungkan BT</button>
-            <button type="button" onclick="window.testPrintBluetoothStruk()" class="ons-btn ons-btn-ghost text-xs text-blue-700 font-semibold" title="Kirim Uji Cetak ESC/POS Langsung ke Printer Bluetooth">⚡ Uji Cetak BT</button>
-            <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs" title="Uji Cetak via Dialog Browser / Print PDF">Uji Cetak (Browser)</button>
             <button type="button" onclick="window.downloadEditedStrukPng()" class="ons-btn ons-btn-ghost text-xs">Unduh PNG</button>
-            <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template ke Sheets</button>
           </div>
         </div>
 
@@ -14357,22 +14354,22 @@ S. prn 3 dd 1 tab</textarea>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          <div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-3">
+          <div class="xl:col-span-3">
             <label class="font-semibold block mb-1">Nama APJ Pengaudit *</label>
-            <input id="audSysApjNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.apj_nama || '')}" oninput="window.updateAuditHeaderField('apj_nama', this.value)" placeholder="Nama Apoteker Penanggung Jawab"/>
+            <input id="audSysApjNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs w-full" value="${S().esc(draft.apj_nama || '')}" oninput="window.updateAuditHeaderField('apj_nama', this.value)" placeholder="Nama Apoteker Penanggung Jawab"/>
           </div>
-          <div>
+          <div class="xl:col-span-2">
             <label class="font-semibold block mb-1">No. SIPA APJ</label>
-            <input id="audSysApjSipa" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input font-mono-num text-xs" value="${S().esc(draft.apj_sipa || '-')}" oninput="window.updateAuditHeaderField('apj_sipa', this.value)" placeholder="No. SIPA APJ"/>
+            <input id="audSysApjSipa" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input font-mono-num text-xs w-full" value="${S().esc(draft.apj_sipa || '-')}" oninput="window.updateAuditHeaderField('apj_sipa', this.value)" placeholder="No. SIPA APJ"/>
           </div>
-          <div>
+          <div class="xl:col-span-3">
             <label class="font-semibold block mb-1">Nama Kasir Pelaksana *</label>
-            <input id="audSysKasirNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(draft.kasir_nama || '')}" oninput="window.updateAuditHeaderField('kasir_nama', this.value)" placeholder="Nama Kasir Aktif"/>
+            <input id="audSysKasirNama" ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs w-full" value="${S().esc(draft.kasir_nama || '')}" oninput="window.updateAuditHeaderField('kasir_nama', this.value)" placeholder="Nama Kasir Aktif"/>
           </div>
-          <div>
+          <div class="xl:col-span-4">
             <label class="font-semibold block mb-1">Catatan Evaluasi Audit</label>
-            <input id="audSysCatatan" class="ons-input text-xs" value="${S().esc(draft.catatan_audit || '')}" oninput="window.updateAuditHeaderField('catatan_audit', this.value)" placeholder="Ringkasan temuan CDOB hari ini"/>
+            <input id="audSysCatatan" class="ons-input text-xs w-full" value="${S().esc(draft.catatan_audit || '')}" oninput="window.updateAuditHeaderField('catatan_audit', this.value)" placeholder="Ringkasan temuan CDOB hari ini"/>
           </div>
         </div>
 
@@ -14391,7 +14388,7 @@ S. prn 3 dd 1 tab</textarea>
                   </select>
                 </td>
                 <td><input class="ons-input text-xs" value="${S().esc(it.keterangan || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'keterangan', this.value)" placeholder="Catatan pemeriksaan..."/></td>
-                <td>${canEditAuditMeta && items.length > 1 ? `<button type="button" onclick="window.removeAuditChecklistRow(${idx})" class="ons-btn ons-btn-danger text-xs px-2 py-1">&times;</button>` : '-'}</td>
+                <td>${canEditAuditMeta && items.length > 1 ? `<button type="button" onclick="window.removeAuditChecklistRow(${idx})" aria-label="Hapus butir audit" class="ons-btn ons-btn-danger text-sm font-bold w-8 h-8 !min-h-[32px] !p-0 inline-flex items-center justify-center rounded-lg">&times;</button>` : '-'}</td>
               </tr>`).join('')}
             </tbody>
           </table>
@@ -15555,17 +15552,23 @@ S. prn 3 dd 1 tab</textarea>
    */
   function renderMobilePreviewView() {
     return `<div class="space-y-4 ons-view-enter">
-      <div class="ons-page-header">
-        <div>
-          <h1 class="text-xl font-extrabold">Simulator Tampilan HP, Tablet &amp; Desktop</h1>
-          
-        </div>
-        <div class="flex gap-1.5 flex-wrap">
-          ${[
-            { id: '100%', label: '&#128187; Desktop (100%)' },
-            { id: '768px', label: '&#128241; Tablet (768px)' },
-            { id: '390px', label: '&#128242; Mobile HP (390px)' }
-          ].map((bp) => `<button onclick="window.setMobilePreviewBp('${bp.id}')" class="ons-btn text-xs ${mobilePreviewBp === bp.id ? 'ons-btn-primary' : 'ons-btn-ghost'}">${bp.label}</button>`).join('')}
+      <div class="ons-subhero-banner is-settings">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-slate-600/10 text-slate-700 dark:text-slate-300 border border-slate-600/20 flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+            </div>
+            <div>
+              <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">Simulator Tampilan HP, Tablet &amp; Desktop</h2>
+            </div>
+          </div>
+          <div class="flex gap-1.5 flex-wrap">
+            ${[
+              { id: '100%', label: '💻 Desktop (100%)' },
+              { id: '768px', label: '📱 Tablet (768px)' },
+              { id: '390px', label: '📲 Mobile HP (390px)' }
+            ].map((bp) => `<button type="button" onclick="window.setMobilePreviewBp('${bp.id}')" class="ons-btn text-xs ${mobilePreviewBp === bp.id ? 'ons-btn-primary' : 'ons-btn-ghost'}">${bp.label}</button>`).join('')}
+          </div>
         </div>
       </div>
 
@@ -15582,13 +15585,14 @@ S. prn 3 dd 1 tab</textarea>
               <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Penjualan</div><b class="font-mono-num">${S().AppState.penjualan.length}</b></div>
               <div class="p-2.5 rounded-lg border" style="border-color:var(--ons-border)"><div style="color:var(--ons-text-soft)">Touch Target</div><b class="text-emerald-600">44px+ OK</b></div>
             </div>
-            <button onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary w-full py-2.5">&#128242; Install PWA ke Perangkat Ini</button>
+            <button type="button" onclick="window.triggerPwaInstall()" class="ons-btn ons-btn-primary w-full py-2.5">📲 Install PWA ke Perangkat Ini</button>
           </div>
-          ${mobilePreviewBp === '390px' ? `<div class="grid grid-cols-4 text-center text-[10px] py-2 border-t" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
-            <button onclick="navigateView('dashboard')" class="font-bold text-blue-600">&#127968; Home</button>
-            <button onclick="navigateView('pos')">&#9889; POS</button>
-            <button onclick="navigateView('gudang')">&#128230; Stok</button>
-            <button onclick="navigateView('klinis')">&#129658; Klinis</button>
+          ${mobilePreviewBp === '390px' ? `<div class="grid grid-cols-5 text-center text-[10px] py-2 border-t" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
+            <button type="button" onclick="navigateView('dashboard')" class="font-bold text-blue-600">🏠 Beranda</button>
+            <button type="button" onclick="navigateView('pos')">🛒 Kasir</button>
+            <button type="button" onclick="navigateView('gudang')">📦 Stok</button>
+            <button type="button" onclick="navigateView('klinis')">🩺 Klinik</button>
+            <button type="button" onclick="window.openMobileDrawer && window.openMobileDrawer()">☰ Menu</button>
           </div>` : ''}
         </div>
       </div>

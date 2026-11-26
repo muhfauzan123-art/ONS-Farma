@@ -619,11 +619,11 @@
       const tensiHigh = allRows.filter((r) => Number(r.tensi_sistol || 0) >= 130 || Number(r.tensi_diastol || 0) >= 80).length;
       const gulaHigh = allRows.filter((r) => r.status_gula && r.status_gula !== 'NORMAL').length;
       const lipidAuHigh = allRows.filter((r) => (r.status_kolesterol && r.status_kolesterol !== 'NORMAL') || (r.status_asam_urat && r.status_asam_urat !== 'NORMAL')).length;
-      return `<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      return `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3">
         <div class="ons-glance-tile">
           <div class="flex items-center justify-between gap-1.5">
             <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Pemeriksaan</span>
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">Semua Pasien</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-blue-500/10 text-blue-600">Semua Pasien</span>
           </div>
           <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${allRows.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
           <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Hari ini: <b>${todayCount}</b> pasien periksa</div>
@@ -631,7 +631,7 @@
         <div class="ons-glance-tile cursor-pointer hover:border-red-400" onclick="window.setPemeriksaanFilter('KRISIS')" title="Filter pasien kritis rujukan dokter">
           <div class="flex items-center justify-between gap-1.5">
             <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kritis / Rujuk</span>
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${krisisCount > 0 ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-600'}">Triase Merah</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 ${krisisCount > 0 ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-600'}">Triase Merah</span>
           </div>
           <div class="text-2xl font-black font-mono-num mt-2 tracking-tight ${krisisCount > 0 ? 'text-red-600' : 'text-emerald-600'}">${krisisCount} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
           <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">TD &ge;180/120 &bull; Gula &lt;70/&ge;300</div>
@@ -639,7 +639,7 @@
         <div class="ons-glance-tile cursor-pointer hover:border-amber-400" onclick="window.setPemeriksaanTab('tensi')" title="Buka sub-tab Cek Tensi Darah">
           <div class="flex items-center justify-between gap-1.5">
             <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Tensi Waspada</span>
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Kardio</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-300">Kardio</span>
           </div>
           <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${tensiHigh} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
           <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Pra-HT / HT (&ge;130/80 mmHg)</div>
@@ -647,7 +647,7 @@
         <div class="ons-glance-tile cursor-pointer hover:border-purple-400" onclick="window.setPemeriksaanTab('gula')" title="Buka sub-tab Cek Gula Darah">
           <div class="flex items-center justify-between gap-1.5">
             <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Metabolik Pantau</span>
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-purple-300">GDS/Lipid</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-purple-500/10 text-purple-700 dark:text-purple-300">GDS/Lipid</span>
           </div>
           <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-purple-600">${gulaHigh} <span class="text-xs font-normal opacity-75">/ ${lipidAuHigh} AU</span></div>
           <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Gula darah, kolesterol &amp; AU</div>
@@ -655,7 +655,7 @@
         <div class="ons-glance-tile cursor-pointer hover:border-sky-400" onclick="window.setPemeriksaanFilter('KONTROL_DEKAT')" title="Filter pasien jadwal kontrol dekat">
           <div class="flex items-center justify-between gap-1.5">
             <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Kontrol &le;7 Hari</span>
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-500/10 text-sky-700 dark:text-sky-300">Follow-Up</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-sky-500/10 text-sky-700 dark:text-sky-300">Follow-Up</span>
           </div>
           <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-sky-600">${kontrolDue} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
           <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Jatuh tempo kontrol &le; 7 hari</div>
@@ -663,7 +663,7 @@
         <div class="ons-glance-tile cursor-pointer hover:border-emerald-400" onclick="window.setPemeriksaanFilter('BELUM_WA')" title="Filter arsip WA pasien">
           <div class="flex items-center justify-between gap-1.5">
             <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Terkirim ke WA</span>
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">KIE Pasien</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-emerald-500/10 text-emerald-600">KIE Pasien</span>
           </div>
           <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${waSentCount} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
           <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Arsip digital edukasi pasien</div>
@@ -725,11 +725,11 @@
       return d && d.tone === 'good';
     }).length;
 
-    return `<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+    return `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3">
       <div class="ons-glance-tile">
         <div class="flex items-center justify-between gap-1.5">
           <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Total Cek ${cfg.title}</span>
-          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-500/10 text-blue-600">POCT</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-blue-500/10 text-blue-600">POCT</span>
         </div>
         <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-blue-600">${subRows.length} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">rekam</span></div>
         <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Hari ini: <b>${subRows.filter((r) => String(r.tanggal || '').slice(0, 10) === todayIso).length}</b> pasien</div>
@@ -737,7 +737,7 @@
       <div class="ons-glance-tile">
         <div class="flex items-center justify-between gap-1.5">
           <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Rata-Rata Terukur</span>
-          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-500/10 text-sky-700 dark:text-sky-300">Rerata</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-sky-500/10 text-sky-700 dark:text-sky-300">Rerata</span>
         </div>
         <div class="text-xl sm:text-2xl font-black font-mono-num mt-2 tracking-tight text-sky-600">${cfg.avgFn(subRows)}</div>
         <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Tertinggi: <b class="font-mono-num">${cfg.maxFn(subRows)}</b></div>
@@ -745,7 +745,7 @@
       <div class="ons-glance-tile">
         <div class="flex items-center justify-between gap-1.5">
           <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Target Normal</span>
-          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Sesuai Acuan</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-emerald-500/10 text-emerald-600">Sesuai Acuan</span>
         </div>
         <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${pctNormal}% <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">normal</span></div>
         <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">${normalCnt} dari ${subRows.length} cek normal</div>
@@ -753,7 +753,7 @@
       <div class="ons-glance-tile cursor-pointer hover:border-red-400" onclick="window.setPemeriksaanFilter('WASPADA')" title="Filter data yang perlu pantau atau tinggi">
         <div class="flex items-center justify-between gap-1.5">
           <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Perlu Pantau / Tinggi</span>
-          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-red-500/10 text-red-700 dark:text-red-300">Atensi</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-red-500/10 text-red-700 dark:text-red-300">Atensi</span>
         </div>
         <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-red-600">${highCnt} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
         <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Rujuk dokter / edukasi terapi</div>
@@ -761,7 +761,7 @@
       <div class="ons-glance-tile">
         <div class="flex items-center justify-between gap-1.5">
           <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Membaik vs Cek Lalu</span>
-          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600">Terkontrol</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-emerald-500/10 text-emerald-600">Terkontrol</span>
         </div>
         <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-emerald-600">${membaikCnt} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
         <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Pasien ulang hasil membaik</div>
@@ -769,7 +769,7 @@
       <div class="ons-glance-tile cursor-pointer hover:border-amber-400" onclick="window.setPemeriksaanFilter('BELUM_WA')" title="Filter jadwal kontrol dan status WA">
         <div class="flex items-center justify-between gap-1.5">
           <span class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Jadwal Kontrol &le;7H</span>
-          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">Follow-Up</span>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-300">Follow-Up</span>
         </div>
         <div class="text-2xl font-black font-mono-num mt-2 tracking-tight text-amber-600">${kontrolDue} <span class="text-xs font-semibold" style="color:var(--ons-text-soft)">pasien</span></div>
         <div class="text-[11px] mt-2 pt-2 border-t" style="border-color:var(--ons-border);color:var(--ons-text-soft)">Terkirim WA: <b>${waSentCount}</b> pasien</div>
@@ -941,12 +941,6 @@
             <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${subTab === 'asam_urat' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} font-mono-num">${asamUratCount}</span>
           </button>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" onclick="window.printRekapPemeriksaanA4()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Cetak Rekap Pemeriksaan Format A4">🖨️ Rekap A4</button>
-          <button type="button" onclick="window.exportPemeriksaanXlsx()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Ekspor Catatan ke Excel">📥 Export Excel</button>
-          ${subTab !== 'semua' ? `<button type="button" onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm" title="Mulai Pemeriksaan Paket Lengkap">+ Paket 4-in-1</button>` : ''}
-          <button type="button" onclick="window.openPemeriksaanModal('','${S().esc(subTab)}')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm">+ Catat ${S().esc(focusLabels[subTab] || 'Pemeriksaan')}</button>
-        </div>
       </div>`;
 
     // 2. Executive Sub-Hero Banner (Contextual per Sub-Menu)
@@ -979,6 +973,9 @@
               (subTab === 'asam_urat' ? '+ Catat Asam Urat' :
               '+ Catat Pemeriksaan')))
             }</button>
+            ${subTab !== 'semua' ? `<button type="button" onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm" title="Mulai Pemeriksaan Paket Lengkap">+ Paket 4-in-1</button>` : ''}
+            <button type="button" onclick="window.printRekapPemeriksaanA4()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Cetak Rekap Pemeriksaan Format A4">🖨️ Rekap A4</button>
+            <button type="button" onclick="window.exportPemeriksaanXlsx()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Ekspor Catatan ke Excel">📥 Export Excel</button>
             <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
           </div>
         </div>

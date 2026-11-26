@@ -2120,7 +2120,7 @@
           <span>${tb.label}</span>
         </button>`).join('')}
       </div>
-      <div class="flex items-center gap-2 text-xs">
+      <div class="hidden md:flex items-center gap-2 text-xs shrink-0">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span class="hidden sm:inline">Live Real-Time</span>
@@ -2436,7 +2436,7 @@
               <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-sky-100/80 leading-relaxed">
                 <span class="font-bold text-white">${S().esc(usahaNama)}</span>
                 <span aria-hidden="true" class="opacity-45">&bull;</span>
-                <span class="font-mono-num">SIA: ${S().esc(prof.no_sia || '-')}</span>
+                <span class="font-mono-num">${prof.no_sia ? 'SIA: ' + S().esc(prof.no_sia) : 'Izin SIA belum diisi'}</span>
                 <span aria-hidden="true" class="opacity-45">&bull;</span>
                 <span>${S().esc(prof.jam_operasional || 'Siap Melayani')}</span>
               </div>
@@ -2573,7 +2573,7 @@
             <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Kesehatan Stok &amp; FEFO</div>
               <div class="flex items-baseline justify-between gap-2 mt-1.5">
-                <div class="text-2xl font-extrabold font-mono-num tracking-tight ${warningEdCount ? 'text-red-600' : 'text-emerald-600'}">${warningEdCount} Batch ED</div>
+                <div class="text-xl xl:text-[22px] font-extrabold font-mono-num tracking-tight whitespace-nowrap ${warningEdCount ? 'text-red-600' : 'text-emerald-600'}">${warningEdCount} Batch ED</div>
                 <div class="shrink-0 pt-0.5" title="Tren Transaksi Penjualan 7 Hari">${S().renderSparklineSvg ? S().renderSparklineSvg(trxSeries, { color: warningEdCount ? '#EF4444' : '#10B981', id: 'spk-trx-dash', width: 88, height: 26 }) : ''}</div>
               </div>
             </div>
@@ -5363,7 +5363,7 @@
             ${st.activeShift ? `<span class="ml-1 inline-block w-2 h-2 rounded-full ${posSubTab === 'tutup-shift' ? 'bg-emerald-300' : 'bg-emerald-500'} animate-pulse"></span>` : ''}
           </button>` : ''}
         </div>
-        <div class="flex items-center gap-2 text-xs" style="color:var(--ons-text-soft)">
+        <div class="hidden md:flex items-center gap-2 text-xs shrink-0" style="color:var(--ons-text-soft)">
           <button type="button" onclick="window.togglePosBeepSetting()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 rounded-xl border flex items-center gap-1.5 shadow-2xs font-semibold" title="Klik untuk mengaktifkan / menonaktifkan suara bip & getar kasir">
             <span>${posBeepEnabled ? '🔊' : '🔇'}</span>
             <span class="hidden md:inline">${posBeepEnabled ? 'Suara Kasir' : 'Senyap'}</span>
@@ -5372,7 +5372,7 @@
             <span>⌨️</span>
             <span class="hidden md:inline">Pintasan [?]</span>
           </button>
-          <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+          <span class="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>${branchLabel} &bull; Kasir Aktif</span>
           </span>
