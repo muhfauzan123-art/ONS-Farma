@@ -7256,70 +7256,27 @@ html.dark #obatWizardForm .ons-wiz-card label {
   background: rgba(0, 102, 254, 0.12);
   color: #0066FE;
 }
-/* 16. Popup Wizard Terpusat 1 Kolom v18.77.0 */
-.ons-modal-backdrop.is-spotlight:has(.ons-wiz-shell) {
-  align-items: center;
-  padding: 1rem;
-}
-.ons-modal-box:has(.ons-wiz-shell) {
-  overflow: hidden;
-  border-radius: 1.15rem;
-  max-height: 92vh;
+/* 16. Full-Screen 1-Kolom Wizard Produk Obat Lega & Modern v18.78.0 */
+.ons-wiz-shape-card {
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 60px -15px rgba(15, 23, 42, 0.28);
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 54px;
+  border-radius: 0.85rem;
 }
-.ons-modal-box:has(.ons-wiz-shell) .ons-wiz-shell {
-  height: auto;
-  max-height: 92vh;
-  min-height: 0;
-  background: transparent;
+.ons-wiz-shape-card.is-selected span:last-child {
+  color: rgba(255, 255, 255, 0.9);
 }
-.ons-wiz-popup-header {
-  padding: 0.85rem 1.25rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
-}
-@media (min-width: 640px) {
-  .ons-wiz-popup-header {
-    flex-wrap: nowrap;
-  }
-}
-.ons-wiz-popup-body {
-  padding: 1rem 1.25rem;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
-.ons-modal-box:has(.ons-wiz-shell) .ons-wiz-card {
-  box-shadow: none;
+#obatWizardForm .ons-wiz-card {
   border: 1px solid #E2E8F0;
+  box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.14);
 }
-html.dark .ons-modal-box:has(.ons-wiz-shell) .ons-wiz-card {
+html.dark #obatWizardForm .ons-wiz-card {
   border-color: #1E293B;
 }
-.ons-modal-box:has(.ons-wiz-shell) .ons-wiz-footer {
-  padding: 0.8rem 1.25rem;
-}
-@media (max-width: 639px) {
-  .ons-modal-backdrop.is-spotlight:has(.ons-wiz-shell) {
-    padding: 0.5rem;
-    align-items: flex-end;
-  }
-  .ons-modal-box:has(.ons-wiz-shell),
-  .ons-modal-box:has(.ons-wiz-shell) .ons-wiz-shell {
-    max-height: 94vh;
-    border-radius: 1.15rem 1.15rem 0.75rem 0.75rem;
-  }
-  .ons-wiz-popup-header {
-    padding: 0.8rem 1rem;
-  }
-  .ons-wiz-popup-body {
-    padding: 0.85rem 1rem;
-  }
+#wizFooterBar {
+  border-top: 1px solid var(--ons-border, #E2E8F0);
 }
 #wizMonitorBox .ons-wiz-preview {
   padding: 0.55rem 0.65rem;
