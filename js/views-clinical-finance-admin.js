@@ -2105,7 +2105,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
               </div>
               <div>
                 <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Catatan Edukasi / Interaksi Apoteker</label>
-                <input class="ons-input text-xs rounded-xl" placeholder="Cth: Minum sesudah makan, hindari susu bersamaan..." value="${S().esc(pioState.catatan)}" oninput="window.setPioMeta('catatan', this.value)"/>
+                <textarea rows="2" class="ons-textarea text-xs rounded-xl leading-relaxed" placeholder="Cth: Minum sesudah makan, hindari susu bersamaan..." oninput="window.setPioMeta('catatan', this.value)">${S().esc(pioState.catatan)}</textarea>
               </div>
               <div class="flex flex-wrap gap-2 pt-2 border-t" style="border-color:var(--ons-border)">
                 <button type="button" onclick="window.submitPioRecord()" class="ons-btn ons-btn-emerald text-xs py-2 px-3.5 rounded-xl font-bold shadow-sm">💾 Simpan Arsip PIO &rarr; SOAP</button>
@@ -2214,7 +2214,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 <h3 class="font-extrabold text-sm" style="color:var(--ons-text-main)">Pratinjau Langsung Etiket Putih / Biru</h3>
                 <div class="text-xs" style="color:var(--ons-text-soft)">Etiket standar kefarmasian live preview</div>
               </div>
-              <div class="grid grid-cols-2 gap-2.5 text-xs">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                 <div>
                   <label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Jenis Etiket</label>
                   <select class="ons-select rounded-xl" onchange="window.setEtiketDraft('jenis', this.value)">
@@ -2284,10 +2284,10 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
                 </div>
                 <span class="badge-bpom ${naranjoScore >= 5 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num font-bold px-2.5 py-1">Skor: ${naranjoScore}</span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div><label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Nama Pasien</label><input class="ons-input rounded-xl" value="${S().esc(mesoState.pasien)}" oninput="window.setMesoMeta('pasien', this.value)"/></div>
                 <div><label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Obat Dicurigai (ROTD)</label><input class="ons-input rounded-xl" value="${S().esc(mesoState.obat)}" oninput="window.setMesoMeta('obat', this.value)"/></div>
-                <div><label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Manifestasi Gejala ROTD</label><input class="ons-input rounded-xl" value="${S().esc(mesoState.gejala)}" oninput="window.setMesoMeta('gejala', this.value)"/></div>
+                <div class="sm:col-span-2"><label class="font-bold text-[10px] block mb-1" style="color:var(--ons-text-soft)">Manifestasi Gejala ROTD</label><textarea rows="2" class="ons-textarea text-xs rounded-xl leading-relaxed" oninput="window.setMesoMeta('gejala', this.value)">${S().esc(mesoState.gejala)}</textarea></div>
               </div>
               <div class="space-y-1.5 border rounded-2xl p-3 max-h-80 overflow-y-auto shadow-inner" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
                 ${NARANJO_CRITERIA.map((cr, idx) => `
@@ -6147,7 +6147,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Target Kas Tunai Laci</div>
-              <div class="text-xl font-extrabold font-mono-num mt-1 truncate ${canReveal && shiftBlindRevealed ? 'text-emerald-600' : 'text-amber-600'}">
+              <div class="text-lg sm:text-xl font-extrabold font-mono-num mt-1 leading-tight break-words ${canReveal && shiftBlindRevealed ? 'text-emerald-600' : 'text-amber-600'}">
                 ${(canReveal && shiftBlindRevealed) ? S().rp(expectedTunai) : '🔒 Blind Count'}
               </div>
             </div>
@@ -10973,7 +10973,7 @@ S. prn 3 dd 1 tab</textarea>
         <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b text-xs" style="border-color:var(--ons-border)">
           <div class="flex items-center gap-1.5 border rounded-lg px-2.5 py-1.5" style="border-color:var(--ons-border)">
             <span class="text-slate-500 text-[11px]">Filter Tgl:</span>
-            <input type="text" id="shiftDateRangeInput" value="${S().esc(shiftDateFilter)}" class="bg-transparent border-0 font-medium text-xs focus:ring-0 cursor-pointer w-44" readonly onclick="ONSStore.toast('Filter rentang tanggal aktif.', 'ok')"/>
+            <input type="text" id="shiftDateRangeInput" value="${S().esc(shiftDateFilter)}" class="bg-transparent border-0 font-medium text-xs focus:ring-0 cursor-pointer w-48 sm:w-52" readonly onclick="ONSStore.toast('Filter rentang tanggal aktif.', 'ok')"/>
             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </div>
           <div class="text-xs text-slate-500">
@@ -12545,7 +12545,7 @@ S. prn 3 dd 1 tab</textarea>
         ${hasFile ? `
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="${S().esc(fileName || 'Berkas Terlampir')}">
             <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-            <span class="max-w-[130px] sm:max-w-[180px] truncate">${S().esc(fileName || 'Berkas Terlampir')}</span>
+            <span class="break-all">${S().esc(fileName || 'Berkas Terlampir')}</span>
           </span>
           <button type="button" onclick="window.viewOrDownloadProfileDoc('${docKey}')" class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800" title="Unduh / Lihat Berkas">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -12638,8 +12638,10 @@ S. prn 3 dd 1 tab</textarea>
            ======================================================== -->
       <div id="profHeroBanner" class="relative overflow-hidden rounded-3xl shadow-2xl border text-white transition-all duration-300" style="background:linear-gradient(135deg, #091E3A 0%, #103766 38%, #1D4ED8 72%, #0284C7 100%);border-color:rgba(56, 189, 248, 0.35)">
         <!-- Ambient Decorative Luminous Glow -->
-        <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-sky-400/25 blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-600/30 blur-3xl pointer-events-none"></div>
+        <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-sky-400/25 blur-3xl"></div>
+          <div class="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-600/30 blur-3xl"></div>
+        </div>
 
         <div class="relative p-5 sm:p-7 space-y-5">
           <!-- Top Tagline & Primary Action Buttons -->
@@ -13063,10 +13065,10 @@ S. prn 3 dd 1 tab</textarea>
                     <input ${ro} class="ons-input text-xs w-full font-semibold" value="Apoteker Penanggung Jawab" placeholder="Nama Apoteker Pendamping"/>
                     <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0812-3456-7890" placeholder="08xxxxxxxxxx"/>
                   </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <input ${ro} class="ons-input text-xs w-full sm:col-span-1" value="siti.rahma@onsfarma.id" placeholder="Email"/>
-                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19950817/STRA-010203/2024" placeholder="No. STRA"/>
-                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19950817/SIPA_35.78/2025/1043" placeholder="No. SIPA"/>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <input ${ro} class="ons-input text-xs w-full sm:col-span-2" value="siti.rahma@onsfarma.id" placeholder="Email"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19950817/STRA-010203/2024" placeholder="No. STRA"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19950817/SIPA_35.78/2025/1043" placeholder="No. SIPA"/>
                   </div>
                   ${renderDocUploadRow('sipa_pendamping_1', 'File SIPA Pendamping #1 :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[0] && merged.apoteker_pendamping[0].file_sipa) || merged.file_sipa_pendamping_1_url || '', merged.file_sipa_pendamping_1_name || 'SIPA_Pendamping_1.pdf')}
                 </div>
@@ -13081,10 +13083,10 @@ S. prn 3 dd 1 tab</textarea>
                     <input ${ro} class="ons-input text-xs w-full font-semibold" value="apt. Dewi Kartika, S.Farm" placeholder="Nama Apoteker Pendamping"/>
                     <input ${ro} class="ons-input font-mono-num text-xs w-full" value="0813-9876-5432" placeholder="08xxxxxxxxxx"/>
                   </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <input ${ro} class="ons-input text-xs w-full sm:col-span-1" value="dewi.kartika@onsfarma.id" placeholder="Email"/>
-                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19961120/STRA-040506/2025" placeholder="No. STRA"/>
-                    <input ${ro} class="ons-input font-mono-num text-xs w-full sm:col-span-1" value="19961120/SIPA_35.78/2026/1044" placeholder="No. SIPA"/>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <input ${ro} class="ons-input text-xs w-full sm:col-span-2" value="dewi.kartika@onsfarma.id" placeholder="Email"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19961120/STRA-040506/2025" placeholder="No. STRA"/>
+                    <input ${ro} class="ons-input font-mono-num text-xs w-full" value="19961120/SIPA_35.78/2026/1044" placeholder="No. SIPA"/>
                   </div>
                   ${renderDocUploadRow('sipa_pendamping_2', 'File SIPA Pendamping #2 :', '.pdf,image/*', (merged.apoteker_pendamping && merged.apoteker_pendamping[1] && merged.apoteker_pendamping[1].file_sipa) || merged.file_sipa_pendamping_2_url || '', merged.file_sipa_pendamping_2_name || 'SIPA_Pendamping_2.pdf')}
                 </div>
@@ -13119,8 +13121,8 @@ S. prn 3 dd 1 tab</textarea>
                 </div>
               </div>
               <div class="pt-2">
-                <div class="text-[9px] uppercase tracking-widest text-sky-200/80 font-bold">Nomor Rekening Operasional</div>
-                <div class="flex items-center justify-between gap-2">
+                <div class="text-[9px] uppercase tracking-wider text-sky-200/80 font-bold">Nomor Rekening Operasional</div>
+                <div class="flex flex-wrap items-center justify-between gap-2">
                   <div id="profBankCardDispNo" class="ons-card-embossed text-base sm:text-lg text-white">
                     ${S().esc(merged.bank_nomor_rekening || '-')}
                   </div>
@@ -14174,9 +14176,9 @@ S. prn 3 dd 1 tab</textarea>
             <span class="text-[11px] font-semibold mr-1" style="color:var(--ons-text-soft)">Preset Cepat:</span>
             ${presets.map((pr) => `<button type="button" onclick="window.applyStrukPreset('${S().esc(pr.id)}')" class="ons-struk-preset-btn ${curTpl.kode === pr.kode ? 'active' : ''}">${S().esc(pr.label)}</button>`).join('')}
           </div>
-          ${tpls.length > 1 ? `<div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-semibold" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
-            <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-xs w-56">
+          ${tpls.length > 1 ? `<div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            <span class="text-[11px] font-semibold shrink-0" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
+            <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-[11px] sm:text-xs w-full sm:w-96 max-w-full">
               ${tpls.map((t, idx) => `<option value="${idx}" ${idx === safeIdx ? 'selected' : ''}>${S().esc(t.nama || t.kode)} (${Number(t.lebar_mm) === 80 ? '80mm' : '58mm'})</option>`).join('')}
             </select>
           </div>` : ''}
@@ -14187,7 +14189,7 @@ S. prn 3 dd 1 tab</textarea>
             <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_POS_58MM')}"/>
             <div>
               <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Nama Template Struk</label>
-              <input id="strukTplNama" class="ons-input text-xs font-bold" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
+              <input id="strukTplNama" class="ons-input text-[11px] sm:text-xs font-medium" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
             </div>
             <div>
               <div class="flex flex-wrap items-center justify-between gap-2 mb-1">

@@ -1081,8 +1081,10 @@
       <div class="ons-login-shell grid grid-cols-1 lg:grid-cols-12">
         <!-- Panel Kiri: Identitas Apotek Modern, Jam Live & Status Cloud -->
         <div class="ons-login-hero lg:col-span-5 p-5 sm:p-7 lg:p-8 flex flex-col justify-between gap-5 relative overflow-hidden">
-          <div class="ons-login-hero-glow-1"></div>
-          <div class="ons-login-hero-glow-2"></div>
+          <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+            <div class="ons-login-hero-glow-1"></div>
+            <div class="ons-login-hero-glow-2"></div>
+          </div>
 
           <div class="space-y-4 lg:space-y-5 relative z-10">
             <!-- Header Brand Identitas Apotek -->
@@ -1097,7 +1099,7 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     Portal Resmi Apotek
                   </span>
-                  <div class="font-black text-lg sm:text-xl lg:text-2xl tracking-tight text-white leading-tight truncate">${S().esc(usahaNama)}</div>
+                  <div class="font-black text-lg sm:text-xl lg:text-2xl tracking-tight text-white leading-tight break-words">${S().esc(usahaNama)}</div>
                   <div class="text-[11px] lg:text-xs text-sky-200/90 font-medium mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0 min-w-0">
                     <span class="truncate max-w-full">${S().esc(pemilikNama)}</span>
                     <span class="text-sky-300/60">•</span>
@@ -2059,7 +2061,7 @@
           '<span class="badge-bpom ' + act.badgeCls + ' shrink-0 text-[10px] font-bold font-mono">' + act.badge + '</span>' +
           '<div class="min-w-0">' +
             '<div class="font-bold truncate" style="color:var(--ons-text-main)">' + S().esc(act.title) + '</div>' +
-            '<div class="text-[11px] truncate" style="color:var(--ons-text-soft)">Oleh <b>' + S().esc(act.user) + '</b> &bull; ' + S().esc(act.desc) + '</div>' +
+            '<div class="text-[11px] leading-snug" style="color:var(--ons-text-soft)">Oleh <b>' + S().esc(act.user) + '</b> &bull; ' + S().esc(act.desc) + '</div>' +
           '</div>' +
         '</div>' +
         '<div class="shrink-0 flex items-center gap-2">' +
@@ -2533,8 +2535,8 @@
             </div>
             <span class="ons-kpi-ico bg-blue-500/10 text-blue-600 font-extrabold text-[15px] tracking-tight shrink-0" aria-hidden="true">Rp</span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
-            <span class="font-semibold truncate" style="color:var(--ons-text-soft)"><b class="text-emerald-600">${todaySales.length} nota</b> hari ini &bull; Total ${S().rp(omzetTotal)}</span>
+          <div class="mt-3 pt-2.5 border-t flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="font-semibold" style="color:var(--ons-text-soft)"><b class="text-emerald-600">${todaySales.length} nota</b> hari ini &bull; Total ${S().rp(omzetTotal)}</span>
             ${canPos ? `<span class="font-semibold text-blue-600 shrink-0">Riwayat &rarr;</span>` : ''}
           </div>
         </div>
@@ -2550,8 +2552,8 @@
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 font-extrabold text-[13px] tracking-tight shrink-0" aria-hidden="true">${marginPct}%</span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
-            <span class="truncate" style="color:var(--ons-text-soft)">Hari ini: <b class="text-emerald-600 font-mono-num">${S().rp(marginHariIni || 0)}</b> &bull; Total ${validSales.length} nota</span>
+          <div class="mt-3 pt-2.5 border-t flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px]" style="border-color:var(--ons-border)">
+            <span style="color:var(--ons-text-soft)">Hari ini: <b class="text-emerald-600 font-mono-num">${S().rp(marginHariIni || 0)}</b> &bull; Total ${validSales.length} nota</span>
             ${canFin ? `<span class="font-semibold text-emerald-600 shrink-0">Buka P&amp;L &rarr;</span>` : ''}
           </div>
         </div>` : `<div class="ons-kpi-card is-emerald" ${canPoct ? `onclick="navigateView('pemeriksaan','semua')"` : ''}>
@@ -2565,8 +2567,8 @@
             </div>
             <span class="ons-kpi-ico bg-emerald-500/10 text-emerald-600 shrink-0"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
-            <span class="truncate" style="color:var(--ons-text-soft)">${branchPoct.length} riwayat pemeriksaan klinik</span>
+          <div class="mt-3 pt-2.5 border-t flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px]" style="border-color:var(--ons-border)">
+            <span style="color:var(--ons-text-soft)">${branchPoct.length} riwayat pemeriksaan klinik</span>
             ${canPoct ? `<span class="font-semibold text-emerald-600 shrink-0">Periksa &rarr;</span>` : ''}
           </div>
         </div>`}
@@ -2582,8 +2584,8 @@
             </div>
             <span class="ons-kpi-ico ${warningEdCount ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'} shrink-0"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
-            <span class="${defectaCount ? 'text-amber-600 font-bold' : 'text-emerald-600 font-semibold'} truncate">${expiredBatches.length ? expiredBatches.length + ' kadaluarsa &bull; ' : ''}${defectaCount} item menipis</span>
+          <div class="mt-3 pt-2.5 border-t flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px]" style="border-color:var(--ons-border)">
+            <span class="${defectaCount ? 'text-amber-600 font-bold' : 'text-emerald-600 font-semibold'}">${expiredBatches.length ? expiredBatches.length + ' kadaluarsa &bull; ' : ''}${defectaCount} item menipis</span>
             ${canGudang ? `<span class="shrink-0 font-semibold" style="color:var(--ons-text-soft)">Cek Gudang &rarr;</span>` : ''}
           </div>
         </div>
@@ -2599,8 +2601,8 @@
             </div>
             <span class="ons-kpi-ico bg-amber-500/10 text-amber-600 shrink-0"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
           </div>
-          <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 text-[11px]" style="border-color:var(--ons-border)">
-            <span class="truncate" style="color:var(--ons-text-soft)">${openFaktur.length} faktur (${apNearDueCount} tempo &le;7h)${piutangTotal > 0 ? ' &bull; Piutang ' + S().rp(piutangTotal) : ''}</span>
+          <div class="mt-3 pt-2.5 border-t flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px]" style="border-color:var(--ons-border)">
+            <span style="color:var(--ons-text-soft)">${openFaktur.length} faktur (${apNearDueCount} tempo &le;7h)${piutangTotal > 0 ? ' &bull; Piutang ' + S().rp(piutangTotal) : ''}</span>
             ${canFin ? `<span class="font-semibold text-amber-600 shrink-0">Kelola AP &rarr;</span>` : ''}
           </div>
         </div>` : `<div class="ons-kpi-card is-amber" ${canShift ? `onclick="navigateView('pos','tutup-shift')"` : ''}>
@@ -2713,16 +2715,16 @@
       </div>
 
       <!-- Strip Ringkas Operasional & Klinis Berikon -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-xs">
         ${opsTiles.map((tl) => `
-          <div class="ons-ops-tile ${tl.onClick ? 'is-clickable' : ''}" ${tl.onClick ? `onclick="${tl.onClick}"` : ''}>
-            <div class="flex items-center gap-3 min-w-0">
+          <div class="ons-ops-tile flex-wrap gap-y-2 ${tl.onClick ? 'is-clickable' : ''}" ${tl.onClick ? `onclick="${tl.onClick}"` : ''}>
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
               <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${tl.icoBg}">
                 <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${tl.ico}</svg>
               </span>
-              <div class="min-w-0">
-                <div class="text-[11px] truncate" style="color:var(--ons-text-soft)">${tl.title}</div>
-                <div class="font-extrabold text-sm mt-0.5 font-mono-num truncate ${tl.valCls}">${tl.value}</div>
+              <div class="min-w-0 flex-1">
+                <div class="text-[11px] leading-snug" style="color:var(--ons-text-soft)">${tl.title}</div>
+                <div class="font-extrabold text-sm mt-0.5 font-mono-num leading-tight ${tl.valCls}">${tl.value}</div>
               </div>
             </div>
             <span class="badge-bpom ${tl.badgeCls} shrink-0">${tl.badge}</span>

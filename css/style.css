@@ -4852,10 +4852,10 @@ html.dark .ons-confirm-btn-no:hover {
 .ons-bank-card-mockup::after {
   content: '';
   position: absolute;
-  top: -45%;
-  right: -25%;
-  width: 260px;
-  height: 260px;
+  top: -40px;
+  right: 0;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(56, 189, 248, 0.4) 0%, transparent 70%);
   pointer-events: none;
@@ -4863,10 +4863,10 @@ html.dark .ons-confirm-btn-no:hover {
 .ons-bank-card-mockup::before {
   content: '';
   position: absolute;
-  bottom: -30%;
-  left: -20%;
-  width: 200px;
-  height: 200px;
+  bottom: -40px;
+  left: 0;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(29, 78, 216, 0.35) 0%, transparent 70%);
   pointer-events: none;
@@ -5344,10 +5344,10 @@ html.dark .ons-dash-tab-btn.active {
 .ons-dash-hero::after {
   content: "";
   position: absolute;
-  top: -40%;
-  right: -10%;
-  width: 340px;
-  height: 340px;
+  top: -40px;
+  right: 0;
+  width: 240px;
+  height: 240px;
   background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%);
   pointer-events: none;
 }
