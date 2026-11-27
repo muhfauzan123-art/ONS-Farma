@@ -15652,7 +15652,7 @@ S. prn 3 dd 1 tab</textarea>
       const idx = S().AppState.rekamKlinis.findIndex((x) => x.id_klinis === idKlinis);
       if (idx >= 0 && res && res.item) S().AppState.rekamKlinis[idx] = res.item;
       global.toast('E-Resep ' + idKlinis + ' resmi diverifikasi APJ!', 'ok');
-      global.renderActiveView();
+      await (global.syncAfterWrite ? global.syncAfterWrite() : Promise.resolve(global.renderActiveView && global.renderActiveView()));
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
@@ -15963,6 +15963,7 @@ S. prn 3 dd 1 tab</textarea>
         S().AppState.strukTemplates = list;
       }
       global.toast('Template struk thermal berhasil disimpan & langsung aktif di Kasir POS!', 'ok');
+      await (global.syncAfterWrite ? global.syncAfterWrite() : Promise.resolve());
     } catch (e) { global.toast(e.message, 'err'); }
   };
 

@@ -159,7 +159,11 @@
       if (res && res.item) S().AppState.omnichannelOrders.unshift(res.item);
       S().closeModal();
       global.toast('Order Omnichannel ' + ((res.item && res.item.no_order) || '') + ' dicatat!', 'ok');
-      if (typeof global.renderActiveView === 'function') global.renderActiveView();
+      if (typeof global.syncAfterWrite === 'function') {
+        await global.syncAfterWrite();
+      } else if (typeof global.renderActiveView === 'function') {
+        global.renderActiveView();
+      }
     } catch (e) { global.toast(e.message, 'err'); }
   }
 
@@ -208,7 +212,11 @@
       if (idx >= 0 && res && res.item) arr[idx] = res.item;
       S().closeModal();
       global.toast('Status pesanan diperbarui.', 'ok');
-      if (typeof global.renderActiveView === 'function') global.renderActiveView();
+      if (typeof global.syncAfterWrite === 'function') {
+        await global.syncAfterWrite();
+      } else if (typeof global.renderActiveView === 'function') {
+        global.renderActiveView();
+      }
     } catch (e) { global.toast(e.message, 'err'); }
   }
 
@@ -308,6 +316,7 @@
   }
 
   let _crmLastLoadedTs = 0;
+  global._resetCrmCooldown = () => { _crmLastLoadedTs = 0; };
   async function loadCrmAndQueue(force) {
     if (!force && _crmLastLoadedTs && (Date.now() - _crmLastLoadedTs) < 45000) return;
     const call = (API() && (API().callBatched || API().callApi)).bind(API());
@@ -360,14 +369,14 @@
       }, { isWrite: true });
       S().closeModal();
       global.toast('Kontak CRM disimpan & dinormalisasi (62/08).', 'ok');
-      await loadCrmAndQueue();
+      await loadCrmAndQueue(true);
     } catch (e) { global.toast(e.message, 'err'); }
   }
 
   async function toggleOptOut(idKontak) {
     try {
       await API().callApi('crm.toggleOptOut', { id_kontak: idKontak }, { isWrite: true });
-      await loadCrmAndQueue();
+      await loadCrmAndQueue(true);
     } catch (e) { global.toast(e.message, 'err'); }
   }
 
@@ -380,7 +389,7 @@
       const res = await API().callApi('crm.blastWa', { segmen: seg, pesan }, { isWrite: true });
       crmTab = 'antrean';
       global.toast(`Berhasil mengantrikan ${res.queued || 0} pesan WhatsApp ke ANTRIAN_NOTIF!`, 'ok');
-      await loadCrmAndQueue();
+      await loadCrmAndQueue(true);
     } catch (e) { global.toast(e.message, 'err'); }
   }
 
@@ -388,7 +397,7 @@
     try {
       const res = await API().callApi('notif.processQueue', {}, { isWrite: true });
       global.toast(`Batch selesai: ${res.terkirim || 0} terkirim, ${res.gagal || 0} gagal (${res.mode || 'LIVE'}).`, 'ok');
-      await loadCrmAndQueue();
+      await loadCrmAndQueue(true);
     } catch (e) { global.toast(e.message, 'err'); }
   }
 

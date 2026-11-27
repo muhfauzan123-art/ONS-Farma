@@ -3868,9 +3868,10 @@
     const nextStatus = isAktif ? 'NONAKTIF (Tidak Dijual)' : 'AKTIF (Dijual)';
     if (typeof global.confirm === 'function' && !global.confirm('Konfirmasi: Ubah status produk "' + o.nama_dagang + '" menjadi ' + nextStatus + '?')) return;
     o.status_aktif = isAktif ? 'NONAKTIF' : 'AKTIF';
+    if (typeof S().invalidateStockIndex === 'function') S().invalidateStockIndex();
     if (typeof S().saveState === 'function') S().saveState();
     if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
-      try { API().callApi('obat.save', o, { isWrite: true }); } catch (e) {}
+      try { Promise.resolve(API().callApi('obat.save', o, { isWrite: true })).then(() => global.syncAfterWrite && global.syncAfterWrite()).catch(() => {}); } catch (e) {}
     }
     if (typeof S().logAuditEvent === 'function') S().logAuditEvent('UBAH_STATUS_OBAT', `Ubah status produk ${o.nama_dagang} (${o.id_obat}) menjadi ${o.status_aktif}`);
     if (global.toast) global.toast(`Status ${o.nama_dagang}: ${o.status_aktif === 'AKTIF' ? 'Dijual' : 'Tidak Dijual'}`, 'ok');
@@ -3899,9 +3900,10 @@
     const idx = (st.masterObat || []).findIndex((x) => x.id_obat === idObat);
     if (idx !== -1) {
       const removed = st.masterObat.splice(idx, 1)[0];
+      if (typeof S().invalidateStockIndex === 'function') S().invalidateStockIndex();
       if (typeof S().saveState === 'function') S().saveState();
       if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
-        try { API().callApi('obat.delete', { id_obat: idObat }, { isWrite: true }); } catch (e) {}
+        try { Promise.resolve(API().callApi('obat.delete', { id_obat: idObat }, { isWrite: true })).then(() => global.syncAfterWrite && global.syncAfterWrite()).catch(() => {}); } catch (e) {}
       }
       if (typeof S().logAuditEvent === 'function') S().logAuditEvent('HAPUS_OBAT', `Hapus produk ${removed.nama_dagang} (${removed.id_obat})`);
       if (global.toast) global.toast(`Produk ${removed.nama_dagang} berhasil dihapus dari katalog.`, 'ok');

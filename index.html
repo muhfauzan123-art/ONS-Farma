@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.79.0"/>
+  <meta name="application-version" content="v18.80.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.79.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.80.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.79.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.80.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.79.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.79.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.79.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.80.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.80.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.80.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.79.0"></script>
-  <script src="./js/struk-engine.js?v=18.79.0"></script>
-  <script src="./js/demo-engine.js?v=18.79.0"></script>
-  <script src="./js/api-turbo.js?v=18.79.0"></script>
-  <script src="./js/store.js?v=18.79.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.79.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.79.0"></script>
+  <script src="./js/config.js?v=18.80.0"></script>
+  <script src="./js/struk-engine.js?v=18.80.0"></script>
+  <script src="./js/demo-engine.js?v=18.80.0"></script>
+  <script src="./js/api-turbo.js?v=18.80.0"></script>
+  <script src="./js/store.js?v=18.80.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.80.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.80.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.79.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.79.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.79.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.79.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.79.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.79.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.80.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.80.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.80.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.80.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.80.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.80.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1084,7 +1084,13 @@
           case 'pos.checkout':
             if (resData.penjualan) _upsertByKey(st.penjualan, 'id_transaksi', resData.penjualan, true);
             if (Array.isArray(resData.detail)) {
+              const trxIdRef = resData.penjualan && resData.penjualan.id_transaksi;
+              const invRef = (resData.penjualan && resData.penjualan.no_invoice) || resData.no_invoice || '';
               resData.detail.forEach((dt) => {
+                if (dt && typeof dt === 'object') {
+                  if (!dt.id_transaksi && trxIdRef) dt.id_transaksi = trxIdRef;
+                  if (!dt.no_invoice && invRef) dt.no_invoice = invRef;
+                }
                 _upsertByKey(st.detailPenjualan, 'id_detail', dt, false);
                 const bt = (st.stokBatch || []).find((b) => dt.id_batch && String(b.id_batch) === String(dt.id_batch));
                 if (bt) {
@@ -1095,13 +1101,68 @@
               if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
             }
             break;
-          case 'pos.voidReturn':
-            if (Array.isArray(st.penjualan) && !resData.is_partial) {
-              const trx = st.penjualan.find((p) => String(p.id_transaksi) === String(d.id_transaksi) || String(p.no_invoice) === String(resData.no_invoice || ''));
-              if (trx) trx.status_trx = 'VOID_RETUR';
+          case 'pos.voidReturn': {
+            const invNo = String(resData.no_invoice || d.no_invoice || '').trim();
+            const trx = Array.isArray(st.penjualan) ? st.penjualan.find((p) => (d.id_transaksi && String(p.id_transaksi) === String(d.id_transaksi)) || (invNo && String(p.no_invoice) === invNo)) : null;
+            const nextStatus = resData.status_trx || (resData.is_partial ? 'RETUR_SEBAGIAN' : 'RETUR');
+            if (trx) {
+              trx.status_trx = nextStatus;
+              if (resData.grand_total_baru !== undefined) trx.grand_total = Number(resData.grand_total_baru);
+            }
+            // Kembalikan qty_sisa ke st.stokBatch secara optimistik untuk Gudang & POS
+            if (Array.isArray(st.stokBatch)) {
+              const dets = Array.isArray(st.detailPenjualan)
+                ? st.detailPenjualan.filter((dt) => (trx && trx.id_transaksi && String(dt.id_transaksi) === String(trx.id_transaksi)) || (invNo && String(dt.no_invoice || '') === invNo))
+                : [];
+              const reqItems = Array.isArray(d.retur_items) ? d.retur_items : [];
+              if (dets.length) {
+                dets.forEach((dt) => {
+                  let restoreQ = 0;
+                  if (reqItems.length) {
+                    const found = reqItems.find((r) => (r.id_detail && String(r.id_detail) === String(dt.id_detail)) || (!r.id_detail && r.id_batch && String(r.id_batch) === String(dt.id_batch)) || (!r.id_detail && !r.id_batch && r.id_obat && String(r.id_obat) === String(dt.id_obat)));
+                    restoreQ = found ? Number(found.qty || 0) : 0;
+                  } else {
+                    restoreQ = Math.max(0, Number(dt.qty || 0) - Number(dt.qty_retur || 0));
+                  }
+                  if (restoreQ > 0) {
+                    dt.qty_retur = Number(dt.qty_retur || 0) + restoreQ;
+                    const bt = st.stokBatch.find((b) => dt.id_batch && String(b.id_batch) === String(dt.id_batch));
+                    if (bt) {
+                      bt.qty_sisa = Number(bt.qty_sisa || 0) + restoreQ;
+                      if (String(bt.status_batch || '').toUpperCase() === 'HABIS' && bt.qty_sisa > 0) bt.status_batch = 'AKTIF';
+                    }
+                  }
+                });
+              } else if (reqItems.length) {
+                reqItems.forEach((r) => {
+                  const rq = Number(r.qty || 0);
+                  if (rq <= 0) return;
+                  const bt = st.stokBatch.find((b) => (r.id_batch && String(b.id_batch) === String(r.id_batch)) || (!r.id_batch && r.id_obat && String(b.id_obat) === String(r.id_obat)));
+                  if (bt) {
+                    bt.qty_sisa = Number(bt.qty_sisa || 0) + rq;
+                    if (String(bt.status_batch || '').toUpperCase() === 'HABIS' && bt.qty_sisa > 0) bt.status_batch = 'AKTIF';
+                  }
+                });
+              }
+            }
+            if (!resData.is_partial && invNo) {
+              if (Array.isArray(st.piutangPelanggan)) {
+                st.piutangPelanggan.forEach((p) => {
+                  if (String(p.no_invoice || '') === invNo) {
+                    p.sisa_piutang = 0;
+                    p.status_piutang = 'BATAL_RETUR';
+                  }
+                });
+              }
+              if (Array.isArray(st.omnichannelOrders)) {
+                st.omnichannelOrders.forEach((o) => {
+                  if (String(o.no_invoice_pos || '') === invNo) o.status_order = 'DIBATALKAN';
+                });
+              }
             }
             if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
             break;
+          }
           case 'shift.open':
           case 'shift.close':
             if (resData.shift) {
@@ -1123,6 +1184,19 @@
             if (Array.isArray(resData.items)) {
               resData.items.forEach((it) => _upsertByKey(st.masterObat, 'id_obat', _indexObatItem(it), false));
             }
+            break;
+          case 'obat.updateBatch':
+            (d.items || []).forEach((p) => {
+              if (!p || !p.id_obat) return;
+              const o = (st.masterObat || []).find((m) => String(m.id_obat) === String(p.id_obat));
+              if (o) {
+                if (p.golongan_bpom) o.golongan_bpom = p.golongan_bpom;
+                if (p.kategori) o.kategori = p.kategori;
+                if (p.bentuk_sediaan) o.bentuk_sediaan = p.bentuk_sediaan;
+                _indexObatItem(o);
+              }
+            });
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
             break;
           case 'stok.addBatch':
             if (resData.batch || resData.item) {
@@ -1163,9 +1237,11 @@
             break;
           case 'member.save':
             if (resData.item || resData.member) _upsertByKey(st.members, 'id_member', resData.item || resData.member, true);
+            if (typeof window._resetCrmCooldown === 'function') window._resetCrmCooldown();
             break;
           case 'member.delete':
             st.members = (st.members || []).filter((x) => String(x.id_member) !== String(d.id_member));
+            if (typeof window._resetCrmCooldown === 'function') window._resetCrmCooldown();
             break;
           case 'sp.save':
             if (resData.item) _upsertByKey(st.suratPesanan, 'id_sp', resData.item, true);
@@ -1178,8 +1254,86 @@
           case 'sp.delete':
             st.suratPesanan = (st.suratPesanan || []).filter((x) => String(x.id_sp) !== String(d.id_sp));
             break;
-          case 'pengadaan.fakturSave':
+          case 'pengadaan.fakturSave': {
             if (resData.item) _upsertByKey(st.fakturPbf, 'id_faktur', resData.item, true);
+            const items = Array.isArray(d.items) ? d.items : [];
+            const isKons = String(d.jenis_penerimaan || '').toUpperCase() === 'KONSINYASI';
+            items.forEach((it, idx) => {
+              const qtyBase = Number(it.qty_dasar || it.qty || 0);
+              if (qtyBase <= 0 || !it.id_obat) return;
+              const hppUnit = Number(it.hpp_unit || 0);
+              const obat = (st.masterObat || []).find((o) => String(o.id_obat) === String(it.id_obat));
+              if (obat && hppUnit > 0) {
+                obat.hpp_terakhir = hppUnit;
+                if (!Number(obat.hpp_avg || 0)) obat.hpp_avg = hppUnit;
+              }
+              _upsertByKey(st.stokBatch, 'id_batch', {
+                id_batch: it.id_batch || ('BTH-TMP-' + Date.now() + '-' + idx),
+                cabang_id: d.cabang_id || st.cabangId || 'ONS-01',
+                id_obat: String(it.id_obat),
+                no_batch: it.no_batch || ('GRN-' + idx),
+                tgl_kadaluarsa: it.tgl_kadaluarsa || '2028-12-31',
+                qty_sisa: qtyBase,
+                qty_karantina: 0,
+                hpp_beli: hppUnit,
+                no_faktur_pbf: d.no_faktur_pbf || '',
+                status_batch: 'AKTIF',
+                no_sp: d.no_sp || '-',
+                is_konsinyasi: isKons ? 'YA' : 'TIDAK',
+                id_pbf: d.id_pbf || ''
+              }, true);
+            });
+            const noSp = String(d.no_sp || '').trim();
+            if ((d.id_sp || (noSp && noSp !== '-')) && Array.isArray(st.suratPesanan)) {
+              const nextSpSt = String(d.sp_status || '').toUpperCase() === 'DITERIMA_SEBAGIAN' ? 'DITERIMA_SEBAGIAN' : 'SELESAI_DITERIMA';
+              st.suratPesanan.forEach((sp) => {
+                if ((d.id_sp && String(sp.id_sp) === String(d.id_sp)) || (noSp && noSp !== '-' && String(sp.no_sp) === noSp)) {
+                  sp.status_sp = nextSpSt;
+                  sp.no_faktur_pbf = d.no_faktur_pbf || sp.no_faktur_pbf;
+                }
+              });
+            }
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          }
+          case 'pengadaan.returBar': {
+            const bt = (st.stokBatch || []).find((b) => String(b.id_batch) === String(d.id_batch));
+            const cutQty = Number(resData.qty_retur || d.qty_retur || 0);
+            if (bt && cutQty > 0) {
+              bt.qty_sisa = Math.max(0, Number(bt.qty_sisa || 0) - cutQty);
+              if (bt.qty_sisa === 0) bt.status_batch = 'RETUR_PBF';
+            }
+            const valCut = Number(resData.nilai_potong_hutang || 0);
+            if (valCut > 0 && Array.isArray(st.fakturPbf)) {
+              const fk = st.fakturPbf.find((f) => (d.id_beli && String(f.id_beli) === String(d.id_beli)) || (bt && bt.no_faktur_pbf && String(f.no_faktur_pbf) === String(bt.no_faktur_pbf)));
+              if (fk) {
+                fk.sisa_hutang = Math.max(0, Number(fk.sisa_hutang || 0) - valCut);
+                if (fk.sisa_hutang === 0) fk.status_bayar = 'LUNAS';
+              }
+            }
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          }
+          case 'konsinyasi.returnUnsold': {
+            const bt = (st.stokBatch || []).find((b) => String(b.id_batch) === String(d.id_batch));
+            const cutQty = Number(resData.qty_retur || d.qty_retur || 0);
+            if (bt && cutQty > 0) {
+              bt.qty_sisa = Math.max(0, Number(bt.qty_sisa || 0) - cutQty);
+              if (bt.qty_sisa === 0) bt.status_batch = 'RETUR_KONSINYASI';
+            }
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          }
+          case 'konsinyasi.settle':
+            (d.batch_ids || []).forEach((bid) => {
+              const bt = (st.stokBatch || []).find((b) => String(b.id_batch) === String(bid));
+              if (bt) bt.konsinyasi_settled = 'YA';
+            });
+            if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+            break;
+          case 'cabang.transferSend':
+          case 'cabang.transferReceive':
+            if (resData.item || resData.transfer) _upsertByKey(st.mutasiCabang, 'id_transfer', resData.item || resData.transfer, true);
             if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
             break;
           case 'klinis.save':
@@ -1207,8 +1361,27 @@
           case 'coldchain.log':
             _upsertByKey(st.coldChain, 'id_log', resData.item || Object.assign({ id_log: 'CC-' + Date.now(), timestamp: new Date().toISOString() }, d), true);
             break;
+          case 'omni.save':
+          case 'omni.updateStatus':
+            if (resData.item) _upsertByKey(st.omnichannelOrders, 'id_order', resData.item, action === 'omni.save');
+            break;
+          case 'struk.saveTemplate':
+            if (resData.item) _upsertByKey(st.strukTemplates, 'kode', resData.item, true);
+            break;
+          case 'users.save':
+          case 'user.save':
+            if (resData.item || resData.user) _upsertByKey(st.staffDirectory, 'id_user', resData.item || resData.user, true);
+            break;
           case 'profil.save':
-            if (resData.profile && ONSStore.setStoreProfile) ONSStore.setStoreProfile(resData.profile);
+            if (resData.profile && ONSStore.setStoreProfile) {
+              ONSStore.setStoreProfile(resData.profile);
+              if (resData.profile.config_json && ONSStore.setStoreSettings) {
+                try {
+                  const cfg = typeof resData.profile.config_json === 'string' ? JSON.parse(resData.profile.config_json) : resData.profile.config_json;
+                  if (cfg && typeof cfg === 'object') ONSStore.setStoreSettings(cfg);
+                } catch (_) {}
+              }
+            }
             break;
           case 'audit.saveChecklist':
             if (resData.audit_system && ONSStore.setAuditSystem) ONSStore.setAuditSystem(resData.audit_system);
