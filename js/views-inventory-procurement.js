@@ -7946,7 +7946,7 @@
               ? global.autoDetectGolonganBpom({ nama_dagang: nama, zat_aktif: obj.zat_aktif, nie_bpom: obj.nie_bpom, kode_kfa: obj.kode_kfa, kategori: obj.kategori })
               : 'BEBAS';
           }
-          const sat1 = String(obj.satuan_1 || obj.satuan_dasar || 'Tablet').trim();
+          const sat1 = String(obj.satuan_1 || obj.satuan_dasar || obj.bentuk_sediaan || 'Tablet').trim();
           const sat2 = String(obj.satuan_2 !== undefined ? obj.satuan_2 : (obj.satuan_sedang || '')).trim();
           const sat3 = String(obj.satuan_3 !== undefined ? obj.satuan_3 : (obj.satuan_besar || '')).trim();
           const rasio2 = sat2 ? Math.max(1, _parseImportNum(obj.rasio_2 !== undefined ? obj.rasio_2 : obj.rasio_sedang, 1)) : 1;
@@ -8180,7 +8180,10 @@
         }
         if (fileInput) fileInput.disabled = false;
         if (chkStok) chkStok.disabled = false;
-        global.toast(`Import terhenti di batch ${chunkNumber}: ${lastErr ? lastErr.message : 'Gagal'}. Sebagian data (${totalProcessed} item) sudah berhasil masuk.`, 'err');
+        const partialMsg = totalProcessed > 0
+          ? `Sebagian data (${totalProcessed} item) sudah berhasil masuk.`
+          : 'Belum ada batch yang selesai penuh.';
+        global.toast(`Import terhenti di batch ${chunkNumber}: ${lastErr ? lastErr.message : 'Gagal'}. ${partialMsg}`, 'err');
         await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
         return;
       }

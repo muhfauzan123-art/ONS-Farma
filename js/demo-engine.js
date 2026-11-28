@@ -2219,12 +2219,15 @@
           const batchNo = String(raw.no_batch || ('BATCH-' + now.slice(2, 10).replace(/-/g, ''))).trim();
           db.stok_batch = db.stok_batch || [];
           const existingBatch = db.stok_batch.find((b) => b.id_obat === targetId && b.no_batch === batchNo);
+          let mutBatchId = existingBatch ? existingBatch.id_batch : ('BTC-' + targetId + '-' + Date.now().toString(36).slice(-4).toUpperCase());
+          let mutStokAkhir = stokAwal;
           if (existingBatch) {
             existingBatch.qty_sisa = Number(existingBatch.qty_sisa || 0) + stokAwal;
             existingBatch.qty_masuk = Number(existingBatch.qty_masuk || 0) + stokAwal;
+            mutStokAkhir = existingBatch.qty_sisa;
           } else {
             db.stok_batch.push({
-              id_batch: 'BTC-' + targetId + '-' + Date.now().toString(36).slice(-4).toUpperCase(),
+              id_batch: mutBatchId,
               cabang_id: cabang,
               id_obat: targetId,
               no_batch: batchNo,
@@ -2238,6 +2241,20 @@
             });
             stockBatchesCreated++;
           }
+          db.mutasi_stok = db.mutasi_stok || [];
+          db.mutasi_stok.unshift({
+            id_mutasi: 'IMP-' + Date.now() + '-' + idx,
+            timestamp: now,
+            cabang_id: cabang,
+            id_obat: targetId,
+            id_batch: mutBatchId,
+            jenis_mutasi: 'SALDO_AWAL_IMPORT',
+            qty_ubah: stokAwal,
+            stok_akhir: mutStokAkhir,
+            referensi_id: 'IMPORT-EXCEL',
+            user_id: 'DEMO',
+            catatan: 'Import saldo awal Excel/CSV (' + batchNo + ')'
+          });
           db.kartu_stok = db.kartu_stok || [];
           db.kartu_stok.push({
             id_kartu: 'KS-IMP-' + Date.now() + idx,
