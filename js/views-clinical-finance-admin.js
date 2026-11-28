@@ -12494,6 +12494,43 @@ S. prn 3 dd 1 tab</textarea>
   let settingsCache = { secrets: {}, audit: [], users: [] };
   let auditDraft = null;
   let auditLogSearchQ = '';
+  let dbAuditState = { running: false, dryRun: true, result: null, error: '' };
+
+  function _renderDbAuditBoxHtml() {
+    if (dbAuditState.running) {
+      return `<div class="p-3.5 rounded-xl border border-blue-300 bg-blue-50/70 dark:bg-blue-950/30 flex items-center gap-3 text-xs">
+        <svg class="w-4 h-4 animate-spin text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+        <div>
+          <div class="font-bold text-blue-800 dark:text-blue-200">${dbAuditState.dryRun ? 'Sedang Memindai Kesehatan Database Google Sheets...' : 'Sedang Membersihkan, Memperbaiki &amp; Menyinkronkan Database...'}</div>
+          <div class="text-[11px] text-blue-700/80 dark:text-blue-300/80">Mohon tunggu beberapa detik, seluruh tab Google Sheets sedang diperiksa.</div>
+        </div>
+      </div>`;
+    }
+    if (dbAuditState.error) {
+      return `<div class="p-3 rounded-xl border border-red-300 bg-red-50/80 dark:bg-red-950/30 text-red-800 dark:text-red-200 flex items-start justify-between gap-2 text-xs">
+        <div><b>Gagal menjalankan pemeriksaan database:</b> ${S().esc(dbAuditState.error)}</div>
+        <button type="button" onclick="window.clearDbAuditBox()" class="text-xs font-bold px-2 py-0.5 rounded hover:bg-red-200/50">&times;</button>
+      </div>`;
+    }
+    const res = dbAuditState.result;
+    if (!res) return '';
+    const iss = Array.isArray(res.issues) ? res.issues : [];
+    return `<div class="p-3 rounded-xl border space-y-2 text-xs" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+      <div class="flex items-start justify-between gap-2">
+        <div class="font-bold">${S().esc(res.pesan || 'Audit selesai.')}</div>
+        <button type="button" onclick="window.clearDbAuditBox()" class="text-xs font-bold px-1.5 py-0.5 rounded opacity-60 hover:opacity-100" title="Tutup laporan">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+        <div class="p-2 rounded border" style="border-color:var(--ons-border)">Tab Dihapus: <b>${(res.sheets_deleted || []).length}</b></div>
+        <div class="p-2 rounded border" style="border-color:var(--ons-border)">Batch Disinkron: <b>${Number(res.stok_batch_synced || 0)}</b></div>
+        <div class="p-2 rounded border" style="border-color:var(--ons-border)">Piutang/Hutang: <b>${Number(res.piutang_synced || 0) + Number(res.hutang_pbf_synced || 0)}</b></div>
+        <div class="p-2 rounded border" style="border-color:var(--ons-border)">Jurnal/SP/Tagihan: <b>${Number(res.jurnal_backfilled || 0) + Number(res.sp_synced || 0) + Number(res.tagihan_synced || 0)}</b></div>
+      </div>
+      ${iss.length
+        ? `<div class="text-[11px] space-y-0.5"><div class="font-semibold">Rincian Temuan (${iss.length}):</div>${iss.slice(0, 15).map((x) => `<div>&bull; ${S().esc(x)}</div>`).join('')}${iss.length > 15 ? `<div>... dan ${iss.length - 15} lainnya</div>` : ''}</div>`
+        : '<div class="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">&#10003; Seluruh skema, sheet &amp; transaksi sudah 100% bersih dan sinkron!</div>'}
+    </div>`;
+  }
 
   function ensureAuditDraft() {
     if (!auditDraft) {
@@ -13821,8 +13858,8 @@ S. prn 3 dd 1 tab</textarea>
           <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template</button>
         ` : (settingsTab === 'vault' ? `
           <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup JSON</button>
-          <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">Pindai DB</button>
-          <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs font-bold">Perbaiki DB</button>
+          <button type="button" onclick="window.runDbAuditAndRepair(true)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && dbAuditState.dryRun ? '⏳ Memindai DB...' : 'Pindai DB'}</button>
+          <button type="button" onclick="window.runDbAuditAndRepair(false)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-emerald text-xs font-bold ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && !dbAuditState.dryRun ? '⏳ Memperbaiki DB...' : 'Perbaiki DB'}</button>
         ` : `
           <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Sistem Audit</button>
         `)))));
@@ -14297,11 +14334,11 @@ S. prn 3 dd 1 tab</textarea>
             <p class="mt-1" style="color:var(--ons-text-soft)">Berjalan langsung pada Google Sheets database utama aplikasi ini. Menghapus tab tidak penting/kosong (<code>Sheet1</code>, tab legacy, tab multi-cabang kosong), menghapus baris kosong, melengkapi kolom skema terbaru, menormalisasi sisa label lama, &amp; menyinkronkan ulang Piutang, Hutang PBF, Batch Stok, SP, Tagihan, dan Jurnal Keuangan.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button type="button" onclick="window.runDbAuditAndRepair(true)" class="ons-btn ons-btn-ghost text-xs">1. Pindai Kesehatan DB</button>
-            <button type="button" onclick="window.runDbAuditAndRepair(false)" class="ons-btn ons-btn-emerald text-xs font-bold">2. Perbaiki, Bersihkan &amp; Sinkronkan DB</button>
+            <button type="button" onclick="window.runDbAuditAndRepair(true)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && dbAuditState.dryRun ? '⏳ Sedang Memindai DB...' : '1. Pindai Kesehatan DB'}</button>
+            <button type="button" onclick="window.runDbAuditAndRepair(false)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-emerald text-xs font-bold ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && !dbAuditState.dryRun ? '⏳ Sedang Memperbaiki DB...' : '2. Perbaiki, Bersihkan &amp; Sinkronkan DB'}</button>
           </div>
         </div>
-        <div id="dbAuditResultBox" class="p-3 rounded-xl border hidden" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)"></div>
+        <div id="dbAuditResultBox" class="${(dbAuditState.running || dbAuditState.result || dbAuditState.error) ? '' : 'hidden'}">${_renderDbAuditBoxHtml()}</div>
       </div>
 
       <!-- Brankas Rahasia Script Properties -->
@@ -15388,27 +15425,45 @@ S. prn 3 dd 1 tab</textarea>
     } catch (e) { global.toast(e.message, 'err'); }
   };
 
+  global.clearDbAuditBox = () => {
+    dbAuditState = { running: false, dryRun: true, result: null, error: '' };
+    global.renderActiveView();
+  };
+
   global.runDbAuditAndRepair = async (dryRun) => {
+    if (dbAuditState.running) {
+      if (global.toast) global.toast('Pemeriksaan database sedang berjalan, mohon tunggu sebentar...', 'info');
+      return;
+    }
+    dbAuditState = { running: true, dryRun: !!dryRun, result: null, error: '' };
+    global.renderActiveView();
+    if (global.toast) {
+      global.toast(dryRun ? '⏳ Memindai kesehatan Google Sheets DB...' : '⏳ Membersihkan & menyinkronkan Google Sheets DB...', 'info');
+    }
+    setTimeout(() => {
+      try {
+        const b = document.getElementById('dbAuditResultBox');
+        if (b && typeof b.scrollIntoView === 'function') b.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (_) {}
+    }, 60);
     try {
-      const res = await API().callApi('db.auditAndRepair', { dry_run: !!dryRun, hapus_tab_sampah: true }, { isWrite: !dryRun });
-      const box = document.getElementById('dbAuditResultBox');
-      if (box) {
-        box.classList.remove('hidden');
-        const iss = Array.isArray(res.issues) ? res.issues : [];
-        box.innerHTML = `<div class="font-bold mb-1.5">${S().esc(res.pesan || 'Audit selesai.')}</div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-2">
-            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Tab Dihapus: <b>${(res.sheets_deleted || []).length}</b></div>
-            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Batch Disinkron: <b>${Number(res.stok_batch_synced || 0)}</b></div>
-            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Piutang/Hutang: <b>${Number(res.piutang_synced || 0) + Number(res.hutang_pbf_synced || 0)}</b></div>
-            <div class="p-2 rounded border" style="border-color:var(--ons-border)">Jurnal/SP/Tagihan: <b>${Number(res.jurnal_backfilled || 0) + Number(res.sp_synced || 0) + Number(res.tagihan_synced || 0)}</b></div>
-          </div>` +
-          (iss.length
-            ? `<div class="text-[11px] space-y-0.5"><div class="font-semibold">Rincian Temuan (${iss.length}):</div>${iss.slice(0, 15).map((x) => `<div>&bull; ${S().esc(x)}</div>`).join('')}${iss.length > 15 ? `<div>... dan ${iss.length - 15} lainnya</div>` : ''}</div>`
-            : '<div class="text-[11px] text-emerald-700 font-semibold">&#10003; Seluruh skema, sheet &amp; transaksi sudah 100% bersih dan sinkron!</div>');
-      }
-      global.toast(res.pesan || 'Audit & Sinkronisasi DB selesai!', 'ok');
+      const res = await API().callApi('db.auditAndRepair', { dry_run: !!dryRun, hapus_tab_sampah: true }, { isWrite: !dryRun, timeoutMs: 55000 });
+      dbAuditState = { running: false, dryRun: !!dryRun, result: res || { ok: true, pesan: 'Audit database selesai.' }, error: '' };
+      global.renderActiveView();
+      global.toast((res && res.pesan) || 'Audit & Sinkronisasi DB selesai!', 'ok');
       if (!dryRun) await (global.syncAfterWrite ? global.syncAfterWrite() : global.bootLoadState(true));
-    } catch (e) { global.toast(e.message || 'Gagal audit database.', 'err'); }
+      setTimeout(() => {
+        try {
+          const b = document.getElementById('dbAuditResultBox');
+          if (b && typeof b.scrollIntoView === 'function') b.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (_) {}
+      }, 100);
+    } catch (e) {
+      const msg = (e && e.message) ? e.message : 'Gagal menghubungi server database.';
+      dbAuditState = { running: false, dryRun: !!dryRun, result: null, error: msg };
+      global.renderActiveView();
+      global.toast(msg, 'err');
+    }
   };
 
   function renderFactoryResetPanelHtml(isOwner, scope) {

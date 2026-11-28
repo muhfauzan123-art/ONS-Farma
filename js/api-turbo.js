@@ -300,7 +300,7 @@
         try {
           const t0 = performance.now();
           // WAJIB text/plain;charset=utf-8 untuk bebas CORS preflight ke GAS Web App!
-          const reqTimeoutMs = o.isWrite ? 45000 : 18000;
+          const reqTimeoutMs = Number(o.timeoutMs) > 0 ? Number(o.timeoutMs) : (o.isWrite ? 45000 : 18000);
           const resp = await _fetchWithTimeout(global.ONS_CONFIG.GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
