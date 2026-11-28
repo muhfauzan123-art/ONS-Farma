@@ -1770,11 +1770,11 @@
     const cfg = opts || {};
     const emptyMsg = cfg.emptyMsg || 'Belum ada data pada rentang waktu yang dipilih.';
     const hasAnyVal = items.some((it) => seriesDefs.some((sd) => Number(it[sd.key] || 0) > 0));
-    const svgW = Math.max(360, items.length * (cfg.barSlotW || 44) + 52);
-    const svgH = 185;
-    const padL = 42;
+    const svgW = Math.max(360, items.length * (cfg.barSlotW || 44) + 56);
+    const svgH = 192;
+    const padL = 44;
     const padR = 14;
-    const padT = 16;
+    const padT = 22;
     const padB = 34;
     const plotW = svgW - padL - padR;
     const plotH = svgH - padT - padB;
@@ -1794,45 +1794,51 @@
     const barCount = seriesDefs.length || 1;
     const groupW = Math.min(34, Math.max(10, slotW * 0.68));
     const singleW = Math.max(5, (groupW - (barCount - 1) * 2) / barCount);
+    const uid = 'vb_' + Math.random().toString(36).slice(2, 7);
+    const showBarLabels = hasAnyVal && items.length <= 14 && seriesDefs.length === 1;
 
-    return `<div class="space-y-2">
+    return `<div class="space-y-2.5">
       <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
         <div class="flex flex-wrap items-center gap-3">
-          ${seriesDefs.map((sd) => `<span class="inline-flex items-center gap-1.5 font-semibold"><span class="w-3 h-2.5 rounded-sm inline-block" style="background:${sd.color}"></span>${S().esc(sd.label)}</span>`).join('')}
+          ${seriesDefs.map((sd) => `<span class="inline-flex items-center gap-1.5 font-semibold" style="color:var(--ons-text-main)"><span class="w-3 h-2.5 rounded-sm inline-block" style="background:${sd.color}"></span>${S().esc(sd.label)}</span>`).join('')}
         </div>
-        ${cfg.unitHint ? `<span class="font-mono-num text-[10px]" style="color:var(--ons-text-soft)">${S().esc(cfg.unitHint)}</span>` : ''}
+        ${cfg.unitHint ? `<span class="font-mono-num text-[10.5px] px-2 py-0.5 rounded-md border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(cfg.unitHint)}</span>` : ''}
       </div>
       <div class="ons-dash-chart-scroll">
         <svg viewBox="0 0 ${svgW} ${svgH}" class="w-full min-w-[280px] sm:min-w-[340px] h-44 overflow-visible" role="img" aria-label="${S().esc(cfg.ariaLabel || 'Grafik Dashboard')}">
+          <defs>
+            ${seriesDefs.map((sd, sIdx) => `<linearGradient id="${uid}_${sIdx}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sd.color}" stop-opacity="0.96"/><stop offset="100%" stop-color="${sd.color}" stop-opacity="0.68"/></linearGradient>`).join('')}
+          </defs>
           ${gridSteps.map((ratio) => {
             const y = padT + plotH * (1 - ratio);
             const lbl = !hasAnyVal ? (ratio === 0 ? '0' : '') : (cfg.isCurrency ? _compactNumLabel(maxPrim * ratio) : Math.round(maxPrim * ratio * 10) / 10);
-            return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${svgW - padR}" y2="${y.toFixed(1)}" stroke="var(--ons-border)" stroke-width="1" ${ratio > 0 ? 'stroke-dasharray="3 3"' : ''}/>
-              <text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#64748B">${lbl}</text>`;
+            return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${svgW - padR}" y2="${y.toFixed(1)}" stroke="var(--ons-border)" stroke-width="${ratio === 0 ? '1.3' : '1'}" ${ratio > 0 ? 'stroke-dasharray="3 3"' : ''}/>
+              <text x="${padL - 7}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="var(--ons-text-soft, #64748B)">${lbl}</text>`;
           }).join('')}
           ${items.map((it, idx) => {
             const cx = padL + idx * slotW + slotW / 2;
             const startX = cx - groupW / 2;
             const bars = seriesDefs.map((sd, sIdx) => {
               const raw = Number(it[sd.key] || 0);
-              const h = raw > 0 ? Math.max(4, (raw / maxPrim) * plotH) : 2;
+              const h = raw > 0 ? Math.max(5, (raw / maxPrim) * plotH) : 3;
               const x = startX + sIdx * (singleW + 2);
               const y = padT + plotH - h;
               const valStr = sd.isCurrency ? S().rp(raw) : (raw + (sd.suffix || ''));
-              return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${singleW.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${sd.color}" opacity="${raw > 0 ? '0.92' : '0.22'}"><title>${S().esc(it.label)} — ${S().esc(sd.label)}: ${S().esc(valStr)}</title></rect>`;
+              const topLbl = showBarLabels && raw > 0 ? `<text x="${(x + singleW / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${sd.color}">${S().esc(cfg.isCurrency ? _compactNumLabel(raw) : String(raw))}</text>` : '';
+              return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${singleW.toFixed(1)}" height="${h.toFixed(1)}" rx="3.5" fill="${raw > 0 ? `url(#${uid}_${sIdx})` : sd.color}" opacity="${raw > 0 ? '1' : '0.18'}"><title>${S().esc(it.label)} — ${S().esc(sd.label)}: ${S().esc(valStr)}</title></rect>${topLbl}`;
             }).join('');
-            return `${bars}<text x="${cx.toFixed(1)}" y="${svgH - 12}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#64748B">${S().esc(it.shortLabel || it.label)}</text>`;
+            return `${bars}<text x="${cx.toFixed(1)}" y="${svgH - 12}" text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--ons-text-soft, #64748B)">${S().esc(it.shortLabel || it.label)}</text>`;
           }).join('')}
         </svg>
       </div>
-      ${!hasAnyVal ? `<div class="text-[11px] text-center py-1" style="color:var(--ons-text-soft)">${S().esc(emptyMsg)}</div>` : ''}
+      ${!hasAnyVal ? `<div class="text-[11px] text-center py-2 px-3 rounded-xl border border-dashed" style="color:var(--ons-text-soft);border-color:var(--ons-border);background:var(--ons-bg-subtle)">${S().esc(emptyMsg)}</div>` : ''}
     </div>`;
   }
 
   function _renderDashFilterBar(range, extraRightHtml) {
-    return `<div class="flex flex-wrap items-center justify-between gap-2.5">
-      <div class="flex flex-wrap items-center gap-2">
-        <select aria-label="Pilih Rentang Waktu Dashboard" onchange="window.setDashPeriodPreset(this.value)" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+    return `<div class="ons-dash-filterbar flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 w-full sm:w-auto">
+      <div class="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
+        <select aria-label="Pilih Rentang Waktu Dashboard" onchange="window.setDashPeriodPreset(this.value)" class="ons-input text-xs py-1.5 px-3 w-full sm:w-auto font-semibold">
           <option value="today" ${dashPeriodPreset === 'today' ? 'selected' : ''}>Hari Ini</option>
           <option value="7d" ${dashPeriodPreset === '7d' ? 'selected' : ''}>7 Hari Terakhir</option>
           <option value="30d" ${dashPeriodPreset === '30d' ? 'selected' : ''}>30 Hari Terakhir</option>
@@ -1842,14 +1848,14 @@
           <option value="custom" ${dashPeriodPreset === 'custom' ? 'selected' : ''}>Custom Tanggal</option>
         </select>
         ${dashPeriodPreset === 'custom' ? `
-          <div class="flex items-center gap-1.5 text-xs">
-            <input id="dashRangeStart" type="date" value="${S().esc(range.startYmd)}" onchange="window.setDashCustomRange(this.value, (document.getElementById('dashRangeEnd')||{}).value)" class="ons-input text-xs py-1 px-2 font-mono-num"/>
-            <span style="color:var(--ons-text-soft)">s.d.</span>
-            <input id="dashRangeEnd" type="date" value="${S().esc(range.endYmd)}" onchange="window.setDashCustomRange((document.getElementById('dashRangeStart')||{}).value, this.value)" class="ons-input text-xs py-1 px-2 font-mono-num"/>
+          <div class="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-1.5 text-xs w-full sm:w-auto">
+            <input id="dashRangeStart" type="date" value="${S().esc(range.startYmd)}" onchange="window.setDashCustomRange(this.value, (document.getElementById('dashRangeEnd')||{}).value)" class="ons-input text-xs py-1 px-2 font-mono-num w-full sm:w-auto"/>
+            <span class="text-center" style="color:var(--ons-text-soft)">s.d.</span>
+            <input id="dashRangeEnd" type="date" value="${S().esc(range.endYmd)}" onchange="window.setDashCustomRange((document.getElementById('dashRangeStart')||{}).value, this.value)" class="ons-input text-xs py-1 px-2 font-mono-num w-full sm:w-auto"/>
           </div>
-        ` : `<span class="text-xs font-mono-num px-2.5 py-1 rounded-lg border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(range.startYmd)} s.d. ${S().esc(range.endYmd)}</span>`}
+        ` : `<span class="text-xs font-mono-num px-2.5 py-1.5 rounded-lg border text-center sm:text-left" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">${S().esc(range.startYmd)} s.d. ${S().esc(range.endYmd)}</span>`}
       </div>
-      ${extraRightHtml || ''}
+      ${extraRightHtml ? `<div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">${extraRightHtml}</div>` : ''}
     </div>`;
   }
 
@@ -1857,7 +1863,8 @@
     const cards = [
       {
         title: 'Berpotensi Rugi',
-        headStyle: 'background:rgba(244,63,94,0.12);color:#be123c',
+        headCls: 'bg-rose-500/10 text-rose-700 dark:text-rose-300',
+        icoBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300',
         badgeCls: invStatus.lossProducts.length ? 'bpom-keras' : 'bpom-bebas',
         count: invStatus.lossProducts.length,
         unit: seeCost ? 'produk (harga &le; HPP)' : 'produk perlu cek harga',
@@ -1867,7 +1874,8 @@
       },
       {
         title: 'Stok Habis / Kosong',
-        headStyle: 'background:rgba(245,158,11,0.14);color:#b45309',
+        headCls: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+        icoBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300',
         badgeCls: invStatus.zeroProducts.length ? 'bpom-prekursor' : 'bpom-bebas',
         count: invStatus.zeroProducts.length,
         unit: 'produk stok 0',
@@ -1877,7 +1885,8 @@
       },
       {
         title: 'Dekat Kadaluarsa',
-        headStyle: 'background:rgba(14,165,233,0.14);color:#0369a1',
+        headCls: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+        icoBg: 'bg-sky-500/15 text-sky-600 dark:text-sky-300',
         badgeCls: invStatus.nearEdBatches.length ? 'bpom-prekursor' : 'bpom-bebas',
         count: invStatus.nearEdBatches.length,
         unit: 'batch (&le;90 hari)',
@@ -1887,7 +1896,8 @@
       },
       {
         title: 'Sudah Kadaluarsa',
-        headStyle: 'background:rgba(239,68,68,0.14);color:#dc2626',
+        headCls: 'bg-red-500/10 text-red-700 dark:text-red-300',
+        icoBg: 'bg-red-500/15 text-red-600 dark:text-red-300',
         badgeCls: invStatus.expiredBatches.length ? 'bpom-keras' : 'bpom-bebas',
         count: invStatus.expiredBatches.length,
         unit: 'batch kadaluarsa',
@@ -1904,13 +1914,15 @@
         </span>
         ${canGudang ? `<button type="button" onclick="navigateView('gudang','batch')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Kelola Stok &amp; FEFO &rarr;</button>` : ''}
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         ${cards.map((c) => `
           <button type="button" class="ons-dash-status-card group" ${c.onClick ? `onclick="${c.onClick}"` : ''}>
-            <div class="ons-dash-status-head" style="${c.headStyle}">
+            <div class="ons-dash-status-head ${c.headCls}">
               <span class="flex items-center gap-1.5 min-w-0 font-bold">
-                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${c.icon}</svg>
-                <span class="truncate">${c.title}</span>
+                <span class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${c.icoBg}">
+                  <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${c.icon}</svg>
+                </span>
+                <span class="leading-tight">${c.title}</span>
               </span>
               <span class="badge-bpom ${c.badgeCls} font-mono-num text-[10px] shrink-0">${c.count}</span>
             </div>
@@ -2056,17 +2068,17 @@
       const timeStr = act.dt instanceof Date && !isNaN(act.dt.getTime())
         ? act.dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
         : '-';
-      return '<div class="p-2.5 rounded-xl border transition hover:border-blue-500 flex items-center justify-between gap-3 text-xs" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">' +
-        '<div class="flex items-center gap-2.5 min-w-0">' +
-          '<span class="badge-bpom ' + act.badgeCls + ' shrink-0 text-[10px] font-bold font-mono">' + act.badge + '</span>' +
-          '<div class="min-w-0">' +
-            '<div class="font-bold truncate" style="color:var(--ons-text-main)">' + S().esc(act.title) + '</div>' +
-            '<div class="text-[11px] leading-snug" style="color:var(--ons-text-soft)">Oleh <b>' + S().esc(act.user) + '</b> &bull; ' + S().esc(act.desc) + '</div>' +
+      return '<div class="p-3 rounded-xl border transition hover:border-blue-500 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">' +
+        '<div class="flex items-start gap-2.5 min-w-0">' +
+          '<span class="badge-bpom ' + act.badgeCls + ' shrink-0 text-[10px] font-bold font-mono mt-0.5">' + act.badge + '</span>' +
+          '<div class="min-w-0 flex-1">' +
+            '<div class="font-bold leading-snug" style="color:var(--ons-text-main)">' + S().esc(act.title) + '</div>' +
+            '<div class="text-[11px] leading-snug mt-0.5 break-words" style="color:var(--ons-text-soft)">Oleh <b>' + S().esc(act.user) + '</b> &bull; ' + S().esc(act.desc) + '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="shrink-0 flex items-center gap-2">' +
-          '<span class="text-[10px] font-mono-num font-semibold text-slate-500">' + timeStr + '</span>' +
-          (act.actionView ? '<button type="button" onclick="navigateView(\'' + act.actionView + '\',\'' + (act.actionSub || '') + '\')" class="ons-btn ons-btn-ghost text-[10px] py-0.5 px-2 font-semibold">Buka &rsaquo;</button>' : '') +
+        '<div class="shrink-0 flex items-center justify-between sm:justify-end gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0" style="border-color:var(--ons-border)">' +
+          '<span class="text-[10.5px] font-mono-num font-semibold" style="color:var(--ons-text-soft)">' + timeStr + '</span>' +
+          (act.actionView ? '<button type="button" onclick="navigateView(\'' + act.actionView + '\',\'' + (act.actionSub || '') + '\')" class="ons-btn ons-btn-ghost text-[10.5px] py-1 px-2.5 font-semibold min-h-[32px]">Buka &rsaquo;</button>' : '') +
         '</div>' +
       '</div>';
     }).join('');
@@ -2110,6 +2122,7 @@
     const canErx = S().canAccessView('eresep-prb');
     const canOnline = S().canAccessView('omnichannel');
 
+    const isDemoMode = (typeof API === 'function' && API() && typeof API().isDemoMode === 'function') ? API().isDemoMode() : false;
     const invStatus = _computeDashInventoryStatus(st, cabId);
     const activeTabList = [
       { id: 'umum', label: 'Dashboard Umum', icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
@@ -2118,23 +2131,27 @@
       { id: 'persediaan', label: 'Persediaan &amp; FEFO', icon: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>' }
     ];
 
-    const tabBarHtml = `<div class="ons-dash-tab-nav mb-4">
-      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5" role="tablist" aria-label="Sub-Menu Dashboard Apotek">
+    const modeBadgeHtml = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${isDemoMode ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25'}">
+      <span class="w-2 h-2 rounded-full ${isDemoMode ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}"></span>
+      <span>${isDemoMode ? 'Mode Lokal' : 'Live Real-Time'}</span>
+    </span>`;
+
+    const tabBarHtml = `<div class="ons-dash-tab-nav ons-dash-4tab-bar mb-4">
+      <div class="ons-dash-4tab-list flex items-center gap-1.5 py-0.5" data-count="${activeTabList.length}" role="tablist" aria-label="Sub-Menu Dashboard Apotek">
         ${activeTabList.map((tb) => `<button type="button" role="tab" aria-selected="${dashSubTab === tb.id ? 'true' : 'false'}" onclick="window.setDashboardTab('${tb.id}')" class="ons-dash-tab-btn ${dashSubTab === tb.id ? 'is-active' : ''}">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${tb.icon}</svg>
           <span>${tb.label}</span>
         </button>`).join('')}
       </div>
-      <div class="hidden md:flex items-center gap-2 text-xs shrink-0">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="hidden sm:inline">Live Real-Time</span>
-        </span>
-        ${canFin && seeCost ? `<button type="button" onclick="navigateView('finance','pnl')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 py-1 px-2.5" title="Buka Laporan Laba Rugi"><span>Laba/Rugi</span><span aria-hidden="true">&rarr;</span></button>` : ''}
-        <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 py-1 px-2.5" title="Segarkan Data Terbaru">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          <span class="hidden sm:inline">Segarkan</span>
-        </button>
+      <div class="ons-dash-4tab-meta flex items-center justify-between md:justify-end gap-2 text-xs shrink-0">
+        ${modeBadgeHtml}
+        <div class="flex items-center gap-1.5">
+          ${canFin && seeCost ? `<button type="button" onclick="navigateView('finance','pnl')" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1 py-1 px-2.5" title="Buka Laporan Laba Rugi"><span>Laba/Rugi</span><span aria-hidden="true">&rarr;</span></button>` : ''}
+          <button type="button" onclick="bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs flex items-center gap-1.5 py-1 px-2.5" title="Segarkan Data Terbaru">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Segarkan</span>
+          </button>
+        </div>
       </div>
     </div>`;
 
@@ -2420,103 +2437,103 @@
       });
     }
 
-    return `<div class="space-y-5 ons-view-enter">
+    return `<div class="space-y-4 sm:space-y-5 ons-view-enter">
       ${tabBarHtml}
 
       <!-- Executive Medical Hero Cockpit -->
-      <div class="ons-dash-hero space-y-4">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0">
-          <div class="flex items-start gap-3.5 sm:gap-4 min-w-0">
+      <div class="ons-dash-hero space-y-3">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3.5 min-w-0">
+          <div class="flex items-start gap-3 sm:gap-3.5 min-w-0">
             <div class="relative shrink-0 pt-0.5">
-              <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-white/40 shadow-lg object-cover bg-white"/>
-              <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${activeShift ? 'bg-emerald-400' : 'bg-amber-400'} border-2 border-[#0A192F]" title="${activeShift ? 'Shift Kasir Terbuka' : 'Shift Belum Dibuka'}"></span>
+              <img src="${S().esc(fotoPem && S().getRole() === 'Pemilik' ? fotoPem : usahaLogo)}" alt="${S().esc(usahaNama)}" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-white/40 shadow-lg object-cover bg-white"/>
+              <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full ${activeShift ? 'bg-emerald-400' : 'bg-amber-400'} border-2 border-[#0A192F]" title="${activeShift ? 'Shift Kasir Terbuka' : 'Shift Belum Dibuka'}"></span>
             </div>
             <div class="flex-1 min-w-0 space-y-1.5">
               <div class="flex flex-wrap items-center gap-1.5 text-xs">
                 <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-white/15 text-white border border-white/20">${S().esc(fullDateLabel)}</span>
-                <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-sky-400/20 text-sky-200 border border-sky-400/30">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('Cabang ' + S().esc(cabId)) : 'Outlet Utama'} &bull; ${S().esc(S().getRole())}</span>
-                ${canShift ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold ${activeShift ? 'bg-emerald-400/20 text-emerald-200 border border-emerald-400/30' : 'bg-amber-400/20 text-amber-200 border border-amber-400/30'} cursor-pointer hover:bg-white/20 transition-colors">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
+                <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-sky-400/20 text-sky-100 border border-sky-300/30">${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? ('Cabang ' + S().esc(cabId)) : 'Outlet Utama'} &bull; ${S().esc(S().getRole())}</span>
+                ${canShift ? `<button type="button" onclick="navigateView('pos','tutup-shift')" class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold ${activeShift ? 'bg-emerald-400/20 text-emerald-100 border border-emerald-300/35' : 'bg-amber-400/20 text-amber-100 border border-amber-300/35'} cursor-pointer hover:bg-white/20 transition-colors">${activeShift ? 'Shift Aktif: ' + S().esc(activeShift.kasir_nama || activeShift.id_shift || 'Buka') : 'Shift Belum Dibuka'}</button>` : ''}
               </div>
-              <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight leading-snug break-words text-white">${greetText}, ${S().esc(activeUserDisplay)}</h1>
-              <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-sky-100/80 leading-relaxed">
-                <span class="font-bold text-white">${S().esc(usahaNama)}</span>
-                <span aria-hidden="true" class="opacity-45">&bull;</span>
-                <span class="font-mono-num">${prof.no_sia ? 'SIA: ' + S().esc(prof.no_sia) : 'Izin SIA belum diisi'}</span>
-                <span aria-hidden="true" class="opacity-45">&bull;</span>
-                <span>${S().esc(prof.jam_operasional || 'Siap Melayani')}</span>
+              <h1 class="text-lg sm:text-[22px] font-extrabold tracking-tight leading-snug break-words text-white">${greetText}, ${S().esc(activeUserDisplay)}</h1>
+              <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-sky-100/90">
+                <span class="font-bold text-white pr-1">${S().esc(usahaNama)}</span>
+                <span class="px-2 py-0.5 rounded-md bg-white/10 border border-white/15">${prof.no_sia ? 'SIA: ' + S().esc(prof.no_sia) : 'Izin SIA belum diisi'}</span>
+                <span class="px-2 py-0.5 rounded-md bg-white/10 border border-white/15">${S().esc(prof.jam_operasional || 'Siap Melayani')}</span>
               </div>
             </div>
           </div>
-          <!-- Quick Action Buttons -->
-          <div class="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
-            ${canPos ? `<button type="button" onclick="navigateView('pos','kasir')" class="ons-dash-hero-btn ons-dash-hero-btn-primary shadow-lg"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>+ Kasir POS (F2)</span></button>` : ''}
-            ${seeCost ? `<button type="button" onclick="window.openOwnerDailyDigestModal()" class="ons-dash-hero-btn bg-emerald-500/20 hover:bg-emerald-500/30 text-white border-emerald-400/30" title="Kirim Rekap Harian ke WA Pemilik"><span>📲 Rekap WA</span></button>` : ''}
-            <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-dash-hero-btn" title="Pusat Pencarian Cepat"><span>Cari</span> <span class="bg-white/20 px-1 py-0.2 rounded text-[10px]">Ctrl+K</span></button>
+          <!-- Primary Hero Actions -->
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            ${canPos ? `<button type="button" onclick="navigateView('pos','kasir')" class="ons-dash-hero-btn ons-dash-hero-btn-primary shadow-lg"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>Kasir POS (F2)</span></button>` : ''}
+            ${seeCost ? `<button type="button" onclick="window.openOwnerDailyDigestModal()" class="ons-dash-hero-btn bg-emerald-500/25 hover:bg-emerald-500/35 text-white border-emerald-300/35" title="Kirim Rekap Harian ke WA Pemilik"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Rekap WA</span></button>` : ''}
           </div>
         </div>
 
-        <!-- Secondary Action Pills -->
-        <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+        <!-- Secondary Action Strip -->
+        <div class="pt-2.5 border-t border-white/12 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div class="flex flex-wrap items-center gap-1.5">
             ${canFaktur && seeCost ? `<button type="button" onclick="navigateView('faktur','faktur')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">+ Faktur PBF</button>` : ''}
             ${canDefecta && seeCost ? `<button type="button" onclick="navigateView('faktur','sp')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">+ Surat Pesanan</button>` : ''}
             ${canGudang ? `<button type="button" onclick="navigateView('gudang','opname')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">+ Stok Opname</button>` : ''}
             ${canPoct ? `<button type="button" onclick="navigateView('pemeriksaan','semua')" class="ons-dash-hero-btn text-[11px] py-1 px-2.5">Pemeriksaan POCT</button>` : ''}
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5">
             ${seeCost ? (() => {
               const bk = S().getLastBackupInfo ? S().getLastBackupInfo() : { isOverdue: false, label: '-' };
-              return `<button type="button" onclick="window.runQuickBackupNow()" class="ons-dash-hero-btn text-[11px] py-1 px-2.5 ${bk.isOverdue ? 'bg-amber-500/30 border-amber-300' : ''}" title="Backup Data (Terakhir: ${S().esc(bk.label)})">💾 Backup Data${bk.isOverdue ? ' ⚠️' : ''}</button>`;
+              return `<button type="button" onclick="window.runQuickBackupNow()" class="ons-dash-hero-btn text-[11px] py-1 px-2.5 ${bk.isOverdue ? 'bg-amber-500/30 border-amber-300/60' : ''}" title="Backup Data (Terakhir: ${S().esc(bk.label)})"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Backup Data</span>${bk.isOverdue ? '<span class="px-1.5 py-0.2 rounded-full bg-amber-300 text-slate-900 text-[9.5px] font-extrabold">Perlu</span>' : ''}</button>`;
             })() : ''}
-            <button type="button" onclick="bootLoadState(true)" class="ons-dash-hero-btn text-[11px] py-1 px-2.5" title="Segarkan Data">Segarkan</button>
+            <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-dash-hero-btn text-[11px] py-1 px-2.5 md:hidden" title="Cari Cepat"><span>Cari</span></button>
           </div>
         </div>
       </div>
 
-      ${st.masterObat.length === 0 ? `<div class="ons-card p-4 border-l-4 flex flex-wrap items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.06)">
-        <div class="min-w-0">
-          <div class="font-bold text-sm">Belum Ada Produk Obat di ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Katalog Cabang Ini' : 'Katalog Apotek Ini'}</div>
-          <p class="text-xs text-slate-500">Tambahkan daftar obat melalui menu <b>Master Katalog Obat</b> atau catat penerimaan barang lewat <b>Faktur Masuk</b> agar transaksi POS dan pemantauan stok langsung aktif.</p>
+      ${st.masterObat.length === 0 ? `<div class="ons-card p-3.5 border-l-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="border-left-color:#0066FE;background:rgba(0,102,254,0.05)">
+        <div class="flex items-start gap-3 min-w-0">
+          <span class="w-8 h-8 rounded-xl bg-blue-500/12 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+          <div class="min-w-0">
+            <div class="font-bold text-xs sm:text-sm">Belum Ada Produk Obat di ${(S().isMultiBranchEnabled && S().isMultiBranchEnabled()) ? 'Katalog Cabang Ini' : 'Katalog Apotek Ini'}</div>
+            <p class="text-[11.5px] leading-snug mt-0.5" style="color:var(--ons-text-soft)">Tambahkan daftar obat melalui <b>Master Katalog Obat</b> atau terima barang lewat <b>Faktur Masuk</b> agar POS &amp; pantauan stok langsung aktif.</p>
+          </div>
         </div>
-        ${canObat ? `<button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-primary text-xs shrink-0">Buka Master Katalog Obat &rarr;</button>` : ''}
+        ${canObat ? `<button type="button" onclick="navigateView('obat')" class="ons-btn ons-btn-primary text-xs shrink-0 w-full sm:w-auto">Buka Master Katalog Obat &rarr;</button>` : ''}
       </div>` : ''}
 
       <!-- 4 Executive Glance Tiles: Database & Status Persediaan -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="ons-glance-tile cursor-pointer" onclick="navigateView('gudang','batch')">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Total Nilai Aset Stok</span>
-            <span class="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center text-xs">📦</span>
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="text-[10.5px] font-bold uppercase tracking-wider leading-tight" style="color:var(--ons-text-soft)">Total Nilai Aset Stok</span>
+            <span class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg></span>
           </div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-blue-600 dark:text-blue-400">${S().rp(invStatus.totalNilaiAset || 0)}</div>
-          <div class="text-[10.5px] text-slate-500 truncate mt-1">${st.masterObat.length} SKU &bull; ${activeBatches.length} batch fisik</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-blue-600 dark:text-blue-400 leading-tight">${S().rp(invStatus.totalNilaiAset || 0)}</div>
+          <div class="text-[10.5px] mt-1 leading-snug" style="color:var(--ons-text-soft)">${st.masterObat.length} SKU &bull; ${activeBatches.length} batch fisik</div>
         </div>
 
         <div class="ons-glance-tile cursor-pointer" onclick="setPosSubTab('tertolak');navigateView('pos','kasir');">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10.5px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Penjualan Tertolak</span>
-            <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center text-xs">⚠️</span>
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="text-[10.5px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider leading-tight">Penjualan Tertolak</span>
+            <span class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
           </div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-amber-600">${_getDashLostSales().length} Item</div>
-          <div class="text-[10.5px] text-slate-500 truncate mt-1">Permintaan batal &rarr; Defecta</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-amber-600 dark:text-amber-400 leading-tight">${_getDashLostSales().length} Item</div>
+          <div class="text-[10.5px] mt-1 leading-snug" style="color:var(--ons-text-soft)">Permintaan batal &rarr; Defecta</div>
         </div>
 
         <div class="ons-glance-tile cursor-pointer" onclick="navigateView('obat','pelanggan')">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Pelanggan / CRM</span>
-            <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xs">👥</span>
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider leading-tight">Pelanggan / CRM</span>
+            <span class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           </div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400">${st.members.length} Member</div>
-          <div class="text-[10.5px] text-slate-500 truncate mt-1">Data pasien &amp; terapi rutin</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 leading-tight">${st.members.length} Member</div>
+          <div class="text-[10.5px] mt-1 leading-snug" style="color:var(--ons-text-soft)">Data pasien &amp; terapi rutin</div>
         </div>
 
         <div class="ons-glance-tile cursor-pointer" onclick="navigateView('faktur','pbf')">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10.5px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Distributor &amp; Mitra</span>
-            <span class="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center text-xs">🏛️</span>
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="text-[10.5px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider leading-tight">Distributor &amp; Mitra</span>
+            <span class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/></svg></span>
           </div>
-          <div class="text-base sm:text-lg font-extrabold font-mono-num text-purple-600 dark:text-purple-400">${st.supplierPbf.length} PBF &bull; ${(st.masterDokter || st.dokterPerujuk || []).length} Dokter</div>
-          <div class="text-[10.5px] text-slate-500 truncate mt-1">Jaringan pengadaan apotek</div>
+          <div class="text-base sm:text-lg font-extrabold font-mono-num text-purple-600 dark:text-purple-400 leading-tight">${st.supplierPbf.length} PBF &bull; ${(st.masterDokter || st.dokterPerujuk || []).length} Dokter</div>
+          <div class="text-[10.5px] mt-1 leading-snug" style="color:var(--ons-text-soft)">Jaringan pengadaan apotek</div>
         </div>
       </div>
 
@@ -2633,10 +2650,14 @@
         const c4 = rad.selisihShift.length;
         return `<div class="ons-card p-3.5 space-y-2.5 border-l-4 ${rad.totalAlerts > 0 ? 'border-l-amber-500' : 'border-l-emerald-500'}">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-sm">${rad.totalAlerts > 0 ? '🛡️' : '✅'}</span>
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${rad.totalAlerts > 0 ? 'bg-amber-500/12 text-amber-600 dark:text-amber-400' : 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400'}">
+                ${rad.totalAlerts > 0
+                  ? '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                  : '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>'}
+              </span>
               <div>
-                <div class="font-extrabold text-xs flex items-center gap-2">
+                <div class="font-extrabold text-xs flex flex-wrap items-center gap-2">
                   <span>Radar Anti-Kebocoran (Pengawasan Pemilik)</span>
                   <span class="badge-bpom ${rad.totalAlerts > 0 ? 'bpom-prekursor' : 'bpom-bebas'} text-[10px]">${rad.totalAlerts > 0 ? `${rad.totalAlerts} Temuan (${periodLbl})` : `Aman (${periodLbl})`}</span>
                 </div>
@@ -2684,31 +2705,35 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 ${seeCost ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5">
           <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
-            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 font-extrabold text-sm">Rp</span>
-            <div class="min-w-0">
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">Rp</span>
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Penjualan (${S().esc(range.label)})</div>
-              <div class="text-lg font-extrabold font-mono-num mt-0.5">${rangeValidSales.length} nota &bull; <span class="text-emerald-600">${S().rp(rangeSalesSum)}</span></div>
+              <div class="text-lg font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5">${S().rp(rangeSalesSum)}</div>
+              <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${rangeValidSales.length} nota selesai</div>
             </div>
           </div>
           ${seeCost ? `<div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
-            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600 font-extrabold text-xs">${rangeProfitPct}%</span>
-            <div class="min-w-0">
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600 dark:text-blue-400 font-extrabold text-xs">${rangeProfitPct}%</span>
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Laba (${S().esc(range.label)})</div>
-              <div class="text-lg font-extrabold font-mono-num mt-0.5 ${rangeProfitSum >= 0 ? 'text-blue-600' : 'text-red-600'}">${S().rp(rangeProfitSum)}</div>
+              <div class="text-lg font-extrabold font-mono-num ${rangeProfitSum >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'} leading-tight mt-0.5">${S().rp(rangeProfitSum)}</div>
+              <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Margin kotor ${rangeProfitPct}%</div>
             </div>
           </div>` : ''}
           <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
-            <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
-            <div class="min-w-0">
+            <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600 dark:text-amber-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Retur Penjualan</div>
-              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-amber-600">${rangeReturSales.length} nota retur (${S().rp(rangeReturSum)})</div>
+              <div class="text-lg font-extrabold font-mono-num text-amber-600 dark:text-amber-400 leading-tight mt-0.5">${S().rp(rangeReturSum)}</div>
+              <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${rangeReturSales.length} nota retur</div>
             </div>
           </div>
           <div class="ons-dash-stat-tile is-clickable" onclick="window.openDashLostSaleModal()">
-            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg></span>
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600 dark:text-rose-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg></span>
             <div class="min-w-0 flex-1">
-              <div class="text-xs font-semibold flex items-center justify-between gap-1" style="color:var(--ons-text-soft)"><span>Penjualan Tertolak</span><span class="text-[10px] text-rose-600 font-bold">+ Catat</span></div>
-              <div class="text-lg font-extrabold font-mono-num mt-0.5 text-rose-600">${rangeLostSales.length} kasus (${rangeLostQty} item)</div>
+              <div class="text-xs font-semibold flex items-center justify-between gap-1" style="color:var(--ons-text-soft)"><span>Penjualan Tertolak</span><span class="text-[10px] text-rose-600 dark:text-rose-400 font-bold shrink-0">+ Catat</span></div>
+              <div class="text-lg font-extrabold font-mono-num text-rose-600 dark:text-rose-400 leading-tight mt-0.5">${rangeLostSales.length} Kasus</div>
+              <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${rangeLostQty} item tercatat</div>
             </div>
           </div>
         </div>
@@ -2791,7 +2816,7 @@
             </div>
           </div>
           <button type="button" onclick="window.openDashTipeProdukModal()" class="ons-dash-status-card justify-start group">
-            <div class="ons-dash-status-head" style="background:rgba(16,185,129,0.12);color:#047857">
+            <div class="ons-dash-status-head bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
               <span>Tipe Produk &amp; Golongan BPOM</span>
               <span aria-hidden="true">&rsaquo;</span>
             </div>
@@ -2822,15 +2847,15 @@
           <div class="grid grid-cols-3 gap-2 text-center">
             <div class="p-2 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
               <div class="text-[10px]" style="color:var(--ons-text-soft)">Hari Ini</div>
-              <div class="font-mono-num font-extrabold text-xs text-blue-600 truncate">${S().rp(omzetHariIni)}</div>
+              <div class="font-mono-num font-extrabold text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 break-words leading-tight mt-0.5">${S().rp(omzetHariIni)}</div>
             </div>
             <div class="p-2 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
               <div class="text-[10px]" style="color:var(--ons-text-soft)">Total 7 Hari</div>
-              <div class="font-mono-num font-extrabold text-xs truncate">${S().rp(total7Hari)}</div>
+              <div class="font-mono-num font-extrabold text-[11px] sm:text-xs break-words leading-tight mt-0.5">${S().rp(total7Hari)}</div>
             </div>
             <div class="p-2 rounded-xl border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
               <div class="text-[10px]" style="color:var(--ons-text-soft)">Rata-rata/Hr</div>
-              <div class="font-mono-num font-extrabold text-xs text-emerald-600 truncate">${S().rp(avg7Hari)}</div>
+              <div class="font-mono-num font-extrabold text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 break-words leading-tight mt-0.5">${S().rp(avg7Hari)}</div>
             </div>
           </div>
           <svg viewBox="0 0 300 50" class="w-full h-10 overflow-visible">
@@ -2984,8 +3009,8 @@
           <div class="space-y-2 text-xs">
             ${topObatList.length ? topObatList.map((item, idx) => {
               const sharePct = Math.max(10, Math.round((Number(item.qty || 0) / topMaxQty) * 100));
-              const rankBadgeCls = idx === 0 ? 'bg-amber-500 text-white' : (idx < 3 ? 'bg-blue-600 text-white' : 'bg-slate-500/20 text-slate-600 dark:text-slate-300');
-              const rankIcon = idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : '#' + (idx + 1)));
+              const rankBadgeCls = idx === 0 ? 'bg-amber-500 text-white' : (idx === 1 ? 'bg-blue-600 text-white' : (idx === 2 ? 'bg-teal-600 text-white' : 'bg-slate-500/15 text-slate-700 dark:text-slate-300'));
+              const rankIcon = '#' + (idx + 1);
               return `<div class="p-2.5 rounded-xl border transition hover:border-blue-500 space-y-1.5" style="border-color:var(--ons-border);background:var(--ons-bg-subtle)">
                 <div class="flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2.5 min-w-0">
@@ -2993,7 +3018,7 @@
                     <span class="font-semibold truncate">${S().esc(item.nama)}</span>
                   </div>
                   <div class="font-mono-num shrink-0 text-right">
-                    <b>${item.qty}</b> unit &bull; <span class="text-blue-600 font-bold">${S().rp(item.omz)}</span>
+                    <b>${item.qty}</b> unit &bull; <span class="text-blue-600 dark:text-blue-400 font-bold">${S().rp(item.omz)}</span>
                   </div>
                 </div>
                 <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--ons-border)">
@@ -3063,32 +3088,32 @@
         <!-- Kolom Kanan: Status Sistem, Pintasan Cepat & Bantuan -->
         <div class="ons-card p-5 lg:col-span-5 flex flex-col justify-between space-y-3">
           <div>
-            <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center justify-between gap-2 mb-2.5">
               <h3 class="font-bold text-sm flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                 <span>Pusat Kendali &amp; Status Sistem</span>
               </h3>
-              <span class="badge-bpom bpom-bebas font-mono-num text-[10px]">v9.1.2 STABLE</span>
+              <span class="badge-bpom bpom-bebas font-mono-num text-[10px]">v${S().esc((global.ONS_CONFIG && global.ONS_CONFIG.APP_VERSION) || '18.85.0')} STABLE</span>
             </div>
             <div class="text-[11px] leading-relaxed space-y-1.5" style="color:var(--ons-text-soft)">
-              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+              <div class="flex items-center justify-between gap-2 py-1 border-b" style="border-color:var(--ons-border)">
                 <span>Arsitektur Sistem</span>
-                <b class="text-emerald-600">Client SPA + GAS REST API</b>
+                <b class="text-emerald-600 dark:text-emerald-400">Client SPA + GAS REST API</b>
               </div>
-              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+              <div class="flex items-center justify-between gap-2 py-1 border-b" style="border-color:var(--ons-border)">
                 <span>Database Cloud</span>
-                <b>Google Sheets (Multi-Sheet)</b>
+                <b style="color:var(--ons-text-main)">Google Sheets (Multi-Sheet)</b>
               </div>
-              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+              <div class="flex items-center justify-between gap-2 py-1 border-b" style="border-color:var(--ons-border)">
                 <span>Konektivitas &amp; PWA</span>
-                <span class="inline-flex items-center gap-1.5 text-emerald-600 font-semibold">
+                <span class="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                   <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                   Online / LocalStorage Ready
                 </span>
               </div>
-              <div class="flex items-center justify-between py-1 border-b" style="border-color:var(--ons-border)">
+              <div class="flex items-center justify-between gap-2 py-1 border-b" style="border-color:var(--ons-border)">
                 <span>Proteksi Data Kasir</span>
-                <b>Blind Count &amp; PIN Supervisor</b>
+                <b style="color:var(--ons-text-main)">Blind Count &amp; PIN Supervisor</b>
               </div>
             </div>
           </div>
@@ -3097,13 +3122,16 @@
             <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Aksi Bantuan Cepat</div>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <button type="button" onclick="window.testAllPrintCapabilities ? window.testAllPrintCapabilities() : (window.ONSStore && window.ONSStore.printHtmlZone ? window.ONSStore.printHtmlZone('<h3>Tes Cetak ONS Farma</h3><p>Printer Thermal &amp; A4 Berfungsi Normal</p>','Tes Cetak') : window.print())" class="ons-btn ons-btn-ghost text-xs flex items-center justify-center gap-1.5 py-1.5" title="Uji Coba Cetak Thermal / A4">
-                <span>🖨️ Tes Cetak</span>
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                <span>Tes Cetak</span>
               </button>
               <button type="button" onclick="if(window.openCommandPalette)window.openCommandPalette()" class="ons-btn ons-btn-ghost text-xs flex items-center justify-center gap-1.5 py-1.5" title="Buka Pintasan Keyboard">
-                <span>⌨️ Pintasan (Ctrl+K)</span>
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/></svg>
+                <span>Pintasan (Ctrl+K)</span>
               </button>
               ${S().canAccessView('settings') ? `<button type="button" onclick="navigateView('settings','konfigurasi')" class="ons-btn ons-btn-ghost text-xs flex items-center justify-center gap-1.5 py-1.5 col-span-2" title="Buka Pengaturan &amp; Kebijakan Toko">
-                <span>⚙️ Konfigurasi Kebijakan Apotek &rarr;</span>
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Konfigurasi Kebijakan Apotek &rarr;</span>
               </button>` : ''}
             </div>
           </div>
@@ -3243,36 +3271,36 @@
       <!-- Sub-Hero Executive Banner Penjualan -->
       <div class="ons-subhero-banner is-penjualan space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2.5">
-              <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-              </span>
+          <div class="flex items-start gap-3 min-w-0">
+            <span class="w-10 h-10 rounded-xl bg-blue-500/12 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            </span>
+            <div class="min-w-0">
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Analisis Performa Penjualan &amp; Margin Apotek</h2>
+              <div class="text-xs mt-0.5 leading-snug" style="color:var(--ons-text-soft)">Pantau pertumbuhan MoM/YoY, margin kotor kasir, jam ramai kunjungan &amp; kontribusi produk terlaris.</div>
             </div>
-            
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canPos ? `<button type="button" onclick="navigateView('pos','kasir')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h8M6 12h12M6 16h6"/></svg><span>Kasir POS (F2)</span></button>` : ''}
             <button type="button" onclick="window.openDashUserSalesModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Performa User Kasir &rsaquo;</button>
           </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 text-xs">
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Rata-rata Nota (ATV)</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-0.5">${S().rp(avgBasket)}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t text-xs" style="border-color:var(--ons-border)">
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Rata-rata Nota (ATV)</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-1">${S().rp(avgBasket)}</div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Transaksi Selesai</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-slate-800 dark:text-slate-100 mt-0.5">${rTrxCount} nota</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Transaksi Selesai</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num mt-1" style="color:var(--ons-text-main)">${rTrxCount} nota</div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Rasio Retur</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-amber-600 mt-0.5">${returRatio}% (${rRetur.length} retur)</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Rasio Retur</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-amber-600 dark:text-amber-400 mt-1">${returRatio}% <span class="text-xs font-semibold">(${rRetur.length} retur)</span></div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">${seeCost ? 'Margin Keuntungan' : 'Permintaan Tertolak'}</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num ${seeCost ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'} mt-0.5">${seeCost ? (profitMarginPct + '% (' + S().rp(rTotalProfit) + ')') : (rLost.length + ' kasus')}</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">${seeCost ? 'Margin Keuntungan' : 'Permintaan Tertolak'}</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num ${seeCost ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} mt-1">${seeCost ? (profitMarginPct + '% (' + S().rp(rTotalProfit) + ')') : (rLost.length + ' kasus')}</div>
           </div>
         </div>
       </div>
@@ -3363,20 +3391,20 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 ${seeCost ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5">
           <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
-            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 font-extrabold text-sm">Rp</span>
-            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Penjualan</div><div class="text-lg font-extrabold font-mono-num text-emerald-600">${S().rp(rTotalSales)}</div></div>
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">Rp</span>
+            <div class="min-w-0 flex-1"><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Total Penjualan</div><div class="text-lg font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5">${S().rp(rTotalSales)}</div><div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${rTrxCount} nota selesai</div></div>
           </div>
           <div class="ons-dash-stat-tile ${canPos ? 'is-clickable' : ''}" ${canPos ? `onclick="navigateView('pos','riwayat')"` : ''}>
-            <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
-            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Retur Penjualan</div><div class="text-lg font-extrabold font-mono-num text-amber-600">${S().rp(rTotalRetur)}</div></div>
+            <span class="ons-dash-tile-ico bg-amber-500/12 text-amber-600 dark:text-amber-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+            <div class="min-w-0 flex-1"><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Retur Penjualan</div><div class="text-lg font-extrabold font-mono-num text-amber-600 dark:text-amber-400 leading-tight mt-0.5">${S().rp(rTotalRetur)}</div><div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${rRetur.length} nota diretur</div></div>
           </div>
           <div class="ons-dash-stat-tile is-clickable" onclick="window.openDashLostSaleModal()">
-            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg></span>
-            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Penjualan Tertolak</div><div class="text-lg font-extrabold font-mono-num text-rose-600">${rLost.length} kasus (${rLostQty} item)</div></div>
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600 dark:text-rose-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 10 4 4m0-4-4 4"/></svg></span>
+            <div class="min-w-0 flex-1"><div class="text-xs font-semibold flex items-center justify-between gap-1" style="color:var(--ons-text-soft)"><span>Penjualan Tertolak</span><span class="text-[10px] text-rose-600 dark:text-rose-400 font-bold shrink-0">+ Catat</span></div><div class="text-lg font-extrabold font-mono-num text-rose-600 dark:text-rose-400 leading-tight mt-0.5">${rLost.length} Kasus</div><div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">${rLostQty} item tercatat</div></div>
           </div>
           ${seeCost ? `<div class="ons-dash-stat-tile">
-            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
-            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Keuntungan Penjualan</div><div class="text-lg font-extrabold font-mono-num text-emerald-600">${S().rp(rTotalProfit)}</div></div>
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600 dark:text-blue-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+            <div class="min-w-0 flex-1"><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Keuntungan Penjualan</div><div class="text-lg font-extrabold font-mono-num text-blue-600 dark:text-blue-400 leading-tight mt-0.5">${S().rp(rTotalProfit)}</div><div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Margin kotor ${profitMarginPct}%</div></div>
           </div>` : ''}
         </div>
 
@@ -3410,79 +3438,88 @@
       <!-- Jam Ramai & Heatmap Transaksi Apotek (Peak Hours) -->
       <div class="ons-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
+          <div class="flex items-start gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-amber-500/12 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
             <div>
-              <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">Pola Kunjungan Pasien &amp; Jam Ramai (Peak Hours 08:00 - 22:00)</h3>
-              <p class="text-xs text-slate-500">Distribusi jam transaksi untuk optimalisasi jadwal shift apoteker &amp; kesiapan kasir.</p>
+              <h3 class="font-extrabold text-sm sm:text-base" style="color:var(--ons-text-main)">Pola Kunjungan Pasien &amp; Jam Ramai (08:00 &ndash; 22:00)</h3>
+              <p class="text-xs mt-0.5" style="color:var(--ons-text-soft)">Distribusi jam transaksi untuk optimalisasi jadwal shift apoteker &amp; kesiapan kasir.</p>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${maxHourTrx > 0 ? `
               <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                <span>🔥 Puncak Kunjungan:</span>
-                <span class="font-mono-num font-extrabold">${String(peakHour).padStart(2, '0')}:00 - ${String(peakHour).padStart(2, '0')}:59</span>
-                <span class="font-normal opacity-80">(${maxHourTrx} nota)</span>
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span>Puncak:</span>
+                <span class="font-mono-num font-extrabold">${String(peakHour).padStart(2, '0')}:00 &ndash; ${String(peakHour).padStart(2, '0')}:59</span>
+                <span class="font-normal opacity-85">(${maxHourTrx} nota)</span>
               </div>
-            ` : '<span class="text-xs text-slate-400">Belum ada pola jam</span>'}
+            ` : `<span class="text-xs px-2.5 py-1 rounded-full border" style="background:var(--ons-bg-subtle);border-color:var(--ons-border);color:var(--ons-text-soft)">Belum ada pola jam</span>`}
           </div>
         </div>
 
-        <!-- Shift Breakdown Badges (2 Shift Operasional Apotek) -->
+        <!-- Shift Breakdown Cards (2 Shift Operasional Apotek) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div class="p-3.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div>
+          <div class="p-3.5 rounded-xl border flex items-center justify-between gap-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="min-w-0">
               <div class="flex items-center gap-1.5 font-bold text-sky-600 dark:text-sky-400">
-                <span>🌅 Shift Pagi (08:00 &ndash; 15:00)</span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded bg-sky-500/10 text-sky-600 font-semibold">7 Jam</span>
+                <span>Shift Pagi (08:00 &ndash; 15:00)</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-300 font-semibold">7 Jam</span>
               </div>
-              <div class="text-xl font-extrabold font-mono-num text-slate-900 dark:text-white mt-1">${shiftPagi} <span class="text-xs font-normal text-slate-400">nota</span> &bull; <span class="text-sky-600 font-bold">${S().rp(shiftPagiOmzet)}</span></div>
-              <div class="text-[10.5px] text-slate-400 mt-0.5">Rata-rata: ${Math.round((shiftPagi / 7) * 10) / 10} transaksi/jam</div>
+              <div class="text-lg sm:text-xl font-extrabold font-mono-num mt-1" style="color:var(--ons-text-main)">${shiftPagi} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">nota</span> &bull; <span class="text-sky-600 dark:text-sky-400 font-bold">${S().rp(shiftPagiOmzet)}</span></div>
+              <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Rata-rata: ${Math.round((shiftPagi / 7) * 10) / 10} transaksi/jam</div>
             </div>
-            <span class="text-2xl">🌤️</span>
+            <span class="w-10 h-10 rounded-xl bg-sky-500/12 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            </span>
           </div>
-          <div class="p-3.5 rounded-xl border flex items-center justify-between" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
-            <div>
+          <div class="p-3.5 rounded-xl border flex items-center justify-between gap-3" style="background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+            <div class="min-w-0">
               <div class="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
-                <span>🌆 Shift Sore (15:00 &ndash; 22:00)</span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 font-semibold">7 Jam</span>
+                <span>Shift Sore (15:00 &ndash; 22:00)</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 font-semibold">7 Jam</span>
               </div>
-              <div class="text-xl font-extrabold font-mono-num text-slate-900 dark:text-white mt-1">${shiftSore} <span class="text-xs font-normal text-slate-400">nota</span> &bull; <span class="text-emerald-600 font-bold">${S().rp(shiftSoreOmzet)}</span></div>
-              <div class="text-[10.5px] text-slate-400 mt-0.5">Rata-rata: ${Math.round((shiftSore / 7) * 10) / 10} transaksi/jam</div>
+              <div class="text-lg sm:text-xl font-extrabold font-mono-num mt-1" style="color:var(--ons-text-main)">${shiftSore} <span class="text-xs font-normal" style="color:var(--ons-text-soft)">nota</span> &bull; <span class="text-emerald-600 dark:text-emerald-400 font-bold">${S().rp(shiftSoreOmzet)}</span></div>
+              <div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Rata-rata: ${Math.round((shiftSore / 7) * 10) / 10} transaksi/jam</div>
             </div>
-            <span class="text-2xl">🌇</span>
+            <span class="w-10 h-10 rounded-xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </span>
           </div>
         </div>
 
-        <!-- Heatmap Hourly Bars (Pagi 08-15: Biru Langit, Sore 15-22: Hijau Zamrud) -->
-        <div class="pt-2">
-          <div class="grid grid-cols-5 sm:grid-cols-15 gap-1.5 items-end h-32 pt-6 pb-2 px-1 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
-            ${(() => {
-              const bars = [];
-              const maxRef = Math.max(1, maxHourTrx);
-              for (let h = 8; h <= 22; h++) {
-                const cnt = hourlyCounts[h] || 0;
-                const omz = hourlyOmzets[h] || 0;
-                const heightPct = Math.max(6, Math.round((cnt / maxRef) * 100));
-                const isPeak = cnt > 0 && cnt === maxHourTrx;
-                const barColor = isPeak
-                  ? 'bg-amber-500 ring-2 ring-amber-400 shadow-md'
-                  : (h < 15 ? 'bg-sky-500' : 'bg-emerald-500');
-                bars.push(`
-                  <div class="flex flex-col items-center h-full justify-end group relative" title="Jam ${String(h).padStart(2, '0')}:00 (${h < 15 ? 'Shift Pagi' : 'Shift Sore'}) &bull; ${cnt} Transaksi &bull; Omzet ${S().rp(omz)}">
-                    <span class="text-[9px] font-mono-num font-bold mb-1 opacity-0 group-hover:opacity-100 transition text-slate-700 dark:text-slate-200">${cnt}</span>
-                    <div class="w-full max-w-[20px] rounded-t-md transition-all ${barColor}" style="height:${heightPct}%"></div>
-                    <span class="text-[9px] font-mono-num mt-1 font-semibold ${isPeak ? 'text-amber-600 font-extrabold' : 'text-slate-400'}">${String(h).padStart(2, '0')}</span>
-                  </div>
-                `);
-              }
-              return bars.join('');
-            })()}
+        <!-- Heatmap Hourly Bars 15-Kolom Sejajar (Pagi 08-14: Biru Langit, Sore 15-22: Hijau Zamrud) -->
+        <div class="pt-1">
+          <div class="ons-dash-chart-scroll">
+            <div class="grid gap-1.5 items-end h-36 pt-6 pb-2.5 px-2.5 rounded-xl border min-w-[440px]" style="grid-template-columns:repeat(15,minmax(24px,1fr));background:var(--ons-bg-subtle);border-color:var(--ons-border)">
+              ${(() => {
+                const bars = [];
+                const maxRef = Math.max(1, maxHourTrx);
+                for (let h = 8; h <= 22; h++) {
+                  const cnt = hourlyCounts[h] || 0;
+                  const omz = hourlyOmzets[h] || 0;
+                  const heightPct = cnt > 0 ? Math.max(12, Math.round((cnt / maxRef) * 100)) : 6;
+                  const isPeak = cnt > 0 && cnt === maxHourTrx;
+                  const barColor = isPeak
+                    ? 'bg-amber-500 ring-2 ring-amber-400/70 shadow-sm'
+                    : (h < 15 ? 'bg-sky-500' : 'bg-emerald-500');
+                  bars.push(`
+                    <div class="flex flex-col items-center h-full justify-end group relative ${h === 15 ? 'border-l pl-1' : ''}" style="${h === 15 ? 'border-color:var(--ons-border)' : ''}" title="Jam ${String(h).padStart(2, '0')}:00 (${h < 15 ? 'Shift Pagi' : 'Shift Sore'}) &bull; ${cnt} Transaksi &bull; Omzet ${S().rp(omz)}">
+                      <span class="text-[9px] font-mono-num font-bold mb-1 ${cnt > 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition" style="color:var(--ons-text-main)">${cnt}</span>
+                      <div class="w-full max-w-[22px] rounded-t-md transition-all ${barColor}" style="height:${heightPct}%;opacity:${cnt > 0 ? '0.95' : '0.24'}"></div>
+                      <span class="text-[9.5px] font-mono-num mt-1.5 font-semibold ${isPeak ? 'text-amber-600 dark:text-amber-400 font-extrabold' : ''}" style="${isPeak ? '' : 'color:var(--ons-text-soft)'}">${String(h).padStart(2, '0')}</span>
+                    </div>
+                  `);
+                }
+                return bars.join('');
+              })()}
+            </div>
           </div>
-          <div class="flex items-center justify-between text-[10px] text-slate-400 px-1 mt-1.5 font-medium">
-            <span>08:00 (Buka Apotek &bull; Shift Pagi)</span>
-            <span class="font-bold text-slate-600 dark:text-slate-300">Pukul 15:00 &bull; Pergantian Shift Sore</span>
-            <span>22:00 (Tutup Shift Sore)</span>
+          <div class="flex flex-wrap items-center justify-between gap-2 text-[10.5px] px-1 mt-1.5 font-medium" style="color:var(--ons-text-soft)">
+            <span>08:00 &bull; Shift Pagi</span>
+            <span class="font-bold" style="color:var(--ons-text-main)">15:00 &bull; Pergantian Shift Sore</span>
+            <span>22:00 &bull; Tutup</span>
           </div>
         </div>
       </div>
@@ -3490,30 +3527,30 @@
       <!-- Top Produk & Pelanggan Terloyal -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="ons-card overflow-hidden">
-          <div class="ons-dash-status-head" style="background:rgba(249,115,22,0.12);color:#c2410c">
-            <span class="flex items-center gap-1.5 font-bold">
+          <div class="ons-dash-status-head bg-amber-500/10 text-amber-700 dark:text-amber-300">
+            <span class="flex items-center gap-2 font-bold">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               <span>Top 10 Produk Paling Laku</span>
             </span>
             ${canObat ? `<button type="button" onclick="navigateView('obat','obat')" class="text-xs font-bold underline">Katalog &rsaquo;</button>` : ''}
           </div>
           <div class="ons-table-wrap">
-            <table class="ons-table text-xs">
-              <thead><tr><th>Peringkat</th><th>Nama Produk</th><th class="text-right">Terjual</th><th class="text-right">Total Nilai</th></tr></thead>
+            <table class="ons-table ons-table-compact text-xs">
+              <thead><tr><th>#</th><th>Nama Produk</th><th class="text-right">Terjual</th><th class="text-right">Total Nilai</th></tr></thead>
               <tbody>
                 ${top10Produk.length ? top10Produk.map((p, i) => {
                   const sharePct = Math.max(10, Math.round((Number(p.qty || 0) / maxProdQty) * 100));
-                  const rankIcon = i === 0 ? '🥇 #1' : (i === 1 ? '🥈 #2' : (i === 2 ? '🥉 #3' : '#' + (i + 1)));
-                  const badgeCls = i === 0 ? 'bg-amber-500 text-white' : (i < 3 ? 'bg-blue-600 text-white' : 'bg-slate-500/15 text-slate-700 dark:text-slate-300');
+                  const badgeCls = i === 0 ? 'bg-amber-500 text-white' : (i === 1 ? 'bg-blue-600 text-white' : (i === 2 ? 'bg-teal-600 text-white' : 'bg-slate-500/15 text-slate-700 dark:text-slate-300'));
                   return `<tr>
-                    <td><span class="px-2 py-0.5 rounded font-mono-num font-extrabold text-[10px] ${badgeCls}">${rankIcon}</span></td>
-                    <td class="font-semibold">
-                      <div>${S().esc(p.nama)}</div>
-                      <div class="h-1 rounded-full bg-slate-200 dark:bg-slate-700 mt-1 max-w-[120px] overflow-hidden">
+                    <td><span class="px-2 py-0.5 rounded font-mono-num font-extrabold text-[10px] ${badgeCls}">#${i + 1}</span></td>
+                    <td class="font-semibold max-w-[140px] sm:max-w-none">
+                      <div class="truncate">${S().esc(p.nama)}</div>
+                      <div class="h-1 rounded-full bg-slate-200 dark:bg-slate-700 mt-1 max-w-[110px] overflow-hidden">
                         <div class="h-full bg-blue-500" style="width:${sharePct}%"></div>
                       </div>
                     </td>
                     <td class="text-right font-mono-num font-bold">${p.qty} unit</td>
-                    <td class="text-right font-mono-num font-extrabold text-blue-600">${S().rp(p.total)}</td>
+                    <td class="text-right font-mono-num font-extrabold text-blue-600 dark:text-blue-400">${S().rp(p.total)}</td>
                   </tr>`;
                 }).join('') : '<tr><td colspan="4" class="text-center py-6" style="color:var(--ons-text-soft)">Data transaksi belum tersedia pada rentang ini.</td></tr>'}
               </tbody>
@@ -3522,22 +3559,23 @@
         </div>
 
         <div class="ons-card overflow-hidden">
-          <div class="ons-dash-status-head" style="background:rgba(14,165,233,0.12);color:#0369a1">
-            <span class="flex items-center gap-1.5 font-bold">
+          <div class="ons-dash-status-head bg-sky-500/10 text-sky-700 dark:text-sky-300">
+            <span class="flex items-center gap-2 font-bold">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
               <span>Top 10 Pelanggan Terloyal</span>
             </span>
             ${canObat ? `<button type="button" onclick="navigateView('obat','pelanggan')" class="text-xs font-bold underline">Member &rsaquo;</button>` : ''}
           </div>
           <div class="ons-table-wrap">
-            <table class="ons-table text-xs">
-              <thead><tr><th>No.</th><th>Nama Pelanggan</th><th>Status</th><th class="text-right">Frekuensi</th><th class="text-right">Total Belanja</th></tr></thead>
+            <table class="ons-table ons-table-compact text-xs">
+              <thead><tr><th>#</th><th>Nama Pelanggan</th><th>Status</th><th class="text-right">Frek.</th><th class="text-right">Total Belanja</th></tr></thead>
               <tbody>
                 ${top10Cust.length ? top10Cust.map((c, i) => `<tr>
                   <td class="font-mono-num">${i + 1}</td>
-                  <td class="font-semibold">${S().esc(c.nama)}</td>
+                  <td class="font-semibold max-w-[130px] sm:max-w-none truncate">${S().esc(c.nama)}</td>
                   <td><span class="badge-bpom ${c.isMember ? 'bpom-bebas' : 'bpom-terbatas'} font-semibold text-[10px]">${c.isMember ? 'Member' : 'Umum'}</span></td>
                   <td class="text-right font-mono-num">${c.nota} nota</td>
-                  <td class="text-right font-mono-num font-extrabold text-emerald-600">${S().rp(c.total)}</td>
+                  <td class="text-right font-mono-num font-extrabold text-emerald-600 dark:text-emerald-400">${S().rp(c.total)}</td>
                 </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6" style="color:var(--ons-text-soft)">Data pelanggan belum tersedia pada rentang ini.</td></tr>'}
               </tbody>
             </table>
@@ -3605,37 +3643,40 @@
       <!-- Sub-Hero Executive Banner Pembelian & PBF -->
       <div class="ons-subhero-banner is-pembelian space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2.5">
-              <span class="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-              </span>
+          <div class="flex items-start gap-3 min-w-0">
+            <span class="w-10 h-10 rounded-xl bg-sky-500/12 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </span>
+            <div class="min-w-0">
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Pusat Kendali Pengadaan Obat &amp; Hutang PBF</h2>
+              <div class="text-xs mt-0.5 leading-snug" style="color:var(--ons-text-soft)">Kendalikan rencana order defecta, status Surat Pesanan (SP) &amp; jadwal jatuh tempo tagihan PBF.</div>
             </div>
-            
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>+ Rencana Order (Defecta)</span></button>` : ''}
+            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg><span>Rencana Order (Defecta)</span></button>` : ''}
             ${canDefecta ? `<button type="button" onclick="navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Buka Buku SP &rsaquo;</button>` : ''}
             ${canFin ? `<button type="button" onclick="navigateView('finance','hutang')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Buku Hutang PBF &rsaquo;</button>` : ''}
           </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 text-xs">
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Komitmen Pengadaan</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-0.5">${S().rp(rencanaPembelianRp + pesananAktifRp + hutangPembelianRp)}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t text-xs" style="border-color:var(--ons-border)">
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Komitmen Pengadaan</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-1">${S().rp(rencanaPembelianRp + pesananAktifRp + hutangPembelianRp)}</div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Pesanan Aktif</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-sky-600 mt-0.5">${openSpList.length} SP (${S().rp(pesananAktifRp)})</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Pesanan Aktif</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-sky-600 dark:text-sky-400 mt-1">${openSpList.length} SP <span class="text-xs font-semibold">(${S().rp(pesananAktifRp)})</span></div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Faktur Belum Lunas</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-amber-600 mt-0.5">${openFakturList.length} Faktur (${S().rp(hutangPembelianRp)})</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Faktur Belum Lunas</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-amber-600 dark:text-amber-400 mt-1">${openFakturList.length} Faktur <span class="text-xs font-semibold">(${S().rp(hutangPembelianRp)})</span></div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Jatuh Tempo &le;7 Hari</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num ${apNearDueCount > 0 ? 'text-rose-600' : 'text-emerald-600'} mt-0.5">${apNearDueCount} faktur ${apNearDueCount > 0 ? '⚠️' : '✓'}</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Jatuh Tempo &le;7 Hari</div>
+            <div class="flex flex-wrap items-center gap-1.5 mt-1">
+              <span class="whitespace-nowrap text-sm sm:text-base font-extrabold font-mono-num ${apNearDueCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${apNearDueCount} faktur</span>
+              <span class="badge-bpom ${apNearDueCount > 0 ? 'bpom-keras' : 'bpom-bebas'} text-[10px]">${apNearDueCount > 0 ? 'Perlu Bayar' : 'Aman'}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3650,16 +3691,16 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('faktur','defecta')"` : ''}>
-            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg></span>
-            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Rencana Pembelian (Defecta Buffer)</div><div class="text-lg font-extrabold font-mono-num text-emerald-600">${S().rp(rencanaPembelianRp)}</div></div>
+            <span class="ons-dash-tile-ico bg-emerald-500/12 text-emerald-600 dark:text-emerald-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg></span>
+            <div class="min-w-0 flex-1"><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Rencana Pembelian (Defecta)</div><div class="text-lg font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5">${S().rp(rencanaPembelianRp)}</div><div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Estimasi pengadaan stok kritis</div></div>
           </div>
           <div class="ons-dash-stat-tile ${canDefecta ? 'is-clickable' : ''}" ${canDefecta ? `onclick="navigateView('faktur','sp')"` : ''}>
-            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pesanan Aktif (${openSpList.length} SP)</div><div class="text-lg font-extrabold font-mono-num text-blue-600">${S().rp(pesananAktifRp)}</div></div>
+            <span class="ons-dash-tile-ico bg-blue-500/12 text-blue-600 dark:text-blue-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+            <div class="min-w-0 flex-1"><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Pesanan Aktif (${openSpList.length} SP)</div><div class="text-lg font-extrabold font-mono-num text-blue-600 dark:text-blue-400 leading-tight mt-0.5">${S().rp(pesananAktifRp)}</div><div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Surat Pesanan menunggu GRN</div></div>
           </div>
           <div class="ons-dash-stat-tile ${canFin ? 'is-clickable' : ''}" ${canFin ? `onclick="navigateView('finance','hutang')"` : ''}>
-            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
-            <div><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Hutang Pembelian (${openFakturList.length} Faktur)</div><div class="text-lg font-extrabold font-mono-num text-amber-600">${S().rp(hutangPembelianRp)}</div></div>
+            <span class="ons-dash-tile-ico bg-rose-500/12 text-rose-600 dark:text-rose-400"><svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h10M7 14h6"/></svg></span>
+            <div class="min-w-0 flex-1"><div class="text-xs font-semibold" style="color:var(--ons-text-soft)">Hutang Pembelian (${openFakturList.length} Faktur)</div><div class="text-lg font-extrabold font-mono-num text-amber-600 dark:text-amber-400 leading-tight mt-0.5">${S().rp(hutangPembelianRp)}</div><div class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Sisa kewajiban faktur PBF</div></div>
           </div>
         </div>
       </div>
@@ -3667,26 +3708,27 @@
       <!-- 2 Tabel Kritis Pengadaan -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="ons-card overflow-hidden">
-          <div class="ons-dash-status-head" style="background:rgba(244,63,94,0.12);color:#be123c">
-            <span class="flex items-center gap-1.5 font-bold">
-              <span>Jatuh Tempo Faktur Terdekat (H-7 Warning)</span>
+          <div class="ons-dash-status-head bg-rose-500/10 text-rose-700 dark:text-rose-300">
+            <span class="flex items-center gap-2 font-bold min-w-0">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="leading-snug">Jatuh Tempo Faktur (H-7)</span>
             </span>
-            ${canFaktur ? `<button type="button" onclick="navigateView('faktur','daftar')" class="text-xs font-bold underline">Daftar Faktur &rsaquo;</button>` : ''}
+            ${canFaktur ? `<button type="button" onclick="navigateView('faktur','daftar')" class="text-xs font-bold underline shrink-0">Daftar Faktur &rsaquo;</button>` : ''}
           </div>
           <div class="ons-table-wrap">
-            <table class="ons-table text-xs">
-              <thead><tr><th>No.</th><th>Nama Supplier PBF</th><th>Jatuh Tempo</th><th>Urgensi</th><th class="text-right">Sisa Hutang</th></tr></thead>
+            <table class="ons-table ons-table-compact text-xs">
+              <thead><tr><th class="w-8">#</th><th>Supplier PBF</th><th>Tempo</th><th>Urgensi</th><th class="text-right">Sisa Hutang</th></tr></thead>
               <tbody>
                 ${openFakturList.length ? openFakturList.slice(0, 6).map((f, i) => {
                   const d = f.tgl_jatuh_tempo ? S().daysUntil(f.tgl_jatuh_tempo) : 999;
                   const badgeCls = d < 0 ? 'bpom-keras' : (d <= 3 ? 'bpom-keras' : (d <= 7 ? 'bpom-prekursor' : 'bpom-bebas'));
-                  const badgeTxt = d < 0 ? ('Lewat ' + Math.abs(d) + 'h') : (d === 0 ? 'Hari Ini!' : ('H-' + d));
+                  const badgeTxt = d < 0 ? ('Lewat ' + Math.abs(d) + 'h') : (d === 0 ? 'Hari Ini' : ('H-' + d));
                   return `<tr class="cursor-pointer hover:bg-blue-500/5 transition" onclick="if(window.openFakturDetailModal)window.openFakturDetailModal('${S().esc(f.id_faktur || f.no_faktur_pbf)}')">
                     <td class="font-mono-num">${i + 1}</td>
-                    <td class="font-semibold">${S().esc(f.id_pbf || f.nama_pbf || '-')}</td>
+                    <td class="font-semibold max-w-[130px] sm:max-w-[165px] truncate">${S().esc(f.id_pbf || f.nama_pbf || '-')}</td>
                     <td class="font-mono-num">${S().esc(f.tgl_jatuh_tempo ? S().formatEd(f.tgl_jatuh_tempo) : '-')}</td>
                     <td><span class="badge-bpom ${badgeCls} font-mono-num font-bold">${badgeTxt}</span></td>
-                    <td class="text-right font-mono-num font-bold text-amber-600">${S().rp(f.sisa_hutang)}</td>
+                    <td class="text-right font-mono-num font-bold text-amber-600 dark:text-amber-400">${S().rp(f.sisa_hutang)}</td>
                   </tr>`;
                 }).join('') : '<tr><td colspan="5" class="text-center py-6" style="color:var(--ons-text-soft)">Semua tagihan faktur PBF lunas / tidak ada hutang aktif.</td></tr>'}
               </tbody>
@@ -3695,22 +3737,23 @@
         </div>
 
         <div class="ons-card overflow-hidden">
-          <div class="ons-dash-status-head" style="background:rgba(14,165,233,0.12);color:#0369a1">
-            <span class="flex items-center gap-1.5 font-bold">
-              <span>Pesanan Aktif (Surat Pesanan PBF)</span>
+          <div class="ons-dash-status-head bg-sky-500/10 text-sky-700 dark:text-sky-300">
+            <span class="flex items-center gap-2 font-bold min-w-0">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+              <span class="leading-snug">Pesanan Aktif (SP PBF)</span>
             </span>
-            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','sp')" class="text-xs font-bold underline">Surat Pesanan &rsaquo;</button>` : ''}
+            ${canDefecta ? `<button type="button" onclick="navigateView('faktur','sp')" class="text-xs font-bold underline shrink-0">Surat Pesanan &rsaquo;</button>` : ''}
           </div>
           <div class="ons-table-wrap">
-            <table class="ons-table text-xs">
-              <thead><tr><th>No.</th><th>Nama Supplier PBF</th><th>Tgl. SP</th><th>Status</th><th class="text-right">Estimasi Nilai</th></tr></thead>
+            <table class="ons-table ons-table-compact text-xs">
+              <thead><tr><th class="w-8">#</th><th>Supplier PBF</th><th>Tgl. SP</th><th>Status</th><th class="text-right">Estimasi</th></tr></thead>
               <tbody>
                 ${openSpList.length ? openSpList.slice(0, 6).map((sp, i) => `<tr class="cursor-pointer hover:bg-blue-500/5 transition" onclick="if(window.openSpA4PreviewModal)window.openSpA4PreviewModal('${S().esc(sp.id_sp)}')">
                   <td class="font-mono-num">${i + 1}</td>
-                  <td class="font-semibold">${S().esc(sp.nama_pbf || sp.id_pbf || '-')}</td>
+                  <td class="font-semibold max-w-[130px] sm:max-w-[165px] truncate">${S().esc(sp.nama_pbf || sp.id_pbf || '-')}</td>
                   <td class="font-mono-num">${S().esc(sp.tanggal || '-')}</td>
                   <td><span class="badge-bpom bpom-prekursor font-bold text-[10px]">${S().esc(sp.status_sp || 'AKTIF')}</span></td>
-                  <td class="text-right font-mono-num font-bold text-blue-600">${S().rp(sp.estimasi_total || 0)}</td>
+                  <td class="text-right font-mono-num font-bold text-blue-600 dark:text-blue-400">${S().rp(sp.estimasi_total || 0)}</td>
                 </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6" style="color:var(--ons-text-soft)">Semua Surat Pesanan sudah selesai diterima / tidak ada SP aktif.</td></tr>'}
               </tbody>
             </table>
@@ -3841,14 +3884,14 @@
       <!-- Sub-Hero Executive Banner Persediaan -->
       <div class="ons-subhero-banner is-persediaan space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2.5">
-              <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-              </span>
+          <div class="flex items-start gap-3 min-w-0">
+            <span class="w-10 h-10 rounded-xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </span>
+            <div class="min-w-0">
               <h2 class="text-base sm:text-lg font-extrabold tracking-tight" style="color:var(--ons-text-main)">Valuasi Persediaan, Arus Mutasi &amp; Kontrol FEFO</h2>
+              <div class="text-xs mt-0.5 leading-snug" style="color:var(--ons-text-soft)">Pantau nilai aset gudang (HPP), mutasi masuk-keluar stok, kontrol kadaluarsa &amp; prioritas defecta.</div>
             </div>
-            
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${canGudang ? `<button type="button" onclick="navigateView('gudang','opname')" class="ons-btn ons-btn-primary text-xs px-3.5 py-1.5 shadow-sm font-bold flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Stok Opname</span></button>` : ''}
@@ -3856,42 +3899,44 @@
             ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3">Defecta Kritis &rsaquo;</button>` : ''}
           </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 text-xs">
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">${seeCost ? 'Total Valuasi Aset (HPP)' : 'Total Stok Fisik'}</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 mt-0.5">${seeCost ? S().rp(persediaanAkhirRp) : (invStatus.currentStockUnits + ' unit')}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t text-xs" style="border-color:var(--ons-border)">
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">${seeCost ? 'Total Valuasi Aset (HPP)' : 'Total Stok Fisik'}</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 mt-1">${seeCost ? S().rp(persediaanAkhirRp) : (invStatus.currentStockUnits + ' unit')}</div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Katalog Obat Terdaftar</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-slate-800 dark:text-slate-100 mt-0.5">${totalKatalog} produk</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Katalog Obat Terdaftar</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num mt-1" style="color:var(--ons-text-main)">${totalKatalog} produk</div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Ketersediaan Stok Aman</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 mt-0.5">${safeStockPct}% (${safeStockCount} produk)</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Ketersediaan Stok Aman</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-1">${safeStockPct}% <span class="text-xs font-semibold">(${safeStockCount} produk)</span></div>
           </div>
-          <div class="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Batch Aktif Terdaftar</div>
-            <div class="text-sm sm:text-base font-extrabold font-mono-num text-indigo-600 mt-0.5">${invStatus.activeBatches.length} batch</div>
+          <div class="p-3 rounded-xl border" style="background:var(--ons-bg-card);border-color:var(--ons-border)">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">Batch Aktif Terdaftar</div>
+            <div class="text-sm sm:text-base font-extrabold font-mono-num text-indigo-600 dark:text-indigo-400 mt-1">${invStatus.activeBatches.length} batch</div>
           </div>
         </div>
       </div>
 
       <!-- Arus Mutasi Persediaan (Alur Akuntansi Stok 6 Kartu) -->
       <div class="space-y-3">
-        <div class="ons-dash-sec-title">
-          <span class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            <span>Arus Mutasi Stok Periode (${S().esc(range.label)})</span>
-          </span>
-          <div class="flex flex-wrap items-center gap-2">
-            <select aria-label="Filter Jenis Mutasi" onchange="window.setDashInvFilter(this.value, '${S().esc(dashInvSupplier)}')" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5">
+          <div class="ons-dash-sec-title">
+            <span class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span>Arus Mutasi Stok (${S().esc(range.label)})</span>
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-center gap-2">
+            <select aria-label="Filter Jenis Mutasi" onchange="window.setDashInvFilter(this.value, '${S().esc(dashInvSupplier)}')" class="ons-input text-xs py-1.5 px-3 w-full sm:w-auto font-semibold">
               <option value="SEMUA" ${dashInvJenis === 'SEMUA' ? 'selected' : ''}>Semua Mutasi</option>
               <option value="PENJUALAN" ${dashInvJenis === 'PENJUALAN' ? 'selected' : ''}>Penjualan POS</option>
               <option value="PEMBELIAN" ${dashInvJenis === 'PEMBELIAN' ? 'selected' : ''}>Pembelian / GRN</option>
               <option value="OPNAME" ${dashInvJenis === 'OPNAME' ? 'selected' : ''}>Penyesuaian / Opname</option>
               <option value="RETUR" ${dashInvJenis === 'RETUR' ? 'selected' : ''}>Retur</option>
             </select>
-            ${seeCost ? `<select aria-label="Filter Supplier Persediaan" onchange="window.setDashInvFilter('${S().esc(dashInvJenis)}', this.value)" class="ons-input text-xs py-1.5 px-3 w-auto font-semibold">
+            ${seeCost ? `<select aria-label="Filter Supplier Persediaan" onchange="window.setDashInvFilter('${S().esc(dashInvJenis)}', this.value)" class="ons-input text-xs py-1.5 px-3 w-full sm:w-auto font-semibold">
               <option value="SEMUA" ${dashInvSupplier === 'SEMUA' ? 'selected' : ''}>Semua Supplier</option>
               ${(st.supplierPbf || []).map((p) => `<option value="${S().esc(p.nama_pbf)}" ${dashInvSupplier === p.nama_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)}</option>`).join('')}
             </select>` : ''}
@@ -3899,59 +3944,59 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-          <div class="ons-dash-stat-tile flex-col items-start gap-1 p-3">
-            <div class="flex items-center justify-between w-full">
-              <span class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">1. Saldo Awal</span>
-              <span class="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center text-xs font-bold">&bull;</span>
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div class="ons-dash-stat-tile ons-dash-flow-card flex-col items-start gap-1 p-3.5 border-t-2 border-t-slate-400">
+            <div class="flex items-center justify-between w-full gap-1">
+              <span class="text-[10.5px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">1. Saldo Awal</span>
+              <span class="w-6 h-6 rounded-lg bg-slate-500/12 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold shrink-0">&bull;</span>
             </div>
-            <div class="text-base font-extrabold font-mono-num mt-1">${seeCost ? S().rp(persediaanAwalRp) : (Math.max(0, invStatus.currentStockUnits - pembelianQty + terjualQty) + ' unit')}</div>
-            <div class="text-[10px]" style="color:var(--ons-text-soft)">Awal rentang</div>
+            <div class="text-[15px] font-extrabold font-mono-num mt-1 leading-tight break-words" style="color:var(--ons-text-main)">${seeCost ? S().rp(persediaanAwalRp) : (Math.max(0, invStatus.currentStockUnits - pembelianQty + terjualQty) + ' unit')}</div>
+            <div class="text-[10.5px]" style="color:var(--ons-text-soft)">Awal rentang</div>
           </div>
 
-          <div class="ons-dash-stat-tile flex-col items-start gap-1 p-3">
-            <div class="flex items-center justify-between w-full">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-sky-600">(+) Pembelian</span>
-              <span class="w-6 h-6 rounded-lg bg-sky-500/10 text-sky-600 flex items-center justify-center text-xs font-bold">+</span>
+          <div class="ons-dash-stat-tile ons-dash-flow-card flex-col items-start gap-1 p-3.5 border-t-2 border-t-sky-500">
+            <div class="flex items-center justify-between w-full gap-1">
+              <span class="text-[10.5px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">(+) Pembelian</span>
+              <span class="w-6 h-6 rounded-lg bg-sky-500/12 text-sky-600 dark:text-sky-400 flex items-center justify-center text-xs font-bold shrink-0">+</span>
             </div>
-            <div class="text-base font-extrabold font-mono-num text-sky-600 mt-1">${fmtCard(pembelianRp, pembelianQty)}</div>
-            <div class="text-[10px]" style="color:var(--ons-text-soft)">${pembelianQty} unit masuk</div>
+            <div class="text-[15px] font-extrabold font-mono-num text-sky-600 dark:text-sky-400 mt-1 leading-tight break-words">${fmtCard(pembelianRp, pembelianQty)}</div>
+            <div class="text-[10.5px]" style="color:var(--ons-text-soft)">${pembelianQty} unit masuk</div>
           </div>
 
-          <div class="ons-dash-stat-tile flex-col items-start gap-1 p-3">
-            <div class="flex items-center justify-between w-full">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">(-) Terjual POS</span>
-              <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xs font-bold">-</span>
+          <div class="ons-dash-stat-tile ons-dash-flow-card flex-col items-start gap-1 p-3.5 border-t-2 border-t-emerald-500">
+            <div class="flex items-center justify-between w-full gap-1">
+              <span class="text-[10.5px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">(-) Terjual POS</span>
+              <span class="w-6 h-6 rounded-lg bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">&minus;</span>
             </div>
-            <div class="text-base font-extrabold font-mono-num text-emerald-600 mt-1">${fmtCard(terjualRp, terjualQty)}</div>
-            <div class="text-[10px]" style="color:var(--ons-text-soft)">${terjualQty} unit keluar</div>
+            <div class="text-[15px] font-extrabold font-mono-num text-emerald-600 dark:text-emerald-400 mt-1 leading-tight break-words">${fmtCard(terjualRp, terjualQty)}</div>
+            <div class="text-[10.5px]" style="color:var(--ons-text-soft)">${terjualQty} unit keluar</div>
           </div>
 
-          <div class="ons-dash-stat-tile flex-col items-start gap-1 p-3">
-            <div class="flex items-center justify-between w-full">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600">(&plusmn;) Opname</span>
-              <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center text-xs font-bold">&plusmn;</span>
+          <div class="ons-dash-stat-tile ons-dash-flow-card flex-col items-start gap-1 p-3.5 border-t-2 border-t-amber-500">
+            <div class="flex items-center justify-between w-full gap-1">
+              <span class="text-[10.5px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">(&plusmn;) Opname</span>
+              <span class="w-6 h-6 rounded-lg bg-amber-500/12 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-bold shrink-0">&plusmn;</span>
             </div>
-            <div class="text-base font-extrabold font-mono-num text-amber-600 mt-1">${fmtCard(penyesuaianRp, penyesuaianQty)}</div>
-            <div class="text-[10px]" style="color:var(--ons-text-soft)">${penyesuaianQty >= 0 ? '+' : ''}${penyesuaianQty} unit selisih</div>
+            <div class="text-[15px] font-extrabold font-mono-num text-amber-600 dark:text-amber-400 mt-1 leading-tight break-words">${fmtCard(penyesuaianRp, penyesuaianQty)}</div>
+            <div class="text-[10.5px]" style="color:var(--ons-text-soft)">${penyesuaianQty >= 0 ? '+' : ''}${penyesuaianQty} unit selisih</div>
           </div>
 
-          <div class="ons-dash-stat-tile flex-col items-start gap-1 p-3">
-            <div class="flex items-center justify-between w-full">
-              <span class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--ons-text-soft)">(&plusmn;) Mutasi Lain</span>
-              <span class="w-6 h-6 rounded-lg bg-slate-500/10 text-slate-600 flex items-center justify-center text-xs font-bold">&sim;</span>
+          <div class="ons-dash-stat-tile ons-dash-flow-card flex-col items-start gap-1 p-3.5 border-t-2 border-t-purple-500">
+            <div class="flex items-center justify-between w-full gap-1">
+              <span class="text-[10.5px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">(&plusmn;) Mutasi Lain</span>
+              <span class="w-6 h-6 rounded-lg bg-purple-500/12 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-bold shrink-0">&sim;</span>
             </div>
-            <div class="text-base font-extrabold font-mono-num mt-1">${fmtCard(mutasiLainRp, mutasiLainQty)}</div>
-            <div class="text-[10px]" style="color:var(--ons-text-soft)">${mutasiLainQty >= 0 ? '+' : ''}${mutasiLainQty} unit internal</div>
+            <div class="text-[15px] font-extrabold font-mono-num mt-1 leading-tight break-words" style="color:var(--ons-text-main)">${fmtCard(mutasiLainRp, mutasiLainQty)}</div>
+            <div class="text-[10.5px]" style="color:var(--ons-text-soft)">${mutasiLainQty >= 0 ? '+' : ''}${mutasiLainQty} unit internal</div>
           </div>
 
-          <div class="ons-dash-stat-tile flex-col items-start gap-1 p-3 border-blue-500/30" style="background:rgba(0,102,254,0.03)">
-            <div class="flex items-center justify-between w-full">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-blue-600">(=) Saldo Akhir</span>
-              <span class="w-6 h-6 rounded-lg bg-blue-500 text-white flex items-center justify-center text-xs font-bold">=</span>
+          <div class="ons-dash-stat-tile ons-dash-flow-card flex-col items-start gap-1 p-3.5 border-t-2 border-t-blue-600 ring-1 ring-blue-500/20" style="background:rgba(0,102,254,0.04)">
+            <div class="flex items-center justify-between w-full gap-1">
+              <span class="text-[10.5px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">(=) Saldo Akhir</span>
+              <span class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">=</span>
             </div>
-            <div class="text-base font-extrabold font-mono-num text-blue-600 mt-1">${seeCost ? S().rp(persediaanAkhirRp) : (invStatus.currentStockUnits + ' unit')}</div>
-            <div class="text-[10px]" style="color:var(--ons-text-soft)">Valuasi stok saat ini</div>
+            <div class="text-[15px] font-extrabold font-mono-num text-blue-600 dark:text-blue-400 mt-1 leading-tight break-words">${seeCost ? S().rp(persediaanAkhirRp) : (invStatus.currentStockUnits + ' unit')}</div>
+            <div class="text-[10.5px]" style="color:var(--ons-text-soft)">Valuasi stok saat ini</div>
           </div>
         </div>
 
@@ -3970,14 +4015,15 @@
 
       <!-- Prioritas Restock Defecta -->
       ${defectaList.length ? `<div class="ons-card overflow-hidden">
-        <div class="ons-dash-status-head" style="background:rgba(245,158,11,0.12);color:#b45309">
-          <span class="flex items-center gap-1.5 font-bold">
+        <div class="ons-dash-status-head bg-amber-500/10 text-amber-700 dark:text-amber-300">
+          <span class="flex items-center gap-2 font-bold">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span>Prioritas Pengadaan Defecta (Stok &le; Batas Minimum)</span>
           </span>
           ${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="text-xs font-bold underline">Buka Buku Defecta &rsaquo;</button>` : ''}
         </div>
         <div class="ons-table-wrap">
-          <table class="ons-table text-xs">
+          <table class="ons-table ons-table-compact text-xs">
             <thead><tr><th>Nama Obat</th><th>Golongan</th><th>Stok Saat Ini</th><th>Batas Min &bull; Max</th><th>Saran Pesan</th><th>Aksi</th></tr></thead>
             <tbody>
               ${defectaList.map((o) => {
@@ -3990,7 +4036,7 @@
                   <td>${S().bpomBadge(o.golongan_bpom || 'BEBAS')}</td>
                   <td><span class="badge-bpom ${stok === 0 ? 'bpom-keras' : 'bpom-prekursor'} font-mono-num font-bold">${stok} ${S().esc(o.satuan_terkecil || 'pcs')}</span></td>
                   <td class="font-mono-num">${minVal !== null ? minVal : '-'} &bull; ${maxVal !== null ? maxVal : '-'}</td>
-                  <td class="font-mono-num font-extrabold text-blue-600">${saran} ${S().esc(o.satuan_terkecil || 'pcs')}</td>
+                  <td class="font-mono-num font-extrabold text-blue-600 dark:text-blue-400">${saran} ${S().esc(o.satuan_terkecil || 'pcs')}</td>
                   <td>${canDefecta ? `<button type="button" onclick="navigateView('faktur','defecta')" class="ons-btn ons-btn-primary text-xs py-1 px-2.5 font-bold">Pesan SP &rarr;</button>` : '-'}</td>
                 </tr>`;
               }).join('')}

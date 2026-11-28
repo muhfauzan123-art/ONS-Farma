@@ -7311,3 +7311,60 @@ html.dark #obatWizardForm .ons-wiz-card {
     padding-right: 0.75rem;
   }
 }
+
+/* ==========================================================================
+   17. Penyempurnaan Tampilan 4 Sub-Menu Dashboard Enterprise (v18.85.0)
+   ========================================================================== */
+.ons-dash-hero {
+  padding: 1.15rem 1.4rem;
+}
+.ons-table.ons-table-compact th,
+.ons-table.ons-table-compact td {
+  padding: 0.54rem 0.65rem;
+}
+.ons-dash-flow-card {
+  justify-content: space-between;
+  min-height: 92px;
+}
+
+@media (max-width: 767px) {
+  .ons-dash-hero {
+    padding: 1rem 1rem !important;
+  }
+  .ons-dash-tab-nav.ons-dash-4tab-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+    gap: 0.45rem !important;
+    padding: 0.45rem !important;
+  }
+  .ons-dash-tab-nav.ons-dash-4tab-bar > .ons-dash-4tab-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.38rem !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  .ons-dash-tab-nav.ons-dash-4tab-bar > .ons-dash-4tab-list[data-count="3"] > .ons-dash-tab-btn:first-child {
+    grid-column: span 2 / span 2;
+  }
+  .ons-dash-tab-nav.ons-dash-4tab-bar .ons-dash-tab-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 44px !important;
+    padding: 0.48rem 0.55rem !important;
+    font-size: 0.75rem !important;
+    white-space: normal !important;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .ons-dash-tab-nav.ons-dash-4tab-bar > .ons-dash-4tab-meta {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--ons-border, rgba(226, 232, 240, 0.85));
+  }
+}
