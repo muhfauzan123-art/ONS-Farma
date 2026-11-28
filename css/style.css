@@ -7368,3 +7368,115 @@ html.dark #obatWizardForm .ons-wiz-card {
     border-top: 1px solid var(--ons-border, rgba(226, 232, 240, 0.85));
   }
 }
+
+/* ==========================================================================
+   18. Penyempurnaan Global Seluruh 16 Menu & 79 Sub-Menu (v18.86.0)
+   ========================================================================== */
+
+/* Icon box Sub-Hero lebih bersih & selaras Light / Dark Mode */
+.ons-subhero-banner .w-12.h-12.rounded-2xl {
+  width: 2.65rem !important;
+  height: 2.65rem !important;
+  border-radius: 0.85rem !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 3px 10px -2px rgba(15, 23, 42, 0.08) !important;
+}
+html.dark .ons-subhero-banner .w-12.h-12.rounded-2xl {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Tampilkan deskripsi singkat Sub-Hero (.ons-subhero-banner p) di desktop agar ruang seimbang */
+@media (min-width: 768px) {
+  .ons-subhero-banner p {
+    display: block !important;
+    font-size: 0.76rem;
+    line-height: 1.4;
+    color: var(--ons-text-soft, #64748B);
+    margin: 0.18rem 0 0 0;
+  }
+}
+
+/* Kepadatan tabel operasional optimal di layar laptop (<= 1440px) */
+@media (min-width: 768px) and (max-width: 1440px) {
+  .ons-table th {
+    padding: 0.62rem 0.68rem !important;
+    font-size: 0.69rem !important;
+  }
+  .ons-table td {
+    padding: 0.6rem 0.68rem !important;
+  }
+  .ons-status-badge,
+  .ons-badge,
+  .badge-bpom {
+    padding: 0.19rem 0.56rem !important;
+    font-size: 0.695rem !important;
+  }
+}
+
+.ons-table th.text-right {
+  text-align: right !important;
+}
+
+/* Sub-tab ribbon semua modul punya scroll-padding & tepi nyaman */
+.ons-dash-tab-nav > div:first-child {
+  scroll-padding-inline: 1rem;
+  scroll-behavior: smooth;
+}
+.ons-quick-pills-ribbon {
+  scroll-padding-inline: 0.75rem;
+}
+
+/* Mobile-First (<640px): 48 kokpit kartu di seluruh 16 menu jadi grid 2 kolom ringkas + POS & Search rapi */
+@media (max-width: 639px) {
+  .ons-cockpit-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.55rem !important;
+  }
+  .ons-cockpit-strip > .ons-cockpit-card:last-child:nth-child(odd) {
+    grid-column: span 2 / span 2;
+  }
+  .ons-cockpit-card {
+    padding: 0.68rem 0.78rem !important;
+    border-radius: 0.9rem !important;
+  }
+  .ons-cockpit-card .flex.items-center.justify-between,
+  .ons-cockpit-label {
+    flex-wrap: wrap !important;
+    gap: 0.25rem 0.4rem !important;
+    align-items: flex-start !important;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.25rem;
+  }
+  .ons-cockpit-val {
+    font-size: 1rem !important;
+    line-height: 1.25;
+  }
+  .ons-cockpit-card .truncate,
+  .ons-cockpit-card .whitespace-nowrap,
+  .ons-cockpit-val {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
+  }
+  .ons-md-search-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+  .ons-pos-total-box {
+    width: 100% !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0.62rem 0.95rem !important;
+  }
+  .ons-pos-bar-tool {
+    min-height: 38px !important;
+    justify-content: center;
+  }
+}

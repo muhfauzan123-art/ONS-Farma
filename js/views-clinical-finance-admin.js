@@ -3070,22 +3070,18 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       </div>
     </div>`;
 
-    const filterToolbar = `<div class="ons-card p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <span class="font-bold text-slate-700 dark:text-slate-300">Periode Evaluasi:</span>
-          <input type="date" class="ons-input text-xs w-36" value="${S().esc(financeDateFrom)}" onchange="window.setFinanceDateRange(this.value, '${S().esc(financeDateTo)}')"/>
-          <span class="text-slate-400">s/d</span>
-          <input type="date" class="ons-input text-xs w-36" value="${S().esc(financeDateTo)}" onchange="window.setFinanceDateRange('${S().esc(financeDateFrom)}', this.value)"/>
-          ${(financeDateFrom || financeDateTo) ? `<button type="button" onclick="window.setFinanceDateRange('','')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Reset</button>` : ''}
-          <div class="hidden sm:flex items-center gap-1.5 ml-2">
-            <button type="button" onclick="const now=new Date();const ym=now.toISOString().slice(0,7);window.setFinanceDateRange(ym+'-01',now.toISOString().slice(0,10))" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-[11px] font-semibold">Bulan Ini</button>
-            <button type="button" onclick="const d=new Date().toISOString().slice(0,10);window.setFinanceDateRange(d,d)" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-[11px] font-semibold">Hari Ini</button>
-          </div>
-        </div>
+    const filterToolbar = `<div class="ons-card p-3.5 sm:p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2.5 text-xs">
         <div class="flex flex-wrap items-center gap-2">
-          <button type="button" onclick="window.exportFinancePnlExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Export P&amp;L (.xlsx)</button>
-          <button type="button" onclick="window.navigateView('sipnap','keuangan')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">📑 Laporan Lengkap SIPNAP &rarr;</button>
+          <span class="font-bold text-slate-700 dark:text-slate-300">Periode Evaluasi:</span>
+          <input type="date" aria-label="Tanggal Awal Evaluasi" class="ons-input text-xs w-[134px] sm:w-36" value="${S().esc(financeDateFrom)}" onchange="window.setFinanceDateRange(this.value, '${S().esc(financeDateTo)}')"/>
+          <span class="text-slate-400">s/d</span>
+          <input type="date" aria-label="Tanggal Akhir Evaluasi" class="ons-input text-xs w-[134px] sm:w-36" value="${S().esc(financeDateTo)}" onchange="window.setFinanceDateRange('${S().esc(financeDateFrom)}', this.value)"/>
+          ${(financeDateFrom || financeDateTo) ? `<button type="button" onclick="window.setFinanceDateRange('','')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Reset</button>` : ''}
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="const now=new Date();const ym=now.toISOString().slice(0,7);window.setFinanceDateRange(ym+'-01',now.toISOString().slice(0,10))" class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-[11px] font-semibold">Bulan Ini</button>
+          <button type="button" onclick="const d=new Date().toISOString().slice(0,10);window.setFinanceDateRange(d,d)" class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-[11px] font-semibold">Hari Ini</button>
         </div>
       </div>
     </div>`;
@@ -4192,8 +4188,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       pageDesc = 'Evaluasi kinerja finansial apotek, margin laba kotor POS, estimasi laba bersih operasional, dan nilai persediaan obat.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.exportFinancePnlExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Export P&amp;L</button>
-        <button type="button" onclick="window.navigateView('sipnap','keuangan')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">📑 Laporan Lengkap &rarr;</button>
+        <button type="button" onclick="window.exportFinancePnlExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export P&amp;L</button>
+        <button type="button" onclick="window.navigateView('sipnap','keuangan')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Laporan Lengkap &rarr;</button>
         ${syncBtn}
       `;
     } else if (financeTab === 'akun-kas') {
@@ -4203,7 +4199,7 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`;
       headerActions = `
         <button type="button" onclick="window.openAddAkunKasModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">+ Akun Kas Baru</button>
-        <button type="button" onclick="window.exportAkunKasExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Export Excel</button>
+        <button type="button" onclick="window.exportAkunKasExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Excel</button>
         ${syncBtn}
       `;
     } else if (financeTab === 'jurnal') {
@@ -4213,8 +4209,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/><path d="M6 14h6"/></svg>`;
       headerActions = `
         <button type="button" onclick="window.openCreateKasTransaksiModal('KELUAR')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">+ Transaksi Kas</button>
-        <button type="button" onclick="window.lockCurrentFinancePeriod()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 text-red-600 font-semibold">🔒 Kunci Periode</button>
-        <button type="button" onclick="window.exportBukuKasExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Export Excel</button>
+        <button type="button" onclick="window.lockCurrentFinancePeriod()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 text-red-600 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Kunci Periode</button>
+        <button type="button" onclick="window.exportBukuKasExcel()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Excel</button>
         ${syncBtn}
       `;
     } else if (financeTab === 'piutang') {
@@ -4224,8 +4220,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>`;
       headerActions = `
         <button type="button" onclick="window.openCatatPiutangModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">+ Catat Piutang</button>
-        <button type="button" onclick="window.openImportPiutangInfoModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📥 Import</button>
-        <button type="button" onclick="window.exportPiutangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Export Excel</button>
+        <button type="button" onclick="window.openImportPiutangInfoModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import</button>
+        <button type="button" onclick="window.exportPiutangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Excel</button>
         ${syncBtn}
       `;
     } else if (financeTab === 'hutang') {
@@ -4235,8 +4231,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`;
       headerActions = `
         <button type="button" onclick="window.openCatatUtangModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">+ Catat Utang</button>
-        <button type="button" onclick="window.openImportUtangInfoModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📥 Import</button>
-        <button type="button" onclick="window.exportUtangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📗 Export Excel</button>
+        <button type="button" onclick="window.openImportUtangInfoModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import</button>
+        <button type="button" onclick="window.exportUtangUsahaExcel('list')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Excel</button>
         ${syncBtn}
       `;
     } else if (financeTab === 'pajak') {
@@ -4245,8 +4241,8 @@ _Semoga cepat sembuh. Hubungi Apotek ONS Farma bila ada pertanyaan lebih lanjut.
       pageDesc = 'Perhitungan PPN keluaran vs masukan faktur PBF, PPh Final PP 55/2022, generator slip gaji staf apotek berbasis presensi riil.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.openPengaturanGajiModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">⚙️ Atur Tarif</button>
-        <button type="button" onclick="window.openPayrollCalculatorModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 font-bold">📊 Rekap Payroll</button>
+        <button type="button" onclick="window.openPengaturanGajiModal()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Atur Tarif</button>
+        <button type="button" onclick="window.openPayrollCalculatorModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-3 font-bold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Rekap Payroll</button>
         ${syncBtn}
       `;
     }
@@ -7992,7 +7988,7 @@ S. prn 3 dd 1 tab</textarea>
       pageDesc = 'Klasifikasi obat Kelas A (Fast Moving 70%), Kelas B (20%), Kelas C (10%) untuk proteksi modal kerja, plus audit rasionalitas antibiotik WHO.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.syncParetoToDefecta()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">🛒 Sinkron ke Defecta</button>
+        <button type="button" onclick="window.syncParetoToDefecta()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Sinkron ke Defecta</button>
         ${syncBtn}
       `;
     } else if (sipnapTab === 'deadstock') {
@@ -8001,7 +7997,7 @@ S. prn 3 dd 1 tab</textarea>
       pageDesc = 'Deteksi dini batch obat mengendap tanpa mutasi keluar, evaluasi modal tertahan, promo bundling/retur PBF, dan rekap lost sales pasien.';
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>`;
       headerActions = `
-        <button type="button" onclick="window.navigateView('faktur','retur')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold">📦 Retur PBF &rarr;</button>
+        <button type="button" onclick="window.navigateView('faktur','retur')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Retur PBF &rarr;</button>
         ${syncBtn}
       `;
     }
@@ -10028,7 +10024,7 @@ S. prn 3 dd 1 tab</textarea>
                     <td class="text-xs text-slate-700 dark:text-slate-300">${S().esc(u.jabatan || dRole)}</td>
                     <td>
                       <span class="badge-bpom ${isAktif ? 'bpom-bebas' : 'bpom-keras'}">
-                        ${isAktif ? '🟢 AKTIF' : '⛔ NONAKTIF'}
+                        ${isAktif ? 'AKTIF' : 'NONAKTIF'}
                       </span>
                     </td>
                     <td class="text-right">
@@ -12689,7 +12685,7 @@ S. prn 3 dd 1 tab</textarea>
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/15 pb-4">
             <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-500/25 text-sky-100 border border-sky-300/40 shadow-sm backdrop-blur-md">
-                <span>🛡️</span> Fasilitas Pelayanan Kefarmasian Resmi Kemenkes RI
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Fasilitas Pelayanan Kefarmasian Resmi Kemenkes RI
               </span>
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/25 text-emerald-200 border border-emerald-400/40">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SIA &amp; SIPA Terverifikasi DPMPTSP
@@ -12700,15 +12696,15 @@ S. prn 3 dd 1 tab</textarea>
             <div class="flex flex-wrap items-center gap-2">
               <!-- Live Color Palette Switcher -->
               <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/45 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/25 shadow-inner">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-sky-200 mr-0.5">🎨 Tema:</span>
-                <button type="button" onclick="window.setProfileTheme('royal-blue')" data-theme="royal-blue" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'royal-blue' ? 'bg-gradient-to-r from-[#0066FE] to-[#0284C7] text-white shadow-md ring-1 ring-white/70' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Medical Royal Blue & Cyan">🔵 Biru</button>
-                <button type="button" onclick="window.setProfileTheme('clean-light')" data-theme="clean-light" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'clean-light' ? 'bg-white text-slate-900 shadow-md ring-1 ring-white' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Clean Light White">⚪ Terang</button>
-                <button type="button" onclick="window.setProfileTheme('fresh-emerald')" data-theme="fresh-emerald" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'fresh-emerald' ? 'bg-emerald-500 text-white shadow-md ring-1 ring-emerald-200' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Fresh Emerald Farmasi">🟢 Hijau</button>
-                <button type="button" onclick="window.setProfileTheme('midnight-navy')" data-theme="midnight-navy" class="prof-theme-btn px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'midnight-navy' ? 'bg-slate-700 text-white shadow-md ring-1 ring-sky-300/70' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Deep Midnight Navy">⚫ Gelap</button>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-sky-200 mr-0.5">Tema:</span>
+                <button type="button" onclick="window.setProfileTheme('royal-blue')" data-theme="royal-blue" class="prof-theme-btn inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'royal-blue' ? 'bg-gradient-to-r from-[#0066FE] to-[#0284C7] text-white shadow-md ring-1 ring-white/70' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Medical Royal Blue & Cyan"><span class="w-2 h-2 rounded-full bg-sky-400"></span>Biru</button>
+                <button type="button" onclick="window.setProfileTheme('clean-light')" data-theme="clean-light" class="prof-theme-btn inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'clean-light' ? 'bg-white text-slate-900 shadow-md ring-1 ring-white' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Clean Light White"><span class="w-2 h-2 rounded-full bg-slate-200 border border-slate-400"></span>Terang</button>
+                <button type="button" onclick="window.setProfileTheme('fresh-emerald')" data-theme="fresh-emerald" class="prof-theme-btn inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'fresh-emerald' ? 'bg-emerald-500 text-white shadow-md ring-1 ring-emerald-200' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Fresh Emerald Farmasi"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Hijau</button>
+                <button type="button" onclick="window.setProfileTheme('midnight-navy')" data-theme="midnight-navy" class="prof-theme-btn inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${curTheme === 'midnight-navy' ? 'bg-slate-700 text-white shadow-md ring-1 ring-sky-300/70' : 'bg-white/10 text-white/90 hover:bg-white/20'}" title="Deep Midnight Navy"><span class="w-2 h-2 rounded-full bg-slate-900 border border-slate-400"></span>Gelap</button>
               </div>
 
               <a id="profGmapsLink" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(merged.latitude || '-5.147665')},${encodeURIComponent(merged.longitude || '119.432732')}" class="ons-btn text-white text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 backdrop-blur-md bg-white/15 hover:bg-white/25 border border-white/25 transition-all shadow-sm" title="Buka Titik Koordinat GPS di Google Maps">
-                <span>🗺️ Google Maps</span>
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Google Maps</span>
               </a>
               <button type="button" onclick="window.submitStoreProfileForm()" class="ons-btn text-white text-xs font-bold px-4 py-1.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/40 transition-all hover:scale-105 active:scale-95" style="background:linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
@@ -12728,8 +12724,8 @@ S. prn 3 dd 1 tab</textarea>
                   </div>
                   ${canEdit ? `
                     <input type="file" id="profLogoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('logo', this)"/>
-                    <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Logo Usaha">
-                      📸
+                    <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all" title="Klik untuk Ganti Logo Usaha">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </button>
                   ` : ''}
                 </div>
@@ -12741,8 +12737,8 @@ S. prn 3 dd 1 tab</textarea>
                   </div>
                   ${canEdit ? `
                     <input type="file" id="profFotoUploadInput" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="window.handleProfileImageUpload('foto', this)"/>
-                    <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all text-[11px]" title="Klik untuk Ganti Foto Pemilik / APJ">
-                      👤
+                    <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white/90 transition-all" title="Klik untuk Ganti Foto Pemilik / APJ">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </button>
                   ` : ''}
                 </div>
@@ -12760,14 +12756,17 @@ S. prn 3 dd 1 tab</textarea>
                   ${merged.slogan ? `"${S().esc(merged.slogan)}"` : 'Sahabat Kesehatan & Pelayanan Farmasi Keluarga'}
                 </p>
                 <div class="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-100">
-                  <span id="profHeroSiaPill" class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-mono-num font-semibold">
-                    📜 ${merged.no_sia ? 'SIA: ' + S().esc(merged.no_sia) : 'Izin SIA belum diisi'}
+                  <span id="profHeroSiaPill" class="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-mono-num font-semibold">
+                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span id="profHeroSiaText">${merged.no_sia ? 'SIA: ' + S().esc(merged.no_sia) : 'Izin SIA belum diisi'}</span>
                   </span>
-                  <span class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-medium">
-                    👨‍⚕️ APJ: <b>${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</b>
+                  <span class="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-medium">
+                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>APJ: <b>${S().esc(merged.nama_pemilik || 'Apoteker Penanggung Jawab')}</b></span>
                   </span>
-                  <span id="profHeroJamPill" class="inline-flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-medium">
-                    🕒 ${S().esc(merged.jam_operasional || '07:30 - 22:00 WITA')}
+                  <span id="profHeroJamPill" class="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-0.5 rounded-md border border-white/20 font-medium">
+                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>${S().esc(merged.jam_operasional || '07:30 - 22:00 WITA')}</span>
                   </span>
                 </div>
               </div>
@@ -12776,11 +12775,11 @@ S. prn 3 dd 1 tab</textarea>
             <!-- Tombol Cepat Media & Reset -->
             ${canEdit ? `<div class="flex flex-wrap items-center gap-2 shrink-0 md:flex-col md:items-end">
               <div class="flex items-center gap-1.5">
-                <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 font-semibold shadow-sm">
-                  📸 Upload Logo Usaha
+                <button type="button" onclick="document.getElementById('profLogoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 font-semibold shadow-sm inline-flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Upload Logo Usaha
                 </button>
-                <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-blue-500/25 hover:bg-blue-500/40 text-blue-200 border border-blue-400/40 font-semibold shadow-sm">
-                  👤 Upload Foto APJ
+                <button type="button" onclick="document.getElementById('profFotoUploadInput').click()" class="ons-btn text-[11px] px-3 py-1.5 rounded-xl bg-blue-500/25 hover:bg-blue-500/40 text-blue-200 border border-blue-400/40 font-semibold shadow-sm inline-flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Upload Foto APJ
                 </button>
               </div>
               ${(fotoUrl || logoUrl) ? `<div class="flex items-center gap-2 text-[10.5px] pt-1">
@@ -13857,9 +13856,9 @@ S. prn 3 dd 1 tab</textarea>
           <button type="button" onclick="window.testPrintEditedStruk()" class="ons-btn ons-btn-ghost text-xs">Uji Browser</button>
           <button type="button" onclick="window.saveStrukTemplateServer()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Template</button>
         ` : (settingsTab === 'vault' ? `
-          <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold">💾 Unduh Backup JSON</button>
-          <button type="button" onclick="window.runDbAuditAndRepair(true)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && dbAuditState.dryRun ? '⏳ Memindai DB...' : 'Pindai DB'}</button>
-          <button type="button" onclick="window.runDbAuditAndRepair(false)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-emerald text-xs font-bold ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && !dbAuditState.dryRun ? '⏳ Memperbaiki DB...' : 'Perbaiki DB'}</button>
+          <button type="button" onclick="window.runQuickBackupNow()" class="ons-btn ons-btn-primary text-xs font-bold"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Unduh Backup JSON</button>
+          <button type="button" onclick="window.runDbAuditAndRepair(true)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && dbAuditState.dryRun ? 'Memindai DB...' : 'Pindai DB'}</button>
+          <button type="button" onclick="window.runDbAuditAndRepair(false)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-emerald text-xs font-bold ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && !dbAuditState.dryRun ? 'Memperbaiki DB...' : 'Perbaiki DB'}</button>
         ` : `
           <button type="button" onclick="window.submitAuditSystemForm()" class="ons-btn ons-btn-emerald text-xs font-bold">Simpan Sistem Audit</button>
         `)))));
@@ -13899,12 +13898,12 @@ S. prn 3 dd 1 tab</textarea>
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Zona Waktu Apotek</span>
-              <span class="ons-cockpit-val text-blue-600 truncate text-base">${S().esc(merged.zona_waktu || 'Asia/Makassar (WITA)')}</span>
+              <span class="ons-cockpit-val text-blue-600 text-sm leading-snug break-words">${S().esc(merged.zona_waktu || 'Asia/Makassar (WITA)')}</span>
               
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Status Pajak Toko</span>
-              <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(pkpLabel)}</span>
+              <span class="ons-cockpit-val text-purple-600 text-sm leading-snug break-words">${S().esc(pkpLabel)}</span>
               
             </div>
           </div>`;
@@ -13965,12 +13964,12 @@ S. prn 3 dd 1 tab</textarea>
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">APJ Penanggung Jawab</span>
-              <span class="ons-cockpit-val text-sky-600 truncate text-base">${S().esc(apjAcc.nama_lengkap)}</span>
+              <span class="ons-cockpit-val text-sky-600 text-sm leading-snug break-words">${S().esc(apjAcc.nama_lengkap)}</span>
               
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Kasir Pelaksana</span>
-              <span class="ons-cockpit-val text-emerald-600 truncate text-base">${S().esc(kasirAcc.nama_lengkap)}</span>
+              <span class="ons-cockpit-val text-emerald-600 text-sm leading-snug break-words">${S().esc(kasirAcc.nama_lengkap)}</span>
               
             </div>
             <div class="ons-cockpit-card">
@@ -13983,7 +13982,7 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-cockpit-strip">
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Template Struk Aktif</span>
-              <span class="ons-cockpit-val text-purple-600 truncate text-base">${S().esc(curTpl.nama || 'Standar 58mm')}</span>
+              <span class="ons-cockpit-val text-purple-600 text-sm leading-snug break-words">${S().esc(curTpl.nama || 'Standar 58mm')}</span>
               
             </div>
             <div class="ons-cockpit-card">
@@ -14006,7 +14005,7 @@ S. prn 3 dd 1 tab</textarea>
           return `<div class="ons-cockpit-strip">
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Status Backup Terakhir</span>
-              <span class="ons-cockpit-val ${bk.isOverdue ? 'text-amber-600' : 'text-emerald-600'} truncate text-base">${S().esc(bk.label)}</span>
+              <span class="ons-cockpit-val ${bk.isOverdue ? 'text-amber-600' : 'text-emerald-600'} text-sm leading-snug break-words">${S().esc(bk.label)}</span>
               
             </div>
             <div class="ons-cockpit-card">
@@ -14039,7 +14038,7 @@ S. prn 3 dd 1 tab</textarea>
             </div>
             <div class="ons-cockpit-card">
               <span class="ons-cockpit-label">Apoteker PJ (APJ)</span>
-              <span class="ons-cockpit-val text-sky-600 truncate text-base">${S().esc(auditDraft.apj_nama || prof.nama_apj || 'apt. Dewi Kartika')}</span>
+              <span class="ons-cockpit-val text-sky-600 text-sm leading-snug break-words">${S().esc(auditDraft.apj_nama || prof.nama_apj || 'apt. Dewi Kartika')}</span>
               
             </div>
             <div class="ons-cockpit-card">
@@ -14220,7 +14219,7 @@ S. prn 3 dd 1 tab</textarea>
           </div>
           ${tpls.length > 1 ? `<div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
             <span class="text-[11px] font-semibold shrink-0" style="color:var(--ons-text-soft)">Template Tersimpan:</span>
-            <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-[11px] sm:text-xs w-full sm:w-96 max-w-full">
+            <select onchange="window.selectStrukTemplateIdx(this.value)" class="ons-select text-[11px] sm:text-xs w-full sm:w-auto sm:min-w-[360px] max-w-full">
               ${tpls.map((t, idx) => `<option value="${idx}" ${idx === safeIdx ? 'selected' : ''}>${S().esc(t.nama || t.kode)} (${Number(t.lebar_mm) === 80 ? '80mm' : '58mm'})</option>`).join('')}
             </select>
           </div>` : ''}
@@ -14231,7 +14230,7 @@ S. prn 3 dd 1 tab</textarea>
             <input id="strukTplKode" type="hidden" value="${S().esc(curTpl.kode || 'STRUK_POS_58MM')}"/>
             <div>
               <label class="font-semibold text-[11px] block mb-1" style="color:var(--ons-text-soft)">Nama Template Struk</label>
-              <input id="strukTplNama" class="ons-input text-[11px] sm:text-xs font-medium" value="${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}"/>
+              <textarea id="strukTplNama" rows="2" class="ons-textarea text-[11px] sm:text-xs font-medium leading-snug min-h-[44px] py-1.5 w-full">${S().esc(curTpl.nama || 'Struk Kasir Standar 58mm')}</textarea>
             </div>
             <div>
               <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -14433,26 +14432,26 @@ S. prn 3 dd 1 tab</textarea>
           </div>
           <div class="xl:col-span-4">
             <label class="font-semibold block mb-1">Catatan Evaluasi Audit</label>
-            <input id="audSysCatatan" class="ons-input text-xs w-full" value="${S().esc(draft.catatan_audit || '')}" oninput="window.updateAuditHeaderField('catatan_audit', this.value)" placeholder="Ringkasan temuan CDOB hari ini"/>
+            <textarea id="audSysCatatan" rows="2" class="ons-textarea text-xs w-full min-h-[46px] py-1.5 leading-snug" oninput="window.updateAuditHeaderField('catatan_audit', this.value)" placeholder="Ringkasan temuan CDOB hari ini">${S().esc(draft.catatan_audit || '')}</textarea>
           </div>
         </div>
 
         <div class="ons-table-wrap">
           <table class="ons-table">
-            <thead><tr><th style="width:48px">Cek</th><th>Butir Pemeriksaan Audit (Dapat Diedit)</th><th style="width:120px">Penanggung Jawab</th><th>Keterangan / Hasil Verifikasi</th><th style="width:60px">Hapus</th></tr></thead>
+            <thead><tr><th style="width:44px">Cek</th><th>Butir Pemeriksaan Audit (Dapat Diedit)</th><th style="width:110px">Penanggung Jawab</th><th>Keterangan / Hasil Verifikasi</th><th style="width:52px">Hapus</th></tr></thead>
             <tbody>
               ${items.map((it, idx) => `<tr>
-                <td><input type="checkbox" ${it.checked ? 'checked' : ''} onchange="window.updateAuditChecklistRow(${idx}, 'checked', this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer"/></td>
-                <td><input ${canEditAuditMeta ? '' : 'readonly'} class="ons-input text-xs" value="${S().esc(it.label || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'label', this.value)"/></td>
-                <td>
+                <td class="align-top pt-2.5"><input type="checkbox" ${it.checked ? 'checked' : ''} onchange="window.updateAuditChecklistRow(${idx}, 'checked', this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer"/></td>
+                <td><textarea ${canEditAuditMeta ? '' : 'readonly'} rows="2" class="ons-textarea text-xs leading-snug min-h-[46px] py-1.5 w-full" oninput="window.updateAuditChecklistRow(${idx}, 'label', this.value)">${S().esc(it.label || '')}</textarea></td>
+                <td class="align-top pt-2">
                   <select ${canEditAuditMeta ? '' : 'disabled'} class="ons-select text-xs" onchange="window.updateAuditChecklistRow(${idx}, 'pj_role', this.value)">
                     <option value="APJ" ${(it.pj_role || 'APJ') === 'APJ' ? 'selected' : ''}>APJ</option>
                     <option value="Kasir" ${it.pj_role === 'Kasir' ? 'selected' : ''}>Kasir</option>
                     <option value="Pemilik" ${it.pj_role === 'Pemilik' ? 'selected' : ''}>Pemilik</option>
                   </select>
                 </td>
-                <td><input class="ons-input text-xs" value="${S().esc(it.keterangan || '')}" oninput="window.updateAuditChecklistRow(${idx}, 'keterangan', this.value)" placeholder="Catatan pemeriksaan..."/></td>
-                <td>${canEditAuditMeta && items.length > 1 ? `<button type="button" onclick="window.removeAuditChecklistRow(${idx})" aria-label="Hapus butir audit" class="ons-btn ons-btn-danger text-sm font-bold w-8 h-8 !min-h-[32px] !p-0 inline-flex items-center justify-center rounded-lg">&times;</button>` : '-'}</td>
+                <td><textarea rows="2" class="ons-textarea text-xs leading-snug min-h-[46px] py-1.5 w-full" oninput="window.updateAuditChecklistRow(${idx}, 'keterangan', this.value)" placeholder="Catatan pemeriksaan...">${S().esc(it.keterangan || '')}</textarea></td>
+                <td class="align-top pt-2">${canEditAuditMeta && items.length > 1 ? `<button type="button" onclick="window.removeAuditChecklistRow(${idx})" aria-label="Hapus butir audit" class="ons-btn ons-btn-danger text-sm font-bold w-8 h-8 !min-h-[32px] !p-0 inline-flex items-center justify-center rounded-lg">&times;</button>` : '-'}</td>
               </tr>`).join('')}
             </tbody>
           </table>
@@ -14471,7 +14470,7 @@ S. prn 3 dd 1 tab</textarea>
       <div class="ons-card p-5 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="font-bold text-sm">Log Audit Immutable (Dengan Redaksi Secret Otomatis)</h3>
-          <input class="ons-input text-xs w-64" value="${S().esc(auditLogSearchQ)}" oninput="window.setAuditLogSearch(this.value)" placeholder="Cari aksi, user, nama APJ/kasir, entitas..."/>
+          <input class="ons-input text-xs w-full sm:w-64" value="${S().esc(auditLogSearchQ)}" oninput="window.setAuditLogSearch(this.value)" placeholder="Cari aksi, user, nama APJ/kasir, entitas..."/>
         </div>
         <div class="ons-table-wrap">
           <table class="ons-table">
@@ -14482,7 +14481,7 @@ S. prn 3 dd 1 tab</textarea>
                 <td class="text-xs"><b>${S().esc(a.user_id)}</b> (${S().esc(a.role)})</td>
                 <td><span class="badge-bpom bpom-terbatas">${S().esc(a.aksi)}</span></td>
                 <td class="font-mono-num text-xs">${S().esc(a.entitas)} #${S().esc(a.entitas_id)}</td>
-                <td class="font-mono-num text-[11px] max-w-md truncate">${S().esc(a.diff_sesudah_json)}</td>
+                <td class="font-mono-num text-[11px] max-w-[240px] sm:max-w-[280px] break-all whitespace-normal leading-snug">${S().esc(a.diff_sesudah_json)}</td>
               </tr>`).join('') : '<tr><td colspan="5" class="text-center py-6" style="color:var(--ons-text-soft)">Tidak ada log audit yang sesuai pencarian.</td></tr>'}
             </tbody>
           </table>
@@ -14561,8 +14560,8 @@ S. prn 3 dd 1 tab</textarea>
     if (heroTitleEl) heroTitleEl.textContent = namaUsaha || 'Apotek ONS Farma';
     const heroSloganEl = document.getElementById('profHeroSlogan');
     if (heroSloganEl) heroSloganEl.textContent = slogan ? `"${slogan}"` : 'Sahabat Kesehatan & Pelayanan Farmasi Keluarga';
-    const heroSiaEl = document.getElementById('profHeroSiaPill');
-    if (heroSiaEl) heroSiaEl.textContent = '📜 SIA: ' + (noSia || '-');
+    const heroSiaEl = document.getElementById('profHeroSiaText') || document.getElementById('profHeroSiaPill');
+    if (heroSiaEl) heroSiaEl.textContent = noSia ? ('SIA: ' + noSia) : 'Izin SIA belum diisi';
   };
 
   global.refreshBankCardMockup = () => {

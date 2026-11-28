@@ -481,18 +481,18 @@
             <span class="text-xs font-bold mr-1" style="color:var(--ons-text-soft)">Filter Segmen:</span>
             ${[
               { id: 'SEMUA', label: 'Semua Kontak', count: contacts.length },
-              { id: 'TERAPI_RUTIN', label: '💊 Terapi Rutin / PRB', count: terapiRutinCount },
-              { id: 'ONLINE', label: '🌐 Resep Online / WA', count: contacts.filter(c => normSeg(c.segmen) === 'ONLINE').length },
-              { id: 'UMUM', label: '🛍️ Pelanggan Umum', count: contacts.filter(c => normSeg(c.segmen) === 'UMUM').length }
+              { id: 'TERAPI_RUTIN', label: '<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span><span>Terapi Rutin / PRB</span>', count: terapiRutinCount },
+              { id: 'ONLINE', label: '<span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span><span>Resep Online / WA</span>', count: contacts.filter(c => normSeg(c.segmen) === 'ONLINE').length },
+              { id: 'UMUM', label: '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span><span>Pelanggan Umum</span>', count: contacts.filter(c => normSeg(c.segmen) === 'UMUM').length }
             ].map((sg) => `
               <button type="button" onclick="ONSViewsOmniCrm.setCrmSeg('${sg.id}')" class="ons-btn ${crmFilterSeg === sg.id ? 'ons-btn-primary' : 'ons-btn-ghost'} text-xs py-1.5 px-3 flex items-center gap-1.5">
-                <span>${sg.label}</span>
+                ${sg.label}
                 <span class="px-1.5 py-0.2 rounded-full text-[10px] ${crmFilterSeg === sg.id ? 'bg-white/20' : 'bg-slate-500/10'} font-mono-num">${sg.count}</span>
               </button>
             `).join('')}
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <input class="ons-input w-64 text-xs" value="${S().esc(crmSearchQ)}" oninput="ONSViewsOmniCrm.setCrmSearch(this.value)" placeholder="Cari nama pasien / nomor 08 / 62..."/>
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <input class="ons-input w-full sm:w-64 text-xs" value="${S().esc(crmSearchQ)}" oninput="ONSViewsOmniCrm.setCrmSearch(this.value)" placeholder="Cari nama pasien / nomor 08 / 62..."/>
           </div>
         </div>
 
@@ -1248,7 +1248,7 @@
           </button>
           <button type="button" onclick="ONSViewsOmniCrm.setCrmTab('tele-refill')" class="ons-dash-tab-btn ${crmTab === 'tele-refill' ? 'is-active' : ''}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-            <span>💊 Pantauan Obat Rutin (Tele-Refill H-3)</span>
+            <span>Pantauan Obat Rutin (Tele-Refill H-3)</span>
             <span class="ons-dash-tab-badge font-mono-num ${teleUrgent > 0 ? 'bg-rose-500 text-white font-bold animate-pulse' : ''}">${teleUrgent || teleList.length}</span>
           </button>
         </div>

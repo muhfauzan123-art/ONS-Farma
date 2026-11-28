@@ -766,24 +766,27 @@
       <!-- MAIN CONTROL CONTAINER -->
       <div class="ons-card p-3 sm:p-4 space-y-3.5">
         <!-- 1. SEGMENTED VIEW SWITCHER & BULK ACTIONS -->
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3" style="border-color:var(--ons-border)">
-          <div class="inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-inner">
-            <button type="button" onclick="window.setSpViewMode('PESANAN')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'PESANAN' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
-              <span>📋 Daftar Pesanan (SP)</span>
+        <div class="flex flex-wrap items-center justify-between gap-2.5 border-b pb-3" style="border-color:var(--ons-border)">
+          <div class="flex flex-wrap sm:inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-inner gap-1">
+            <button type="button" onclick="window.setSpViewMode('PESANAN')" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'PESANAN' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>Daftar Pesanan (SP)</span>
               <span class="text-[10px] py-0.2 px-1.5 rounded-full font-mono-num ${spViewMode === 'PESANAN' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}">${rows.length}</span>
             </button>
-            <button type="button" onclick="window.setSpViewMode('PRODUK')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'PRODUK' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
-              <span>💊 Rincian Produk</span>
+            <button type="button" onclick="window.setSpViewMode('PRODUK')" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'PRODUK' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+              <span>Rincian Produk</span>
               <span class="text-[10px] py-0.2 px-1.5 rounded-full font-mono-num ${spViewMode === 'PRODUK' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}">${flatItems.length}</span>
             </button>
-            <button type="button" onclick="window.setSpViewMode('SUPPLIER')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'SUPPLIER' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
-              <span>🏢 Rekap Supplier</span>
+            <button type="button" onclick="window.setSpViewMode('SUPPLIER')" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-xl font-bold transition-all ${spViewMode === 'SUPPLIER' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M13 8h4"/><path d="M13 12h4"/><path d="M13 16h4"/></svg>
+              <span>Rekap Supplier</span>
               <span class="text-[10px] py-0.2 px-1.5 rounded-full font-mono-num ${spViewMode === 'SUPPLIER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}">${uniquePbfCount}</span>
             </button>
           </div>
 
           <div class="flex items-center gap-2">
-            ${spSelectedIds.size ? `<button type="button" onclick="window.deleteBulkSelectedSp()" class="ons-btn text-xs py-1.5 px-3 text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700 font-bold rounded-xl shadow-sm hover:bg-rose-100 transition" title="Hapus seluruh SP yang dicentang">🗑 Hapus ${spSelectedIds.size} SP Terpilih</button>` : ''}
+            ${spSelectedIds.size ? `<button type="button" onclick="window.deleteBulkSelectedSp()" class="ons-btn text-xs py-1.5 px-3 text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700 font-bold rounded-xl shadow-sm hover:bg-rose-100 transition" title="Hapus seluruh SP yang dicentang"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Hapus ${spSelectedIds.size} SP Terpilih</button>` : ''}
             <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 text-xs shadow-xs">
               <span class="text-slate-400">Terpilih:</span>
               <b class="font-mono-num text-slate-800 dark:text-slate-200">${spSelectedIds.size} SP</b>
@@ -794,72 +797,81 @@
           </div>
         </div>
 
-        <!-- 2. QUICK FILTER PILLS HORIZONTAL RIBBON (v18.54.0) -->
+        <!-- 2. QUICK FILTER PILLS HORIZONTAL RIBBON (v18.86.0) -->
         <div class="ons-quick-pills-ribbon" role="toolbar" aria-label="Filter Cepat Status dan Golongan SP">
           <button type="button" onclick="window.setSpQuickPill('STATUS', 'SEMUA')" class="ons-quick-pill ${(spFilterStatus === 'SEMUA' && spFilterGol === 'SEMUA') ? 'is-active' : ''}">
             <span>Semua Pesanan</span>
             <span class="ons-quick-pill-badge">${allSp.length}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('STATUS', 'MENUNGGU')" class="ons-quick-pill tone-warn ${spFilterStatus === 'MENUNGGU' ? 'is-active' : ''}">
-            <span>⏳ Menunggu PBF</span>
+            <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+            <span>Menunggu PBF</span>
             <span class="ons-quick-pill-badge">${waitingCnt}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('STATUS', 'SEBAGIAN')" class="ons-quick-pill ${spFilterStatus === 'SEBAGIAN' ? 'is-active' : ''}">
-            <span>📦 Diterima Sebagian</span>
+            <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
+            <span>Diterima Sebagian</span>
             <span class="ons-quick-pill-badge">${partialCnt}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('STATUS', 'SELESAI')" class="ons-quick-pill tone-emerald ${spFilterStatus === 'SELESAI' ? 'is-active' : ''}">
-            <span>✅ Selesai Diterima</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span>Selesai Diterima</span>
             <span class="ons-quick-pill-badge">${doneCnt}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('GOL', 'REGULER')" class="ons-quick-pill tone-emerald ${spFilterGol === 'REGULER' ? 'is-active' : ''}">
-            <span>🟢 Reguler Bebas</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span>Reguler Bebas</span>
             <span class="ons-quick-pill-badge">${regulerCnt}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('GOL', 'PREKURSOR')" class="ons-quick-pill tone-warn ${spFilterGol === 'PREKURSOR' ? 'is-active' : ''}">
-            <span>🟡 Prekursor</span>
+            <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+            <span>Prekursor</span>
             <span class="ons-quick-pill-badge">${prekursorCnt}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('GOL', 'OOT')" class="ons-quick-pill tone-warn ${spFilterGol === 'OOT' ? 'is-active' : ''}">
-            <span>🟠 OOT</span>
+            <span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+            <span>OOT</span>
             <span class="ons-quick-pill-badge">${ootCnt}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('GOL', 'PSIKOTROPIKA')" class="ons-quick-pill tone-danger ${spFilterGol === 'PSIKOTROPIKA' ? 'is-active' : ''}">
-            <span>🟣 Psikotropika</span>
+            <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+            <span>Psikotropika</span>
             <span class="ons-quick-pill-badge">${psikotropikaCnt}</span>
           </button>
           <button type="button" onclick="window.setSpQuickPill('GOL', 'NARKOTIKA')" class="ons-quick-pill tone-danger ${spFilterGol === 'NARKOTIKA' ? 'is-active' : ''}">
-            <span>🔴 Narkotika</span>
+            <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+            <span>Narkotika</span>
             <span class="ons-quick-pill-badge">${narkotikaCnt}</span>
           </button>
           <button type="button" onclick="window.openSpDraftModal()" class="ons-quick-pill">
-            <span>📝 Draft Tersimpan</span>
+            <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Draft Tersimpan</span>
             <span class="ons-quick-pill-badge">${drafts.length}</span>
           </button>
         </div>
 
         <!-- 3. SEARCH & FILTER CONTROLS TOOLBAR -->
         <div class="flex flex-wrap items-center justify-between gap-2.5">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+          <div class="flex flex-wrap items-center gap-2 w-full md:flex-1 md:min-w-0">
             <!-- Search Input with icon -->
-            <div class="relative flex-1 min-w-[200px]">
+            <div class="relative w-full sm:flex-1 sm:min-w-[200px]">
               <input class="ons-input text-xs pl-8 pr-7 py-2 w-full rounded-xl" placeholder="Cari No. SP, nama PBF, nama produk..." value="${S().esc(spSearchQ)}" oninput="window.setSpSearchQ(this.value)"/>
               <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
               ${spSearchQ ? `<button type="button" onclick="window.setSpSearchQ('');" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600 p-0.5" title="Bersihkan pencarian">&times;</button>` : ''}
             </div>
 
             <!-- PBF Supplier Filter -->
-            <select aria-label="Filter Supplier PBF" class="ons-select text-xs py-2 rounded-xl w-44" onchange="window.setSpFilterPbf(this.value)">
+            <select aria-label="Filter Supplier PBF" class="ons-select text-xs py-2 rounded-xl w-full sm:w-44" onchange="window.setSpFilterPbf(this.value)">
               <option value="">Semua PBF (${(st.supplierPbf || []).length})</option>
               ${(st.supplierPbf || []).map((p) => `<option value="${S().esc(p.id_pbf)}" ${spFilterPbf === p.id_pbf ? 'selected' : ''}>${S().esc(p.nama_pbf)}</option>`).join('')}
             </select>
 
             <!-- Date Range Picker with Quick Presets -->
-            <div class="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs shadow-xs">
-              <span class="text-[11px] pl-1 text-slate-400">📅</span>
-              <input type="date" aria-label="Filter Tanggal SP Dari" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-[142px] text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateFrom)}" onchange="window.setSpDateRange('from', this.value)"/>
+            <div class="w-full sm:w-auto inline-flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs shadow-xs">
+              <svg class="w-3.5 h-3.5 ml-1 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input type="date" aria-label="Filter Tanggal SP Dari" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-[126px] sm:w-[142px] text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateFrom)}" onchange="window.setSpDateRange('from', this.value)"/>
               <span class="text-slate-300 dark:text-slate-600">&ndash;</span>
-              <input type="date" aria-label="Filter Tanggal SP Sampai" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-[142px] text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateTo)}" onchange="window.setSpDateRange('to', this.value)"/>
+              <input type="date" aria-label="Filter Tanggal SP Sampai" class="border-0 bg-transparent text-xs p-1 focus:ring-0 w-[126px] sm:w-[142px] text-slate-700 dark:text-slate-200 font-mono-num" value="${S().esc(spDateTo)}" onchange="window.setSpDateRange('to', this.value)"/>
               ${(spDateFrom || spDateTo) ? `<button type="button" onclick="window.setSpQuickDate('ALL')" class="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 font-bold" title="Reset Rentang Tanggal">&times;</button>` : ''}
             </div>
 

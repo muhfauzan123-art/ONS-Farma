@@ -885,48 +885,55 @@
         const chillerCount = allMeta.filter((m) => String(m.o.suhu_simpan || '').toUpperCase().includes('CHILLER') || String(m.o.suhu_simpan || '').includes('2-8')).length;
 
         return `<div class="ons-card p-3 space-y-2.5">
-        <!-- Quick Filter Pills Ribbon (v18.52.0) -->
+        <!-- Quick Filter Pills Ribbon (v18.86.0) -->
         <div class="ons-quick-pills-ribbon" role="toolbar" aria-label="Filter Cepat Katalog Obat">
           <button type="button" onclick="window.setMasterQuickPill('SEMUA')" class="ons-quick-pill ${(!masterFilterGol && masterFilterStok === 'SEMUA' && masterFilterSuhu === 'SEMUA') ? 'is-active' : ''}">
             <span>Semua Produk</span>
             <span class="ons-quick-pill-badge">${totalCount}</span>
           </button>
           <button type="button" onclick="window.setMasterQuickPill('STOK', 'KRITIS')" class="ons-quick-pill tone-warn ${(masterFilterStok === 'KRITIS') ? 'is-active' : ''}">
-            <span>⚠️ Stok Menipis</span>
+            <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+            <span>Stok Menipis</span>
             <span class="ons-quick-pill-badge">${kritisCount}</span>
           </button>
           <button type="button" onclick="window.setMasterQuickPill('STOK', 'NEAR_ED')" class="ons-quick-pill tone-danger ${(masterFilterStok === 'NEAR_ED') ? 'is-active' : ''}">
-            <span>⏳ Near-ED &le;90h</span>
+            <svg class="w-3.5 h-3.5 shrink-0 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Near-ED &le;90h</span>
             <span class="ons-quick-pill-badge">${nearEdCount}</span>
           </button>
           <button type="button" onclick="window.setMasterQuickPill('GOL', 'KERAS')" class="ons-quick-pill tone-danger ${(masterFilterGol === 'KERAS') ? 'is-active' : ''}">
-            <span>🔴 Obat Keras</span>
+            <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+            <span>Obat Keras</span>
             <span class="ons-quick-pill-badge">${golCounts['KERAS'] || 0}</span>
           </button>
           <button type="button" onclick="window.setMasterQuickPill('GOL', 'TERBATAS')" class="ons-quick-pill ${(masterFilterGol === 'TERBATAS') ? 'is-active' : ''}">
-            <span>🔵 Bebas Terbatas</span>
+            <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
+            <span>Bebas Terbatas</span>
             <span class="ons-quick-pill-badge">${golCounts['TERBATAS'] || 0}</span>
           </button>
           <button type="button" onclick="window.setMasterQuickPill('GOL', 'BEBAS')" class="ons-quick-pill tone-emerald ${(masterFilterGol === 'BEBAS') ? 'is-active' : ''}">
-            <span>🟢 Obat Bebas</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span>Obat Bebas</span>
             <span class="ons-quick-pill-badge">${golCounts['BEBAS'] || 0}</span>
           </button>
           <button type="button" onclick="window.setMasterQuickPill('STOK', 'HABIS')" class="ons-quick-pill tone-danger ${(masterFilterStok === 'HABIS') ? 'is-active' : ''}">
-            <span>❌ Stok 0</span>
+            <span class="w-2 h-2 rounded-full bg-red-600 shrink-0"></span>
+            <span>Stok 0</span>
             <span class="ons-quick-pill-badge">${habisCount}</span>
           </button>
           <button type="button" onclick="window.setMasterQuickPill('SUHU', 'CHILLER')" class="ons-quick-pill ${(masterFilterSuhu === 'CHILLER') ? 'is-active' : ''}">
-            <span>❄️ Chiller</span>
+            <svg class="w-3.5 h-3.5 shrink-0 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>
+            <span>Chiller</span>
             <span class="ons-quick-pill-badge">${chillerCount}</span>
           </button>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <div class="flex-1 min-w-[210px]">
+          <div class="w-full sm:flex-1 sm:min-w-[210px]">
             ${_renderSearchInputWithClear('mdObatSearchInp', 'mdObatClearBtn', masterSearchQ, 'Cari Nama Dagang, Zat Aktif, Golongan, KFA, NIE, Rak, PBF...', 'window.setMasterSearch', 'window.clearMasterObatSearch')}
           </div>
-          <select id="masterGolSelect" class="ons-select text-xs font-semibold py-1.5 px-2.5 min-w-[190px] max-w-[240px]" onchange="window.setMasterGol(this.value)" aria-label="Filter Kategori / Golongan BPOM">
-            <option value="" ${!masterFilterGol ? 'selected' : ''}>🏷️ Semua Kategori (${totalCount})</option>
+          <select id="masterGolSelect" class="ons-select text-xs font-semibold py-1.5 px-2.5 w-full sm:w-auto sm:min-w-[190px] sm:max-w-[240px]" onchange="window.setMasterGol(this.value)" aria-label="Filter Kategori / Golongan BPOM">
+            <option value="" ${!masterFilterGol ? 'selected' : ''}>Semua Kategori (${totalCount})</option>
             ${golDefList.filter((g) => g.id).map((g) => {
               const cnt = golCounts[g.id] || 0;
               return `<option value="${g.id}" ${masterFilterGol === g.id ? 'selected' : ''}>${g.icon} ${g.label} (${cnt})</option>`;
@@ -1142,16 +1149,11 @@
     return `<div class="space-y-3 ons-view-enter">
       <div class="ons-card p-3 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2.5">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+          <div class="w-full sm:flex-1 sm:min-w-[220px]">
             ${_renderSearchInputWithClear('mdSupplierSearchInp', 'mdSupplierClearBtn', supplierSearchQ, 'Cari nama PBF, izin CDOB, NPWP, kontak WA, atau sales...', 'window.setMasterSupplierSearch', 'window.clearMasterSupplierSearch')}
-            <div class="flex flex-wrap items-center gap-1">
-              ${['SEMUA', 'AKTIF', 'NONAKTIF'].map((stOpt) => `<button type="button" onclick="window.setMasterSupplierStatus('${stOpt}')" class="ons-subnav-chip ${supplierStatusFilter === stOpt ? 'active' : ''}">${stOpt === 'SEMUA' ? 'Semua Status' : (stOpt === 'AKTIF' ? '🟢 Aktif' : '🔴 Nonaktif')}</button>`).join('')}
-            </div>
           </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
-            <button type="button" onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Import Kontak PBF"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
-            <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Supplier Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Supplier</span></button>
+          <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            ${['SEMUA', 'AKTIF', 'NONAKTIF'].map((stOpt) => `<button type="button" onclick="window.setMasterSupplierStatus('${stOpt}')" class="ons-subnav-chip ${supplierStatusFilter === stOpt ? 'active' : ''}">${stOpt === 'SEMUA' ? 'Semua Status' : (stOpt === 'AKTIF' ? '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1"></span>Aktif' : '<span class="w-2 h-2 rounded-full bg-rose-500 inline-block mr-1"></span>Nonaktif')}</button>`).join('')}
           </div>
         </div>
       </div>
@@ -1313,21 +1315,16 @@
     return `<div class="space-y-3 ons-view-enter">
       <div class="ons-card p-3 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2.5">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+          <div class="w-full sm:flex-1 sm:min-w-[220px]">
             ${_renderSearchInputWithClear('mdPelangganSearchInp', 'mdPelangganClearBtn', pelangganSearchQ, 'Cari nama pelanggan, No. RM, No. WA, penyakit kronis, atau alergi...', 'window.setMasterPelangganSearch', 'window.clearMasterPelangganSearch')}
-            <div class="flex flex-wrap items-center gap-1">
-              ${[
-                { k: 'SEMUA', label: 'Semua Pasien' },
-                { k: 'MEMBER_RUTIN', label: '⭐ Member Rutin' },
-                { k: 'UMUM', label: 'Umum' },
-                { k: 'ALERGI', label: '⚠️ Alergi' }
-              ].map((stOpt) => `<button type="button" onclick="window.setMasterPelangganProg('${stOpt.k}')" class="ons-subnav-chip ${pelangganProgFilter === stOpt.k ? 'active' : ''}">${stOpt.label}</button>`).join('')}
-            </div>
           </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
-            <button type="button" onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Import Kontak Pelanggan"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
-            <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Pelanggan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Pelanggan</span></button>
+          <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            ${[
+              { k: 'SEMUA', label: 'Semua Pasien' },
+              { k: 'MEMBER_RUTIN', label: '<span class="w-2 h-2 rounded-full bg-sky-500 inline-block mr-1"></span>Member Rutin' },
+              { k: 'UMUM', label: 'Umum' },
+              { k: 'ALERGI', label: '<span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span>Alergi' }
+            ].map((stOpt) => `<button type="button" onclick="window.setMasterPelangganProg('${stOpt.k}')" class="ons-subnav-chip ${pelangganProgFilter === stOpt.k ? 'active' : ''}">${stOpt.label}</button>`).join('')}
           </div>
         </div>
       </div>
@@ -1470,21 +1467,16 @@
     return `<div class="space-y-3 ons-view-enter">
       <div class="ons-card p-3 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2.5">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+          <div class="w-full sm:flex-1 sm:min-w-[220px]">
             ${_renderSearchInputWithClear('mdDokterSearchInp', 'mdDokterClearBtn', dokterSearchQ, 'Cari nama dokter, spesialisasi, No. SIP/STR, atau klinik/RS mitra...', 'window.setMasterDokterSearch', 'window.clearMasterDokterSearch')}
-            <div class="flex flex-wrap items-center gap-1">
-              ${[
-                { k: 'SEMUA', label: 'Semua Dokter' },
-                { k: 'AKTIF', label: '🟢 Aktif' },
-                { k: 'SPESIALIS', label: '🩺 Spesialis' },
-                { k: 'NONAKTIF', label: '🔴 Nonaktif' }
-              ].map((stOpt) => `<button type="button" onclick="window.setMasterDokterStatus('${stOpt.k}')" class="ons-subnav-chip ${dokterStatusFilter === stOpt.k ? 'active' : ''}">${stOpt.label}</button>`).join('')}
-            </div>
           </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
-            <button type="button" onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Import Kontak Dokter"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
-            <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Dokter Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Dokter</span></button>
+          <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            ${[
+              { k: 'SEMUA', label: 'Semua Dokter' },
+              { k: 'AKTIF', label: '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1"></span>Aktif' },
+              { k: 'SPESIALIS', label: '<span class="w-2 h-2 rounded-full bg-sky-500 inline-block mr-1"></span>Spesialis' },
+              { k: 'NONAKTIF', label: '<span class="w-2 h-2 rounded-full bg-rose-500 inline-block mr-1"></span>Nonaktif' }
+            ].map((stOpt) => `<button type="button" onclick="window.setMasterDokterStatus('${stOpt.k}')" class="ons-subnav-chip ${dokterStatusFilter === stOpt.k ? 'active' : ''}">${stOpt.label}</button>`).join('')}
           </div>
         </div>
       </div>
@@ -1600,14 +1592,8 @@
   function _renderMasterSalesSubTab() {
     return `<div class="space-y-3 ons-view-enter">
       <div class="ons-card p-3 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2.5">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
-            ${_renderSearchInputWithClear('mdSalesSearchInp', 'mdSalesClearBtn', salesSearchQ, 'Cari nama sales, kode pelayan kasir, atau nomor telepon...', 'window.setMasterSalesSearch', 'window.clearMasterSalesSearch')}
-          </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button type="button" onclick="window.renderActiveView()" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold" title="Segarkan Data"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>Sinkron</span></button>
-            <button type="button" onclick="window.openMasterSalesModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Tambah Sales / Pelayan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Sales/Pelayan</span></button>
-          </div>
+        <div class="w-full">
+          ${_renderSearchInputWithClear('mdSalesSearchInp', 'mdSalesClearBtn', salesSearchQ, 'Cari nama sales, kode pelayan kasir, atau nomor telepon...', 'window.setMasterSalesSearch', 'window.clearMasterSalesSearch')}
         </div>
       </div>
 
@@ -2506,12 +2492,12 @@
 
     const exportBtns = (fnName) => `
       <div class="ons-dd-wrap inline-block">
-        <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold">📤 Ekspor &#9662;</button>
+        <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ons-btn-ghost text-xs py-1.5 px-3 font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Ekspor &#9662;</span></button>
         <div class="ons-dd-items hidden">
           <div class="ons-float-hdr">Format Unduhan</div>
-          <button type="button" onclick="window.${fnName}('xlsx')" class="ons-float-item"><span>📗</span><span>Export Excel (.xlsx)</span></button>
-          <button type="button" onclick="window.${fnName}('csv')" class="ons-float-item"><span>📄</span><span>Export CSV</span></button>
-          <button type="button" onclick="window.${fnName}('pdf')" class="ons-float-item"><span>📕</span><span>Export PDF</span></button>
+          <button type="button" onclick="window.${fnName}('xlsx')" class="ons-float-item"><svg class="w-3.5 h-3.5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>Export Excel (.xlsx)</span></button>
+          <button type="button" onclick="window.${fnName}('csv')" class="ons-float-item"><svg class="w-3.5 h-3.5 shrink-0 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Export CSV</span></button>
+          <button type="button" onclick="window.${fnName}('pdf')" class="ons-float-item"><svg class="w-3.5 h-3.5 shrink-0 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg><span>Export PDF</span></button>
         </div>
       </div>
     `;
@@ -2531,8 +2517,8 @@
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
       headerActions = `
         <button type="button" onclick="window.openSupplierPbfModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Supplier Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Supplier Baru</span></button>
-        <button type="button" onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
-        <button type="button" onclick="window.navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📋 Buat SP</button>
+        <button type="button" onclick="window.openKontakImportModal('supplier')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
+        <button type="button" onclick="window.navigateView('faktur','sp')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg><span>Buat SP</span></button>
         ${exportBtns('exportMasterSupplier')}
         ${syncBtn}
       `;
@@ -2543,8 +2529,8 @@
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
       headerActions = `
         <button type="button" onclick="window.openMasterPelangganModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Pelanggan Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Pelanggan Baru</span></button>
-        <button type="button" onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
-        <button type="button" onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">🩺 Pantau Terapi</button>
+        <button type="button" onclick="window.openKontakImportModal('pelanggan')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
+        <button type="button" onclick="window.setMasterPelangganProg('MEMBER_RUTIN')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Pantau Terapi</span></button>
         ${exportBtns('exportMasterPelanggan')}
         ${syncBtn}
       `;
@@ -2555,8 +2541,8 @@
       dynamicIcon = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 2a2 2 0 0 0-2 2v2H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2V4a2 2 0 0 0-2-2h-2Z"/><path d="M10 12h4"/><path d="M12 10v4"/></svg>`;
       headerActions = `
         <button type="button" onclick="window.openMasterDokterModal('')" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 font-bold" title="+ Dokter Baru"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Dokter Baru</span></button>
-        <button type="button" onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">📥 Import</button>
-        <button type="button" onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold">🧾 Antrean E-Resep</button>
+        <button type="button" onclick="window.openKontakImportModal('dokter')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import</span></button>
+        <button type="button" onclick="window.navigateView('klinis','erx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5 font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg><span>Antrean E-Resep</span></button>
         ${exportBtns('exportMasterDokter')}
         ${syncBtn}
       `;
@@ -8434,27 +8420,30 @@
                 <span class="ons-quick-pill-badge">${sorted.length}</span>
               </button>
               <button type="button" onclick="window.setGudangBatchFilter('KADALUARSA')" class="ons-quick-pill tone-danger ${gudangBatchFilter === 'KADALUARSA' ? 'is-active' : ''}">
-                <span>🔴 Kadaluarsa (ED)</span>
+                <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                <span>Kadaluarsa (ED)</span>
                 <span class="ons-quick-pill-badge">${expiredCount}</span>
               </button>
               <button type="button" onclick="window.setGudangBatchFilter('KRITIS')" class="ons-quick-pill tone-warn ${gudangBatchFilter === 'KRITIS' ? 'is-active' : ''}">
-                <span>⚠️ Kritis &le;90h</span>
+                <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                <span>Kritis &le;90h</span>
                 <span class="ons-quick-pill-badge">${kritisCount}</span>
               </button>
               <button type="button" onclick="window.setGudangBatchFilter('KARANTINA')" class="ons-quick-pill tone-warn ${gudangBatchFilter === 'KARANTINA' ? 'is-active' : ''}">
-                <span>🟠 Karantina</span>
+                <span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+                <span>Karantina</span>
                 <span class="ons-quick-pill-badge">${sorted.filter(b => String(b.status_batch || '').includes('KARANTINA') || Number(b.qty_karantina || 0) > 0).length}</span>
               </button>
               <button type="button" onclick="window.setGudangBatchFilter('AMAN')" class="ons-quick-pill tone-emerald ${gudangBatchFilter === 'AMAN' ? 'is-active' : ''}">
-                <span>🟢 Stok Aman &gt;90h</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span>Stok Aman &gt;90h</span>
                 <span class="ons-quick-pill-badge">${sorted.filter(b => String(b.status_batch || 'AKTIF') === 'AKTIF' && Number(b.qty_sisa || 0) > 0 && S().daysUntil(b.tgl_kadaluarsa) > 90).length}</span>
               </button>
             </div>
           </div>
           <div class="flex flex-wrap gap-1.5">
-            <button onclick="window.exportStokKadaluarsa('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Excel</button>
-            <button onclick="window.exportStokKadaluarsa('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5">Print</button>
-            ${seeCost ? `<button onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-emerald text-xs py-1.5 px-2.5">+ Input Batch Manual</button>` : ''}
+            <button onclick="window.exportStokKadaluarsa('xlsx')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
+            <button onclick="window.exportStokKadaluarsa('pdf')" class="ons-btn ons-btn-ghost text-xs py-1.5 px-2.5"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>
           </div>
         </div>
 
@@ -9194,22 +9183,22 @@
           <div class="flex flex-wrap items-center gap-2">
             ${gudangTab === 'batch' ? `
               ${seeCost ? `<button type="button" onclick="window.openAddManualBatchModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Input Batch Manual</button>` : ''}
-              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sinkron</button>
             ` : gudangTab === 'opname' ? `
               <button type="button" onclick="window.openRiwayatOpnameModal()" class="ons-btn ons-btn-ghost text-xs">Riwayat Opname</button>
               <button type="button" onclick="window.startNewOpnameSession()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Mulai Opname</button>
             ` : gudangTab === 'penyesuaian' ? `
               <button type="button" onclick="window.openQuickAdjustmentModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Sesuaikan Stok</button>
-              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sinkron</button>
             ` : gudangTab === 'transfer' ? `
               <button type="button" onclick="window.openPindahkanStokModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Pindahkan Stok</button>
-              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sinkron</button>
             ` : gudangTab === 'kartu-stok' ? `
               <button type="button" onclick="window.exportKartuStok('xlsx')" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">Export Excel</button>
-              <button type="button" onclick="window.exportKartuStok('pdf')" class="ons-btn ons-btn-ghost text-xs font-bold">🖨️ Cetak PDF</button>
+              <button type="button" onclick="window.exportKartuStok('pdf')" class="ons-btn ons-btn-ghost text-xs font-bold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Cetak PDF</button>
             ` : gudangTab === 'coldchain' ? `
               <button type="button" onclick="window.openTambahLogSuhuModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">+ Catat Suhu Manual</button>
-              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+              <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sinkron</button>
             ` : ''}
           </div>
         </div>
@@ -12417,8 +12406,8 @@
               <div class="flex flex-wrap items-center gap-2">
                 <h2 class="text-lg sm:text-xl font-extrabold" style="color:var(--ons-text-main)">${pageFakturTitle}</h2>
                 ${fakturTab === 'sp' ? `
-                  <span class="badge-bpom bpom-bebas text-[10.5px] font-bold">✓ Standar CDOB 5 Golongan</span>
-                  <span class="badge-bpom bpom-terbatas text-[10.5px] font-bold hidden sm:inline-flex">📄 Cetak A4 Resmi ber-QR</span>
+                  <span class="badge-bpom bpom-bebas text-[10.5px] font-bold">Standar CDOB 5 Golongan</span>
+                  <span class="badge-bpom bpom-terbatas text-[10.5px] font-bold hidden sm:inline-flex">Cetak A4 Resmi ber-QR</span>
                 ` : ''}
               </div>
               ${fakturTab === 'sp' ? `
@@ -12431,16 +12420,16 @@
           <div class="flex flex-wrap items-center gap-2">
             ${fakturTab === 'rencana' ? `
               <div class="inline-flex rounded-xl p-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'RENCANA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">📋 Usulan (${allPlans.length})</button>
-                <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'DEFECTA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">📦 Defecta (${lowStockDefecta.length})</button>
+                <button type="button" onclick="window.setRencanaSubMode('RENCANA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'RENCANA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">Usulan (${allPlans.length})</button>
+                <button type="button" onclick="window.setRencanaSubMode('DEFECTA')" class="px-2.5 py-1 text-xs rounded-lg transition-all ${rencanaSubMode === 'DEFECTA' ? 'bg-white dark:bg-slate-700 font-bold text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}">Defecta (${lowStockDefecta.length})</button>
               </div>
-              <button type="button" onclick="window.openRopCalculatorModal()" class="ons-btn ons-btn-ghost text-xs">🧮 Hitung ROP</button>
+              <button type="button" onclick="window.openRopCalculatorModal()" class="ons-btn ons-btn-ghost text-xs"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>Hitung ROP</button>
               <button type="button" onclick="window.openAddPlanModal()" class="ons-btn ons-btn-ghost text-xs">+ Usulan Baru</button>
-              <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">⚡ Buat SP Otomatis</button>
+              <button type="button" onclick="window.generateSpFromDefecta()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Buat SP Otomatis</button>
             ` : fakturTab === 'sp' ? `
-              <button type="button" onclick="window.setFakturTab('rencana');window.setRencanaSubMode('DEFECTA');" class="ons-btn ons-btn-ghost text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800" title="Impor otomatis dari usulan Defecta Kritis">⚡ Defecta &rarr; SP</button>
-              <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs font-semibold">📥 Export Excel</button>
-              <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"><svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg><span>+ Surat Pesanan (SP)</span></button>
+              <button type="button" onclick="window.setFakturTab('rencana');window.setRencanaSubMode('DEFECTA');" class="ons-btn ons-btn-ghost text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800" title="Impor otomatis dari usulan Defecta Kritis"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Defecta &rarr; SP</button>
+              <button type="button" onclick="window.exportSpList('xlsx')" class="ons-btn ons-btn-ghost text-xs font-semibold"><svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Excel</button>
+              <button type="button" onclick="window.openCreateSpModal()" class="ons-btn ons-btn-primary text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"><svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg><span>Surat Pesanan (SP)</span></button>
             ` : fakturTab === 'input' ? `
               <button type="button" onclick="window.setFakturTab('faktur')" class="ons-btn ons-btn-ghost text-xs font-bold">&larr; Daftar Faktur</button>
               <button type="button" onclick="window.toggleGrnScannerPanel()" class="ons-btn ons-btn-primary text-xs font-bold shadow-sm">Upload &amp; Scan Faktur</button>

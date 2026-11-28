@@ -5462,8 +5462,8 @@
       ${subTabHeader}
 
       <!-- Shift & Multi-Cart Antrean Bar -->
-      <div class="ons-pos-bar px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5 text-xs rounded-2xl shadow-sm">
-        <div class="flex flex-wrap items-center gap-2">
+      <div class="ons-pos-bar px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs rounded-2xl shadow-sm">
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
           ${st.activeShift ? `
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
               <span class="ons-pos-live-dot"></span>
@@ -5474,7 +5474,7 @@
           ` : `
             <button type="button" onclick="window.openBukaShiftModal()" class="ons-btn ons-btn-primary text-xs py-1.5 px-3 rounded-xl shadow-sm">+ Buka Shift Kasir</button>
           `}
-          <span class="mx-1 opacity-25">|</span>
+          <span class="hidden sm:inline mx-1 opacity-25">|</span>
           ${st.carts.map((c, idx) => {
             const tabTot = (c.items || []).reduce((s, it) => s + Math.max(0, Number(it.harga_jual || 0) * Number(it.qty || 0) - Number(it.diskon_item || 0)), 0);
             return `<div class="inline-flex items-center rounded-xl overflow-hidden border transition-all" style="border-color:${idx === st.activeCartIdx ? '#0066FE' : 'var(--ons-border)'}">
@@ -5486,24 +5486,25 @@
             </div>`;
           }).join('')}
           <button type="button" onclick="window.openHoldCartModal()" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 min-h-0 h-8 rounded-xl border" style="border-color:var(--ons-border-strong)" title="Tahan transaksi pelanggan saat ini">+ Hold Antrean</button>
-          <button type="button" onclick="window.openDaftarAntreanTertahanModal()" class="ons-btn ${st.carts.length > 1 ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl" title="Lihat semua antrean pelanggan tertahan">📋 Antrean (${st.carts.length})</button>
+          <button type="button" onclick="window.openDaftarAntreanTertahanModal()" class="ons-btn ${st.carts.length > 1 ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl inline-flex items-center gap-1.5" title="Lihat semua antrean pelanggan tertahan"><svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg><span>Antrean (${st.carts.length})</span></button>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           ${offQueue.length ? `<button type="button" onclick="window.syncPosOfflineNow()" class="ons-btn ons-btn-amber text-xs py-1 px-2.5 rounded-xl font-bold">Sinkron ${offQueue.length}</button>` : ''}
           ${(() => {
             const isFocus = typeof document !== 'undefined' && document.body && document.body.classList && document.body.classList.contains('ons-pos-focus-mode');
-            return `<button type="button" onclick="window.togglePosFocusMode()" class="ons-btn ${isFocus ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl font-semibold hidden md:inline-flex" title="Sembunyikan sidebar sementara agar layar kasir lebih lega">${isFocus ? '✕ Keluar Fokus' : '⛶ Mode Fokus'}</button>`;
+            return `<button type="button" onclick="window.togglePosFocusMode()" class="ons-btn ${isFocus ? 'ons-btn-primary font-bold shadow-sm' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl font-semibold hidden md:inline-flex items-center gap-1.5" title="Sembunyikan sidebar sementara agar layar kasir lebih lega">${isFocus ? '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span>Keluar Fokus</span>' : '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg><span>Mode Fokus</span>'}</button>`;
           })()}
           <div class="ons-dd-wrap inline-block">
-            <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl font-semibold border" style="border-color:var(--ons-border-strong)" title="Laci Kas, Printer Bluetooth &amp; Shift">
-              ⚙️ Kas &amp; Printer${S().ThermalPrinter && S().ThermalPrinter.characteristic ? ' (BT Aktif)' : ''} &#9662;
+            <button type="button" onclick="window.toggleOnsDropdown(this, event)" class="ons-btn ${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'ons-btn-emerald font-bold' : 'ons-btn-ghost'} text-xs py-1 px-3 min-h-0 h-8 rounded-xl font-semibold border inline-flex items-center gap-1.5" style="border-color:var(--ons-border-strong)" title="Laci Kas, Printer Bluetooth &amp; Shift">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>Kas &amp; Printer${S().ThermalPrinter && S().ThermalPrinter.characteristic ? ' (BT Aktif)' : ''} &#9662;</span>
             </button>
             <div class="ons-dd-items hidden">
               <div class="ons-float-hdr">Operasional Laci &amp; Perangkat</div>
-              <button type="button" onclick="window.openKasMasukModal()" class="ons-float-item"><span>➕</span><span>Kas Masuk Laci</span></button>
-              <button type="button" onclick="window.openKasKeluarModal()" class="ons-float-item"><span>➖</span><span>Kas Keluar Laci</span></button>
-              <button type="button" onclick="window.handlePosPrinterBtClick()" class="ons-float-item"><span>🖨️</span><span>${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'Printer BT Terhubung (Uji/Ganti)' : 'Hubungkan Printer Thermal BT'}</span></button>
-              ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<div class="ons-float-sep"></div><button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-float-item"><span>🔒</span><span>Tutup Shift &amp; Rekap Kas</span></button>` : ''}
+              <button type="button" onclick="window.openKasMasukModal()" class="ons-float-item"><svg class="w-3.5 h-3.5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Kas Masuk Laci</span></button>
+              <button type="button" onclick="window.openKasKeluarModal()" class="ons-float-item"><svg class="w-3.5 h-3.5 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Kas Keluar Laci</span></button>
+              <button type="button" onclick="window.handlePosPrinterBtClick()" class="ons-float-item"><svg class="w-3.5 h-3.5 shrink-0 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>${S().ThermalPrinter && S().ThermalPrinter.characteristic ? 'Printer BT Terhubung (Uji/Ganti)' : 'Hubungkan Printer Thermal BT'}</span></button>
+              ${(S().canAccessSubTab && S().canAccessSubTab('pos', 'tutup-shift')) ? `<div class="ons-float-sep"></div><button type="button" onclick="navigateView('pos','tutup-shift')" class="ons-float-item"><svg class="w-3.5 h-3.5 shrink-0 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Tutup Shift &amp; Rekap Kas</span></button>` : ''}
             </div>
           </div>
         </div>
@@ -5511,20 +5512,20 @@
 
       <!-- Hero Search & Total Bar (Apotek Digital Style) -->
       <div class="ons-pos-hero-strip p-3.5 sm:p-4 rounded-2xl shadow-sm">
-        <div class="ons-pos-dropdown flex-1 min-w-[260px]">
+        <div class="ons-pos-dropdown w-full lg:flex-1 lg:min-w-[260px]">
           <div class="ons-pos-search-pill rounded-xl">
-            <span class="text-slate-400 text-base" aria-hidden="true">&#128269;</span>
-            <input id="posSearchInput" placeholder="${(global.innerWidth || 1024) < 640 ? 'Cari obat…' : '[F2] Cari nama obat, kode, zat aktif, atau scan barcode...'}" value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
+            <svg class="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="posSearchInput" placeholder="${(global.innerWidth || 1024) < 640 ? 'Cari obat atau scan barcode…' : '[F2] Cari nama obat, kode, zat aktif, atau scan barcode...'}" value="${S().esc(st.posSearchQ)}" oninput="window.onPosSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.posAddFirstMatch();}"/>
             <button id="posSearchClearBtn" type="button" onclick="window.clearPosSearchInput()" class="${String(st.posSearchQ || '').trim() ? '' : 'hidden'} px-2 py-0.5 rounded text-sm font-bold text-red-500 hover:bg-red-500/10" title="Bersihkan pencarian">&times;</button>
-            <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-xs py-1 px-3 min-h-0 h-8 rounded-lg font-bold shadow-sm" title="Scan Barcode Kamera">Scan Barcode</button>
+            <button type="button" onclick="window.startPosCameraScan()" class="ons-btn ons-btn-primary text-xs py-1 px-3 min-h-0 h-8 rounded-lg font-bold shadow-sm shrink-0" title="Scan Barcode Kamera">Scan Barcode</button>
           </div>
           <div id="posSearchDropdown" class="ons-pos-search-menu ${String(st.posSearchQ || '').trim() ? '' : 'hidden'}">${String(st.posSearchQ || '').trim() ? renderPosSearchDropdownHtml(catalog) : ''}</div>
         </div>
-        <div class="flex flex-wrap items-center gap-2.5 ml-auto">
-          <div class="flex items-center gap-1.5">
-            <button type="button" onclick="window.openRacikanModalFromPos && window.openRacikanModalFromPos()" class="ons-pos-bar-tool font-bold rounded-xl" title="Resep Dokter &amp; Obat Racikan (Compound)">&#128138; + Racikan / Resep</button>
-            <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool font-bold rounded-xl" title="Kalkulator Dosis &amp; Aturan Pakai">&#129658; Hitung Dosis</button>
-            <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool font-bold rounded-xl text-red-600 dark:text-red-400" title="Kosongkan Keranjang">&#128465; Bersihkan</button>
+        <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto lg:ml-auto">
+          <div class="grid grid-cols-3 sm:flex items-center gap-1.5 w-full sm:w-auto">
+            <button type="button" onclick="window.openRacikanModalFromPos && window.openRacikanModalFromPos()" class="ons-pos-bar-tool font-bold rounded-xl justify-center text-center inline-flex items-center gap-1" title="Resep Dokter &amp; Obat Racikan (Compound)"><svg class="w-3.5 h-3.5 shrink-0 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg><span>+ Racikan</span></button>
+            <button type="button" onclick="window.openDosageCalculatorModal && window.openDosageCalculatorModal()" class="ons-pos-bar-tool font-bold rounded-xl justify-center text-center inline-flex items-center gap-1" title="Kalkulator Dosis &amp; Aturan Pakai"><svg class="w-3.5 h-3.5 shrink-0 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg><span>Hitung Dosis</span></button>
+            <button type="button" onclick="window.openClearPosCartModal()" class="ons-pos-bar-tool font-bold rounded-xl text-red-600 dark:text-red-400 justify-center text-center inline-flex items-center gap-1" title="Kosongkan Keranjang"><svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>Bersihkan</span></button>
           </div>
           <div class="ons-pos-total-box flex flex-col items-end justify-center">
             <div class="text-[9px] uppercase tracking-wider font-extrabold text-blue-200">TOTAL TAGIHAN</div>

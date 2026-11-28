@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.85.0"/>
+  <meta name="application-version" content="v18.86.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.85.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.86.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.85.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.86.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.85.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.85.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.85.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.86.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.86.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.86.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.85.0"></script>
-  <script src="./js/struk-engine.js?v=18.85.0"></script>
-  <script src="./js/demo-engine.js?v=18.85.0"></script>
-  <script src="./js/api-turbo.js?v=18.85.0"></script>
-  <script src="./js/store.js?v=18.85.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.85.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.85.0"></script>
+  <script src="./js/config.js?v=18.86.0"></script>
+  <script src="./js/struk-engine.js?v=18.86.0"></script>
+  <script src="./js/demo-engine.js?v=18.86.0"></script>
+  <script src="./js/api-turbo.js?v=18.86.0"></script>
+  <script src="./js/store.js?v=18.86.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.86.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.86.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.85.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.85.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.85.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.85.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.85.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.85.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.86.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.86.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.86.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.86.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.86.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.86.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -492,8 +492,8 @@
         const activeTab = tabs.find((t) => t.subTab === curSub) || tabs[0] || null;
 
         const trail = activeTab
-          ? `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <span>${ONSStore.esc(item.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeTab.label)}</strong>`
-          : `<span>${ONSStore.esc(sect.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(item.label)}</strong>`;
+          ? `<span class="hidden sm:inline">${ONSStore.esc(sect.label)}</span><span class="hidden sm:inline opacity-40 mx-1">/</span><span>${ONSStore.esc(item.label)}</span> <span class="opacity-40 mx-1">/</span> <strong style="color:var(--ons-text-main)">${ONSStore.esc(activeTab.label)}</strong>`
+          : `<span class="hidden sm:inline">${ONSStore.esc(sect.label)}</span><span class="hidden sm:inline opacity-40 mx-1">/</span><strong style="color:var(--ons-text-main)">${ONSStore.esc(item.label)}</strong>`;
 
         return `<div class="flex items-center justify-between gap-2 text-xs" style="color:var(--ons-text-soft)">
           <div class="flex items-center flex-nowrap overflow-x-auto gap-1 text-[11px] sm:text-xs" style="scrollbar-width:none;-webkit-overflow-scrolling:touch;">${trail}</div>
@@ -874,7 +874,7 @@
               <button type="button" onclick="ONSStore.toggleDarkMode();window.closeMobileDrawer();renderApp();" class="ons-btn ons-btn-ghost text-xs py-2 justify-center">${st.darkMode ? svgIcon('sun', 'w-4 h-4') : svgIcon('moon', 'w-4 h-4')}<span>${st.darkMode ? 'Mode Terang' : 'Mode Malam'}</span></button>
               <button type="button" onclick="window.closeMobileDrawer();bootLoadState(true);window.toast && window.toast('Data berhasil disegarkan','ok')" class="ons-btn ons-btn-ghost text-xs py-2 justify-center"><span>↻ Segarkan</span></button>
             </div>
-            <button type="button" onclick="window.closeMobileDrawer();window.showShortcutCheatSheet && window.showShortcutCheatSheet();" class="ons-btn ons-btn-ghost ons-drawer-kbd-btn text-xs py-1.5 w-full justify-center"><span>⌨️ Pintasan Keyboard [?]</span></button>
+              <button type="button" onclick="window.closeMobileDrawer();window.showShortcutCheatSheet && window.showShortcutCheatSheet();" class="ons-btn ons-btn-ghost ons-drawer-kbd-btn text-xs py-1.5 w-full justify-center gap-1.5"><svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M7 16h10"/></svg><span>Pintasan Keyboard [?]</span></button>
             <button onclick="window.closeMobileDrawer();logoutUser();" class="ons-nav-btn ons-nav-logout-btn">${svgIcon('logout')}<span>Keluar Sesi</span></button>
           </div>
         </div>`;
@@ -1739,28 +1739,28 @@
         const isDemo = ONSApi.isDemoMode();
         const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine !== false;
         if (isDemo) {
-          return { cls: 'is-local', dot: '🟠', label: 'Mode Lokal', desc: 'Data tersimpan di perangkat ini (Mode Lokal/Demo). Gunakan Backup JSON rutin atau beralih ke Mode Live GAS.' };
+          return { cls: 'is-local', dotCls: 'bg-amber-400', label: 'Mode Lokal', desc: 'Data tersimpan di perangkat ini (Mode Lokal/Demo). Gunakan Backup JSON rutin atau beralih ke Mode Live GAS.' };
         }
         if (!isOnline) {
-          return { cls: 'is-offline', dot: '🔴', label: 'Offline (Antre)', desc: 'Koneksi internet terputus. Transaksi disimpan ke antrean offline dan otomatis disinkron saat online.' };
+          return { cls: 'is-offline', dotCls: 'bg-red-400', label: 'Offline (Antre)', desc: 'Koneksi internet terputus. Transaksi disimpan ke antrean offline dan otomatis disinkron saat online.' };
         }
-        return { cls: 'is-cloud', dot: '🟢', label: 'Cloud Sheets', desc: 'Tersambung langsung ke Google Sheets Cloud Apotek ONS Farma secara real-time.' };
+        return { cls: 'is-cloud', dotCls: 'bg-emerald-400 animate-pulse', label: 'Cloud Sheets', desc: 'Tersambung langsung ke Google Sheets Cloud Apotek ONS Farma secara real-time.' };
       };
 
       window.syncConnStatusPill = function () {
         const pill = document.getElementById('topbarConnPill');
         if (!pill) return;
         const m = window.getConnStatusMeta();
-        pill.className = 'ons-conn-pill ' + m.cls;
+        pill.className = 'ons-conn-pill ' + m.cls + ' shrink-0 hidden sm:inline-flex';
         pill.title = m.desc;
-        pill.innerHTML = `<span>${m.dot}</span><span class="hidden sm:inline">${m.label}</span>`;
+        pill.innerHTML = `<span class="w-2 h-2 rounded-full ${m.dotCls || 'bg-emerald-400'} shrink-0 inline-block"></span><span class="hidden sm:inline">${m.label}</span>`;
       };
 
       window.showConnStatusToast = function () {
         const m = window.getConnStatusMeta();
         const bk = ONSStore.getLastBackupInfo ? ONSStore.getLastBackupInfo() : null;
         const extra = bk ? (' | Backup terakhir: ' + bk.label) : '';
-        if (typeof toast === 'function') toast(m.dot + ' ' + m.label + ' — ' + m.desc + extra, m.cls === 'is-cloud' ? 'ok' : 'warn');
+        if (typeof toast === 'function') toast(m.label + ' — ' + m.desc + extra, m.cls === 'is-cloud' ? 'ok' : 'warn');
       };
       window.addEventListener('online', window.syncConnStatusPill);
       window.addEventListener('offline', window.syncConnStatusPill);
@@ -2000,9 +2000,25 @@
         void slot.offsetWidth;
         slot.classList.add('ons-view-enter');
         _enhanceSubTabBarsToDropdowns(slot);
+        if (typeof window.onsCenterActiveTabs === 'function') window.onsCenterActiveTabs(slot);
         if (typeof window.onsEnsureTableScroll === 'function') window.onsEnsureTableScroll(slot);
         if (typeof window._onsStartTableObs === 'function') window._onsStartTableObs();
         if (typeof window.updateScannerFabContext === 'function') window.updateScannerFabContext();
+      };
+
+      window.onsCenterActiveTabs = function (root) {
+        const host = root || document.getElementById('mainViewSlot');
+        if (!host || typeof requestAnimationFrame === 'undefined') return;
+        requestAnimationFrame(() => {
+          const strips = host.querySelectorAll('.ons-dash-tab-nav > div:first-child, .ons-dash-tab-nav, .ons-quick-pills-ribbon');
+          strips.forEach((sc) => {
+            if (!sc || sc.scrollWidth <= sc.clientWidth + 2) return;
+            const act = sc.querySelector('.is-active, .active, [aria-selected="true"]');
+            if (!act) return;
+            const targetLeft = Math.max(0, act.offsetLeft - (sc.clientWidth - act.offsetWidth) / 2);
+            sc.scrollLeft = targetLeft;
+          });
+        });
       };
 
       /**
@@ -2616,8 +2632,8 @@
                     <span class="font-extrabold tracking-wide text-xs sm:text-[13px] truncate">${ONSStore.esc((ONSStore.getStoreProfile && ONSStore.getStoreProfile().nama_usaha) || 'Apotek ONS Farma')}</span>
                   </div>
                   ${(() => {
-                    const cm = window.getConnStatusMeta ? window.getConnStatusMeta() : { cls: 'is-cloud', dot: '🟢', label: 'Cloud Sheets', desc: '' };
-                    return `<button id="topbarConnPill" type="button" onclick="window.showConnStatusToast()" class="ons-conn-pill ${cm.cls} shrink-0 hidden sm:inline-flex" title="${ONSStore.esc(cm.desc)}"><span>${cm.dot}</span><span>${cm.label}</span></button>`;
+                    const cm = window.getConnStatusMeta ? window.getConnStatusMeta() : { cls: 'is-cloud', dotCls: 'bg-emerald-400', label: 'Cloud Sheets', desc: '' };
+                    return `<button id="topbarConnPill" type="button" onclick="window.showConnStatusToast()" class="ons-conn-pill ${cm.cls} shrink-0 hidden sm:inline-flex" title="${ONSStore.esc(cm.desc)}"><span class="w-2 h-2 rounded-full ${cm.dotCls || 'bg-emerald-400'} shrink-0 inline-block"></span><span>${cm.label}</span></button>`;
                   })()}
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2 text-white shrink-0">
@@ -2629,9 +2645,9 @@
                     <span class="hidden sm:inline font-semibold text-white">Cari Cepat</span>
                     <kbd class="hidden md:inline ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">Ctrl+K</kbd>
                   </button>
-                  <button onclick="window.showShortcutCheatSheet && window.showShortcutCheatSheet()" aria-label="Pintasan Keyboard" class="ons-topbar-icon-btn text-xs px-2 sm:px-2.5 h-9 rounded-xl text-white hover:bg-white/20 hidden md:flex items-center gap-1 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Pintasan Keyboard (Tekan ?)">
-                    <span class="text-xs">⌨️</span>
-                    <kbd class="ml-0.5 px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">?</kbd>
+                  <button onclick="window.showShortcutCheatSheet && window.showShortcutCheatSheet()" aria-label="Pintasan Keyboard" class="ons-topbar-icon-btn text-xs px-2 sm:px-2.5 h-9 rounded-xl text-white hover:bg-white/20 hidden md:flex items-center gap-1.5 shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Pintasan Keyboard (Tekan ?)">
+                    <svg class="w-3.5 h-3.5 text-white shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M7 16h10"/></svg>
+                    <kbd class="px-1 py-0.5 text-[10px] rounded bg-white/20 border border-white/20 text-white font-mono">?</kbd>
                   </button>
                   <div id="headerAlertHost" class="relative">
                     <button onclick="window.toggleHeaderAlerts()" aria-label="Radar Notifikasi Apotek" class="ons-topbar-icon-btn w-9 h-9 rounded-xl text-white hover:bg-white/20 flex items-center justify-center relative shadow-sm transition-all" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#FFFFFF" title="Radar Notifikasi Apotek">

@@ -974,9 +974,9 @@
               '+ Catat Pemeriksaan')))
             }</button>
             ${subTab !== 'semua' ? `<button type="button" onclick="window.openPemeriksaanModal('','semua')" class="ons-btn ons-btn-emerald text-xs px-3.5 py-1.5 rounded-xl font-bold shadow-sm" title="Mulai Pemeriksaan Paket Lengkap">+ Paket 4-in-1</button>` : ''}
-            <button type="button" onclick="window.printRekapPemeriksaanA4()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Cetak Rekap Pemeriksaan Format A4">🖨️ Rekap A4</button>
-            <button type="button" onclick="window.exportPemeriksaanXlsx()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Ekspor Catatan ke Excel">📥 Export Excel</button>
-            <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server">🔄 Sinkron</button>
+            <button type="button" onclick="window.printRekapPemeriksaanA4()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Cetak Rekap Pemeriksaan Format A4"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Rekap A4</button>
+            <button type="button" onclick="window.exportPemeriksaanXlsx()" class="ons-btn ons-btn-ghost text-xs px-3 py-1.5 rounded-xl border font-semibold" style="border-color:var(--ons-border-strong)" title="Ekspor Catatan ke Excel"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Excel</button>
+            <button type="button" onclick="window.bootLoadState(true)" class="ons-btn ons-btn-ghost text-xs" title="Sinkronkan data server"><svg class="w-3.5 h-3.5 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sinkron</button>
           </div>
         </div>
       </div>`;
@@ -990,9 +990,9 @@
       <!-- Toolbar Pencarian & Filter + Tabel Riwayat -->
       <div class="ons-card p-4 sm:p-5 space-y-3.5 rounded-2xl shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-2.5">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
-            <input type="text" value="${S().esc(searchQ)}" oninput="window.setPemeriksaanSearch(this.value)" class="ons-input max-w-xs text-xs rounded-xl" placeholder="Cari pasien, No. WA, terapi, atau kode cek..."/>
-            <select onchange="window.setPemeriksaanFilter(this.value)" class="ons-select w-56 text-xs rounded-xl">
+          <div class="flex flex-wrap items-center gap-2 w-full sm:flex-1 sm:min-w-0">
+            <input type="text" value="${S().esc(searchQ)}" oninput="window.setPemeriksaanSearch(this.value)" class="ons-input w-full sm:max-w-xs text-xs rounded-xl" placeholder="Cari pasien, No. WA, terapi, atau kode cek..."/>
+            <select onchange="window.setPemeriksaanFilter(this.value)" class="ons-select w-full sm:w-56 text-xs rounded-xl">
               <option value="SEMUA" ${filterMode === 'SEMUA' ? 'selected' : ''}>Semua Status Pemeriksaan</option>
               <option value="KRISIS" ${filterMode === 'KRISIS' ? 'selected' : ''}>Prioritas Kritis / Rujuk Dokter</option>
               <option value="WASPADA" ${filterMode === 'WASPADA' ? 'selected' : ''}>Perlu Perhatian / Tinggi</option>
