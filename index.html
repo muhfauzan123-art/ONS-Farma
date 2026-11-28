@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#0050CA"/>
-  <meta name="application-version" content="v18.81.0"/>
+  <meta name="application-version" content="v18.82.0"/>
   <title>Apotek ONS Farma</title>
-  <link rel="manifest" href="./manifest.json?v=18.81.0"/>
+  <link rel="manifest" href="./manifest.json?v=18.82.0"/>
   <link rel="icon" type="image/png" href="./icons/ons-farma-app-icon.png"/>
   <link rel="apple-touch-icon" href="./icons/icon-192.png"/>
   <!-- PWA iOS Splash & Status Bar (Item #10) -->
@@ -30,33 +30,33 @@
       theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] } } }
     };
   </script>
-  <link rel="stylesheet" href="./css/style.css?v=18.81.0"/>
+  <link rel="stylesheet" href="./css/style.css?v=18.82.0"/>
 </head>
 <body>
   <div id="appRoot"></div>
   <div id="onsPrintZone" aria-hidden="true"></div>
 
   <!-- Pustaka Offline Lokal (Tanpa Dependensi Eksternal Rawan Putus) -->
-  <script src="./vendor/ons-code128.js?v=18.81.0"></script>
-  <script src="./vendor/ons-xlsx-export.js?v=18.81.0"></script>
-  <script src="./vendor/ons-xlsx-lite.js?v=18.81.0"></script>
+  <script src="./vendor/ons-code128.js?v=18.82.0"></script>
+  <script src="./vendor/ons-xlsx-export.js?v=18.82.0"></script>
+  <script src="./vendor/ons-xlsx-lite.js?v=18.82.0"></script>
 
   <!-- Core Config, Scale Turbo REST API, Thermal Printer & Sandbox Engine -->
-  <script src="./js/config.js?v=18.81.0"></script>
-  <script src="./js/struk-engine.js?v=18.81.0"></script>
-  <script src="./js/demo-engine.js?v=18.81.0"></script>
-  <script src="./js/api-turbo.js?v=18.81.0"></script>
-  <script src="./js/store.js?v=18.81.0"></script>
-  <script src="./js/invoice-scanner.js?v=18.81.0"></script>
-  <script src="./js/barcode-scanner.js?v=18.81.0"></script>
+  <script src="./js/config.js?v=18.82.0"></script>
+  <script src="./js/struk-engine.js?v=18.82.0"></script>
+  <script src="./js/demo-engine.js?v=18.82.0"></script>
+  <script src="./js/api-turbo.js?v=18.82.0"></script>
+  <script src="./js/store.js?v=18.82.0"></script>
+  <script src="./js/invoice-scanner.js?v=18.82.0"></script>
+  <script src="./js/barcode-scanner.js?v=18.82.0"></script>
 
   <!-- 17 Tampilan Layar & Sub-Menu Terstruktur Apotek Digital v18.0 -->
-  <script src="./js/views-auth-dash-pos.js?v=18.81.0"></script>
-  <script src="./js/views-procurement-pro.js?v=18.81.0"></script>
-  <script src="./js/views-inventory-procurement.js?v=18.81.0"></script>
-  <script src="./js/views-clinical-finance-admin.js?v=18.81.0"></script>
-  <script src="./js/views-pemeriksaan.js?v=18.81.0"></script>
-  <script src="./js/views-omnichannel-crm.js?v=18.81.0"></script>
+  <script src="./js/views-auth-dash-pos.js?v=18.82.0"></script>
+  <script src="./js/views-procurement-pro.js?v=18.82.0"></script>
+  <script src="./js/views-inventory-procurement.js?v=18.82.0"></script>
+  <script src="./js/views-clinical-finance-admin.js?v=18.82.0"></script>
+  <script src="./js/views-pemeriksaan.js?v=18.82.0"></script>
+  <script src="./js/views-omnichannel-crm.js?v=18.82.0"></script>
 
   <!-- Bootstrap Utama, Pohon Menu & Sub-Menu Apotek Digital (<50ms) -->
   <script>
@@ -1387,7 +1387,10 @@
               if (resData.profile.config_json && ONSStore.setStoreSettings) {
                 try {
                   const cfg = typeof resData.profile.config_json === 'string' ? JSON.parse(resData.profile.config_json) : resData.profile.config_json;
-                  if (cfg && typeof cfg === 'object') ONSStore.setStoreSettings(cfg);
+                  if (cfg && typeof cfg === 'object') {
+                    ONSStore.setStoreSettings(cfg);
+                    if (typeof ONSStore.applySyncedConfigExtras === 'function') ONSStore.applySyncedConfigExtras(cfg);
+                  }
                 } catch (_) {}
               }
             }
@@ -1515,13 +1518,14 @@
           st.user = sesNow.user;
         }
         if (typeof ONSStore.invalidateStockIndex === 'function') ONSStore.invalidateStockIndex();
+        let _syncedCfgFromBoot = null;
         if (data.store_profile && ONSStore.setStoreProfile) {
           ONSStore.setStoreProfile(data.store_profile);
           if (data.store_profile.config_json) {
             try {
               const cfg = typeof data.store_profile.config_json === 'string' ? JSON.parse(data.store_profile.config_json) : data.store_profile.config_json;
               if (cfg && typeof cfg === 'object' && ONSStore.setStoreSettings) {
-                ONSStore.setStoreSettings(cfg);
+                _syncedCfgFromBoot = ONSStore.setStoreSettings(cfg);
               }
             } catch (e) {}
           }
@@ -1558,6 +1562,9 @@
         st.masterGudang = data.master_gudang || (ONSStore.DEFAULT_MASTER_GUDANG ? ONSStore.DEFAULT_MASTER_GUDANG.slice() : []);
         st.masterKategoriPelanggan = data.master_kategori_pelanggan || (ONSStore.DEFAULT_MASTER_KAT_PELANGGAN ? ONSStore.DEFAULT_MASTER_KAT_PELANGGAN.slice() : []);
         st.masterPajak = data.master_pajak || (ONSStore.DEFAULT_MASTER_PAJAK ? ONSStore.DEFAULT_MASTER_PAJAK.slice() : []);
+        if (_syncedCfgFromBoot && typeof ONSStore.applySyncedConfigExtras === 'function') {
+          ONSStore.applySyncedConfigExtras(_syncedCfgFromBoot);
+        }
         st.stokBatch = (data.stok_batch || []).map((b) => {
           if (b && b.id_obat !== undefined && b.id_obat !== null) {
             b.id_obat = String(b.id_obat).trim();

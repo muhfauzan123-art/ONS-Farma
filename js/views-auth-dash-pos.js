@@ -8568,7 +8568,7 @@
       const trx = (st.penjualan || []).find((p) => p.no_invoice === noInvoice) || {};
       let items = [];
       try {
-        const res = await API().callApi('pos.detail', { no_invoice: noInvoice });
+        const res = await API().callApi('pos.details', { no_invoice: noInvoice });
         if (res && Array.isArray(res.items)) items = res.items;
       } catch (_) {}
       const prof = S().getStoreProfile ? S().getStoreProfile() : {};

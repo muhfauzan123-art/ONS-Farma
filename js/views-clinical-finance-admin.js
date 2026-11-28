@@ -9393,11 +9393,13 @@ S. prn 3 dd 1 tab</textarea>
     anlPoLeadTime = Math.max(1, Number(lead || 3));
     anlPoReviewPeriod = Math.max(1, Number(review || 14));
     anlPoBufferPct = Math.max(0, Number(buf || 20));
+    const poCfg = { lead: anlPoLeadTime, review: anlPoReviewPeriod, buf: anlPoBufferPct };
     try {
-      localStorage.setItem('ons_anl_po_cfg', JSON.stringify({ lead: anlPoLeadTime, review: anlPoReviewPeriod, buf: anlPoBufferPct }));
+      localStorage.setItem('ons_anl_po_cfg', JSON.stringify(poCfg));
     } catch (e) {}
+    if (typeof S().syncConfigPatch === 'function') S().syncConfigPatch({ anl_po_cfg: poCfg });
     S().closeModal();
-    global.toast('Konfigurasi PO berhasil disimpan!', 'ok');
+    global.toast('Konfigurasi PO berhasil disimpan & disinkronkan!', 'ok');
     global.renderActiveView();
   };
 
@@ -12187,6 +12189,7 @@ S. prn 3 dd 1 tab</textarea>
       const custom = getCustomRoles().filter((r) => r.id !== targetRoleId && r.name !== targetRoleId);
       customRolesList = custom;
       try { localStorage.setItem('ons_custom_roles', JSON.stringify(custom)); } catch (e) {}
+      if (typeof S().syncConfigPatch === 'function') S().syncConfigPatch({ custom_roles: custom });
       global.toast(`Peran "${targetRoleId}" dihapus!`, 'ok');
       global.renderActiveView();
     });
@@ -12475,6 +12478,7 @@ S. prn 3 dd 1 tab</textarea>
 
       customRolesList = customRoles;
       try { localStorage.setItem('ons_custom_roles', JSON.stringify(customRoles)); } catch (e) {}
+      if (typeof S().syncConfigPatch === 'function') S().syncConfigPatch({ custom_roles: customRoles });
 
       S().closeModal();
       global.toast('Peran & hak akses "' + name + '" berhasil disimpan!', 'ok');
@@ -13358,6 +13362,7 @@ S. prn 3 dd 1 tab</textarea>
     try {
       localStorage.setItem('ons_payment_channels_v1', JSON.stringify(list));
     } catch (e) {}
+    if (typeof S().syncConfigPatch === 'function') S().syncConfigPatch({ payment_channels: list });
   }
 
   global.setPaymentChannelSearch = (q) => {
@@ -14301,11 +14306,20 @@ S. prn 3 dd 1 tab</textarea>
 
       <!-- Brankas Rahasia Script Properties -->
       <div class="ons-card p-5 lg:col-span-12 space-y-3">
-        <h3 class="font-bold text-sm">Brankas Rahasia Script Properties (Read-Back Tersensor)</h3>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Brankas Rahasia Script Properties (Read-Back Tersensor)</h3>
+            ${!isOwner ? '<p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">ID Database Sheets &amp; kunci integrasi API hanya ditampilkan saat login sebagai <b>Pemilik</b>.</p>' : ''}
+          </div>
+          ${(isOwner && (secrets.DB_ID || secrets.DRIVE_FOLDER_ID)) ? `<div class="flex flex-wrap gap-2">
+            ${secrets.DB_ID ? `<a href="https://docs.google.com/spreadsheets/d/${S().esc(secrets.DB_ID)}/edit" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-xs font-bold">📊 Buka Google Sheets Database</a>` : ''}
+            ${secrets.DRIVE_FOLDER_ID ? `<a href="https://drive.google.com/drive/folders/${S().esc(secrets.DRIVE_FOLDER_ID)}" target="_blank" rel="noopener" class="ons-btn ons-btn-ghost text-xs font-semibold">📁 Buka Folder Drive Arsip</a>` : ''}
+          </div>` : ''}
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
           ${Object.keys(secrets).map((k) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg border" style="border-color:var(--ons-border)">
-            <div><b>${S().esc(k)}</b><div class="font-mono-num" style="color:var(--ons-text-soft)">${S().esc(secrets[k] || '(Belum diatur)')}</div></div>
-            <button onclick="window.promptUpdateSecret('${S().esc(k)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5">Ubah</button>
+            <div class="min-w-0"><b>${S().esc(k)}</b><div class="font-mono-num truncate" style="color:var(--ons-text-soft)">${S().esc(secrets[k] || '(Belum diatur)')}</div></div>
+            <button onclick="window.promptUpdateSecret('${S().esc(k)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 shrink-0">Ubah</button>
           </div>`).join('')}
         </div>
       </div>
@@ -14928,6 +14942,7 @@ S. prn 3 dd 1 tab</textarea>
               const cfg = typeof rawProf.config_json === 'string' ? JSON.parse(rawProf.config_json) : rawProf.config_json;
               if (cfg && typeof cfg === 'object' && S().setStoreSettings) {
                 S().setStoreSettings(cfg);
+                if (typeof S().applySyncedConfigExtras === 'function') S().applySyncedConfigExtras(cfg);
               }
             } catch (e) {}
           }
@@ -15754,15 +15769,33 @@ S. prn 3 dd 1 tab</textarea>
     if (global.toast) global.toast(`"${namaProd}" berhasil dimasukkan ke Rencana Pembelian (Defecta).`, 'ok');
   };
 
-  global.toggleUserStatus = (idUser) => {
+  global.toggleUserStatus = async (idUser) => {
     const st = S().AppState;
-    const u = (st.pengguna || []).find((x) => x.id_user === idUser);
-    if (!u) return;
-    const nextStatus = u.status_aktif === 'NONAKTIF' ? 'AKTIF' : 'NONAKTIF';
+    const pool = (settingsCache && Array.isArray(settingsCache.users) && settingsCache.users.length)
+      ? settingsCache.users
+      : (Array.isArray(st.staffDirectory) && st.staffDirectory.length ? st.staffDirectory : (st.pengguna || []));
+    const u = pool.find((x) => String(x.id_user) === String(idUser));
+    if (!u) return global.toast && global.toast('Data pengguna tidak ditemukan.', 'warn');
+    const prevStatus = u.status_aktif;
+    const nextStatus = String(u.status_aktif || 'AKTIF').toUpperCase() === 'NONAKTIF' ? 'AKTIF' : 'NONAKTIF';
     u.status_aktif = nextStatus;
     if (typeof S().saveState === 'function') S().saveState();
     if (typeof API === 'function' && API() && typeof API().callApi === 'function') {
-      try { API().callApi('user.save', u, { isWrite: true }); } catch (e) {}
+      try {
+        await API().callApi('users.save', {
+          id_user: u.id_user,
+          username: u.username,
+          nama_lengkap: u.nama_lengkap,
+          role: u.role,
+          cabang_id: u.cabang_id || st.cabangId,
+          status_aktif: nextStatus
+        }, { isWrite: true });
+      } catch (e) {
+        u.status_aktif = prevStatus;
+        if (global.toast) global.toast('Gagal menyimpan status ke Google Sheets: ' + (e.message || e), 'err');
+        global.renderActiveView();
+        return;
+      }
     }
     if (typeof S().logAuditEvent === 'function') S().logAuditEvent('UBAH_STATUS_USER', `Ubah status pengguna ${u.nama_lengkap} (${u.id_user}) menjadi ${nextStatus}`);
     if (global.toast) global.toast(`Status pengguna ${u.nama_lengkap}: ${nextStatus}`, 'ok');
@@ -17144,9 +17177,9 @@ S. prn 3 dd 1 tab</textarea>
         zona_waktu: getVal('cfg_zona_waktu', false, false)
       };
 
-      if (S().setStoreSettings) S().setStoreSettings(updated);
+      const merged = S().setStoreSettings ? S().setStoreSettings(updated) : updated;
       try {
-        API().callApi('profil.save', { config_json: JSON.stringify(updated) }, { isWrite: true }).catch(() => {});
+        API().callApi('profil.save', { config_json: JSON.stringify(merged) }, { isWrite: true }).catch(() => {});
       } catch (e) {}
       global.toast('Konfigurasi operasional toko berhasil disimpan & disinkronkan!', 'ok');
       global.renderActiveView();

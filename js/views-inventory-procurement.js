@@ -103,7 +103,9 @@
     return Array.isArray(arr) ? arr : [];
   }
   function _saveSalesStaffList(list) {
-    _writeJsonLs(SALES_STAFF_KEY, Array.isArray(list) ? list : []);
+    const clean = Array.isArray(list) ? list : [];
+    _writeJsonLs(SALES_STAFF_KEY, clean);
+    if (typeof S().syncConfigPatch === 'function') S().syncConfigPatch({ sales_staff: clean });
   }
   global.getOnsSalesStaffList = _getSalesStaffList;
 
@@ -1621,6 +1623,24 @@
   const MASTER_KAT_PELANGGAN_KEY = 'ons_master_kat_pelanggan_v1';
   const MASTER_PAJAK_KEY = 'ons_master_pajak_v1';
 
+  const _MASTER_REF_CLOUD_KEYS = {
+    [MASTER_KATEGORI_KEY]: 'master_kategori',
+    [MASTER_SATUAN_KEY]: 'master_satuan',
+    [MASTER_RAK_KEY]: 'master_rak',
+    [MASTER_GUDANG_KEY]: 'master_gudang',
+    [MASTER_KAT_PELANGGAN_KEY]: 'master_kat_pelanggan',
+    [MASTER_PAJAK_KEY]: 'master_pajak'
+  };
+
+  function _persistMasterRefList(lsKey, stateKey, list) {
+    _writeLocalList(lsKey, list);
+    S().AppState[stateKey] = list;
+    const cloudKey = _MASTER_REF_CLOUD_KEYS[lsKey];
+    if (cloudKey && typeof S().syncConfigPatch === 'function') {
+      S().syncConfigPatch({ [cloudKey]: list });
+    }
+  }
+
   let mdKategoriSearchQ = '';
   let mdSatuanSearchQ = '';
   let mdRakSearchQ = '';
@@ -2643,8 +2663,7 @@
       const newId = 'KAT-' + String(list.length + 1).padStart(3, '0');
       list.push({ id_kategori: newId, nama_kategori: nama, status });
     }
-    _writeLocalList(MASTER_KATEGORI_KEY, list);
-    S().AppState.masterKategori = list;
+    _persistMasterRefList(MASTER_KATEGORI_KEY, 'masterKategori', list);
     S().closeModal();
     global.toast('Kategori berhasil disimpan', 'ok');
     global.renderActiveView();
@@ -2663,8 +2682,7 @@
   };
   global.confirmDeleteKategori = (id) => {
     const list = _getMasterKategoriList().filter((k) => k.id_kategori !== id);
-    _writeLocalList(MASTER_KATEGORI_KEY, list);
-    S().AppState.masterKategori = list;
+    _persistMasterRefList(MASTER_KATEGORI_KEY, 'masterKategori', list);
     S().closeModal();
     global.toast('Kategori berhasil dihapus', 'ok');
     global.renderActiveView();
@@ -2723,8 +2741,7 @@
       const newId = 'SAT-' + String(list.length + 1).padStart(3, '0');
       list.push({ id_satuan: newId, nama_satuan: nama, status });
     }
-    _writeLocalList(MASTER_SATUAN_KEY, list);
-    S().AppState.masterSatuan = list;
+    _persistMasterRefList(MASTER_SATUAN_KEY, 'masterSatuan', list);
     S().closeModal();
     global.toast('Satuan kemasan berhasil disimpan', 'ok');
     global.renderActiveView();
@@ -2743,8 +2760,7 @@
   };
   global.confirmDeleteSatuan = (id) => {
     const list = _getMasterSatuanList().filter((s) => s.id_satuan !== id);
-    _writeLocalList(MASTER_SATUAN_KEY, list);
-    S().AppState.masterSatuan = list;
+    _persistMasterRefList(MASTER_SATUAN_KEY, 'masterSatuan', list);
     S().closeModal();
     global.toast('Satuan kemasan berhasil dihapus', 'ok');
     global.renderActiveView();
@@ -2803,8 +2819,7 @@
       const newId = 'RAK-' + String(list.length + 1).padStart(3, '0');
       list.push({ id_rak: newId, nama_rak: nama, status });
     }
-    _writeLocalList(MASTER_RAK_KEY, list);
-    S().AppState.masterRak = list;
+    _persistMasterRefList(MASTER_RAK_KEY, 'masterRak', list);
     S().closeModal();
     global.toast('Rak berhasil disimpan', 'ok');
     global.renderActiveView();
@@ -2823,8 +2838,7 @@
   };
   global.confirmDeleteRak = (id) => {
     const list = _getMasterRakList().filter((r) => r.id_rak !== id);
-    _writeLocalList(MASTER_RAK_KEY, list);
-    S().AppState.masterRak = list;
+    _persistMasterRefList(MASTER_RAK_KEY, 'masterRak', list);
     S().closeModal();
     global.toast('Rak berhasil dihapus', 'ok');
     global.renderActiveView();
@@ -2883,8 +2897,7 @@
       const newId = 'GDG-' + String(list.length + 1).padStart(3, '0');
       list.push({ id_gudang: newId, nama_gudang: nama, status });
     }
-    _writeLocalList(MASTER_GUDANG_KEY, list);
-    S().AppState.masterGudang = list;
+    _persistMasterRefList(MASTER_GUDANG_KEY, 'masterGudang', list);
     S().closeModal();
     global.toast('Gudang berhasil disimpan', 'ok');
     global.renderActiveView();
@@ -2903,8 +2916,7 @@
   };
   global.confirmDeleteGudang = (id) => {
     const list = _getMasterGudangList().filter((g) => g.id_gudang !== id);
-    _writeLocalList(MASTER_GUDANG_KEY, list);
-    S().AppState.masterGudang = list;
+    _persistMasterRefList(MASTER_GUDANG_KEY, 'masterGudang', list);
     S().closeModal();
     global.toast('Gudang berhasil dihapus', 'ok');
     global.renderActiveView();
@@ -2968,8 +2980,7 @@
       const newId = 'KPEL-' + String(list.length + 1).padStart(3, '0');
       list.push({ id_kat_pelanggan: newId, nama_kategori: nama, kode, status });
     }
-    _writeLocalList(MASTER_KAT_PELANGGAN_KEY, list);
-    S().AppState.masterKategoriPelanggan = list;
+    _persistMasterRefList(MASTER_KAT_PELANGGAN_KEY, 'masterKategoriPelanggan', list);
     S().closeModal();
     global.toast('Kategori pelanggan berhasil disimpan', 'ok');
     global.renderActiveView();
@@ -2988,8 +2999,7 @@
   };
   global.confirmDeleteKatPelanggan = (id) => {
     const list = _getMasterKatPelangganList().filter((kp) => kp.id_kat_pelanggan !== id);
-    _writeLocalList(MASTER_KAT_PELANGGAN_KEY, list);
-    S().AppState.masterKategoriPelanggan = list;
+    _persistMasterRefList(MASTER_KAT_PELANGGAN_KEY, 'masterKategoriPelanggan', list);
     S().closeModal();
     global.toast('Kategori pelanggan berhasil dihapus', 'ok');
     global.renderActiveView();
@@ -3046,8 +3056,7 @@
       const newId = 'TAX-' + String(list.length + 1).padStart(3, '0');
       list.push({ id_pajak: newId, nama_pajak: nama, nilai_pajak: nilai });
     }
-    _writeLocalList(MASTER_PAJAK_KEY, list);
-    S().AppState.masterPajak = list;
+    _persistMasterRefList(MASTER_PAJAK_KEY, 'masterPajak', list);
     S().closeModal();
     global.toast('Pajak berhasil disimpan', 'ok');
     global.renderActiveView();
@@ -3066,8 +3075,7 @@
   };
   global.confirmDeletePajak = (id) => {
     const list = _getMasterPajakList().filter((p) => p.id_pajak !== id);
-    _writeLocalList(MASTER_PAJAK_KEY, list);
-    S().AppState.masterPajak = list;
+    _persistMasterRefList(MASTER_PAJAK_KEY, 'masterPajak', list);
     S().closeModal();
     global.toast('Pajak berhasil dihapus', 'ok');
     global.renderActiveView();

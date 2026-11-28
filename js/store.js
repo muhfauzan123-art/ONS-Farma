@@ -2562,6 +2562,44 @@
     return merged;
   }
 
+  function applySyncedConfigExtras(cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    const syncLsList = (lsKey, stateKey, arr) => {
+      if (!Array.isArray(arr)) return;
+      try { localStorage.setItem(lsKey, JSON.stringify(arr)); } catch (_) {}
+      if (stateKey && AppState) AppState[stateKey] = arr.slice();
+    };
+    syncLsList('ons_master_kategori_v1', 'masterKategori', cfg.master_kategori);
+    syncLsList('ons_master_satuan_v1', 'masterSatuan', cfg.master_satuan);
+    syncLsList('ons_master_rak_v1', 'masterRak', cfg.master_rak);
+    syncLsList('ons_master_gudang_v1', 'masterGudang', cfg.master_gudang);
+    syncLsList('ons_master_kat_pelanggan_v1', 'masterKategoriPelanggan', cfg.master_kat_pelanggan);
+    syncLsList('ons_master_pajak_v1', 'masterPajak', cfg.master_pajak);
+    syncLsList('ons_payment_channels_v1', null, cfg.payment_channels);
+    syncLsList('ons_custom_roles', null, cfg.custom_roles);
+    if (Array.isArray(cfg.sales_staff)) {
+      try { localStorage.setItem('ONS_SALES_STAFF_V1', JSON.stringify(cfg.sales_staff)); } catch (_) {}
+    }
+    if (cfg.anl_po_cfg && typeof cfg.anl_po_cfg === 'object') {
+      try { localStorage.setItem('ons_anl_po_cfg', JSON.stringify(cfg.anl_po_cfg)); } catch (_) {}
+    }
+  }
+
+  function syncConfigPatch(patchObj) {
+    const merged = setStoreSettings(patchObj || {});
+    applySyncedConfigExtras(merged);
+    try {
+      const api = (typeof global !== 'undefined' && global.ONSApi) ? global.ONSApi : (typeof window !== 'undefined' ? window.ONSApi : null);
+      if (api && typeof api.isDemoMode === 'function' && !api.isDemoMode() && typeof api.getSession === 'function' && api.getSession()) {
+        const role = getRole();
+        if (role === 'Pemilik' || role === 'APJ') {
+          api.callApi('profil.save', { config_json: JSON.stringify(merged) }, { isWrite: true }).catch(() => {});
+        }
+      }
+    } catch (_) {}
+    return merged;
+  }
+
   function getStoreProfile() {
     if (!AppState.storeProfile) {
       AppState.storeProfile = loadCachedProfile();
@@ -3305,6 +3343,8 @@
     defaultStoreSettings,
     getStoreSettings,
     setStoreSettings,
+    applySyncedConfigExtras,
+    syncConfigPatch,
     getProfileCompleteness,
     compressImageFile,
     normalizeWa62,
