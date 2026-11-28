@@ -6,7 +6,7 @@
  * - Selalu sajikan UI instan dari cache untuk pengalaman bebas lag (<50ms)
  */
 
-const CACHE_NAME = 'ons-farma-pwa-v18.83.0';
+const CACHE_NAME = 'ons-farma-pwa-v18.84.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -115,7 +115,7 @@ self.addEventListener('fetch', (event) => {
     caches.open(CACHE_NAME).then((cache) =>
       cache.match(event.request).then((cached) => {
         const cleanUrl = url.split('?')[0];
-        const matchPromise = cached ? Promise.resolve(cached) : cache.match(cleanUrl);
+        const matchPromise = (cached || url.includes('?v=')) ? Promise.resolve(cached) : cache.match(cleanUrl);
         return matchPromise.then((matched) => {
           const networkFetch = fetch(event.request).then((resp) => {
             if (resp && resp.status === 200 && url.startsWith(self.location.origin)) {

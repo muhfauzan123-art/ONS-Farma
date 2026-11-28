@@ -14301,6 +14301,10 @@ S. prn 3 dd 1 tab</textarea>
   }
 
   function _renderSettingsVaultSubTab(isOwner, secrets, bk, isDemo) {
+    const vLinks = (S().AppState && S().AppState.vaultLinks) || {};
+    const dbId = (secrets && secrets.DB_ID) || vLinks.db_id || '';
+    const driveId = (secrets && secrets.DRIVE_FOLDER_ID) || vLinks.drive_folder_id || '';
+    const secretKeys = Object.keys(secrets || {});
     return `<div class="grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
       <!-- 1-Click Backup & Restore -->
       <div class="ons-card p-5 lg:col-span-12 space-y-3 border-2 border-blue-400/70" style="background:linear-gradient(135deg,rgba(0,102,254,0.06),transparent)">
@@ -14334,6 +14338,7 @@ S. prn 3 dd 1 tab</textarea>
             <p class="mt-1" style="color:var(--ons-text-soft)">Berjalan langsung pada Google Sheets database utama aplikasi ini. Menghapus tab tidak penting/kosong (<code>Sheet1</code>, tab legacy, tab multi-cabang kosong), menghapus baris kosong, melengkapi kolom skema terbaru, menormalisasi sisa label lama, &amp; menyinkronkan ulang Piutang, Hutang PBF, Batch Stok, SP, Tagihan, dan Jurnal Keuangan.</p>
           </div>
           <div class="flex flex-wrap gap-2">
+            ${(isOwner && dbId && !isDemo) ? `<a href="https://docs.google.com/spreadsheets/d/${S().esc(dbId)}/edit" target="_blank" rel="noopener" class="ons-btn ons-btn-primary text-xs font-bold">📊 Buka Google Sheets DB</a>` : ''}
             <button type="button" onclick="window.runDbAuditAndRepair(true)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-ghost text-xs ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && dbAuditState.dryRun ? '⏳ Sedang Memindai DB...' : '1. Pindai Kesehatan DB'}</button>
             <button type="button" onclick="window.runDbAuditAndRepair(false)" ${dbAuditState.running ? 'disabled' : ''} class="ons-btn ons-btn-emerald text-xs font-bold ${dbAuditState.running ? 'opacity-60 cursor-wait' : ''}">${dbAuditState.running && !dbAuditState.dryRun ? '⏳ Sedang Memperbaiki DB...' : '2. Perbaiki, Bersihkan &amp; Sinkronkan DB'}</button>
           </div>
@@ -14346,15 +14351,16 @@ S. prn 3 dd 1 tab</textarea>
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 class="font-bold text-sm">Brankas Rahasia Script Properties (Read-Back Tersensor)</h3>
-            ${!isOwner ? '<p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">ID Database Sheets &amp; kunci integrasi API hanya ditampilkan saat login sebagai <b>Pemilik</b>.</p>' : ''}
+            ${!isOwner ? '<p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">ID Database Sheets &amp; kunci integrasi API hanya ditampilkan saat login sebagai <b>Pemilik</b>.</p>' : (secretKeys.length === 0 ? '<p class="text-[11px] mt-0.5" style="color:var(--ons-text-soft)">Parameter server belum termuat — klik <b>Muat Ulang Parameter</b> di sebelah kanan.</p>' : '')}
           </div>
-          ${(isOwner && (secrets.DB_ID || secrets.DRIVE_FOLDER_ID)) ? `<div class="flex flex-wrap gap-2">
-            ${secrets.DB_ID ? `<a href="https://docs.google.com/spreadsheets/d/${S().esc(secrets.DB_ID)}/edit" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-xs font-bold">📊 Buka Google Sheets Database</a>` : ''}
-            ${secrets.DRIVE_FOLDER_ID ? `<a href="https://drive.google.com/drive/folders/${S().esc(secrets.DRIVE_FOLDER_ID)}" target="_blank" rel="noopener" class="ons-btn ons-btn-ghost text-xs font-semibold">📁 Buka Folder Drive Arsip</a>` : ''}
-          </div>` : ''}
+          <div class="flex flex-wrap gap-2">
+            ${(isOwner && dbId && !isDemo) ? `<a href="https://docs.google.com/spreadsheets/d/${S().esc(dbId)}/edit" target="_blank" rel="noopener" class="ons-btn ons-btn-emerald text-xs font-bold">📊 Buka Google Sheets Database</a>` : ''}
+            ${(isOwner && driveId && !isDemo) ? `<a href="https://drive.google.com/drive/folders/${S().esc(driveId)}" target="_blank" rel="noopener" class="ons-btn ons-btn-ghost text-xs font-semibold">📁 Buka Folder Drive Arsip</a>` : ''}
+            ${(isOwner && secretKeys.length === 0) ? `<button type="button" onclick="window.loadSettingsBundle(true)" class="ons-btn ons-btn-ghost text-xs font-semibold">🔄 Muat Ulang Parameter</button>` : ''}
+          </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-          ${Object.keys(secrets).map((k) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg border" style="border-color:var(--ons-border)">
+          ${secretKeys.map((k) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg border" style="border-color:var(--ons-border)">
             <div class="min-w-0"><b>${S().esc(k)}</b><div class="font-mono-num truncate" style="color:var(--ons-text-soft)">${S().esc(secrets[k] || '(Belum diatur)')}</div></div>
             <button onclick="window.promptUpdateSecret('${S().esc(k)}')" class="ons-btn ons-btn-ghost text-xs py-1 px-2.5 shrink-0">Ubah</button>
           </div>`).join('')}
@@ -14957,7 +14963,8 @@ S. prn 3 dd 1 tab</textarea>
       if (!force) return _setLoadPromise;
       try { await _setLoadPromise; } catch (e) {}
     }
-    if (!force && (settingsCache.audit.length || Object.keys(settingsCache.secrets).length || (_setLastLoadedTs && (Date.now() - _setLastLoadedTs) < 60000))) return;
+    const needOwnerSecrets = S().getRole() === 'Pemilik' && Object.keys(settingsCache.secrets || {}).length === 0;
+    if (!force && !needOwnerSecrets && (settingsCache.audit.length || Object.keys(settingsCache.secrets).length || (_setLastLoadedTs && (Date.now() - _setLastLoadedTs) < 60000))) return;
     _setLoading = true;
     const call = (API() && (API().callBatched || API().callApi)).bind(API());
     _setLoadPromise = (async () => {
@@ -14969,7 +14976,14 @@ S. prn 3 dd 1 tab</textarea>
           call('profil.get', {}).catch(() => null),
           call('audit.getChecklist', {}).catch(() => null)
         ]);
-        _setLastLoadedTs = Date.now();
+        const hasSecrets = sec && sec.secrets && Object.keys(sec.secrets).length > 0;
+        if (S().getRole() !== 'Pemilik' || hasSecrets) _setLastLoadedTs = Date.now();
+        if (hasSecrets && S().AppState) {
+          S().AppState.vaultLinks = Object.assign({}, S().AppState.vaultLinks || {}, {
+            db_id: sec.secrets.DB_ID || '',
+            drive_folder_id: sec.secrets.DRIVE_FOLDER_ID || ''
+          });
+        }
         const rawProf = profRes && ((profRes.profile || profRes.item) || (profRes.nama_usaha ? profRes : null));
         if (rawProf && S().setStoreProfile) {
           const curProf = S().getStoreProfile();
